@@ -53,8 +53,8 @@ import (
 )
 
 func in_dmrgo_ConfigError(s *C.dmrgo_config_error_t) (d g_dmrgo.ConfigError) {
-	d.Type = C.GoStringN(s._type, C.int(s.type_len))
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
+	d.Type = cStr(s._type, s.type_len)
+	d.Field = cStr(s.field, s.field_len)
 	return
 }
 
@@ -67,8 +67,8 @@ func out_dmrgo_ConfigError(d *C.dmrgo_config_error_t, s *g_dmrgo.ConfigError, oc
 }
 
 func in_dmrgo_FieldRangeError(s *C.dmrgo_field_range_error_t) (d g_dmrgo.FieldRangeError) {
-	d.Type = C.GoStringN(s._type, C.int(s.type_len))
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
+	d.Type = cStr(s._type, s.type_len)
+	d.Field = cStr(s.field, s.field_len)
 	d.Bits = int(s.bits)
 	d.Signed = bool(s.signed_)
 	d.Min = float64(s.min)
@@ -565,7 +565,7 @@ func in_data_Message(s *C.dmrgo_data_message_t, st *st_data_Message) (d g_data.M
 		d.Proprietary = nil
 	}
 	d.Rate = g_enums.DataType(s.rate)
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Payload = cSlice[byte](unsafe.Pointer(s.payload), s.payload_len)
 	d.BadCRC = bool(s.bad_crc)
 	d.Fragmented = bool(s.fragmented)
 	d.Fragments = uint16(s.fragments)
@@ -950,7 +950,7 @@ func in_hytera_hdap_Header(s *C.dmrgo_hdap_header_t) (d g_hytera_hdap.Header) {
 func in_hytera_hdap_Message(s *C.dmrgo_hdap_message_t) (d g_hytera_hdap.Message) {
 	d.Header = in_hytera_hdap_Header(&s.header)
 	d.Opcode = g_hytera_hdap.Opcode(s.opcode)
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Payload = cSlice[byte](unsafe.Pointer(s.payload), s.payload_len)
 	d.Checksum = uint8(s.checksum)
 	d.End = uint8(s.end)
 	return
@@ -967,7 +967,7 @@ func in_hytera_hdap_TMPMessage(s *C.dmrgo_hdap_tmp_message_t) (d g_hytera_hdap.T
 	d.RequestID = uint32(s.request_id)
 	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
 	d.Source = *(*[4]byte)(unsafe.Pointer(&s.source))
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	return
 }
 
@@ -981,7 +981,7 @@ func in_ip_Datagram(s *C.dmrgo_ip_datagram_t) (d g_ip.Datagram) {
 	d.Compressed = bool(s.compressed)
 	d.SAID = g_enums.SAID(s.said)
 	d.DAID = g_enums.DAID(s.daid)
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Payload = cSlice[byte](unsafe.Pointer(s.payload), s.payload_len)
 	return
 }
 
@@ -993,7 +993,7 @@ func in_ip_ICMPPacket(s *C.dmrgo_ip_icmp_packet_t) (d g_ip.ICMPPacket) {
 	d.Message = g_ip.ICMPMessage(s.message)
 	d.Pointer = uint8(s.pointer)
 	d.NextHopMTU = uint16(s.next_hop_mtu)
-	d.Original = unsafe.Slice((*byte)(unsafe.Pointer(s.original)), int(s.original_len))
+	d.Original = cSlice[byte](unsafe.Pointer(s.original), s.original_len)
 	return
 }
 
@@ -1068,7 +1068,7 @@ func out_ip_UDP(d *C.dmrgo_ip_udp_t, s *g_ip.UDP, oc *outc) {
 
 func in_ip_ICMP(s *C.dmrgo_ip_icmp_t) (d g_ip.ICMP) {
 	d.Header = *(*g_ip.ICMPHeader)(unsafe.Pointer(&s.header))
-	d.Original = unsafe.Slice((*byte)(unsafe.Pointer(s.original)), int(s.original_len))
+	d.Original = cSlice[byte](unsafe.Pointer(s.original), s.original_len)
 	return
 }
 
@@ -1092,14 +1092,14 @@ func in_ip_IPv4Header(s *C.dmrgo_ip_ipv4_header_t) (d g_ip.IPv4Header) {
 
 func in_ip_IPv4(s *C.dmrgo_ip_ipv4_t) (d g_ip.IPv4) {
 	d.Header = in_ip_IPv4Header(&s.header)
-	d.Options = unsafe.Slice((*byte)(unsafe.Pointer(s.options)), int(s.options_len))
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Options = cSlice[byte](unsafe.Pointer(s.options), s.options_len)
+	d.Payload = cSlice[byte](unsafe.Pointer(s.payload), s.payload_len)
 	return
 }
 
 func in_ip_UDP(s *C.dmrgo_ip_udp_t) (d g_ip.UDP) {
 	d.Header = *(*g_ip.UDPHeader)(unsafe.Pointer(&s.header))
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Payload = cSlice[byte](unsafe.Pointer(s.payload), s.payload_len)
 	return
 }
 
@@ -2931,7 +2931,7 @@ func in_layer2_packet_Packet(s *C.dmrgo_packet_t, st *st_layer2_packet_Packet) (
 	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
 	d.Blocks = nil
 	if s.blocks_len > 0 {
-		cs := unsafe.Slice((*C.dmrgo_layer2_data_t)(unsafe.Pointer(s.blocks)), int(s.blocks_len))
+		cs := cSlice[C.dmrgo_layer2_data_t](unsafe.Pointer(s.blocks), s.blocks_len)
 		d.Blocks = make([]g_layer2.Data, len(cs))
 		ss := make([]st_layer2_Data, len(cs))
 		for i := range cs {
@@ -2997,7 +2997,7 @@ func in_layer2_packet_Message(s *C.dmrgo_packet_message_t, st *st_layer2_packet_
 		d.Proprietary = nil
 	}
 	d.DataType = g_enums.DataType(s.data_type)
-	d.Data = unsafe.Slice((*byte)(unsafe.Pointer(s.data)), int(s.data_len))
+	d.Data = cSlice[byte](unsafe.Pointer(s.data), s.data_len)
 	d.CRC = uint32(s.crc)
 	if s.has_response {
 		st.p_Response = in_layer2_packet_ResponseData(&s.response)
@@ -3580,16 +3580,16 @@ func in_mototrbo_ars_Message(s *C.dmrgo_ars_message_t) (d g_mototrbo_ars.Message
 	d.Length = uint16(s.length)
 	d.Header = in_mototrbo_ars_Header(&s.header)
 	d.Registration = in_mototrbo_ars_Registration(&s.registration)
-	d.Device = unsafe.Slice((*byte)(unsafe.Pointer(s.device)), int(s.device_len))
-	d.User = unsafe.Slice((*byte)(unsafe.Pointer(s.user)), int(s.user_len))
-	d.Password = unsafe.Slice((*byte)(unsafe.Pointer(s.password)), int(s.password_len))
+	d.Device = cSlice[byte](unsafe.Pointer(s.device), s.device_len)
+	d.User = cSlice[byte](unsafe.Pointer(s.user), s.user_len)
+	d.Password = cSlice[byte](unsafe.Pointer(s.password), s.password_len)
 	d.Response = in_mototrbo_ars_Response(&s.response)
-	d.Extra = unsafe.Slice((*byte)(unsafe.Pointer(s.extra)), int(s.extra_len))
+	d.Extra = cSlice[byte](unsafe.Pointer(s.extra), s.extra_len)
 	return
 }
 
 func in_mototrbo_lrrp_Request(s *C.dmrgo_lrrp_request_t) (d g_mototrbo_lrrp.Request) {
-	d.RequestID = unsafe.Slice((*byte)(unsafe.Pointer(s.request_id)), int(s.request_id_len))
+	d.RequestID = cSlice[byte](unsafe.Pointer(s.request_id), s.request_id_len)
 	d.HasRequestID = bool(s.has_request_id)
 	d.ShortRequestID = uint8(s.short_request_id)
 	d.HasShortRequestID = bool(s.has_short_request_id)
@@ -3617,12 +3617,12 @@ func in_mototrbo_lrrp_Request(s *C.dmrgo_lrrp_request_t) (d g_mototrbo_lrrp.Requ
 
 func in_mototrbo_lrrp_OperationError(s *C.dmrgo_lrrp_operation_error_t) (d g_mototrbo_lrrp.OperationError) {
 	d.Code = uint32(s.code)
-	d.Info = unsafe.Slice((*byte)(unsafe.Pointer(s.info)), int(s.info_len))
+	d.Info = cSlice[byte](unsafe.Pointer(s.info), s.info_len)
 	return
 }
 
 func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report) {
-	d.RequestID = unsafe.Slice((*byte)(unsafe.Pointer(s.request_id)), int(s.request_id_len))
+	d.RequestID = cSlice[byte](unsafe.Pointer(s.request_id), s.request_id_len)
 	d.HasRequestID = bool(s.has_request_id)
 	d.ShortRequestID = uint8(s.short_request_id)
 	d.HasShortRequestID = bool(s.has_short_request_id)
@@ -3803,11 +3803,11 @@ func in_mototrbo_tms_SequenceHigh(s *C.dmrgo_tms_sequence_high_t) (d g_mototrbo_
 func in_mototrbo_tms_Message(s *C.dmrgo_tms_message_t) (d g_mototrbo_tms.Message) {
 	d.Length = uint16(s.length)
 	d.Header = in_mototrbo_tms_Header(&s.header)
-	d.Address = unsafe.Slice((*byte)(unsafe.Pointer(s.address)), int(s.address_len))
+	d.Address = cSlice[byte](unsafe.Pointer(s.address), s.address_len)
 	d.Capability = uint8(s.capability)
 	d.SequenceLow = in_mototrbo_tms_SequenceLow(&s.sequence_low)
 	d.SequenceHigh = in_mototrbo_tms_SequenceHigh(&s.sequence_high)
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	return
 }
 
@@ -3839,13 +3839,13 @@ func out_shortdata_HyteraText(d *C.dmrgo_shortdata_hytera_text_t, s *g_shortdata
 
 func in_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) (d g_shortdata.HyteraText) {
 	d.Field = uint16(s.field)
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	return
 }
 
 func in_sms_AnyToneText(s *C.dmrgo_sms_anytone_text_t) (d g_sms.AnyToneText) {
 	d.Prefix = uint32(s.prefix)
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	return
 }
 
@@ -3859,7 +3859,7 @@ func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
 	d.DD = g_enums.DDFormat(s.dd)
 	d.Sequence = uint8(s.sequence)
 	d.AckRequired = bool(s.ack_required)
-	d.Body = unsafe.Slice((*byte)(unsafe.Pointer(s.body)), int(s.body_len))
+	d.Body = cSlice[byte](unsafe.Pointer(s.body), s.body_len)
 	return
 }
 
@@ -3901,7 +3901,7 @@ func out_sms_IPText(d *C.dmrgo_sms_ip_text_t, s *g_sms.IPText, oc *outc) {
 }
 
 func in_sms_IPText(s *C.dmrgo_sms_ip_text_t) (d g_sms.IPText) {
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	return
 }
 
@@ -3940,7 +3940,7 @@ func in_transport_dmrd_Control(s *C.dmrgo_dmrd_control_t) (d g_transport_dmrd.Co
 	d.Salt = uint32(s.salt)
 	d.HasSalt = bool(s.has_salt)
 	d.Token = *(*[32]byte)(unsafe.Pointer(&s.token))
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	return
 }
 
@@ -4021,7 +4021,7 @@ func out_transport_dmrd_session_Output(d *C.dmrgo_dmrd_session_output_t, s *g_tr
 }
 
 func in_transport_dmrd_session_BridgeConfig(s *C.dmrgo_dmrd_session_bridge_config_t) (d g_transport_dmrd_session.BridgeConfig) {
-	d.Key = unsafe.Slice((*byte)(unsafe.Pointer(s.key)), int(s.key_len))
+	d.Key = cSlice[byte](unsafe.Pointer(s.key), s.key_len)
 	d.Enhanced = bool(s.enhanced)
 	d.Keepalive = time.Duration(s.keepalive)
 	d.Timeout = time.Duration(s.timeout)
@@ -4031,9 +4031,9 @@ func in_transport_dmrd_session_BridgeConfig(s *C.dmrgo_dmrd_session_bridge_confi
 func in_transport_dmrd_session_PeerConfig(s *C.dmrgo_dmrd_session_peer_config_t) (d g_transport_dmrd_session.PeerConfig) {
 	d.Dialect = g_transport_dmrd.Dialect(s.dialect)
 	d.ID = uint32(s.id)
-	d.Password = unsafe.Slice((*byte)(unsafe.Pointer(s.password)), int(s.password_len))
-	d.Config = unsafe.Slice((*byte)(unsafe.Pointer(s.config)), int(s.config_len))
-	d.Options = unsafe.Slice((*byte)(unsafe.Pointer(s.options)), int(s.options_len))
+	d.Password = cSlice[byte](unsafe.Pointer(s.password), s.password_len)
+	d.Config = cSlice[byte](unsafe.Pointer(s.config), s.config_len)
+	d.Options = cSlice[byte](unsafe.Pointer(s.options), s.options_len)
 	d.Retry = time.Duration(s.retry)
 	d.Timeout = time.Duration(s.timeout)
 	d.Backoff = time.Duration(s.backoff)
@@ -4075,7 +4075,7 @@ func in_transport_hytera_P2P(s *C.dmrgo_hytera_p2p_t) (d g_transport_hytera.P2P)
 	d.Seq = uint8(s.seq)
 	d.Status = *(*[3]byte)(unsafe.Pointer(&s.status))
 	d.Reserved = *(*[11]byte)(unsafe.Pointer(&s.reserved))
-	d.Body = unsafe.Slice((*byte)(unsafe.Pointer(s.body)), int(s.body_len))
+	d.Body = cSlice[byte](unsafe.Pointer(s.body), s.body_len)
 	return
 }
 
@@ -4140,7 +4140,7 @@ func in_transport_ipsc_Payload(s *C.dmrgo_ipsc_payload_t) (d g_transport_ipsc.Pa
 func in_transport_ipsc_Raw(s *C.dmrgo_ipsc_raw_t) (d g_transport_ipsc.Raw) {
 	d.Opcode = g_transport_ipsc.Opcode(s.opcode)
 	d.ID = uint32(s.id)
-	d.Body = unsafe.Slice((*byte)(unsafe.Pointer(s.body)), int(s.body_len))
+	d.Body = cSlice[byte](unsafe.Pointer(s.body), s.body_len)
 	return
 }
 
@@ -4309,7 +4309,7 @@ func in_transport_mmdvm_DMRStart(s *C.dmrgo_mmdvm_dmr_start_t) (d g_transport_mm
 
 func in_transport_mmdvm_Debug(s *C.dmrgo_mmdvm_debug_t) (d g_transport_mmdvm.Debug) {
 	d.Command = g_transport_mmdvm.Command(s.command)
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	d.N = *(*[4]int16)(unsafe.Pointer(&s.n))
 	return
 }
@@ -4393,7 +4393,7 @@ func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_m
 
 func in_transport_mmdvm_Frame(s *C.dmrgo_mmdvm_frame_t) (d g_transport_mmdvm.Frame) {
 	d.Command = g_transport_mmdvm.Command(s.command)
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Payload = cSlice[byte](unsafe.Pointer(s.payload), s.payload_len)
 	return
 }
 
@@ -4536,7 +4536,7 @@ func in_transport_mmdvm_Version(s *C.dmrgo_mmdvm_version_t) (d g_transport_mmdvm
 	d.Capabilities = g_transport_mmdvm.Capabilities(s.capabilities)
 	d.CPU = g_transport_mmdvm.CPU(s.cpu)
 	d.UDID = *(*[16]byte)(unsafe.Pointer(&s.udid))
-	d.Description = unsafe.Slice((*byte)(unsafe.Pointer(s.description)), int(s.description_len))
+	d.Description = cSlice[byte](unsafe.Pointer(s.description), s.description_len)
 	return
 }
 
@@ -5009,7 +5009,7 @@ func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.U
 }
 
 func in_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) (d g_trunk_auth.Keys) {
-	d.Entries = unsafe.Slice((*g_trunk_auth.Entry)(unsafe.Pointer(s.entries)), int(s.entries_len))
+	d.Entries = cSlice[g_trunk_auth.Entry](unsafe.Pointer(s.entries), s.entries_len)
 	return
 }
 
@@ -5053,7 +5053,7 @@ func (c *vt_vocoder_Codec) Decode(q0 []int16, q1 [9]byte) (o0 []int16, o1 error)
 		code = C.dmrgo_vocoder_codec_vtable_t__decode(&c.t, (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(d[:cap(d)]))), C.size_t(cap(d)), &c.m1n0, &c.m1n0need, &c.m1a1[0])
 		if code == C.DMRGO_ERR_SHORT {
 			grown := false
-			if int(c.m1n0need) > cap(d) {
+			if growOK(c.m1n0need, cap(d)) {
 				d = slices.Grow(d, int(c.m1n0need)-len(d))
 				grown = true
 			}
@@ -5067,7 +5067,7 @@ func (c *vt_vocoder_Codec) Decode(q0 []int16, q1 [9]byte) (o0 []int16, o1 error)
 		o1 = codeErr(code)
 		return
 	}
-	o0 = d[:c.m1n0]
+	o0 = d[:min(c.m1n0, C.size_t(cap(d)))]
 	return
 }
 
@@ -5166,7 +5166,7 @@ func in_vocoder_dvsi_Config(s *C.dmrgo_dvsi_config_t) (d g_vocoder_dvsi.Config) 
 
 func in_vocoder_dvsi_Packet(s *C.dmrgo_dvsi_packet_t) (d g_vocoder_dvsi.Packet) {
 	d.Type = g_vocoder_dvsi.PacketType(s._type)
-	d.Fields = unsafe.Slice((*byte)(unsafe.Pointer(s.fields)), int(s.fields_len))
+	d.Fields = cSlice[byte](unsafe.Pointer(s.fields), s.fields_len)
 	return
 }
 
@@ -5345,7 +5345,7 @@ func in_voice_Event(s *C.dmrgo_voice_event_t, st *st_voice_Event) (d g_voice.Eve
 	}
 	d.Lost = uint8(s.lost)
 	d.LC = in_layer2_pdu_FullLinkControl(&s.lc, &st.f_LC)
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	d.Reason = g_voice.EndReason(s.reason)
 	d.Stats = *(*g_voice.Stats)(unsafe.Pointer(&s.stats))
 	return
@@ -5363,7 +5363,7 @@ func in_voice_CallOptions(s *C.dmrgo_voice_call_options_t, st *st_voice_CallOpti
 	} else {
 		d.PIHeader = nil
 	}
-	d.TalkerAlias = C.GoStringN(s.talker_alias, C.int(s.talker_alias_len))
+	d.TalkerAlias = cStr(s.talker_alias, s.talker_alias_len)
 	d.TalkerAliasFormat = g_layer3.TalkerAliasDataFormat(s.talker_alias_format)
 	if s.has_gps {
 		st.p_GPS = *(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&s.gps))
@@ -7051,8 +7051,8 @@ func in_transport_dmrd_FreeDMROptions(s *C.dmrgo_dmrd_free_dmr_options_t) (d g_t
 	d.DialATG = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dial_atg))
 	d.Dynamic = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dynamic))
 	d.DirectDialSlot = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.direct_dial_slot))
-	d.Key = unsafe.Slice((*byte)(unsafe.Pointer(s.key)), int(s.key_len))
-	d.Lang = unsafe.Slice((*byte)(unsafe.Pointer(s.lang)), int(s.lang_len))
+	d.Key = cSlice[byte](unsafe.Pointer(s.key), s.key_len)
+	d.Lang = cSlice[byte](unsafe.Pointer(s.lang), s.lang_len)
 	return
 }
 
@@ -7185,7 +7185,7 @@ func fromC_transport_dmrd_session_MasterConfig(s *C.dmrgo_dmrd_session_master_co
 
 func in_transport_dmrd_session_Output(s *C.dmrgo_dmrd_session_output_t) (d g_transport_dmrd_session.Output) {
 	d.Kind = g_transport_dmrd_session.OutputKind(s.kind)
-	d.Packet = unsafe.Slice((*byte)(unsafe.Pointer(s.packet)), int(s.packet_len))
+	d.Packet = cSlice[byte](unsafe.Pointer(s.packet), s.packet_len)
 	d.Command = g_transport_dmrd.Command(s.command)
 	d.ID = uint32(s.id)
 	d.Reason = g_transport_dmrd_session.Reason(s.reason)
@@ -7406,7 +7406,7 @@ func fromC_transport_ipsc_session_MasterConfig(s *C.dmrgo_ipsc_session_master_co
 
 func in_transport_ipsc_session_Output(s *C.dmrgo_ipsc_session_output_t) (d g_transport_ipsc_session.Output) {
 	d.Kind = g_transport_ipsc_session.OutputKind(s.kind)
-	d.Packet = unsafe.Slice((*byte)(unsafe.Pointer(s.packet)), int(s.packet_len))
+	d.Packet = cSlice[byte](unsafe.Pointer(s.packet), s.packet_len)
 	d.Addr = *(*g_transport_ipsc_session.Addr)(unsafe.Pointer(&s.addr))
 	d.ID = uint32(s.id)
 	d.Reason = g_transport_ipsc_session.Reason(s.reason)
@@ -8836,6 +8836,9 @@ func new_voice_Transmitter(v *g_voice.Transmitter) *C.dmrgo_voice_transmitter_t 
 func dmrgo_config_error_error(c_self *C.dmrgo_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -8870,6 +8873,9 @@ func dmrgo_config_error_last(c_out *C.dmrgo_config_error_t, c_ok *C.bool) C.int 
 func dmrgo_field_range_error_error(c_self *C.dmrgo_field_range_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -8904,6 +8910,9 @@ func dmrgo_field_range_error_last(c_out *C.dmrgo_field_range_error_t, c_ok *C.bo
 func dmrgo_bs_activation_string(c_self C.dmrgo_bs_activation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -8995,6 +9004,9 @@ func dmrgo_bs_cach_reset(c_self *C.dmrgo_bs_cach_t) (rc C.int) {
 func dmrgo_bs_channel_auth_string(c_self C.dmrgo_bs_channel_auth_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9025,6 +9037,9 @@ func dmrgo_bs_check_slot(c_s C.dmrgo_enums_slot_t) (rc C.int) {
 func dmrgo_bs_mode_string(c_self C.dmrgo_bs_mode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9069,6 +9084,9 @@ func dmrgo_bs_new(c_cfg *C.dmrgo_bs_config_t, c_out **C.dmrgo_bs_repeater_t) (rc
 func dmrgo_bs_output_kind_string(c_self C.dmrgo_bs_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9085,6 +9103,9 @@ func dmrgo_bs_output_kind_string(c_self C.dmrgo_bs_output_kind_t, c_out *C.char,
 func dmrgo_bs_reason_string(c_self C.dmrgo_bs_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9158,6 +9179,9 @@ func dmrgo_bs_repeater_inbound_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo
 func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_bs_Repeater(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -9236,6 +9260,9 @@ func dmrgo_bs_repeater_lost_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_du
 func dmrgo_bs_repeater_lost(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_s C.dmrgo_enums_slot_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_bs_Repeater(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -9362,6 +9389,9 @@ func dmrgo_bs_repeater_tick_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_du
 func dmrgo_bs_repeater_tick(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_bs_Repeater(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -9410,6 +9440,9 @@ func dmrgo_bs_repeater_tick(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duratio
 func dmrgo_bs_service_string(c_self C.dmrgo_bs_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9426,6 +9459,9 @@ func dmrgo_bs_service_string(c_self C.dmrgo_bs_service_t, c_out *C.char, c_out_c
 func dmrgo_bs_slot_state_string(c_self C.dmrgo_bs_slot_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9442,6 +9478,9 @@ func dmrgo_bs_slot_state_string(c_self C.dmrgo_bs_slot_state_t, c_out *C.char, c
 func dmrgo_bs_state_string(c_self C.dmrgo_bs_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9598,6 +9637,9 @@ func dmrgo_csbk_new_wakeup(c_cfg *C.dmrgo_csbk_wakeup_config_t, c_out **C.dmrgo_
 func dmrgo_csbk_oacsu_answer_string(c_self C.dmrgo_csbk_oacsu_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9614,6 +9656,9 @@ func dmrgo_csbk_oacsu_answer_string(c_self C.dmrgo_csbk_oacsu_answer_t, c_out *C
 func dmrgo_csbk_output_kind_string(c_self C.dmrgo_csbk_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9661,6 +9706,9 @@ func dmrgo_csbk_preambles_burst_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.d
 func dmrgo_csbk_preambles_burst(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Preambles(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -9759,6 +9807,9 @@ func dmrgo_csbk_preambles_decoded_need(c_self *C.dmrgo_csbk_preambles_t, c_now C
 func dmrgo_csbk_preambles_decoded(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Preambles(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -9830,6 +9881,9 @@ func dmrgo_csbk_preambles_lost_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.dm
 func dmrgo_csbk_preambles_lost(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Preambles(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -9920,6 +9974,9 @@ func dmrgo_csbk_preambles_tick_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.dm
 func dmrgo_csbk_preambles_tick(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Preambles(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -9968,6 +10025,9 @@ func dmrgo_csbk_preambles_tick(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_d
 func dmrgo_csbk_preambles_state_string(c_self C.dmrgo_csbk_preambles_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -9984,6 +10044,9 @@ func dmrgo_csbk_preambles_state_string(c_self C.dmrgo_csbk_preambles_state_t, c_
 func dmrgo_csbk_reason_string(c_self C.dmrgo_csbk_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -10031,6 +10094,9 @@ func dmrgo_csbk_requester_burst_need(c_self *C.dmrgo_csbk_requester_t, c_now C.d
 func dmrgo_csbk_requester_burst(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Requester(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10098,6 +10164,9 @@ func dmrgo_csbk_requester_cancel_need(c_self *C.dmrgo_csbk_requester_t, c_now C.
 func dmrgo_csbk_requester_cancel(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Requester(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10203,6 +10272,9 @@ func dmrgo_csbk_requester_decoded_need(c_self *C.dmrgo_csbk_requester_t, c_now C
 func dmrgo_csbk_requester_decoded(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Requester(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -10274,6 +10346,9 @@ func dmrgo_csbk_requester_lost_need(c_self *C.dmrgo_csbk_requester_t, c_now C.dm
 func dmrgo_csbk_requester_lost(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Requester(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10461,6 +10536,9 @@ func dmrgo_csbk_requester_tick_need(c_self *C.dmrgo_csbk_requester_t, c_now C.dm
 func dmrgo_csbk_requester_tick(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Requester(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10509,6 +10587,9 @@ func dmrgo_csbk_requester_tick(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_d
 func dmrgo_csbk_requester_state_string(c_self C.dmrgo_csbk_requester_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -10556,6 +10637,9 @@ func dmrgo_csbk_responder_burst_need(c_self *C.dmrgo_csbk_responder_t, c_now C.d
 func dmrgo_csbk_responder_burst(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Responder(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10666,6 +10750,9 @@ func dmrgo_csbk_responder_decoded_need(c_self *C.dmrgo_csbk_responder_t, c_now C
 func dmrgo_csbk_responder_decoded(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Responder(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -10737,6 +10824,9 @@ func dmrgo_csbk_responder_lost_need(c_self *C.dmrgo_csbk_responder_t, c_now C.dm
 func dmrgo_csbk_responder_lost(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Responder(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10827,6 +10917,9 @@ func dmrgo_csbk_responder_tick_need(c_self *C.dmrgo_csbk_responder_t, c_now C.dm
 func dmrgo_csbk_responder_tick(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Responder(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10875,6 +10968,9 @@ func dmrgo_csbk_responder_tick(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_d
 func dmrgo_csbk_result_string(c_self C.dmrgo_csbk_result_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -10891,6 +10987,9 @@ func dmrgo_csbk_result_string(c_self C.dmrgo_csbk_result_t, c_out *C.char, c_out
 func dmrgo_csbk_service_string(c_self C.dmrgo_csbk_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -10938,6 +11037,9 @@ func dmrgo_csbk_timing_burst_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_d
 func dmrgo_csbk_timing_burst(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Timing(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11048,6 +11150,9 @@ func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo
 func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Timing(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -11183,6 +11288,9 @@ func dmrgo_csbk_timing_terminator_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dm
 func dmrgo_csbk_timing_terminator(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Timing(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11245,6 +11353,9 @@ func dmrgo_csbk_timing_tick_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_du
 func dmrgo_csbk_timing_tick(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Timing(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11293,6 +11404,9 @@ func dmrgo_csbk_timing_tick(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duratio
 func dmrgo_csbk_timing_state_string(c_self C.dmrgo_csbk_timing_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -11340,6 +11454,9 @@ func dmrgo_csbk_wakeup_burst_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_d
 func dmrgo_csbk_wakeup_burst(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Wakeup(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11407,6 +11524,9 @@ func dmrgo_csbk_wakeup_cancel_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_
 func dmrgo_csbk_wakeup_cancel(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Wakeup(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11500,6 +11620,9 @@ func dmrgo_csbk_wakeup_decoded_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo
 func dmrgo_csbk_wakeup_decoded(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Wakeup(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -11571,6 +11694,9 @@ func dmrgo_csbk_wakeup_lost_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_du
 func dmrgo_csbk_wakeup_lost(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Wakeup(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11633,6 +11759,9 @@ func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_items
 func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Wakeup(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11723,6 +11852,9 @@ func dmrgo_csbk_wakeup_tick_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_du
 func dmrgo_csbk_wakeup_tick(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Wakeup(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11786,6 +11918,9 @@ func dmrgo_csbk_wakeup_wake(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duratio
 func dmrgo_csbk_wakeup_state_string(c_self C.dmrgo_csbk_wakeup_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -11802,6 +11937,9 @@ func dmrgo_csbk_wakeup_state_string(c_self C.dmrgo_csbk_wakeup_state_t, c_out *C
 func dmrgo_data_end_reason_string(c_self C.dmrgo_data_end_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -11846,6 +11984,9 @@ func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C
 func dmrgo_data_event_kind_string(c_self C.dmrgo_data_event_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -11942,6 +12083,9 @@ func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_out *C.dmrgo_ip_icm
 func dmrgo_data_output_kind_string(c_self C.dmrgo_data_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -11996,6 +12140,12 @@ func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_du
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Receiver(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12119,6 +12269,12 @@ func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Receiver(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -12215,6 +12371,12 @@ func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12330,6 +12492,12 @@ func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12396,6 +12564,9 @@ func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 func dmrgo_data_result_string(c_self C.dmrgo_data_result_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12443,6 +12614,9 @@ func dmrgo_data_sender_burst_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_d
 func dmrgo_data_sender_burst(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Sender(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12510,6 +12684,9 @@ func dmrgo_data_sender_cancel_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_
 func dmrgo_data_sender_cancel(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Sender(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12615,6 +12792,9 @@ func dmrgo_data_sender_decoded_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo
 func dmrgo_data_sender_decoded(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Sender(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -12736,6 +12916,9 @@ func dmrgo_data_sender_tick_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_du
 func dmrgo_data_sender_tick(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_data_Sender(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12784,6 +12967,9 @@ func dmrgo_data_sender_tick(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duratio
 func dmrgo_data_sender_state_string(c_self C.dmrgo_data_sender_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12800,6 +12986,9 @@ func dmrgo_data_sender_state_string(c_self C.dmrgo_data_sender_state_t, c_out *C
 func dmrgo_data_state_string(c_self C.dmrgo_data_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12816,6 +13005,9 @@ func dmrgo_data_state_string(c_self C.dmrgo_data_state_t, c_out *C.char, c_out_c
 func dmrgo_enums_access_string(c_self C.dmrgo_enums_access_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12847,6 +13039,9 @@ func dmrgo_enums_ack_reason_from_ts(c_self C.dmrgo_enums_ack_reason_t, c_out *C.
 func dmrgo_enums_ack_reason_string(c_self C.dmrgo_enums_ack_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12878,6 +13073,9 @@ func dmrgo_enums_ack_reason_type(c_self C.dmrgo_enums_ack_reason_t, c_out *C.dmr
 func dmrgo_enums_ack_type_string(c_self C.dmrgo_enums_ack_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12894,6 +13092,9 @@ func dmrgo_enums_ack_type_string(c_self C.dmrgo_enums_ack_type_t, c_out *C.char,
 func dmrgo_enums_activity_id_string(c_self C.dmrgo_enums_activity_id_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12910,6 +13111,9 @@ func dmrgo_enums_activity_id_string(c_self C.dmrgo_enums_activity_id_t, c_out *C
 func dmrgo_enums_announcement_type_string(c_self C.dmrgo_enums_announcement_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12956,6 +13160,9 @@ func dmrgo_enums_daid_is_manufacturer_specific(c_self C.dmrgo_enums_daid_t, c_ou
 func dmrgo_enums_daid_string(c_self C.dmrgo_enums_daid_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -12972,6 +13179,9 @@ func dmrgo_enums_daid_string(c_self C.dmrgo_enums_daid_t, c_out *C.char, c_out_c
 func dmrgo_enums_dd_format_string(c_self C.dmrgo_enums_dd_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13003,6 +13213,9 @@ func dmrgo_enums_dpid_is_manufacturer_specific(c_self C.dmrgo_enums_dpid_t, c_ou
 func dmrgo_enums_dpid_string(c_self C.dmrgo_enums_dpid_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13064,6 +13277,9 @@ func dmrgo_enums_data_type_is_reserved(c_self C.dmrgo_enums_data_type_t, c_out *
 func dmrgo_enums_data_type_string(c_self C.dmrgo_enums_data_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13080,6 +13296,9 @@ func dmrgo_enums_data_type_string(c_self C.dmrgo_enums_data_type_t, c_out *C.cha
 func dmrgo_enums_fid_string(c_self C.dmrgo_enums_fid_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13096,6 +13315,9 @@ func dmrgo_enums_fid_string(c_self C.dmrgo_enums_fid_t, c_out *C.char, c_out_cap
 func dmrgo_enums_flco_string(c_self C.dmrgo_enums_flco_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13112,6 +13334,9 @@ func dmrgo_enums_flco_string(c_self C.dmrgo_enums_flco_t, c_out *C.char, c_out_c
 func dmrgo_enums_lcss_string(c_self C.dmrgo_enums_lcss_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13183,6 +13408,9 @@ func dmrgo_enums_new_color_code(c_v C.uint8_t, c_out *C.dmrgo_enums_color_code_t
 func dmrgo_enums_protect_kind_string(c_self C.dmrgo_enums_protect_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13199,6 +13427,9 @@ func dmrgo_enums_protect_kind_string(c_self C.dmrgo_enums_protect_kind_t, c_out 
 func dmrgo_enums_rc_command_string(c_self C.dmrgo_enums_rc_command_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13230,6 +13461,9 @@ func dmrgo_enums_said_is_manufacturer_specific(c_self C.dmrgo_enums_said_t, c_ou
 func dmrgo_enums_said_string(c_self C.dmrgo_enums_said_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13246,6 +13480,9 @@ func dmrgo_enums_said_string(c_self C.dmrgo_enums_said_t, c_out *C.char, c_out_c
 func dmrgo_enums_sap_string(c_self C.dmrgo_enums_sap_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13262,6 +13499,9 @@ func dmrgo_enums_sap_string(c_self C.dmrgo_enums_sap_t, c_out *C.char, c_out_cap
 func dmrgo_enums_slco_string(c_self C.dmrgo_enums_slco_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13293,6 +13533,9 @@ func dmrgo_enums_spid_is_manufacturer_specific(c_self C.dmrgo_enums_spid_t, c_ou
 func dmrgo_enums_spid_string(c_self C.dmrgo_enums_spid_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13324,6 +13567,9 @@ func dmrgo_enums_service_function_invites(c_self C.dmrgo_enums_service_function_
 func dmrgo_enums_service_function_string(c_self C.dmrgo_enums_service_function_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13355,6 +13601,9 @@ func dmrgo_enums_service_kind_needs_payload_channel(c_self C.dmrgo_enums_service
 func dmrgo_enums_service_kind_string(c_self C.dmrgo_enums_service_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13386,6 +13635,9 @@ func dmrgo_enums_slot_other(c_self C.dmrgo_enums_slot_t, c_out *C.dmrgo_enums_sl
 func dmrgo_enums_slot_string(c_self C.dmrgo_enums_slot_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13402,6 +13654,9 @@ func dmrgo_enums_slot_string(c_self C.dmrgo_enums_slot_t, c_out *C.char, c_out_c
 func dmrgo_enums_sync_pattern_string(c_self C.dmrgo_enums_sync_pattern_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13418,6 +13673,9 @@ func dmrgo_enums_sync_pattern_string(c_self C.dmrgo_enums_sync_pattern_t, c_out 
 func dmrgo_enums_udt_format_string(c_self C.dmrgo_enums_udt_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13491,6 +13749,9 @@ func dmrgo_enums_voice_burst_type_lcss(c_self C.dmrgo_enums_voice_burst_type_t, 
 func dmrgo_enums_voice_burst_type_string(c_self C.dmrgo_enums_voice_burst_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -13722,11 +13983,14 @@ func dmrgo_fec_result_has_errors(c_self *C.dmrgo_fec_result_t, c_out *C.bool) (r
 func dmrgo_hdap_decode_lp_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_lp_answer_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeLPAnswer(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13745,11 +14009,14 @@ func dmrgo_hdap_decode_lp_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_hdap_decode_lp_emergency(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_lp_emergency_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeLPEmergency(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13768,11 +14035,14 @@ func dmrgo_hdap_decode_lp_emergency(c_data *C.uint8_t, c_data_len C.size_t, c_ou
 func dmrgo_hdap_decode_lp_report(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_lp_report_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeLPReport(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13791,11 +14061,14 @@ func dmrgo_hdap_decode_lp_report(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_hdap_decode_lp_request(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_lp_request_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeLPRequest(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13821,11 +14094,17 @@ func dmrgo_hdap_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeMessage(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13850,11 +14129,14 @@ func dmrgo_hdap_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.
 func dmrgo_hdap_decode_rrs_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_rrs_answer_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeRRSAnswer(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13873,11 +14155,14 @@ func dmrgo_hdap_decode_rrs_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_hdap_decode_rrs_check_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_rrs_check_answer_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeRRSCheckAnswer(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13896,11 +14181,14 @@ func dmrgo_hdap_decode_rrs_check_answer(c_data *C.uint8_t, c_data_len C.size_t, 
 func dmrgo_hdap_decode_rrs_radio(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_rrs_radio_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeRRSRadio(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13919,11 +14207,14 @@ func dmrgo_hdap_decode_rrs_radio(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_hdap_decode_tmp_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_tmp_answer_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeTMPAnswer(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13942,11 +14233,14 @@ func dmrgo_hdap_decode_tmp_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_hdap_decode_tmp_flags(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_tmp_flags_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeTMPFlags(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13965,11 +14259,14 @@ func dmrgo_hdap_decode_tmp_flags(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_hdap_decode_tmp_group_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_tmp_group_answer_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeTMPGroupAnswer(a_data)
 	_ = r0
 	if c_out != nil {
@@ -13995,11 +14292,17 @@ func dmrgo_hdap_decode_tmp_message(c_data *C.uint8_t, c_data_len C.size_t, c_out
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_hytera_hdap.DecodeTMPMessage(a_data)
 	_ = r0
 	if c_out != nil {
@@ -14024,6 +14327,9 @@ func dmrgo_hdap_decode_tmp_message(c_data *C.uint8_t, c_data_len C.size_t, c_out
 func dmrgo_hdap_gps_data_append_binary(c_self *C.dmrgo_hdap_gps_data_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14092,6 +14398,9 @@ func dmrgo_hdap_gps_data_longitude(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.dou
 func dmrgo_hdap_gps_data_string(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14133,6 +14442,9 @@ func dmrgo_hdap_gps_data_valid(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.bool) (
 func dmrgo_hdap_header_append_binary(c_self *C.dmrgo_hdap_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14161,6 +14473,9 @@ func dmrgo_hdap_header_append_binary(c_self *C.dmrgo_hdap_header_t, c_dst *C.uin
 func dmrgo_hdap_header_string(c_self *C.dmrgo_hdap_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14182,6 +14497,9 @@ func dmrgo_hdap_header_string(c_self *C.dmrgo_hdap_header_t, c_out *C.char, c_ou
 func dmrgo_hdap_lp_answer_append_binary(c_self *C.dmrgo_hdap_lp_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14210,6 +14528,9 @@ func dmrgo_hdap_lp_answer_append_binary(c_self *C.dmrgo_hdap_lp_answer_t, c_dst 
 func dmrgo_hdap_lp_answer_string(c_self *C.dmrgo_hdap_lp_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14231,6 +14552,9 @@ func dmrgo_hdap_lp_answer_string(c_self *C.dmrgo_hdap_lp_answer_t, c_out *C.char
 func dmrgo_hdap_lp_emergency_append_binary(c_self *C.dmrgo_hdap_lp_emergency_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14259,6 +14583,9 @@ func dmrgo_hdap_lp_emergency_append_binary(c_self *C.dmrgo_hdap_lp_emergency_t, 
 func dmrgo_hdap_lp_emergency_string(c_self *C.dmrgo_hdap_lp_emergency_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14280,6 +14607,9 @@ func dmrgo_hdap_lp_emergency_string(c_self *C.dmrgo_hdap_lp_emergency_t, c_out *
 func dmrgo_hdap_lp_report_append_binary(c_self *C.dmrgo_hdap_lp_report_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14308,6 +14638,9 @@ func dmrgo_hdap_lp_report_append_binary(c_self *C.dmrgo_hdap_lp_report_t, c_dst 
 func dmrgo_hdap_lp_report_string(c_self *C.dmrgo_hdap_lp_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14329,6 +14662,9 @@ func dmrgo_hdap_lp_report_string(c_self *C.dmrgo_hdap_lp_report_t, c_out *C.char
 func dmrgo_hdap_lp_request_append_binary(c_self *C.dmrgo_hdap_lp_request_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14357,6 +14693,9 @@ func dmrgo_hdap_lp_request_append_binary(c_self *C.dmrgo_hdap_lp_request_t, c_ds
 func dmrgo_hdap_lp_request_string(c_self *C.dmrgo_hdap_lp_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14378,6 +14717,9 @@ func dmrgo_hdap_lp_request_string(c_self *C.dmrgo_hdap_lp_request_t, c_out *C.ch
 func dmrgo_hdap_message_append_binary(c_self *C.dmrgo_hdap_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14445,6 +14787,9 @@ func dmrgo_hdap_message_seal(c_self *C.dmrgo_hdap_message_t) (rc C.int) {
 func dmrgo_hdap_message_string(c_self *C.dmrgo_hdap_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14466,6 +14811,9 @@ func dmrgo_hdap_message_string(c_self *C.dmrgo_hdap_message_t, c_out *C.char, c_
 func dmrgo_hdap_opcode_string(c_self C.dmrgo_hdap_opcode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14482,6 +14830,9 @@ func dmrgo_hdap_opcode_string(c_self C.dmrgo_hdap_opcode_t, c_out *C.char, c_out
 func dmrgo_hdap_rrs_answer_append_binary(c_self *C.dmrgo_hdap_rrs_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14510,6 +14861,9 @@ func dmrgo_hdap_rrs_answer_append_binary(c_self *C.dmrgo_hdap_rrs_answer_t, c_ds
 func dmrgo_hdap_rrs_answer_string(c_self *C.dmrgo_hdap_rrs_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14531,6 +14885,9 @@ func dmrgo_hdap_rrs_answer_string(c_self *C.dmrgo_hdap_rrs_answer_t, c_out *C.ch
 func dmrgo_hdap_rrs_check_answer_append_binary(c_self *C.dmrgo_hdap_rrs_check_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14559,6 +14916,9 @@ func dmrgo_hdap_rrs_check_answer_append_binary(c_self *C.dmrgo_hdap_rrs_check_an
 func dmrgo_hdap_rrs_check_answer_string(c_self *C.dmrgo_hdap_rrs_check_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14580,6 +14940,9 @@ func dmrgo_hdap_rrs_check_answer_string(c_self *C.dmrgo_hdap_rrs_check_answer_t,
 func dmrgo_hdap_rrs_radio_append_binary(c_self *C.dmrgo_hdap_rrs_radio_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14608,6 +14971,9 @@ func dmrgo_hdap_rrs_radio_append_binary(c_self *C.dmrgo_hdap_rrs_radio_t, c_dst 
 func dmrgo_hdap_rrs_radio_string(c_self *C.dmrgo_hdap_rrs_radio_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14629,6 +14995,9 @@ func dmrgo_hdap_rrs_radio_string(c_self *C.dmrgo_hdap_rrs_radio_t, c_out *C.char
 func dmrgo_hdap_service_string(c_self C.dmrgo_hdap_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14645,6 +15014,9 @@ func dmrgo_hdap_service_string(c_self C.dmrgo_hdap_service_t, c_out *C.char, c_o
 func dmrgo_hdap_tmp_answer_append_binary(c_self *C.dmrgo_hdap_tmp_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14673,6 +15045,9 @@ func dmrgo_hdap_tmp_answer_append_binary(c_self *C.dmrgo_hdap_tmp_answer_t, c_ds
 func dmrgo_hdap_tmp_answer_string(c_self *C.dmrgo_hdap_tmp_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14694,6 +15069,9 @@ func dmrgo_hdap_tmp_answer_string(c_self *C.dmrgo_hdap_tmp_answer_t, c_out *C.ch
 func dmrgo_hdap_tmp_flags_append_binary(c_self *C.dmrgo_hdap_tmp_flags_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14722,6 +15100,9 @@ func dmrgo_hdap_tmp_flags_append_binary(c_self *C.dmrgo_hdap_tmp_flags_t, c_dst 
 func dmrgo_hdap_tmp_flags_string(c_self *C.dmrgo_hdap_tmp_flags_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14743,6 +15124,9 @@ func dmrgo_hdap_tmp_flags_string(c_self *C.dmrgo_hdap_tmp_flags_t, c_out *C.char
 func dmrgo_hdap_tmp_group_answer_append_binary(c_self *C.dmrgo_hdap_tmp_group_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14771,6 +15155,9 @@ func dmrgo_hdap_tmp_group_answer_append_binary(c_self *C.dmrgo_hdap_tmp_group_an
 func dmrgo_hdap_tmp_group_answer_string(c_self *C.dmrgo_hdap_tmp_group_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14792,6 +15179,9 @@ func dmrgo_hdap_tmp_group_answer_string(c_self *C.dmrgo_hdap_tmp_group_answer_t,
 func dmrgo_hdap_tmp_message_append_binary(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14827,6 +15217,15 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14842,7 +15241,7 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
 	ws_self := *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
@@ -14867,6 +15266,9 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 func dmrgo_hdap_tmp_message_string(c_self *C.dmrgo_hdap_tmp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14888,6 +15290,9 @@ func dmrgo_hdap_tmp_message_string(c_self *C.dmrgo_hdap_tmp_message_t, c_out *C.
 func dmrgo_hdap_tmp_message_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14913,6 +15318,9 @@ func dmrgo_hdap_tmp_message_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst 
 func dmrgo_hdap_tmp_type_string(c_self C.dmrgo_hdap_tmp_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14929,6 +15337,9 @@ func dmrgo_hdap_tmp_type_string(c_self C.dmrgo_hdap_tmp_type_t, c_out *C.char, c
 func dmrgo_ip_append_compressed(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d *C.dmrgo_ip_datagram_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14958,6 +15369,9 @@ func dmrgo_ip_append_compressed(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len 
 func dmrgo_ip_append_icmp_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_c *C.dmrgo_ip_icmp_packet_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14987,6 +15401,9 @@ func dmrgo_ip_append_icmp_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len
 func dmrgo_ip_append_ipv4(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d *C.dmrgo_ip_datagram_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15016,11 +15433,14 @@ func dmrgo_ip_append_ipv4(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.siz
 func dmrgo_ip_check_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1, r2 := g_ip.CheckIPv4(a_data, int(c_mtu))
 	_ = r0
 	_ = r1
@@ -15085,11 +15505,17 @@ func dmrgo_ip_decode(c_sap C.dmrgo_enums_sap_t, c_data *C.uint8_t, c_data_len C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_ip.Decode(g_enums.SAP(c_sap), a_data)
 	_ = r0
 	if c_out != nil {
@@ -15121,11 +15547,17 @@ func dmrgo_ip_decode_icmp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_ip.DecodeICMP(a_data)
 	_ = r0
 	if c_out != nil {
@@ -15157,11 +15589,17 @@ func dmrgo_ip_decode_icmp_packet(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_ip.DecodeICMPPacket(a_data)
 	_ = r0
 	if c_out != nil {
@@ -15193,11 +15631,17 @@ func dmrgo_ip_decode_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_ip.DecodeIPv4(a_data)
 	_ = r0
 	if c_out != nil {
@@ -15229,11 +15673,17 @@ func dmrgo_ip_decode_udp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_ip.DecodeUDP(a_data)
 	_ = r0
 	if c_out != nil {
@@ -15273,6 +15723,9 @@ func dmrgo_ip_group_address(c_prefix C.uint8_t, c_group C.uint32_t, c_out *C.uin
 func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15301,6 +15754,9 @@ func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_
 func dmrgo_ip_icmp_string(c_self *C.dmrgo_ip_icmp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15322,6 +15778,9 @@ func dmrgo_ip_icmp_string(c_self *C.dmrgo_ip_icmp_t, c_out *C.char, c_out_cap C.
 func dmrgo_ip_icmp_header_append_binary(c_self *C.dmrgo_ip_icmp_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15350,6 +15809,9 @@ func dmrgo_ip_icmp_header_append_binary(c_self *C.dmrgo_ip_icmp_header_t, c_dst 
 func dmrgo_ip_icmp_header_string(c_self *C.dmrgo_ip_icmp_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15386,6 +15848,9 @@ func dmrgo_ip_icmp_message_code(c_self C.dmrgo_ip_icmp_message_t, c_out *C.uint8
 func dmrgo_ip_icmp_message_string(c_self C.dmrgo_ip_icmp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15435,6 +15900,9 @@ func dmrgo_ip_id(c_addr *C.uint8_t, c_out *C.uint32_t) (rc C.int) {
 func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15463,6 +15931,9 @@ func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_
 func dmrgo_ip_ipv4_string(c_self *C.dmrgo_ip_ipv4_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15484,6 +15955,9 @@ func dmrgo_ip_ipv4_string(c_self *C.dmrgo_ip_ipv4_t, c_out *C.char, c_out_cap C.
 func dmrgo_ip_ipv4_header_append_binary(c_self *C.dmrgo_ip_ipv4_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15512,6 +15986,9 @@ func dmrgo_ip_ipv4_header_append_binary(c_self *C.dmrgo_ip_ipv4_header_t, c_dst 
 func dmrgo_ip_ipv4_header_string(c_self *C.dmrgo_ip_ipv4_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15533,6 +16010,9 @@ func dmrgo_ip_ipv4_header_string(c_self *C.dmrgo_ip_ipv4_header_t, c_out *C.char
 func dmrgo_ip_port_string(c_self C.dmrgo_ip_port_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15587,6 +16067,9 @@ func dmrgo_ip_port_spid(c_p C.dmrgo_ip_port_t, c_spid *C.dmrgo_enums_spid_t, c_o
 func dmrgo_ip_protocol_string(c_self C.dmrgo_ip_protocol_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15633,6 +16116,9 @@ func dmrgo_ip_spid_port(c_spid C.dmrgo_enums_spid_t, c_out *C.dmrgo_ip_port_t) (
 func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15661,6 +16147,9 @@ func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_ds
 func dmrgo_ip_udp_string(c_self *C.dmrgo_ip_udp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15682,6 +16171,9 @@ func dmrgo_ip_udp_string(c_self *C.dmrgo_ip_udp_t, c_out *C.char, c_out_cap C.si
 func dmrgo_ip_udp_header_append_binary(c_self *C.dmrgo_ip_udp_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15710,6 +16202,9 @@ func dmrgo_ip_udp_header_append_binary(c_self *C.dmrgo_ip_udp_header_t, c_dst *C
 func dmrgo_ip_udp_header_string(c_self *C.dmrgo_ip_udp_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -16492,6 +16987,9 @@ func dmrgo_layer2_burst_set_ambe_frames(c_self *C.dmrgo_layer2_burst_t, c_frames
 func dmrgo_layer2_burst_string(c_self *C.dmrgo_layer2_burst_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_Burst(c_self)
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -16645,6 +17143,9 @@ func dmrgo_layer2_data_data_type(c_self *C.dmrgo_layer2_data_t, c_out *C.dmrgo_e
 func dmrgo_layer2_data_string(c_self *C.dmrgo_layer2_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -17031,6 +17532,9 @@ func dmrgo_layer2_encode_short_lc_to_cach(c_slc *C.dmrgo_pdu_short_lc_t, c_tact 
 func dmrgo_layer2_end_hint_string(c_self C.dmrgo_layer2_end_hint_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -17047,6 +17551,9 @@ func dmrgo_layer2_end_hint_string(c_self C.dmrgo_layer2_end_hint_t, c_out *C.cha
 func dmrgo_layer2_kind_string(c_self C.dmrgo_layer2_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -17187,6 +17694,9 @@ func dmrgo_layer2_new_voice_transmitter(c_opts *C.dmrgo_layer2_voice_transmitter
 func dmrgo_layer2_placement_string(c_self C.dmrgo_layer2_placement_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -18207,7 +18717,7 @@ func dmrgo_layer2_voice_transmitter_add_frames_need(c_self *C.dmrgo_layer2_voice
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_frames []g_vocoder.AMBEFrame
-	a_frames = unsafe.Slice((*g_vocoder.AMBEFrame)(unsafe.Pointer(c_frames)), int(c_frames_len))
+	a_frames = cSlice[g_vocoder.AMBEFrame](unsafe.Pointer(c_frames), c_frames_len)
 	_ = h
 	_ = a_frames
 	if c_items != nil {
@@ -18223,12 +18733,18 @@ func dmrgo_layer2_voice_transmitter_add_frames_need(c_self *C.dmrgo_layer2_voice
 func dmrgo_layer2_voice_transmitter_add_frames(c_self *C.dmrgo_layer2_voice_transmitter_t, c_frames *C.dmrgo_vocoder_ambe_frame_t, c_frames_len C.size_t, c_out *C.dmrgo_layer2_raw_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_frames), c_frames_len, unsafe.Sizeof(*c_frames)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_frames == nil && c_frames_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_frames []g_vocoder.AMBEFrame
-	a_frames = unsafe.Slice((*g_vocoder.AMBEFrame)(unsafe.Pointer(c_frames)), int(c_frames_len))
+	a_frames = cSlice[g_vocoder.AMBEFrame](unsafe.Pointer(c_frames), c_frames_len)
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -18264,7 +18780,7 @@ func dmrgo_layer2_voice_transmitter_add_slots_need(c_self *C.dmrgo_layer2_voice_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_slots [][9]byte
-	a_slots = unsafe.Slice((*[9]byte)(unsafe.Pointer(c_slots)), int(c_slots_len))
+	a_slots = cSlice[[9]byte](unsafe.Pointer(c_slots), c_slots_len)
 	_ = h
 	_ = a_slots
 	if c_items != nil {
@@ -18280,12 +18796,18 @@ func dmrgo_layer2_voice_transmitter_add_slots_need(c_self *C.dmrgo_layer2_voice_
 func dmrgo_layer2_voice_transmitter_add_slots(c_self *C.dmrgo_layer2_voice_transmitter_t, c_slots *C.uint8_t, c_slots_len C.size_t, c_out *C.dmrgo_layer2_raw_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_slots), c_slots_len, unsafe.Sizeof(*c_slots)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_slots == nil && c_slots_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_slots [][9]byte
-	a_slots = unsafe.Slice((*[9]byte)(unsafe.Pointer(c_slots)), int(c_slots_len))
+	a_slots = cSlice[[9]byte](unsafe.Pointer(c_slots), c_slots_len)
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -18321,7 +18843,7 @@ func dmrgo_layer2_voice_transmitter_append_frames_need(c_self *C.dmrgo_layer2_vo
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_frames []g_vocoder.AMBEFrame
-	a_frames = unsafe.Slice((*g_vocoder.AMBEFrame)(unsafe.Pointer(c_frames)), int(c_frames_len))
+	a_frames = cSlice[g_vocoder.AMBEFrame](unsafe.Pointer(c_frames), c_frames_len)
 	_ = h
 	_ = a_frames
 	if c_items != nil {
@@ -18337,6 +18859,12 @@ func dmrgo_layer2_voice_transmitter_append_frames_need(c_self *C.dmrgo_layer2_vo
 func dmrgo_layer2_voice_transmitter_append_frames(c_self *C.dmrgo_layer2_voice_transmitter_t, c_dst *C.dmrgo_layer2_raw_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_frames *C.dmrgo_vocoder_ambe_frame_t, c_frames_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_frames), c_frames_len, unsafe.Sizeof(*c_frames)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18348,7 +18876,7 @@ func dmrgo_layer2_voice_transmitter_append_frames(c_self *C.dmrgo_layer2_voice_t
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_frames []g_vocoder.AMBEFrame
-	a_frames = unsafe.Slice((*g_vocoder.AMBEFrame)(unsafe.Pointer(c_frames)), int(c_frames_len))
+	a_frames = cSlice[g_vocoder.AMBEFrame](unsafe.Pointer(c_frames), c_frames_len)
 	need_items := max(0, (((len(a_frames) + int(g_layer2.VoiceSlotsPerBurst)) - 1) / int(g_layer2.VoiceSlotsPerBurst)))
 	need_arena := 0
 	_ = need_arena
@@ -18392,6 +18920,9 @@ func dmrgo_layer2_voice_transmitter_append_headers_need(c_self *C.dmrgo_layer2_v
 func dmrgo_layer2_voice_transmitter_append_headers(c_self *C.dmrgo_layer2_voice_transmitter_t, c_dst *C.dmrgo_layer2_raw_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18429,7 +18960,7 @@ func dmrgo_layer2_voice_transmitter_append_slots_need(c_self *C.dmrgo_layer2_voi
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_slots [][9]byte
-	a_slots = unsafe.Slice((*[9]byte)(unsafe.Pointer(c_slots)), int(c_slots_len))
+	a_slots = cSlice[[9]byte](unsafe.Pointer(c_slots), c_slots_len)
 	_ = h
 	_ = a_slots
 	if c_items != nil {
@@ -18445,6 +18976,12 @@ func dmrgo_layer2_voice_transmitter_append_slots_need(c_self *C.dmrgo_layer2_voi
 func dmrgo_layer2_voice_transmitter_append_slots(c_self *C.dmrgo_layer2_voice_transmitter_t, c_dst *C.dmrgo_layer2_raw_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slots *C.uint8_t, c_slots_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_slots), c_slots_len, unsafe.Sizeof(*c_slots)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18456,7 +18993,7 @@ func dmrgo_layer2_voice_transmitter_append_slots(c_self *C.dmrgo_layer2_voice_tr
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_slots [][9]byte
-	a_slots = unsafe.Slice((*[9]byte)(unsafe.Pointer(c_slots)), int(c_slots_len))
+	a_slots = cSlice[[9]byte](unsafe.Pointer(c_slots), c_slots_len)
 	need_items := max(0, (((len(a_slots) + int(g_layer2.VoiceSlotsPerBurst)) - 1) / int(g_layer2.VoiceSlotsPerBurst)))
 	need_arena := 0
 	_ = need_arena
@@ -18500,6 +19037,9 @@ func dmrgo_layer2_voice_transmitter_append_terminate_need(c_self *C.dmrgo_layer2
 func dmrgo_layer2_voice_transmitter_append_terminate(c_self *C.dmrgo_layer2_voice_transmitter_t, c_dst *C.dmrgo_layer2_raw_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18566,6 +19106,9 @@ func dmrgo_layer2_voice_transmitter_headers_need(c_self *C.dmrgo_layer2_voice_tr
 func dmrgo_layer2_voice_transmitter_headers(c_self *C.dmrgo_layer2_voice_transmitter_t, c_out *C.dmrgo_layer2_raw_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18710,6 +19253,9 @@ func dmrgo_layer2_voice_transmitter_terminate_need(c_self *C.dmrgo_layer2_voice_
 func dmrgo_layer2_voice_transmitter_terminate(c_self *C.dmrgo_layer2_voice_transmitter_t, c_out *C.dmrgo_layer2_raw_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_VoiceTransmitter(c_self)
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18773,7 +19319,7 @@ func dmrgo_framer_append_bursts_need(c_self *C.dmrgo_framer_t, c_stream *C.uint8
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_stream []byte
-	a_stream = unsafe.Slice((*byte)(unsafe.Pointer(c_stream)), int(c_stream_len))
+	a_stream = cSlice[byte](unsafe.Pointer(c_stream), c_stream_len)
 	_ = h
 	_ = a_stream
 	if c_items != nil {
@@ -18789,6 +19335,12 @@ func dmrgo_framer_append_bursts_need(c_self *C.dmrgo_framer_t, c_stream *C.uint8
 func dmrgo_framer_append_bursts(c_self *C.dmrgo_framer_t, c_dst *C.dmrgo_framer_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_stream *C.uint8_t, c_stream_len C.size_t, c_nbits C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_stream), c_stream_len, unsafe.Sizeof(*c_stream)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_framer_Framer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -18799,7 +19351,7 @@ func dmrgo_framer_append_bursts(c_self *C.dmrgo_framer_t, c_dst *C.dmrgo_framer_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_stream []byte
-	a_stream = unsafe.Slice((*byte)(unsafe.Pointer(c_stream)), int(c_stream_len))
+	a_stream = cSlice[byte](unsafe.Pointer(c_stream), c_stream_len)
 	need_items := max(0, (2 * ((min(int(int(c_nbits)), (8*len(a_stream))) / int(g_layer2.BurstBits)) + 1)))
 	need_arena := 0
 	_ = need_arena
@@ -18862,7 +19414,7 @@ func dmrgo_framer_write_need(c_self *C.dmrgo_framer_t, c_stream *C.uint8_t, c_st
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_stream []byte
-	a_stream = unsafe.Slice((*byte)(unsafe.Pointer(c_stream)), int(c_stream_len))
+	a_stream = cSlice[byte](unsafe.Pointer(c_stream), c_stream_len)
 	_ = h
 	_ = a_stream
 	if c_items != nil {
@@ -18878,12 +19430,18 @@ func dmrgo_framer_write_need(c_self *C.dmrgo_framer_t, c_stream *C.uint8_t, c_st
 func dmrgo_framer_write(c_self *C.dmrgo_framer_t, c_stream *C.uint8_t, c_stream_len C.size_t, c_nbits C.int64_t, c_out *C.dmrgo_framer_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_stream), c_stream_len, unsafe.Sizeof(*c_stream)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_framer_Framer(c_self)
 	if c_stream == nil && c_stream_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_stream []byte
-	a_stream = unsafe.Slice((*byte)(unsafe.Pointer(c_stream)), int(c_stream_len))
+	a_stream = cSlice[byte](unsafe.Pointer(c_stream), c_stream_len)
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -18955,11 +19513,14 @@ func dmrgo_framer_new(c_c *C.dmrgo_framer_config_t, c_out **C.dmrgo_framer_t) (r
 func dmrgo_framer_search(c_stream *C.uint8_t, c_stream_len C.size_t, c_nbits C.int64_t, c_start C.int64_t, c_threshold C.int64_t, c_m *C.dmrgo_framer_match_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_stream), c_stream_len, unsafe.Sizeof(*c_stream)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_stream == nil && c_stream_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_stream []byte
-	a_stream = unsafe.Slice((*byte)(unsafe.Pointer(c_stream)), int(c_stream_len))
+	a_stream = cSlice[byte](unsafe.Pointer(c_stream), c_stream_len)
 	r0, r1 := g_layer2_framer.Search(a_stream, int(c_nbits), int(c_start), int(c_threshold))
 	_ = r0
 	_ = r1
@@ -18979,6 +19540,9 @@ func dmrgo_framer_search(c_stream *C.uint8_t, c_stream_len C.size_t, c_nbits C.i
 func dmrgo_packet_append_bursts(c_dst *C.dmrgo_layer2_raw_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_p *C.dmrgo_packet_t, c_color_code C.dmrgo_enums_color_code_t, c_src C.dmrgo_layer2_sync_source_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -19129,6 +19693,9 @@ func dmrgo_packet_assembler_add(c_self *C.dmrgo_packet_assembler_t, c_d *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Assembler(c_self)
 	if c_d == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -19253,6 +19820,9 @@ func dmrgo_packet_assembler_add_burst(c_self *C.dmrgo_packet_assembler_t, c_b *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Assembler(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -19310,6 +19880,9 @@ func dmrgo_packet_assembler_append_missing_need(c_self *C.dmrgo_packet_assembler
 func dmrgo_packet_assembler_append_missing(c_self *C.dmrgo_packet_assembler_t, c_dst *C.int64_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Assembler(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -19395,6 +19968,9 @@ func dmrgo_packet_assembler_lost(c_self *C.dmrgo_packet_assembler_t, c_message *
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Assembler(c_self)
 	need_arena := (3048)*int(unsafe.Sizeof(*new(byte))) + 16
 	if int(c_arena_cap)-oc.need < need_arena {
@@ -19448,6 +20024,9 @@ func dmrgo_packet_assembler_missing_need(c_self *C.dmrgo_packet_assembler_t, c_i
 func dmrgo_packet_assembler_missing(c_self *C.dmrgo_packet_assembler_t, c_out *C.int64_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Assembler(c_self)
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -19525,6 +20104,9 @@ func dmrgo_packet_assembler_response(c_self *C.dmrgo_packet_assembler_t, c_out *
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Assembler(c_self)
 	need_arena := (127) * (int(unsafe.Sizeof(C.dmrgo_layer2_data_t{})) + 16 + 0)
 	if int(c_arena_cap)-oc.need < need_arena {
@@ -19606,6 +20188,9 @@ func dmrgo_packet_builder_new_response(c_self *C.dmrgo_packet_builder_t, c_to *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Builder(c_self)
 	var a_to g_layer2_pdu.ConfirmedDataHeader
 	var p_to *g_layer2_pdu.ConfirmedDataHeader
@@ -19689,6 +20274,9 @@ func dmrgo_packet_builder_retry(c_self *C.dmrgo_packet_builder_t, c_p *C.dmrgo_p
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Builder(c_self)
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
@@ -19747,7 +20335,7 @@ func dmrgo_packet_builder_segment_need(c_self *C.dmrgo_packet_builder_t, c_heade
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_payload []byte
-	a_payload = unsafe.Slice((*byte)(unsafe.Pointer(c_payload)), int(c_payload_len))
+	a_payload = cSlice[byte](unsafe.Pointer(c_payload), c_payload_len)
 	_ = h
 	_ = a_header
 	_ = a_payload
@@ -19771,6 +20359,12 @@ func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_packet_Builder(c_self)
 	if c_header == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -19782,7 +20376,7 @@ func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_payload []byte
-	a_payload = unsafe.Slice((*byte)(unsafe.Pointer(c_payload)), int(c_payload_len))
+	a_payload = cSlice[byte](unsafe.Pointer(c_payload), c_payload_len)
 	need_arena := (127) * (int(unsafe.Sizeof(C.dmrgo_layer2_data_t{})) + 16 + 0)
 	if int(c_arena_cap)-oc.need < need_arena {
 		if c_arena_need != nil {
@@ -19817,6 +20411,9 @@ func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.
 func dmrgo_packet_bursts(c_p *C.dmrgo_packet_t, c_color_code C.dmrgo_enums_color_code_t, c_src C.dmrgo_layer2_sync_source_t, c_out *C.dmrgo_layer2_raw_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
 	var s_p st_layer2_packet_Packet
@@ -19843,13 +20440,16 @@ func dmrgo_packet_bursts(c_p *C.dmrgo_packet_t, c_color_code C.dmrgo_enums_color
 func dmrgo_packet_decode_response_data(c_blocks *C.dmrgo_pdu_rate12_data_t, c_blocks_len C.size_t, c_out *C.dmrgo_packet_response_data_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_blocks), c_blocks_len, unsafe.Sizeof(*c_blocks)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_blocks == nil && c_blocks_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_blocks []*g_layer2_pdu.Rate12Data
 	a_blocks = nil
 	if c_blocks_len > 0 {
-		cs := unsafe.Slice((*C.dmrgo_pdu_rate12_data_t)(unsafe.Pointer(c_blocks)), int(c_blocks_len))
+		cs := cSlice[C.dmrgo_pdu_rate12_data_t](unsafe.Pointer(c_blocks), c_blocks_len)
 		a_blocks = make([]*g_layer2_pdu.Rate12Data, len(cs))
 		vs := make([]g_layer2_pdu.Rate12Data, len(cs))
 		for i := range cs {
@@ -19875,6 +20475,9 @@ func dmrgo_packet_decode_response_data(c_blocks *C.dmrgo_pdu_rate12_data_t, c_bl
 func dmrgo_packet_message_udp_ipv4(c_self *C.dmrgo_packet_message_t, c_header *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_payload *C.uint8_t, c_payload_cap C.size_t, c_payload_len *C.size_t, c_payload_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_cap, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -19950,6 +20553,12 @@ func dmrgo_packet_new_packet(c_header *C.dmrgo_pdu_data_header_t, c_payload *C.u
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_header == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -19960,7 +20569,7 @@ func dmrgo_packet_new_packet(c_header *C.dmrgo_pdu_data_header_t, c_payload *C.u
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_payload []byte
-	a_payload = unsafe.Slice((*byte)(unsafe.Pointer(c_payload)), int(c_payload_len))
+	a_payload = cSlice[byte](unsafe.Pointer(c_payload), c_payload_len)
 	r0, r1 := g_layer2_packet.NewPacket(a_header, a_payload, g_enums.DataType(c_rate))
 	_ = r0
 	if c_out != nil {
@@ -19992,6 +20601,9 @@ func dmrgo_packet_new_response(c_to *C.dmrgo_pdu_confirmed_data_header_t, c_r C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	var a_to g_layer2_pdu.ConfirmedDataHeader
 	var p_to *g_layer2_pdu.ConfirmedDataHeader
 	if c_to != nil {
@@ -20061,6 +20673,9 @@ func dmrgo_packet_response_class(c_self C.dmrgo_packet_response_t, c_out *C.uint
 func dmrgo_packet_response_string(c_self C.dmrgo_packet_response_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20092,6 +20707,9 @@ func dmrgo_packet_response_type(c_self C.dmrgo_packet_response_t, c_out *C.uint8
 func dmrgo_packet_response_data_append_encode(c_self *C.dmrgo_packet_response_data_t, c_dst *C.dmrgo_pdu_rate12_data_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_blocks C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20120,6 +20738,9 @@ func dmrgo_packet_response_data_append_encode(c_self *C.dmrgo_packet_response_da
 func dmrgo_packet_response_data_append_retry_blocks(c_self *C.dmrgo_packet_response_data_t, c_dst *C.int64_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20159,6 +20780,9 @@ func dmrgo_packet_response_data_append_retry_blocks(c_self *C.dmrgo_packet_respo
 func dmrgo_packet_response_data_encode(c_self *C.dmrgo_packet_response_data_t, c_blocks C.int64_t, c_out *C.dmrgo_pdu_rate12_data_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20198,6 +20822,9 @@ func dmrgo_packet_response_data_encode(c_self *C.dmrgo_packet_response_data_t, c
 func dmrgo_packet_response_data_retry_blocks(c_self *C.dmrgo_packet_response_data_t, c_out *C.int64_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20281,6 +20908,9 @@ func dmrgo_pdu_ack_inbound_pdu_encode(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_o
 func dmrgo_pdu_ack_inbound_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20325,6 +20955,9 @@ func dmrgo_pdu_ack_inbound_payload_pdu_encode(c_self *C.dmrgo_pdu_ack_inbound_pa
 func dmrgo_pdu_ack_inbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_payload_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20369,6 +21002,9 @@ func dmrgo_pdu_ack_outbound_pdu_encode(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c
 func dmrgo_pdu_ack_outbound_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20413,6 +21049,9 @@ func dmrgo_pdu_ack_outbound_payload_pdu_encode(c_self *C.dmrgo_pdu_ack_outbound_
 func dmrgo_pdu_ack_outbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_payload_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20457,6 +21096,9 @@ func dmrgo_pdu_ackvitation_pdu_encode(c_self *C.dmrgo_pdu_ackvitation_pdu_t, c_o
 func dmrgo_pdu_ackvitation_pdu_string(c_self *C.dmrgo_pdu_ackvitation_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20519,6 +21161,9 @@ func dmrgo_pdu_adjacent_site_parms_encode(c_self *C.dmrgo_pdu_adjacent_site_parm
 func dmrgo_pdu_adjacent_site_parms_string(c_self *C.dmrgo_pdu_adjacent_site_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20563,6 +21208,9 @@ func dmrgo_pdu_ahoy_pdu_encode(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.uint8_t)
 func dmrgo_pdu_ahoy_pdu_string(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20607,6 +21255,9 @@ func dmrgo_pdu_aloha_pdu_encode(c_self *C.dmrgo_pdu_aloha_pdu_t, c_out *C.uint8_
 func dmrgo_pdu_aloha_pdu_string(c_self *C.dmrgo_pdu_aloha_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20651,6 +21302,9 @@ func dmrgo_pdu_ann_wd_tscc_parms_encode(c_self *C.dmrgo_pdu_ann_wd_tscc_parms_t,
 func dmrgo_pdu_ann_wd_tscc_parms_string(c_self *C.dmrgo_pdu_ann_wd_tscc_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20672,6 +21326,12 @@ func dmrgo_pdu_ann_wd_tscc_parms_string(c_self *C.dmrgo_pdu_ann_wd_tscc_parms_t,
 func dmrgo_pdu_append_talker_alias(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_header *C.dmrgo_pdu_flc_talker_alias_header_t, c_blocks *C.dmrgo_pdu_flc_talker_alias_block_t, c_blocks_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_blocks), c_blocks_len, unsafe.Sizeof(*c_blocks)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20690,7 +21350,7 @@ func dmrgo_pdu_append_talker_alias(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_l
 	var a_blocks []*g_layer2_pdu.FLCTalkerAliasBlock
 	a_blocks = nil
 	if c_blocks_len > 0 {
-		cs := unsafe.Slice((*C.dmrgo_pdu_flc_talker_alias_block_t)(unsafe.Pointer(c_blocks)), int(c_blocks_len))
+		cs := cSlice[C.dmrgo_pdu_flc_talker_alias_block_t](unsafe.Pointer(c_blocks), c_blocks_len)
 		a_blocks = make([]*g_layer2_pdu.FLCTalkerAliasBlock, len(cs))
 		vs := make([]g_layer2_pdu.FLCTalkerAliasBlock, len(cs))
 		for i := range cs {
@@ -20758,6 +21418,9 @@ func dmrgo_pdu_bcap_continuation_encode(c_self *C.dmrgo_pdu_bcap_continuation_t,
 func dmrgo_pdu_bcap_continuation_string(c_self *C.dmrgo_pdu_bcap_continuation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20802,6 +21465,9 @@ func dmrgo_pdu_bs_outbound_activation_pdu_encode(c_self *C.dmrgo_pdu_bs_outbound
 func dmrgo_pdu_bs_outbound_activation_pdu_string(c_self *C.dmrgo_pdu_bs_outbound_activation_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21056,6 +21722,9 @@ func dmrgo_pdu_broadcast_pdu_encode(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *
 func dmrgo_pdu_broadcast_pdu_string(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21100,6 +21769,9 @@ func dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_br
 func dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(c_self *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21164,6 +21836,9 @@ func dmrgo_pdu_cgap_continuation_encode(c_self *C.dmrgo_pdu_cgap_continuation_t,
 func dmrgo_pdu_cgap_continuation_string(c_self *C.dmrgo_pdu_cgap_continuation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21689,6 +22364,9 @@ func dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk
 func dmrgo_pdu_csbk_string(c_self *C.dmrgo_pdu_csbk_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21862,6 +22540,9 @@ func dmrgo_pdu_csbk_bytes_set_group(c_self *C.dmrgo_pdu_csbk_bytes_t, c_group C.
 func dmrgo_pdu_csbk_opcode_string(c_self C.dmrgo_pdu_csbk_opcode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21922,6 +22603,9 @@ func dmrgo_pdu_call_timer_parms_encode(c_self *C.dmrgo_pdu_call_timer_parms_t, c
 func dmrgo_pdu_call_timer_parms_string(c_self *C.dmrgo_pdu_call_timer_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22037,6 +22721,9 @@ func dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(c_self *C.dmrgo
 func dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(c_self *C.dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22081,6 +22768,9 @@ func dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(c_self *C.dmrgo_pdu_ca
 func dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(c_self *C.dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22125,6 +22815,9 @@ func dmrgo_pdu_capacity_plus_group_voice_grant_encode(c_self *C.dmrgo_pdu_capaci
 func dmrgo_pdu_capacity_plus_group_voice_grant_string(c_self *C.dmrgo_pdu_capacity_plus_group_voice_grant_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22197,6 +22890,9 @@ func dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(c_self *C.dmrgo_pdu_capacity
 func dmrgo_pdu_capacity_plus_neighbors_pdu_string(c_self *C.dmrgo_pdu_capacity_plus_neighbors_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22241,6 +22937,9 @@ func dmrgo_pdu_capacity_plus_preamble_pdu_encode(c_self *C.dmrgo_pdu_capacity_pl
 func dmrgo_pdu_capacity_plus_preamble_pdu_string(c_self *C.dmrgo_pdu_capacity_plus_preamble_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22285,6 +22984,9 @@ func dmrgo_pdu_capacity_plus_private_voice_grant_encode(c_self *C.dmrgo_pdu_capa
 func dmrgo_pdu_capacity_plus_private_voice_grant_string(c_self *C.dmrgo_pdu_capacity_plus_private_voice_grant_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22329,6 +23031,9 @@ func dmrgo_pdu_capacity_plus_rest_channel_encode(c_self *C.dmrgo_pdu_capacity_pl
 func dmrgo_pdu_capacity_plus_rest_channel_string(c_self *C.dmrgo_pdu_capacity_plus_rest_channel_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22350,6 +23055,9 @@ func dmrgo_pdu_capacity_plus_rest_channel_string(c_self *C.dmrgo_pdu_capacity_pl
 func dmrgo_pdu_capacity_plus_segment_string(c_self C.dmrgo_pdu_capacity_plus_segment_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22466,6 +23174,9 @@ func dmrgo_pdu_capacity_plus_site_status_pdu_encode(c_self *C.dmrgo_pdu_capacity
 func dmrgo_pdu_capacity_plus_site_status_pdu_string(c_self *C.dmrgo_pdu_capacity_plus_site_status_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22510,6 +23221,9 @@ func dmrgo_pdu_chan_freq_parms_encode(c_self *C.dmrgo_pdu_chan_freq_parms_t, c_o
 func dmrgo_pdu_chan_freq_parms_string(c_self *C.dmrgo_pdu_chan_freq_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22554,6 +23268,9 @@ func dmrgo_pdu_channel_timing_pdu_encode(c_self *C.dmrgo_pdu_channel_timing_pdu_
 func dmrgo_pdu_channel_timing_pdu_string(c_self *C.dmrgo_pdu_channel_timing_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22598,6 +23315,9 @@ func dmrgo_pdu_clear_pdu_encode(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.uint8_
 func dmrgo_pdu_clear_pdu_string(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22642,6 +23362,9 @@ func dmrgo_pdu_confirmed_data_header_encode(c_self *C.dmrgo_pdu_confirmed_data_h
 func dmrgo_pdu_confirmed_data_header_string(c_self *C.dmrgo_pdu_confirmed_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22808,6 +23531,9 @@ func dmrgo_pdu_data_header_set_addresses(c_self *C.dmrgo_pdu_data_header_t, c_de
 func dmrgo_pdu_data_header_string(c_self *C.dmrgo_pdu_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23538,6 +24264,9 @@ func dmrgo_pdu_defined_data_header_encode(c_self *C.dmrgo_pdu_defined_data_heade
 func dmrgo_pdu_defined_data_header_string(c_self *C.dmrgo_pdu_defined_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23582,6 +24311,9 @@ func dmrgo_pdu_duplex_private_data_grant_pdu_encode(c_self *C.dmrgo_pdu_duplex_p
 func dmrgo_pdu_duplex_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23626,6 +24358,9 @@ func dmrgo_pdu_duplex_private_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_duplex_
 func dmrgo_pdu_duplex_private_voice_grant_pdu_string(c_self *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23816,6 +24551,9 @@ func dmrgo_pdu_embedded_signalling_info(c_self *C.dmrgo_pdu_embedded_signalling_
 func dmrgo_pdu_embedded_signalling_string(c_self *C.dmrgo_pdu_embedded_signalling_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23837,13 +24575,19 @@ func dmrgo_pdu_embedded_signalling_string(c_self *C.dmrgo_pdu_embedded_signallin
 func dmrgo_pdu_encode_talker_alias(c_alias *C.char, c_alias_len C.size_t, c_format C.dmrgo_layer3_talker_alias_data_format_t, c_out *C.dmrgo_pdu_full_link_control_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_alias), c_alias_len, unsafe.Sizeof(*c_alias)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_alias == nil && c_alias_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2_pdu.EncodeTalkerAlias(C.GoStringN(c_alias, C.int(c_alias_len)), g_layer3.TalkerAliasDataFormat(c_format))
+	r0, r1 := g_layer2_pdu.EncodeTalkerAlias(cStr(c_alias, c_alias_len), g_layer3.TalkerAliasDataFormat(c_format))
 	_ = r0
 	{
 		src := r0
@@ -23874,6 +24618,9 @@ func dmrgo_pdu_encode_talker_alias(c_alias *C.char, c_alias_len C.size_t, c_form
 func dmrgo_pdu_encode_talker_alias_into(c_dst *C.dmrgo_pdu_full_link_control_t, c_p **C.dmrgo_pdu_full_link_control_payloads_t, c_alias *C.char, c_alias_len C.size_t, c_format C.dmrgo_layer3_talker_alias_data_format_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_alias), c_alias_len, unsafe.Sizeof(*c_alias)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	var a_dst [4]g_layer2_pdu.FullLinkControl
 	var p_dst *[4]g_layer2_pdu.FullLinkControl
 	if c_dst != nil {
@@ -23890,7 +24637,7 @@ func dmrgo_pdu_encode_talker_alias_into(c_dst *C.dmrgo_pdu_full_link_control_t, 
 	if c_alias == nil && c_alias_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2_pdu.EncodeTalkerAliasInto(p_dst, &a_p, C.GoStringN(c_alias, C.int(c_alias_len)), g_layer3.TalkerAliasDataFormat(c_format))
+	r0, r1 := g_layer2_pdu.EncodeTalkerAliasInto(p_dst, &a_p, cStr(c_alias, c_alias_len), g_layer3.TalkerAliasDataFormat(c_format))
 	if c_dst != nil {
 		for i0 := range a_dst {
 			out_layer2_pdu_FullLinkControl(&(*(*[4]C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(c_dst)))[i0], &a_dst[i0], oc)
@@ -23939,6 +24686,9 @@ func dmrgo_pdu_flc_gps_info_encode(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.
 func dmrgo_pdu_flc_gps_info_string(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23983,6 +24733,9 @@ func dmrgo_pdu_flc_group_voice_encode(c_self *C.dmrgo_pdu_flc_group_voice_t, c_o
 func dmrgo_pdu_flc_group_voice_string(c_self *C.dmrgo_pdu_flc_group_voice_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24027,6 +24780,9 @@ func dmrgo_pdu_flc_talker_alias_block_encode(c_self *C.dmrgo_pdu_flc_talker_alia
 func dmrgo_pdu_flc_talker_alias_block_string(c_self *C.dmrgo_pdu_flc_talker_alias_block_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24071,6 +24827,9 @@ func dmrgo_pdu_flc_talker_alias_header_encode(c_self *C.dmrgo_pdu_flc_talker_ali
 func dmrgo_pdu_flc_talker_alias_header_string(c_self *C.dmrgo_pdu_flc_talker_alias_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24115,6 +24874,9 @@ func dmrgo_pdu_flc_terminator_data_link_control_encode(c_self *C.dmrgo_pdu_flc_t
 func dmrgo_pdu_flc_terminator_data_link_control_string(c_self *C.dmrgo_pdu_flc_terminator_data_link_control_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24159,6 +24921,9 @@ func dmrgo_pdu_flc_unit_to_unit_encode(c_self *C.dmrgo_pdu_flc_unit_to_unit_t, c
 func dmrgo_pdu_flc_unit_to_unit_string(c_self *C.dmrgo_pdu_flc_unit_to_unit_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24180,6 +24945,9 @@ func dmrgo_pdu_flc_unit_to_unit_string(c_self *C.dmrgo_pdu_flc_unit_to_unit_t, c
 func dmrgo_pdu_format_string(c_self C.dmrgo_pdu_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24424,6 +25192,9 @@ func dmrgo_pdu_full_link_control_set_addresses(c_self *C.dmrgo_pdu_full_link_con
 func dmrgo_pdu_full_link_control_string(c_self *C.dmrgo_pdu_full_link_control_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24490,6 +25261,9 @@ func dmrgo_pdu_gen_site_parms_encode(c_self *C.dmrgo_pdu_gen_site_parms_t, c_out
 func dmrgo_pdu_gen_site_parms_string(c_self *C.dmrgo_pdu_gen_site_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -24878,6 +25652,9 @@ func dmrgo_pdu_local_time_parms_encode(c_self *C.dmrgo_pdu_local_time_parms_t, c
 func dmrgo_pdu_local_time_parms_string(c_self *C.dmrgo_pdu_local_time_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25022,6 +25799,9 @@ func dmrgo_pdu_mbc_continuation_encode(c_self *C.dmrgo_pdu_mbc_continuation_t, c
 func dmrgo_pdu_mbc_continuation_string(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25088,6 +25868,9 @@ func dmrgo_pdu_mbc_header_encode(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.uint
 func dmrgo_pdu_mbc_header_string(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25131,11 +25914,14 @@ func dmrgo_pdu_mbc_header_payloads_free(c_self *C.dmrgo_pdu_mbc_header_payloads_
 func dmrgo_pdu_mbc_last_block_crc_ok(c_blocks *C.uint8_t, c_blocks_len C.size_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_blocks), c_blocks_len, unsafe.Sizeof(*c_blocks)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_blocks == nil && c_blocks_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_blocks [][12]byte
-	a_blocks = unsafe.Slice((*[12]byte)(unsafe.Pointer(c_blocks)), int(c_blocks_len))
+	a_blocks = cSlice[[12]byte](unsafe.Pointer(c_blocks), c_blocks_len)
 	r0 := g_layer2_pdu.MBCLastBlockCRCOK(a_blocks)
 	_ = r0
 	if c_out != nil {
@@ -25194,6 +25980,9 @@ func dmrgo_pdu_mvap_continuation_encode(c_self *C.dmrgo_pdu_mvap_continuation_t,
 func dmrgo_pdu_mvap_continuation_string(c_self *C.dmrgo_pdu_mvap_continuation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25238,6 +26027,9 @@ func dmrgo_pdu_maintenance_pdu_encode(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_o
 func dmrgo_pdu_maintenance_pdu_string(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25282,6 +26074,9 @@ func dmrgo_pdu_mass_reg_parms_encode(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out
 func dmrgo_pdu_mass_reg_parms_string(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25326,6 +26121,9 @@ func dmrgo_pdu_motorola_call_alert_ack_pdu_encode(c_self *C.dmrgo_pdu_motorola_c
 func dmrgo_pdu_motorola_call_alert_ack_pdu_string(c_self *C.dmrgo_pdu_motorola_call_alert_ack_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25370,6 +26168,9 @@ func dmrgo_pdu_motorola_call_alert_pdu_encode(c_self *C.dmrgo_pdu_motorola_call_
 func dmrgo_pdu_motorola_call_alert_pdu_string(c_self *C.dmrgo_pdu_motorola_call_alert_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25442,6 +26243,9 @@ func dmrgo_pdu_motorola_radio_check_pdu_encode(c_self *C.dmrgo_pdu_motorola_radi
 func dmrgo_pdu_motorola_radio_check_pdu_string(c_self *C.dmrgo_pdu_motorola_radio_check_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25486,6 +26290,9 @@ func dmrgo_pdu_move_pdu_encode(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.uint8_t)
 func dmrgo_pdu_move_pdu_string(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25530,6 +26337,9 @@ func dmrgo_pdu_negative_acknowledgement_pdu_encode(c_self *C.dmrgo_pdu_negative_
 func dmrgo_pdu_negative_acknowledgement_pdu_string(c_self *C.dmrgo_pdu_negative_acknowledgement_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25694,6 +26504,9 @@ func dmrgo_pdu_pi_header_encode(c_self *C.dmrgo_pdu_pi_header_t, c_out *C.uint8_
 func dmrgo_pdu_pi_header_string(c_self *C.dmrgo_pdu_pi_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25758,6 +26571,9 @@ func dmrgo_pdu_pr_fill_encode(c_self *C.dmrgo_pdu_pr_fill_t, c_out *C.uint8_t) (
 func dmrgo_pdu_pr_fill_string(c_self *C.dmrgo_pdu_pr_fill_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25817,6 +26633,9 @@ func dmrgo_pdu_preamble_pdu_encode(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.
 func dmrgo_pdu_preamble_pdu_string(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25861,6 +26680,9 @@ func dmrgo_pdu_private_data_grant_multi_item_pdu_encode(c_self *C.dmrgo_pdu_priv
 func dmrgo_pdu_private_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25905,6 +26727,9 @@ func dmrgo_pdu_private_data_grant_pdu_encode(c_self *C.dmrgo_pdu_private_data_gr
 func dmrgo_pdu_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_private_data_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25949,6 +26774,9 @@ func dmrgo_pdu_private_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_private_voice_
 func dmrgo_pdu_private_voice_grant_pdu_string(c_self *C.dmrgo_pdu_private_voice_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25993,6 +26821,9 @@ func dmrgo_pdu_proprietary_header_encode(c_self *C.dmrgo_pdu_proprietary_header_
 func dmrgo_pdu_proprietary_header_string(c_self *C.dmrgo_pdu_proprietary_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26037,6 +26868,9 @@ func dmrgo_pdu_protect_pdu_encode(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.ui
 func dmrgo_pdu_protect_pdu_string(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26081,6 +26915,9 @@ func dmrgo_pdu_random_access_pdu_encode(c_self *C.dmrgo_pdu_random_access_pdu_t,
 func dmrgo_pdu_random_access_pdu_string(c_self *C.dmrgo_pdu_random_access_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26250,6 +27087,9 @@ func dmrgo_pdu_rate12_data_set_confirmed(c_self *C.dmrgo_pdu_rate12_data_t, c_db
 func dmrgo_pdu_rate12_data_string(c_self *C.dmrgo_pdu_rate12_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26419,6 +27259,9 @@ func dmrgo_pdu_rate1_data_set_confirmed(c_self *C.dmrgo_pdu_rate1_data_t, c_dbsn
 func dmrgo_pdu_rate1_data_string(c_self *C.dmrgo_pdu_rate1_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26588,6 +27431,9 @@ func dmrgo_pdu_rate34_data_set_confirmed(c_self *C.dmrgo_pdu_rate34_data_t, c_db
 func dmrgo_pdu_rate34_data_string(c_self *C.dmrgo_pdu_rate34_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26632,6 +27478,9 @@ func dmrgo_pdu_raw_data_header_encode(c_self *C.dmrgo_pdu_raw_data_header_t, c_o
 func dmrgo_pdu_raw_data_header_string(c_self *C.dmrgo_pdu_raw_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26695,6 +27544,9 @@ func dmrgo_pdu_response_packet_header_encode(c_self *C.dmrgo_pdu_response_packet
 func dmrgo_pdu_response_packet_header_string(c_self *C.dmrgo_pdu_response_packet_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26739,6 +27591,9 @@ func dmrgo_pdu_reverse_channel_encode(c_self *C.dmrgo_pdu_reverse_channel_t, c_o
 func dmrgo_pdu_reverse_channel_string(c_self *C.dmrgo_pdu_reverse_channel_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26774,6 +27629,9 @@ func dmrgo_pdu_seal(c_p *C.uint8_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
 func dmrgo_pdu_service_type_string(c_self C.dmrgo_pdu_service_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26790,11 +27648,14 @@ func dmrgo_pdu_service_type_string(c_self C.dmrgo_pdu_service_type_t, c_out *C.c
 func dmrgo_pdu_set_mbc_last_block_crc(c_blocks *C.uint8_t, c_blocks_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_blocks), c_blocks_len, unsafe.Sizeof(*c_blocks)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_blocks == nil && c_blocks_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_blocks [][12]byte
-	a_blocks = unsafe.Slice((*[12]byte)(unsafe.Pointer(c_blocks)), int(c_blocks_len))
+	a_blocks = cSlice[[12]byte](unsafe.Pointer(c_blocks), c_blocks_len)
 	g_layer2_pdu.SetMBCLastBlockCRC(a_blocks)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -26855,6 +27716,9 @@ func dmrgo_pdu_short_lc_encode(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.uint8_t)
 func dmrgo_pdu_short_lc_string(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26900,6 +27764,9 @@ func dmrgo_pdu_short_lc_activity_update_encode(c_self *C.dmrgo_pdu_short_lc_acti
 func dmrgo_pdu_short_lc_activity_update_string(c_self *C.dmrgo_pdu_short_lc_activity_update_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27016,6 +27883,9 @@ func dmrgo_pdu_short_lc_c_sys_parms_site_id(c_self *C.dmrgo_pdu_short_lc_c_sys_p
 func dmrgo_pdu_short_lc_c_sys_parms_string(c_self *C.dmrgo_pdu_short_lc_c_sys_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27083,6 +27953,9 @@ func dmrgo_pdu_short_lc_null_message_encode(c_self *C.dmrgo_pdu_short_lc_null_me
 func dmrgo_pdu_short_lc_null_message_string(c_self *C.dmrgo_pdu_short_lc_null_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27199,6 +28072,9 @@ func dmrgo_pdu_short_lc_p_sys_parms_site_id(c_self *C.dmrgo_pdu_short_lc_p_sys_p
 func dmrgo_pdu_short_lc_p_sys_parms_string(c_self *C.dmrgo_pdu_short_lc_p_sys_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27310,6 +28186,9 @@ func dmrgo_pdu_slot_type_info(c_self *C.dmrgo_pdu_slot_type_t, c_out *C.dmrgo_pd
 func dmrgo_pdu_slot_type_string(c_self *C.dmrgo_pdu_slot_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27448,6 +28327,9 @@ func dmrgo_pdu_status_precoded_header_encode(c_self *C.dmrgo_pdu_status_precoded
 func dmrgo_pdu_status_precoded_header_string(c_self *C.dmrgo_pdu_status_precoded_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27622,6 +28504,9 @@ func dmrgo_pdu_tact_slot(c_self *C.dmrgo_pdu_tact_t, c_out *C.dmrgo_enums_slot_t
 func dmrgo_pdu_tact_string(c_self *C.dmrgo_pdu_tact_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27643,6 +28528,12 @@ func dmrgo_pdu_tact_string(c_self *C.dmrgo_pdu_tact_t, c_out *C.char, c_out_cap 
 func dmrgo_pdu_talker_alias(c_header *C.dmrgo_pdu_flc_talker_alias_header_t, c_blocks *C.dmrgo_pdu_flc_talker_alias_block_t, c_blocks_len C.size_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_blocks), c_blocks_len, unsafe.Sizeof(*c_blocks)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	var a_header g_layer2_pdu.FLCTalkerAliasHeader
 	var p_header *g_layer2_pdu.FLCTalkerAliasHeader
 	if c_header != nil {
@@ -27655,7 +28546,7 @@ func dmrgo_pdu_talker_alias(c_header *C.dmrgo_pdu_flc_talker_alias_header_t, c_b
 	var a_blocks []*g_layer2_pdu.FLCTalkerAliasBlock
 	a_blocks = nil
 	if c_blocks_len > 0 {
-		cs := unsafe.Slice((*C.dmrgo_pdu_flc_talker_alias_block_t)(unsafe.Pointer(c_blocks)), int(c_blocks_len))
+		cs := cSlice[C.dmrgo_pdu_flc_talker_alias_block_t](unsafe.Pointer(c_blocks), c_blocks_len)
 		a_blocks = make([]*g_layer2_pdu.FLCTalkerAliasBlock, len(cs))
 		vs := make([]g_layer2_pdu.FLCTalkerAliasBlock, len(cs))
 		for i := range cs {
@@ -27725,6 +28616,9 @@ func dmrgo_pdu_talker_alias_assembler_add_need(c_self *C.dmrgo_pdu_talker_alias_
 func dmrgo_pdu_talker_alias_assembler_add(c_self *C.dmrgo_pdu_talker_alias_assembler_t, c_lc *C.dmrgo_pdu_full_link_control_t, c_alias *C.char, c_alias_cap C.size_t, c_alias_len *C.size_t, c_alias_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_alias), c_alias_cap, unsafe.Sizeof(*c_alias)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_pdu_TalkerAliasAssembler(c_self)
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
@@ -27820,6 +28714,9 @@ func dmrgo_pdu_talker_alias_assembler_append_add_need(c_self *C.dmrgo_pdu_talker
 func dmrgo_pdu_talker_alias_assembler_append_add(c_self *C.dmrgo_pdu_talker_alias_assembler_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_lc *C.dmrgo_pdu_full_link_control_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_layer2_pdu_TalkerAliasAssembler(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -27917,6 +28814,9 @@ func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_encode(c_self *C.dmrgo_pdu_ta
 func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -27961,6 +28861,9 @@ func dmrgo_pdu_talkgroup_data_grant_pdu_encode(c_self *C.dmrgo_pdu_talkgroup_dat
 func dmrgo_pdu_talkgroup_data_grant_pdu_string(c_self *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28005,6 +28908,9 @@ func dmrgo_pdu_talkgroup_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_talkgroup_vo
 func dmrgo_pdu_talkgroup_voice_grant_pdu_string(c_self *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28069,6 +28975,9 @@ func dmrgo_pdu_udp_ipv4_compressed_header_octets(c_self *C.dmrgo_pdu_udp_ipv4_co
 func dmrgo_pdu_udp_ipv4_compressed_header_string(c_self *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28113,6 +29022,9 @@ func dmrgo_pdu_udt_header_encode(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.uint
 func dmrgo_pdu_udt_header_string(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28134,6 +29046,9 @@ func dmrgo_pdu_udt_header_string(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.char
 func dmrgo_pdu_udt_opcode_string(c_self C.dmrgo_pdu_udt_opcode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28173,6 +29088,9 @@ func dmrgo_pdu_unconfirmed_data_header_encode(c_self *C.dmrgo_pdu_unconfirmed_da
 func dmrgo_pdu_unconfirmed_data_header_string(c_self *C.dmrgo_pdu_unconfirmed_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28237,6 +29155,9 @@ func dmrgo_pdu_unified_single_block_data_encode(c_self *C.dmrgo_pdu_unified_sing
 func dmrgo_pdu_unified_single_block_data_string(c_self *C.dmrgo_pdu_unified_single_block_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28281,6 +29202,9 @@ func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_encode(c_self *C.d
 func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(c_self *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28325,6 +29249,9 @@ func dmrgo_pdu_unit_to_unit_voice_service_request_pdu_encode(c_self *C.dmrgo_pdu
 func dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(c_self *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28389,6 +29316,9 @@ func dmrgo_pdu_vnap_continuation_encode(c_self *C.dmrgo_pdu_vnap_continuation_t,
 func dmrgo_pdu_vnap_continuation_string(c_self *C.dmrgo_pdu_vnap_continuation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28433,6 +29363,9 @@ func dmrgo_pdu_vote_now_parms_encode(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out
 func dmrgo_pdu_vote_now_parms_string(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28454,6 +29387,9 @@ func dmrgo_pdu_vote_now_parms_string(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out
 func dmrgo_layer3_additional_information_field_string(c_self C.dmrgo_layer3_additional_information_field_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28533,6 +29469,9 @@ func dmrgo_layer3_cdef_parms_rx_frequency_mhz(c_self *C.dmrgo_layer3_cdef_parms_
 func dmrgo_layer3_cdef_parms_string(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28640,6 +29579,9 @@ func dmrgo_layer3_data_service_options_field(c_self *C.dmrgo_layer3_data_service
 func dmrgo_layer3_data_service_options_string(c_self *C.dmrgo_layer3_data_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28869,6 +29811,9 @@ func dmrgo_layer3_diversion_service_options_field(c_self *C.dmrgo_layer3_diversi
 func dmrgo_layer3_diversion_service_options_string(c_self *C.dmrgo_layer3_diversion_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28951,6 +29896,9 @@ func dmrgo_layer3_polling_service_options_field(c_self *C.dmrgo_layer3_polling_s
 func dmrgo_layer3_polling_service_options_string(c_self *C.dmrgo_layer3_polling_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28972,6 +29920,9 @@ func dmrgo_layer3_polling_service_options_string(c_self *C.dmrgo_layer3_polling_
 func dmrgo_layer3_position_error_string(c_self C.dmrgo_layer3_position_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29034,6 +29985,9 @@ func dmrgo_layer3_registration_service_options_field(c_self *C.dmrgo_layer3_regi
 func dmrgo_layer3_registration_service_options_string(c_self *C.dmrgo_layer3_registration_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29101,6 +30055,9 @@ func dmrgo_layer3_service_options_field(c_self *C.dmrgo_layer3_service_options_t
 func dmrgo_layer3_service_options_string(c_self *C.dmrgo_layer3_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29168,6 +30125,9 @@ func dmrgo_layer3_short_data_service_options_field(c_self *C.dmrgo_layer3_short_
 func dmrgo_layer3_short_data_service_options_string(c_self *C.dmrgo_layer3_short_data_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29189,6 +30149,9 @@ func dmrgo_layer3_short_data_service_options_string(c_self *C.dmrgo_layer3_short
 func dmrgo_layer3_source_type_string(c_self C.dmrgo_layer3_source_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29251,6 +30214,9 @@ func dmrgo_layer3_status_service_options_field(c_self *C.dmrgo_layer3_status_ser
 func dmrgo_layer3_status_service_options_string(c_self *C.dmrgo_layer3_status_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29272,6 +30238,9 @@ func dmrgo_layer3_status_service_options_string(c_self *C.dmrgo_layer3_status_se
 func dmrgo_layer3_talker_alias_data_format_string(c_self C.dmrgo_layer3_talker_alias_data_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29334,6 +30303,9 @@ func dmrgo_layer3_voice_service_options_field(c_self *C.dmrgo_layer3_voice_servi
 func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29376,6 +30348,9 @@ func dmrgo_location_decoder_free(c_self *C.dmrgo_location_decoder_t) (rc C.int) 
 func dmrgo_location_decoder_decode(c_self *C.dmrgo_location_decoder_t, c_h *C.dmrgo_pdu_data_header_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_location_fix_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_location_Decoder(c_self)
 	var a_h g_layer2_pdu.DataHeader
 	var p_h *g_layer2_pdu.DataHeader
@@ -29388,7 +30363,7 @@ func dmrgo_location_decoder_decode(c_self *C.dmrgo_location_decoder_t, c_h *C.dm
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := h.v.Decode(p_h, a_data)
 	_ = r0
 	if c_out != nil {
@@ -29407,6 +30382,9 @@ func dmrgo_location_decoder_decode(c_self *C.dmrgo_location_decoder_t, c_h *C.dm
 func dmrgo_location_format_string(c_self C.dmrgo_location_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29430,11 +30408,17 @@ func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_mototrbo_ars.DecodeMessage(a_data)
 	_ = r0
 	if c_out != nil {
@@ -29459,6 +30443,9 @@ func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 func dmrgo_ars_event_string(c_self C.dmrgo_ars_event_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29475,6 +30462,9 @@ func dmrgo_ars_event_string(c_self C.dmrgo_ars_event_t, c_out *C.char, c_out_cap
 func dmrgo_ars_header_append_binary(c_self *C.dmrgo_ars_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29503,6 +30493,9 @@ func dmrgo_ars_header_append_binary(c_self *C.dmrgo_ars_header_t, c_dst *C.uint8
 func dmrgo_ars_header_string(c_self *C.dmrgo_ars_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29524,6 +30517,9 @@ func dmrgo_ars_header_string(c_self *C.dmrgo_ars_header_t, c_out *C.char, c_out_
 func dmrgo_ars_message_append_binary(c_self *C.dmrgo_ars_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29583,6 +30579,12 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29618,6 +30620,9 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 func dmrgo_ars_message_string(c_self *C.dmrgo_ars_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29646,6 +30651,9 @@ func dmrgo_ars_new_ack(c_refresh C.uint8_t, c_out *C.dmrgo_ars_message_t, c_aren
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0, r1 := g_mototrbo_ars.NewAck(uint8(c_refresh))
 	_ = r0
 	if c_out != nil {
@@ -29677,6 +30685,9 @@ func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_a
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0, r1 := g_mototrbo_ars.NewFailure(uint8(c_reason))
 	_ = r0
 	if c_out != nil {
@@ -29708,6 +30719,9 @@ func dmrgo_ars_new_query(c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0 := g_mototrbo_ars.NewQuery()
 	_ = r0
 	if c_out != nil {
@@ -29736,6 +30750,9 @@ func dmrgo_ars_new_registration(c_event C.dmrgo_ars_event_t, c_out *C.dmrgo_ars_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0 := g_mototrbo_ars.NewRegistration(g_mototrbo_ars.Event(c_event))
 	_ = r0
 	if c_out != nil {
@@ -29757,6 +30774,9 @@ func dmrgo_ars_new_registration(c_event C.dmrgo_ars_event_t, c_out *C.dmrgo_ars_
 func dmrgo_ars_registration_append_binary(c_self *C.dmrgo_ars_registration_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29785,6 +30805,9 @@ func dmrgo_ars_registration_append_binary(c_self *C.dmrgo_ars_registration_t, c_
 func dmrgo_ars_registration_string(c_self *C.dmrgo_ars_registration_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29806,6 +30829,9 @@ func dmrgo_ars_registration_string(c_self *C.dmrgo_ars_registration_t, c_out *C.
 func dmrgo_ars_response_append_binary(c_self *C.dmrgo_ars_response_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29834,6 +30860,9 @@ func dmrgo_ars_response_append_binary(c_self *C.dmrgo_ars_response_t, c_dst *C.u
 func dmrgo_ars_response_string(c_self *C.dmrgo_ars_response_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29855,6 +30884,9 @@ func dmrgo_ars_response_string(c_self *C.dmrgo_ars_response_t, c_out *C.char, c_
 func dmrgo_ars_type_string(c_self C.dmrgo_ars_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29871,6 +30903,9 @@ func dmrgo_ars_type_string(c_self C.dmrgo_ars_type_t, c_out *C.char, c_out_cap C
 func dmrgo_lrrp_circle2d_append_binary(c_self *C.dmrgo_lrrp_circle2d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29899,6 +30934,9 @@ func dmrgo_lrrp_circle2d_append_binary(c_self *C.dmrgo_lrrp_circle2d_t, c_dst *C
 func dmrgo_lrrp_circle2d_string(c_self *C.dmrgo_lrrp_circle2d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29920,6 +30958,9 @@ func dmrgo_lrrp_circle2d_string(c_self *C.dmrgo_lrrp_circle2d_t, c_out *C.char, 
 func dmrgo_lrrp_circle3d_append_binary(c_self *C.dmrgo_lrrp_circle3d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29948,6 +30989,9 @@ func dmrgo_lrrp_circle3d_append_binary(c_self *C.dmrgo_lrrp_circle3d_t, c_dst *C
 func dmrgo_lrrp_circle3d_string(c_self *C.dmrgo_lrrp_circle3d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29976,6 +31020,12 @@ func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	var a_m g_mototrbo_lrrp.Message
 	var p_m *g_mototrbo_lrrp.Message
 	if c_m != nil {
@@ -29986,7 +31036,7 @@ func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0 := g_mototrbo_lrrp.DecodeMessageInto(p_m, a_data)
 	var ws_m C.dmrgo_lrrp_message_t
 	if c_m != nil {
@@ -30015,6 +31065,9 @@ func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8
 func dmrgo_lrrp_document_id_string(c_self C.dmrgo_lrrp_document_id_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30031,6 +31084,9 @@ func dmrgo_lrrp_document_id_string(c_self C.dmrgo_lrrp_document_id_t, c_out *C.c
 func dmrgo_lrrp_message_append_binary(c_self *C.dmrgo_lrrp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30059,6 +31115,9 @@ func dmrgo_lrrp_message_append_binary(c_self *C.dmrgo_lrrp_message_t, c_dst *C.u
 func dmrgo_lrrp_message_string(c_self *C.dmrgo_lrrp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30080,6 +31139,9 @@ func dmrgo_lrrp_message_string(c_self *C.dmrgo_lrrp_message_t, c_out *C.char, c_
 func dmrgo_lrrp_operation_error_append_binary(c_self *C.dmrgo_lrrp_operation_error_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30108,6 +31170,9 @@ func dmrgo_lrrp_operation_error_append_binary(c_self *C.dmrgo_lrrp_operation_err
 func dmrgo_lrrp_operation_error_string(c_self *C.dmrgo_lrrp_operation_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30129,6 +31194,9 @@ func dmrgo_lrrp_operation_error_string(c_self *C.dmrgo_lrrp_operation_error_t, c
 func dmrgo_lrrp_point2d_append_binary(c_self *C.dmrgo_lrrp_point2d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30157,6 +31225,9 @@ func dmrgo_lrrp_point2d_append_binary(c_self *C.dmrgo_lrrp_point2d_t, c_dst *C.u
 func dmrgo_lrrp_point2d_string(c_self *C.dmrgo_lrrp_point2d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30178,6 +31249,9 @@ func dmrgo_lrrp_point2d_string(c_self *C.dmrgo_lrrp_point2d_t, c_out *C.char, c_
 func dmrgo_lrrp_point3d_append_binary(c_self *C.dmrgo_lrrp_point3d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30206,6 +31280,9 @@ func dmrgo_lrrp_point3d_append_binary(c_self *C.dmrgo_lrrp_point3d_t, c_dst *C.u
 func dmrgo_lrrp_point3d_string(c_self *C.dmrgo_lrrp_point3d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30227,6 +31304,9 @@ func dmrgo_lrrp_point3d_string(c_self *C.dmrgo_lrrp_point3d_t, c_out *C.char, c_
 func dmrgo_lrrp_point3d_accuracy_append_binary(c_self *C.dmrgo_lrrp_point3d_accuracy_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30255,6 +31335,9 @@ func dmrgo_lrrp_point3d_accuracy_append_binary(c_self *C.dmrgo_lrrp_point3d_accu
 func dmrgo_lrrp_point3d_accuracy_string(c_self *C.dmrgo_lrrp_point3d_accuracy_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30276,6 +31359,9 @@ func dmrgo_lrrp_point3d_accuracy_string(c_self *C.dmrgo_lrrp_point3d_accuracy_t,
 func dmrgo_lrrp_report_append_binary(c_self *C.dmrgo_lrrp_report_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30304,6 +31390,9 @@ func dmrgo_lrrp_report_append_binary(c_self *C.dmrgo_lrrp_report_t, c_dst *C.uin
 func dmrgo_lrrp_report_string(c_self *C.dmrgo_lrrp_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30325,6 +31414,9 @@ func dmrgo_lrrp_report_string(c_self *C.dmrgo_lrrp_report_t, c_out *C.char, c_ou
 func dmrgo_lrrp_request_append_binary(c_self *C.dmrgo_lrrp_request_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30353,6 +31445,9 @@ func dmrgo_lrrp_request_append_binary(c_self *C.dmrgo_lrrp_request_t, c_dst *C.u
 func dmrgo_lrrp_request_string(c_self *C.dmrgo_lrrp_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30374,6 +31469,9 @@ func dmrgo_lrrp_request_string(c_self *C.dmrgo_lrrp_request_t, c_out *C.char, c_
 func dmrgo_lrrp_time_append_binary(c_self *C.dmrgo_lrrp_time_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30402,6 +31500,9 @@ func dmrgo_lrrp_time_append_binary(c_self *C.dmrgo_lrrp_time_t, c_dst *C.uint8_t
 func dmrgo_lrrp_time_string(c_self *C.dmrgo_lrrp_time_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30430,11 +31531,17 @@ func dmrgo_tms_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_mototrbo_tms.DecodeMessage(a_data)
 	_ = r0
 	if c_out != nil {
@@ -30459,6 +31566,9 @@ func dmrgo_tms_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 func dmrgo_tms_encoding_string(c_self C.dmrgo_tms_encoding_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30475,6 +31585,9 @@ func dmrgo_tms_encoding_string(c_self C.dmrgo_tms_encoding_t, c_out *C.char, c_o
 func dmrgo_tms_header_append_binary(c_self *C.dmrgo_tms_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30503,6 +31616,9 @@ func dmrgo_tms_header_append_binary(c_self *C.dmrgo_tms_header_t, c_dst *C.uint8
 func dmrgo_tms_header_string(c_self *C.dmrgo_tms_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30524,6 +31640,9 @@ func dmrgo_tms_header_string(c_self *C.dmrgo_tms_header_t, c_out *C.char, c_out_
 func dmrgo_tms_message_append_binary(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30583,6 +31702,15 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30598,7 +31726,7 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
 	ws_self := *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
@@ -30623,6 +31751,9 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 func dmrgo_tms_message_string(c_self *C.dmrgo_tms_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30644,6 +31775,9 @@ func dmrgo_tms_message_string(c_self *C.dmrgo_tms_message_t, c_out *C.char, c_ou
 func dmrgo_tms_message_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30676,6 +31810,9 @@ func dmrgo_tms_new_ack(c_seq C.uint8_t, c_out *C.dmrgo_tms_message_t, c_arena un
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0, r1 := g_mototrbo_tms.NewAck(uint8(c_seq))
 	_ = r0
 	if c_out != nil {
@@ -30707,6 +31844,9 @@ func dmrgo_tms_new_text(c_seq C.uint8_t, c_ack_required C.bool, c_out *C.dmrgo_t
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0, r1 := g_mototrbo_tms.NewText(uint8(c_seq), bool(c_ack_required))
 	_ = r0
 	if c_out != nil {
@@ -30731,6 +31871,9 @@ func dmrgo_tms_new_text(c_seq C.uint8_t, c_ack_required C.bool, c_out *C.dmrgo_t
 func dmrgo_tms_sequence_high_append_binary(c_self *C.dmrgo_tms_sequence_high_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30759,6 +31902,9 @@ func dmrgo_tms_sequence_high_append_binary(c_self *C.dmrgo_tms_sequence_high_t, 
 func dmrgo_tms_sequence_high_string(c_self *C.dmrgo_tms_sequence_high_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30780,6 +31926,9 @@ func dmrgo_tms_sequence_high_string(c_self *C.dmrgo_tms_sequence_high_t, c_out *
 func dmrgo_tms_sequence_low_append_binary(c_self *C.dmrgo_tms_sequence_low_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30808,6 +31957,9 @@ func dmrgo_tms_sequence_low_append_binary(c_self *C.dmrgo_tms_sequence_low_t, c_
 func dmrgo_tms_sequence_low_string(c_self *C.dmrgo_tms_sequence_low_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30829,6 +31981,9 @@ func dmrgo_tms_sequence_low_string(c_self *C.dmrgo_tms_sequence_low_t, c_out *C.
 func dmrgo_tms_type_string(c_self C.dmrgo_tms_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30845,11 +32000,14 @@ func dmrgo_tms_type_string(c_self C.dmrgo_tms_type_t, c_out *C.char, c_out_cap C
 func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_rmc_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_s), c_s_len, unsafe.Sizeof(*c_s)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_s == nil && c_s_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_s []byte
-	a_s = unsafe.Slice((*byte)(unsafe.Pointer(c_s)), int(c_s_len))
+	a_s = cSlice[byte](unsafe.Pointer(c_s), c_s_len)
 	r0, r1 := g_nmea.ParseRMC(a_s)
 	_ = r0
 	if c_out != nil {
@@ -30868,6 +32026,12 @@ func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_
 func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30878,7 +32042,7 @@ func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0, r1 := g_shortdata.AppendText(a_dst, g_enums.DDFormat(c_format), a_text)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -30903,11 +32067,17 @@ func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, 
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_shortdata.DecodeHyteraText(a_data)
 	_ = r0
 	if c_out != nil {
@@ -30932,6 +32102,9 @@ func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, 
 func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30967,6 +32140,15 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30982,7 +32164,7 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
 	ws_self := *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
@@ -31007,6 +32189,9 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 func dmrgo_shortdata_hytera_text_string(c_self *C.dmrgo_shortdata_hytera_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31028,6 +32213,9 @@ func dmrgo_shortdata_hytera_text_string(c_self *C.dmrgo_shortdata_hytera_text_t,
 func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31053,6 +32241,12 @@ func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text
 func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31063,7 +32257,7 @@ func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.siz
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_shortdata.Text(a_dst, g_enums.DDFormat(c_format), a_data)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -31081,6 +32275,9 @@ func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.siz
 func dmrgo_sms_anytone_text_append_binary(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31116,6 +32313,15 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31131,7 +32337,7 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
 	ws_self := *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
@@ -31156,6 +32362,9 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 func dmrgo_sms_anytone_text_string(c_self *C.dmrgo_sms_anytone_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31177,6 +32386,9 @@ func dmrgo_sms_anytone_text_string(c_self *C.dmrgo_sms_anytone_text_t, c_out *C.
 func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31202,6 +32414,9 @@ func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst 
 func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_t *C.dmrgo_sms_text_t, c_confirmed C.bool, c_h *C.dmrgo_sms_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31253,6 +32468,15 @@ func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t,
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31270,7 +32494,7 @@ func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1, r2 := g_sms.Decode(a_dst, p_h, a_data)
 	_ = r0
 	_ = r1
@@ -31305,11 +32529,17 @@ func dmrgo_sms_decode_anytone_text(c_data *C.uint8_t, c_data_len C.size_t, c_out
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_sms.DecodeAnyToneText(a_data)
 	_ = r0
 	if c_out != nil {
@@ -31341,11 +32571,17 @@ func dmrgo_sms_decode_ip_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_sms.DecodeIPText(a_data)
 	_ = r0
 	if c_out != nil {
@@ -31370,6 +32606,9 @@ func dmrgo_sms_decode_ip_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 func dmrgo_sms_format_string(c_self C.dmrgo_sms_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31386,6 +32625,9 @@ func dmrgo_sms_format_string(c_self C.dmrgo_sms_format_t, c_out *C.char, c_out_c
 func dmrgo_sms_ip_text_append_binary(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31421,6 +32663,15 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31436,7 +32687,7 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
 	ws_self := *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
@@ -31461,6 +32712,9 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 func dmrgo_sms_ip_text_string(c_self *C.dmrgo_sms_ip_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31482,6 +32736,9 @@ func dmrgo_sms_ip_text_string(c_self *C.dmrgo_sms_ip_text_t, c_out *C.char, c_ou
 func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31507,6 +32764,12 @@ func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t
 func dmrgo_dmrd_append_free_dmr_static(c_dst *C.uint32_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_s C.dmrgo_enums_slot_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31517,7 +32780,7 @@ func dmrgo_dmrd_append_free_dmr_static(c_dst *C.uint32_t, c_dst_cap C.size_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := g_transport_dmrd.AppendFreeDMRStatic(a_dst, a_text, g_enums.Slot(c_s))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -31532,6 +32795,9 @@ func dmrgo_dmrd_append_free_dmr_static(c_dst *C.uint32_t, c_dst_cap C.size_t, c_
 func dmrgo_dmrd_bridge_append_binary(c_self *C.dmrgo_dmrd_bridge_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31560,6 +32826,9 @@ func dmrgo_dmrd_bridge_append_binary(c_self *C.dmrgo_dmrd_bridge_t, c_dst *C.uin
 func dmrgo_dmrd_bridge_control_append_binary(c_self *C.dmrgo_dmrd_bridge_control_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31588,11 +32857,14 @@ func dmrgo_dmrd_bridge_control_append_binary(c_self *C.dmrgo_dmrd_bridge_control
 func dmrgo_dmrd_classify(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmrd_dialect_t, c_out *C.dmrgo_dmrd_command_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0 := g_transport_dmrd.Classify(a_p, g_transport_dmrd.Dialect(c_d))
 	_ = r0
 	if c_out != nil {
@@ -31608,6 +32880,9 @@ func dmrgo_dmrd_classify(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmrd_dial
 func dmrgo_dmrd_command_string(c_self C.dmrgo_dmrd_command_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31624,6 +32899,9 @@ func dmrgo_dmrd_command_string(c_self C.dmrgo_dmrd_command_t, c_out *C.char, c_o
 func dmrgo_dmrd_config_callsign(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31664,6 +32942,9 @@ func dmrgo_dmrd_config_color_code(c_self *C.dmrgo_dmrd_config_t, c_out *C.dmrgo_
 func dmrgo_dmrd_config_description(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31722,6 +33003,9 @@ func dmrgo_dmrd_config_id(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint32_t) (rc 
 func dmrgo_dmrd_config_latitude(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31741,6 +33025,9 @@ func dmrgo_dmrd_config_latitude(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t,
 func dmrgo_dmrd_config_location(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31760,6 +33047,9 @@ func dmrgo_dmrd_config_location(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t,
 func dmrgo_dmrd_config_longitude(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31779,6 +33069,9 @@ func dmrgo_dmrd_config_longitude(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t
 func dmrgo_dmrd_config_package_id(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31854,6 +33147,9 @@ func dmrgo_dmrd_config_reset(c_self *C.dmrgo_dmrd_config_t) (rc C.int) {
 func dmrgo_dmrd_config_set_callsign(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31861,7 +33157,7 @@ func dmrgo_dmrd_config_set_callsign(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetCallsign(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -31893,6 +33189,9 @@ func dmrgo_dmrd_config_set_color_code(c_self *C.dmrgo_dmrd_config_t, c_v C.dmrgo
 func dmrgo_dmrd_config_set_description(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31900,7 +33199,7 @@ func dmrgo_dmrd_config_set_description(c_self *C.dmrgo_dmrd_config_t, c_v *C.uin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetDescription(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -31946,6 +33245,9 @@ func dmrgo_dmrd_config_set_id(c_self *C.dmrgo_dmrd_config_t, c_v C.uint32_t) (rc
 func dmrgo_dmrd_config_set_latitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31953,7 +33255,7 @@ func dmrgo_dmrd_config_set_latitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetLatitude(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -31968,6 +33270,9 @@ func dmrgo_dmrd_config_set_latitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_
 func dmrgo_dmrd_config_set_location(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31975,7 +33280,7 @@ func dmrgo_dmrd_config_set_location(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetLocation(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -31990,6 +33295,9 @@ func dmrgo_dmrd_config_set_location(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_
 func dmrgo_dmrd_config_set_longitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31997,7 +33305,7 @@ func dmrgo_dmrd_config_set_longitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetLongitude(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -32012,6 +33320,9 @@ func dmrgo_dmrd_config_set_longitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8
 func dmrgo_dmrd_config_set_package_id(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32019,7 +33330,7 @@ func dmrgo_dmrd_config_set_package_id(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetPackageID(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -32085,6 +33396,9 @@ func dmrgo_dmrd_config_set_slots(c_self *C.dmrgo_dmrd_config_t, c_v C.uint8_t) (
 func dmrgo_dmrd_config_set_software_id(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32092,7 +33406,7 @@ func dmrgo_dmrd_config_set_software_id(c_self *C.dmrgo_dmrd_config_t, c_v *C.uin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetSoftwareID(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -32124,6 +33438,9 @@ func dmrgo_dmrd_config_set_tx_frequency(c_self *C.dmrgo_dmrd_config_t, c_v C.uin
 func dmrgo_dmrd_config_set_url(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32131,7 +33448,7 @@ func dmrgo_dmrd_config_set_url(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetURL(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -32167,6 +33484,9 @@ func dmrgo_dmrd_config_slots(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t) (r
 func dmrgo_dmrd_config_software_id(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32207,6 +33527,9 @@ func dmrgo_dmrd_config_tx_frequency(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint
 func dmrgo_dmrd_config_url(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32226,11 +33549,14 @@ func dmrgo_dmrd_config_url(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_ou
 func dmrgo_dmrd_config_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_config_t, c_out_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_dmrd.ConfigOf(a_p)
 	_ = r0
 	if c_out_ok != nil {
@@ -32252,6 +33578,9 @@ func dmrgo_dmrd_config_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_
 func dmrgo_dmrd_control_append_binary(c_self *C.dmrgo_dmrd_control_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d C.dmrgo_dmrd_dialect_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32280,6 +33609,9 @@ func dmrgo_dmrd_control_append_binary(c_self *C.dmrgo_dmrd_control_t, c_dst *C.u
 func dmrgo_dmrd_dmr_plus_options_append_text(c_self *C.dmrgo_dmrd_dmr_plus_options_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32305,6 +33637,9 @@ func dmrgo_dmrd_dmr_plus_options_append_text(c_self *C.dmrgo_dmrd_dmr_plus_optio
 func dmrgo_dmrd_data_append_binary(c_self *C.dmrgo_dmrd_data_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32434,6 +33769,9 @@ func dmrgo_dmrd_data_set_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_h
 func dmrgo_dmrd_data_string(c_self *C.dmrgo_dmrd_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32455,11 +33793,14 @@ func dmrgo_dmrd_data_string(c_self *C.dmrgo_dmrd_data_t, c_out *C.char, c_out_ca
 func dmrgo_dmrd_decode_bridge(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_bridge_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_dmrd.DecodeBridge(a_p)
 	_ = r0
 	if c_out != nil {
@@ -32478,11 +33819,14 @@ func dmrgo_dmrd_decode_bridge(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_d
 func dmrgo_dmrd_decode_bridge_control(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_bridge_control_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_dmrd.DecodeBridgeControl(a_p)
 	_ = r0
 	if c_out != nil {
@@ -32508,11 +33852,17 @@ func dmrgo_dmrd_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmr
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_dmrd.DecodeControl(a_p, g_transport_dmrd.Dialect(c_d))
 	_ = r0
 	if c_out != nil {
@@ -32537,11 +33887,14 @@ func dmrgo_dmrd_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmr
 func dmrgo_dmrd_decode_data(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_dmrd_data_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_dmrd.DecodeData(a_data)
 	_ = r0
 	if c_out != nil {
@@ -32560,11 +33913,14 @@ func dmrgo_dmrd_decode_data(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmr
 func dmrgo_dmrd_decode_local_position(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_dmrd_local_position_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_dmrd.DecodeLocalPosition(a_data)
 	_ = r0
 	if c_out != nil {
@@ -32583,11 +33939,14 @@ func dmrgo_dmrd_decode_local_position(c_data *C.uint8_t, c_data_len C.size_t, c_
 func dmrgo_dmrd_decode_local_talker_alias(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_dmrd_local_talker_alias_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_dmrd.DecodeLocalTalkerAlias(a_data)
 	_ = r0
 	if c_out != nil {
@@ -32606,11 +33965,14 @@ func dmrgo_dmrd_decode_local_talker_alias(c_data *C.uint8_t, c_data_len C.size_t
 func dmrgo_dmrd_decode_position(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_dmrd_position_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_dmrd.DecodePosition(a_data)
 	_ = r0
 	if c_out != nil {
@@ -32629,11 +33991,14 @@ func dmrgo_dmrd_decode_position(c_data *C.uint8_t, c_data_len C.size_t, c_out *C
 func dmrgo_dmrd_decode_talker_alias(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_dmrd_talker_alias_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_dmrd.DecodeTalkerAlias(a_data)
 	_ = r0
 	if c_out != nil {
@@ -32652,6 +34017,9 @@ func dmrgo_dmrd_decode_talker_alias(c_data *C.uint8_t, c_data_len C.size_t, c_ou
 func dmrgo_dmrd_dialect_string(c_self C.dmrgo_dmrd_dialect_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32668,6 +34036,9 @@ func dmrgo_dmrd_dialect_string(c_self C.dmrgo_dmrd_dialect_t, c_out *C.char, c_o
 func dmrgo_dmrd_frame_type_string(c_self C.dmrgo_dmrd_frame_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32684,6 +34055,9 @@ func dmrgo_dmrd_frame_type_string(c_self C.dmrgo_dmrd_frame_type_t, c_out *C.cha
 func dmrgo_dmrd_hbrp_config_callsign(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32724,6 +34098,9 @@ func dmrgo_dmrd_hbrp_config_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out
 func dmrgo_dmrd_hbrp_config_description(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32785,6 +34162,9 @@ func dmrgo_dmrd_hbrp_config_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint
 func dmrgo_dmrd_hbrp_config_latitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32804,6 +34184,9 @@ func dmrgo_dmrd_hbrp_config_latitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *
 func dmrgo_dmrd_hbrp_config_location(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32823,6 +34206,9 @@ func dmrgo_dmrd_hbrp_config_location(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *
 func dmrgo_dmrd_hbrp_config_longitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32842,6 +34228,9 @@ func dmrgo_dmrd_hbrp_config_longitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out 
 func dmrgo_dmrd_hbrp_config_package_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32917,6 +34306,9 @@ func dmrgo_dmrd_hbrp_config_reset(c_self *C.dmrgo_dmrd_hbrp_config_t) (rc C.int)
 func dmrgo_dmrd_hbrp_config_set_callsign(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32924,7 +34316,7 @@ func dmrgo_dmrd_hbrp_config_set_callsign(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetCallsign(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -32956,6 +34348,9 @@ func dmrgo_dmrd_hbrp_config_set_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c
 func dmrgo_dmrd_hbrp_config_set_description(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32963,7 +34358,7 @@ func dmrgo_dmrd_hbrp_config_set_description(c_self *C.dmrgo_dmrd_hbrp_config_t, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetDescription(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33009,6 +34404,9 @@ func dmrgo_dmrd_hbrp_config_set_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v C.uin
 func dmrgo_dmrd_hbrp_config_set_latitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33016,7 +34414,7 @@ func dmrgo_dmrd_hbrp_config_set_latitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetLatitude(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33031,6 +34429,9 @@ func dmrgo_dmrd_hbrp_config_set_latitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v
 func dmrgo_dmrd_hbrp_config_set_location(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33038,7 +34439,7 @@ func dmrgo_dmrd_hbrp_config_set_location(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetLocation(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33053,6 +34454,9 @@ func dmrgo_dmrd_hbrp_config_set_location(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v
 func dmrgo_dmrd_hbrp_config_set_longitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33060,7 +34464,7 @@ func dmrgo_dmrd_hbrp_config_set_longitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetLongitude(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33075,6 +34479,9 @@ func dmrgo_dmrd_hbrp_config_set_longitude(c_self *C.dmrgo_dmrd_hbrp_config_t, c_
 func dmrgo_dmrd_hbrp_config_set_package_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33082,7 +34489,7 @@ func dmrgo_dmrd_hbrp_config_set_package_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetPackageID(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33131,6 +34538,9 @@ func dmrgo_dmrd_hbrp_config_set_rx_frequency(c_self *C.dmrgo_dmrd_hbrp_config_t,
 func dmrgo_dmrd_hbrp_config_set_software_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33138,7 +34548,7 @@ func dmrgo_dmrd_hbrp_config_set_software_id(c_self *C.dmrgo_dmrd_hbrp_config_t, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetSoftwareID(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33170,6 +34580,9 @@ func dmrgo_dmrd_hbrp_config_set_tx_frequency(c_self *C.dmrgo_dmrd_hbrp_config_t,
 func dmrgo_dmrd_hbrp_config_set_url(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33177,7 +34590,7 @@ func dmrgo_dmrd_hbrp_config_set_url(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.u
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_v []byte
-	a_v = unsafe.Slice((*byte)(unsafe.Pointer(c_v)), int(c_v_len))
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
 	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetURL(a_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33192,6 +34605,9 @@ func dmrgo_dmrd_hbrp_config_set_url(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v *C.u
 func dmrgo_dmrd_hbrp_config_software_id(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33232,6 +34648,9 @@ func dmrgo_dmrd_hbrp_config_tx_frequency(c_self *C.dmrgo_dmrd_hbrp_config_t, c_o
 func dmrgo_dmrd_hbrp_config_url(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33251,11 +34670,14 @@ func dmrgo_dmrd_hbrp_config_url(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uin
 func dmrgo_dmrd_hbrp_config_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_hbrp_config_t, c_out_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_dmrd.HBRPConfigOf(a_p)
 	_ = r0
 	if c_out_ok != nil {
@@ -33277,6 +34699,9 @@ func dmrgo_dmrd_hbrp_config_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_
 func dmrgo_dmrd_local_position_append_binary(c_self *C.dmrgo_dmrd_local_position_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33359,6 +34784,9 @@ func dmrgo_dmrd_local_position_lc_into(c_self *C.dmrgo_dmrd_local_position_t, c_
 func dmrgo_dmrd_local_position_string(c_self *C.dmrgo_dmrd_local_position_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33380,6 +34808,9 @@ func dmrgo_dmrd_local_position_string(c_self *C.dmrgo_dmrd_local_position_t, c_o
 func dmrgo_dmrd_local_talker_alias_append_binary(c_self *C.dmrgo_dmrd_local_talker_alias_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33462,6 +34893,9 @@ func dmrgo_dmrd_local_talker_alias_lc_into(c_self *C.dmrgo_dmrd_local_talker_ali
 func dmrgo_dmrd_local_talker_alias_string(c_self *C.dmrgo_dmrd_local_talker_alias_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33483,11 +34917,14 @@ func dmrgo_dmrd_local_talker_alias_string(c_self *C.dmrgo_dmrd_local_talker_alia
 func dmrgo_dmrd_parse_dmr_plus_options(c_text *C.uint8_t, c_text_len C.size_t, c_out *C.dmrgo_dmrd_dmr_plus_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_text == nil && c_text_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0, r1 := g_transport_dmrd.ParseDMRPlusOptions(a_text)
 	_ = r0
 	if c_out != nil {
@@ -33513,11 +34950,17 @@ func dmrgo_dmrd_parse_free_dmr_options(c_text *C.uint8_t, c_text_len C.size_t, c
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_text == nil && c_text_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0, r1 := g_transport_dmrd.ParseFreeDMROptions(a_text)
 	_ = r0
 	if c_out != nil {
@@ -33542,6 +34985,9 @@ func dmrgo_dmrd_parse_free_dmr_options(c_text *C.uint8_t, c_text_len C.size_t, c
 func dmrgo_dmrd_position_append_binary(c_self *C.dmrgo_dmrd_position_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33624,6 +35070,9 @@ func dmrgo_dmrd_position_lc_into(c_self *C.dmrgo_dmrd_position_t, c_dst *C.dmrgo
 func dmrgo_dmrd_position_string(c_self *C.dmrgo_dmrd_position_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33645,6 +35094,9 @@ func dmrgo_dmrd_position_string(c_self *C.dmrgo_dmrd_position_t, c_out *C.char, 
 func dmrgo_dmrd_talker_alias_append_binary(c_self *C.dmrgo_dmrd_talker_alias_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33727,6 +35179,9 @@ func dmrgo_dmrd_talker_alias_lc_into(c_self *C.dmrgo_dmrd_talker_alias_t, c_dst 
 func dmrgo_dmrd_talker_alias_string(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33773,6 +35228,9 @@ func dmrgo_dmrd_auth_bridge_key_sign_need(c_self *C.dmrgo_dmrd_auth_bridge_key_t
 func dmrgo_dmrd_auth_bridge_key_sign(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_auth_BridgeKey(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -33813,7 +35271,7 @@ func dmrgo_dmrd_auth_bridge_key_verify_need(c_self *C.dmrgo_dmrd_auth_bridge_key
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	_ = h
 	_ = a_p
 	if c_items != nil {
@@ -33829,12 +35287,18 @@ func dmrgo_dmrd_auth_bridge_key_verify_need(c_self *C.dmrgo_dmrd_auth_bridge_key
 func dmrgo_dmrd_auth_bridge_key_verify(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_body *C.uint8_t, c_body_cap C.size_t, c_body_len *C.size_t, c_body_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_body), c_body_cap, unsafe.Sizeof(*c_body)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_auth_BridgeKey(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	if c_body_len == nil || (c_body == nil && c_body_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33867,11 +35331,14 @@ func dmrgo_dmrd_auth_bridge_key_verify(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c
 func dmrgo_dmrd_auth_new_bridge_key(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_dmrd_auth_bridge_key_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_key), c_key_len, unsafe.Sizeof(*c_key)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_key == nil && c_key_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_key []byte
-	a_key = unsafe.Slice((*byte)(unsafe.Pointer(c_key)), int(c_key_len))
+	a_key = cSlice[byte](unsafe.Pointer(c_key), c_key_len)
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33891,11 +35358,14 @@ func dmrgo_dmrd_auth_new_bridge_key(c_key *C.uint8_t, c_key_len C.size_t, c_out 
 func dmrgo_dmrd_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_password), c_password_len, unsafe.Sizeof(*c_password)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_password == nil && c_password_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_password []byte
-	a_password = unsafe.Slice((*byte)(unsafe.Pointer(c_password)), int(c_password_len))
+	a_password = cSlice[byte](unsafe.Pointer(c_password), c_password_len)
 	r0, r1 := g_transport_dmrd_auth.Token(g_transport_dmrd.Dialect(c_d), uint32(c_salt), a_password)
 	_ = r0
 	if c_out != nil {
@@ -33914,16 +35384,22 @@ func dmrgo_dmrd_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_pass
 func dmrgo_dmrd_auth_verify_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_token *C.uint8_t, c_token_len C.size_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_password), c_password_len, unsafe.Sizeof(*c_password)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_token), c_token_len, unsafe.Sizeof(*c_token)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_password == nil && c_password_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_password []byte
-	a_password = unsafe.Slice((*byte)(unsafe.Pointer(c_password)), int(c_password_len))
+	a_password = cSlice[byte](unsafe.Pointer(c_password), c_password_len)
 	if c_token == nil && c_token_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_token []byte
-	a_token = unsafe.Slice((*byte)(unsafe.Pointer(c_token)), int(c_token_len))
+	a_token = cSlice[byte](unsafe.Pointer(c_token), c_token_len)
 	r0 := g_transport_dmrd_auth.VerifyToken(g_transport_dmrd.Dialect(c_d), uint32(c_salt), a_password, a_token)
 	_ = r0
 	if c_out != nil {
@@ -33974,7 +35450,7 @@ func dmrgo_dmrd_session_bridge_packet_need(c_self *C.dmrgo_dmrd_session_bridge_t
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	_ = h
 	_ = a_p
 	if c_items != nil {
@@ -33997,12 +35473,21 @@ func dmrgo_dmrd_session_bridge_packet(c_self *C.dmrgo_dmrd_session_bridge_t, c_n
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Bridge(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -34068,12 +35553,15 @@ func dmrgo_dmrd_session_bridge_packet(c_self *C.dmrgo_dmrd_session_bridge_t, c_n
 func dmrgo_dmrd_session_bridge_sign(c_self *C.dmrgo_dmrd_session_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Bridge(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0 := h.v.Sign(a_p)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -34125,6 +35613,12 @@ func dmrgo_dmrd_session_bridge_tick(c_self *C.dmrgo_dmrd_session_bridge_t, c_now
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Bridge(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -34206,7 +35700,7 @@ func dmrgo_dmrd_session_master_admit_need(c_self *C.dmrgo_dmrd_session_master_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_password []byte
-	a_password = unsafe.Slice((*byte)(unsafe.Pointer(c_password)), int(c_password_len))
+	a_password = cSlice[byte](unsafe.Pointer(c_password), c_password_len)
 	_ = h
 	_ = a_password
 	if c_items != nil {
@@ -34229,12 +35723,21 @@ func dmrgo_dmrd_session_master_admit(c_self *C.dmrgo_dmrd_session_master_t, c_sa
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_password), c_password_len, unsafe.Sizeof(*c_password)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_password == nil && c_password_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_password []byte
-	a_password = unsafe.Slice((*byte)(unsafe.Pointer(c_password)), int(c_password_len))
+	a_password = cSlice[byte](unsafe.Pointer(c_password), c_password_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -34321,6 +35824,12 @@ func dmrgo_dmrd_session_master_close(c_self *C.dmrgo_dmrd_session_master_t, c_ds
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -34427,7 +35936,7 @@ func dmrgo_dmrd_session_master_packet_need(c_self *C.dmrgo_dmrd_session_master_t
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	_ = h
 	_ = a_b
 	if c_items != nil {
@@ -34450,12 +35959,21 @@ func dmrgo_dmrd_session_master_packet(c_self *C.dmrgo_dmrd_session_master_t, c_n
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_b == nil && c_b_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -34542,6 +36060,12 @@ func dmrgo_dmrd_session_master_refuse(c_self *C.dmrgo_dmrd_session_master_t, c_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -34641,6 +36165,12 @@ func dmrgo_dmrd_session_master_resume(c_self *C.dmrgo_dmrd_session_master_t, c_n
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -34744,6 +36274,12 @@ func dmrgo_dmrd_session_master_tick(c_self *C.dmrgo_dmrd_session_master_t, c_now
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -34888,6 +36424,9 @@ func dmrgo_dmrd_session_new_peer(c_cfg *C.dmrgo_dmrd_session_peer_config_t, c_ou
 func dmrgo_dmrd_session_output_kind_string(c_self C.dmrgo_dmrd_session_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -34936,6 +36475,12 @@ func dmrgo_dmrd_session_peer_close(c_self *C.dmrgo_dmrd_session_peer_t, c_dst *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -35026,7 +36571,7 @@ func dmrgo_dmrd_session_peer_packet_need(c_self *C.dmrgo_dmrd_session_peer_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	_ = h
 	_ = a_b
 	if c_items != nil {
@@ -35049,12 +36594,21 @@ func dmrgo_dmrd_session_peer_packet(c_self *C.dmrgo_dmrd_session_peer_t, c_now C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Peer(c_self)
 	if c_b == nil && c_b_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35169,6 +36723,12 @@ func dmrgo_dmrd_session_peer_tick(c_self *C.dmrgo_dmrd_session_peer_t, c_now C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_dmrd_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -35235,6 +36795,9 @@ func dmrgo_dmrd_session_peer_tick(c_self *C.dmrgo_dmrd_session_peer_t, c_now C.d
 func dmrgo_dmrd_session_reason_string(c_self C.dmrgo_dmrd_session_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35251,6 +36814,9 @@ func dmrgo_dmrd_session_reason_string(c_self C.dmrgo_dmrd_session_reason_t, c_ou
 func dmrgo_dmrd_session_state_string(c_self C.dmrgo_dmrd_session_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35267,11 +36833,14 @@ func dmrgo_dmrd_session_state_string(c_self C.dmrgo_dmrd_session_state_t, c_out 
 func dmrgo_hytera_decode_frame(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_hytera_frame_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_hytera.DecodeFrame(a_p)
 	_ = r0
 	if c_out != nil {
@@ -35290,11 +36859,14 @@ func dmrgo_hytera_decode_frame(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_
 func dmrgo_hytera_decode_heartbeat(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_hytera_heartbeat_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_hytera.DecodeHeartbeat(a_p)
 	_ = r0
 	if c_out != nil {
@@ -35320,11 +36892,17 @@ func dmrgo_hytera_decode_p2p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_hy
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_hytera.DecodeP2P(a_p)
 	_ = r0
 	if c_out != nil {
@@ -35349,6 +36927,9 @@ func dmrgo_hytera_decode_p2p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_hy
 func dmrgo_hytera_frame_append_binary(c_self *C.dmrgo_hytera_frame_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35497,6 +37078,9 @@ func dmrgo_hytera_frame_set_hint(c_self *C.dmrgo_hytera_frame_t, c_h *C.dmrgo_la
 func dmrgo_hytera_heartbeat_append_binary(c_self *C.dmrgo_hytera_heartbeat_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35525,6 +37109,9 @@ func dmrgo_hytera_heartbeat_append_binary(c_self *C.dmrgo_hytera_heartbeat_t, c_
 func dmrgo_hytera_p2p_append_binary(c_self *C.dmrgo_hytera_p2p_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35601,6 +37188,9 @@ func dmrgo_hytera_p2p_service(c_self *C.dmrgo_hytera_p2p_t, c_s *C.dmrgo_hytera_
 func dmrgo_hytera_service_string(c_self C.dmrgo_hytera_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35617,6 +37207,9 @@ func dmrgo_hytera_service_string(c_self C.dmrgo_hytera_service_t, c_out *C.char,
 func dmrgo_hytera_slot_type_string(c_self C.dmrgo_hytera_slot_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35633,6 +37226,12 @@ func dmrgo_hytera_slot_type_string(c_self C.dmrgo_hytera_slot_type_t, c_out *C.c
 func dmrgo_ipsc_append_peer_list_reply(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_master C.uint32_t, c_entries *C.dmrgo_ipsc_peer_entry_t, c_entries_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_entries), c_entries_len, unsafe.Sizeof(*c_entries)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35643,7 +37242,7 @@ func dmrgo_ipsc_append_peer_list_reply(c_dst *C.uint8_t, c_dst_cap C.size_t, c_d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_entries []g_transport_ipsc.PeerEntry
-	a_entries = unsafe.Slice((*g_transport_ipsc.PeerEntry)(unsafe.Pointer(c_entries)), int(c_entries_len))
+	a_entries = cSlice[g_transport_ipsc.PeerEntry](unsafe.Pointer(c_entries), c_entries_len)
 	r0 := g_transport_ipsc.AppendPeerListReply(a_dst, uint32(c_master), a_entries)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -35748,6 +37347,9 @@ func dmrgo_ipsc_call_info_slot(c_self C.dmrgo_ipsc_call_info_t, c_out *C.dmrgo_e
 func dmrgo_ipsc_control_append_binary(c_self *C.dmrgo_ipsc_control_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35776,11 +37378,14 @@ func dmrgo_ipsc_control_append_binary(c_self *C.dmrgo_ipsc_control_t, c_dst *C.u
 func dmrgo_ipsc_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_control_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_ipsc.DecodeControl(a_p)
 	_ = r0
 	if c_out != nil {
@@ -35806,11 +37411,17 @@ func dmrgo_ipsc_decode_raw(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_ipsc.DecodeRaw(a_p)
 	_ = r0
 	if c_out != nil {
@@ -35835,11 +37446,14 @@ func dmrgo_ipsc_decode_raw(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc
 func dmrgo_ipsc_decode_user(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_user_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_ipsc.DecodeUser(a_p)
 	_ = r0
 	if c_out != nil {
@@ -35965,6 +37579,9 @@ func dmrgo_ipsc_mode_ts2(c_self C.dmrgo_ipsc_mode_t, c_out *C.uint8_t) (rc C.int
 func dmrgo_ipsc_opcode_string(c_self C.dmrgo_ipsc_opcode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36072,11 +37689,14 @@ func dmrgo_ipsc_peer_list_len(c_self *C.dmrgo_ipsc_peer_list_t, c_out *C.int64_t
 func dmrgo_ipsc_peer_list_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_peer_list_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_ipsc.PeerListOf(a_p)
 	_ = r0
 	if c_out != nil {
@@ -36095,6 +37715,9 @@ func dmrgo_ipsc_peer_list_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ip
 func dmrgo_ipsc_raw_append_binary(c_self *C.dmrgo_ipsc_raw_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36178,6 +37801,9 @@ func dmrgo_ipsc_stream_skip(c_self *C.dmrgo_ipsc_stream_t, c_n C.uint16_t) (rc C
 func dmrgo_ipsc_user_append_binary(c_self *C.dmrgo_ipsc_user_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36398,6 +38024,9 @@ func dmrgo_ipsc_auth_key_sign_need(c_self *C.dmrgo_ipsc_auth_key_t, c_items *C.s
 func dmrgo_ipsc_auth_key_sign(c_self *C.dmrgo_ipsc_auth_key_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_auth_Key(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36438,7 +38067,7 @@ func dmrgo_ipsc_auth_key_verify_need(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	_ = h
 	_ = a_p
 	if c_items != nil {
@@ -36454,12 +38083,18 @@ func dmrgo_ipsc_auth_key_verify_need(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uin
 func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_body *C.uint8_t, c_body_cap C.size_t, c_body_len *C.size_t, c_body_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_body), c_body_cap, unsafe.Sizeof(*c_body)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_auth_Key(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	if c_body_len == nil || (c_body == nil && c_body_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36514,10 +38149,13 @@ func dmrgo_ipsc_auth_new_key(c_k *C.uint8_t, c_out **C.dmrgo_ipsc_auth_key_t) (r
 func dmrgo_ipsc_auth_parse_key(c_s *C.char, c_s_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_s), c_s_len, unsafe.Sizeof(*c_s)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_s == nil && c_s_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_transport_ipsc_auth.ParseKey(C.GoStringN(c_s, C.int(c_s_len)))
+	r0, r1 := g_transport_ipsc_auth.ParseKey(cStr(c_s, c_s_len))
 	_ = r0
 	if c_out != nil {
 		*(*[20]byte)(unsafe.Pointer(&(*(*[20]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -36573,6 +38211,12 @@ func dmrgo_ipsc_session_master_adopt(c_self *C.dmrgo_ipsc_session_master_t, c_no
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36675,6 +38319,12 @@ func dmrgo_ipsc_session_master_adopt_with_key(c_self *C.dmrgo_ipsc_session_maste
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36771,6 +38421,12 @@ func dmrgo_ipsc_session_master_close(c_self *C.dmrgo_ipsc_session_master_t, c_ds
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36880,7 +38536,7 @@ func dmrgo_ipsc_session_master_packet_need(c_self *C.dmrgo_ipsc_session_master_t
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	_ = h
 	_ = a_p
 	if c_items != nil {
@@ -36903,6 +38559,15 @@ func dmrgo_ipsc_session_master_packet(c_self *C.dmrgo_ipsc_session_master_t, c_n
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36911,7 +38576,7 @@ func dmrgo_ipsc_session_master_packet(c_self *C.dmrgo_ipsc_session_master_t, c_n
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36987,7 +38652,7 @@ func dmrgo_ipsc_session_master_packet_with_key_need(c_self *C.dmrgo_ipsc_session
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	_ = h
 	_ = a_p
 	if c_items != nil {
@@ -37010,6 +38675,15 @@ func dmrgo_ipsc_session_master_packet_with_key(c_self *C.dmrgo_ipsc_session_mast
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37021,7 +38695,7 @@ func dmrgo_ipsc_session_master_packet_with_key(c_self *C.dmrgo_ipsc_session_mast
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37145,6 +38819,9 @@ func dmrgo_ipsc_session_master_sign_need(c_self *C.dmrgo_ipsc_session_master_t, 
 func dmrgo_ipsc_session_master_sign(c_self *C.dmrgo_ipsc_session_master_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37192,6 +38869,9 @@ func dmrgo_ipsc_session_master_sign_for_need(c_self *C.dmrgo_ipsc_session_master
 func dmrgo_ipsc_session_master_sign_for(c_self *C.dmrgo_ipsc_session_master_t, c_id C.uint32_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37262,6 +38942,12 @@ func dmrgo_ipsc_session_master_tick(c_self *C.dmrgo_ipsc_session_master_t, c_now
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37384,6 +39070,9 @@ func dmrgo_ipsc_session_new_peer(c_cfg *C.dmrgo_ipsc_session_peer_config_t, c_ou
 func dmrgo_ipsc_session_output_kind_string(c_self C.dmrgo_ipsc_session_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37432,6 +39121,12 @@ func dmrgo_ipsc_session_peer_close(c_self *C.dmrgo_ipsc_session_peer_t, c_dst *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37561,7 +39256,7 @@ func dmrgo_ipsc_session_peer_packet_need(c_self *C.dmrgo_ipsc_session_peer_t, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	_ = h
 	_ = a_b
 	if c_items != nil {
@@ -37584,6 +39279,15 @@ func dmrgo_ipsc_session_peer_packet(c_self *C.dmrgo_ipsc_session_peer_t, c_from 
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37592,7 +39296,7 @@ func dmrgo_ipsc_session_peer_packet(c_self *C.dmrgo_ipsc_session_peer_t, c_from 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37716,6 +39420,9 @@ func dmrgo_ipsc_session_peer_sign_need(c_self *C.dmrgo_ipsc_session_peer_t, c_it
 func dmrgo_ipsc_session_peer_sign(c_self *C.dmrgo_ipsc_session_peer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37786,6 +39493,12 @@ func dmrgo_ipsc_session_peer_tick(c_self *C.dmrgo_ipsc_session_peer_t, c_now C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37852,6 +39565,9 @@ func dmrgo_ipsc_session_peer_tick(c_self *C.dmrgo_ipsc_session_peer_t, c_now C.d
 func dmrgo_ipsc_session_reason_string(c_self C.dmrgo_ipsc_session_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37868,6 +39584,9 @@ func dmrgo_ipsc_session_reason_string(c_self C.dmrgo_ipsc_session_reason_t, c_ou
 func dmrgo_ipsc_session_state_string(c_self C.dmrgo_ipsc_session_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37899,6 +39618,9 @@ func dmrgo_ipsc_session_version_default(c_out *C.uint8_t) (rc C.int) {
 func dmrgo_mmdvm_ack_append_binary(c_self *C.dmrgo_mmdvm_ack_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37927,6 +39649,9 @@ func dmrgo_mmdvm_ack_append_binary(c_self *C.dmrgo_mmdvm_ack_t, c_dst *C.uint8_t
 func dmrgo_mmdvm_ack_string(c_self *C.dmrgo_mmdvm_ack_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37948,6 +39673,12 @@ func dmrgo_mmdvm_ack_string(c_self *C.dmrgo_mmdvm_ack_t, c_out *C.char, c_out_ca
 func dmrgo_mmdvm_append_frame(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_c C.dmrgo_mmdvm_command_t, c_payload *C.uint8_t, c_payload_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37958,7 +39689,7 @@ func dmrgo_mmdvm_append_frame(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_payload []byte
-	a_payload = unsafe.Slice((*byte)(unsafe.Pointer(c_payload)), int(c_payload_len))
+	a_payload = cSlice[byte](unsafe.Pointer(c_payload), c_payload_len)
 	r0, r1 := g_transport_mmdvm.AppendFrame(a_dst, g_transport_mmdvm.Command(c_c), a_payload)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -37991,6 +39722,9 @@ func dmrgo_mmdvm_capabilities_has(c_self C.dmrgo_mmdvm_capabilities_t, c_m C.dmr
 func dmrgo_mmdvm_command_string(c_self C.dmrgo_mmdvm_command_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38007,6 +39741,9 @@ func dmrgo_mmdvm_command_string(c_self C.dmrgo_mmdvm_command_t, c_out *C.char, c
 func dmrgo_mmdvm_config_v1_append_binary(c_self *C.dmrgo_mmdvm_config_v1_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38035,6 +39772,9 @@ func dmrgo_mmdvm_config_v1_append_binary(c_self *C.dmrgo_mmdvm_config_v1_t, c_ds
 func dmrgo_mmdvm_config_v1_string(c_self *C.dmrgo_mmdvm_config_v1_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38056,6 +39796,9 @@ func dmrgo_mmdvm_config_v1_string(c_self *C.dmrgo_mmdvm_config_v1_t, c_out *C.ch
 func dmrgo_mmdvm_config_v2_append_binary(c_self *C.dmrgo_mmdvm_config_v2_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38084,6 +39827,9 @@ func dmrgo_mmdvm_config_v2_append_binary(c_self *C.dmrgo_mmdvm_config_v2_t, c_ds
 func dmrgo_mmdvm_config_v2_string(c_self *C.dmrgo_mmdvm_config_v2_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38180,6 +39926,9 @@ func dmrgo_mmdvm_control_voice_sync(c_self C.dmrgo_mmdvm_control_t, c_out *C.boo
 func dmrgo_mmdvm_dmr_abort_append_binary(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38208,6 +39957,9 @@ func dmrgo_mmdvm_dmr_abort_append_binary(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_ds
 func dmrgo_mmdvm_dmr_abort_string(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38229,6 +39981,9 @@ func dmrgo_mmdvm_dmr_abort_string(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_out *C.ch
 func dmrgo_mmdvm_dmr_aloha_append_binary(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38257,6 +40012,9 @@ func dmrgo_mmdvm_dmr_aloha_append_binary(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_ds
 func dmrgo_mmdvm_dmr_aloha_string(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38278,6 +40036,9 @@ func dmrgo_mmdvm_dmr_aloha_string(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_out *C.ch
 func dmrgo_mmdvm_dmr_data_append_binary(c_self *C.dmrgo_mmdvm_dmr_data_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38375,6 +40136,9 @@ func dmrgo_mmdvm_dmr_data_set_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_h *C.dmrg
 func dmrgo_mmdvm_dmr_short_lc_append_binary(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38451,6 +40215,9 @@ func dmrgo_mmdvm_dmr_short_lc_short_lc_into(c_self *C.dmrgo_mmdvm_dmr_short_lc_t
 func dmrgo_mmdvm_dmr_short_lc_string(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38472,6 +40239,9 @@ func dmrgo_mmdvm_dmr_short_lc_string(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out
 func dmrgo_mmdvm_dmr_start_append_binary(c_self *C.dmrgo_mmdvm_dmr_start_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38500,6 +40270,9 @@ func dmrgo_mmdvm_dmr_start_append_binary(c_self *C.dmrgo_mmdvm_dmr_start_t, c_ds
 func dmrgo_mmdvm_dmr_start_string(c_self *C.dmrgo_mmdvm_dmr_start_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38521,6 +40294,9 @@ func dmrgo_mmdvm_dmr_start_string(c_self *C.dmrgo_mmdvm_dmr_start_t, c_out *C.ch
 func dmrgo_mmdvm_debug_append_binary(c_self *C.dmrgo_mmdvm_debug_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38569,11 +40345,14 @@ func dmrgo_mmdvm_debug_count(c_self *C.dmrgo_mmdvm_debug_t, c_out *C.int64_t) (r
 func dmrgo_mmdvm_decode_ack(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_ack_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeAck(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38592,11 +40371,14 @@ func dmrgo_mmdvm_decode_ack(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmr
 func dmrgo_mmdvm_decode_config_v1(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_config_v1_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeConfigV1(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38615,11 +40397,14 @@ func dmrgo_mmdvm_decode_config_v1(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_mmdvm_decode_config_v2(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_config_v2_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeConfigV2(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38638,11 +40423,14 @@ func dmrgo_mmdvm_decode_config_v2(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_mmdvm_decode_dmr_abort(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_abort_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeDMRAbort(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38661,11 +40449,14 @@ func dmrgo_mmdvm_decode_dmr_abort(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_mmdvm_decode_dmr_aloha(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_aloha_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeDMRAloha(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38707,11 +40498,14 @@ func dmrgo_mmdvm_decode_dmr_data(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdv
 func dmrgo_mmdvm_decode_dmr_short_lc(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_short_lc_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeDMRShortLC(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38730,11 +40524,14 @@ func dmrgo_mmdvm_decode_dmr_short_lc(c_data *C.uint8_t, c_data_len C.size_t, c_o
 func dmrgo_mmdvm_decode_dmr_start(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_start_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeDMRStart(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38760,6 +40557,9 @@ func dmrgo_mmdvm_decode_debug(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdvm_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_f == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38789,11 +40589,14 @@ func dmrgo_mmdvm_decode_debug(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdvm_d
 func dmrgo_mmdvm_decode_nak(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_nak_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeNak(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38812,11 +40615,14 @@ func dmrgo_mmdvm_decode_nak(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmr
 func dmrgo_mmdvm_decode_set_freq(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_set_freq_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeSetFreq(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38835,11 +40641,14 @@ func dmrgo_mmdvm_decode_set_freq(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_mmdvm_decode_set_mode(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_set_mode_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeSetMode(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38858,11 +40667,14 @@ func dmrgo_mmdvm_decode_set_mode(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_mmdvm_decode_status_v1(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_status_v1_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeStatusV1(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38881,11 +40693,14 @@ func dmrgo_mmdvm_decode_status_v1(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_mmdvm_decode_status_v2(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_status_v2_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_transport_mmdvm.DecodeStatusV2(a_data)
 	_ = r0
 	if c_out != nil {
@@ -38911,11 +40726,17 @@ func dmrgo_mmdvm_decode_version(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := g_transport_mmdvm.DecodeVersion(a_p)
 	_ = r0
 	if c_out != nil {
@@ -38940,6 +40761,9 @@ func dmrgo_mmdvm_decode_version(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo
 func dmrgo_mmdvm_mode_string(c_self C.dmrgo_mmdvm_mode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38956,6 +40780,9 @@ func dmrgo_mmdvm_mode_string(c_self C.dmrgo_mmdvm_mode_t, c_out *C.char, c_out_c
 func dmrgo_mmdvm_nak_append_binary(c_self *C.dmrgo_mmdvm_nak_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38984,6 +40811,9 @@ func dmrgo_mmdvm_nak_append_binary(c_self *C.dmrgo_mmdvm_nak_t, c_dst *C.uint8_t
 func dmrgo_mmdvm_nak_string(c_self *C.dmrgo_mmdvm_nak_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39037,11 +40867,17 @@ func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1, r2 := g_transport_mmdvm.Next(a_p)
 	_ = r0
 	_ = r1
@@ -39071,6 +40907,9 @@ func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame
 func dmrgo_mmdvm_set_freq_append_binary(c_self *C.dmrgo_mmdvm_set_freq_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39099,6 +40938,9 @@ func dmrgo_mmdvm_set_freq_append_binary(c_self *C.dmrgo_mmdvm_set_freq_t, c_dst 
 func dmrgo_mmdvm_set_freq_string(c_self *C.dmrgo_mmdvm_set_freq_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39120,6 +40962,9 @@ func dmrgo_mmdvm_set_freq_string(c_self *C.dmrgo_mmdvm_set_freq_t, c_out *C.char
 func dmrgo_mmdvm_set_mode_append_binary(c_self *C.dmrgo_mmdvm_set_mode_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39148,6 +40993,9 @@ func dmrgo_mmdvm_set_mode_append_binary(c_self *C.dmrgo_mmdvm_set_mode_t, c_dst 
 func dmrgo_mmdvm_set_mode_string(c_self *C.dmrgo_mmdvm_set_mode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39169,6 +41017,9 @@ func dmrgo_mmdvm_set_mode_string(c_self *C.dmrgo_mmdvm_set_mode_t, c_out *C.char
 func dmrgo_mmdvm_status_v1_append_binary(c_self *C.dmrgo_mmdvm_status_v1_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39197,6 +41048,9 @@ func dmrgo_mmdvm_status_v1_append_binary(c_self *C.dmrgo_mmdvm_status_v1_t, c_ds
 func dmrgo_mmdvm_status_v1_string(c_self *C.dmrgo_mmdvm_status_v1_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39218,6 +41072,9 @@ func dmrgo_mmdvm_status_v1_string(c_self *C.dmrgo_mmdvm_status_v1_t, c_out *C.ch
 func dmrgo_mmdvm_status_v2_append_binary(c_self *C.dmrgo_mmdvm_status_v2_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39246,6 +41103,9 @@ func dmrgo_mmdvm_status_v2_append_binary(c_self *C.dmrgo_mmdvm_status_v2_t, c_ds
 func dmrgo_mmdvm_status_v2_string(c_self *C.dmrgo_mmdvm_status_v2_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39267,6 +41127,9 @@ func dmrgo_mmdvm_status_v2_string(c_self *C.dmrgo_mmdvm_status_v2_t, c_out *C.ch
 func dmrgo_mmdvm_version_append_binary(c_self *C.dmrgo_mmdvm_version_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39338,6 +41201,9 @@ func dmrgo_trunk_appended_addresses(c_self *C.dmrgo_trunk_appended_t, c_out *C.d
 func dmrgo_trunk_appended_binary(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39370,6 +41236,9 @@ func dmrgo_trunk_appended_binary(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint
 func dmrgo_trunk_appended_digits(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39425,6 +41294,9 @@ func dmrgo_trunk_appended_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8_t, 
 func dmrgo_trunk_appended_lip(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39526,6 +41398,9 @@ func dmrgo_trunk_appended_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_out *C.
 func dmrgo_trunk_appended_set_addresses(c_self *C.dmrgo_trunk_appended_t, c_one_key C.bool, c_list *C.uint32_t, c_list_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_list), c_list_len, unsafe.Sizeof(*c_list)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39535,7 +41410,7 @@ func dmrgo_trunk_appended_set_addresses(c_self *C.dmrgo_trunk_appended_t, c_one_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_list []uint32
-	a_list = unsafe.Slice((*uint32)(unsafe.Pointer(c_list)), int(c_list_len))
+	a_list = cSlice[uint32](unsafe.Pointer(c_list), c_list_len)
 	r0 := x.SetAddresses(bool(c_one_key), a_list)
 	ws_self := *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
@@ -39553,6 +41428,9 @@ func dmrgo_trunk_appended_set_addresses(c_self *C.dmrgo_trunk_appended_t, c_one_
 func dmrgo_trunk_appended_set_binary(c_self *C.dmrgo_trunk_appended_t, c_b *C.uint8_t, c_b_len C.size_t, c_n C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39562,7 +41440,7 @@ func dmrgo_trunk_appended_set_binary(c_self *C.dmrgo_trunk_appended_t, c_b *C.ui
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	r0 := x.SetBinary(a_b, int(c_n))
 	ws_self := *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
@@ -39580,6 +41458,9 @@ func dmrgo_trunk_appended_set_binary(c_self *C.dmrgo_trunk_appended_t, c_b *C.ui
 func dmrgo_trunk_appended_set_digits(c_self *C.dmrgo_trunk_appended_t, c_digits *C.uint8_t, c_digits_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_digits), c_digits_len, unsafe.Sizeof(*c_digits)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39589,7 +41470,7 @@ func dmrgo_trunk_appended_set_digits(c_self *C.dmrgo_trunk_appended_t, c_digits 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_digits []byte
-	a_digits = unsafe.Slice((*byte)(unsafe.Pointer(c_digits)), int(c_digits_len))
+	a_digits = cSlice[byte](unsafe.Pointer(c_digits), c_digits_len)
 	r0 := x.SetDigits(a_digits)
 	ws_self := *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
@@ -39629,6 +41510,9 @@ func dmrgo_trunk_appended_set_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8
 func dmrgo_trunk_appended_set_lip(c_self *C.dmrgo_trunk_appended_t, c_pdu *C.uint8_t, c_pdu_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39638,7 +41522,7 @@ func dmrgo_trunk_appended_set_lip(c_self *C.dmrgo_trunk_appended_t, c_pdu *C.uin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_pdu []byte
-	a_pdu = unsafe.Slice((*byte)(unsafe.Pointer(c_pdu)), int(c_pdu_len))
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
 	r0 := x.SetLIP(a_pdu)
 	ws_self := *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
@@ -39656,6 +41540,9 @@ func dmrgo_trunk_appended_set_lip(c_self *C.dmrgo_trunk_appended_t, c_pdu *C.uin
 func dmrgo_trunk_appended_set_mixed(c_self *C.dmrgo_trunk_appended_t, c_one_key C.bool, c_addr C.uint32_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39665,7 +41552,7 @@ func dmrgo_trunk_appended_set_mixed(c_self *C.dmrgo_trunk_appended_t, c_one_key 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetMixed(bool(c_one_key), uint32(c_addr), a_text)
 	ws_self := *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
@@ -39739,6 +41626,9 @@ func dmrgo_trunk_appended_set_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_n *
 func dmrgo_trunk_appended_set_text(c_self *C.dmrgo_trunk_appended_t, c_f C.dmrgo_enums_udt_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39748,7 +41638,7 @@ func dmrgo_trunk_appended_set_text(c_self *C.dmrgo_trunk_appended_t, c_f C.dmrgo
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_text []byte
-	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetText(g_enums.UDTFormat(c_f), a_text)
 	ws_self := *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
@@ -39766,6 +41656,9 @@ func dmrgo_trunk_appended_set_text(c_self *C.dmrgo_trunk_appended_t, c_f C.dmrgo
 func dmrgo_trunk_appended_text(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39856,6 +41749,9 @@ func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacit
 func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_CapacityPlusFollower(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -39963,6 +41859,9 @@ func dmrgo_trunk_capacity_plus_follower_lost_need(c_self *C.dmrgo_trunk_capacity
 func dmrgo_trunk_capacity_plus_follower_lost(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_CapacityPlusFollower(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -40093,6 +41992,9 @@ func dmrgo_trunk_capacity_plus_follower_tick_need(c_self *C.dmrgo_trunk_capacity
 func dmrgo_trunk_capacity_plus_follower_tick(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_CapacityPlusFollower(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -40370,6 +42272,9 @@ func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.d
 func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_Follower(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -40513,6 +42418,9 @@ func dmrgo_trunk_follower_lost_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dm
 func dmrgo_trunk_follower_lost(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_Follower(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -40635,6 +42543,9 @@ func dmrgo_trunk_follower_tick_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dm
 func dmrgo_trunk_follower_tick(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_Follower(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -40855,6 +42766,9 @@ func dmrgo_trunk_lip_short_report_encode(c_self *C.dmrgo_trunk_lip_short_report_
 func dmrgo_trunk_lip_short_report_string(c_self *C.dmrgo_trunk_lip_short_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -40956,6 +42870,9 @@ func dmrgo_trunk_ms_auth_response_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo
 func dmrgo_trunk_ms_auth_response(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_response C.uint32_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41024,6 +42941,9 @@ func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duratio
 func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41207,6 +43127,9 @@ func dmrgo_trunk_ms_cancel_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_durati
 func dmrgo_trunk_ms_cancel(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41315,6 +43238,9 @@ func dmrgo_trunk_ms_end_call_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_dura
 func dmrgo_trunk_ms_end_call(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41377,6 +43303,9 @@ func dmrgo_trunk_ms_group_alias_need(c_self *C.dmrgo_trunk_ms_t, c_tg C.uint32_t
 func dmrgo_trunk_ms_group_alias(c_self *C.dmrgo_trunk_ms_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_tg C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41440,6 +43369,9 @@ func dmrgo_trunk_ms_interrupt_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_dur
 func dmrgo_trunk_ms_interrupt(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_terminate C.bool, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41521,6 +43453,9 @@ func dmrgo_trunk_ms_lost_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration
 func dmrgo_trunk_ms_lost(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41629,6 +43564,9 @@ func dmrgo_trunk_ms_power_off_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_dur
 func dmrgo_trunk_ms_power_off(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41707,6 +43645,9 @@ func dmrgo_trunk_ms_quality_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_durat
 func dmrgo_trunk_ms_quality(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_level C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -41857,12 +43798,15 @@ func dmrgo_trunk_ms_set_status(c_self *C.dmrgo_trunk_ms_t, c_s C.dmrgo_trunk_sta
 func dmrgo_trunk_ms_set_supplementary(c_self *C.dmrgo_trunk_ms_t, c_format C.uint8_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0 := h.v.SetSupplementary(uint8(c_format), a_data)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41957,6 +43901,9 @@ func dmrgo_trunk_ms_tick_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration
 func dmrgo_trunk_ms_tick(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_MS(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -42048,6 +43995,9 @@ func dmrgo_trunk_nmea_long_encode(c_self *C.dmrgo_trunk_nmea_long_t, c_out *C.ui
 func dmrgo_trunk_nmea_long_string(c_self *C.dmrgo_trunk_nmea_long_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42092,6 +44042,9 @@ func dmrgo_trunk_nmea_short_encode(c_self *C.dmrgo_trunk_nmea_short_t, c_out *C.
 func dmrgo_trunk_nmea_short_string(c_self *C.dmrgo_trunk_nmea_short_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42227,6 +44180,9 @@ func dmrgo_trunk_new_tscc(c_cfg *C.dmrgo_trunk_tscc_config_t, c_out **C.dmrgo_tr
 func dmrgo_trunk_output_kind_string(c_self C.dmrgo_trunk_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42243,6 +44199,9 @@ func dmrgo_trunk_output_kind_string(c_self C.dmrgo_trunk_output_kind_t, c_out *C
 func dmrgo_trunk_reason_string(c_self C.dmrgo_trunk_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42259,6 +44218,9 @@ func dmrgo_trunk_reason_string(c_self C.dmrgo_trunk_reason_t, c_out *C.char, c_o
 func dmrgo_trunk_state_string(c_self C.dmrgo_trunk_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42275,6 +44237,9 @@ func dmrgo_trunk_state_string(c_self C.dmrgo_trunk_state_t, c_out *C.char, c_out
 func dmrgo_trunk_stun_action_string(c_self C.dmrgo_trunk_stun_action_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42399,6 +44364,9 @@ func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_d
 func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_TSCC(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -42608,6 +44576,9 @@ func dmrgo_trunk_tscc_tick_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_dura
 func dmrgo_trunk_tscc_tick(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_trunk_TSCC(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -42692,6 +44663,9 @@ func dmrgo_trunk_tscc_usbd(c_self *C.dmrgo_trunk_tscc_t, c_out *C.dmrgo_pdu_unif
 func dmrgo_trunk_tscc_output_kind_string(c_self C.dmrgo_trunk_tscc_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42878,6 +44852,9 @@ func dmrgo_trunk_usbd_lip_response_encode(c_self *C.dmrgo_trunk_usbd_lip_respons
 func dmrgo_trunk_usbd_lip_response_string(c_self *C.dmrgo_trunk_usbd_lip_response_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -42922,6 +44899,9 @@ func dmrgo_trunk_usbd_poll_request_encode(c_self *C.dmrgo_trunk_usbd_poll_reques
 func dmrgo_trunk_usbd_poll_request_string(c_self *C.dmrgo_trunk_usbd_poll_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43082,6 +45062,9 @@ func dmrgo_vocoder_codec_decode_need(c_self *C.dmrgo_vocoder_codec_t, c_slot *C.
 func dmrgo_vocoder_codec_decode(c_self *C.dmrgo_vocoder_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_Codec(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -43121,12 +45104,15 @@ func dmrgo_vocoder_codec_decode(c_self *C.dmrgo_vocoder_codec_t, c_dst *C.int16_
 func dmrgo_vocoder_codec_encode(c_self *C.dmrgo_vocoder_codec_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pcm), c_pcm_len, unsafe.Sizeof(*c_pcm)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_Codec(c_self)
 	if c_pcm == nil && c_pcm_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_pcm []int16
-	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
+	a_pcm = cSlice[int16](unsafe.Pointer(c_pcm), c_pcm_len)
 	r0, r1 := h.v.Encode(a_pcm)
 	_ = r0
 	if c_out != nil {
@@ -43382,6 +45368,9 @@ func dmrgo_codec2_codec_decode_need(c_self *C.dmrgo_codec2_codec_t, c_slot *C.ui
 func dmrgo_codec2_codec_decode(c_self *C.dmrgo_codec2_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_codec2_Codec(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -43437,12 +45426,15 @@ func dmrgo_codec2_codec_decode_mode(c_self *C.dmrgo_codec2_codec_t, c_out *C.dmr
 func dmrgo_codec2_codec_encode(c_self *C.dmrgo_codec2_codec_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pcm), c_pcm_len, unsafe.Sizeof(*c_pcm)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_codec2_Codec(c_self)
 	if c_pcm == nil && c_pcm_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_pcm []int16
-	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
+	a_pcm = cSlice[int16](unsafe.Pointer(c_pcm), c_pcm_len)
 	r0, r1 := h.v.Encode(a_pcm)
 	_ = r0
 	if c_out != nil {
@@ -43565,6 +45557,12 @@ func dmrgo_codec2_new(c_p *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec
 func dmrgo_dvsi_append_channel(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_channel C.int64_t, c_data *C.uint8_t, c_data_len C.size_t, c_bits C.int64_t, c_parity C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43575,7 +45573,7 @@ func dmrgo_dvsi_append_channel(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_data []byte
-	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
 	r0, r1 := g_vocoder_dvsi.AppendChannel(a_dst, int(c_channel), a_data, int(c_bits), bool(c_parity))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -43593,6 +45591,9 @@ func dmrgo_dvsi_append_channel(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *
 func dmrgo_dvsi_append_parity_mode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_on C.bool, c_parity C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43613,6 +45614,9 @@ func dmrgo_dvsi_append_parity_mode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_l
 func dmrgo_dvsi_append_query(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_parity C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43633,6 +45637,9 @@ func dmrgo_dvsi_append_query(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.
 func dmrgo_dvsi_append_rate_dmr(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_channel C.int64_t, c_parity C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43656,6 +45663,9 @@ func dmrgo_dvsi_append_rate_dmr(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len 
 func dmrgo_dvsi_append_reset(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_parity C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43676,6 +45686,12 @@ func dmrgo_dvsi_append_reset(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.
 func dmrgo_dvsi_append_speech(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_channel C.int64_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_parity C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_pcm), c_pcm_len, unsafe.Sizeof(*c_pcm)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -43686,7 +45702,7 @@ func dmrgo_dvsi_append_speech(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_pcm []int16
-	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
+	a_pcm = cSlice[int16](unsafe.Pointer(c_pcm), c_pcm_len)
 	r0, r1 := g_vocoder_dvsi.AppendSpeech(a_dst, int(c_channel), a_pcm, bool(c_parity))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -43747,6 +45763,9 @@ func dmrgo_dvsi_codec_decode_need(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_
 func dmrgo_dvsi_codec_decode(c_self *C.dmrgo_dvsi_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_dvsi_Codec(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -43786,12 +45805,15 @@ func dmrgo_dvsi_codec_decode(c_self *C.dmrgo_dvsi_codec_t, c_dst *C.int16_t, c_d
 func dmrgo_dvsi_codec_encode(c_self *C.dmrgo_dvsi_codec_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pcm), c_pcm_len, unsafe.Sizeof(*c_pcm)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_dvsi_Codec(c_self)
 	if c_pcm == nil && c_pcm_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_pcm []int16
-	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
+	a_pcm = cSlice[int16](unsafe.Pointer(c_pcm), c_pcm_len)
 	r0, r1 := h.v.Encode(a_pcm)
 	_ = r0
 	if c_out != nil {
@@ -43856,6 +45878,9 @@ func dmrgo_dvsi_codec_product_need(c_self *C.dmrgo_dvsi_codec_t, c_items *C.size
 func dmrgo_dvsi_codec_product(c_self *C.dmrgo_dvsi_codec_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_dvsi_Codec(c_self)
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -43927,6 +45952,9 @@ func dmrgo_dvsi_codec_version_need(c_self *C.dmrgo_dvsi_codec_t, c_items *C.size
 func dmrgo_dvsi_codec_version(c_self *C.dmrgo_dvsi_codec_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_dvsi_Codec(c_self)
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -43988,6 +46016,9 @@ func dmrgo_dvsi_new(c_port *C.dmrgo_dvsi_port_t, c_cfg *C.dmrgo_dvsi_config_t, c
 func dmrgo_dvsi_packet_append_channel_data(c_self *C.dmrgo_dvsi_packet_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t, c_n2 *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44024,6 +46055,9 @@ func dmrgo_dvsi_packet_append_channel_data(c_self *C.dmrgo_dvsi_packet_t, c_dst 
 func dmrgo_dvsi_packet_append_samples(c_self *C.dmrgo_dvsi_packet_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44056,6 +46090,9 @@ func dmrgo_dvsi_packet_append_samples(c_self *C.dmrgo_dvsi_packet_t, c_dst *C.in
 func dmrgo_dvsi_packet_response(c_self *C.dmrgo_dvsi_packet_t, c_f C.dmrgo_dvsi_field_t, c_data *C.uint8_t, c_data_cap C.size_t, c_data_len *C.size_t, c_data_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_cap, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44088,11 +46125,17 @@ func dmrgo_dvsi_parse(c_b *C.uint8_t, c_b_len C.size_t, c_parity C.bool, c_packe
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_b == nil && c_b_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_b []byte
-	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	r0, r1, r2 := g_vocoder_dvsi.Parse(a_b, bool(c_parity))
 	_ = r0
 	_ = r1
@@ -44132,12 +46175,15 @@ func dmrgo_dvsi_port_free(c_self *C.dmrgo_dvsi_port_t) (rc C.int) {
 func dmrgo_dvsi_port_read(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_dvsi_Port(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := h.v.Read(a_p)
 	_ = r0
 	if c_out != nil {
@@ -44156,12 +46202,15 @@ func dmrgo_dvsi_port_read(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len C
 func dmrgo_dvsi_port_write(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_vocoder_dvsi_Port(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
 	r0, r1 := h.v.Write(a_p)
 	_ = r0
 	if c_out != nil {
@@ -44180,6 +46229,9 @@ func dmrgo_dvsi_port_write(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len 
 func dmrgo_voice_end_reason_string(c_self C.dmrgo_voice_end_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44196,6 +46248,9 @@ func dmrgo_voice_end_reason_string(c_self C.dmrgo_voice_end_reason_t, c_out *C.c
 func dmrgo_voice_event_kind_string(c_self C.dmrgo_voice_event_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44243,6 +46298,9 @@ func dmrgo_voice_interrupter_burst_need(c_self *C.dmrgo_voice_interrupter_t, c_n
 func dmrgo_voice_interrupter_burst(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Interrupter(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -44353,6 +46411,9 @@ func dmrgo_voice_interrupter_decoded_need(c_self *C.dmrgo_voice_interrupter_t, c
 func dmrgo_voice_interrupter_decoded(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Interrupter(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -44467,6 +46528,9 @@ func dmrgo_voice_interrupter_tick_need(c_self *C.dmrgo_voice_interrupter_t, c_no
 func dmrgo_voice_interrupter_tick(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Interrupter(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -44515,6 +46579,9 @@ func dmrgo_voice_interrupter_tick(c_self *C.dmrgo_voice_interrupter_t, c_now C.d
 func dmrgo_voice_interrupter_state_string(c_self C.dmrgo_voice_interrupter_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44616,6 +46683,9 @@ func dmrgo_voice_new_transmitter(c_cfg *C.dmrgo_voice_transmitter_config_t, c_ou
 func dmrgo_voice_origin_string(c_self C.dmrgo_voice_origin_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44632,6 +46702,9 @@ func dmrgo_voice_origin_string(c_self C.dmrgo_voice_origin_t, c_out *C.char, c_o
 func dmrgo_voice_output_kind_string(c_self C.dmrgo_voice_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -44686,6 +46759,12 @@ func dmrgo_voice_receiver_burst(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Receiver(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -44809,6 +46888,12 @@ func dmrgo_voice_receiver_decoded(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrg
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Receiver(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -44922,6 +47007,12 @@ func dmrgo_voice_receiver_lost(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -45037,6 +47128,12 @@ func dmrgo_voice_receiver_tick(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -45103,6 +47200,9 @@ func dmrgo_voice_receiver_tick(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_d
 func dmrgo_voice_state_string(c_self C.dmrgo_voice_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -45150,6 +47250,9 @@ func dmrgo_voice_transmitter_burst_need(c_self *C.dmrgo_voice_transmitter_t, c_n
 func dmrgo_voice_transmitter_burst(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Transmitter(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -45260,6 +47363,9 @@ func dmrgo_voice_transmitter_decoded_need(c_self *C.dmrgo_voice_transmitter_t, c
 func dmrgo_voice_transmitter_decoded(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Transmitter(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -45351,12 +47457,15 @@ func dmrgo_voice_transmitter_frame(c_self *C.dmrgo_voice_transmitter_t, c_f *C.d
 func dmrgo_voice_transmitter_frames(c_self *C.dmrgo_voice_transmitter_t, c_f *C.dmrgo_vocoder_ambe_frame_t, c_f_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_f), c_f_len, unsafe.Sizeof(*c_f)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Transmitter(c_self)
 	if c_f == nil && c_f_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_f []g_vocoder.AMBEFrame
-	a_f = unsafe.Slice((*g_vocoder.AMBEFrame)(unsafe.Pointer(c_f)), int(c_f_len))
+	a_f = cSlice[g_vocoder.AMBEFrame](unsafe.Pointer(c_f), c_f_len)
 	r0 := h.v.Frames(a_f...)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -45460,12 +47569,15 @@ func dmrgo_voice_transmitter_slot(c_self *C.dmrgo_voice_transmitter_t, c_s *C.ui
 func dmrgo_voice_transmitter_slots(c_self *C.dmrgo_voice_transmitter_t, c_s *C.uint8_t, c_s_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_s), c_s_len, unsafe.Sizeof(*c_s)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Transmitter(c_self)
 	if c_s == nil && c_s_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_s [][9]byte
-	a_s = unsafe.Slice((*[9]byte)(unsafe.Pointer(c_s)), int(c_s_len))
+	a_s = cSlice[[9]byte](unsafe.Pointer(c_s), c_s_len)
 	r0 := h.v.Slots(a_s...)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -45549,6 +47661,9 @@ func dmrgo_voice_transmitter_tick_need(c_self *C.dmrgo_voice_transmitter_t, c_no
 func dmrgo_voice_transmitter_tick(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_voice_Transmitter(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -45597,6 +47712,9 @@ func dmrgo_voice_transmitter_tick(c_self *C.dmrgo_voice_transmitter_t, c_now C.d
 func dmrgo_voice_transmitter_state_string(c_self C.dmrgo_voice_transmitter_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}

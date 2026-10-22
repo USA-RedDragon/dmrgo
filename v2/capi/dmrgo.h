@@ -50,7 +50,9 @@ enum dmrgo_status {
 	DMRGO_OK = 0,
 	/* A handle is NULL, freed or of another type. */
 	DMRGO_ERR_HANDLE = -2,
-	/* A pointer argument is NULL. */
+	/* An argument is NULL or out of range: a fill over its capacity, a
+	 * length over PTRDIFF_MAX or past the end of the address space, or a
+	 * NULL pointer with a nonzero length. */
 	DMRGO_ERR_ARG = -3,
 	/* An output did not fit its buffer. The lengths give the full size;
 	 * see the output rules above for the retry. */

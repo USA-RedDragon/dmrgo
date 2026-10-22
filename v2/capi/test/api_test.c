@@ -198,6 +198,28 @@ static void test_self_writes(void) {
 	printf("self: read-only calls take a const self and no arena\n");
 }
 
+static void test_bad_args(void) {
+	dmrgo_ars_message_t am = {0};
+	uint8_t out[4];
+	size_t n = 10;
+	CHECK(dmrgo_ars_message_append_binary(&am, out, sizeof out, &n, NULL) == DMRGO_ERR_ARG);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_ARG), "bad argument") == 0);
+	dmrgo_nmea_rmc_t rmc;
+	CHECK(dmrgo_nmea_parse_rmc((const uint8_t *)"x", SIZE_MAX, &rmc) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_nmea_parse_rmc(NULL, 5, &rmc) == DMRGO_ERR_ARG);
+	am.device = NULL;
+	am.device_len = 5;
+	n = 0;
+	CHECK(dmrgo_ars_message_append_binary(&am, out, sizeof out, &n, NULL) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_ars_message_append_binary(&am, out, sizeof out, &n, NULL) == DMRGO_ERR_ARG);
+	am.device_len = SIZE_MAX;
+	CHECK(dmrgo_ars_message_append_binary(&am, out, sizeof out, &n, NULL) == DMRGO_ERR_ARG);
+	char s[8];
+	size_t sl = 0;
+	CHECK(dmrgo_ars_message_string(&am, s, SIZE_MAX, &sl, NULL) == DMRGO_ERR_ARG);
+	printf("bad args: DMRGO_ERR_ARG for bad fills and lengths, never a panic\n");
+}
+
 static void test_in_out(void) {
 	static const uint8_t report[] = {0x07, 0x1a, 0x22, 0x04, 0x24, 0x68, 0xac, 0xe0, 0x34, 0x1f, 0x4d, 0xbc, 0x77, 0x80, 0x51,
 		0x11, 0x8e, 0xcd, 0x8d, 0x11, 0x8a, 0xd4, 0x7b, 0x00, 0x63, 0x6c, 0x00, 0x06};
@@ -792,6 +814,7 @@ int main(int argc, char **argv) {
 	test_names();
 	test_self_writes();
 	test_in_out();
+	test_bad_args();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

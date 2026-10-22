@@ -369,7 +369,7 @@ func (g *gen) inField(w *strings.Builder, t types.Type, d, s, cn, st string) err
 	switch u := t.(type) {
 	case *types.Basic:
 		if u.Kind() == types.String {
-			lines(w, d+" = C.GoStringN("+s+"."+n+", C.int("+s+"."+nl+"))")
+			lines(w, d+" = cStr("+s+"."+n+", "+s+"."+nl+")")
 			return nil
 		}
 	case *types.Slice:
@@ -405,7 +405,7 @@ func (g *gen) subStorage(st, pfx, field string, t types.Type) string {
 func (g *gen) inSlice(w *strings.Builder, u *types.Slice, d, ptr, n string) error {
 	e := u.Elem()
 	if g.alias(e) {
-		lines(w, d+" = unsafe.Slice((*"+g.goType(e)+")(unsafe.Pointer("+ptr+")), int("+n+"))")
+		lines(w, d+" = cSlice["+g.goType(e)+"](unsafe.Pointer("+ptr+"), "+n+")")
 		return nil
 	}
 	lines(w, d+" = nil", "if "+n+" > 0 {")
@@ -413,10 +413,10 @@ func (g *gen) inSlice(w *strings.Builder, u *types.Slice, d, ptr, n string) erro
 	if err != nil {
 		return err
 	}
-	lines(w, "cs := unsafe.Slice((*"+ge+")(unsafe.Pointer("+ptr+")), int("+n+"))")
+	lines(w, "cs := cSlice["+ge+"](unsafe.Pointer("+ptr+"), "+n+")")
 	lines(w, d+" = make("+g.goType(u)+", len(cs))")
 	if isString(e) {
-		lines(w, "for i := range cs {", d+"[i] = C.GoStringN(cs[i].ptr, C.int(cs[i].len))", "}", "}")
+		lines(w, "for i := range cs {", d+"[i] = cStr(cs[i].ptr, cs[i].len)", "}", "}")
 		return nil
 	}
 	if p, ok := e.(*types.Pointer); ok {

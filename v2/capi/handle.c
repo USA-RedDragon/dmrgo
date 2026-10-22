@@ -17,7 +17,7 @@ const char *dmrgo_strerror(int status) {
 	case DMRGO_ERR_HANDLE:
 		return "invalid handle";
 	case DMRGO_ERR_ARG:
-		return "null argument";
+		return "bad argument";
 	case DMRGO_ERR_SHORT:
 		return "output buffer too small";
 	case DMRGO_ERR_PANIC:
