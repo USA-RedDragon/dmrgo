@@ -147,6 +147,54 @@ func TestClassify(t *testing.T) {
 	}
 }
 
+func TestRepeaterID(t *testing.T) {
+	t.Parallel()
+
+	const id = 3129100
+	data, _ := (&dmrd.Data{Repeater: id, Slot: 1}).AppendBinary(nil)
+	alias, _ := (&dmrd.TalkerAlias{Repeater: id}).AppendBinary(nil)
+	pos, _ := (&dmrd.Position{Repeater: id}).AppendBinary(nil)
+	var cfg dmrd.Config
+	cfg.Reset()
+	cfg.SetID(id)
+	var hcfg dmrd.HBRPConfig
+	hcfg.Reset()
+	hcfg.SetID(id)
+	ping, _ := (&dmrd.Control{Command: dmrd.CommandRPTPING, ID: id}).AppendBinary(nil, dmrd.DialectMMDVM)
+	opts, _ := (&dmrd.Control{Command: dmrd.CommandRPTO, ID: id, Text: []byte("TS2=91;")}).AppendBinary(nil, dmrd.DialectMMDVM)
+	login, _ := (&dmrd.Control{Command: dmrd.CommandRPTL, ID: id}).AppendBinary(nil, dmrd.DialectHBRP)
+	ack, _ := (&dmrd.Control{Command: dmrd.CommandRPTACK, ID: id}).AppendBinary(nil, dmrd.DialectMMDVM)
+	bcka, _ := (&dmrd.BridgeControl{Command: dmrd.CommandBCKA}).AppendBinary(nil)
+	tests := []struct {
+		name string
+		p    []byte
+		d    dmrd.Dialect
+		ok   bool
+	}{
+		{"DMRD", data, dmrd.DialectMMDVM, true},
+		{"DMRD local", data, dmrd.DialectLocal, true},
+		{"DMRA", alias, dmrd.DialectMMDVM, true},
+		{"DMRA local", alias, dmrd.DialectLocal, false},
+		{"DMRG", pos, dmrd.DialectMMDVM, true},
+		{"RPTC", cfg[:], dmrd.DialectMMDVM, true},
+		{"RPTC HBRP", hcfg[:], dmrd.DialectHBRP, true},
+		{"RPTPING", ping, dmrd.DialectMMDVM, true},
+		{"RPTO", opts, dmrd.DialectMMDVM, true},
+		{"RPTL HBRP", login, dmrd.DialectHBRP, true},
+		{"RPTACK", ack, dmrd.DialectMMDVM, false},
+		{"BCKA", bcka, dmrd.DialectMMDVM, false},
+		{"short DMRD", data[:20], dmrd.DialectMMDVM, false},
+		{"RPTL of HBRP in MMDVM", login, dmrd.DialectMMDVM, false},
+		{"empty", nil, dmrd.DialectMMDVM, false},
+	}
+	for _, tt := range tests {
+		got, ok := dmrd.RepeaterID(tt.p, tt.d)
+		if ok != tt.ok || (ok && got != id) || (!ok && got != 0) {
+			t.Errorf("%s: %d, %v; want ok %v", tt.name, got, ok, tt.ok)
+		}
+	}
+}
+
 func TestControlErrors(t *testing.T) {
 	t.Parallel()
 

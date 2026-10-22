@@ -1166,6 +1166,7 @@ var api = [...]any{
 	transport_dmrd.HBRPConfigOf,
 	transport_dmrd.ParseDMRPlusOptions,
 	transport_dmrd.ParseFreeDMROptions,
+	transport_dmrd.RepeaterID,
 	(*transport_dmrd_auth.BridgeKey).SignInPlace,
 	(*transport_dmrd_auth.BridgeKey).Verify,
 	transport_dmrd_auth.NewBridgeKey,

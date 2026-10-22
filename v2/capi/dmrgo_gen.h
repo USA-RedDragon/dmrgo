@@ -9886,6 +9886,8 @@ int dmrgo_dmrd_position_append_binary(const dmrgo_dmrd_position_t *self, uint8_t
 int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.RepeaterID. RepeaterID returns the repeater ID of the message p of dialect d, by its command as Classify gives it: the repeater of a DMRD, DMRA or DMRG, the ID of an RPTC, and the ID of every control message that carries one. */
+int dmrgo_dmrd_repeater_id(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, uint32_t *id, bool *ok);
 /* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. It returns an error when Type is above 3, and DMRGO_ERR_NIL_RECEIVER for a nil t. */

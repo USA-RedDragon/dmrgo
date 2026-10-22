@@ -1720,6 +1720,7 @@ sym int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, 
 sym int dmrgo_dmrd_position_append_binary(const dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
 sym int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dmrd_repeater_id(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, uint32_t *id, bool *ok);
 sym int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 sym int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
