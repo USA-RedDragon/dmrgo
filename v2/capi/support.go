@@ -352,22 +352,53 @@ func dmrgo_last_error_code() C.int {
 	return C.dmrgo__last().code
 }
 
-//export dmrgo_version
-func dmrgo_version(buf *C.char, capx C.size_t, n, need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	v := "(unknown)"
-	if bi, ok := debug.ReadBuildInfo(); ok {
-		for _, d := range bi.Deps {
-			if d.Path == modulePath {
-				v = d.Version
-				if d.Replace != nil && d.Replace.Version != "" {
-					v = d.Replace.Version
-				}
+var version string
+
+func moduleVersion() string {
+	if version != "" {
+		return version
+	}
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "(unknown)"
+	}
+	v := "(devel)"
+	for _, d := range bi.Deps {
+		if d.Path == modulePath {
+			v = d.Version
+			if d.Replace != nil && d.Replace.Version != "" {
+				v = d.Replace.Version
 			}
 		}
 	}
-	putStr(buf, capx, n, need, v, oc)
+	if v != "(devel)" && v != "" {
+		return v
+	}
+	rev, dirty := "", ""
+	for _, s := range bi.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			rev = s.Value
+		case "vcs.modified":
+			if s.Value == "true" {
+				dirty = "-dirty"
+			}
+		}
+	}
+	if rev != "" {
+		return "(devel) " + rev[:min(len(rev), 12)] + dirty
+	}
+	return "(devel)"
+}
+
+//export dmrgo_version
+func dmrgo_version(buf *C.char, capx C.size_t, n, need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if !lenOK(unsafe.Pointer(buf), capx, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	oc := &outc{}
+	putStr(buf, capx, n, need, moduleVersion(), oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

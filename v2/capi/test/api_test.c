@@ -44,6 +44,10 @@ static void test_version(void) {
 	CHECK(dmrgo_abi_version() == DMRGO_ABI_VERSION);
 	OK(dmrgo_version(v, sizeof v, &n, NULL));
 	CHECK(n > 0 && strlen(v) == n);
+#ifdef DMRGO_TEST_VERSION
+	if (DMRGO_TEST_VERSION[0])
+		CHECK(strcmp(v, DMRGO_TEST_VERSION) == 0);
+#endif
 }
 
 static void test_errors(void) {
