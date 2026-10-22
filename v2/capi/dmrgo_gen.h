@@ -8862,7 +8862,7 @@ int dmrgo_pdu_ahoy_pdu_string(const dmrgo_pdu_ahoy_pdu_t *self, char *out, size_
 int dmrgo_pdu_aloha_pdu_string(const dmrgo_pdu_aloha_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AnnWDTSCCParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ann_wd_tscc_parms_string(const dmrgo_pdu_ann_wd_tscc_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AppendTalkerAlias. AppendTalkerAlias appends the alias that TalkerAlias returns to dst as UTF-8 and returns the extended slice, with the errors of TalkerAlias. With DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE it returns dst unchanged. header may be NULL. */
+/* Go: pdu.AppendTalkerAlias. AppendTalkerAlias appends the alias that TalkerAlias returns to dst as UTF-8 and returns the extended slice, with the errors of TalkerAlias. With DMRGO_ERR_NIL_ARGUMENT and DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE it returns dst unchanged. header may be NULL. */
 int dmrgo_pdu_append_talker_alias(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len);
 /* Go: pdu.BCAPContinuation.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_CONTINUATION. */
 int dmrgo_pdu_bcap_continuation_data_type(const dmrgo_pdu_bcap_continuation_t *self, dmrgo_enums_data_type_t *out);
@@ -9616,7 +9616,7 @@ int dmrgo_pdu_tact_encode(const dmrgo_pdu_tact_t *self, uint8_t out[1]);
 int dmrgo_pdu_tact_slot(const dmrgo_pdu_tact_t *self, dmrgo_enums_slot_t *out);
 /* Go: pdu.TACT.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_tact_string(const dmrgo_pdu_tact_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.TalkerAlias. TalkerAlias returns the alias carried by a Talker Alias header and its blocks, given in order block 1, 2, 3. It returns DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE when fewer blocks are given or header or a block is NULL, and DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8, with the alias, when the Code Units of the UTF-8 format are not valid UTF-8. header may be NULL. */
+/* Go: pdu.TalkerAlias. TalkerAlias returns the alias carried by a Talker Alias header and its blocks, given in order block 1, 2, 3. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL header, DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE when fewer blocks are given or a block is NULL, and DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8, with the alias, when the Code Units of the UTF-8 format are not valid UTF-8. header may be NULL. */
 int dmrgo_pdu_talker_alias(const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_pdu_talker_alias_assembler_new makes a zero dmrgo_pdu_talker_alias_assembler_t. */
 int dmrgo_pdu_talker_alias_assembler_new(dmrgo_pdu_talker_alias_assembler_t **out);
