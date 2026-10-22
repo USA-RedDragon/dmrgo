@@ -581,7 +581,10 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out)
 	}
 	for i := range t.setups {
-		if t.setups[i].used && t.setups[i].caller == src {
+		if st := &t.setups[i]; st.used && st.caller == src {
+			if st.called == r.TargetAddress {
+				t.sendAck(src, enums.AckReasonWait)
+			}
 			return out
 		}
 	}

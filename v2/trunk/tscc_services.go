@@ -485,7 +485,10 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 		return append(out, TSCCOutput{Kind: TSCCStatus, Grant: Grant{Service: enums.ServiceKindStatusTransport, Group: true, Target: target, Source: src}, Status: st, Ack: enums.AckReasonMessageAccepted})
 	}
 	for i := range t.svc.status {
-		if t.svc.status[i].used && t.svc.status[i].caller == src {
+		if op := &t.svc.status[i]; op.used && op.caller == src {
+			if op.called == target {
+				t.sendAck(src, enums.AckReasonWait)
+			}
 			return out
 		}
 	}
