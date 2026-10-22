@@ -1778,6 +1778,10 @@ func (s *CSBK) String() string {
 		_ret += v.String()
 	} else if v, ok := s.AsMotorolaCallAlertAck(); ok {
 		_ret += v.String()
+	} else if v, ok := s.AsBSOutboundActivation(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrantMultiItem(); ok {
+		_ret += v.String()
 	} else {
 		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
@@ -1801,9 +1805,10 @@ func (s *CSBK) AsUnitToUnitVoiceServiceRequest() (p UnitToUnitVoiceServiceReques
 
 // SetUnitToUnitVoiceServiceRequest makes s carry p as a
 // UnitToUnitVoiceServiceRequestPDU payload: it sets Opcode to
-// CSBKUnitToUnitVoiceServiceRequest, FID to 0 and RawPayload, and keeps the
-// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
-// not fit its bits, and then leaves s as it is.
+// CSBKUnitToUnitVoiceServiceRequest, FID to 0, Hint0x38 to Opcode0x38Unknown
+// and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetUnitToUnitVoiceServiceRequest(p UnitToUnitVoiceServiceRequestPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -1815,6 +1820,7 @@ func (s *CSBK) SetUnitToUnitVoiceServiceRequest(p UnitToUnitVoiceServiceRequestP
 	}
 	s.Opcode = CSBKUnitToUnitVoiceServiceRequest
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -1835,9 +1841,10 @@ func (s *CSBK) AsUnitToUnitVoiceServiceAnswerResponse() (p UnitToUnitVoiceServic
 
 // SetUnitToUnitVoiceServiceAnswerResponse makes s carry p as a
 // UnitToUnitVoiceServiceAnswerResponsePDU payload: it sets Opcode to
-// CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0 and RawPayload, and
-// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
-// of p does not fit its bits, and then leaves s as it is.
+// CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetUnitToUnitVoiceServiceAnswerResponse(p UnitToUnitVoiceServiceAnswerResponsePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -1849,6 +1856,7 @@ func (s *CSBK) SetUnitToUnitVoiceServiceAnswerResponse(p UnitToUnitVoiceServiceA
 	}
 	s.Opcode = CSBKUnitToUnitVoiceServiceAnswerResponse
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -1868,10 +1876,10 @@ func (s *CSBK) AsNegativeAcknowledgement() (p NegativeAcknowledgementPDU, ok boo
 }
 
 // SetNegativeAcknowledgement makes s carry p as a NegativeAcknowledgementPDU
-// payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0 and
-// RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0, Hint0x38
+// to Opcode0x38Unknown and RawPayload, and keeps the other fields. It
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetNegativeAcknowledgement(p NegativeAcknowledgementPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -1883,6 +1891,7 @@ func (s *CSBK) SetNegativeAcknowledgement(p NegativeAcknowledgementPDU) error {
 	}
 	s.Opcode = CSBKNegativeAcknowledgement
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -1901,9 +1910,9 @@ func (s *CSBK) AsPreamble() (p PreamblePDU, ok bool) {
 }
 
 // SetPreamble makes s carry p as a PreamblePDU payload: it sets Opcode to
-// CSBKPreamble, FID to 0 and RawPayload, and keeps the other fields. It
-// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
-// and then leaves s as it is.
+// CSBKPreamble, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetPreamble(p PreamblePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -1915,6 +1924,7 @@ func (s *CSBK) SetPreamble(p PreamblePDU) error {
 	}
 	s.Opcode = CSBKPreamble
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -1933,9 +1943,10 @@ func (s *CSBK) AsChannelTiming() (p ChannelTimingPDU, ok bool) {
 }
 
 // SetChannelTiming makes s carry p as a ChannelTimingPDU payload: it sets
-// Opcode to CSBKChannelTiming, FID to 0 and RawPayload, and keeps the other
-// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
-// its bits, and then leaves s as it is.
+// Opcode to CSBKChannelTiming, FID to 0, Hint0x38 to Opcode0x38Unknown and
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetChannelTiming(p ChannelTimingPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -1947,6 +1958,7 @@ func (s *CSBK) SetChannelTiming(p ChannelTimingPDU) error {
 	}
 	s.Opcode = CSBKChannelTiming
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -1965,9 +1977,10 @@ func (s *CSBK) AsPrivateVoiceGrant() (p PrivateVoiceGrantPDU, ok bool) {
 }
 
 // SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it
-// sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps
-// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
-// does not fit its bits, and then leaves s as it is.
+// sets Opcode to CSBKPrivateVoiceGrant, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetPrivateVoiceGrant(p PrivateVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -1979,6 +1992,7 @@ func (s *CSBK) SetPrivateVoiceGrant(p PrivateVoiceGrantPDU) error {
 	}
 	s.Opcode = CSBKPrivateVoiceGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -1998,8 +2012,8 @@ func (s *CSBK) AsTalkgroupVoiceGrant() (p TalkgroupVoiceGrantPDU, ok bool) {
 }
 
 // SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU
-// payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns a
+// payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
 // *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
 // leaves s as it is.
 func (s *CSBK) SetTalkgroupVoiceGrant(p TalkgroupVoiceGrantPDU) error {
@@ -2013,6 +2027,7 @@ func (s *CSBK) SetTalkgroupVoiceGrant(p TalkgroupVoiceGrantPDU) error {
 	}
 	s.Opcode = CSBKTalkgroupVoiceGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2033,9 +2048,10 @@ func (s *CSBK) AsBroadcastTalkgroupVoiceGrant() (p BroadcastTalkgroupVoiceGrantP
 
 // SetBroadcastTalkgroupVoiceGrant makes s carry p as a
 // BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to
-// CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the
-// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
-// not fit its bits, and then leaves s as it is.
+// CSBKBroadcastTalkgroupVoiceGrant, FID to 0, Hint0x38 to Opcode0x38Unknown
+// and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetBroadcastTalkgroupVoiceGrant(p BroadcastTalkgroupVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2047,6 +2063,7 @@ func (s *CSBK) SetBroadcastTalkgroupVoiceGrant(p BroadcastTalkgroupVoiceGrantPDU
 	}
 	s.Opcode = CSBKBroadcastTalkgroupVoiceGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2065,9 +2082,10 @@ func (s *CSBK) AsPrivateDataGrant() (p PrivateDataGrantPDU, ok bool) {
 }
 
 // SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it
-// sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps
-// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
-// does not fit its bits, and then leaves s as it is.
+// sets Opcode to CSBKPrivateDataGrant, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetPrivateDataGrant(p PrivateDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2079,6 +2097,7 @@ func (s *CSBK) SetPrivateDataGrant(p PrivateDataGrantPDU) error {
 	}
 	s.Opcode = CSBKPrivateDataGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2097,9 +2116,10 @@ func (s *CSBK) AsTalkgroupDataGrant() (p TalkgroupDataGrantPDU, ok bool) {
 }
 
 // SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload:
-// it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and
-// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
-// of p does not fit its bits, and then leaves s as it is.
+// it sets Opcode to CSBKTalkgroupDataGrant, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetTalkgroupDataGrant(p TalkgroupDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2111,6 +2131,7 @@ func (s *CSBK) SetTalkgroupDataGrant(p TalkgroupDataGrantPDU) error {
 	}
 	s.Opcode = CSBKTalkgroupDataGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2130,10 +2151,10 @@ func (s *CSBK) AsDuplexPrivateVoiceGrant() (p DuplexPrivateVoiceGrantPDU, ok boo
 }
 
 // SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU
-// payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0, Hint0x38
+// to Opcode0x38Unknown and RawPayload, and keeps the other fields. It
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetDuplexPrivateVoiceGrant(p DuplexPrivateVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2145,6 +2166,7 @@ func (s *CSBK) SetDuplexPrivateVoiceGrant(p DuplexPrivateVoiceGrantPDU) error {
 	}
 	s.Opcode = CSBKDuplexPrivateVoiceGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2164,10 +2186,10 @@ func (s *CSBK) AsDuplexPrivateDataGrant() (p DuplexPrivateDataGrantPDU, ok bool)
 }
 
 // SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU
-// payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0, Hint0x38
+// to Opcode0x38Unknown and RawPayload, and keeps the other fields. It
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetDuplexPrivateDataGrant(p DuplexPrivateDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2179,6 +2201,7 @@ func (s *CSBK) SetDuplexPrivateDataGrant(p DuplexPrivateDataGrantPDU) error {
 	}
 	s.Opcode = CSBKDuplexPrivateDataGrant
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2199,9 +2222,10 @@ func (s *CSBK) AsPrivateDataGrantMultiItem() (p PrivateDataGrantMultiItemPDU, ok
 
 // SetPrivateDataGrantMultiItem makes s carry p as a
 // PrivateDataGrantMultiItemPDU payload: it sets Opcode to
-// CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the
-// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
-// not fit its bits, and then leaves s as it is.
+// CSBKPrivateDataGrantMultiItem, FID to 0, Hint0x38 to Opcode0x38Unknown and
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2213,6 +2237,7 @@ func (s *CSBK) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU) erro
 	}
 	s.Opcode = CSBKPrivateDataGrantMultiItem
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2231,9 +2256,9 @@ func (s *CSBK) AsMove() (p MovePDU, ok bool) {
 }
 
 // SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove,
-// FID to 0 and RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetMove(p MovePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2245,6 +2270,7 @@ func (s *CSBK) SetMove(p MovePDU) error {
 	}
 	s.Opcode = CSBKMove
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2263,9 +2289,9 @@ func (s *CSBK) AsAloha() (p AlohaPDU, ok bool) {
 }
 
 // SetAloha makes s carry p as an AlohaPDU payload: it sets Opcode to
-// CSBKAloha, FID to 0 and RawPayload, and keeps the other fields. It returns
-// a *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// CSBKAloha, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetAloha(p AlohaPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2277,6 +2303,7 @@ func (s *CSBK) SetAloha(p AlohaPDU) error {
 	}
 	s.Opcode = CSBKAloha
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2295,9 +2322,9 @@ func (s *CSBK) AsBroadcast() (p BroadcastPDU, ok bool) {
 }
 
 // SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to
-// CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It
-// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
-// and then leaves s as it is.
+// CSBKBroadcast, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetBroadcast(p BroadcastPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2309,6 +2336,7 @@ func (s *CSBK) SetBroadcast(p BroadcastPDU) error {
 	}
 	s.Opcode = CSBKBroadcast
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2327,9 +2355,9 @@ func (s *CSBK) AsClear() (p ClearPDU, ok bool) {
 }
 
 // SetClear makes s carry p as a ClearPDU payload: it sets Opcode to
-// CSBKClear, FID to 0 and RawPayload, and keeps the other fields. It returns
-// a *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// CSBKClear, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetClear(p ClearPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2341,6 +2369,7 @@ func (s *CSBK) SetClear(p ClearPDU) error {
 	}
 	s.Opcode = CSBKClear
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2359,9 +2388,9 @@ func (s *CSBK) AsProtect() (p ProtectPDU, ok bool) {
 }
 
 // SetProtect makes s carry p as a ProtectPDU payload: it sets Opcode to
-// CSBKProtect, FID to 0 and RawPayload, and keeps the other fields. It
-// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
-// and then leaves s as it is.
+// CSBKProtect, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetProtect(p ProtectPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2373,6 +2402,7 @@ func (s *CSBK) SetProtect(p ProtectPDU) error {
 	}
 	s.Opcode = CSBKProtect
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2391,9 +2421,9 @@ func (s *CSBK) AsAhoy() (p AhoyPDU, ok bool) {
 }
 
 // SetAhoy makes s carry p as an AhoyPDU payload: it sets Opcode to CSBKAhoy,
-// FID to 0 and RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetAhoy(p AhoyPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2405,6 +2435,7 @@ func (s *CSBK) SetAhoy(p AhoyPDU) error {
 	}
 	s.Opcode = CSBKAhoy
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2423,9 +2454,10 @@ func (s *CSBK) AsAckOutbound() (p AckOutboundPDU, ok bool) {
 }
 
 // SetAckOutbound makes s carry p as an AckOutboundPDU payload: it sets
-// Opcode to CSBKAckOutbound, FID to 0 and RawPayload, and keeps the other
-// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
-// its bits, and then leaves s as it is.
+// Opcode to CSBKAckOutbound, FID to 0, Hint0x38 to Opcode0x38Unknown and
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetAckOutbound(p AckOutboundPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2437,6 +2469,7 @@ func (s *CSBK) SetAckOutbound(p AckOutboundPDU) error {
 	}
 	s.Opcode = CSBKAckOutbound
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2455,9 +2488,9 @@ func (s *CSBK) AsAckInbound() (p AckInboundPDU, ok bool) {
 }
 
 // SetAckInbound makes s carry p as an AckInboundPDU payload: it sets Opcode
-// to CSBKAckInbound, FID to 0 and RawPayload, and keeps the other fields. It
-// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
-// and then leaves s as it is.
+// to CSBKAckInbound, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload,
+// and keeps the other fields. It returns a *dmrgo.FieldRangeError when a
+// field of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetAckInbound(p AckInboundPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2469,6 +2502,7 @@ func (s *CSBK) SetAckInbound(p AckInboundPDU) error {
 	}
 	s.Opcode = CSBKAckInbound
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2487,9 +2521,10 @@ func (s *CSBK) AsAckOutboundPayload() (p AckOutboundPayloadPDU, ok bool) {
 }
 
 // SetAckOutboundPayload makes s carry p as an AckOutboundPayloadPDU payload:
-// it sets Opcode to CSBKAckOutboundPayload, FID to 0 and RawPayload, and
-// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
-// of p does not fit its bits, and then leaves s as it is.
+// it sets Opcode to CSBKAckOutboundPayload, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetAckOutboundPayload(p AckOutboundPayloadPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2501,6 +2536,7 @@ func (s *CSBK) SetAckOutboundPayload(p AckOutboundPayloadPDU) error {
 	}
 	s.Opcode = CSBKAckOutboundPayload
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2519,9 +2555,10 @@ func (s *CSBK) AsAckInboundPayload() (p AckInboundPayloadPDU, ok bool) {
 }
 
 // SetAckInboundPayload makes s carry p as an AckInboundPayloadPDU payload:
-// it sets Opcode to CSBKAckInboundPayload, FID to 0 and RawPayload, and
-// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
-// of p does not fit its bits, and then leaves s as it is.
+// it sets Opcode to CSBKAckInboundPayload, FID to 0, Hint0x38 to
+// Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetAckInboundPayload(p AckInboundPayloadPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2533,6 +2570,7 @@ func (s *CSBK) SetAckInboundPayload(p AckInboundPayloadPDU) error {
 	}
 	s.Opcode = CSBKAckInboundPayload
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2551,9 +2589,10 @@ func (s *CSBK) AsRandomAccess() (p RandomAccessPDU, ok bool) {
 }
 
 // SetRandomAccess makes s carry p as a RandomAccessPDU payload: it sets
-// Opcode to CSBKRandomAccess, FID to 0 and RawPayload, and keeps the other
-// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
-// its bits, and then leaves s as it is.
+// Opcode to CSBKRandomAccess, FID to 0, Hint0x38 to Opcode0x38Unknown and
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetRandomAccess(p RandomAccessPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2565,6 +2604,7 @@ func (s *CSBK) SetRandomAccess(p RandomAccessPDU) error {
 	}
 	s.Opcode = CSBKRandomAccess
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2583,9 +2623,10 @@ func (s *CSBK) AsAckvitation() (p AckvitationPDU, ok bool) {
 }
 
 // SetAckvitation makes s carry p as an AckvitationPDU payload: it sets
-// Opcode to CSBKAckvitation, FID to 0 and RawPayload, and keeps the other
-// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
-// its bits, and then leaves s as it is.
+// Opcode to CSBKAckvitation, FID to 0, Hint0x38 to Opcode0x38Unknown and
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetAckvitation(p AckvitationPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2597,6 +2638,7 @@ func (s *CSBK) SetAckvitation(p AckvitationPDU) error {
 	}
 	s.Opcode = CSBKAckvitation
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2615,9 +2657,10 @@ func (s *CSBK) AsMaintenance() (p MaintenancePDU, ok bool) {
 }
 
 // SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode
-// to CSBKMaintenance, FID to 0 and RawPayload, and keeps the other fields.
-// It returns a *dmrgo.FieldRangeError when a field of p does not fit its
-// bits, and then leaves s as it is.
+// to CSBKMaintenance, FID to 0, Hint0x38 to Opcode0x38Unknown and
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetMaintenance(p MaintenancePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2629,6 +2672,7 @@ func (s *CSBK) SetMaintenance(p MaintenancePDU) error {
 	}
 	s.Opcode = CSBKMaintenance
 	s.FID = 0
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2648,10 +2692,10 @@ func (s *CSBK) AsMotorolaRadioCheck() (p MotorolaRadioCheckPDU, ok bool) {
 }
 
 // SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload:
-// it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola and
-// RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola,
+// Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields.
+// It returns a *dmrgo.FieldRangeError when a field of p does not fit its
+// bits, and then leaves s as it is.
 func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2663,6 +2707,7 @@ func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
 	}
 	s.Opcode = CSBKMotorolaRadioCheck
 	s.FID = enums.FIDMotorola
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2682,10 +2727,10 @@ func (s *CSBK) AsMotorolaCallAlert() (p MotorolaCallAlertPDU, ok bool) {
 }
 
 // SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it
-// sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola and
-// RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola, Hint0x38
+// to Opcode0x38Unknown and RawPayload, and keeps the other fields. It
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2697,6 +2742,7 @@ func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
 	}
 	s.Opcode = CSBKMotorolaCallAlert
 	s.FID = enums.FIDMotorola
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }
@@ -2717,9 +2763,9 @@ func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
 
 // SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU
 // payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to
-// enums.FIDMotorola and RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
-// leaves s as it is.
+// enums.FIDMotorola, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -2731,6 +2777,7 @@ func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
 	}
 	s.Opcode = CSBKMotorolaCallAlertAck
 	s.FID = enums.FIDMotorola
+	s.Hint0x38 = Opcode0x38Unknown
 	s.RawPayload = raw
 	return nil
 }

@@ -1,6 +1,7 @@
 package emit
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -282,6 +283,11 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 	for _, sc := range sets {
 		texts = append(texts, sc.text)
 	}
+	for _, r := range pdu.Resets {
+		if !slices.ContainsFunc(sets, func(sc setCond) bool { return sc.cond.Field == r.Field }) {
+			texts = append(texts, r.Field+" to "+r.Values[0])
+		}
+	}
 	texts = append(texts, union.Name)
 	doc := "Set" + v.Name + " makes s carry p as " + article(v.Type) + " " + v.Type + " payload: it sets " + andList(texts) + ", and keeps the other fields."
 	var errs []string
@@ -337,6 +343,11 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 		}
 		for _, sc := range sets {
 			b.Id(dst).Dot(sc.cond.Field).Op("=").Add(sc.value)
+		}
+		for _, r := range pdu.Resets {
+			if !slices.ContainsFunc(sets, func(sc setCond) bool { return sc.cond.Field == r.Field }) {
+				b.Id(dst).Dot(r.Field).Op("=").Add(emitDispatchConstant(r.Values[0], pdu))
+			}
 		}
 		b.Id(dst).Dot(union.Name).Op("=").Id("raw")
 		if check {

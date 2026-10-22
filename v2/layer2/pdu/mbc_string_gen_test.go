@@ -27,6 +27,8 @@ func (s *MBCHeader) fmtString() string {
 		_ret += v.String()
 	} else if v, ok := s.AsPrivateDataGrantMultiItem(); ok {
 		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrantMultiItem(); ok {
+		_ret += v.String()
 	} else if v, ok := s.AsMove(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsBroadcast(); ok {

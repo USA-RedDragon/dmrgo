@@ -85,6 +85,8 @@ func (s *MBCHeader) String() string {
 		_ret += v.String()
 	} else if v, ok := s.AsPrivateDataGrantMultiItem(); ok {
 		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrantMultiItem(); ok {
+		_ret += v.String()
 	} else if v, ok := s.AsMove(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsBroadcast(); ok {
@@ -357,6 +359,40 @@ func (s *MBCHeader) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU)
 		return err
 	}
 	s.Opcode = CSBKPrivateDataGrantMultiItem
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkgroupDataGrantMultiItem decodes RawPayload as a
+// TalkgroupDataGrantMultiItemPDU payload. ok is false unless Opcode is
+// CSBKTalkgroupDataGrantMultiItem and FID is 0.
+func (s *MBCHeader) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
+	if s == nil {
+		return TalkgroupDataGrantMultiItemPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKTalkgroupDataGrantMultiItem && s.FID == 0) {
+		return p, false
+	}
+	return decodeTalkgroupDataGrantMultiItemPDU(s.RawPayload), true
+}
+
+// SetTalkgroupDataGrantMultiItem makes s carry p as a
+// TalkgroupDataGrantMultiItemPDU payload: it sets Opcode to
+// CSBKTalkgroupDataGrantMultiItem, FID to 0 and RawPayload, and keeps the
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
+func (s *MBCHeader) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKTalkgroupDataGrantMultiItem
 	s.FID = 0
 	s.RawPayload = raw
 	return nil

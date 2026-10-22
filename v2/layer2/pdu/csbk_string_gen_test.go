@@ -321,6 +321,10 @@ func (s *CSBK) fmtString() string {
 		_ret += v.String()
 	} else if v, ok := s.AsMotorolaCallAlertAck(); ok {
 		_ret += v.String()
+	} else if v, ok := s.AsBSOutboundActivation(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrantMultiItem(); ok {
+		_ret += v.String()
 	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}

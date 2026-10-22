@@ -271,8 +271,8 @@ type PrivateDataGrantMultiItemPDU struct {
 }
 
 // TalkgroupDataGrantMultiItemPDU is the multi-item talkgroup data channel
-// grant (TD_GRANT_MI) CSBK payload. DecodeCSBK keeps it in RawPayload (opcode
-// 0x38): use CSBK.AsTalkgroupDataGrantMultiItem.
+// grant (TD_GRANT_MI) CSBK and MBC header payload. Its CSBK opcode 0x38 is
+// also BS_Dwn_Act: see CSBK.AsTalkgroupDataGrantMultiItem.
 // (ETSI TS 102 361-4 clause 7.1.1.1.1)
 //
 //dmr:subpdu
@@ -459,6 +459,9 @@ const (
 //dmr:crc_mask 0xA5A5
 //dmr:input_size 96
 //dmr:dispatch_if FID==0
+//dmr:reset Hint0x38=Opcode0x38Unknown
+//dmr:string_as BSOutboundActivation
+//dmr:string_as TalkgroupDataGrantMultiItem
 //dmr:variant UnitToUnitVoiceServiceRequest UnitToUnitVoiceServiceRequestPDU Opcode=CSBKUnitToUnitVoiceServiceRequest
 //dmr:variant UnitToUnitVoiceServiceAnswerResponse UnitToUnitVoiceServiceAnswerResponsePDU Opcode=CSBKUnitToUnitVoiceServiceAnswerResponse
 //dmr:variant NegativeAcknowledgement NegativeAcknowledgementPDU Opcode=CSBKNegativeAcknowledgement
@@ -496,7 +499,8 @@ type CSBK struct {
 	FEC         fec.Result `dmr:"-"`         // result of the CRC check
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
 	// Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst,
-	// which a network relay can rewrite.
+	// which a network relay can rewrite. Each SetX resets it, except the two
+	// 0x38 setters, which set it.
 	Hint0x38 Opcode0x38Hint `dmr:"-"`
 
 	// RawPayload holds CSBK octets 2 to 9 (bits 16 to 79), the payload that
@@ -505,12 +509,13 @@ type CSBK struct {
 }
 
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
-// opcode 0x38 as a BS_Dwn_Act PDU. ok is false for another opcode or FID.
+// opcode 0x38 as a BS_Dwn_Act PDU. ok is false for another opcode or FID,
+// and when Hint0x38 is Opcode0x38TalkgroupDataGrantMultiItem.
 func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s == nil {
 		return BSOutboundActivationPDU{}, false
 	}
-	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
+	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 || s.Hint0x38 == Opcode0x38TalkgroupDataGrantMultiItem {
 		return p, false
 	}
 	return decodeBSOutboundActivationPDU(s.RawPayload), true
@@ -518,12 +523,12 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 
 // AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID
 // CSBK with opcode 0x38 as a TD_GRANT_MI PDU. ok is false for another opcode
-// or FID.
+// or FID, and when Hint0x38 is Opcode0x38BSOutboundActivation.
 func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
 	if s == nil {
 		return TalkgroupDataGrantMultiItemPDU{}, false
 	}
-	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
+	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 || s.Hint0x38 == Opcode0x38BSOutboundActivation {
 		return p, false
 	}
 	return decodeTalkgroupDataGrantMultiItemPDU(s.RawPayload), true
