@@ -5388,7 +5388,7 @@ struct dmrgo_voice_transmitter_config_t {
 	int64_t terminators;
 	/* Timeout is the transmit timeout T_TO. 0 means DMRGO_CONSTANTS_TTO (180 s), and a negative value turns it off (ETSI TS 102 361-2 clause 6.1). */
 	dmrgo_duration_t timeout;
-	/* Queue is the number of vocoder slots buffered. 0 means DMRGO_VOICE_DEFAULT_QUEUE; at most DMRGO_VOICE_MAX_QUEUE. It must hold Headers+1 bursts, so that a relayed late entry can send its headers first. */
+	/* Queue is the number of vocoder slots buffered. 0 means Headers+2 bursts, DMRGO_VOICE_DEFAULT_QUEUE for 0 or 1 Headers; at most DMRGO_VOICE_MAX_QUEUE. It must hold Headers+1 bursts, so that a relayed late entry can send its headers first. */
 	int64_t queue;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. */
 	dmrgo_duration_t lead;
@@ -7688,7 +7688,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
 /* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when dmrgo_voice_receiver_config_t.lost is 0. */
 #define DMRGO_VOICE_DEFAULT_LOST 1000000000
-/* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when dmrgo_voice_transmitter_config_t.queue is 0: three bursts. */
+/* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when dmrgo_voice_transmitter_config_t.queue is 0 and dmrgo_voice_transmitter_config_t.headers is 0 or 1: three bursts. */
 #define DMRGO_VOICE_DEFAULT_QUEUE 9
 /* Go: voice.EndDataSync. EndDataSync is a data burst other than a terminator. */
 #define DMRGO_VOICE_END_DATA_SYNC ((dmrgo_voice_end_reason_t)2)
