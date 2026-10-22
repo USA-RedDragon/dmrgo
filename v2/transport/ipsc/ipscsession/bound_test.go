@@ -72,12 +72,12 @@ func TestMaxOutputOctets(t *testing.T) {
 			q := queue[0]
 			queue = queue[1:]
 			if q.to == masterAddr {
-				check("master packet", m, masterAddr, m.Packet(now, q.from, q.p, nil))
+				check("master packet", m, masterAddr, m.Packet(now, q.from, q.p, nil, nil))
 				continue
 			}
 			for i, a := range addrs {
 				if a == q.to {
-					check("peer packet", ps[i], a, ps[i].Packet(q.from, q.p, nil))
+					check("peer packet", ps[i], a, ps[i].Packet(now, q.from, q.p, nil))
 				}
 			}
 		}
@@ -93,9 +93,9 @@ func TestMaxOutputOctets(t *testing.T) {
 		pump(now)
 	}
 	for i, p := range ps {
-		check("peer close", p, addrs[i], p.Close(nil))
+		check("peer close", p, addrs[i], p.Close(400*time.Second, nil))
 	}
-	check("master close", m, masterAddr, m.Close(nil))
+	check("master close", m, masterAddr, m.Close(400*time.Second, nil))
 	if worst["master packet"] == 0 || worst["peer packet"] == 0 {
 		t.Fatalf("the network sent nothing: %v", worst)
 	}

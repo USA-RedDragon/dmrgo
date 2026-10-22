@@ -1,6 +1,6 @@
 package ipscsession
 
-import "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+import "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 
 // MaxOutputOctets returns the most octets that the packets of the outputs
 // of one call of the Master hold, where outputs that share a packet count
@@ -11,7 +11,7 @@ func (m *Master) MaxOutputOctets() int {
 		return 0
 	}
 
-	return 2*MaxPacket + m.maxPeers*(5+auth.TrailerLen)
+	return 2*MaxPacket + m.maxPeers*(5+ipscauth.TrailerLen)
 }
 
 // MaxOutputOctets returns the most octets that the packets of the outputs

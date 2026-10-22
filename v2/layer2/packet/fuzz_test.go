@@ -391,7 +391,7 @@ func (s *session) samePacket(m *packet.Message) bool {
 }
 
 func (s *session) wellFormed(m *packet.Message) bool {
-	if m.Header.Format != s.p.Header.Format {
+	if m.Header.Format() != s.p.Header.Format() {
 		return false
 	}
 	per, err := packet.BlockOctets(m.DataType, s.confirmed)
@@ -399,12 +399,12 @@ func (s *session) wellFormed(m *packet.Message) bool {
 		return false
 	}
 	pad := 0
-	switch h := m.Header; {
-	case !fullFlag(&h):
-	case h.UnconfirmedDataHeader != nil:
-		pad = int(h.UnconfirmedDataHeader.PadOctetCount)
-	case h.ConfirmedDataHeader != nil:
-		pad = int(h.ConfirmedDataHeader.PadOctetCount)
+	if h := m.Header; fullFlag(&h) {
+		if u, ok := h.AsUnconfirmed(); ok {
+			pad = int(u.PadOctetCount)
+		} else if c, ok := h.AsConfirmed(); ok {
+			pad = int(c.PadOctetCount)
+		}
 	}
 	s.octets = append(s.octets[:0], m.Data...)
 	for range pad {
@@ -414,17 +414,8 @@ func (s *session) wellFormed(m *packet.Message) bool {
 }
 
 func blocksOf(h *pdu.DataHeader) int {
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		return int(h.UnconfirmedDataHeader.BlocksToFollow)
-	case h.ConfirmedDataHeader != nil:
-		return int(h.ConfirmedDataHeader.BlocksToFollow)
-	case h.DefinedDataHeader != nil:
-		return int(h.DefinedDataHeader.AppendedBlocks)
-	case h.RawDataHeader != nil:
-		return int(h.RawDataHeader.AppendedBlocks)
-	}
-	return 0
+	n, _ := h.BlocksToFollow()
+	return n
 }
 
 func (s *session) plan() bool {

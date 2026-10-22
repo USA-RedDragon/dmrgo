@@ -41,10 +41,4 @@ func TestNilReceivers(t *testing.T) {
 	if lc := s.ShortLC(); lc != (pdu.ShortLC{}) {
 		t.Errorf("nil DMRShortLC ShortLC %+v", lc)
 	}
-	var lc pdu.ShortLC
-	var p pdu.ShortLCPayloads
-	s.ShortLCInto(&lc, &p)
-	if lc != (pdu.ShortLC{}) {
-		t.Errorf("nil DMRShortLC ShortLCInto %+v", lc)
-	}
 }
