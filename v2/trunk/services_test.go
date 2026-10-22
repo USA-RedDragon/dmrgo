@@ -82,10 +82,10 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 	if !ok || st.Status != 42 || st.Grant.Source != 3120001 || st.Grant.Target != 3120003 || st.Grant.Group {
 		t.Errorf("C status %+v %v", st, ok)
 	}
-	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.ReasonMSAccepted {
+	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.AckReasonMSAccepted {
 		t.Errorf("A accepted %+v", acc)
 	}
-	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Status != 42 || e.Ack != enums.ReasonMSAccepted || e.Call.Target != 3120003 || e.Call.Source != 3120001 {
+	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Status != 42 || e.Ack != enums.AckReasonMSAccepted || e.Call.Target != 3120003 || e.Call.Source != 3120001 {
 		t.Errorf("TSCCStatus %+v %v", e, ok)
 	}
 
@@ -122,7 +122,7 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStatus); return ok })
-	if e, _ := s.event(trunk.TSCCStatus); e.Ack != enums.ReasonMSAccepted || e.Call.Source != 0xFFFECB || e.Status != 5 {
+	if e, _ := s.event(trunk.TSCCStatus); e.Ack != enums.AckReasonMSAccepted || e.Call.Source != 0xFFFECB || e.Status != 5 {
 		t.Errorf("dispatcher status %+v", e)
 	}
 	if err := s.tscc.SendStatus(s.now, true, 9, 1, trunk.StatusPoll); err == nil {
@@ -147,7 +147,7 @@ func TestStatus_NoAnswer(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(4*time.Second, func() bool { _, ok := has(a.log, trunk.OutputRefused); return ok })
-	if r, _ := has(a.log, trunk.OutputRefused); r.Ack != enums.ReasonMSAwayRefused {
+	if r, _ := has(a.log, trunk.OutputRefused); r.Ack != enums.AckReasonMSAwayRefused {
 		t.Errorf("refused %+v", r)
 	}
 	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Reason != trunk.ReasonTimeout {
@@ -212,7 +212,7 @@ func TestInterrupt_PayloadInterrupt(t *testing.T) {
 		t.Fatalf("B did not leave for the interrupt: %+v %v", ce, ok)
 	}
 	talk(s, a, g.Slot, 5*time.Second, func() bool { _, ok := has(a.log, trunk.OutputReverseChannel); return ok })
-	if acc, ok := has(b.log, trunk.OutputAccepted); !ok || acc.Ack != enums.ReasonMessageAccepted || b.ms.State() != trunk.StatePayload || b.channel != g.Channel {
+	if acc, ok := has(b.log, trunk.OutputAccepted); !ok || acc.Ack != enums.AckReasonMessageAccepted || b.ms.State() != trunk.StatePayload || b.channel != g.Channel {
 		t.Fatalf("B after the interrupt: %+v %v, state %v channel %d", acc, ok, b.ms.State(), b.channel)
 	}
 	rc, ok := has(a.log, trunk.OutputReverseChannel)
@@ -247,7 +247,7 @@ func TestInterrupt_Refused(t *testing.T) {
 	}
 	s.msOutputs(b, s.mout)
 	talk(s, a, g.Slot, 3*time.Second, func() bool { _, ok := has(b.log, trunk.OutputRefused); return ok && b.ms.State() == trunk.StatePayload })
-	if r, _ := has(b.log, trunk.OutputRefused); r.Ack != enums.ReasonNotSupported || b.channel != g.Channel {
+	if r, _ := has(b.log, trunk.OutputRefused); r.Ack != enums.AckReasonNotSupported || b.channel != g.Channel {
 		t.Errorf("refused %+v, channel %d", r, b.channel)
 	}
 	if _, ok := has(a.log, trunk.OutputReverseChannel); ok {
@@ -344,7 +344,7 @@ func TestStun_WithoutAuthentication(t *testing.T) {
 		t.Errorf("second Stun: %v", err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
-	if e, _ := s.event(trunk.TSCCStun); e.Address != 3120001 || e.Stun != trunk.StunStun || e.Ack != enums.ReasonMSAccepted || e.Reason != trunk.ReasonNone {
+	if e, _ := s.event(trunk.TSCCStun); e.Address != 3120001 || e.Stun != trunk.StunStun || e.Ack != enums.AckReasonMSAccepted || e.Reason != trunk.ReasonNone {
 		t.Errorf("TSCCStun %+v", e)
 	}
 	if o, ok := has(a.log, trunk.OutputStun); !ok || o.Stun != trunk.StunStun || !a.ms.Stunned() {
@@ -381,7 +381,7 @@ func TestStun_WithoutAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
-	if e, _ := s.event(trunk.TSCCStun); e.Ack != enums.ReasonMSNotSupported || c.ms.Stunned() {
+	if e, _ := s.event(trunk.TSCCStun); e.Ack != enums.AckReasonMSNotSupported || c.ms.Stunned() {
 		t.Errorf("NoStun: %+v, stunned %v", e, c.ms.Stunned())
 	}
 
@@ -428,11 +428,11 @@ func TestStun_Authenticated(t *testing.T) {
 	for _, e := range stuns(s) {
 		switch e.Address {
 		case 3120001:
-			if e.Ack != enums.ReasonMSAccepted || e.Reason != trunk.ReasonNone || !a.ms.Stunned() {
+			if e.Ack != enums.AckReasonMSAccepted || e.Reason != trunk.ReasonNone || !a.ms.Stunned() {
 				t.Errorf("A: %+v, stunned %v", e, a.ms.Stunned())
 			}
 		case 3120002:
-			if e.Ack != enums.ReasonRecipientRefused || e.Reason != trunk.ReasonAuthentication || b.ms.Stunned() {
+			if e.Ack != enums.AckReasonRecipientRefused || e.Reason != trunk.ReasonAuthentication || b.ms.Stunned() {
 				t.Errorf("B with another key: %+v, stunned %v", e, b.ms.Stunned())
 			}
 		}
@@ -449,11 +449,11 @@ func TestStun_Authenticated(t *testing.T) {
 	for _, e := range stuns(s) {
 		switch e.Address {
 		case 3120001:
-			if e.Stun != trunk.StunKill || e.Ack != enums.ReasonMSAccepted || !a.ms.Killed() || !a.ms.Off() {
+			if e.Stun != trunk.StunKill || e.Ack != enums.AckReasonMSAccepted || !a.ms.Killed() || !a.ms.Off() {
 				t.Errorf("kill A: %+v, killed %v", e, a.ms.Killed())
 			}
 		case 3120003:
-			if e.Ack != enums.ReasonMSNotSupported || s.ms[2].ms.Killed() {
+			if e.Ack != enums.AckReasonMSNotSupported || s.ms[2].ms.Killed() {
 				t.Errorf("kill without a key: %+v", e)
 			}
 		}

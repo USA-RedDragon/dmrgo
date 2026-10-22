@@ -2,7 +2,7 @@ package enums
 
 // FLCO is the 6-bit Full Link Control Opcode of a full LC (ETSI TS 102 361-2
 // Table B.1, ETSI TS 102 361-3 clause 7.1.1).
-type FLCO byte
+type FLCO uint8
 
 // The FLCO values.
 const (

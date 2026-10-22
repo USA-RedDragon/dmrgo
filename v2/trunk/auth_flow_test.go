@@ -16,7 +16,7 @@ var table615Key = [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1
 func challengeAhoy(t *testing.T, group, flag bool, target, source uint32) pdu.CSBK {
 	t.Helper()
 	return pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceOptsMirror: 1, ServiceKindFlag: flag, GroupIndividual: group, ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: target, SourceAddress: source}}
+		ServiceOptsMirror: 1, ServiceKindFlag: flag, GroupIndividual: group, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: target, SourceAddress: source}}
 }
 
 func TestMS_AuthDuringRegistration(t *testing.T) {
@@ -36,12 +36,12 @@ func TestMS_AuthDuringRegistration(t *testing.T) {
 	out = r.ms.AuthResponse(r.now, auth.Response(out[0].Challenge, table615Key, 0), r.out[:0])
 	wantKinds(t, "response", out, trunk.OutputBurst)
 	c := sent(t, &out[0])
-	if c.AckInboundPDU == nil || enums.AckReason(c.AckInboundPDU.ReasonCode) != enums.ReasonAuthResponseMS || c.AckInboundPDU.TargetAddress != 0xE8CA1D ||
+	if c.AckInboundPDU == nil || enums.AckReason(c.AckInboundPDU.ReasonCode) != enums.AckReasonAuthResponseMS || c.AckInboundPDU.TargetAddress != 0xE8CA1D ||
 		c.AckInboundPDU.AdditionalInfo != msAddr || c.AckInboundPDU.ResponseInfo != 0 || out[0].Due != at+60*time.Millisecond || out[0].Slot != enums.Slot1 {
 		t.Fatalf("C_ACKU %+v due %v slot %v", c.AckInboundPDU, out[0].Due, out[0].Slot)
 	}
 	wantKinds(t, "second response", r.ms.AuthResponse(r.now, 1, r.out[:0]))
-	out = r.feed(ack(t, enums.ReasonRegAccepted), &idle)
+	out = r.feed(ack(t, enums.AckReasonRegAccepted), &idle)
 	wantKinds(t, "Reg_Accepted", out, trunk.OutputRegistered)
 }
 
@@ -104,7 +104,7 @@ func TestMS_AuthOnPayload(t *testing.T) {
 	out = r.ms.AuthResponse(r.now, auth.Response(out[0].Challenge, table615Key, 0x010203), r.out[:0])
 	wantKinds(t, "P_ACKU", out, trunk.OutputBurst)
 	c := sent(t, &out[0])
-	if c.AckInboundPayloadPDU == nil || c.AckInboundPayloadPDU.TargetAddress != 0xE9C81E || enums.AckReason(c.AckInboundPayloadPDU.ReasonCode) != enums.ReasonAuthResponseMS ||
+	if c.AckInboundPayloadPDU == nil || c.AckInboundPayloadPDU.TargetAddress != 0xE9C81E || enums.AckReason(c.AckInboundPayloadPDU.ReasonCode) != enums.AckReasonAuthResponseMS ||
 		out[0].Slot != enums.Slot1 {
 		t.Errorf("P_ACKU %+v slot %v", c.AckInboundPayloadPDU, out[0].Slot)
 	}
@@ -158,7 +158,7 @@ func TestTSCC_Authentication(t *testing.T) {
 		default:
 		}
 	}
-	want := map[uint32]enums.AckReason{3120003: enums.ReasonRegDenied, 3120004: enums.ReasonRegDenied, 3120005: enums.ReasonRegRefused}
+	want := map[uint32]enums.AckReason{3120003: enums.AckReasonRegDenied, 3120004: enums.AckReasonRegDenied, 3120005: enums.AckReasonRegRefused}
 	for addr, r := range want {
 		if refused[addr] != r || s.tscc.Registered(addr) {
 			t.Errorf("MS %d: refused %v, want %v; registered %v", addr, refused[addr], r, s.tscc.Registered(addr))
@@ -169,7 +169,7 @@ func TestTSCC_Authentication(t *testing.T) {
 			t.Errorf("MS %d got no challenge", addr)
 		}
 	}
-	if o, ok := has(s.ms[3].log, trunk.OutputRefused); !ok || o.Ack != enums.ReasonRegDenied {
+	if o, ok := has(s.ms[3].log, trunk.OutputRefused); !ok || o.Ack != enums.AckReasonRegDenied {
 		t.Errorf("wrong key: %+v %v", o, ok)
 	}
 	if s.ms[2].ms.Registered() || s.ms[3].ms.Registered() || s.ms[4].ms.Registered() {
@@ -201,7 +201,7 @@ func TestTSCC_AuthPSNPerMS(t *testing.T) {
 	})
 	for i, m := range s.ms[1:] {
 		addr := uint32(3120002 + i)
-		if o, _ := has(m.log, trunk.OutputRefused); o.Ack != enums.ReasonRegDenied || m.ms.Registered() || s.tscc.Registered(addr) {
+		if o, _ := has(m.log, trunk.OutputRefused); o.Ack != enums.AckReasonRegDenied || m.ms.Registered() || s.tscc.Registered(addr) {
 			t.Errorf("MS %d with another PSN than the TSCC: %+v, registered %v", addr, o, m.ms.Registered())
 		}
 	}

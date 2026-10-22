@@ -93,12 +93,12 @@ func (l *LCBytes) SetReserved(r bool) {
 }
 
 // FID returns the Feature set ID, octet 1.
-func (l LCBytes) FID() enums.FeatureSetID {
-	return enums.FeatureSetID(l[1])
+func (l LCBytes) FID() enums.FID {
+	return enums.FID(l[1])
 }
 
 // SetFID writes fid into octet 1.
-func (l *LCBytes) SetFID(fid enums.FeatureSetID) {
+func (l *LCBytes) SetFID(fid enums.FID) {
 	if l == nil {
 		return
 	}

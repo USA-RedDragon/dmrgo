@@ -415,9 +415,9 @@ func (f *CapacityPlusFollower) activity(now time.Duration, a *pdu.CapacityPlusAc
 	for lsn := uint8(1); lsn <= pdu.CapacityPlusMaxLSN; lsn++ {
 		g := Grant{Opcode: pdu.CSBKCapacityPlusSiteStatus, LateEntry: true}
 		if tg, ok := a.Talkgroup(lsn); ok && f.wantsGroup(uint32(tg)) {
-			g.Service, g.Group, g.Target = enums.ServiceTalkgroupVoice, true, uint32(tg)
+			g.Service, g.Group, g.Target = enums.ServiceKindTalkgroupVoice, true, uint32(tg)
 		} else if r, ok := a.RadioTarget(lsn); ok && f.indiv {
-			g.Service, g.Target = enums.ServiceIndividualVoice, uint32(r)
+			g.Service, g.Target = enums.ServiceKindIndividualVoice, uint32(r)
 		} else {
 			continue
 		}
@@ -439,13 +439,13 @@ func (f *CapacityPlusFollower) fullLC(now time.Duration, lc *pdu.FullLinkControl
 	var g Grant
 	var rest uint8
 	if p, ok := lc.AsCapacityPlusGroupVoiceGrant(); ok {
-		g = Grant{Service: enums.ServiceTalkgroupVoice, Group: true, Target: uint32(p.GroupAddress), Source: uint32(p.SourceAddress), Emergency: p.ServiceOptions.IsEmergency}
+		g = Grant{Service: enums.ServiceKindTalkgroupVoice, Group: true, Target: uint32(p.GroupAddress), Source: uint32(p.SourceAddress), Emergency: p.ServiceOptions.IsEmergency}
 		rest = p.RestLSN
 		if !f.wantsGroup(g.Target) {
 			return f.restSeen(now, rest, out)
 		}
 	} else if p, ok := lc.AsCapacityPlusPrivateVoiceGrant(); ok {
-		g = Grant{Service: enums.ServiceIndividualVoice, Target: p.TargetAddress, Source: uint32(p.SourceAddress), Emergency: p.ServiceOptions.IsEmergency}
+		g = Grant{Service: enums.ServiceKindIndividualVoice, Target: p.TargetAddress, Source: uint32(p.SourceAddress), Emergency: p.ServiceOptions.IsEmergency}
 		rest = p.RestLSN
 		if !f.indiv {
 			return f.restSeen(now, rest, out)

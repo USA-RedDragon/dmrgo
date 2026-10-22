@@ -467,7 +467,7 @@ func fullFlag(h *pdu.DataHeader) bool {
 func fuzzHeader(kind uint8, fields uint64, dst, src uint32) pdu.DataHeader {
 	dst, src = dst&0xFFFFFF, src&0xFFFFFF
 	group, resp := kind&0x40 != 0, kind&0x80 != 0
-	sap := enums.ServiceAccessPointID(fields & 0xF)
+	sap := enums.SAP(fields & 0xF)
 	switch kind & 3 {
 	case 0:
 		return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{

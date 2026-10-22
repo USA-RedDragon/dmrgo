@@ -8,7 +8,7 @@ import (
 // DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2
 // calls. It is in the range that is reserved for future MFID allocation
 // (1xxxxxxx), and QRadioLink assigned it itself (ETSI TS 102 361-1 Table 9.21).
-const DefaultFID enums.FeatureSetID = 0xC2
+const DefaultFID enums.FID = 0xC2
 
 // FrameSamples is the number of 8 kHz PCM samples in one Codec2 frame.
 const FrameSamples = 160
@@ -32,7 +32,7 @@ type Config struct {
 	// FID is the Feature set ID to send in the Full LC. Zero selects
 	// DefaultFID. FID 0 is the ETSI feature set, which repeaters treat as
 	// AMBE, so it cannot be selected.
-	FID enums.FeatureSetID
+	FID enums.FID
 }
 
 var _ vocoder.Codec = (*Codec)(nil)

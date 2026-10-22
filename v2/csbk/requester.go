@@ -73,7 +73,7 @@ type RequestOptions struct {
 // names the opcode of the request also ends it.
 type Match struct {
 	// FID is the feature set ID of the answer.
-	FID enums.FeatureSetID
+	FID enums.FID
 	// Opcodes holds the opcodes of the answer.
 	Opcodes [4]pdu.CSBKOpcode
 	// N is the number of Opcodes that are used, from 1 to 4.

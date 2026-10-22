@@ -25,7 +25,7 @@ static inline int dmrgo_vocoder_codec_vtable_t__encode(const dmrgo_vocoder_codec
 	return t->encode(t->user, pcm, pcm_len, out);
 }
 
-static inline int dmrgo_vocoder_codec_vtable_t__fid(const dmrgo_vocoder_codec_vtable_t *t, dmrgo_enums_feature_set_id_t *out) {
+static inline int dmrgo_vocoder_codec_vtable_t__fid(const dmrgo_vocoder_codec_vtable_t *t, dmrgo_enums_fid_t *out) {
 	return t->fid(t->user, out);
 }
 

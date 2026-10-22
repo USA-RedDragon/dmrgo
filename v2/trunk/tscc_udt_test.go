@@ -62,7 +62,7 @@ func TestTSCC_ShortData(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := waitLog(s, a, trunk.OutputDelivered)
-	if d.Ack != enums.ReasonMSAccepted {
+	if d.Ack != enums.AckReasonMSAccepted {
 		t.Errorf("delivered %v", d.Ack)
 	}
 	if _, ok := has(b.log, trunk.OutputUDT); !ok {
@@ -80,7 +80,7 @@ func TestTSCC_ShortData(t *testing.T) {
 	if err := a.ms.SendShortData(s.now, true, 9, &text, layer3.ShortDataServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
-	if d := waitLog(s, a, trunk.OutputDelivered); d.Ack != enums.ReasonMessageAccepted {
+	if d := waitLog(s, a, trunk.OutputDelivered); d.Ack != enums.AckReasonMessageAccepted {
 		t.Errorf("group delivered %v", d.Ack)
 	}
 	s.run(time.Second)
@@ -136,7 +136,7 @@ func TestTSCC_Polling(t *testing.T) {
 	if err := a.ms.PollShortData(s.now, 3120003, enums.UDTNMEA, 1); err != nil {
 		t.Fatal(err)
 	}
-	if r := waitLog(s, a, trunk.OutputRefused); r.Ack != enums.ReasonMSNotSupported {
+	if r := waitLog(s, a, trunk.OutputRefused); r.Ack != enums.AckReasonMSNotSupported {
 		t.Errorf("poll refused %+v", r)
 	}
 
@@ -170,7 +170,7 @@ func TestTSCC_Polling(t *testing.T) {
 	if err := s.tscc.PollUSBD(s.now, 3120002, pdu.ServiceTypeLIP, 1); err != nil {
 		t.Fatal(err)
 	}
-	if e := waitEvent(s, trunk.TSCCRefused); e.Ack != enums.ReasonMSNotSupported {
+	if e := waitEvent(s, trunk.TSCCRefused); e.Ack != enums.AckReasonMSNotSupported {
 		t.Errorf("USBD refused %+v", e)
 	}
 	if err := s.tscc.PollUSBD(s.now, 0, pdu.ServiceTypeLIP, 0); err == nil {
@@ -226,7 +226,7 @@ func TestTSCC_Diversion(t *testing.T) {
 	if err := b.ms.Divert(s.now, constants.GatewayPSTNI, opts, &pstn); err != nil {
 		t.Fatal(err)
 	}
-	if r := waitLog(s, b, trunk.OutputRefused); r.Ack != enums.ReasonTransientSysRefused {
+	if r := waitLog(s, b, trunk.OutputRefused); r.Ack != enums.AckReasonTransientSysRefused {
 		t.Errorf("PSTN diversion %+v", r)
 	}
 }
@@ -276,7 +276,7 @@ func TestTSCC_Duplex(t *testing.T) {
 	gb, _ := has(b.log, trunk.OutputGrant)
 	_ = gb
 	start := waitEvent(s, trunk.TSCCCallStart)
-	if start.Call.Service != enums.ServiceDuplexVoice || ga.Grant.Service != enums.ServiceDuplexVoice {
+	if start.Call.Service != enums.ServiceKindDuplexVoice || ga.Grant.Service != enums.ServiceKindDuplexVoice {
 		t.Errorf("duplex grant %+v", start.Call)
 	}
 	s.mout = a.ms.EndCall(s.now, s.mout[:0])
@@ -296,7 +296,7 @@ func TestTSCC_Duplex(t *testing.T) {
 	if err := a.ms.CallDuplex(s.now, 3120004, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
-	if r := waitLog(s, a, trunk.OutputRefused); r.Ack != enums.ReasonMSDuplexNotSupported {
+	if r := waitLog(s, a, trunk.OutputRefused); r.Ack != enums.AckReasonMSDuplexNotSupported {
 		t.Errorf("NoDuplex %+v", r)
 	}
 	if _, ok := has(d.log, trunk.OutputAhoy); !ok {

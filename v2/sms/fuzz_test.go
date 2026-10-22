@@ -41,7 +41,7 @@ func fuzzDecode(t *testing.T, defined bool, code uint8, data []byte) {
 		}}
 	} else {
 		m.Header = pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-			SAP: enums.ServiceAccessPointID(code & 0xF), LLIDDestination: 2, LLIDSource: 1,
+			SAP: enums.SAP(code & 0xF), LLIDDestination: 2, LLIDSource: 1,
 		}}
 	}
 	out, got, err := sms.Decode(nil, &m.Header, m.Data)

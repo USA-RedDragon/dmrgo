@@ -21,7 +21,7 @@ type FullLinkControl struct {
 	// FLCO is the Full Link Control Opcode; Encode returns an error unless FLCO and FID select the one payload field that is set.
 	FLCO enums.FLCO `dmr:"bits:2-7,enum"`
 	// FID is the Feature set ID; the payload fields apply only to the standard FID 0, and RawPayload holds the payload of any other FID.
-	FID enums.FeatureSetID `dmr:"bits:8-15,enum"`
+	FID enums.FID `dmr:"bits:8-15,enum"`
 	// FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (layer2.MMDVMHostAccepts).
 	FEC fec.Result `dmr:"-"`
 

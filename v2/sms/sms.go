@@ -133,7 +133,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	return dst, Text{}, ErrNotText
 }
 
-func decodeIP(dst []byte, sap enums.ServiceAccessPointID, data []byte, t Text) ([]byte, Text, error) {
+func decodeIP(dst []byte, sap enums.SAP, data []byte, t Text) ([]byte, Text, error) {
 	n := len(dst)
 	d, err := ip.Decode(sap, data)
 	if err != nil {

@@ -206,7 +206,7 @@ func (m *MS) PollStatus(now time.Duration, target uint32) error {
 func (m *MS) statusRequest(now time.Duration, req request, group bool, target uint32, st Status) error {
 	o := layer3.StatusServiceOptions{Group: group, IsSuppData: m.svc.suplLen > 0, StatusHigh: uint8(st) >> 2}
 	field, _ := o.Field()
-	if err := m.request(now, enums.ServiceStatusTransport, target, field, false); err != nil {
+	if err := m.request(now, enums.ServiceKindStatusTransport, target, field, false); err != nil {
 		return err
 	}
 	m.req = req
@@ -225,11 +225,11 @@ func (m *MS) suplExtra(options uint8) uint8 {
 		v = uint8((s.suplLen+1)/12&3) << 2
 	}
 	switch m.kind {
-	case enums.ServiceIndividualVoice, enums.ServiceTalkgroupVoice, enums.ServiceIndividualPacketData, enums.ServiceTalkgroupPacketData:
+	case enums.ServiceKindIndividualVoice, enums.ServiceKindTalkgroupVoice, enums.ServiceKindIndividualPacketData, enums.ServiceKindTalkgroupPacketData:
 		if options&0x10 != 0 {
 			return v
 		}
-	case enums.ServiceStatusTransport:
+	case enums.ServiceKindStatusTransport:
 		if options&0x20 != 0 {
 			return v
 		}
@@ -275,7 +275,7 @@ func (m *MS) Interrupt(now time.Duration, terminate bool, dst []Output) ([]Outpu
 	m.ownCall = false
 	dst = m.f.leave(now, ReasonInterrupt, dst)
 	m.f.cleared, m.f.clearedAt, m.f.hasClear = g, now, true
-	m.kind = enums.ServiceStatusTransport
+	m.kind = enums.ServiceKindStatusTransport
 	m.startAccess(now, reqInterrupt, target, field, false)
 	m.svc.raExtra = uint8(st) & 3
 	m.svc.intCall, m.svc.intOn, m.svc.intEnd = g, true, terminate
@@ -303,7 +303,7 @@ func (m *MS) resume(now time.Duration, out []Output) []Output {
 // remove asks the TSCC to remove the address and keeps the registration.
 // The outputs follow from Burst and Tick: OutputAccepted when the TSCC
 // accepted the address, OutputRefused with Ack
-// enums.ReasonIPConnectionFailed when it refused the address and kept the
+// enums.AckReasonIPConnectionFailed when it refused the address and kept the
 // registration, or OutputRefused for a refused registration. It returns
 // ErrNotOnControl and ErrBusy as Call does. (ETSI TS 102 361-4 clause
 // 6.4.11)
@@ -321,7 +321,7 @@ func (m *MS) AdviseIP(now time.Duration, ip [16]byte, ipv6, remove bool) error {
 	s := &m.svc
 	s.ip, s.ipv6, s.ipRemove = ip, ipv6, remove
 	field, _ := layer3.RegistrationServiceOptions{IPInform: true, PowerSave: s.psRQ, Register: !remove}.Field()
-	m.kind = enums.ServiceRegistration
+	m.kind = enums.ServiceKindRegistration
 	m.startAccess(now, reqIP, constants.GatewayREGI, field, false)
 	return nil
 }
@@ -350,7 +350,7 @@ func (m *MS) svcAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 	s.awakeEnd, s.asleep = now+s.awake, false
 	kind := enums.ServiceKind(a.ServiceKind)
 	switch {
-	case !a.GroupIndividual && (a.SourceAddress == constants.GatewaySTUNI || a.SourceAddress == constants.GatewayKILLI) && kind == enums.ServiceSupplementary:
+	case !a.GroupIndividual && (a.SourceAddress == constants.GatewaySTUNI || a.SourceAddress == constants.GatewayKILLI) && kind == enums.ServiceKindSupplementary:
 		return m.stunAhoy(now, a, h, out), true
 	case !a.GroupIndividual && a.SourceAddress == constants.GatewayIPI:
 		if m.req != reqIP {
@@ -372,12 +372,12 @@ func (m *MS) svcAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 		out = m.svcUpload(now, m.replySlot(h), constants.GatewaySUPLI, s.suplFmt, s.supl[:n], out)
 		s.suplLen = 0
 		return out, true
-	case kind == enums.ServiceStatusTransport:
+	case kind == enums.ServiceKindStatusTransport:
 		if s.stunned {
 			return out, true
 		}
 		return m.statusAhoy(now, a, h, out), true
-	case s.stunned && kind != enums.ServiceRegistration:
+	case s.stunned && kind != enums.ServiceKindRegistration:
 		return out, true
 	}
 	return out, false
@@ -393,7 +393,7 @@ func (m *MS) replySlot(h *layer2.Hint) enums.Slot {
 func (m *MS) statusAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
 	s := &m.svc
 	st := Status(a.ServiceOptsMirror&0x1F)<<2 | Status(a.AppendedBlocks)
-	g := Grant{Service: enums.ServiceStatusTransport, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}
+	g := Grant{Service: enums.ServiceKindStatusTransport, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}
 	repeat := s.hasStat && now-s.lastStatAt < statusHold && s.lastStatV == st && s.lastStat.Target == g.Target && s.lastStat.Source == g.Source
 	s.lastStat, s.lastStatV, s.lastStatAt, s.hasStat = g, st, now, true
 	if !repeat {
@@ -402,9 +402,9 @@ func (m *MS) statusAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out [
 	if a.GroupIndividual {
 		return out
 	}
-	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.ReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
+	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
 	if st == StatusPoll {
-		m.txAck.ReasonCode, m.txAck.ResponseInfo = byte(enums.ReasonStatusPollAcceptedMS), uint8(s.status)
+		m.txAck.ReasonCode, m.txAck.ResponseInfo = byte(enums.AckReasonStatusPollAcceptedMS), uint8(s.status)
 	}
 	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
 	return m.send(now+frame, m.replySlot(h), out)
@@ -421,17 +421,17 @@ func (m *MS) stunAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []O
 		act = StunRevive
 	}
 	if act == StunKill && (s.noKill || s.auth == nil) || act != StunKill && s.noStun {
-		return m.finalAck(now, gw, enums.ReasonMSNotSupported, h, out)
+		return m.finalAck(now, gw, enums.AckReasonMSNotSupported, h, out)
 	}
 	if s.auth == nil {
-		out = m.finalAck(now, gw, enums.ReasonMSAccepted, h, out)
+		out = m.finalAck(now, gw, enums.AckReasonMSAccepted, h, out)
 		return m.applyStun(act, out)
 	}
 	if !s.stunWait || s.stunAct != act || s.stunGw != gw {
 		s.stunChal = m.rng.Uint32() % (maxAddress + 1)
 	}
 	s.stunWait, s.stunAct, s.stunGw, s.stunUntil = true, act, gw, now+m.regTO
-	s.txAckvit = pdu.AckvitationPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceSupplementary), TargetAddress: s.stunChal, SourceAddress: m.addr}
+	s.txAckvit = pdu.AckvitationPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: s.stunChal, SourceAddress: m.addr}
 	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckvitation, AckvitationPDU: &s.txAckvit}
 	return m.send(now+frame, m.replySlot(h), out)
 }
@@ -459,15 +459,15 @@ func (m *MS) applyStun(act StunAction, out []Output) []Output {
 func (m *MS) svcAck(now time.Duration, a *pdu.AckOutboundPDU, h *layer2.Hint, out []Output) ([]Output, bool) {
 	s := &m.svc
 	r := enums.AckReason(a.ReasonCode)
-	if r == enums.ReasonAuthResponseTS && s.stunWait {
+	if r == enums.AckReasonAuthResponseTS && s.stunWait {
 		s.stunWait = false
 		if !m.authOK(a.AdditionalInfo) {
-			return m.finalAck(now, s.stunGw, enums.ReasonRecipientRefused, h, out), true
+			return m.finalAck(now, s.stunGw, enums.AckReasonRecipientRefused, h, out), true
 		}
-		out = m.finalAck(now, s.stunGw, enums.ReasonMSAccepted, h, out)
+		out = m.finalAck(now, s.stunGw, enums.AckReasonMSAccepted, h, out)
 		return m.applyStun(s.stunAct, out), true
 	}
-	if r == enums.ReasonRegAccepted && (m.req == reqRegister || m.req == reqIP) {
+	if r == enums.AckReasonRegAccepted && (m.req == reqRegister || m.req == reqIP) {
 		s.psOffset = 0
 		if s.psRQ > 0 {
 			s.psOffset = a.ResponseInfo
@@ -482,8 +482,8 @@ func (m *MS) svcAck(now time.Duration, a *pdu.AckOutboundPDU, h *layer2.Hint, ou
 		switch {
 		case r.Type() == enums.AckNACK:
 			out = m.fail(ReasonNack, r, out)
-		case r == enums.ReasonStatusPollAcceptedMS || r == enums.ReasonStatusPollAcceptedTS:
-			out = append(out, Output{Kind: OutputStatus, Status: Status(a.ResponseInfo), Grant: Grant{Service: enums.ServiceStatusTransport, Target: m.addr, Source: m.target}})
+		case r == enums.AckReasonStatusPollAcceptedMS || r == enums.AckReasonStatusPollAcceptedTS:
+			out = append(out, Output{Kind: OutputStatus, Status: Status(a.ResponseInfo), Grant: Grant{Service: enums.ServiceKindStatusTransport, Target: m.addr, Source: m.target}})
 			m.done()
 		case r.Type() == enums.AckACK:
 			out = append(out, Output{Kind: OutputAccepted, Ack: r})
@@ -508,24 +508,24 @@ func (m *MS) ipAck(now time.Duration, r enums.AckReason, out []Output) []Output 
 	m.ra = raIdle
 	was := m.Registered()
 	switch {
-	case r == enums.ReasonRegAccepted:
+	case r == enums.AckReasonRegAccepted:
 		m.registered, m.regArea = true, m.areaOf(m.f.ctl.site.SysCode)
 		m.done()
 		if !was {
 			out = append(out, Output{Kind: OutputRegistered, Ack: r})
 		}
 		return append(out, Output{Kind: OutputAccepted, Ack: r})
-	case r == enums.ReasonIPConnectionFailed:
+	case r == enums.AckReasonIPConnectionFailed:
 		m.registered, m.regArea = true, m.areaOf(m.f.ctl.site.SysCode)
 		if !was {
 			out = append(out, Output{Kind: OutputRegistered, Ack: r})
 		}
 		return m.fail(ReasonNack, r, out)
-	case r == enums.ReasonRegDenied:
+	case r == enums.AckReasonRegDenied:
 		m.deny(now)
 		out = m.fail(ReasonNack, r, out)
 		return m.leaveTSCC(now, ReasonDenied, out)
-	case r == enums.ReasonRegRefused:
+	case r == enums.AckReasonRegRefused:
 		out = m.fail(ReasonNack, r, out)
 		return m.leaveTSCC(now, ReasonNack, out)
 	case r.Type() == enums.AckNACK:
@@ -574,7 +574,7 @@ func (m *MS) svcBurst(now time.Duration, before State, h *layer2.Hint, out []Out
 			hd := &u.Header
 			if u.CRCOK && hd.SupplementaryFlag && !hd.Group && hd.LLIDSource == constants.GatewaySUPLI && hd.LLIDDestination == m.addr && !s.stunned {
 				s.awakeEnd = now + s.awake
-				out = m.finalAck(now, constants.GatewaySUPLI, enums.ReasonMSAccepted, h, out)
+				out = m.finalAck(now, constants.GatewaySUPLI, enums.AckReasonMSAccepted, h, out)
 			}
 		default:
 		}
@@ -613,7 +613,7 @@ func (m *MS) svcLate(now time.Duration, out []Output) []Output {
 	}
 	if s.massOn && !s.massStarted && now >= s.massAt && m.f.state == StateControl && m.req == reqNone {
 		s.massStarted = true
-		m.kind = enums.ServiceRegistration
+		m.kind = enums.ServiceKindRegistration
 		m.startAccess(now, reqRegister, constants.GatewayREGI, m.regOptions(), false)
 	}
 	out = m.powerSave(now, out)

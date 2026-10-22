@@ -450,7 +450,7 @@ func (f *Follower) wants(now time.Duration, g *Grant) bool {
 	if f.hasClear && now-f.clearedAt < clearHold && g.LateEntry && sameCall(&f.cleared, g) {
 		return false
 	}
-	if f.self != 0 && (g.Service == enums.ServiceDuplexVoice || g.Service == enums.ServiceDuplexPacketData) {
+	if f.self != 0 && (g.Service == enums.ServiceKindDuplexVoice || g.Service == enums.ServiceKindDuplexPacketData) {
 		return g.Target == f.self
 	}
 	if f.self != 0 && (g.Source == f.self || !g.Group && g.Target == f.self) {

@@ -71,7 +71,7 @@ func TestMS_RegisterAndCall(t *testing.T) {
 	out := r.feed(a, &idle)
 	wantKinds(t, "registration C_RAND", out, trunk.OutputBurst)
 	c := sent(t, &out[0])
-	if c.RandomAccessPDU == nil || c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceRegistration) ||
+	if c.RandomAccessPDU == nil || c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindRegistration) ||
 		c.RandomAccessPDU.TargetAddress != constants.GatewayREGI || c.RandomAccessPDU.SourceAddress != msAddr || c.RandomAccessPDU.ServiceOptions != 1 {
 		t.Fatalf("registration C_RAND %+v", c.RandomAccessPDU)
 	}
@@ -81,7 +81,7 @@ func TestMS_RegisterAndCall(t *testing.T) {
 	if err := r.ms.Call(r.now, true, 9, layer3.VoiceServiceOptions{}); !errors.Is(err, trunk.ErrBusy) {
 		t.Errorf("Call while registering = %v", err)
 	}
-	out = r.feed(ack(t, enums.ReasonRegAccepted), &idle)
+	out = r.feed(ack(t, enums.AckReasonRegAccepted), &idle)
 	wantKinds(t, "Reg_Accepted", out, trunk.OutputRegistered)
 	if !r.ms.Registered() || r.ms.Busy() {
 		t.Errorf("Registered %v, Busy %v", r.ms.Registered(), r.ms.Busy())
@@ -92,10 +92,10 @@ func TestMS_RegisterAndCall(t *testing.T) {
 	}
 	out = r.feed(a, &idle)
 	wantKinds(t, "call C_RAND", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceTalkgroupVoice) || c.RandomAccessPDU.TargetAddress != 9 || c.RandomAccessPDU.ServiceOptions != 1 {
+	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindTalkgroupVoice) || c.RandomAccessPDU.TargetAddress != 9 || c.RandomAccessPDU.ServiceOptions != 1 {
 		t.Fatalf("call C_RAND %+v", c.RandomAccessPDU)
 	}
-	wantKinds(t, "C_WACKD", r.feed(ack(t, enums.ReasonWait), &idle))
+	wantKinds(t, "C_WACKD", r.feed(ack(t, enums.AckReasonWait), &idle))
 	out = r.feed(tvGrant(t, 9, 5, true), &idle)
 	wantKinds(t, "TV_GRANT", out, trunk.OutputGrant, trunk.OutputTune)
 	if r.ms.State() != trunk.StatePayload || r.ms.Busy() {
@@ -133,7 +133,7 @@ func TestMS_NoAnswer(t *testing.T) {
 			switch out[i].Kind {
 			case trunk.OutputBurst:
 				sends++
-				if c := sent(t, &out[i]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceIndividualVoice) {
+				if c := sent(t, &out[i]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindIndividualVoice) {
 					t.Fatalf("C_RAND %+v", c.RandomAccessPDU)
 				}
 			case trunk.OutputRefused:
@@ -158,9 +158,9 @@ func TestMS_Refused(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantKinds(t, "C_RAND", r.feed(a, &idle), trunk.OutputBurst)
-	out := r.feed(ack(t, enums.ReasonSysBusyRefused), &idle)
+	out := r.feed(ack(t, enums.AckReasonSysBusyRefused), &idle)
 	wantKinds(t, "C_NACKD", out, trunk.OutputRefused)
-	if out[0].Reason != trunk.ReasonNack || out[0].Ack != enums.ReasonSysBusyRefused || r.ms.Busy() {
+	if out[0].Reason != trunk.ReasonNack || out[0].Ack != enums.AckReasonSysBusyRefused || r.ms.Busy() {
 		t.Errorf("refused %+v, busy %v", out[0], r.ms.Busy())
 	}
 }
@@ -172,7 +172,7 @@ func TestMS_CallTimeout(t *testing.T) {
 	r.feed(a, &idle)
 	_ = r.ms.Call(r.now, true, 9, layer3.VoiceServiceOptions{})
 	r.feed(a, &idle)
-	r.feed(ack(t, enums.ReasonQueuedForResource), &idle)
+	r.feed(ack(t, enums.AckReasonQueuedForResource), &idle)
 	at, ok := r.ms.Deadline()
 	if !ok || at != r.now+4*time.Second {
 		t.Fatalf("Deadline %v, %v, want %v", at, ok, r.now+4*time.Second)
@@ -189,14 +189,14 @@ func TestMS_Called(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	r.feed(aloha(t), &idle)
 	ahoy := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}}, testCC)
+		ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}}, testCC)
 	out := r.feed(ahoy, &busy)
 	wantKinds(t, "C_AHOY", out, trunk.OutputAhoy, trunk.OutputBurst)
 	if out[0].Grant.Source != 3120002 {
 		t.Errorf("Ahoy %+v", out[0].Grant)
 	}
 	c := sent(t, &out[1])
-	if c.AckInboundPDU == nil || enums.AckReason(c.AckInboundPDU.ReasonCode) != enums.ReasonMSAccepted || c.AckInboundPDU.TargetAddress != 3120002 {
+	if c.AckInboundPDU == nil || enums.AckReason(c.AckInboundPDU.ReasonCode) != enums.AckReasonMSAccepted || c.AckInboundPDU.TargetAddress != 3120002 {
 		t.Fatalf("C_ACKU %+v", c.AckInboundPDU)
 	}
 	pv := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{

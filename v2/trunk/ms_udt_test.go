@@ -154,24 +154,24 @@ func TestMS_ShortDataSend(t *testing.T) {
 			t.Errorf("second request %v", err)
 		}
 		rq := randSent(t, r)
-		kind := enums.ServiceIndividualShortData
+		kind := enums.ServiceKindIndividualShortData
 		if group {
-			kind = enums.ServiceTalkgroupShortData
+			kind = enums.ServiceKindTalkgroupShortData
 		}
 		if rq.ServiceKind != uint8(kind) || rq.TargetAddress != peer || rq.Reserved != uint8(a.Blocks-1) {
 			t.Fatalf("C_RAND %+v", rq)
 		}
-		wantKinds(t, "C_WACKD", r.feed(ack(t, enums.ReasonWait), &idle))
-		wantKinds(t, "C_AHOY to another MS", r.feed(ahoyBurst(t, enums.ServiceIndividualShortData, constants.GatewaySDMI, peer, false, 1), &idle))
-		out := r.feed(ahoyBurst(t, enums.ServiceIndividualShortData, constants.GatewaySDMI, msAddr, false, 1), &idle)
+		wantKinds(t, "C_WACKD", r.feed(ack(t, enums.AckReasonWait), &idle))
+		wantKinds(t, "C_AHOY to another MS", r.feed(ahoyBurst(t, enums.ServiceKindIndividualShortData, constants.GatewaySDMI, peer, false, 1), &idle))
+		out := r.feed(ahoyBurst(t, enums.ServiceKindIndividualShortData, constants.GatewaySDMI, msAddr, false, 1), &idle)
 		h, got := uploaded(t, out)
 		if h.Opcode != pdu.UDTOpcodeInboundHeader || h.LLIDDestination != peer || h.LLIDSource != msAddr || h.Group != group ||
 			h.SupplementaryFlag || h.OptionFlag || got != a || out[0].Due != r.now+60*time.Millisecond {
 			t.Fatalf("upload %+v %+v", h, got)
 		}
-		final := enums.ReasonMSAccepted
+		final := enums.AckReasonMSAccepted
 		if group {
-			final = enums.ReasonMessageAccepted
+			final = enums.AckReasonMessageAccepted
 		}
 		out = r.feed(ack(t, final), &idle)
 		wantKinds(t, "final C_ACKD", out, trunk.OutputDelivered)
@@ -195,16 +195,16 @@ func TestMS_ShortDataRefusedAndTimeout(t *testing.T) {
 		t.Fatal(err)
 	}
 	randSent(t, r)
-	out := r.feed(ack(t, enums.ReasonMSAwayRefused), &idle)
+	out := r.feed(ack(t, enums.AckReasonMSAwayRefused), &idle)
 	wantKinds(t, "C_NACKD", out, trunk.OutputRefused)
-	if out[0].Reason != trunk.ReasonNack || out[0].Ack != enums.ReasonMSAwayRefused {
+	if out[0].Reason != trunk.ReasonNack || out[0].Ack != enums.AckReasonMSAwayRefused {
 		t.Errorf("refused %+v", out[0])
 	}
 	if err := r.ms.SendShortData(r.now, false, peer, &a, layer3.ShortDataServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	randSent(t, r)
-	wantKinds(t, "C_QACKD", r.feed(ack(t, enums.ReasonQueuedForBusy), &idle))
+	wantKinds(t, "C_QACKD", r.feed(ack(t, enums.AckReasonQueuedForBusy), &idle))
 	at, ok := r.ms.Deadline()
 	if !ok || at > r.now+constants.TNPTimerDefault {
 		t.Fatalf("deadline %v %v, want TNP_Timer", at, ok)
@@ -229,7 +229,7 @@ func TestMS_ShortDataReceive(t *testing.T) {
 	}
 	out := r.feedAll(download(t, pdu.UDTHeader{LLIDDestination: msAddr, LLIDSource: peer}, &a))
 	wantKinds(t, "UDT to the MS", out, trunk.OutputUDT, trunk.OutputBurst)
-	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMSAccepted) || k.TargetAddress != peer || k.AdditionalInfo != msAddr {
+	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSAccepted) || k.TargetAddress != peer || k.AdditionalInfo != msAddr {
 		t.Errorf("C_ACKU %+v", k)
 	}
 	got := r.ms.UDT().Appended()
@@ -252,19 +252,19 @@ func TestMS_PollShortData(t *testing.T) {
 		t.Fatal(err)
 	}
 	rq := randSent(t, r)
-	if rq.ServiceKind != uint8(enums.ServiceShortDataPolling) || rq.TargetAddress != peer || rq.Reserved != 0 ||
+	if rq.ServiceKind != uint8(enums.ServiceKindShortDataPolling) || rq.TargetAddress != peer || rq.Reserved != 0 ||
 		layer3.DecodePollingServiceOptions([1]byte{rq.ServiceOptions << 1}).Format != enums.UDTNMEA {
 		t.Fatalf("C_RAND %+v", rq)
 	}
-	wantKinds(t, "C_WACKD", r.feed(ack(t, enums.ReasonWait), &idle))
-	wantKinds(t, "C_AHOY to the polled MS", r.feed(ahoyBurst(t, enums.ServiceShortDataPolling, msAddr, peer, false, 0), &idle))
+	wantKinds(t, "C_WACKD", r.feed(ack(t, enums.AckReasonWait), &idle))
+	wantKinds(t, "C_AHOY to the polled MS", r.feed(ahoyBurst(t, enums.ServiceKindShortDataPolling, msAddr, peer, false, 0), &idle))
 	var a trunk.Appended
 	if err := a.SetNMEAShort(&trunk.NMEAShort{North: true, Fix: true, LatDegrees: 41}); err != nil {
 		t.Fatal(err)
 	}
 	out := r.feedAll(download(t, pdu.UDTHeader{LLIDDestination: msAddr, LLIDSource: peer}, &a))
 	wantKinds(t, "polled data", out, trunk.OutputUDT, trunk.OutputDelivered, trunk.OutputBurst)
-	if k := ackSent(t, &out[2]); k.ReasonCode != byte(enums.ReasonMSAccepted) || k.TargetAddress != peer {
+	if k := ackSent(t, &out[2]); k.ReasonCode != byte(enums.AckReasonMSAccepted) || k.TargetAddress != peer {
 		t.Errorf("C_ACKU %+v", k)
 	}
 	if r.ms.Busy() {
@@ -275,9 +275,9 @@ func TestMS_PollShortData(t *testing.T) {
 func TestMS_Polled(t *testing.T) {
 	t.Parallel()
 	r := onTSCC(t, nil)
-	out := r.feed(ahoyBurst(t, enums.ServiceShortDataPolling, peer, msAddr, false, 0), &idle)
+	out := r.feed(ahoyBurst(t, enums.ServiceKindShortDataPolling, peer, msAddr, false, 0), &idle)
 	wantKinds(t, "poll without data", out, trunk.OutputPolled, trunk.OutputBurst)
-	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMSNotSupported) || k.TargetAddress != peer {
+	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSNotSupported) || k.TargetAddress != peer {
 		t.Errorf("C_NACKU %+v", k)
 	}
 	var a trunk.Appended
@@ -285,7 +285,7 @@ func TestMS_Polled(t *testing.T) {
 		t.Fatal(err)
 	}
 	r.ms.SetPollResponse(&a)
-	out = r.feed(ahoyBurst(t, enums.ServiceShortDataPolling, constants.GatewaySDMI, msAddr, false, 0), &idle)
+	out = r.feed(ahoyBurst(t, enums.ServiceKindShortDataPolling, constants.GatewaySDMI, msAddr, false, 0), &idle)
 	if out[0].Kind != trunk.OutputPolled || out[0].Grant.Source != constants.GatewaySDMI {
 		t.Fatalf("outputs %v", kinds(out))
 	}
@@ -294,7 +294,7 @@ func TestMS_Polled(t *testing.T) {
 		t.Errorf("poll response %+v", h)
 	}
 	r.ms.SetPollResponse(nil)
-	out = r.feed(ahoyBurst(t, enums.ServiceShortDataPolling, peer, msAddr, false, 0), &idle)
+	out = r.feed(ahoyBurst(t, enums.ServiceKindShortDataPolling, peer, msAddr, false, 0), &idle)
 	wantKinds(t, "poll after clear", out, trunk.OutputPolled, trunk.OutputBurst)
 }
 
@@ -314,7 +314,7 @@ func TestMS_USBDPoll(t *testing.T) {
 	wantKinds(t, "poll of another MS", r.feed(usbdPoll(t, pdu.ServiceTypeLIP, 0, peer), &idle))
 	out := r.feed(usbdPoll(t, pdu.ServiceTypeLIP, 0, msAddr), &idle)
 	wantKinds(t, "poll without response", out, trunk.OutputPolled, trunk.OutputBurst)
-	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMSNotSupported) {
+	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSNotSupported) {
 		t.Errorf("C_NACKU %+v", k)
 	}
 	lip := trunk.USBDLIPResponse{Longitude: 90, Latitude: -45, Velocity: 3}
@@ -344,12 +344,12 @@ func TestMS_USBDPoll(t *testing.T) {
 		}
 	}
 	out = r.feed(usbdPoll(t, pdu.ServiceTypeManufacturerSpecific1, 0, msAddr), &idle)
-	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMSNotSupported) {
+	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSNotSupported) {
 		t.Errorf("other service type %+v", k)
 	}
 	r.ms.SetUSBDResponse(nil)
 	out = r.feed(usbdPoll(t, pdu.ServiceTypeLIP, 0, msAddr), &idle)
-	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMSNotSupported) {
+	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSNotSupported) {
 		t.Errorf("after clear %+v", k)
 	}
 }
@@ -375,16 +375,16 @@ func TestMS_Divert(t *testing.T) {
 		t.Fatal(err)
 	}
 	rq := randSent(t, r)
-	if rq.ServiceKind != uint8(enums.ServiceCallDiversion) || rq.TargetAddress != constants.GatewayMSI || rq.ProxyFlag ||
+	if rq.ServiceKind != uint8(enums.ServiceKindCallDiversion) || rq.TargetAddress != constants.GatewayMSI || rq.ProxyFlag ||
 		layer3.DecodeDiversionServiceOptions([1]byte{rq.ServiceOptions << 1}) != opts {
 		t.Fatalf("C_RAND %+v", rq)
 	}
-	out := r.feed(ahoyBurst(t, enums.ServiceCallDiversion, constants.GatewayDIVERTI, msAddr, false, 0), &idle)
+	out := r.feed(ahoyBurst(t, enums.ServiceKindCallDiversion, constants.GatewayDIVERTI, msAddr, false, 0), &idle)
 	h, got := uploaded(t, out)
 	if !h.OptionFlag || h.LLIDDestination != constants.GatewayMSI || h.SupplementaryFlag || got != a {
 		t.Fatalf("diversion upload %+v", h)
 	}
-	out = r.feed(ackFrom(t, enums.ReasonMessageAccepted, constants.GatewayMSI), &idle)
+	out = r.feed(ackFrom(t, enums.AckReasonMessageAccepted, constants.GatewayMSI), &idle)
 	wantKinds(t, "diversion accepted", out, trunk.OutputDelivered)
 
 	if err := r.ms.Divert(r.now, constants.GatewayTSI, layer3.DiversionServiceOptions{Voice: true}, nil); err != nil {
@@ -393,7 +393,7 @@ func TestMS_Divert(t *testing.T) {
 	if rq := randSent(t, r); rq.TargetAddress != constants.GatewayTSI || rq.Reserved != 0 {
 		t.Fatalf("clear C_RAND %+v", rq)
 	}
-	wantKinds(t, "clear accepted", r.feed(ack(t, enums.ReasonMessageAccepted), &idle), trunk.OutputDelivered)
+	wantKinds(t, "clear accepted", r.feed(ack(t, enums.AckReasonMessageAccepted), &idle), trunk.OutputDelivered)
 
 	var v6 trunk.Appended
 	v6.SetIP([16]byte{0x20, 0x01}, true)
@@ -436,7 +436,7 @@ func TestMS_DGNA(t *testing.T) {
 	}
 	out := r.feedAll(download(t, pdu.UDTHeader{LLIDDestination: msAddr, LLIDSource: peer, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &a))
 	wantKinds(t, "C_DGNAHD", out, trunk.OutputUDT, trunk.OutputGroups, trunk.OutputBurst)
-	if k := ackSent(t, &out[2]); k.ReasonCode != byte(enums.ReasonMSAccepted) || k.TargetAddress != peer {
+	if k := ackSent(t, &out[2]); k.ReasonCode != byte(enums.AckReasonMSAccepted) || k.TargetAddress != peer {
 		t.Errorf("C_ACKU %+v", k)
 	}
 	g := r.ms.Groups()
@@ -468,15 +468,15 @@ func TestMS_DGNA(t *testing.T) {
 		t.Fatal(err)
 	}
 	rq := randSent(t, r2)
-	if rq.ServiceKind != uint8(enums.ServiceSupplementary) || rq.TargetAddress != constants.GatewayDGNAI || rq.Reserved != 1<<2 {
+	if rq.ServiceKind != uint8(enums.ServiceKindSupplementary) || rq.TargetAddress != constants.GatewayDGNAI || rq.Reserved != 1<<2 {
 		t.Fatalf("C_RAND %+v", rq)
 	}
-	out = r2.feed(ahoyBurst(t, enums.ServiceSupplementary, constants.GatewayDGNAI, msAddr, false, 1), &idle)
+	out = r2.feed(ahoyBurst(t, enums.ServiceKindSupplementary, constants.GatewayDGNAI, msAddr, false, 1), &idle)
 	h, got := uploaded(t, out)
 	if h.Opcode != pdu.UDTOpcodeDGNAInboundHeader || h.LLIDDestination != peer || !h.ResponseRequested || got != a {
 		t.Fatalf("C_DGNAHU %+v", h)
 	}
-	wantKinds(t, "final C_ACKD", r2.feed(ackFrom(t, enums.ReasonMSAccepted, peer), &idle), trunk.OutputDelivered)
+	wantKinds(t, "final C_ACKD", r2.feed(ackFrom(t, enums.AckReasonMSAccepted, peer), &idle), trunk.OutputDelivered)
 }
 
 func dxGrant(t testing.TB, data bool, target, source uint32) layer2.RawBurst {
@@ -493,10 +493,10 @@ func TestMS_Duplex(t *testing.T) {
 	t.Parallel()
 	for _, data := range []bool{false, true} {
 		r := onTSCC(t, nil)
-		kind := enums.ServiceDuplexVoice
+		kind := enums.ServiceKindDuplexVoice
 		var err error
 		if data {
-			kind = enums.ServiceDuplexPacketData
+			kind = enums.ServiceKindDuplexPacketData
 			err = r.ms.CallDuplexData(r.now, peer, layer3.DataServiceOptions{})
 		} else {
 			err = r.ms.CallDuplex(r.now, peer, layer3.VoiceServiceOptions{})
@@ -523,11 +523,11 @@ func TestMS_Duplex(t *testing.T) {
 	}
 	for _, no := range []bool{false, true} {
 		r := onTSCC(t, &trunk.MSConfig{NoDuplex: no})
-		out := r.feed(ahoyBurst(t, enums.ServiceDuplexVoice, peer, msAddr, false, 0), &idle)
+		out := r.feed(ahoyBurst(t, enums.ServiceKindDuplexVoice, peer, msAddr, false, 0), &idle)
 		wantKinds(t, "duplex radio check", out, trunk.OutputAhoy, trunk.OutputBurst)
-		want := enums.ReasonMSAccepted
+		want := enums.AckReasonMSAccepted
 		if no {
-			want = enums.ReasonMSDuplexNotSupported
+			want = enums.AckReasonMSDuplexNotSupported
 		}
 		if k := ackSent(t, &out[1]); k.ReasonCode != byte(want) || k.TargetAddress != peer {
 			t.Errorf("NoDuplex %v: %+v", no, k)
@@ -546,7 +546,7 @@ func TestMS_DuplexSlotOfOwnGrant(t *testing.T) {
 				}
 				randSent(t, r)
 			} else {
-				wantKinds(t, "duplex C_AHOY", r.feed(ahoyBurst(t, enums.ServiceDuplexVoice, peer, msAddr, false, 0), &idle), trunk.OutputAhoy, trunk.OutputBurst)
+				wantKinds(t, "duplex C_AHOY", r.feed(ahoyBurst(t, enums.ServiceKindDuplexVoice, peer, msAddr, false, 0), &idle), trunk.OutputAhoy, trunk.OutputBurst)
 			}
 			want := enums.Slot1
 			if ts2 {
@@ -582,21 +582,21 @@ func TestMS_Ambient(t *testing.T) {
 	if err := r.ms.CallAmbient(r.now, peer, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
-	if rq := randSent(t, r); rq.ServiceKind != uint8(enums.ServiceIndividualVoice) || rq.Reserved != 0b0010 {
+	if rq := randSent(t, r); rq.ServiceKind != uint8(enums.ServiceKindIndividualVoice) || rq.Reserved != 0b0010 {
 		t.Fatalf("ALS C_RAND %+v", rq)
 	}
 
 	r = onTSCC(t, nil)
-	out := r.feed(ahoyBurst(t, enums.ServiceIndividualVoice, peer, msAddr, true, 0), &idle)
-	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMSNotSupported) {
+	out := r.feed(ahoyBurst(t, enums.ServiceKindIndividualVoice, peer, msAddr, true, 0), &idle)
+	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSNotSupported) {
 		t.Errorf("ALS without support %+v", k)
 	}
 
 	for _, emergency := range []bool{false, true} {
 		r = onTSCC(t, &trunk.MSConfig{Ambient: true})
-		out = r.feed(ahoyBurst(t, enums.ServiceIndividualVoice, peer, msAddr, true, 0), &idle)
+		out = r.feed(ahoyBurst(t, enums.ServiceKindIndividualVoice, peer, msAddr, true, 0), &idle)
 		wantKinds(t, "ALS radio check", out, trunk.OutputAhoy, trunk.OutputBurst)
-		if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.ReasonMessageAccepted) {
+		if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMessageAccepted) {
 			t.Errorf("ALS C_ACKU %+v", k)
 		}
 		out = r.feed(pvGrant(t, msAddr, peer, emergency), &idle)
@@ -627,7 +627,7 @@ func TestMS_Ambient(t *testing.T) {
 	}
 
 	r = onTSCC(t, &trunk.MSConfig{Ambient: true})
-	r.feed(ahoyBurst(t, enums.ServiceIndividualVoice, peer, msAddr, true, 0), &idle)
+	r.feed(ahoyBurst(t, enums.ServiceKindIndividualVoice, peer, msAddr, true, 0), &idle)
 	for end := r.now + constants.TALSRequestLifeSpanDefault; r.now <= end; {
 		r.feed(aloha(t), &idle)
 	}

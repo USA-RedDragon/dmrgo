@@ -46,7 +46,7 @@ func transmit(t *testing.T, c *Codec, pcm []int16) []layer2.RawBurst {
 	return append(bursts, out...)
 }
 
-func checkLC(t *testing.T, where string, lc *pdu.FullLinkControl, fid enums.FeatureSetID) {
+func checkLC(t *testing.T, where string, lc *pdu.FullLinkControl, fid enums.FID) {
 	t.Helper()
 	if lc.FID != fid {
 		t.Errorf("%s: FID %#02x, want %#02x", where, uint8(lc.FID), uint8(fid))

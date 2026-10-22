@@ -171,7 +171,7 @@ func TestSenderLoopback(t *testing.T) {
 		{"lost ACK", func(try uint8, i int) bool { return try == 0 && i == 0 }, data.ResultDelivered, 2, "ACK+ACK", 1},
 		{"all lost", func(try uint8, _ int) bool { return try > 0 }, data.ResultRetryLimit, 3, "", 0},
 	} {
-		for _, sap := range []enums.ServiceAccessPointID{enums.SAPIPBasedPacketData, enums.SAPShortData} {
+		for _, sap := range []enums.SAP{enums.SAPIPBasedPacketData, enums.SAPShortData} {
 			l := &link{
 				t:    t,
 				tx:   newSender(t, &data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),

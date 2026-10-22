@@ -93,7 +93,7 @@ func TestFollower_GrantClear(t *testing.T) {
 	out = f.Burst(now, &g, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
 	wantKinds(t, "TV_GRANT", out, trunk.OutputGrant, trunk.OutputTune)
 	gr := out[0].Grant
-	if gr.Target != 9 || gr.Source != 3120001 || !gr.Group || gr.Channel != 5 || gr.Slot != enums.Slot2 || gr.RXHz != 451_050_000 || gr.Service != enums.ServiceTalkgroupVoice {
+	if gr.Target != 9 || gr.Source != 3120001 || !gr.Group || gr.Channel != 5 || gr.Slot != enums.Slot2 || gr.RXHz != 451_050_000 || gr.Service != enums.ServiceKindTalkgroupVoice {
 		t.Errorf("Grant = %+v", gr)
 	}
 	if c := gr.Call(); !c.Group || c.Target != 9 || c.Source != 3120001 {
@@ -192,7 +192,7 @@ func TestFollower_Filters(t *testing.T) {
 		PhysicalChannel: 4, TargetAddress: 3120002, SourceAddress: 3120001}}, testCC)
 	out = f.Burst(2*slot, &pv, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "PV_GRANT", out, trunk.OutputGrant)
-	if out[0].Grant.Group || out[0].Grant.Service != enums.ServiceIndividualVoice {
+	if out[0].Grant.Group || out[0].Grant.Service != enums.ServiceKindIndividualVoice {
 		t.Errorf("PV_GRANT %+v", out[0].Grant)
 	}
 

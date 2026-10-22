@@ -40,16 +40,16 @@ func TestServiceFunction_Table6_1(t *testing.T) {
 		k    enums.ServiceKind
 		want bool
 	}{
-		{enums.ServiceFunctionAll, enums.ServiceStatusTransport, true},
-		{enums.ServiceFunctionPayload, enums.ServiceTalkgroupVoice, true},
-		{enums.ServiceFunctionPayload, enums.ServiceRegistration, true},
-		{enums.ServiceFunctionPayload, enums.ServiceIndividualShortData, false},
-		{enums.ServiceFunctionNoPayload, enums.ServiceIndividualShortData, true},
-		{enums.ServiceFunctionNoPayload, enums.ServiceRegistration, true},
-		{enums.ServiceFunctionNoPayload, enums.ServiceIndividualVoice, false},
-		{enums.ServiceFunctionRegistration, enums.ServiceRegistration, true},
-		{enums.ServiceFunctionRegistration, enums.ServiceTalkgroupVoice, false},
-		{enums.ServiceFunction(4), enums.ServiceRegistration, false},
+		{enums.ServiceFunctionAll, enums.ServiceKindStatusTransport, true},
+		{enums.ServiceFunctionPayload, enums.ServiceKindTalkgroupVoice, true},
+		{enums.ServiceFunctionPayload, enums.ServiceKindRegistration, true},
+		{enums.ServiceFunctionPayload, enums.ServiceKindIndividualShortData, false},
+		{enums.ServiceFunctionNoPayload, enums.ServiceKindIndividualShortData, true},
+		{enums.ServiceFunctionNoPayload, enums.ServiceKindRegistration, true},
+		{enums.ServiceFunctionNoPayload, enums.ServiceKindIndividualVoice, false},
+		{enums.ServiceFunctionRegistration, enums.ServiceKindRegistration, true},
+		{enums.ServiceFunctionRegistration, enums.ServiceKindTalkgroupVoice, false},
+		{enums.ServiceFunction(4), enums.ServiceKindRegistration, false},
 	}
 	for _, tt := range tests {
 		if got := tt.f.Invites(tt.k); got != tt.want {
@@ -84,14 +84,14 @@ func TestAckReason_Tables7_42to7_45(t *testing.T) {
 		fromTS bool
 		name   string
 	}{
-		{enums.ReasonRegAccepted, enums.AckACK, true, "Reg_Accepted"},
-		{enums.ReasonMSAccepted, enums.AckACK, false, "MS_Accepted"},
-		{enums.ReasonMSAwayRefused, enums.AckNACK, true, "MSaway_Refused"},
-		{enums.ReasonRegDenied, enums.AckNACK, true, "Reg_Denied"},
-		{enums.ReasonRecipientRefused, enums.AckNACK, false, "Recipient_Refused"},
-		{enums.ReasonMSNotSupported, enums.AckNACK, false, "MSNot_Supported"},
-		{enums.ReasonQueuedForResource, enums.AckQACK, true, "Queued-for-resource"},
-		{enums.ReasonWait, enums.AckWACK, true, "Wait"},
+		{enums.AckReasonRegAccepted, enums.AckACK, true, "Reg_Accepted"},
+		{enums.AckReasonMSAccepted, enums.AckACK, false, "MS_Accepted"},
+		{enums.AckReasonMSAwayRefused, enums.AckNACK, true, "MSaway_Refused"},
+		{enums.AckReasonRegDenied, enums.AckNACK, true, "Reg_Denied"},
+		{enums.AckReasonRecipientRefused, enums.AckNACK, false, "Recipient_Refused"},
+		{enums.AckReasonMSNotSupported, enums.AckNACK, false, "MSNot_Supported"},
+		{enums.AckReasonQueuedForResource, enums.AckQACK, true, "Queued-for-resource"},
+		{enums.AckReasonWait, enums.AckWACK, true, "Wait"},
 	}
 	for _, tt := range tests {
 		if tt.r.Type() != tt.typ || tt.r.FromTS() != tt.fromTS || tt.r.String() != tt.name {

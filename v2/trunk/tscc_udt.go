@@ -206,7 +206,7 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 	if !t.addOp(udtOp{kind: opGatewayPoll, stage: stAck, caller: constants.GatewaySDMI, called: target, until: now + t.cfg.AnswerTimeout}) {
 		return ErrBusy
 	}
-	t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: uab(blocks), ServiceKind: uint8(enums.ServiceShortDataPolling), TargetAddress: target,
+	t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: uab(blocks), ServiceKind: uint8(enums.ServiceKindShortDataPolling), TargetAddress: target,
 		SourceAddress: constants.GatewaySDMI}, 0, true)
 	return nil
 }
@@ -268,16 +268,16 @@ func (t *TSCC) divIndex(addr uint32) int {
 
 func diverts(o *layer3.DiversionServiceOptions, k enums.ServiceKind) bool {
 	switch k {
-	case enums.ServiceIndividualVoice, enums.ServiceDuplexVoice:
+	case enums.ServiceKindIndividualVoice, enums.ServiceKindDuplexVoice:
 		return o.Voice
-	case enums.ServiceIndividualPacketData, enums.ServiceDuplexPacketData:
+	case enums.ServiceKindIndividualPacketData, enums.ServiceKindDuplexPacketData:
 		return o.PacketData
-	case enums.ServiceIndividualShortData:
+	case enums.ServiceKindIndividualShortData:
 		return o.ShortData
-	case enums.ServiceStatusTransport:
+	case enums.ServiceKindStatusTransport:
 		return o.Status
-	case enums.ServiceTalkgroupVoice, enums.ServiceTalkgroupPacketData, enums.ServiceTalkgroupShortData, enums.ServiceShortDataPolling,
-		enums.ServiceCallDiversion, enums.ServiceCallAnswer, enums.ServiceSupplementary, enums.ServiceRegistration, enums.ServiceCancelCall:
+	case enums.ServiceKindTalkgroupVoice, enums.ServiceKindTalkgroupPacketData, enums.ServiceKindTalkgroupShortData, enums.ServiceKindShortDataPolling,
+		enums.ServiceKindCallDiversion, enums.ServiceKindCallAnswer, enums.ServiceKindSupplementary, enums.ServiceKindRegistration, enums.ServiceKindCancelCall:
 	}
 	return false
 }
@@ -285,13 +285,13 @@ func diverts(o *layer3.DiversionServiceOptions, k enums.ServiceKind) bool {
 func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) ([]TSCCOutput, bool) {
 	src, kind := r.SourceAddress, enums.ServiceKind(r.ServiceKind)
 	switch kind {
-	case enums.ServiceIndividualShortData, enums.ServiceTalkgroupShortData, enums.ServiceShortDataPolling, enums.ServiceCallDiversion,
-		enums.ServiceDuplexVoice, enums.ServiceDuplexPacketData:
-	case enums.ServiceSupplementary:
+	case enums.ServiceKindIndividualShortData, enums.ServiceKindTalkgroupShortData, enums.ServiceKindShortDataPolling, enums.ServiceKindCallDiversion,
+		enums.ServiceKindDuplexVoice, enums.ServiceKindDuplexPacketData:
+	case enums.ServiceKindSupplementary:
 		if r.TargetAddress != constants.GatewayDGNAI {
 			return out, false
 		}
-	case enums.ServiceIndividualVoice, enums.ServiceIndividualPacketData:
+	case enums.ServiceKindIndividualVoice, enums.ServiceKindIndividualPacketData:
 		if i := t.divIndex(r.TargetAddress); i >= 0 && diverts(&t.u.divs[i].opts, kind) {
 			return t.divertedCall(src, i, out), true
 		}
@@ -300,50 +300,50 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 		return out, false
 	}
 	if t.cfg.Reg && t.regIndex(src) < 0 {
-		return t.refuse(src, enums.ReasonMSNotRegistered, out), true
+		return t.refuse(src, enums.AckReasonMSNotRegistered, out), true
 	}
 	blocks := r.Reserved&0b11 + 1
 	switch kind {
-	case enums.ServiceCallDiversion:
+	case enums.ServiceKindCallDiversion:
 		return t.divertRequest(now, r, out), true
-	case enums.ServiceSupplementary:
+	case enums.ServiceKindSupplementary:
 		if !t.addOp(udtOp{kind: opDGNA, caller: src, until: now + constants.TNPTimerDefault}) {
-			return t.refuse(src, enums.ReasonSysBusyRefused, out), true
+			return t.refuse(src, enums.AckReasonSysBusyRefused, out), true
 		}
 		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: r.Reserved >> 2 & 0b11, ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewayDGNAI}, 0, true)
 		return out, true
-	case enums.ServiceTalkgroupShortData:
+	case enums.ServiceKindTalkgroupShortData:
 		if !t.addOp(udtOp{kind: opShortData, caller: src, called: r.TargetAddress, group: true, until: now + constants.TNPTimerDefault}) {
-			return t.refuse(src, enums.ReasonSysBusyRefused, out), true
+			return t.refuse(src, enums.AckReasonSysBusyRefused, out), true
 		}
-		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: blocks - 1, ServiceKind: uint8(enums.ServiceIndividualShortData), TargetAddress: src,
+		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: blocks - 1, ServiceKind: uint8(enums.ServiceKindIndividualShortData), TargetAddress: src,
 			SourceAddress: constants.GatewaySDMI}, 0, true)
 		return out, true
-	case enums.ServiceIndividualShortData, enums.ServiceShortDataPolling, enums.ServiceDuplexVoice, enums.ServiceDuplexPacketData:
+	case enums.ServiceKindIndividualShortData, enums.ServiceKindShortDataPolling, enums.ServiceKindDuplexVoice, enums.ServiceKindDuplexPacketData:
 	default:
 		return out, false
 	}
 	target := r.TargetAddress
 	if target >= constants.GatewayPSTNI {
-		return t.refuse(src, enums.ReasonNotSupported, out), true
+		return t.refuse(src, enums.AckReasonNotSupported, out), true
 	}
 	if i := t.divIndex(target); i >= 0 {
-		if kind == enums.ServiceShortDataPolling {
-			return t.refuse(src, enums.ReasonDivCauseFail, out), true
+		if kind == enums.ServiceKindShortDataPolling {
+			return t.refuse(src, enums.AckReasonDivCauseFail, out), true
 		}
 		if diverts(&t.u.divs[i].opts, kind) {
 			return t.divertedCall(src, i, out), true
 		}
 	}
 	if t.cfg.Reg && t.regIndex(target) < 0 {
-		return t.refuse(src, enums.ReasonNoregMSAwayRefused, out), true
+		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out), true
 	}
 	op := udtOp{caller: src, called: target, until: now + constants.TNPTimerDefault, svc: kind, opts: r.ServiceOptions}
 	a := pdu.AhoyPDU{ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewaySDMI, AppendedBlocks: blocks - 1}
 	switch kind {
-	case enums.ServiceIndividualShortData:
+	case enums.ServiceKindIndividualShortData:
 		op.kind = opShortData
-	case enums.ServiceShortDataPolling:
+	case enums.ServiceKindShortDataPolling:
 		op.kind, op.stage = opPoll, stAck
 		a = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, AppendedBlocks: blocks - 1, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: src}
 	default:
@@ -352,10 +352,10 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 		a = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: src}
 	}
 	if !t.addOp(op) {
-		return t.refuse(src, enums.ReasonSysBusyRefused, out), true
+		return t.refuse(src, enums.AckReasonSysBusyRefused, out), true
 	}
 	if op.kind != opShortData {
-		t.sendAck(src, enums.ReasonWait)
+		t.sendAck(src, enums.AckReasonWait)
 	}
 	t.sendAhoy(a, 0, true)
 	return out, true
@@ -367,7 +367,7 @@ func (t *TSCC) divertRequest(now time.Duration, r *pdu.RandomAccessPDU, out []TS
 	switch r.TargetAddress {
 	case constants.GatewayTSI, constants.GatewayDIVERTI:
 		if o.Set {
-			return t.refuse(src, enums.ReasonNotSupported, out)
+			return t.refuse(src, enums.AckReasonNotSupported, out)
 		}
 		for i := range t.u.divs {
 			d := &t.u.divs[i]
@@ -389,22 +389,22 @@ func (t *TSCC) divertRequest(now time.Duration, r *pdu.RandomAccessPDU, out []TS
 			}
 			out = append(out, TSCCOutput{Kind: TSCCDiversion, Address: d.from})
 		}
-		t.ackFrom(src, enums.ReasonMessageAccepted, 0, r.TargetAddress)
+		t.ackFrom(src, enums.AckReasonMessageAccepted, 0, r.TargetAddress)
 		return out
 	case constants.GatewayMSI, constants.GatewayGPI:
 	default:
-		return t.refuse(src, enums.ReasonTransientSysRefused, out)
+		return t.refuse(src, enums.AckReasonTransientSysRefused, out)
 	}
 	if !o.Set || !t.addOp(udtOp{kind: opDivert, caller: src, gateway: r.TargetAddress, opts: r.ServiceOptions, until: now + constants.TNPTimerDefault}) {
-		return t.refuse(src, enums.ReasonSysBusyRefused, out)
+		return t.refuse(src, enums.AckReasonSysBusyRefused, out)
 	}
-	t.sendAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceCallDiversion), TargetAddress: src, SourceAddress: constants.GatewayDIVERTI}, 0, true)
+	t.sendAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindCallDiversion), TargetAddress: src, SourceAddress: constants.GatewayDIVERTI}, 0, true)
 	return out
 }
 
 func (t *TSCC) divertedCall(caller uint32, i int, out []TSCCOutput) []TSCCOutput {
 	if t.u.downN > 0 {
-		return t.refuse(caller, enums.ReasonSysBusyRefused, out)
+		return t.refuse(caller, enums.AckReasonSysBusyRefused, out)
 	}
 	t.download(&t.u.divs[i].to, caller, constants.GatewayDIVERTI, false, true, false, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
 	return out
@@ -552,7 +552,7 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 	if !t.u.in.CRCOK {
 		caller := o.caller
 		*o = udtOp{}
-		return t.refuse(caller, enums.ReasonUDTUploadCRCError, out)
+		return t.refuse(caller, enums.AckReasonUDTUploadCRCError, out)
 	}
 	if t.u.downN > 0 {
 		return out
@@ -566,9 +566,9 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 	caller := o.caller
 	*o = udtOp{}
 	for range udtRepeats {
-		t.ackFrom(caller, enums.ReasonMessageAccepted, 0, to)
+		t.ackFrom(caller, enums.AckReasonMessageAccepted, 0, to)
 	}
-	return append(out, TSCCOutput{Kind: TSCCDelivered, Address: caller, Ack: enums.ReasonMessageAccepted, Call: Grant{Group: true, Target: to, Source: caller}})
+	return append(out, TSCCOutput{Kind: TSCCDelivered, Address: caller, Ack: enums.AckReasonMessageAccepted, Call: Grant{Group: true, Target: to, Source: caller}})
 }
 
 func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
@@ -580,7 +580,7 @@ func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
 	t.u.ops[i] = udtOp{}
 	a := t.u.in.Appended()
 	if _, err := a.Addresses(); err != nil || !t.u.in.CRCOK {
-		return t.refuse(src, enums.ReasonTransientSysRefused, out)
+		return t.refuse(src, enums.AckReasonTransientSysRefused, out)
 	}
 	k := t.divIndex(src)
 	if k < 0 {
@@ -592,10 +592,10 @@ func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
 		}
 	}
 	if k < 0 {
-		return t.refuse(src, enums.ReasonSysBusyRefused, out)
+		return t.refuse(src, enums.AckReasonSysBusyRefused, out)
 	}
 	t.u.divs[k] = diversion{used: true, from: src, opts: layer3.DecodeDiversionServiceOptions([1]byte{o.opts << 1}), to: a}
-	t.ackFrom(src, enums.ReasonMessageAccepted, 0, o.gateway)
+	t.ackFrom(src, enums.AckReasonMessageAccepted, 0, o.gateway)
 	return append(out, TSCCOutput{Kind: TSCCDiversion, Address: src})
 }
 
@@ -629,9 +629,9 @@ func (t *TSCC) udtAck(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 		case opNone, opShortData, opGatewayPoll, opDivert, opDGNA, opUSBD:
 		}
 		for range udtRepeats {
-			t.ackFrom(op.caller, enums.ReasonMSAccepted, 0, op.called)
+			t.ackFrom(op.caller, enums.AckReasonMSAccepted, 0, op.called)
 		}
-		return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: enums.ReasonMSAccepted, Call: Grant{Target: op.called, Source: op.caller}}), true
+		return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: enums.AckReasonMSAccepted, Call: Grant{Target: op.called, Source: op.caller}}), true
 	}
 	return out, false
 }
@@ -642,7 +642,7 @@ func (t *TSCC) duplexGrant(now time.Duration, op *udtOp, out []TSCCOutput) []TSC
 			continue
 		}
 		ch := t.cfg.Payload[c]
-		data := op.svc == enums.ServiceDuplexPacketData
+		data := op.svc == enums.ServiceKindDuplexPacketData
 		g := Grant{Service: op.svc, Target: op.caller, Source: op.called, Channel: ch, Slot: enums.Slot1, ColorCode: t.cfg.ColorCode, HasColorCode: true,
 			Emergency: op.emerg, Opcode: pdu.CSBKDuplexPrivateVoiceGrant}
 		if data {
@@ -658,12 +658,12 @@ func (t *TSCC) duplexGrant(now time.Duration, op *udtOp, out []TSCCOutput) []TSC
 		}
 		return append(out, TSCCOutput{Kind: TSCCCallStart, Call: g})
 	}
-	return t.refuse(op.caller, enums.ReasonSysBusyRefused, out)
+	return t.refuse(op.caller, enums.AckReasonSysBusyRefused, out)
 }
 
 func (t *TSCC) duplexSend(g *Grant, caller bool) {
 	ts2 := g.Slot == enums.Slot2
-	if g.Service == enums.ServiceDuplexPacketData {
+	if g.Service == enums.ServiceKindDuplexPacketData {
 		t.u.dxd = pdu.DuplexPrivateDataGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, Emergency: g.Emergency, CallDirection: caller,
 			TargetAddress: g.Target, SourceAddress: g.Source}
 		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateDataGrant, DuplexPrivateDataGrantPDU: &t.u.dxd}
@@ -676,7 +676,7 @@ func (t *TSCC) duplexSend(g *Grant, caller bool) {
 }
 
 func duplex(g *Grant) bool {
-	return g.Service == enums.ServiceDuplexVoice || g.Service == enums.ServiceDuplexPacketData
+	return g.Service == enums.ServiceKindDuplexVoice || g.Service == enums.ServiceKindDuplexPacketData
 }
 
 func (t *TSCC) relaySlot(i int) int {
@@ -694,9 +694,9 @@ func (t *TSCC) udtTimers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		}
 		op := *o
 		*o = udtOp{}
-		r := enums.ReasonMSAwayRefused
+		r := enums.AckReasonMSAwayRefused
 		if op.stage == stUpload {
-			r = enums.ReasonRefusedUnknownTS
+			r = enums.AckReasonRefusedUnknownTS
 		}
 		if op.caller >= constants.GatewayPSTNI {
 			out = append(out, TSCCOutput{Kind: TSCCRefused, Address: op.called, Ack: r})

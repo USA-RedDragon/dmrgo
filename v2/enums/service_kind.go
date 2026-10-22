@@ -8,21 +8,21 @@ type ServiceKind uint8
 
 // The ServiceKind values. 0b1100 is reserved.
 const (
-	ServiceIndividualVoice      ServiceKind = 0b0000 // individual voice call
-	ServiceTalkgroupVoice       ServiceKind = 0b0001 // talkgroup voice call
-	ServiceIndividualPacketData ServiceKind = 0b0010 // individual packet data call
-	ServiceTalkgroupPacketData  ServiceKind = 0b0011 // packet data call to a talkgroup
-	ServiceIndividualShortData  ServiceKind = 0b0100 // individual UDT short data call
-	ServiceTalkgroupShortData   ServiceKind = 0b0101 // talkgroup UDT short data call
-	ServiceShortDataPolling     ServiceKind = 0b0110 // UDT short data polling
-	ServiceStatusTransport      ServiceKind = 0b0111 // status transport
-	ServiceCallDiversion        ServiceKind = 0b1000 // call diversion
-	ServiceCallAnswer           ServiceKind = 0b1001 // call answer
-	ServiceDuplexVoice          ServiceKind = 0b1010 // full-duplex MS to MS voice call
-	ServiceDuplexPacketData     ServiceKind = 0b1011 // full-duplex MS to MS packet data call
-	ServiceSupplementary        ServiceKind = 0b1101 // supplementary service
-	ServiceRegistration         ServiceKind = 0b1110 // registration, authentication, de-registration and MS radio check
-	ServiceCancelCall           ServiceKind = 0b1111 // cancel call
+	ServiceKindIndividualVoice      ServiceKind = 0b0000 // individual voice call
+	ServiceKindTalkgroupVoice       ServiceKind = 0b0001 // talkgroup voice call
+	ServiceKindIndividualPacketData ServiceKind = 0b0010 // individual packet data call
+	ServiceKindTalkgroupPacketData  ServiceKind = 0b0011 // packet data call to a talkgroup
+	ServiceKindIndividualShortData  ServiceKind = 0b0100 // individual UDT short data call
+	ServiceKindTalkgroupShortData   ServiceKind = 0b0101 // talkgroup UDT short data call
+	ServiceKindShortDataPolling     ServiceKind = 0b0110 // UDT short data polling
+	ServiceKindStatusTransport      ServiceKind = 0b0111 // status transport
+	ServiceKindCallDiversion        ServiceKind = 0b1000 // call diversion
+	ServiceKindCallAnswer           ServiceKind = 0b1001 // call answer
+	ServiceKindDuplexVoice          ServiceKind = 0b1010 // full-duplex MS to MS voice call
+	ServiceKindDuplexPacketData     ServiceKind = 0b1011 // full-duplex MS to MS packet data call
+	ServiceKindSupplementary        ServiceKind = 0b1101 // supplementary service
+	ServiceKindRegistration         ServiceKind = 0b1110 // registration, authentication, de-registration and MS radio check
+	ServiceKindCancelCall           ServiceKind = 0b1111 // cancel call
 )
 
 // NeedsPayloadChannel reports whether the service uses a payload channel:
@@ -30,8 +30,8 @@ const (
 // invites random access by this split (ETSI TS 102 361-4 Table 6.1).
 func (k ServiceKind) NeedsPayloadChannel() bool {
 	switch k {
-	case ServiceIndividualVoice, ServiceTalkgroupVoice, ServiceIndividualPacketData,
-		ServiceTalkgroupPacketData, ServiceDuplexVoice, ServiceDuplexPacketData:
+	case ServiceKindIndividualVoice, ServiceKindTalkgroupVoice, ServiceKindIndividualPacketData,
+		ServiceKindTalkgroupPacketData, ServiceKindDuplexVoice, ServiceKindDuplexPacketData:
 		return true
 	default:
 		return false
@@ -42,35 +42,35 @@ func (k ServiceKind) NeedsPayloadChannel() bool {
 // reserved value.
 func (k ServiceKind) String() string {
 	switch k {
-	case ServiceIndividualVoice:
+	case ServiceKindIndividualVoice:
 		return "Individual Voice"
-	case ServiceTalkgroupVoice:
+	case ServiceKindTalkgroupVoice:
 		return "Talkgroup Voice"
-	case ServiceIndividualPacketData:
+	case ServiceKindIndividualPacketData:
 		return "Individual Packet Data"
-	case ServiceTalkgroupPacketData:
+	case ServiceKindTalkgroupPacketData:
 		return "Talkgroup Packet Data"
-	case ServiceIndividualShortData:
+	case ServiceKindIndividualShortData:
 		return "Individual UDT Short Data"
-	case ServiceTalkgroupShortData:
+	case ServiceKindTalkgroupShortData:
 		return "Talkgroup UDT Short Data"
-	case ServiceShortDataPolling:
+	case ServiceKindShortDataPolling:
 		return "UDT Short Data Polling"
-	case ServiceStatusTransport:
+	case ServiceKindStatusTransport:
 		return "Status Transport"
-	case ServiceCallDiversion:
+	case ServiceKindCallDiversion:
 		return "Call Diversion"
-	case ServiceCallAnswer:
+	case ServiceKindCallAnswer:
 		return "Call Answer"
-	case ServiceDuplexVoice:
+	case ServiceKindDuplexVoice:
 		return "Full-Duplex Voice"
-	case ServiceDuplexPacketData:
+	case ServiceKindDuplexPacketData:
 		return "Full-Duplex Packet Data"
-	case ServiceSupplementary:
+	case ServiceKindSupplementary:
 		return "Supplementary"
-	case ServiceRegistration:
+	case ServiceKindRegistration:
 		return "Registration"
-	case ServiceCancelCall:
+	case ServiceKindCancelCall:
 		return "Cancel Call"
 	}
 	return "Reserved ServiceKind(" + text.Int(int64(k)) + ")"
@@ -103,11 +103,11 @@ func (f ServiceFunction) Invites(k ServiceKind) bool {
 	case ServiceFunctionAll:
 		return true
 	case ServiceFunctionPayload:
-		return k == ServiceRegistration || k.NeedsPayloadChannel()
+		return k == ServiceKindRegistration || k.NeedsPayloadChannel()
 	case ServiceFunctionNoPayload:
-		return k == ServiceRegistration || !k.NeedsPayloadChannel()
+		return k == ServiceKindRegistration || !k.NeedsPayloadChannel()
 	case ServiceFunctionRegistration:
-		return k == ServiceRegistration
+		return k == ServiceKindRegistration
 	}
 	return false
 }

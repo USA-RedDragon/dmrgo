@@ -188,7 +188,7 @@ sym #define DMRGO_BS_STATE_REPEATING_SLOT1 ((dmrgo_bs_state_t)2)
 sym #define DMRGO_BS_STATE_REPEATING_SLOT2 ((dmrgo_bs_state_t)3)
 sym #define DMRGO_BS_TO_NETWORK ((dmrgo_bs_dest_t)2)
 sym #define DMRGO_BS_TO_RF ((dmrgo_bs_dest_t)1)
-sym #define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_feature_set_id_t)194)
+sym #define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_fid_t)194)
 sym #define DMRGO_CODEC2_FRAME_SAMPLES 160
 sym #define DMRGO_CODEC2_MODE2400 ((dmrgo_codec2_mode_t)2400)
 sym #define DMRGO_CODEC2_MODE3200 ((dmrgo_codec2_mode_t)3200)
@@ -511,6 +511,47 @@ sym #define DMRGO_ENUMS_ACCESS_POLITE_OWN_C_C ((dmrgo_enums_access_t)0)
 sym #define DMRGO_ENUMS_ACK_ACK ((dmrgo_enums_ack_type_t)1)
 sym #define DMRGO_ENUMS_ACK_NACK ((dmrgo_enums_ack_type_t)0)
 sym #define DMRGO_ENUMS_ACK_QACK ((dmrgo_enums_ack_type_t)2)
+sym #define DMRGO_ENUMS_ACK_REASON_AUTH_RESPONSE_MS ((dmrgo_enums_ack_reason_t)72)
+sym #define DMRGO_ENUMS_ACK_REASON_AUTH_RESPONSE_TS ((dmrgo_enums_ack_reason_t)100)
+sym #define DMRGO_ENUMS_ACK_REASON_CALLED_GROUP_NOT_ALLOWED ((dmrgo_enums_ack_reason_t)47)
+sym #define DMRGO_ENUMS_ACK_REASON_CALLED_PARTY_BUSY ((dmrgo_enums_ack_reason_t)46)
+sym #define DMRGO_ENUMS_ACK_REASON_CALL_BACK ((dmrgo_enums_ack_reason_t)69)
+sym #define DMRGO_ENUMS_ACK_REASON_CALL_CANCEL_REFUSED ((dmrgo_enums_ack_reason_t)41)
+sym #define DMRGO_ENUMS_ACK_REASON_CUSTOM_REFUSED ((dmrgo_enums_ack_reason_t)21)
+sym #define DMRGO_ENUMS_ACK_REASON_DIV_CAUSE_FAIL ((dmrgo_enums_ack_reason_t)38)
+sym #define DMRGO_ENUMS_ACK_REASON_DUPLEX_CONGESTION ((dmrgo_enums_ack_reason_t)49)
+sym #define DMRGO_ENUMS_ACK_REASON_EQUIP_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)19)
+sym #define DMRGO_ENUMS_ACK_REASON_IP_CONNECTION_FAILED ((dmrgo_enums_ack_reason_t)44)
+sym #define DMRGO_ENUMS_ACK_REASON_LINE_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)17)
+sym #define DMRGO_ENUMS_ACK_REASON_MESSAGE_ACCEPTED ((dmrgo_enums_ack_reason_t)96)
+sym #define DMRGO_ENUMS_ACK_REASON_MS_ACCEPTED ((dmrgo_enums_ack_reason_t)68)
+sym #define DMRGO_ENUMS_ACK_REASON_MS_ALERTING ((dmrgo_enums_ack_reason_t)70)
+sym #define DMRGO_ENUMS_ACK_REASON_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)37)
+sym #define DMRGO_ENUMS_ACK_REASON_MS_DUPLEX_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)22)
+sym #define DMRGO_ENUMS_ACK_REASON_MS_NOT_REGISTERED ((dmrgo_enums_ack_reason_t)45)
+sym #define DMRGO_ENUMS_ACK_REASON_MS_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)0)
+sym #define DMRGO_ENUMS_ACK_REASON_NOREG_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)36)
+sym #define DMRGO_ENUMS_ACK_REASON_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)32)
+sym #define DMRGO_ENUMS_ACK_REASON_PERM_USER_REFUSED ((dmrgo_enums_ack_reason_t)33)
+sym #define DMRGO_ENUMS_ACK_REASON_QUEUED_FOR_BUSY ((dmrgo_enums_ack_reason_t)161)
+sym #define DMRGO_ENUMS_ACK_REASON_QUEUED_FOR_RESOURCE ((dmrgo_enums_ack_reason_t)160)
+sym #define DMRGO_ENUMS_ACK_REASON_RECIPIENT_REFUSED ((dmrgo_enums_ack_reason_t)20)
+sym #define DMRGO_ENUMS_ACK_REASON_REFUSED_UNKNOWN_MS ((dmrgo_enums_ack_reason_t)31)
+sym #define DMRGO_ENUMS_ACK_REASON_REFUSED_UNKNOWN_TS ((dmrgo_enums_ack_reason_t)63)
+sym #define DMRGO_ENUMS_ACK_REASON_REG_ACCEPTED ((dmrgo_enums_ack_reason_t)98)
+sym #define DMRGO_ENUMS_ACK_REASON_REG_DENIED ((dmrgo_enums_ack_reason_t)43)
+sym #define DMRGO_ENUMS_ACK_REASON_REG_REFUSED ((dmrgo_enums_ack_reason_t)42)
+sym #define DMRGO_ENUMS_ACK_REASON_REG_SUBSCRIPTION ((dmrgo_enums_ack_reason_t)101)
+sym #define DMRGO_ENUMS_ACK_REASON_STACK_FULL_REFUSED ((dmrgo_enums_ack_reason_t)18)
+sym #define DMRGO_ENUMS_ACK_REASON_STATUS_POLL_ACCEPTED_MS ((dmrgo_enums_ack_reason_t)71)
+sym #define DMRGO_ENUMS_ACK_REASON_STATUS_POLL_ACCEPTED_TS ((dmrgo_enums_ack_reason_t)99)
+sym #define DMRGO_ENUMS_ACK_REASON_STORE_FORWARD ((dmrgo_enums_ack_reason_t)97)
+sym #define DMRGO_ENUMS_ACK_REASON_SYS_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)39)
+sym #define DMRGO_ENUMS_ACK_REASON_SYS_NOT_READY ((dmrgo_enums_ack_reason_t)40)
+sym #define DMRGO_ENUMS_ACK_REASON_TEMP_USER_REFUSED ((dmrgo_enums_ack_reason_t)34)
+sym #define DMRGO_ENUMS_ACK_REASON_TRANSIENT_SYS_REFUSED ((dmrgo_enums_ack_reason_t)35)
+sym #define DMRGO_ENUMS_ACK_REASON_UDT_UPLOAD_CRC_ERROR ((dmrgo_enums_ack_reason_t)48)
+sym #define DMRGO_ENUMS_ACK_REASON_WAIT ((dmrgo_enums_ack_reason_t)224)
 sym #define DMRGO_ENUMS_ACK_WACK ((dmrgo_enums_ack_type_t)3)
 sym #define DMRGO_ENUMS_ACTIVITY_EMERGENCY_GROUP_VOICE ((dmrgo_enums_activity_id_t)12)
 sym #define DMRGO_ENUMS_ACTIVITY_EMERGENCY_INDIVIDUAL_VOICE ((dmrgo_enums_activity_id_t)13)
@@ -577,24 +618,24 @@ sym #define DMRGO_ENUMS_DPID_EXTENDED_HEADER ((dmrgo_enums_dpid_t)0)
 sym #define DMRGO_ENUMS_DPID_LOCATION_PROTOCOL ((dmrgo_enums_dpid_t)2)
 sym #define DMRGO_ENUMS_DPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_dpid_t)95)
 sym #define DMRGO_ENUMS_DPID_TEXT_MESSAGE ((dmrgo_enums_dpid_t)1)
-sym #define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_feature_set_id_t)11)
-sym #define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_feature_set_id_t)19)
-sym #define DMRGO_ENUMS_FIDEMC2 ((dmrgo_enums_feature_set_id_t)28)
-sym #define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH ((dmrgo_enums_feature_set_id_t)8)
-sym #define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH2 ((dmrgo_enums_feature_set_id_t)104)
-sym #define DMRGO_ENUMS_FIDJVC_KENWOOD ((dmrgo_enums_feature_set_id_t)32)
-sym #define DMRGO_ENUMS_FID_ASELSAN ((dmrgo_enums_feature_set_id_t)9)
-sym #define DMRGO_ENUMS_FID_FLYDE_MICRO ((dmrgo_enums_feature_set_id_t)4)
-sym #define DMRGO_ENUMS_FID_KIRISUN ((dmrgo_enums_feature_set_id_t)10)
-sym #define DMRGO_ENUMS_FID_MOTOROLA ((dmrgo_enums_feature_set_id_t)16)
-sym #define DMRGO_ENUMS_FID_PROD_EL ((dmrgo_enums_feature_set_id_t)5)
-sym #define DMRGO_ENUMS_FID_RADIODATA ((dmrgo_enums_feature_set_id_t)7)
-sym #define DMRGO_ENUMS_FID_RADIO_ACTIVITY ((dmrgo_enums_feature_set_id_t)51)
-sym #define DMRGO_ENUMS_FID_RADIO_ACTIVITY2 ((dmrgo_enums_feature_set_id_t)60)
-sym #define DMRGO_ENUMS_FID_STANDARDIZED ((dmrgo_enums_feature_set_id_t)0)
-sym #define DMRGO_ENUMS_FID_TAIT ((dmrgo_enums_feature_set_id_t)88)
-sym #define DMRGO_ENUMS_FID_TRIDENT_MICRO_SYSTEMS ((dmrgo_enums_feature_set_id_t)6)
-sym #define DMRGO_ENUMS_FID_VERTEX_STANDARD ((dmrgo_enums_feature_set_id_t)119)
+sym #define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
+sym #define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_fid_t)19)
+sym #define DMRGO_ENUMS_FIDEMC2 ((dmrgo_enums_fid_t)28)
+sym #define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH ((dmrgo_enums_fid_t)8)
+sym #define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH2 ((dmrgo_enums_fid_t)104)
+sym #define DMRGO_ENUMS_FIDJVC_KENWOOD ((dmrgo_enums_fid_t)32)
+sym #define DMRGO_ENUMS_FID_ASELSAN ((dmrgo_enums_fid_t)9)
+sym #define DMRGO_ENUMS_FID_FLYDE_MICRO ((dmrgo_enums_fid_t)4)
+sym #define DMRGO_ENUMS_FID_KIRISUN ((dmrgo_enums_fid_t)10)
+sym #define DMRGO_ENUMS_FID_MOTOROLA ((dmrgo_enums_fid_t)16)
+sym #define DMRGO_ENUMS_FID_PROD_EL ((dmrgo_enums_fid_t)5)
+sym #define DMRGO_ENUMS_FID_RADIODATA ((dmrgo_enums_fid_t)7)
+sym #define DMRGO_ENUMS_FID_RADIO_ACTIVITY ((dmrgo_enums_fid_t)51)
+sym #define DMRGO_ENUMS_FID_RADIO_ACTIVITY2 ((dmrgo_enums_fid_t)60)
+sym #define DMRGO_ENUMS_FID_STANDARDIZED ((dmrgo_enums_fid_t)0)
+sym #define DMRGO_ENUMS_FID_TAIT ((dmrgo_enums_fid_t)88)
+sym #define DMRGO_ENUMS_FID_TRIDENT_MICRO_SYSTEMS ((dmrgo_enums_fid_t)6)
+sym #define DMRGO_ENUMS_FID_VERTEX_STANDARD ((dmrgo_enums_fid_t)119)
 sym #define DMRGO_ENUMS_FLCOGPS_INFO ((dmrgo_enums_flco_t)8)
 sym #define DMRGO_ENUMS_FLCO_GROUP_VOICE_CHANNEL_USER ((dmrgo_enums_flco_t)0)
 sym #define DMRGO_ENUMS_FLCO_TALKER_ALIAS_BLOCK1 ((dmrgo_enums_flco_t)5)
@@ -617,76 +658,35 @@ sym #define DMRGO_ENUMS_RC_DECREASE_POWER ((dmrgo_enums_rc_command_t)1)
 sym #define DMRGO_ENUMS_RC_HIGHEST_POWER ((dmrgo_enums_rc_command_t)2)
 sym #define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
 sym #define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
-sym #define DMRGO_ENUMS_REASON_AUTH_RESPONSE_MS ((dmrgo_enums_ack_reason_t)72)
-sym #define DMRGO_ENUMS_REASON_AUTH_RESPONSE_TS ((dmrgo_enums_ack_reason_t)100)
-sym #define DMRGO_ENUMS_REASON_CALLED_GROUP_NOT_ALLOWED ((dmrgo_enums_ack_reason_t)47)
-sym #define DMRGO_ENUMS_REASON_CALLED_PARTY_BUSY ((dmrgo_enums_ack_reason_t)46)
-sym #define DMRGO_ENUMS_REASON_CALL_BACK ((dmrgo_enums_ack_reason_t)69)
-sym #define DMRGO_ENUMS_REASON_CALL_CANCEL_REFUSED ((dmrgo_enums_ack_reason_t)41)
-sym #define DMRGO_ENUMS_REASON_CUSTOM_REFUSED ((dmrgo_enums_ack_reason_t)21)
-sym #define DMRGO_ENUMS_REASON_DIV_CAUSE_FAIL ((dmrgo_enums_ack_reason_t)38)
-sym #define DMRGO_ENUMS_REASON_DUPLEX_CONGESTION ((dmrgo_enums_ack_reason_t)49)
-sym #define DMRGO_ENUMS_REASON_EQUIP_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)19)
-sym #define DMRGO_ENUMS_REASON_IP_CONNECTION_FAILED ((dmrgo_enums_ack_reason_t)44)
-sym #define DMRGO_ENUMS_REASON_LINE_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)17)
-sym #define DMRGO_ENUMS_REASON_MESSAGE_ACCEPTED ((dmrgo_enums_ack_reason_t)96)
-sym #define DMRGO_ENUMS_REASON_MS_ACCEPTED ((dmrgo_enums_ack_reason_t)68)
-sym #define DMRGO_ENUMS_REASON_MS_ALERTING ((dmrgo_enums_ack_reason_t)70)
-sym #define DMRGO_ENUMS_REASON_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)37)
-sym #define DMRGO_ENUMS_REASON_MS_DUPLEX_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)22)
-sym #define DMRGO_ENUMS_REASON_MS_NOT_REGISTERED ((dmrgo_enums_ack_reason_t)45)
-sym #define DMRGO_ENUMS_REASON_MS_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)0)
-sym #define DMRGO_ENUMS_REASON_NOREG_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)36)
-sym #define DMRGO_ENUMS_REASON_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)32)
-sym #define DMRGO_ENUMS_REASON_PERM_USER_REFUSED ((dmrgo_enums_ack_reason_t)33)
-sym #define DMRGO_ENUMS_REASON_QUEUED_FOR_BUSY ((dmrgo_enums_ack_reason_t)161)
-sym #define DMRGO_ENUMS_REASON_QUEUED_FOR_RESOURCE ((dmrgo_enums_ack_reason_t)160)
-sym #define DMRGO_ENUMS_REASON_RECIPIENT_REFUSED ((dmrgo_enums_ack_reason_t)20)
-sym #define DMRGO_ENUMS_REASON_REFUSED_UNKNOWN_MS ((dmrgo_enums_ack_reason_t)31)
-sym #define DMRGO_ENUMS_REASON_REFUSED_UNKNOWN_TS ((dmrgo_enums_ack_reason_t)63)
-sym #define DMRGO_ENUMS_REASON_REG_ACCEPTED ((dmrgo_enums_ack_reason_t)98)
-sym #define DMRGO_ENUMS_REASON_REG_DENIED ((dmrgo_enums_ack_reason_t)43)
-sym #define DMRGO_ENUMS_REASON_REG_REFUSED ((dmrgo_enums_ack_reason_t)42)
-sym #define DMRGO_ENUMS_REASON_REG_SUBSCRIPTION ((dmrgo_enums_ack_reason_t)101)
-sym #define DMRGO_ENUMS_REASON_STACK_FULL_REFUSED ((dmrgo_enums_ack_reason_t)18)
-sym #define DMRGO_ENUMS_REASON_STATUS_POLL_ACCEPTED_MS ((dmrgo_enums_ack_reason_t)71)
-sym #define DMRGO_ENUMS_REASON_STATUS_POLL_ACCEPTED_TS ((dmrgo_enums_ack_reason_t)99)
-sym #define DMRGO_ENUMS_REASON_STORE_FORWARD ((dmrgo_enums_ack_reason_t)97)
-sym #define DMRGO_ENUMS_REASON_SYS_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)39)
-sym #define DMRGO_ENUMS_REASON_SYS_NOT_READY ((dmrgo_enums_ack_reason_t)40)
-sym #define DMRGO_ENUMS_REASON_TEMP_USER_REFUSED ((dmrgo_enums_ack_reason_t)34)
-sym #define DMRGO_ENUMS_REASON_TRANSIENT_SYS_REFUSED ((dmrgo_enums_ack_reason_t)35)
-sym #define DMRGO_ENUMS_REASON_UDT_UPLOAD_CRC_ERROR ((dmrgo_enums_ack_reason_t)48)
-sym #define DMRGO_ENUMS_REASON_WAIT ((dmrgo_enums_ack_reason_t)224)
 sym #define DMRGO_ENUMS_SAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
 sym #define DMRGO_ENUMS_SAID_MANUFACTURER_SPECIFIC ((dmrgo_enums_said_t)12)
 sym #define DMRGO_ENUMS_SAID_RADIO_NETWORK ((dmrgo_enums_said_t)0)
-sym #define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_service_access_point_id_t)4)
-sym #define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_service_access_point_id_t)2)
-sym #define DMRGO_ENUMS_SAPUDPIP_HEADER_COMPRESSION ((dmrgo_enums_service_access_point_id_t)3)
-sym #define DMRGO_ENUMS_SAP_ADDRESS_RESOLUTION_PROTOCOL ((dmrgo_enums_service_access_point_id_t)5)
-sym #define DMRGO_ENUMS_SAP_PROPRIETARY_PACKET_DATA ((dmrgo_enums_service_access_point_id_t)9)
-sym #define DMRGO_ENUMS_SAP_SHORT_DATA ((dmrgo_enums_service_access_point_id_t)10)
-sym #define DMRGO_ENUMS_SAP_UNIFIED_DATA_TRANSPORT ((dmrgo_enums_service_access_point_id_t)0)
-sym #define DMRGO_ENUMS_SERVICE_CALL_ANSWER ((dmrgo_enums_service_kind_t)9)
-sym #define DMRGO_ENUMS_SERVICE_CALL_DIVERSION ((dmrgo_enums_service_kind_t)8)
-sym #define DMRGO_ENUMS_SERVICE_CANCEL_CALL ((dmrgo_enums_service_kind_t)15)
-sym #define DMRGO_ENUMS_SERVICE_DUPLEX_PACKET_DATA ((dmrgo_enums_service_kind_t)11)
-sym #define DMRGO_ENUMS_SERVICE_DUPLEX_VOICE ((dmrgo_enums_service_kind_t)10)
+sym #define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
+sym #define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
+sym #define DMRGO_ENUMS_SAPUDPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)3)
+sym #define DMRGO_ENUMS_SAP_ADDRESS_RESOLUTION_PROTOCOL ((dmrgo_enums_sap_t)5)
+sym #define DMRGO_ENUMS_SAP_PROPRIETARY_PACKET_DATA ((dmrgo_enums_sap_t)9)
+sym #define DMRGO_ENUMS_SAP_SHORT_DATA ((dmrgo_enums_sap_t)10)
+sym #define DMRGO_ENUMS_SAP_UNIFIED_DATA_TRANSPORT ((dmrgo_enums_sap_t)0)
 sym #define DMRGO_ENUMS_SERVICE_FUNCTION_ALL ((dmrgo_enums_service_function_t)0)
 sym #define DMRGO_ENUMS_SERVICE_FUNCTION_NO_PAYLOAD ((dmrgo_enums_service_function_t)2)
 sym #define DMRGO_ENUMS_SERVICE_FUNCTION_PAYLOAD ((dmrgo_enums_service_function_t)1)
 sym #define DMRGO_ENUMS_SERVICE_FUNCTION_REGISTRATION ((dmrgo_enums_service_function_t)3)
-sym #define DMRGO_ENUMS_SERVICE_INDIVIDUAL_PACKET_DATA ((dmrgo_enums_service_kind_t)2)
-sym #define DMRGO_ENUMS_SERVICE_INDIVIDUAL_SHORT_DATA ((dmrgo_enums_service_kind_t)4)
-sym #define DMRGO_ENUMS_SERVICE_INDIVIDUAL_VOICE ((dmrgo_enums_service_kind_t)0)
-sym #define DMRGO_ENUMS_SERVICE_REGISTRATION ((dmrgo_enums_service_kind_t)14)
-sym #define DMRGO_ENUMS_SERVICE_SHORT_DATA_POLLING ((dmrgo_enums_service_kind_t)6)
-sym #define DMRGO_ENUMS_SERVICE_STATUS_TRANSPORT ((dmrgo_enums_service_kind_t)7)
-sym #define DMRGO_ENUMS_SERVICE_SUPPLEMENTARY ((dmrgo_enums_service_kind_t)13)
-sym #define DMRGO_ENUMS_SERVICE_TALKGROUP_PACKET_DATA ((dmrgo_enums_service_kind_t)3)
-sym #define DMRGO_ENUMS_SERVICE_TALKGROUP_SHORT_DATA ((dmrgo_enums_service_kind_t)5)
-sym #define DMRGO_ENUMS_SERVICE_TALKGROUP_VOICE ((dmrgo_enums_service_kind_t)1)
+sym #define DMRGO_ENUMS_SERVICE_KIND_CALL_ANSWER ((dmrgo_enums_service_kind_t)9)
+sym #define DMRGO_ENUMS_SERVICE_KIND_CALL_DIVERSION ((dmrgo_enums_service_kind_t)8)
+sym #define DMRGO_ENUMS_SERVICE_KIND_CANCEL_CALL ((dmrgo_enums_service_kind_t)15)
+sym #define DMRGO_ENUMS_SERVICE_KIND_DUPLEX_PACKET_DATA ((dmrgo_enums_service_kind_t)11)
+sym #define DMRGO_ENUMS_SERVICE_KIND_DUPLEX_VOICE ((dmrgo_enums_service_kind_t)10)
+sym #define DMRGO_ENUMS_SERVICE_KIND_INDIVIDUAL_PACKET_DATA ((dmrgo_enums_service_kind_t)2)
+sym #define DMRGO_ENUMS_SERVICE_KIND_INDIVIDUAL_SHORT_DATA ((dmrgo_enums_service_kind_t)4)
+sym #define DMRGO_ENUMS_SERVICE_KIND_INDIVIDUAL_VOICE ((dmrgo_enums_service_kind_t)0)
+sym #define DMRGO_ENUMS_SERVICE_KIND_REGISTRATION ((dmrgo_enums_service_kind_t)14)
+sym #define DMRGO_ENUMS_SERVICE_KIND_SHORT_DATA_POLLING ((dmrgo_enums_service_kind_t)6)
+sym #define DMRGO_ENUMS_SERVICE_KIND_STATUS_TRANSPORT ((dmrgo_enums_service_kind_t)7)
+sym #define DMRGO_ENUMS_SERVICE_KIND_SUPPLEMENTARY ((dmrgo_enums_service_kind_t)13)
+sym #define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_PACKET_DATA ((dmrgo_enums_service_kind_t)3)
+sym #define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_SHORT_DATA ((dmrgo_enums_service_kind_t)5)
+sym #define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_VOICE ((dmrgo_enums_service_kind_t)1)
 sym #define DMRGO_ENUMS_SLCOC_SYS_PARMS ((dmrgo_enums_slco_t)2)
 sym #define DMRGO_ENUMS_SLCOP_SYS_PARMS ((dmrgo_enums_slco_t)3)
 sym #define DMRGO_ENUMS_SLCO_ACTIVITY_UPDATE ((dmrgo_enums_slco_t)1)
@@ -1444,7 +1444,7 @@ sym int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size
 sym int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
 sym int dmrgo_codec2_codec_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_codec2_codec_encode(dmrgo_codec2_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-sym int dmrgo_codec2_codec_fid(dmrgo_codec2_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+sym int dmrgo_codec2_codec_fid(dmrgo_codec2_codec_t *self, dmrgo_enums_fid_t *out);
 sym int dmrgo_codec2_codec_frame_samples(dmrgo_codec2_codec_t *self, int64_t *out);
 sym int dmrgo_codec2_codec_free(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
@@ -1741,7 +1741,7 @@ sym int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
 sym int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 sym int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-sym int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+sym int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_fid_t *out);
 sym int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
 sym int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
 sym int dmrgo_dvsi_codec_product(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1775,7 +1775,7 @@ sym int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, si
 sym int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
-sym int dmrgo_enums_feature_set_id_string(dmrgo_enums_feature_set_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_enums_fid_string(dmrgo_enums_fid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_flco_string(dmrgo_enums_flco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_lcss_string(dmrgo_enums_lcss_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_n_rand_wait_frames(dmrgo_enums_n_rand_wait_t self, int64_t *out);
@@ -1784,7 +1784,7 @@ sym int dmrgo_enums_new_color_code(uint8_t v, dmrgo_enums_color_code_t *out);
 sym int dmrgo_enums_protect_kind_string(dmrgo_enums_protect_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_rc_command_string(dmrgo_enums_rc_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_said_string(dmrgo_enums_said_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_service_access_point_id_string(dmrgo_enums_service_access_point_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_enums_sap_string(dmrgo_enums_sap_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_service_function_invites(dmrgo_enums_service_function_t self, dmrgo_enums_service_kind_t k, bool *out);
 sym int dmrgo_enums_service_function_string(dmrgo_enums_service_function_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_service_kind_needs_payload_channel(dmrgo_enums_service_kind_t self, bool *out);
@@ -1892,7 +1892,7 @@ sym int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len
 sym int dmrgo_ip_append_icmp_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_icmp_packet_t *c);
 sym int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 sym int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
-sym int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_decode(dmrgo_enums_sap_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_icmp(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_icmp_packet(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_ipv4(const uint8_t *data, size_t data_len, dmrgo_ip_ipv4_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -2412,7 +2412,7 @@ sym int dmrgo_pdu_csbk_as_motorola_radio_check(dmrgo_pdu_csbk_t *self, dmrgo_pdu
 sym int dmrgo_pdu_csbk_as_talkgroup_data_grant_multi_item(dmrgo_pdu_csbk_t *self, dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_csbk_bytes_addresses(const dmrgo_pdu_csbk_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
 sym int dmrgo_pdu_csbk_bytes_crc_ok(const dmrgo_pdu_csbk_bytes_t *self, bool *out);
-sym int dmrgo_pdu_csbk_bytes_fid(const dmrgo_pdu_csbk_bytes_t *self, dmrgo_enums_feature_set_id_t *out);
+sym int dmrgo_pdu_csbk_bytes_fid(const dmrgo_pdu_csbk_bytes_t *self, dmrgo_enums_fid_t *out);
 sym int dmrgo_pdu_csbk_bytes_group(const dmrgo_pdu_csbk_bytes_t *self, bool *group, bool *ok);
 sym int dmrgo_pdu_csbk_bytes_opcode(const dmrgo_pdu_csbk_bytes_t *self, dmrgo_pdu_csbk_opcode_t *out);
 sym int dmrgo_pdu_csbk_bytes_reseal(dmrgo_pdu_csbk_bytes_t *self);
@@ -2520,7 +2520,7 @@ sym int dmrgo_pdu_is_pr_fill(const uint8_t info[12], bool *out);
 sym int dmrgo_pdu_lc_bytes_addresses(const dmrgo_pdu_lc_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
 sym int dmrgo_pdu_lc_bytes_call(const dmrgo_pdu_lc_bytes_t *self, bool *group, uint32_t *target, uint32_t *source, bool *ok);
 sym int dmrgo_pdu_lc_bytes_codeword(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_data_type_t dt, uint8_t out[12]);
-sym int dmrgo_pdu_lc_bytes_fid(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_feature_set_id_t *out);
+sym int dmrgo_pdu_lc_bytes_fid(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t *out);
 sym int dmrgo_pdu_lc_bytes_flco(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t *out);
 sym int dmrgo_pdu_lc_bytes_group(const dmrgo_pdu_lc_bytes_t *self, bool *group, bool *ok);
 sym int dmrgo_pdu_lc_bytes_protect_flag(const dmrgo_pdu_lc_bytes_t *self, bool *out);
@@ -2528,7 +2528,7 @@ sym int dmrgo_pdu_lc_bytes_reserved(const dmrgo_pdu_lc_bytes_t *self, bool *out)
 sym int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 sym int dmrgo_pdu_lc_bytes_set_addresses(dmrgo_pdu_lc_bytes_t *self, uint32_t target, uint32_t source);
 sym int dmrgo_pdu_lc_bytes_set_call(dmrgo_pdu_lc_bytes_t *self, bool group, uint32_t target, uint32_t source);
-sym int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_feature_set_id_t fid);
+sym int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t fid);
 sym int dmrgo_pdu_lc_bytes_set_flco(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t f);
 sym int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group, bool *out);
 sym int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
@@ -2919,7 +2919,7 @@ sym int dmrgo_vocoder_codec_close(dmrgo_vocoder_codec_t *self);
 sym int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 sym int dmrgo_vocoder_codec_decode_need(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_vocoder_codec_encode(dmrgo_vocoder_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-sym int dmrgo_vocoder_codec_fid(dmrgo_vocoder_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+sym int dmrgo_vocoder_codec_fid(dmrgo_vocoder_codec_t *self, dmrgo_enums_fid_t *out);
 sym int dmrgo_vocoder_codec_frame_samples(dmrgo_vocoder_codec_t *self, int64_t *out);
 sym int dmrgo_vocoder_codec_free(dmrgo_vocoder_codec_t *self);
 sym int dmrgo_vocoder_codec_from_vtable(const dmrgo_vocoder_codec_vtable_t *vt, dmrgo_vocoder_codec_t **out);
@@ -3042,14 +3042,14 @@ sym typedef uint8_t dmrgo_enums_daid_t;
 sym typedef uint8_t dmrgo_enums_data_type_t;
 sym typedef uint8_t dmrgo_enums_dd_format_t;
 sym typedef uint8_t dmrgo_enums_dpid_t;
-sym typedef uint8_t dmrgo_enums_feature_set_id_t;
+sym typedef uint8_t dmrgo_enums_fid_t;
 sym typedef uint8_t dmrgo_enums_flco_t;
 sym typedef uint8_t dmrgo_enums_lcss_t;
 sym typedef uint8_t dmrgo_enums_n_rand_wait_t;
 sym typedef uint8_t dmrgo_enums_protect_kind_t;
 sym typedef uint8_t dmrgo_enums_rc_command_t;
 sym typedef uint8_t dmrgo_enums_said_t;
-sym typedef uint8_t dmrgo_enums_service_access_point_id_t;
+sym typedef uint8_t dmrgo_enums_sap_t;
 sym typedef uint8_t dmrgo_enums_service_function_t;
 sym typedef uint8_t dmrgo_enums_service_kind_t;
 sym typedef uint8_t dmrgo_enums_slco_t;
@@ -3117,9 +3117,9 @@ type struct dmrgo_ars_response_t { bool extension; uint8_t value; };
 type struct dmrgo_bs_config_t { dmrgo_bs_mode_t mode; dmrgo_enums_color_code_t color_code; dmrgo_bs_activation_t activation; bool cach; dmrgo_duration_t call_hang; dmrgo_duration_t data_hang; dmrgo_duration_t inactivity; dmrgo_duration_t lost; dmrgo_duration_t timeout; int64_t headers; int64_t terminators; int64_t pending; dmrgo_duration_t pending_age; int64_t data_queue; uint8_t silence[9]; dmrgo_duration_t lead; dmrgo_bs_channel_auth_t channel_auth; dmrgo_duration_t chan_auth_response; dmrgo_duration_t chan_auth_select; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_bs_output_t { dmrgo_bs_output_kind_t kind; dmrgo_enums_slot_t slot; dmrgo_bs_dest_t to; bool has_cach; uint8_t cach[3]; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; dmrgo_bs_source_t from; dmrgo_bs_service_t service; dmrgo_voice_call_t call; dmrgo_voice_end_reason_t end; dmrgo_bs_reason_t reason; };
 type struct dmrgo_bs_source_t { bool rf; uint32_t peer; };
-type struct dmrgo_codec2_config_t { dmrgo_codec2_mode_t mode; dmrgo_enums_feature_set_id_t fid; };
+type struct dmrgo_codec2_config_t { dmrgo_codec2_mode_t mode; dmrgo_enums_fid_t fid; };
 type struct dmrgo_config_error_t { char *type_; size_t type__len; char *field; size_t field_len; };
-type struct dmrgo_csbk_match_t { dmrgo_enums_feature_set_id_t fid; dmrgo_pdu_csbk_opcode_t opcodes[4]; int64_t n; };
+type struct dmrgo_csbk_match_t { dmrgo_enums_fid_t fid; dmrgo_pdu_csbk_opcode_t opcodes[4]; int64_t n; };
 type struct dmrgo_csbk_output_t { dmrgo_csbk_output_kind_t kind; dmrgo_csbk_service_t service; dmrgo_csbk_result_t result; dmrgo_csbk_reason_t reason; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; uint32_t target; uint32_t source; bool group; bool data; dmrgo_duration_t until; dmrgo_pdu_csbk_bytes_t csbk; };
 type struct dmrgo_csbk_preambles_config_t { dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_request_options_t { dmrgo_enums_access_t access; bool time_critical; int64_t preambles; int64_t retry_preambles; };
@@ -3273,12 +3273,12 @@ type struct dmrgo_pdu_cgap_continuation_t { dmrgo_fec_result_t fec; bool last_bl
 type struct dmrgo_pdu_chan_freq_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t reserved1; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint16_t reserved2; uint16_t channel; };
 type struct dmrgo_pdu_channel_timing_pdu_t { uint16_t sync_age; uint8_t generation; uint32_t leader_identifier; bool new_leader; uint8_t leader_dynamic_identifier; bool channel_timing_op1; uint32_t source_identifier; bool reserved; uint8_t source_dynamic_identifier; bool channel_timing_op0; };
 type struct dmrgo_pdu_clear_pdu_t { uint16_t physical_channel; bool reserved1; uint8_t reserved2; bool group_individual; uint32_t target_address; uint32_t source_address; };
-type struct dmrgo_pdu_confirmed_data_header_t { bool group; bool response_requested; bool reserved; uint8_t pad_octet_count; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; bool re_synchronize_flag; uint8_t send_sequence_number; uint8_t fragment_sequence_number; };
+type struct dmrgo_pdu_confirmed_data_header_t { bool group; bool response_requested; bool reserved; uint8_t pad_octet_count; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; bool re_synchronize_flag; uint8_t send_sequence_number; uint8_t fragment_sequence_number; };
 type struct dmrgo_pdu_csbk_bytes_t { uint8_t v[12]; };
-type struct dmrgo_pdu_csbk_t { bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_feature_set_id_t fid; dmrgo_fec_result_t fec; dmrgo_pdu_opcode0x38_hint_t hint0x38; bool has_unit_to_unit_voice_service_request_pdu; dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t unit_to_unit_voice_service_request_pdu; bool has_unit_to_unit_voice_service_answer_response_pdu; dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t unit_to_unit_voice_service_answer_response_pdu; bool has_negative_acknowledgement_pdu; dmrgo_pdu_negative_acknowledgement_pdu_t negative_acknowledgement_pdu; bool has_preamble_pdu; dmrgo_pdu_preamble_pdu_t preamble_pdu; bool has_channel_timing_pdu; dmrgo_pdu_channel_timing_pdu_t channel_timing_pdu; bool has_private_voice_grant_pdu; dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu; bool has_talkgroup_voice_grant_pdu; dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu; bool has_broadcast_talkgroup_voice_grant_pdu; dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu; bool has_private_data_grant_pdu; dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu; bool has_talkgroup_data_grant_pdu; dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu; bool has_duplex_private_voice_grant_pdu; dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu; bool has_duplex_private_data_grant_pdu; dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu; bool has_private_data_grant_multi_item_pdu; dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu; bool has_move_pdu; dmrgo_pdu_move_pdu_t move_pdu; bool has_aloha_pdu; dmrgo_pdu_aloha_pdu_t aloha_pdu; bool has_broadcast_pdu; dmrgo_pdu_broadcast_pdu_t broadcast_pdu; bool has_clear_pdu; dmrgo_pdu_clear_pdu_t clear_pdu; bool has_protect_pdu; dmrgo_pdu_protect_pdu_t protect_pdu; bool has_ahoy_pdu; dmrgo_pdu_ahoy_pdu_t ahoy_pdu; bool has_ack_outbound_pdu; dmrgo_pdu_ack_outbound_pdu_t ack_outbound_pdu; bool has_ack_inbound_pdu; dmrgo_pdu_ack_inbound_pdu_t ack_inbound_pdu; bool has_ack_outbound_payload_pdu; dmrgo_pdu_ack_outbound_payload_pdu_t ack_outbound_payload_pdu; bool has_ack_inbound_payload_pdu; dmrgo_pdu_ack_inbound_payload_pdu_t ack_inbound_payload_pdu; bool has_random_access_pdu; dmrgo_pdu_random_access_pdu_t random_access_pdu; bool has_ackvitation_pdu; dmrgo_pdu_ackvitation_pdu_t ackvitation_pdu; bool has_maintenance_pdu; dmrgo_pdu_maintenance_pdu_t maintenance_pdu; uint8_t raw_payload[8]; };
+type struct dmrgo_pdu_csbk_t { bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_fid_t fid; dmrgo_fec_result_t fec; dmrgo_pdu_opcode0x38_hint_t hint0x38; bool has_unit_to_unit_voice_service_request_pdu; dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t unit_to_unit_voice_service_request_pdu; bool has_unit_to_unit_voice_service_answer_response_pdu; dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t unit_to_unit_voice_service_answer_response_pdu; bool has_negative_acknowledgement_pdu; dmrgo_pdu_negative_acknowledgement_pdu_t negative_acknowledgement_pdu; bool has_preamble_pdu; dmrgo_pdu_preamble_pdu_t preamble_pdu; bool has_channel_timing_pdu; dmrgo_pdu_channel_timing_pdu_t channel_timing_pdu; bool has_private_voice_grant_pdu; dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu; bool has_talkgroup_voice_grant_pdu; dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu; bool has_broadcast_talkgroup_voice_grant_pdu; dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu; bool has_private_data_grant_pdu; dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu; bool has_talkgroup_data_grant_pdu; dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu; bool has_duplex_private_voice_grant_pdu; dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu; bool has_duplex_private_data_grant_pdu; dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu; bool has_private_data_grant_multi_item_pdu; dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu; bool has_move_pdu; dmrgo_pdu_move_pdu_t move_pdu; bool has_aloha_pdu; dmrgo_pdu_aloha_pdu_t aloha_pdu; bool has_broadcast_pdu; dmrgo_pdu_broadcast_pdu_t broadcast_pdu; bool has_clear_pdu; dmrgo_pdu_clear_pdu_t clear_pdu; bool has_protect_pdu; dmrgo_pdu_protect_pdu_t protect_pdu; bool has_ahoy_pdu; dmrgo_pdu_ahoy_pdu_t ahoy_pdu; bool has_ack_outbound_pdu; dmrgo_pdu_ack_outbound_pdu_t ack_outbound_pdu; bool has_ack_inbound_pdu; dmrgo_pdu_ack_inbound_pdu_t ack_inbound_pdu; bool has_ack_outbound_payload_pdu; dmrgo_pdu_ack_outbound_payload_pdu_t ack_outbound_payload_pdu; bool has_ack_inbound_payload_pdu; dmrgo_pdu_ack_inbound_payload_pdu_t ack_inbound_payload_pdu; bool has_random_access_pdu; dmrgo_pdu_random_access_pdu_t random_access_pdu; bool has_ackvitation_pdu; dmrgo_pdu_ackvitation_pdu_t ackvitation_pdu; bool has_maintenance_pdu; dmrgo_pdu_maintenance_pdu_t maintenance_pdu; uint8_t raw_payload[8]; };
 type struct dmrgo_pdu_data_header_bytes_t { uint8_t v[12]; };
 type struct dmrgo_pdu_data_header_t { dmrgo_fec_result_t fec; dmrgo_pdu_format_t format; uint8_t appended_blocks; bool has_unconfirmed_data_header; dmrgo_pdu_unconfirmed_data_header_t unconfirmed_data_header; bool has_confirmed_data_header; dmrgo_pdu_confirmed_data_header_t confirmed_data_header; bool has_response_packet_header; dmrgo_pdu_response_packet_header_t response_packet_header; bool has_defined_data_header; dmrgo_pdu_defined_data_header_t defined_data_header; bool has_status_precoded_header; dmrgo_pdu_status_precoded_header_t status_precoded_header; bool has_raw_data_header; dmrgo_pdu_raw_data_header_t raw_data_header; bool has_udt_header; dmrgo_pdu_udt_header_t udt_header; bool has_proprietary_header; dmrgo_pdu_proprietary_header_t proprietary_header; uint8_t raw_payload[10]; };
-type struct dmrgo_pdu_defined_data_header_t { bool group; bool response_requested; uint8_t appended_blocks; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; dmrgo_enums_dd_format_t defined_data; bool sarq; bool full_message_flag; uint8_t bit_padding; };
+type struct dmrgo_pdu_defined_data_header_t { bool group; bool response_requested; uint8_t appended_blocks; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; dmrgo_enums_dd_format_t defined_data; bool sarq; bool full_message_flag; uint8_t bit_padding; };
 type struct dmrgo_pdu_duplex_private_data_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool call_direction; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_duplex_private_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool reserved; bool emergency; bool call_direction; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_embedded_signalling_t { dmrgo_enums_color_code_t color_code; bool preemption_and_power_control_indicator; dmrgo_enums_lcss_t lcss; dmrgo_fec_result_t fec; };
@@ -3288,34 +3288,34 @@ type struct dmrgo_pdu_flc_talker_alias_block_t { uint8_t talker_alias_data[7]; }
 type struct dmrgo_pdu_flc_talker_alias_header_t { dmrgo_layer3_talker_alias_data_format_t talker_alias_data_format; int64_t talker_alias_data_length; uint64_t talker_alias_data; };
 type struct dmrgo_pdu_flc_terminator_data_link_control_t { uint32_t llid_destination; uint32_t llid_source; bool group_or_individual; bool response_requested; bool full_message_flag; bool reserved; bool re_synchronize_flag; uint8_t send_sequence_number; };
 type struct dmrgo_pdu_flc_unit_to_unit_t { dmrgo_layer3_service_options_t service_options; uint32_t target_address; uint32_t source_address; };
-type struct dmrgo_pdu_full_link_control_t { dmrgo_enums_data_type_t burst_data_type; bool protect_flag; bool reserved; dmrgo_enums_flco_t flco; dmrgo_enums_feature_set_id_t fid; dmrgo_fec_result_t fec; bool has_group_voice; dmrgo_pdu_flc_group_voice_t group_voice; bool has_unit_to_unit; dmrgo_pdu_flc_unit_to_unit_t unit_to_unit; bool has_gps_info; dmrgo_pdu_flc_gps_info_t gps_info; bool has_talker_alias_header; dmrgo_pdu_flc_talker_alias_header_t talker_alias_header; bool has_talker_alias_block; dmrgo_pdu_flc_talker_alias_block_t talker_alias_block; bool has_terminator_data_link_control; dmrgo_pdu_flc_terminator_data_link_control_t terminator_data_link_control; uint8_t raw_payload[7]; };
+type struct dmrgo_pdu_full_link_control_t { dmrgo_enums_data_type_t burst_data_type; bool protect_flag; bool reserved; dmrgo_enums_flco_t flco; dmrgo_enums_fid_t fid; dmrgo_fec_result_t fec; bool has_group_voice; dmrgo_pdu_flc_group_voice_t group_voice; bool has_unit_to_unit; dmrgo_pdu_flc_unit_to_unit_t unit_to_unit; bool has_gps_info; dmrgo_pdu_flc_gps_info_t gps_info; bool has_talker_alias_header; dmrgo_pdu_flc_talker_alias_header_t talker_alias_header; bool has_talker_alias_block; dmrgo_pdu_flc_talker_alias_block_t talker_alias_block; bool has_terminator_data_link_control; dmrgo_pdu_flc_terminator_data_link_control_t terminator_data_link_control; uint8_t raw_payload[7]; };
 type struct dmrgo_pdu_gen_site_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t reserved1; bool reg; uint8_t backoff; uint16_t sys_ident_code; bool reserved2; bool hibernating; uint8_t reserved3; uint8_t reserved4; bool reg_without_tg; uint8_t reserved5; };
 type struct dmrgo_pdu_lc_bytes_t { uint8_t v[9]; };
 type struct dmrgo_pdu_local_time_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint8_t day; uint8_t month; uint8_t utc_offset; bool utc_offset_lags; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint8_t hours; uint8_t minutes; uint8_t seconds; uint8_t day_of_week; uint8_t utc_offset_quarter; uint8_t reserved; };
 type struct dmrgo_pdu_maintenance_pdu_t { uint16_t reserved; uint8_t maint_kind; bool reserved2; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_mass_reg_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint8_t reserved; uint8_t reg_window; uint8_t aloha_mask; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint32_t address; };
 type struct dmrgo_pdu_mbc_continuation_t { bool last_block; uint8_t data[12]; };
-type struct dmrgo_pdu_mbc_header_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_feature_set_id_t fid; bool has_private_voice_grant_pdu; dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu; bool has_talkgroup_voice_grant_pdu; dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu; bool has_broadcast_talkgroup_voice_grant_pdu; dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu; bool has_private_data_grant_pdu; dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu; bool has_talkgroup_data_grant_pdu; dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu; bool has_duplex_private_voice_grant_pdu; dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu; bool has_duplex_private_data_grant_pdu; dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu; bool has_private_data_grant_multi_item_pdu; dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu; bool has_move_pdu; dmrgo_pdu_move_pdu_t move_pdu; bool has_broadcast_pdu; dmrgo_pdu_broadcast_pdu_t broadcast_pdu; uint8_t raw_payload[8]; };
+type struct dmrgo_pdu_mbc_header_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_fid_t fid; bool has_private_voice_grant_pdu; dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu; bool has_talkgroup_voice_grant_pdu; dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu; bool has_broadcast_talkgroup_voice_grant_pdu; dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu; bool has_private_data_grant_pdu; dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu; bool has_talkgroup_data_grant_pdu; dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu; bool has_duplex_private_voice_grant_pdu; dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu; bool has_duplex_private_data_grant_pdu; dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu; bool has_private_data_grant_multi_item_pdu; dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu; bool has_move_pdu; dmrgo_pdu_move_pdu_t move_pdu; bool has_broadcast_pdu; dmrgo_pdu_broadcast_pdu_t broadcast_pdu; uint8_t raw_payload[8]; };
 type struct dmrgo_pdu_motorola_call_alert_ack_pdu_t { uint8_t request; uint8_t reserved; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_motorola_call_alert_pdu_t { uint16_t reserved; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_motorola_radio_check_pdu_t { uint8_t reserved; bool answer; uint8_t reserved2; uint32_t requester_address; uint32_t checked_address; };
 type struct dmrgo_pdu_move_pdu_t { uint16_t reserved1; uint8_t mask; uint8_t reserved2; bool reg; uint8_t backoff; uint8_t reserved3; uint16_t physical_channel; uint32_t ms_address; };
 type struct dmrgo_pdu_mvap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; dmrgo_enums_color_code_t color_code; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
 type struct dmrgo_pdu_negative_acknowledgement_pdu_t { dmrgo_layer3_additional_information_field_t additional_info; dmrgo_layer3_source_type_t source_type; dmrgo_pdu_csbk_opcode_t service_type; uint8_t reason_code; uint32_t source_address; uint32_t target_address; };
-type struct dmrgo_pdu_pi_header_t { dmrgo_fec_result_t fec; uint8_t algorithm_id; dmrgo_enums_feature_set_id_t mfid; uint8_t key_id; uint32_t message_indicator; uint32_t destination; uint8_t raw[10]; };
+type struct dmrgo_pdu_pi_header_t { dmrgo_fec_result_t fec; uint8_t algorithm_id; dmrgo_enums_fid_t mfid; uint8_t key_id; uint32_t message_indicator; uint32_t destination; uint8_t raw[10]; };
 type struct dmrgo_pdu_pr_fill_t { uint8_t unused; };
 type struct dmrgo_pdu_preamble_pdu_t { bool data; bool group; uint8_t reserved; uint8_t csbk_blocks_to_follow; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_private_data_grant_multi_item_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_private_data_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_private_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool reserved; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
-type struct dmrgo_pdu_proprietary_header_t { dmrgo_enums_service_access_point_id_t sap; dmrgo_enums_feature_set_id_t mfid; uint8_t manufacturer_data[8]; };
+type struct dmrgo_pdu_proprietary_header_t { dmrgo_enums_sap_t sap; dmrgo_enums_fid_t mfid; uint8_t manufacturer_data[8]; };
 type struct dmrgo_pdu_protect_pdu_t { uint16_t reserved; uint8_t protect_kind; bool group_individual; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_random_access_pdu_t { uint8_t service_options; bool proxy_flag; uint8_t reserved; uint8_t service_kind; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_rate12_data_t { uint8_t data[12]; };
 type struct dmrgo_pdu_rate1_data_t { uint8_t data[24]; };
 type struct dmrgo_pdu_rate34_data_t { uint8_t data[18]; };
-type struct dmrgo_pdu_raw_data_header_t { bool group; bool response_requested; uint8_t appended_blocks; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; uint8_t source_port; uint8_t destination_port; bool sarq; bool full_message_flag; uint8_t bit_padding; };
-type struct dmrgo_pdu_response_packet_header_t { bool reserved; bool response_requested; uint8_t reserved2; dmrgo_enums_service_access_point_id_t sap; uint8_t reserved3; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; uint8_t response_class; uint8_t response_type; uint8_t response_status; };
+type struct dmrgo_pdu_raw_data_header_t { bool group; bool response_requested; uint8_t appended_blocks; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; uint8_t source_port; uint8_t destination_port; bool sarq; bool full_message_flag; uint8_t bit_padding; };
+type struct dmrgo_pdu_response_packet_header_t { bool reserved; bool response_requested; uint8_t reserved2; dmrgo_enums_sap_t sap; uint8_t reserved3; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; uint8_t response_class; uint8_t response_type; uint8_t response_status; };
 type struct dmrgo_pdu_reverse_channel_t { dmrgo_enums_rc_command_t rc_command; dmrgo_fec_result_t fec; };
 type struct dmrgo_pdu_short_lc_activity_update_t { dmrgo_enums_activity_id_t ts1_activity_id; dmrgo_enums_activity_id_t ts2_activity_id; uint8_t hash_ts1; uint8_t hash_ts2; };
 type struct dmrgo_pdu_short_lc_c_sys_parms_t { uint8_t model; uint16_t net_site_raw; bool reg; uint16_t common_slot_counter; };
@@ -3323,15 +3323,15 @@ type struct dmrgo_pdu_short_lc_null_message_t { uint32_t reserved; };
 type struct dmrgo_pdu_short_lc_p_sys_parms_t { uint8_t model; uint16_t net_site_raw; bool payload_channel_type; uint16_t common_slot_counter; };
 type struct dmrgo_pdu_short_lc_t { dmrgo_enums_slco_t slco; dmrgo_fec_result_t fec; bool has_null_message; dmrgo_pdu_short_lc_null_message_t null_message; bool has_activity_update; dmrgo_pdu_short_lc_activity_update_t activity_update; bool has_c_sys_parms; dmrgo_pdu_short_lc_c_sys_parms_t c_sys_parms; bool has_p_sys_parms; dmrgo_pdu_short_lc_p_sys_parms_t p_sys_parms; uint8_t raw_payload[3]; };
 type struct dmrgo_pdu_slot_type_t { dmrgo_enums_color_code_t color_code; dmrgo_enums_data_type_t data_type; dmrgo_fec_result_t fec; };
-type struct dmrgo_pdu_status_precoded_header_t { bool group; bool response_requested; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; uint8_t source_port; uint8_t destination_port; uint16_t status_precoded; };
+type struct dmrgo_pdu_status_precoded_header_t { bool group; bool response_requested; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; uint8_t source_port; uint8_t destination_port; uint16_t status_precoded; };
 type struct dmrgo_pdu_sys_code_t { dmrgo_pdu_network_model_t model; uint16_t net; uint16_t site; uint8_t par; };
 type struct dmrgo_pdu_tact_t { bool access_type; bool tdma_channel; dmrgo_enums_lcss_t lcss; dmrgo_fec_result_t fec; };
 type struct dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_talkgroup_data_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_talkgroup_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool late_entry; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_udp_ipv4_compressed_header_t { uint16_t ipv4_identification; dmrgo_enums_said_t said; dmrgo_enums_daid_t daid; uint8_t header_compression_opcode; dmrgo_enums_spid_t spid; dmrgo_enums_dpid_t dpid; uint16_t extended_header1; uint16_t extended_header2; };
-type struct dmrgo_pdu_udt_header_t { bool group; bool response_requested; bool emergency; bool option_flag; dmrgo_enums_service_access_point_id_t sap; dmrgo_enums_udt_format_t udt_format; uint32_t llid_destination; uint32_t llid_source; uint8_t pad_nibble; bool reserved; uint8_t appended_blocks; bool supplementary_flag; bool protect_flag; dmrgo_pdu_udt_opcode_t opcode; };
-type struct dmrgo_pdu_unconfirmed_data_header_t { bool group; bool response_requested; bool reserved; uint8_t pad_octet_count; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; uint8_t reserved2; uint8_t fragment_sequence_number; };
+type struct dmrgo_pdu_udt_header_t { bool group; bool response_requested; bool emergency; bool option_flag; dmrgo_enums_sap_t sap; dmrgo_enums_udt_format_t udt_format; uint32_t llid_destination; uint32_t llid_source; uint8_t pad_nibble; bool reserved; uint8_t appended_blocks; bool supplementary_flag; bool protect_flag; dmrgo_pdu_udt_opcode_t opcode; };
+type struct dmrgo_pdu_unconfirmed_data_header_t { bool group; bool response_requested; bool reserved; uint8_t pad_octet_count; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; uint8_t reserved2; uint8_t fragment_sequence_number; };
 type struct dmrgo_pdu_unified_single_block_data_t { dmrgo_fec_result_t fec; dmrgo_pdu_service_type_t service_type; uint8_t payload[10]; };
 type struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t { dmrgo_layer3_service_options_t service_options; uint8_t answer_response; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t { dmrgo_layer3_service_options_t service_options; uint8_t reserved; uint32_t target_address; uint32_t source_address; };
@@ -3373,9 +3373,9 @@ type struct dmrgo_trunk_tune_t { uint16_t channel; dmrgo_enums_slot_t slot; uint
 type struct dmrgo_trunk_usbd_poll_request_t { uint8_t response_delay; bool payload_contents; bool reserved; uint64_t parameters; uint32_t target; };
 type struct dmrgo_trunk_usbdlip_response_t { uint8_t time_elapsed; double longitude; double latitude; dmrgo_layer3_position_error_t position_error; uint8_t velocity; uint8_t direction; uint8_t reason; uint8_t hashed_source; };
 type struct dmrgo_vocoder_ambe_frame_t { uint8_t v[7]; };
-type struct dmrgo_vocoder_codec_vtable_t { uintptr_t user; int (*close)(uintptr_t user); int (*decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out); int (*frame_samples)(uintptr_t user, int64_t *out); int (*reset)(uintptr_t user); int (*silence)(uintptr_t user, uint8_t out[9]); };
+type struct dmrgo_vocoder_codec_vtable_t { uintptr_t user; int (*close)(uintptr_t user); int (*decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(uintptr_t user, dmrgo_enums_fid_t *out); int (*frame_samples)(uintptr_t user, int64_t *out); int (*reset)(uintptr_t user); int (*silence)(uintptr_t user, uint8_t out[9]); };
 type struct dmrgo_voice_call_options_t { bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; bool in_call; bool hang_time; };
-type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; dmrgo_layer3_service_options_t options; dmrgo_enums_feature_set_id_t fid; dmrgo_pdu_lc_bytes_t lc; dmrgo_voice_origin_t origin; uint32_t stream; };
+type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; dmrgo_layer3_service_options_t options; dmrgo_enums_fid_t fid; dmrgo_pdu_lc_bytes_t lc; dmrgo_voice_origin_t origin; uint32_t stream; };
 type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_call_t call; dmrgo_enums_voice_burst_type_t position; dmrgo_layer2_raw_burst_t burst; dmrgo_voice_frame_quality_t frames[3]; uint8_t lost; dmrgo_pdu_full_link_control_t lc; uint8_t *text; size_t text_len; dmrgo_voice_end_reason_t reason; dmrgo_voice_stats_t stats; };
 type struct dmrgo_voice_frame_quality_t { uint8_t errors_corrected; bool bad; };
 type struct dmrgo_voice_interrupter_config_t { dmrgo_enums_color_code_t color_code; dmrgo_duration_t wait; int64_t retries; int64_t repeats; dmrgo_layer2_burst_t *scratch; };

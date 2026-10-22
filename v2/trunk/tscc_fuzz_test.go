@@ -27,18 +27,18 @@ func newInboundPool(t testing.TB) burstPool {
 			ServiceOptions: opts, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}})
 	}
 	return burstPool{
-		rnd(enums.ServiceRegistration, 1, 0xFFFEC6),
-		rnd(enums.ServiceRegistration, 0, 0xFFFEC6),
-		rnd(enums.ServiceTalkgroupVoice, 0, 9),
-		rnd(enums.ServiceIndividualVoice, 0, 3120002),
-		rnd(enums.ServiceStatusTransport, 0, 3120002),
+		rnd(enums.ServiceKindRegistration, 1, 0xFFFEC6),
+		rnd(enums.ServiceKindRegistration, 0, 0xFFFEC6),
+		rnd(enums.ServiceKindTalkgroupVoice, 0, 9),
+		rnd(enums.ServiceKindIndividualVoice, 0, 3120002),
+		rnd(enums.ServiceKindStatusTransport, 0, 3120002),
 		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
-			ReasonCode: byte(enums.ReasonMSAccepted), TargetAddress: 3120001, AdditionalInfo: 3120002}}),
+			ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001, AdditionalInfo: 3120002}}),
 		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{TargetAddress: 9, SourceAddress: 3120001}}),
 		voiceLCRaw(t, enums.DataTypeVoiceLCHeader),
 		voiceLCRaw(t, enums.DataTypeTerminatorWithLC),
 		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
-			ReasonCode: byte(enums.ReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3120001}}),
+			ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3120001}}),
 	}
 }
 

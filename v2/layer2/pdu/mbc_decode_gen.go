@@ -28,7 +28,7 @@ func DecodeMBCHeader(data [12]byte) MBCHeader {
 	result.LastBlock = data[0]&0x80 != 0
 	result.ProtectFlag = data[0]&0x40 != 0
 	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-	result.FID = enums.FeatureSetID(uint64(data[1]))
+	result.FID = enums.FID(uint64(data[1]))
 	var _dispatchBytes [8]byte
 	copy(_dispatchBytes[0:8], data[2:10])
 	if result.FID == 0 {
@@ -102,7 +102,7 @@ func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
 	result.LastBlock = data[0]&0x80 != 0
 	result.ProtectFlag = data[0]&0x40 != 0
 	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-	result.FID = enums.FeatureSetID(uint64(data[1]))
+	result.FID = enums.FID(uint64(data[1]))
 	var _dispatchBytes [8]byte
 	copy(_dispatchBytes[0:8], data[2:10])
 	if result.FID == 0 {
@@ -292,7 +292,7 @@ func (s *MBCHeader) Encode() ([12]byte, error) {
 	if _payload != "" {
 		var result MBCHeader
 		result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-		result.FID = enums.FeatureSetID(uint64(data[1]))
+		result.FID = enums.FID(uint64(data[1]))
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.Opcode {

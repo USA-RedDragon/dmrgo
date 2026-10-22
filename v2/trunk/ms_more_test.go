@@ -18,7 +18,7 @@ func registered(t *testing.T, cfg *trunk.MSConfig) *msRig {
 	a := aloha(t)
 	r.feed(a, &idle)
 	wantKinds(t, "registration C_RAND", r.feed(a, &idle), trunk.OutputBurst)
-	wantKinds(t, "Reg_Accepted", r.feed(ack(t, enums.ReasonRegAccepted), &idle), trunk.OutputRegistered)
+	wantKinds(t, "Reg_Accepted", r.feed(ack(t, enums.AckReasonRegAccepted), &idle), trunk.OutputRegistered)
 	return r
 }
 
@@ -29,10 +29,10 @@ func TestMS_PowerOff(t *testing.T) {
 	wantKinds(t, "PowerOff", r.out)
 	out := r.feed(aloha(t), &idle)
 	wantKinds(t, "de-registration C_RAND", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceRegistration) || c.RandomAccessPDU.ServiceOptions != 0 {
+	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindRegistration) || c.RandomAccessPDU.ServiceOptions != 0 {
 		t.Fatalf("de-registration %+v", c.RandomAccessPDU)
 	}
-	wantKinds(t, "Reg_Accepted", r.feed(ack(t, enums.ReasonRegAccepted), &idle), trunk.OutputPowerOff)
+	wantKinds(t, "Reg_Accepted", r.feed(ack(t, enums.AckReasonRegAccepted), &idle), trunk.OutputPowerOff)
 	if !r.ms.Off() || r.ms.Registered() {
 		t.Errorf("Off %v Registered %v", r.ms.Off(), r.ms.Registered())
 	}
@@ -64,9 +64,9 @@ func TestMS_RegDeniedAndRefused(t *testing.T) {
 		t.Errorf("Call while registering = %v", err)
 	}
 	r.feed(a, &idle)
-	out := r.feed(ack(t, enums.ReasonRegDenied), &idle)
+	out := r.feed(ack(t, enums.AckReasonRegDenied), &idle)
 	wantKinds(t, "Reg_Denied", out, trunk.OutputRefused, trunk.OutputLost)
-	if out[0].Ack != enums.ReasonRegDenied || out[1].Reason != trunk.ReasonDenied || r.ms.State() != trunk.StateHunting {
+	if out[0].Ack != enums.AckReasonRegDenied || out[1].Reason != trunk.ReasonDenied || r.ms.State() != trunk.StateHunting {
 		t.Errorf("Reg_Denied %+v, state %v", out, r.ms.State())
 	}
 	out = r.feed(a, &idle)
@@ -80,7 +80,7 @@ func TestMS_RegDeniedAndRefused(t *testing.T) {
 	r2 := newRig(t, &trunk.MSConfig{Address: msAddr})
 	r2.feed(a, &idle)
 	r2.feed(a, &idle)
-	out = r2.feed(ack(t, enums.ReasonRegRefused), &idle)
+	out = r2.feed(ack(t, enums.AckReasonRegRefused), &idle)
 	wantKinds(t, "Reg_Refused", out, trunk.OutputRefused, trunk.OutputLost)
 	wantKinds(t, "TSCC again", r2.feed(a, &idle), trunk.OutputSite)
 	wantKinds(t, "registration again", r2.feed(a, &idle), trunk.OutputBurst)
@@ -96,7 +96,7 @@ func TestMS_RadioCheck(t *testing.T) {
 		answer bool
 	}{{false, msAddr, true}, {true, 9, true}, {true, 10, false}, {false, msAddr + 1, false}} {
 		ahoy := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-			ServiceKind: uint8(enums.ServiceRegistration), GroupIndividual: tt.group, TargetAddress: tt.target, SourceAddress: constants.GatewayALLMSI}}, testCC)
+			ServiceKind: uint8(enums.ServiceKindRegistration), GroupIndividual: tt.group, TargetAddress: tt.target, SourceAddress: constants.GatewayALLMSI}}, testCC)
 		out := r.feed(ahoy, &busy)
 		if !tt.answer {
 			wantKinds(t, "radio check for another", out)
@@ -142,7 +142,7 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 		t.Errorf("Protect %v", out[0].Protect)
 	}
 	pa := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: msAddr, SourceAddress: constants.GatewayALLMSI}}, testCC)
+		ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: msAddr, SourceAddress: constants.GatewayALLMSI}}, testCC)
 	out = r.feed(pa, nil)
 	wantKinds(t, "P_AHOY", out, trunk.OutputAhoy, trunk.OutputBurst)
 	if c := sent(t, &out[1]); c.AckInboundPayloadPDU == nil || out[1].Slot != enums.Slot1 {
@@ -178,7 +178,7 @@ func TestMS_DataCallAndEmergency(t *testing.T) {
 		}
 	}
 	wantKinds(t, "data C_RAND after an inviting C_ALOHA", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceIndividualPacketData) {
+	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindIndividualPacketData) {
 		t.Fatalf("C_RAND %+v", c.RandomAccessPDU)
 	}
 	pd := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateDataGrant, PrivateDataGrantPDU: &pdu.PrivateDataGrantPDU{

@@ -35,5 +35,5 @@ type Codec interface {
 	// this codec. The FID does not identify the vocoder, so a receiver selects
 	// the codec by a name that both ends agree on out of band (ETSI TS 102
 	// 361-1 Table 9.21 NOTE).
-	FID() enums.FeatureSetID
+	FID() enums.FID
 }

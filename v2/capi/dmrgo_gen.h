@@ -744,10 +744,10 @@ typedef uint8_t dmrgo_enums_dd_format_t;
 typedef uint8_t dmrgo_enums_dpid_t;
 /* Go: enums.DataType. DataType is the 4-bit Data Type of a slot type: the content of a general data burst (ETSI TS 102 361-1 clause 9.3.6, Table 9.22). */
 typedef uint8_t dmrgo_enums_data_type_t;
+/* Go: enums.FID. FID is the 8-bit Feature set ID (FID) of a full LC or CSBK. */
+typedef uint8_t dmrgo_enums_fid_t;
 /* Go: enums.FLCO. FLCO is the 6-bit Full Link Control Opcode of a full LC (ETSI TS 102 361-2 Table B.1, ETSI TS 102 361-3 clause 7.1.1). */
 typedef uint8_t dmrgo_enums_flco_t;
-/* Go: enums.FeatureSetID. FeatureSetID is the 8-bit Feature set ID (FID) of a full LC or CSBK. */
-typedef uint8_t dmrgo_enums_feature_set_id_t;
 /* Go: enums.LCSS. LCSS is the 2-bit LC Start/Stop of an EMB or CACH. */
 typedef uint8_t dmrgo_enums_lcss_t;
 /* Go: enums.NRandWait. NRandWait is the 4-bit NRand_Wait of a C_ALOHA, the code for the number of TDMA frames by which the TSCC may delay its answer to a random access (ETSI TS 102 361-4 clause 6.2.1.1.5). */
@@ -758,12 +758,12 @@ typedef uint8_t dmrgo_enums_protect_kind_t;
 typedef uint8_t dmrgo_enums_rc_command_t;
 /* Go: enums.SAID. SAID is the 4-bit Source IP Address Identifier of a UDP/IPv4 compressed header. */
 typedef uint8_t dmrgo_enums_said_t;
+/* Go: enums.SAP. SAP is the 4-bit Service Access Point (SAP) identifier of a data header. */
+typedef uint8_t dmrgo_enums_sap_t;
 /* Go: enums.SLCO. SLCO is the 4-bit Short Link Control Opcode of a short LC. */
 typedef uint8_t dmrgo_enums_slco_t;
 /* Go: enums.SPID. SPID is the 7-bit UDP Source Port Identifier of a UDP/IPv4 compressed header. */
 typedef uint8_t dmrgo_enums_spid_t;
-/* Go: enums.ServiceAccessPointID. ServiceAccessPointID is the 4-bit Service Access Point (SAP) identifier of a data header. */
-typedef uint8_t dmrgo_enums_service_access_point_id_t;
 /* Go: enums.ServiceFunction. ServiceFunction is the 2-bit Service_Function of a C_ALOHA, which tells for which services an MS may make a random access (ETSI TS 102 361-4 clause 6.2.1.1.2, Table 6.1). */
 typedef uint8_t dmrgo_enums_service_function_t;
 /* Go: enums.ServiceKind. ServiceKind is the 4-bit Service_Kind of a Tier III C_RAND, C_AHOY or C_ACKVIT (ETSI TS 102 361-4 clause 7.2.12, Table 7.49). */
@@ -1123,7 +1123,7 @@ struct dmrgo_voice_call_t {
 	/* Options is the Service Options of the LC. */
 	dmrgo_layer3_service_options_t options;
 	/* FID is the feature set ID of the LC. */
-	dmrgo_enums_feature_set_id_t fid;
+	dmrgo_enums_fid_t fid;
 	/* LC is the 9 LC octets as received. It is zero for OriginUnknown and for an OriginExpected call until a header or embedded LC with the same addresses arrives. */
 	dmrgo_pdu_lc_bytes_t lc;
 	/* Origin is where the Receiver learned the call. */
@@ -1163,7 +1163,7 @@ struct dmrgo_bs_output_t {
 
 struct dmrgo_csbk_match_t {
 	/* FID is the feature set ID of the answer. */
-	dmrgo_enums_feature_set_id_t fid;
+	dmrgo_enums_fid_t fid;
 	/* Opcodes holds the opcodes of the answer. */
 	dmrgo_pdu_csbk_opcode_t opcodes[4];
 	/* N is the number of Opcodes that are used, from 1 to 4. */
@@ -1308,7 +1308,7 @@ struct dmrgo_pdu_unconfirmed_data_header_t {
 	/* Pad Octet Count (POC); bit 3 is the MSB */
 	uint8_t pad_octet_count;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* destination LLID */
 	uint32_t llid_destination;
 	/* source LLID */
@@ -1333,7 +1333,7 @@ struct dmrgo_pdu_confirmed_data_header_t {
 	/* Pad Octet Count (POC); bit 3 is the MSB */
 	uint8_t pad_octet_count;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* destination LLID */
 	uint32_t llid_destination;
 	/* source LLID */
@@ -1358,7 +1358,7 @@ struct dmrgo_pdu_response_packet_header_t {
 	/* reserved */
 	uint8_t reserved2;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* reserved */
 	uint8_t reserved3;
 	/* destination LLID */
@@ -1385,7 +1385,7 @@ struct dmrgo_pdu_defined_data_header_t {
 	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
 	uint8_t appended_blocks;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* destination LLID */
 	uint32_t llid_destination;
 	/* source LLID */
@@ -1406,7 +1406,7 @@ struct dmrgo_pdu_status_precoded_header_t {
 	/* Response Requested (A) */
 	bool response_requested;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* destination LLID */
 	uint32_t llid_destination;
 	/* source LLID */
@@ -1427,7 +1427,7 @@ struct dmrgo_pdu_raw_data_header_t {
 	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
 	uint8_t appended_blocks;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* destination LLID */
 	uint32_t llid_destination;
 	/* source LLID */
@@ -1454,7 +1454,7 @@ struct dmrgo_pdu_udt_header_t {
 	/* UDT_Option_Flag in C_UDTHD, UDT_DIV in C_UDTHU */
 	bool option_flag;
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* UDT Format */
 	dmrgo_enums_udt_format_t udt_format;
 	/* destination LLID */
@@ -1477,9 +1477,9 @@ struct dmrgo_pdu_udt_header_t {
 
 struct dmrgo_pdu_proprietary_header_t {
 	/* SAP identifier */
-	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_sap_t sap;
 	/* manufacturer FID */
-	dmrgo_enums_feature_set_id_t mfid;
+	dmrgo_enums_fid_t mfid;
 	/* manufacturer data, header octets 2 to 9 */
 	uint8_t manufacturer_data[8];
 };
@@ -2437,7 +2437,7 @@ struct dmrgo_pdu_csbk_t {
 	/* CSBKO, selects the payload field */
 	dmrgo_pdu_csbk_opcode_t opcode;
 	/* feature set ID, only the standard FID has payload fields */
-	dmrgo_enums_feature_set_id_t fid;
+	dmrgo_enums_fid_t fid;
 	/* result of the CRC check */
 	dmrgo_fec_result_t fec;
 	/* Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst, which a network relay can rewrite. */
@@ -2596,7 +2596,7 @@ struct dmrgo_pdu_full_link_control_t {
 	/* FLCO is the Full Link Control Opcode; Encode returns an error unless FLCO and FID select the one payload field that is set. */
 	dmrgo_enums_flco_t flco;
 	/* FID is the Feature set ID; the payload fields apply only to the standard FID 0, and RawPayload holds the payload of any other FID. */
-	dmrgo_enums_feature_set_id_t fid;
+	dmrgo_enums_fid_t fid;
 	/* FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (layer2.MMDVMHostAccepts). */
 	dmrgo_fec_result_t fec;
 	/* Grp_V_Ch_Usr payload */
@@ -2638,7 +2638,7 @@ struct dmrgo_pdu_mbc_header_t {
 	/* CSBKO, selects the payload field */
 	dmrgo_pdu_csbk_opcode_t opcode;
 	/* feature set ID, only the standard FID has payload fields */
-	dmrgo_enums_feature_set_id_t fid;
+	dmrgo_enums_fid_t fid;
 	/* PV_GRANT payload, or nil */
 	bool has_private_voice_grant_pdu;
 	dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu;
@@ -2700,7 +2700,7 @@ struct dmrgo_pdu_pi_header_t {
 	/* privacy algorithm ID */
 	uint8_t algorithm_id;
 	/* manufacturer FID */
-	dmrgo_enums_feature_set_id_t mfid;
+	dmrgo_enums_fid_t mfid;
 	/* key ID */
 	uint8_t key_id;
 	/* 32-bit message indicator */
@@ -5225,7 +5225,7 @@ struct dmrgo_vocoder_codec_vtable_t {
 	int (*close)(uintptr_t user);
 	int (*decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 	int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-	int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out);
+	int (*fid)(uintptr_t user, dmrgo_enums_fid_t *out);
 	int (*frame_samples)(uintptr_t user, int64_t *out);
 	int (*reset)(uintptr_t user);
 	int (*silence)(uintptr_t user, uint8_t out[9]);
@@ -5235,7 +5235,7 @@ struct dmrgo_codec2_config_t {
 	/* Mode is the Codec2 bit rate. Zero is ModeAuto: the decoder detects Mode2400 or Mode3200 from the padding of the frames of each call, and the encoder uses Mode2400. */
 	dmrgo_codec2_mode_t mode;
 	/* FID is the Feature set ID to send in the Full LC. Zero selects DefaultFID. FID 0 is the ETSI feature set, which repeaters treat as AMBE, so it cannot be selected. */
-	dmrgo_enums_feature_set_id_t fid;
+	dmrgo_enums_fid_t fid;
 };
 
 struct dmrgo_dvsi_config_t {
@@ -6069,6 +6069,88 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_ACK_NACK ((dmrgo_enums_ack_type_t)0)
 /* Go: enums.AckQACK. C_QACK, the request is queued */
 #define DMRGO_ENUMS_ACK_QACK ((dmrgo_enums_ack_type_t)2)
+/* Go: enums.AckReasonAuthResponseMS. authentication response of the MS */
+#define DMRGO_ENUMS_ACK_REASON_AUTH_RESPONSE_MS ((dmrgo_enums_ack_reason_t)72)
+/* Go: enums.AckReasonAuthResponseTS. authentication response of the TS */
+#define DMRGO_ENUMS_ACK_REASON_AUTH_RESPONSE_TS ((dmrgo_enums_ack_reason_t)100)
+/* Go: enums.AckReasonCallBack. CallBack */
+#define DMRGO_ENUMS_ACK_REASON_CALL_BACK ((dmrgo_enums_ack_reason_t)69)
+/* Go: enums.AckReasonCallCancelRefused. Call_Cancel_Refused */
+#define DMRGO_ENUMS_ACK_REASON_CALL_CANCEL_REFUSED ((dmrgo_enums_ack_reason_t)41)
+/* Go: enums.AckReasonCalledGroupNotAllowed. Called_Group_Not_Allowed */
+#define DMRGO_ENUMS_ACK_REASON_CALLED_GROUP_NOT_ALLOWED ((dmrgo_enums_ack_reason_t)47)
+/* Go: enums.AckReasonCalledPartyBusy. Called_Party_Busy */
+#define DMRGO_ENUMS_ACK_REASON_CALLED_PARTY_BUSY ((dmrgo_enums_ack_reason_t)46)
+/* Go: enums.AckReasonCustomRefused. Custom_Refused */
+#define DMRGO_ENUMS_ACK_REASON_CUSTOM_REFUSED ((dmrgo_enums_ack_reason_t)21)
+/* Go: enums.AckReasonDivCauseFail. Div_Cause_Fail */
+#define DMRGO_ENUMS_ACK_REASON_DIV_CAUSE_FAIL ((dmrgo_enums_ack_reason_t)38)
+/* Go: enums.AckReasonDuplexCongestion. Duplex_Congestion */
+#define DMRGO_ENUMS_ACK_REASON_DUPLEX_CONGESTION ((dmrgo_enums_ack_reason_t)49)
+/* Go: enums.AckReasonEquipBusyRefused. EquipBusy_Refused */
+#define DMRGO_ENUMS_ACK_REASON_EQUIP_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)19)
+/* Go: enums.AckReasonIPConnectionFailed. IP_Connection_failed */
+#define DMRGO_ENUMS_ACK_REASON_IP_CONNECTION_FAILED ((dmrgo_enums_ack_reason_t)44)
+/* Go: enums.AckReasonLineNotSupported. LineNot_Supported */
+#define DMRGO_ENUMS_ACK_REASON_LINE_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)17)
+/* Go: enums.AckReasonMSAccepted. MS_Accepted */
+#define DMRGO_ENUMS_ACK_REASON_MS_ACCEPTED ((dmrgo_enums_ack_reason_t)68)
+/* Go: enums.AckReasonMSAlerting. MS_ALERTING */
+#define DMRGO_ENUMS_ACK_REASON_MS_ALERTING ((dmrgo_enums_ack_reason_t)70)
+/* Go: enums.AckReasonMSAwayRefused. MSaway_Refused */
+#define DMRGO_ENUMS_ACK_REASON_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)37)
+/* Go: enums.AckReasonMSDuplexNotSupported. MS_Duplex_Not_Supported */
+#define DMRGO_ENUMS_ACK_REASON_MS_DUPLEX_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)22)
+/* Go: enums.AckReasonMSNotRegistered. MS_Not_Registered */
+#define DMRGO_ENUMS_ACK_REASON_MS_NOT_REGISTERED ((dmrgo_enums_ack_reason_t)45)
+/* Go: enums.AckReasonMSNotSupported. MSNot_Supported */
+#define DMRGO_ENUMS_ACK_REASON_MS_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)0)
+/* Go: enums.AckReasonMessageAccepted. Message_Accepted */
+#define DMRGO_ENUMS_ACK_REASON_MESSAGE_ACCEPTED ((dmrgo_enums_ack_reason_t)96)
+/* Go: enums.AckReasonNoregMSAwayRefused. NoregMSaway_Refused */
+#define DMRGO_ENUMS_ACK_REASON_NOREG_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)36)
+/* Go: enums.AckReasonNotSupported. Not_Supported */
+#define DMRGO_ENUMS_ACK_REASON_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)32)
+/* Go: enums.AckReasonPermUserRefused. Perm_User_Refused */
+#define DMRGO_ENUMS_ACK_REASON_PERM_USER_REFUSED ((dmrgo_enums_ack_reason_t)33)
+/* Go: enums.AckReasonQueuedForBusy. Queued-for-busy, the called party is in another call */
+#define DMRGO_ENUMS_ACK_REASON_QUEUED_FOR_BUSY ((dmrgo_enums_ack_reason_t)161)
+/* Go: enums.AckReasonQueuedForResource. Queued-for-resource, such as a payload channel */
+#define DMRGO_ENUMS_ACK_REASON_QUEUED_FOR_RESOURCE ((dmrgo_enums_ack_reason_t)160)
+/* Go: enums.AckReasonRecipientRefused. Recipient_Refused */
+#define DMRGO_ENUMS_ACK_REASON_RECIPIENT_REFUSED ((dmrgo_enums_ack_reason_t)20)
+/* Go: enums.AckReasonRefusedUnknownMS. Refused_Reason_Unknown of the MS */
+#define DMRGO_ENUMS_ACK_REASON_REFUSED_UNKNOWN_MS ((dmrgo_enums_ack_reason_t)31)
+/* Go: enums.AckReasonRefusedUnknownTS. Refused_Reason_Unknown of the TS */
+#define DMRGO_ENUMS_ACK_REASON_REFUSED_UNKNOWN_TS ((dmrgo_enums_ack_reason_t)63)
+/* Go: enums.AckReasonRegAccepted. Reg_Accepted */
+#define DMRGO_ENUMS_ACK_REASON_REG_ACCEPTED ((dmrgo_enums_ack_reason_t)98)
+/* Go: enums.AckReasonRegDenied. Reg_Denied */
+#define DMRGO_ENUMS_ACK_REASON_REG_DENIED ((dmrgo_enums_ack_reason_t)43)
+/* Go: enums.AckReasonRegRefused. Reg_Refused */
+#define DMRGO_ENUMS_ACK_REASON_REG_REFUSED ((dmrgo_enums_ack_reason_t)42)
+/* Go: enums.AckReasonRegSubscription. Reg_Subscription/Attachment service */
+#define DMRGO_ENUMS_ACK_REASON_REG_SUBSCRIPTION ((dmrgo_enums_ack_reason_t)101)
+/* Go: enums.AckReasonStackFullRefused. StackFull_Refused */
+#define DMRGO_ENUMS_ACK_REASON_STACK_FULL_REFUSED ((dmrgo_enums_ack_reason_t)18)
+/* Go: enums.AckReasonStatusPollAcceptedMS. accepted for the status polling service */
+#define DMRGO_ENUMS_ACK_REASON_STATUS_POLL_ACCEPTED_MS ((dmrgo_enums_ack_reason_t)71)
+/* Go: enums.AckReasonStatusPollAcceptedTS. accepted for the status polling service */
+#define DMRGO_ENUMS_ACK_REASON_STATUS_POLL_ACCEPTED_TS ((dmrgo_enums_ack_reason_t)99)
+/* Go: enums.AckReasonStoreForward. Store_Forward */
+#define DMRGO_ENUMS_ACK_REASON_STORE_FORWARD ((dmrgo_enums_ack_reason_t)97)
+/* Go: enums.AckReasonSysBusyRefused. SYSbusy_Refused */
+#define DMRGO_ENUMS_ACK_REASON_SYS_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)39)
+/* Go: enums.AckReasonSysNotReady. SYS_NotReady */
+#define DMRGO_ENUMS_ACK_REASON_SYS_NOT_READY ((dmrgo_enums_ack_reason_t)40)
+/* Go: enums.AckReasonTempUserRefused. Temp_User_Refused */
+#define DMRGO_ENUMS_ACK_REASON_TEMP_USER_REFUSED ((dmrgo_enums_ack_reason_t)34)
+/* Go: enums.AckReasonTransientSysRefused. Transient_Sys_Refused */
+#define DMRGO_ENUMS_ACK_REASON_TRANSIENT_SYS_REFUSED ((dmrgo_enums_ack_reason_t)35)
+/* Go: enums.AckReasonUDTUploadCRCError. CRC error in the UDT upload phase */
+#define DMRGO_ENUMS_ACK_REASON_UDT_UPLOAD_CRC_ERROR ((dmrgo_enums_ack_reason_t)48)
+/* Go: enums.AckReasonWait. Wait */
+#define DMRGO_ENUMS_ACK_REASON_WAIT ((dmrgo_enums_ack_reason_t)224)
 /* Go: enums.AckWACK. C_WACK, more signalling follows */
 #define DMRGO_ENUMS_ACK_WACK ((dmrgo_enums_ack_type_t)3)
 /* Go: enums.ActivityEmergencyGroupVoice. emergency group voice activity */
@@ -6202,41 +6284,41 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.DataTypeVoiceLCHeader. Voice LC Header */
 #define DMRGO_ENUMS_DATA_TYPE_VOICE_LC_HEADER ((dmrgo_enums_data_type_t)1)
 /* Go: enums.FIDAselsan. ASELSAN */
-#define DMRGO_ENUMS_FID_ASELSAN ((dmrgo_enums_feature_set_id_t)9)
+#define DMRGO_ENUMS_FID_ASELSAN ((dmrgo_enums_fid_t)9)
 /* Go: enums.FIDDMRAssociation. DMR Association */
-#define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_feature_set_id_t)11)
+#define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
 /* Go: enums.FIDEMC. EMC */
-#define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_feature_set_id_t)19)
+#define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_fid_t)19)
 /* Go: enums.FIDEMC2. EMC, second ID */
-#define DMRGO_ENUMS_FIDEMC2 ((dmrgo_enums_feature_set_id_t)28)
+#define DMRGO_ENUMS_FIDEMC2 ((dmrgo_enums_fid_t)28)
 /* Go: enums.FIDFlydeMicro. Flyde Micro */
-#define DMRGO_ENUMS_FID_FLYDE_MICRO ((dmrgo_enums_feature_set_id_t)4)
+#define DMRGO_ENUMS_FID_FLYDE_MICRO ((dmrgo_enums_fid_t)4)
 /* Go: enums.FIDHYTScienceTech. HYT Science Tech */
-#define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH ((dmrgo_enums_feature_set_id_t)8)
+#define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH ((dmrgo_enums_fid_t)8)
 /* Go: enums.FIDHYTScienceTech2. HYT Science Tech, second ID */
-#define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH2 ((dmrgo_enums_feature_set_id_t)104)
+#define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH2 ((dmrgo_enums_fid_t)104)
 /* Go: enums.FIDJVCKenwood. JVC Kenwood */
-#define DMRGO_ENUMS_FIDJVC_KENWOOD ((dmrgo_enums_feature_set_id_t)32)
+#define DMRGO_ENUMS_FIDJVC_KENWOOD ((dmrgo_enums_fid_t)32)
 /* Go: enums.FIDKirisun. Kirisun */
-#define DMRGO_ENUMS_FID_KIRISUN ((dmrgo_enums_feature_set_id_t)10)
+#define DMRGO_ENUMS_FID_KIRISUN ((dmrgo_enums_fid_t)10)
 /* Go: enums.FIDMotorola. Motorola */
-#define DMRGO_ENUMS_FID_MOTOROLA ((dmrgo_enums_feature_set_id_t)16)
+#define DMRGO_ENUMS_FID_MOTOROLA ((dmrgo_enums_fid_t)16)
 /* Go: enums.FIDProdEl. PROD-EL */
-#define DMRGO_ENUMS_FID_PROD_EL ((dmrgo_enums_feature_set_id_t)5)
+#define DMRGO_ENUMS_FID_PROD_EL ((dmrgo_enums_fid_t)5)
 /* Go: enums.FIDRadioActivity. Radio Activity */
-#define DMRGO_ENUMS_FID_RADIO_ACTIVITY ((dmrgo_enums_feature_set_id_t)51)
+#define DMRGO_ENUMS_FID_RADIO_ACTIVITY ((dmrgo_enums_fid_t)51)
 /* Go: enums.FIDRadioActivity2. Radio Activity, second ID */
-#define DMRGO_ENUMS_FID_RADIO_ACTIVITY2 ((dmrgo_enums_feature_set_id_t)60)
+#define DMRGO_ENUMS_FID_RADIO_ACTIVITY2 ((dmrgo_enums_fid_t)60)
 /* Go: enums.FIDRadiodata. RADIODATA */
-#define DMRGO_ENUMS_FID_RADIODATA ((dmrgo_enums_feature_set_id_t)7)
+#define DMRGO_ENUMS_FID_RADIODATA ((dmrgo_enums_fid_t)7)
 /* Go: enums.FIDStandardized. standardized feature set */
-#define DMRGO_ENUMS_FID_STANDARDIZED ((dmrgo_enums_feature_set_id_t)0)
+#define DMRGO_ENUMS_FID_STANDARDIZED ((dmrgo_enums_fid_t)0)
 /* Go: enums.FIDTait. Tait */
-#define DMRGO_ENUMS_FID_TAIT ((dmrgo_enums_feature_set_id_t)88)
+#define DMRGO_ENUMS_FID_TAIT ((dmrgo_enums_fid_t)88)
 /* Go: enums.FIDTridentMicroSystems. Trident Micro Systems */
-#define DMRGO_ENUMS_FID_TRIDENT_MICRO_SYSTEMS ((dmrgo_enums_feature_set_id_t)6)
+#define DMRGO_ENUMS_FID_TRIDENT_MICRO_SYSTEMS ((dmrgo_enums_fid_t)6)
 /* Go: enums.FIDVertexStandard. Vertex Standard */
-#define DMRGO_ENUMS_FID_VERTEX_STANDARD ((dmrgo_enums_feature_set_id_t)119)
+#define DMRGO_ENUMS_FID_VERTEX_STANDARD ((dmrgo_enums_fid_t)119)
 /* Go: enums.FLCOGPSInfo. GPS_Info */
 #define DMRGO_ENUMS_FLCOGPS_INFO ((dmrgo_enums_flco_t)8)
 /* Go: enums.FLCOGroupVoiceChannelUser. Grp_V_Ch_Usr, group voice channel user */
@@ -6281,88 +6363,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
 /* Go: enums.RCLowestPower. set power to lowest, Tier III */
 #define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
-/* Go: enums.ReasonAuthResponseMS. authentication response of the MS */
-#define DMRGO_ENUMS_REASON_AUTH_RESPONSE_MS ((dmrgo_enums_ack_reason_t)72)
-/* Go: enums.ReasonAuthResponseTS. authentication response of the TS */
-#define DMRGO_ENUMS_REASON_AUTH_RESPONSE_TS ((dmrgo_enums_ack_reason_t)100)
-/* Go: enums.ReasonCallBack. CallBack */
-#define DMRGO_ENUMS_REASON_CALL_BACK ((dmrgo_enums_ack_reason_t)69)
-/* Go: enums.ReasonCallCancelRefused. Call_Cancel_Refused */
-#define DMRGO_ENUMS_REASON_CALL_CANCEL_REFUSED ((dmrgo_enums_ack_reason_t)41)
-/* Go: enums.ReasonCalledGroupNotAllowed. Called_Group_Not_Allowed */
-#define DMRGO_ENUMS_REASON_CALLED_GROUP_NOT_ALLOWED ((dmrgo_enums_ack_reason_t)47)
-/* Go: enums.ReasonCalledPartyBusy. Called_Party_Busy */
-#define DMRGO_ENUMS_REASON_CALLED_PARTY_BUSY ((dmrgo_enums_ack_reason_t)46)
-/* Go: enums.ReasonCustomRefused. Custom_Refused */
-#define DMRGO_ENUMS_REASON_CUSTOM_REFUSED ((dmrgo_enums_ack_reason_t)21)
-/* Go: enums.ReasonDivCauseFail. Div_Cause_Fail */
-#define DMRGO_ENUMS_REASON_DIV_CAUSE_FAIL ((dmrgo_enums_ack_reason_t)38)
-/* Go: enums.ReasonDuplexCongestion. Duplex_Congestion */
-#define DMRGO_ENUMS_REASON_DUPLEX_CONGESTION ((dmrgo_enums_ack_reason_t)49)
-/* Go: enums.ReasonEquipBusyRefused. EquipBusy_Refused */
-#define DMRGO_ENUMS_REASON_EQUIP_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)19)
-/* Go: enums.ReasonIPConnectionFailed. IP_Connection_failed */
-#define DMRGO_ENUMS_REASON_IP_CONNECTION_FAILED ((dmrgo_enums_ack_reason_t)44)
-/* Go: enums.ReasonLineNotSupported. LineNot_Supported */
-#define DMRGO_ENUMS_REASON_LINE_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)17)
-/* Go: enums.ReasonMSAccepted. MS_Accepted */
-#define DMRGO_ENUMS_REASON_MS_ACCEPTED ((dmrgo_enums_ack_reason_t)68)
-/* Go: enums.ReasonMSAlerting. MS_ALERTING */
-#define DMRGO_ENUMS_REASON_MS_ALERTING ((dmrgo_enums_ack_reason_t)70)
-/* Go: enums.ReasonMSAwayRefused. MSaway_Refused */
-#define DMRGO_ENUMS_REASON_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)37)
-/* Go: enums.ReasonMSDuplexNotSupported. MS_Duplex_Not_Supported */
-#define DMRGO_ENUMS_REASON_MS_DUPLEX_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)22)
-/* Go: enums.ReasonMSNotRegistered. MS_Not_Registered */
-#define DMRGO_ENUMS_REASON_MS_NOT_REGISTERED ((dmrgo_enums_ack_reason_t)45)
-/* Go: enums.ReasonMSNotSupported. MSNot_Supported */
-#define DMRGO_ENUMS_REASON_MS_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)0)
-/* Go: enums.ReasonMessageAccepted. Message_Accepted */
-#define DMRGO_ENUMS_REASON_MESSAGE_ACCEPTED ((dmrgo_enums_ack_reason_t)96)
-/* Go: enums.ReasonNoregMSAwayRefused. NoregMSaway_Refused */
-#define DMRGO_ENUMS_REASON_NOREG_MS_AWAY_REFUSED ((dmrgo_enums_ack_reason_t)36)
-/* Go: enums.ReasonNotSupported. Not_Supported */
-#define DMRGO_ENUMS_REASON_NOT_SUPPORTED ((dmrgo_enums_ack_reason_t)32)
-/* Go: enums.ReasonPermUserRefused. Perm_User_Refused */
-#define DMRGO_ENUMS_REASON_PERM_USER_REFUSED ((dmrgo_enums_ack_reason_t)33)
-/* Go: enums.ReasonQueuedForBusy. Queued-for-busy, the called party is in another call */
-#define DMRGO_ENUMS_REASON_QUEUED_FOR_BUSY ((dmrgo_enums_ack_reason_t)161)
-/* Go: enums.ReasonQueuedForResource. Queued-for-resource, such as a payload channel */
-#define DMRGO_ENUMS_REASON_QUEUED_FOR_RESOURCE ((dmrgo_enums_ack_reason_t)160)
-/* Go: enums.ReasonRecipientRefused. Recipient_Refused */
-#define DMRGO_ENUMS_REASON_RECIPIENT_REFUSED ((dmrgo_enums_ack_reason_t)20)
-/* Go: enums.ReasonRefusedUnknownMS. Refused_Reason_Unknown of the MS */
-#define DMRGO_ENUMS_REASON_REFUSED_UNKNOWN_MS ((dmrgo_enums_ack_reason_t)31)
-/* Go: enums.ReasonRefusedUnknownTS. Refused_Reason_Unknown of the TS */
-#define DMRGO_ENUMS_REASON_REFUSED_UNKNOWN_TS ((dmrgo_enums_ack_reason_t)63)
-/* Go: enums.ReasonRegAccepted. Reg_Accepted */
-#define DMRGO_ENUMS_REASON_REG_ACCEPTED ((dmrgo_enums_ack_reason_t)98)
-/* Go: enums.ReasonRegDenied. Reg_Denied */
-#define DMRGO_ENUMS_REASON_REG_DENIED ((dmrgo_enums_ack_reason_t)43)
-/* Go: enums.ReasonRegRefused. Reg_Refused */
-#define DMRGO_ENUMS_REASON_REG_REFUSED ((dmrgo_enums_ack_reason_t)42)
-/* Go: enums.ReasonRegSubscription. Reg_Subscription/Attachment service */
-#define DMRGO_ENUMS_REASON_REG_SUBSCRIPTION ((dmrgo_enums_ack_reason_t)101)
-/* Go: enums.ReasonStackFullRefused. StackFull_Refused */
-#define DMRGO_ENUMS_REASON_STACK_FULL_REFUSED ((dmrgo_enums_ack_reason_t)18)
-/* Go: enums.ReasonStatusPollAcceptedMS. accepted for the status polling service */
-#define DMRGO_ENUMS_REASON_STATUS_POLL_ACCEPTED_MS ((dmrgo_enums_ack_reason_t)71)
-/* Go: enums.ReasonStatusPollAcceptedTS. accepted for the status polling service */
-#define DMRGO_ENUMS_REASON_STATUS_POLL_ACCEPTED_TS ((dmrgo_enums_ack_reason_t)99)
-/* Go: enums.ReasonStoreForward. Store_Forward */
-#define DMRGO_ENUMS_REASON_STORE_FORWARD ((dmrgo_enums_ack_reason_t)97)
-/* Go: enums.ReasonSysBusyRefused. SYSbusy_Refused */
-#define DMRGO_ENUMS_REASON_SYS_BUSY_REFUSED ((dmrgo_enums_ack_reason_t)39)
-/* Go: enums.ReasonSysNotReady. SYS_NotReady */
-#define DMRGO_ENUMS_REASON_SYS_NOT_READY ((dmrgo_enums_ack_reason_t)40)
-/* Go: enums.ReasonTempUserRefused. Temp_User_Refused */
-#define DMRGO_ENUMS_REASON_TEMP_USER_REFUSED ((dmrgo_enums_ack_reason_t)34)
-/* Go: enums.ReasonTransientSysRefused. Transient_Sys_Refused */
-#define DMRGO_ENUMS_REASON_TRANSIENT_SYS_REFUSED ((dmrgo_enums_ack_reason_t)35)
-/* Go: enums.ReasonUDTUploadCRCError. CRC error in the UDT upload phase */
-#define DMRGO_ENUMS_REASON_UDT_UPLOAD_CRC_ERROR ((dmrgo_enums_ack_reason_t)48)
-/* Go: enums.ReasonWait. Wait */
-#define DMRGO_ENUMS_REASON_WAIT ((dmrgo_enums_ack_reason_t)224)
 /* Go: enums.SAIDManufacturerSpecific. first manufacturer specific value */
 #define DMRGO_ENUMS_SAID_MANUFACTURER_SPECIFIC ((dmrgo_enums_said_t)12)
 /* Go: enums.SAIDRadioNetwork. radio network */
@@ -6370,19 +6370,19 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.SAIDUSBEthernetNetwork. USB or Ethernet network */
 #define DMRGO_ENUMS_SAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
 /* Go: enums.SAPAddressResolutionProtocol. Address Resolution Protocol (ARP) */
-#define DMRGO_ENUMS_SAP_ADDRESS_RESOLUTION_PROTOCOL ((dmrgo_enums_service_access_point_id_t)5)
+#define DMRGO_ENUMS_SAP_ADDRESS_RESOLUTION_PROTOCOL ((dmrgo_enums_sap_t)5)
 /* Go: enums.SAPIPBasedPacketData. IP based packet data */
-#define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_service_access_point_id_t)4)
+#define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
 /* Go: enums.SAPProprietaryPacketData. proprietary packet data */
-#define DMRGO_ENUMS_SAP_PROPRIETARY_PACKET_DATA ((dmrgo_enums_service_access_point_id_t)9)
+#define DMRGO_ENUMS_SAP_PROPRIETARY_PACKET_DATA ((dmrgo_enums_sap_t)9)
 /* Go: enums.SAPShortData. short data */
-#define DMRGO_ENUMS_SAP_SHORT_DATA ((dmrgo_enums_service_access_point_id_t)10)
+#define DMRGO_ENUMS_SAP_SHORT_DATA ((dmrgo_enums_sap_t)10)
 /* Go: enums.SAPTCPIPHeaderCompression. TCP/IP header compression */
-#define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_service_access_point_id_t)2)
+#define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
 /* Go: enums.SAPUDPIPHeaderCompression. UDP/IP header compression */
-#define DMRGO_ENUMS_SAPUDPIP_HEADER_COMPRESSION ((dmrgo_enums_service_access_point_id_t)3)
+#define DMRGO_ENUMS_SAPUDPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)3)
 /* Go: enums.SAPUnifiedDataTransport. Unified Data Transport (UDT) */
-#define DMRGO_ENUMS_SAP_UNIFIED_DATA_TRANSPORT ((dmrgo_enums_service_access_point_id_t)0)
+#define DMRGO_ENUMS_SAP_UNIFIED_DATA_TRANSPORT ((dmrgo_enums_sap_t)0)
 /* Go: enums.SLCOActivityUpdate. Act_Updt, activity update */
 #define DMRGO_ENUMS_SLCO_ACTIVITY_UPDATE ((dmrgo_enums_slco_t)1)
 /* Go: enums.SLCOCSysParms. C_SYS_Parms (ETSI TS 102 361-4 clause 7.1.2) */
@@ -6399,16 +6399,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_SPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_spid_t)95)
 /* Go: enums.SPIDTextMessage. Port 5016 */
 #define DMRGO_ENUMS_SPID_TEXT_MESSAGE ((dmrgo_enums_spid_t)1)
-/* Go: enums.ServiceCallAnswer. call answer */
-#define DMRGO_ENUMS_SERVICE_CALL_ANSWER ((dmrgo_enums_service_kind_t)9)
-/* Go: enums.ServiceCallDiversion. call diversion */
-#define DMRGO_ENUMS_SERVICE_CALL_DIVERSION ((dmrgo_enums_service_kind_t)8)
-/* Go: enums.ServiceCancelCall. cancel call */
-#define DMRGO_ENUMS_SERVICE_CANCEL_CALL ((dmrgo_enums_service_kind_t)15)
-/* Go: enums.ServiceDuplexPacketData. full-duplex MS to MS packet data call */
-#define DMRGO_ENUMS_SERVICE_DUPLEX_PACKET_DATA ((dmrgo_enums_service_kind_t)11)
-/* Go: enums.ServiceDuplexVoice. full-duplex MS to MS voice call */
-#define DMRGO_ENUMS_SERVICE_DUPLEX_VOICE ((dmrgo_enums_service_kind_t)10)
 /* Go: enums.ServiceFunctionAll. ServiceFunctionAll invites random access for all services. */
 #define DMRGO_ENUMS_SERVICE_FUNCTION_ALL ((dmrgo_enums_service_function_t)0)
 /* Go: enums.ServiceFunctionNoPayload. ServiceFunctionNoPayload invites random access for registration and the services that do not need a payload channel. */
@@ -6417,26 +6407,36 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_SERVICE_FUNCTION_PAYLOAD ((dmrgo_enums_service_function_t)1)
 /* Go: enums.ServiceFunctionRegistration. ServiceFunctionRegistration invites random access for registration only. */
 #define DMRGO_ENUMS_SERVICE_FUNCTION_REGISTRATION ((dmrgo_enums_service_function_t)3)
-/* Go: enums.ServiceIndividualPacketData. individual packet data call */
-#define DMRGO_ENUMS_SERVICE_INDIVIDUAL_PACKET_DATA ((dmrgo_enums_service_kind_t)2)
-/* Go: enums.ServiceIndividualShortData. individual UDT short data call */
-#define DMRGO_ENUMS_SERVICE_INDIVIDUAL_SHORT_DATA ((dmrgo_enums_service_kind_t)4)
-/* Go: enums.ServiceIndividualVoice. individual voice call */
-#define DMRGO_ENUMS_SERVICE_INDIVIDUAL_VOICE ((dmrgo_enums_service_kind_t)0)
-/* Go: enums.ServiceRegistration. registration, authentication, de-registration and MS radio check */
-#define DMRGO_ENUMS_SERVICE_REGISTRATION ((dmrgo_enums_service_kind_t)14)
-/* Go: enums.ServiceShortDataPolling. UDT short data polling */
-#define DMRGO_ENUMS_SERVICE_SHORT_DATA_POLLING ((dmrgo_enums_service_kind_t)6)
-/* Go: enums.ServiceStatusTransport. status transport */
-#define DMRGO_ENUMS_SERVICE_STATUS_TRANSPORT ((dmrgo_enums_service_kind_t)7)
-/* Go: enums.ServiceSupplementary. supplementary service */
-#define DMRGO_ENUMS_SERVICE_SUPPLEMENTARY ((dmrgo_enums_service_kind_t)13)
-/* Go: enums.ServiceTalkgroupPacketData. packet data call to a talkgroup */
-#define DMRGO_ENUMS_SERVICE_TALKGROUP_PACKET_DATA ((dmrgo_enums_service_kind_t)3)
-/* Go: enums.ServiceTalkgroupShortData. talkgroup UDT short data call */
-#define DMRGO_ENUMS_SERVICE_TALKGROUP_SHORT_DATA ((dmrgo_enums_service_kind_t)5)
-/* Go: enums.ServiceTalkgroupVoice. talkgroup voice call */
-#define DMRGO_ENUMS_SERVICE_TALKGROUP_VOICE ((dmrgo_enums_service_kind_t)1)
+/* Go: enums.ServiceKindCallAnswer. call answer */
+#define DMRGO_ENUMS_SERVICE_KIND_CALL_ANSWER ((dmrgo_enums_service_kind_t)9)
+/* Go: enums.ServiceKindCallDiversion. call diversion */
+#define DMRGO_ENUMS_SERVICE_KIND_CALL_DIVERSION ((dmrgo_enums_service_kind_t)8)
+/* Go: enums.ServiceKindCancelCall. cancel call */
+#define DMRGO_ENUMS_SERVICE_KIND_CANCEL_CALL ((dmrgo_enums_service_kind_t)15)
+/* Go: enums.ServiceKindDuplexPacketData. full-duplex MS to MS packet data call */
+#define DMRGO_ENUMS_SERVICE_KIND_DUPLEX_PACKET_DATA ((dmrgo_enums_service_kind_t)11)
+/* Go: enums.ServiceKindDuplexVoice. full-duplex MS to MS voice call */
+#define DMRGO_ENUMS_SERVICE_KIND_DUPLEX_VOICE ((dmrgo_enums_service_kind_t)10)
+/* Go: enums.ServiceKindIndividualPacketData. individual packet data call */
+#define DMRGO_ENUMS_SERVICE_KIND_INDIVIDUAL_PACKET_DATA ((dmrgo_enums_service_kind_t)2)
+/* Go: enums.ServiceKindIndividualShortData. individual UDT short data call */
+#define DMRGO_ENUMS_SERVICE_KIND_INDIVIDUAL_SHORT_DATA ((dmrgo_enums_service_kind_t)4)
+/* Go: enums.ServiceKindIndividualVoice. individual voice call */
+#define DMRGO_ENUMS_SERVICE_KIND_INDIVIDUAL_VOICE ((dmrgo_enums_service_kind_t)0)
+/* Go: enums.ServiceKindRegistration. registration, authentication, de-registration and MS radio check */
+#define DMRGO_ENUMS_SERVICE_KIND_REGISTRATION ((dmrgo_enums_service_kind_t)14)
+/* Go: enums.ServiceKindShortDataPolling. UDT short data polling */
+#define DMRGO_ENUMS_SERVICE_KIND_SHORT_DATA_POLLING ((dmrgo_enums_service_kind_t)6)
+/* Go: enums.ServiceKindStatusTransport. status transport */
+#define DMRGO_ENUMS_SERVICE_KIND_STATUS_TRANSPORT ((dmrgo_enums_service_kind_t)7)
+/* Go: enums.ServiceKindSupplementary. supplementary service */
+#define DMRGO_ENUMS_SERVICE_KIND_SUPPLEMENTARY ((dmrgo_enums_service_kind_t)13)
+/* Go: enums.ServiceKindTalkgroupPacketData. packet data call to a talkgroup */
+#define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_PACKET_DATA ((dmrgo_enums_service_kind_t)3)
+/* Go: enums.ServiceKindTalkgroupShortData. talkgroup UDT short data call */
+#define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_SHORT_DATA ((dmrgo_enums_service_kind_t)5)
+/* Go: enums.ServiceKindTalkgroupVoice. talkgroup voice call */
+#define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_VOICE ((dmrgo_enums_service_kind_t)1)
 /* Go: enums.Slot1. TDMA channel 1 */
 #define DMRGO_ENUMS_SLOT1 ((dmrgo_enums_slot_t)1)
 /* Go: enums.Slot2. TDMA channel 2 */
@@ -7576,7 +7576,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: auth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
 #define DMRGO_TRUNK_AUTH_MAX_CHALLENGE 16776415
 /* Go: codec2.DefaultFID. DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2 calls. */
-#define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_feature_set_id_t)194)
+#define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_fid_t)194)
 /* Go: codec2.FrameSamples. FrameSamples is the number of 8 kHz PCM samples in one Codec2 frame. */
 #define DMRGO_CODEC2_FRAME_SAMPLES 160
 /* Go: codec2.Mode2400. 2400 bit/s, 6 bytes per frame */
@@ -8094,10 +8094,10 @@ int dmrgo_enums_data_type_is_bptc(dmrgo_enums_data_type_t self, bool *out);
 int dmrgo_enums_data_type_is_reserved(dmrgo_enums_data_type_t self, bool *out);
 /* Go: enums.DataType.String. */
 int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: enums.FID.String. String returns the name of the FID. */
+int dmrgo_enums_fid_string(dmrgo_enums_fid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.FLCO.String. */
 int dmrgo_enums_flco_string(dmrgo_enums_flco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.FeatureSetID.String. String returns the name of the FeatureSetID. */
-int dmrgo_enums_feature_set_id_string(dmrgo_enums_feature_set_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.LCSS.String. */
 int dmrgo_enums_lcss_string(dmrgo_enums_lcss_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.NRandWait.Frames. Frames returns the number of TDMA frames, NWait, of the code (ETSI TS 102 361-4 Table 6.2). */
@@ -8112,14 +8112,14 @@ int dmrgo_enums_protect_kind_string(dmrgo_enums_protect_kind_t self, char *out, 
 int dmrgo_enums_rc_command_string(dmrgo_enums_rc_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SAID.String. */
 int dmrgo_enums_said_string(dmrgo_enums_said_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: enums.SAP.String. String returns the name of the SAP. */
+int dmrgo_enums_sap_string(dmrgo_enums_sap_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SLCO.String. String returns the name of the SLCO. */
 int dmrgo_enums_slco_string(dmrgo_enums_slco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SPID.String. */
 int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SPIDToPort. SPIDToPort returns the UDP port of spid. */
 int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
-/* Go: enums.ServiceAccessPointID.String. String returns the name of the SAP. */
-int dmrgo_enums_service_access_point_id_string(dmrgo_enums_service_access_point_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.ServiceFunction.Invites. Invites reports whether the Service_Function invites a random access for the service kind k. */
 int dmrgo_enums_service_function_invites(dmrgo_enums_service_function_t self, dmrgo_enums_service_kind_t k, bool *out);
 /* Go: enums.ServiceFunction.String. String returns the name of the ServiceFunction. */
@@ -8279,7 +8279,7 @@ int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *
 /* Go: ip.CheckIPv4. CheckIPv4 returns the ICMP error message that a radio sends for the IPv4 packet data that it received for an accessory interface with the MTU mtu: ICMPBadHeader with the octet in error when the header is not a valid IPv4 header, or ICMPFragmentationNeeded when the packet is longer than mtu and has the DF flag set. */
 int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 /* Go: ip.Decode. Decode decodes the UDP datagram at the start of data, the user data of a packet with the given SAP. */
-int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_decode(dmrgo_enums_sap_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.DecodeICMP. DecodeICMP decodes an ICMP from data. */
 int dmrgo_ip_decode_icmp(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.DecodeICMPPacket. DecodeICMPPacket decodes the ICMP message in the IPv4 packet at the start of data. */
@@ -8845,7 +8845,7 @@ int dmrgo_pdu_csbk_bytes_addresses(const dmrgo_pdu_csbk_bytes_t *self, uint32_t 
 /* Go: pdu.CSBKBytes.CRCOK. CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with the CSBK mask, as BlockCRCOK does. */
 int dmrgo_pdu_csbk_bytes_crc_ok(const dmrgo_pdu_csbk_bytes_t *self, bool *out);
 /* Go: pdu.CSBKBytes.FID. FID returns the Feature set ID, octet 1. */
-int dmrgo_pdu_csbk_bytes_fid(const dmrgo_pdu_csbk_bytes_t *self, dmrgo_enums_feature_set_id_t *out);
+int dmrgo_pdu_csbk_bytes_fid(const dmrgo_pdu_csbk_bytes_t *self, dmrgo_enums_fid_t *out);
 /* Go: pdu.CSBKBytes.Group. Group reports whether the target address is a talkgroup, from the Group bit of Pre_CSBK or the G/I bit of P_CLEAR, P_PROTECT, C_AHOY and P_AHOY. */
 int dmrgo_pdu_csbk_bytes_group(const dmrgo_pdu_csbk_bytes_t *self, bool *group, bool *ok);
 /* Go: pdu.CSBKBytes.Opcode. Opcode returns the 6-bit CSBKO, the low 6 bits of octet 0. */
@@ -9115,7 +9115,7 @@ int dmrgo_pdu_lc_bytes_call(const dmrgo_pdu_lc_bytes_t *self, bool *group, uint3
 /* Go: pdu.LCBytes.Codeword. Codeword returns the 12-octet on-air codeword of l in a burst of dt: l followed by its RS(12,9) parity XORed with the mask of dt. */
 int dmrgo_pdu_lc_bytes_codeword(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_data_type_t dt, uint8_t out[12]);
 /* Go: pdu.LCBytes.FID. FID returns the Feature set ID, octet 1. */
-int dmrgo_pdu_lc_bytes_fid(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_feature_set_id_t *out);
+int dmrgo_pdu_lc_bytes_fid(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t *out);
 /* Go: pdu.LCBytes.FLCO. FLCO returns the 6-bit FLCO, bits 2 to 7 of octet 0. */
 int dmrgo_pdu_lc_bytes_flco(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t *out);
 /* Go: pdu.LCBytes.Group. Group reports whether the FLCO is Grp_V_Ch_Usr (0). */
@@ -9131,7 +9131,7 @@ int dmrgo_pdu_lc_bytes_set_addresses(dmrgo_pdu_lc_bytes_t *self, uint32_t target
 /* Go: pdu.LCBytes.SetCall. SetCall sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to UU_V_Ch_Usr (3) when it is false, and writes the target and source addresses. */
 int dmrgo_pdu_lc_bytes_set_call(dmrgo_pdu_lc_bytes_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: pdu.LCBytes.SetFID. SetFID writes fid into octet 1. */
-int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_feature_set_id_t fid);
+int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t fid);
 /* Go: pdu.LCBytes.SetFLCO. SetFLCO writes f into the FLCO and keeps the PF and Reserved bits. */
 int dmrgo_pdu_lc_bytes_set_flco(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t f);
 /* Go: pdu.LCBytes.SetGroup. SetGroup sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to UU_V_Ch_Usr (3) when it is false, and keeps every other bit, so the Service Options and addresses carry over. */
@@ -10719,7 +10719,7 @@ int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t
 /* Go: vocoder.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame. */
 int dmrgo_vocoder_codec_encode(dmrgo_vocoder_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: vocoder.Codec.FID. FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
-int dmrgo_vocoder_codec_fid(dmrgo_vocoder_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+int dmrgo_vocoder_codec_fid(dmrgo_vocoder_codec_t *self, dmrgo_enums_fid_t *out);
 /* Go: vocoder.Codec.FrameSamples. FrameSamples returns the number of PCM samples in one frame. */
 int dmrgo_vocoder_codec_frame_samples(dmrgo_vocoder_codec_t *self, int64_t *out);
 /* Go: vocoder.Codec.Reset. Reset starts a new call: the decoder drops what it learned from the frames of the call before, such as a detected mode. */
@@ -10753,7 +10753,7 @@ int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode
 /* Go: codec2.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame, in Mode2400 for ModeAuto. */
 int dmrgo_codec2_codec_encode(dmrgo_codec2_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: codec2.Codec.FID. FID returns the configured Feature set ID. */
-int dmrgo_codec2_codec_fid(dmrgo_codec2_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+int dmrgo_codec2_codec_fid(dmrgo_codec2_codec_t *self, dmrgo_enums_fid_t *out);
 /* Go: codec2.Codec.FrameSamples. FrameSamples returns FrameSamples. */
 int dmrgo_codec2_codec_frame_samples(dmrgo_codec2_codec_t *self, int64_t *out);
 /* Go: codec2.Codec.Mode. Mode returns the configured Codec2 mode, ModeAuto for a Codec that detects the mode. */
@@ -10787,7 +10787,7 @@ int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_c
 /* Go: dvsi.Codec.Encode. Encode has the chip encode exactly FrameSamples samples into one 72-bit frame with FEC. */
 int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: dvsi.Codec.FID. FID returns enums.FIDStandardized, the Feature set ID of calls with the ETSI standard vocoder, AMBE+2. */
-int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_fid_t *out);
 /* Go: dvsi.Codec.FrameSamples. FrameSamples returns FrameSamples. */
 int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
 /* dmrgo_dvsi_codec_product_need sets *items and *arena to the room that dmrgo_dvsi_codec_product needs for these arguments, without a change to the handle. */

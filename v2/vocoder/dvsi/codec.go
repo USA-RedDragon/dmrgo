@@ -306,7 +306,7 @@ func (c *Codec) FrameSamples() int {
 
 // FID returns enums.FIDStandardized, the Feature set ID of calls with the
 // ETSI standard vocoder, AMBE+2.
-func (c *Codec) FID() enums.FeatureSetID {
+func (c *Codec) FID() enums.FID {
 	if c == nil {
 		return 0
 	}

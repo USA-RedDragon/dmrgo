@@ -14,12 +14,12 @@ import (
 func newMSPool(t testing.TB) burstPool {
 	t.Helper()
 	ahoy := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}}, testCC)
+		ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}}, testCC)
 	own := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
 		PhysicalChannel: 5, TargetAddress: 9, SourceAddress: msAddr}}, testCC)
 	challenge := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: msAddr, SourceAddress: 0x7A17C0}}, testCC)
-	return append(newPool(t), ack(t, enums.ReasonRegAccepted), ack(t, enums.ReasonWait), ack(t, enums.ReasonSysBusyRefused), ahoy, own, challenge)
+		ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: msAddr, SourceAddress: 0x7A17C0}}, testCC)
+	return append(newPool(t), ack(t, enums.AckReasonRegAccepted), ack(t, enums.AckReasonWait), ack(t, enums.AckReasonSysBusyRefused), ahoy, own, challenge)
 }
 
 func runMS(t *testing.T, pool burstPool, in []byte) {

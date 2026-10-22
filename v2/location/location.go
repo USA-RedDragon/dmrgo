@@ -100,7 +100,7 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	if h == nil {
 		return Fix{}, ErrNoFix
 	}
-	var sap enums.ServiceAccessPointID
+	var sap enums.SAP
 	switch {
 	case h.UnconfirmedDataHeader != nil:
 		sap = h.UnconfirmedDataHeader.SAP

@@ -15,7 +15,7 @@ func DecodePIHeader(data [12]byte) PIHeader {
 	var result PIHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x6969)
 	result.AlgorithmID = uint8(uint64(data[0]))
-	result.MFID = enums.FeatureSetID(uint64(data[1]))
+	result.MFID = enums.FID(uint64(data[1]))
 	result.KeyID = uint8(uint64(data[2]))
 	result.MessageIndicator = uint32(uint64(data[3])<<24 | uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6]))
 	result.Destination = uint32(uint64(data[7])<<16 | uint64(data[8])<<8 | uint64(data[9]))

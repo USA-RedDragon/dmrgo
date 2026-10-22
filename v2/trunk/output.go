@@ -317,8 +317,8 @@ func (g *Grant) Data() bool {
 		return false
 	}
 
-	return g.Service == enums.ServiceIndividualPacketData || g.Service == enums.ServiceTalkgroupPacketData ||
-		g.Service == enums.ServiceDuplexPacketData
+	return g.Service == enums.ServiceKindIndividualPacketData || g.Service == enums.ServiceKindTalkgroupPacketData ||
+		g.Service == enums.ServiceKindDuplexPacketData
 }
 
 func (g *Grant) tune() Tune {

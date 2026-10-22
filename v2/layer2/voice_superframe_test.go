@@ -29,7 +29,7 @@ func silenceSlot() [9]byte {
 	return slot
 }
 
-func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
+func groupLC(fid enums.FID) pdu.FullLinkControl {
 	gv := &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}
 	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: fid}
 	if fid == enums.FIDStandardized {
@@ -110,7 +110,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 	const cc = 5
 	sources := []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2}
 	for _, source := range sources {
-		for _, fid := range []enums.FeatureSetID{enums.FIDStandardized, enums.FeatureSetID(0xC2)} {
+		for _, fid := range []enums.FID{enums.FIDStandardized, enums.FID(0xC2)} {
 			t.Run(fmt.Sprintf("source%d/FID%#x", source, int(fid)), func(t *testing.T) {
 				t.Parallel()
 

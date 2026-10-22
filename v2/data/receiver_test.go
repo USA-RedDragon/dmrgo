@@ -142,7 +142,7 @@ func confirmedHeader(ns uint8) pdu.DataHeader {
 	return sapHeader(enums.SAPIPBasedPacketData, ns, false)
 }
 
-func sapHeader(sap enums.ServiceAccessPointID, ns uint8, resync bool) pdu.DataHeader {
+func sapHeader(sap enums.SAP, ns uint8, resync bool) pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: sap, LLIDDestination: dstID, LLIDSource: srcID,
 		FullMessageFlag: true, ReSynchronizeFlag: resync, SendSequenceNumber: ns, FragmentSequenceNumber: 0b1000,
@@ -294,7 +294,7 @@ func TestReceiverSequence(t *testing.T) {
 	}
 	for _, c := range []struct {
 		name      string
-		sap       enums.ServiceAccessPointID
+		sap       enums.SAP
 		pkts      []pk
 		resp      string
 		status    []uint8
@@ -341,7 +341,7 @@ func TestReceiverSequence(t *testing.T) {
 func TestReceiverProprietarySAP(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {
-		sap       enums.ServiceAccessPointID
+		sap       enums.SAP
 		delivered int
 	}{
 		{enums.SAPIPBasedPacketData, 2},

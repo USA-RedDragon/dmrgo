@@ -301,7 +301,7 @@ func refusedAndPowerOff(t *testing.T, s *sim) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(d.log, trunk.OutputRefused); return ok })
-	if r, _ := has(d.log, trunk.OutputRefused); r.Reason != trunk.ReasonNack || r.Ack != enums.ReasonMSNotRegistered {
+	if r, _ := has(d.log, trunk.OutputRefused); r.Reason != trunk.ReasonNack || r.Ack != enums.AckReasonMSNotRegistered {
 		t.Errorf("unregistered call: %+v", r)
 	}
 
@@ -330,7 +330,7 @@ func TestTSCC_NoAnswerAndBusy(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(a.log, trunk.OutputRefused); return ok })
-	if r, _ := has(a.log, trunk.OutputRefused); r.Ack != enums.ReasonMSAwayRefused {
+	if r, _ := has(a.log, trunk.OutputRefused); r.Ack != enums.AckReasonMSAwayRefused {
 		t.Errorf("no answer: %+v", r)
 	}
 	_ = a.ms.Call(s.now, true, 9, layer3.VoiceServiceOptions{})
@@ -340,7 +340,7 @@ func TestTSCC_NoAnswerAndBusy(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(c.log, trunk.OutputRefused); return ok })
-	if r, _ := has(c.log, trunk.OutputRefused); r.Ack != enums.ReasonSysBusyRefused {
+	if r, _ := has(c.log, trunk.OutputRefused); r.Ack != enums.AckReasonSysBusyRefused {
 		t.Errorf("busy: %+v", r)
 	}
 }

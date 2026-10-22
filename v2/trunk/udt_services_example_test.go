@@ -110,7 +110,7 @@ func ExampleMS_SetPollResponse() {
 	var a trunk.Appended
 	_ = a.SetText(enums.UDTISO8, []byte("status 7"))
 	s.ms.SetPollResponse(&a)
-	s.send(ahoyFor(enums.ServiceShortDataPolling, 3120002, false))
+	s.send(ahoyFor(enums.ServiceKindShortDataPolling, 3120002, false))
 	lip := trunk.USBDLIPResponse{Latitude: 45, Longitude: -90}
 	p, _ := lip.Encode()
 	s.ms.SetUSBDResponse(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP, Payload: p})
@@ -133,8 +133,8 @@ func ExampleMS_Divert() {
 	_ = a.SetAddresses(false, []uint32{3120005})
 	_ = s.ms.Divert(s.now, constants.GatewayMSI, layer3.DiversionServiceOptions{Set: true, Voice: true}, &a)
 	s.send(&pdu.CSBK{Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{}})
-	s.send(ahoyFor(enums.ServiceCallDiversion, constants.GatewayDIVERTI, false))
-	s.send(ackd(enums.ReasonMessageAccepted))
+	s.send(ahoyFor(enums.ServiceKindCallDiversion, constants.GatewayDIVERTI, false))
+	s.send(ackd(enums.AckReasonMessageAccepted))
 	// Output:
 	// send CSBK
 	// send Data Header
@@ -192,7 +192,7 @@ func ExampleMS_CallDuplex() {
 // OutputAmbient when it joins the call.
 func ExampleMS_CallAmbient() {
 	s := newExampleSite(trunk.MSConfig{Ambient: true})
-	s.send(ahoyFor(enums.ServiceIndividualVoice, 3120002, true))
+	s.send(ahoyFor(enums.ServiceKindIndividualVoice, 3120002, true))
 	s.send(&pdu.CSBK{Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{
 		PhysicalChannel: 9, TargetAddress: 3120001, SourceAddress: 3120002}})
 	// Output:

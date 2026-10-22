@@ -22,13 +22,13 @@ func newUDTPool(t testing.TB) burstPool {
 		t.Fatal(err)
 	}
 	pool := burstPool{
-		aloha(t), ack(t, enums.ReasonWait), ack(t, enums.ReasonMSAccepted), ack(t, enums.ReasonMSAwayRefused),
-		ahoyBurst(t, enums.ServiceIndividualShortData, constants.GatewaySDMI, msAddr, false, 1),
-		ahoyBurst(t, enums.ServiceShortDataPolling, peer, msAddr, false, 0),
-		ahoyBurst(t, enums.ServiceCallDiversion, constants.GatewayDIVERTI, msAddr, false, 0),
-		ahoyBurst(t, enums.ServiceSupplementary, constants.GatewayDGNAI, msAddr, false, 1),
-		ahoyBurst(t, enums.ServiceDuplexVoice, peer, msAddr, false, 0),
-		ahoyBurst(t, enums.ServiceIndividualVoice, peer, msAddr, true, 0),
+		aloha(t), ack(t, enums.AckReasonWait), ack(t, enums.AckReasonMSAccepted), ack(t, enums.AckReasonMSAwayRefused),
+		ahoyBurst(t, enums.ServiceKindIndividualShortData, constants.GatewaySDMI, msAddr, false, 1),
+		ahoyBurst(t, enums.ServiceKindShortDataPolling, peer, msAddr, false, 0),
+		ahoyBurst(t, enums.ServiceKindCallDiversion, constants.GatewayDIVERTI, msAddr, false, 0),
+		ahoyBurst(t, enums.ServiceKindSupplementary, constants.GatewayDGNAI, msAddr, false, 1),
+		ahoyBurst(t, enums.ServiceKindDuplexVoice, peer, msAddr, false, 0),
+		ahoyBurst(t, enums.ServiceKindIndividualVoice, peer, msAddr, true, 0),
 		dxGrant(t, false, msAddr, peer), dxGrant(t, true, peer, msAddr), pvGrant(t, msAddr, peer, false),
 		usbdPoll(t, pdu.ServiceTypeLIP, 1, msAddr), tvGrant(t, 501, 5, false),
 	}

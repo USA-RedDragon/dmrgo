@@ -12,7 +12,7 @@ import (
 func TestMessageUDPIPv4(t *testing.T) {
 	t.Parallel()
 
-	unconfirmed := func(sap enums.ServiceAccessPointID) pdu.DataHeader {
+	unconfirmed := func(sap enums.SAP) pdu.DataHeader {
 		return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{SAP: sap}}
 	}
 	confirmed := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression}}

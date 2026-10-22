@@ -104,9 +104,9 @@ func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appe
 		return dmrgo.ErrNilReceiver
 	}
 
-	kind := enums.ServiceIndividualShortData
+	kind := enums.ServiceKindIndividualShortData
 	if group {
-		kind = enums.ServiceTalkgroupShortData
+		kind = enums.ServiceKindTalkgroupShortData
 	}
 	field, err := opts.Field()
 	if err != nil {
@@ -120,7 +120,7 @@ func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appe
 	}
 	m.req = reqShortData
 	m.u.reserved = uab(a.Blocks)
-	m.upload(a, target, group, false, pdu.UDTOpcodeInboundHeader, constants.GatewaySDMI, enums.ServiceIndividualShortData)
+	m.upload(a, target, group, false, pdu.UDTOpcodeInboundHeader, constants.GatewaySDMI, enums.ServiceKindIndividualShortData)
 	return nil
 }
 
@@ -142,7 +142,7 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 	if blocks < 1 || blocks > 4 {
 		return ErrUDTLength
 	}
-	if err := m.request(now, enums.ServiceShortDataPolling, target, field, false); err != nil {
+	if err := m.request(now, enums.ServiceKindShortDataPolling, target, field, false); err != nil {
 		return err
 	}
 	m.req, m.u.reserved, m.u.ahoyFrom = reqPoll, uab(blocks), 0
@@ -184,14 +184,14 @@ func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServ
 	if err != nil {
 		return errTarget
 	}
-	if err := m.request(now, enums.ServiceCallDiversion, gateway, field, false); err != nil {
+	if err := m.request(now, enums.ServiceKindCallDiversion, gateway, field, false); err != nil {
 		return err
 	}
 	m.req = reqDivert
 	if opts.Set {
 		m.u.reserved = uab(a.Blocks)
 		m.u.proxy = a.Blocks > 1
-		m.upload(a, gateway, false, true, pdu.UDTOpcodeInboundHeader, constants.GatewayDIVERTI, enums.ServiceCallDiversion)
+		m.upload(a, gateway, false, true, pdu.UDTOpcodeInboundHeader, constants.GatewayDIVERTI, enums.ServiceKindCallDiversion)
 	}
 	return nil
 }
@@ -221,12 +221,12 @@ func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 		return errTarget
 	}
 	field, _ := layer3.ShortDataServiceOptions{}.Field()
-	if err := m.request(now, enums.ServiceSupplementary, constants.GatewayDGNAI, field, false); err != nil {
+	if err := m.request(now, enums.ServiceKindSupplementary, constants.GatewayDGNAI, field, false); err != nil {
 		return err
 	}
 	m.req = reqDGNA
 	m.u.reserved = uab(a.Blocks) << 2
-	m.upload(a, target, false, false, pdu.UDTOpcodeDGNAInboundHeader, constants.GatewayDGNAI, enums.ServiceSupplementary)
+	m.upload(a, target, false, false, pdu.UDTOpcodeDGNAInboundHeader, constants.GatewayDGNAI, enums.ServiceKindSupplementary)
 	return nil
 }
 
@@ -242,7 +242,7 @@ func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServi
 	if err != nil {
 		return errTarget
 	}
-	return m.request(now, enums.ServiceDuplexVoice, target, field, opts.IsEmergency)
+	return m.request(now, enums.ServiceKindDuplexVoice, target, field, opts.IsEmergency)
 }
 
 // CallDuplexData asks the TSCC for a full-duplex packet data call to the MS
@@ -257,7 +257,7 @@ func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataSe
 	if err != nil {
 		return errTarget
 	}
-	return m.request(now, enums.ServiceDuplexPacketData, target, field, opts.IsEmergency)
+	return m.request(now, enums.ServiceKindDuplexPacketData, target, field, opts.IsEmergency)
 }
 
 // CallAmbient asks the TSCC for an individual voice call to the MS target
@@ -376,27 +376,27 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 		(kind == m.u.ahoyKind || m.req == reqDivert):
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
 		return m.sendUDT(now+frame, slot, &m.u.send, m.u.sendTo, m.u.sendGrp, m.u.sendDiv, false, m.u.sendOp, out)
-	case kind == enums.ServiceShortDataPolling && m.req == reqNone:
+	case kind == enums.ServiceKindShortDataPolling && m.req == reqNone:
 		out = append(out, Output{Kind: OutputPolled, Grant: Grant{Service: kind, Target: m.addr, Source: a.SourceAddress}})
 		if !m.u.hasPoll {
-			return m.ackU(now+frame, slot, enums.ReasonMSNotSupported, a.SourceAddress, out)
+			return m.ackU(now+frame, slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
 		}
 		return m.sendUDT(now+frame, slot, &m.u.poll, a.SourceAddress, false, false, false, pdu.UDTOpcodeInboundHeader, out)
-	case kind == enums.ServiceDuplexVoice && m.req == reqNone:
+	case kind == enums.ServiceKindDuplexVoice && m.req == reqNone:
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
 		if m.u.noDuplex {
-			return m.ackU(now+frame, slot, enums.ReasonMSDuplexNotSupported, a.SourceAddress, out)
+			return m.ackU(now+frame, slot, enums.AckReasonMSDuplexNotSupported, a.SourceAddress, out)
 		}
 		m.pending, m.pendingEnd = true, now+m.pendingTO
-		return m.ackU(now+frame, slot, enums.ReasonMSAccepted, a.SourceAddress, out)
-	case kind == enums.ServiceIndividualVoice && a.ALS && m.req == reqNone:
+		return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, a.SourceAddress, out)
+	case kind == enums.ServiceKindIndividualVoice && a.ALS && m.req == reqNone:
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
 		if !m.u.ambient {
-			return m.ackU(now+frame, slot, enums.ReasonMSNotSupported, a.SourceAddress, out)
+			return m.ackU(now+frame, slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
 		}
 		m.u.alsWait, m.u.alsEnd, m.u.alsFrom = true, now+constants.TALSRequestLifeSpanDefault, a.SourceAddress
 		m.pending, m.pendingEnd = true, now+m.pendingTO
-		return m.ackU(now+frame, slot, enums.ReasonMessageAccepted, a.SourceAddress, out)
+		return m.ackU(now+frame, slot, enums.AckReasonMessageAccepted, a.SourceAddress, out)
 	}
 	return m.ahoy(now, a, h, out)
 }
@@ -427,7 +427,7 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 			return out
 		}
 		out = append(out, Output{Kind: OutputGroups})
-		return m.ackU(now+frame, m.slot, enums.ReasonMSAccepted, h.LLIDSource, out)
+		return m.ackU(now+frame, m.slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 	case h.SupplementaryFlag && h.LLIDSource == constants.GatewayDIVERTI:
 		if m.req != reqNone && m.req != reqDereg && m.req != reqRegister {
 			return m.fail(ReasonDiverted, 0, out)
@@ -435,12 +435,12 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 		return out
 	case m.req == reqPoll && h.LLIDSource == m.target:
 		m.done()
-		out = append(out, Output{Kind: OutputDelivered, Ack: enums.ReasonMSAccepted})
-		return m.ackU(now+frame, m.slot, enums.ReasonMSAccepted, h.LLIDSource, out)
+		out = append(out, Output{Kind: OutputDelivered, Ack: enums.AckReasonMSAccepted})
+		return m.ackU(now+frame, m.slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 	case h.SupplementaryFlag:
 		return out
 	}
-	return m.ackU(now+frame, m.slot, enums.ReasonMSAccepted, h.LLIDSource, out)
+	return m.ackU(now+frame, m.slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 }
 
 func (m *MS) assign(a *Appended) bool {
@@ -489,10 +489,10 @@ func (m *MS) assign(a *Appended) bool {
 
 func (m *MS) joined(now time.Duration, out []Output) []Output {
 	g := &m.f.call
-	if g.Service == enums.ServiceDuplexVoice || g.Service == enums.ServiceDuplexPacketData {
+	if g.Service == enums.ServiceKindDuplexVoice || g.Service == enums.ServiceKindDuplexPacketData {
 		m.ownCall = true
 	}
-	if !m.u.alsWait || g.Service != enums.ServiceIndividualVoice || g.Target != m.addr || g.Source != m.u.alsFrom {
+	if !m.u.alsWait || g.Service != enums.ServiceKindIndividualVoice || g.Target != m.addr || g.Source != m.u.alsFrom {
 		return out
 	}
 	m.u.alsWait, m.u.alsCall, m.ownCall = false, true, true
@@ -537,9 +537,9 @@ func (m *MS) usbdPoll(now time.Duration, p *pdu.UnifiedSingleBlockData, h *layer
 	if m.f.ctl.site.Offset {
 		due += slotLength
 	}
-	out = append(out, Output{Kind: OutputPolled, Grant: Grant{Service: enums.ServiceShortDataPolling, Target: m.addr}})
+	out = append(out, Output{Kind: OutputPolled, Grant: Grant{Service: enums.ServiceKindShortDataPolling, Target: m.addr}})
 	if !m.u.hasUSBD || m.u.usbd.ServiceType != p.ServiceType {
-		return m.ackU(due, slot, enums.ReasonMSNotSupported, constants.GatewayTSI, out)
+		return m.ackU(due, slot, enums.AckReasonMSNotSupported, constants.GatewayTSI, out)
 	}
 	m.u.usbdP = m.u.usbd
 	b, err := m.u.usbdP.Encode()
