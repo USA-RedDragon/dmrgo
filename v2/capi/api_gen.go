@@ -8335,6 +8335,99 @@ func dmrgo_bs_repeater_deadline(c_self *C.dmrgo_bs_repeater_t, c_at *C.dmrgo_dur
 	return C.DMRGO_OK
 }
 
+//export dmrgo_bs_repeater_decoded_need
+func dmrgo_bs_repeater_decoded_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_bs_Repeater(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_from g_bs.Source
+	a_from = in_bs_Source(&(*c_from))
+	_ = h
+	_ = a_b
+	_ = a_h
+	_ = a_from
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_bs.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_bs_repeater_decoded
+func dmrgo_bs_repeater_decoded(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_bs_Repeater(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_from g_bs.Source
+	a_from = in_bs_Source(&(*c_from))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_bs.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_h, a_from, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_bs_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_bs_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
 //export dmrgo_bs_repeater_inbound_need
 func dmrgo_bs_repeater_inbound_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)

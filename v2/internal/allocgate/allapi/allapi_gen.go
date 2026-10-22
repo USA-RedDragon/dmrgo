@@ -63,6 +63,7 @@ var api = [...]any{
 	(*bs.CACH).Next,
 	(*bs.CACH).Reset,
 	(*bs.Repeater).Deadline,
+	(*bs.Repeater).Decoded,
 	(*bs.Repeater).Inbound,
 	(*bs.Repeater).Lost,
 	(*bs.Repeater).Reject,

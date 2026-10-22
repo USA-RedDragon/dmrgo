@@ -68,18 +68,28 @@ func parseScript(data []byte, p []layer2.RawBurst) script {
 	return s
 }
 
+func decoded(b *layer2.Burst, raw *layer2.RawBurst) *layer2.Burst {
+	if b.DecodeFromBytes(*raw) != nil {
+		return nil
+	}
+	return b
+}
+
 func runScript(t *testing.T, p []layer2.RawBurst, data []byte) {
 	t.Helper()
 	s := parseScript(data, p)
 	r := newRepeater(t, &s.cfg)
 	out := make([]bs.Output, 0, bs.MaxOutputs)
 	b := layer2.NewBurst()
+	dec := layer2.NewBurst()
 	for i := range s.ops {
 		o := &s.ops[i]
 		var err error
 		switch o.kind {
-		case 0, 1, 2:
+		case 0, 1:
 			out = r.Inbound(o.at, &o.raw, o.h, o.from, out[:0])
+		case 2:
+			out = r.Decoded(o.at, decoded(dec, &o.raw), o.h, o.from, out[:0])
 		case 3:
 			out = r.Tick(o.at, out[:0])
 		case 4:
