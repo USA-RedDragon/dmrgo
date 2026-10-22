@@ -10122,6 +10122,8 @@ int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, si
 int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
 /* Go: auth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */
 int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
+/* Go: ipscsession.AddrOf. AddrOf returns the Addr of the IP address ip and the UDP port port, as net.UDPAddr holds them: ip is 4 octets, or 16 octets of an IPv4-mapped IPv6 address. */
+int dmrgo_ipscsession_addr_of(const uint8_t *ip, size_t ip_len, int64_t port, dmrgo_ipscsession_addr_t *a, bool *ok);
 /* dmrgo_ipscsession_master_free frees the handle. self may be NULL. */
 int dmrgo_ipscsession_master_free(dmrgo_ipscsession_master_t *self);
 /* dmrgo_ipscsession_master_adopt_need sets *items and *arena to the room that dmrgo_ipscsession_master_adopt needs for these arguments, without a change to the handle. */

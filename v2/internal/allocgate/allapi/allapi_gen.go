@@ -1285,6 +1285,7 @@ var api = [...]any{
 	(*transport_ipsc_ipscsession.Peer).Sign,
 	(*transport_ipsc_ipscsession.Peer).State,
 	(*transport_ipsc_ipscsession.Peer).Tick,
+	transport_ipsc_ipscsession.AddrOf,
 	transport_ipsc_ipscsession.NewMaster,
 	transport_ipsc_ipscsession.NewPeer,
 	transport_ipsc_ipscsession.OutputKind.String,
