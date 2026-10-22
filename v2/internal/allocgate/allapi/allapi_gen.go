@@ -1077,6 +1077,7 @@ var api = [...]any{
 	(*sms.IPText).SetTextUTF8,
 	(*sms.IPText).String,
 	(*sms.IPText).TextUTF8,
+	sms.AppendAck,
 	sms.AppendPacket,
 	sms.Decode,
 	sms.DecodeAnyToneText,

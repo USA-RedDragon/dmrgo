@@ -64,6 +64,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"lrrp.Message.AppendBinary", func() { _, err = tinyLRRP.AppendBinary(buf[:0]) }},
 		{"sms.Decode", func() { _, _, err = sms.Decode(buf[:0], &smsMsg.Header, smsMsg.Data) }},
 		{"sms.AppendPacket", func() { _, err = sms.AppendPacket(buf[:0], &smsText, &tinySMSHeader) }},
+		{"sms.AppendAck", func() { _, err = sms.AppendAck(buf[:0], &smsText, &tinySMSHeader) }},
 		{"location.Decoder.Decode", func() { _, err = tinyLocation.Decode(&gpsMsg.Header, gpsMsg.Data) }},
 		{"hdap.DecodeMessage", func() { _, err = hdap.DecodeMessage(hdapMsg) }},
 		{"hdap.Message.AppendBinary", func() { _, err = hm.AppendBinary(buf[:0]) }},

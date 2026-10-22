@@ -33129,6 +33129,42 @@ func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_sms_append_ack
+func dmrgo_sms_append_ack(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_t *C.dmrgo_sms_text_t, c_h *C.dmrgo_sms_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_t g_sms.Text
+	var p_t *g_sms.Text
+	if c_t != nil {
+		a_t = in_sms_Text(&(*c_t))
+		p_t = &a_t
+	}
+	var a_h g_sms.Header
+	var p_h *g_sms.Header
+	var s_h st_sms_Header
+	if c_h != nil {
+		a_h = in_sms_Header(&(*c_h), &s_h)
+		p_h = &a_h
+	}
+	r0, r1 := g_sms.AppendAck(a_dst, p_t, p_h)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_sms_append_packet
 func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_t *C.dmrgo_sms_text_t, c_h *C.dmrgo_sms_header_t) (rc C.int) {
 	defer recoverTo(&rc)

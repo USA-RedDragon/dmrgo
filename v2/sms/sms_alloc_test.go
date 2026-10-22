@@ -22,6 +22,9 @@ func TestAllocs(t *testing.T) {
 		if _, err := sms.AppendPacket(out, &text, &h); err != nil {
 			panic(err)
 		}
+		if _, err := sms.AppendAck(out, &text, &h); err != nil {
+			panic(err)
+		}
 	})
 	if n != 0 {
 		t.Errorf("%.1f allocations per run, want 0", n)
