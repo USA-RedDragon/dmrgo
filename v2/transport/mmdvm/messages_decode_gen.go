@@ -250,8 +250,9 @@ func (s *StatusV1) String() string {
 }
 
 // DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets or
-// more. It returns ErrShort when data is shorter than 37 octets. It ignores
-// the octets after the first 37. It does not keep data.
+// more. It returns ErrShort when data is shorter than 37 octets and a
+// *dmrgo.FieldRangeError when TXDelay is not 0 to 50 or DMRColorCode is not
+// 0 to 15. It ignores the octets after the first 37. It does not keep data.
 func DecodeConfigV2(data []byte) (ConfigV2, error) {
 	if len(data) < 37 {
 		return ConfigV2{}, ErrShort
@@ -272,6 +273,9 @@ func DecodeConfigV2(data []byte) (ConfigV2, error) {
 	result.DStar = data[1]&0x01 != 0
 	result.POCSAG = data[2]&0x01 != 0
 	result.TXDelay = uint8(uint64(data[3]))
+	if uint64(result.TXDelay) > 50 {
+		return ConfigV2{}, errConfigV2TXDelayRange
+	}
 	result.State = Mode(uint64(data[4]))
 	result.TXDCOffset = uint8(uint64(data[5]))
 	result.RXDCOffset = uint8(uint64(data[6]))
@@ -289,6 +293,9 @@ func DecodeConfigV2(data []byte) (ConfigV2, error) {
 	result.NXDNTXHang = uint8(uint64(data[22]))
 	result.DMRTrunking = data[25]&0x80 != 0
 	result.DMRColorCode = enums.ColorCode(uint64(data[26]))
+	if uint64(result.DMRColorCode) > 15 {
+		return ConfigV2{}, errConfigV2DMRColorCodeRange
+	}
 	result.DMRDelay = uint8(uint64(data[27]))
 	result.OscOffset = uint8(uint64(data[28]))
 	return result, nil
@@ -349,6 +356,9 @@ func (s *ConfigV2) AppendBinary(dst []byte) ([]byte, error) {
 	if s.POCSAG {
 		data[2] |= 0x01
 	}
+	if uint64(s.TXDelay) > 50 {
+		return dst[:_n], errConfigV2TXDelayRange
+	}
 	data[3] = byte(uint64(s.TXDelay))
 	data[4] = byte(uint64(s.State))
 	data[5] = byte(uint64(s.TXDCOffset))
@@ -368,7 +378,7 @@ func (s *ConfigV2) AppendBinary(dst []byte) ([]byte, error) {
 	if s.DMRTrunking {
 		data[25] |= 0x80
 	}
-	if uint64(s.DMRColorCode)>>8 != 0 {
+	if uint64(s.DMRColorCode) > 15 {
 		return dst[:_n], errConfigV2DMRColorCodeRange
 	}
 	data[26] = byte(uint64(s.DMRColorCode))
@@ -410,8 +420,9 @@ func (s *ConfigV2) String() string {
 }
 
 // DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets or
-// more. It returns ErrShort when data is shorter than 23 octets. It ignores
-// the octets after the first 23. It does not keep data.
+// more. It returns ErrShort when data is shorter than 23 octets and a
+// *dmrgo.FieldRangeError when TXDelay is not 0 to 50 or DMRColorCode is not
+// 0 to 15. It ignores the octets after the first 23. It does not keep data.
 func DecodeConfigV1(data []byte) (ConfigV1, error) {
 	if len(data) < 23 {
 		return ConfigV1{}, ErrShort
@@ -432,10 +443,16 @@ func DecodeConfigV1(data []byte) (ConfigV1, error) {
 	result.DMR = data[1]&0x02 != 0
 	result.DStar = data[1]&0x01 != 0
 	result.TXDelay = uint8(uint64(data[2]))
+	if uint64(result.TXDelay) > 50 {
+		return ConfigV1{}, errConfigV1TXDelayRange
+	}
 	result.State = Mode(uint64(data[3]))
 	result.RXLevel = uint8(uint64(data[4]))
 	result.CWIDTXLevel = uint8(uint64(data[5]))
 	result.DMRColorCode = enums.ColorCode(uint64(data[6]))
+	if uint64(result.DMRColorCode) > 15 {
+		return ConfigV1{}, errConfigV1DMRColorCodeRange
+	}
 	result.DMRDelay = uint8(uint64(data[7]))
 	result.OscOffset = uint8(uint64(data[8]))
 	result.DStarTXLevel = uint8(uint64(data[9]))
@@ -510,11 +527,14 @@ func (s *ConfigV1) AppendBinary(dst []byte) ([]byte, error) {
 	if s.DStar {
 		data[1] |= 0x01
 	}
+	if uint64(s.TXDelay) > 50 {
+		return dst[:_n], errConfigV1TXDelayRange
+	}
 	data[2] = byte(uint64(s.TXDelay))
 	data[3] = byte(uint64(s.State))
 	data[4] = byte(uint64(s.RXLevel))
 	data[5] = byte(uint64(s.CWIDTXLevel))
-	if uint64(s.DMRColorCode)>>8 != 0 {
+	if uint64(s.DMRColorCode) > 15 {
 		return dst[:_n], errConfigV1DMRColorCodeRange
 	}
 	data[6] = byte(uint64(s.DMRColorCode))
@@ -770,54 +790,10 @@ func (s *Nak) String() string {
 	return "Nak{ Command: " + text.Int(int64(s.Command)) + ", Reason: " + text.Int(int64(s.Reason)) + " }"
 }
 
-// DecodeDMRStart decodes a DMRStart from data, a payload of 1 octet. It
-// returns ErrShort when data is shorter than 1 octet and ErrLength when it
-// is longer. It does not keep data.
-func DecodeDMRStart(data []byte) (DMRStart, error) {
-	if len(data) < 1 {
-		return DMRStart{}, ErrShort
-	}
-	if len(data) != 1 {
-		return DMRStart{}, ErrLength
-	}
-	var result DMRStart
-	result.TX = data[0]&0x01 != 0
-	return result, nil
-}
-
-// AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and
-// a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
-// grow dst.
-func (s *DMRStart) AppendBinary(dst []byte) ([]byte, error) {
-	if s == nil {
-		return dst, dmrgo.ErrNilReceiver
-	}
-
-	_n := len(dst)
-	for range 1 {
-		dst = append(dst, 0)
-	}
-	data := dst[_n:]
-	if s.TX {
-		data[0] |= 0x01
-	}
-	data[0] = data[0]&^0xFE | byte(uint64(0)<<1)&0xFE
-	return dst, nil
-}
-
-// String returns the fields of s as text, for printing. It allocates the
-// string.
-func (s *DMRStart) String() string {
-	if s == nil {
-		return "<nil>"
-	}
-
-	return "DMRStart{ TX: " + text.Bool(s.TX) + " }"
-}
-
 // DecodeDMRAbort decodes a DMRAbort from data, a payload of 1 octet. It
-// returns ErrShort when data is shorter than 1 octet and ErrLength when it
-// is longer. It does not keep data.
+// returns ErrShort when data is shorter than 1 octet, ErrLength when it is
+// longer and a *dmrgo.FieldRangeError when Slot is not 1 or 2. It does not
+// keep data.
 func DecodeDMRAbort(data []byte) (DMRAbort, error) {
 	if len(data) < 1 {
 		return DMRAbort{}, ErrShort
@@ -827,6 +803,9 @@ func DecodeDMRAbort(data []byte) (DMRAbort, error) {
 	}
 	var result DMRAbort
 	result.Slot = enums.Slot(uint64(data[0]))
+	if uint64(result.Slot) < 1 || uint64(result.Slot) > 2 {
+		return DMRAbort{}, errDMRAbortSlotRange
+	}
 	return result, nil
 }
 
@@ -843,7 +822,7 @@ func (s *DMRAbort) AppendBinary(dst []byte) ([]byte, error) {
 		dst = append(dst, 0)
 	}
 	data := dst[_n:]
-	if uint64(s.Slot)>>8 != 0 {
+	if uint64(s.Slot) < 1 || uint64(s.Slot) > 2 {
 		return dst[:_n], errDMRAbortSlotRange
 	}
 	data[0] = byte(uint64(s.Slot))
@@ -903,21 +882,41 @@ func (s *DMRShortLC) String() string {
 }
 
 var (
-	errStatusV1Size              = errors.New("StatusV1.Size: not one of 7, 8, 9, 10 or 11 octets")
+	errStatusV1Size         = errors.New("StatusV1.Size: not one of 7, 8, 9, 10 or 11 octets")
+	errConfigV2TXDelayRange = &dmrgo.FieldRangeError{
+		Bits:  8,
+		Field: "TXDelay",
+		Max:   50.0,
+		Min:   0.0,
+		Type:  "ConfigV2",
+	}
 	errConfigV2DMRColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "DMRColorCode",
+		Max:   15.0,
+		Min:   0.0,
 		Type:  "ConfigV2",
+	}
+	errConfigV1TXDelayRange = &dmrgo.FieldRangeError{
+		Bits:  8,
+		Field: "TXDelay",
+		Max:   50.0,
+		Min:   0.0,
+		Type:  "ConfigV1",
 	}
 	errConfigV1DMRColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "DMRColorCode",
+		Max:   15.0,
+		Min:   0.0,
 		Type:  "ConfigV1",
 	}
 	errSetFreqSize       = errors.New("SetFreq.Size: not one of 9, 10 or 14 octets")
 	errDMRAbortSlotRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "Slot",
+		Max:   2.0,
+		Min:   1.0,
 		Type:  "DMRAbort",
 	}
 )

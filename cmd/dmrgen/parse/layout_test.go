@@ -43,6 +43,11 @@ func TestParseRejectsBadLayouts(t *testing.T) {
 		{"sizes not ascending", "// dmr:frame 2 1\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n}", "ascending"},
 		{"two default sizes", "// dmr:frame 1* 2*\ntype T struct {\n Size uint8 " + tag("-") + "\n A uint8 " + tag("bits:0-7") + "\n B uint8 " + tag("bits:8-15") + "\n}", "more than one default"},
 		{"frame with crc", "// dmr:frame 3\n// dmr:crc crc_ccitt\ntype T struct {\n FEC fec.Result " + tag("-") + "\n A uint8 " + tag("bits:0-7") + "\n}", "cannot have dmr:fec or dmr:crc"},
+		{"max outside a frame", "type T struct {\n A uint8 " + tag("bits:0-7,max:3") + "\n}", "require dmr:frame or dmr:view"},
+		{"max with bias", "// dmr:frame 1\ntype T struct {\n A uint8 " + tag("bits:0-7,bias:1,max:3") + "\n}", "min and max require"},
+		{"min above max", "// dmr:frame 1\ntype T struct {\n A uint8 " + tag("bits:0-7,min:4,max:3") + "\n}", "min is above max"},
+		{"max on bool", "// dmr:frame 1\ntype T struct {\n A bool " + tag("bit:0,max:1") + "\n B uint8 " + tag("bits:1-7") + "\n}", "min and max require"},
+		{"min and max in a frame", "// dmr:frame 1\ntype T struct {\n A uint8 " + tag("bits:0-7,min:1,max:2") + "\n}", ""},
 		{"view without size", "// dmr:view V\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n}", "wants a type name and a size"},
 	}
 	for _, tt := range tests {

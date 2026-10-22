@@ -120,6 +120,12 @@ type Field struct {
 	// Bias is added on decode and subtracted on encode (bias:N).
 	Bias uint64
 
+	// Min and Max are the values that a dmr:frame integer field takes
+	// (min:N, max:N): the decoder and the encoder return a range error for
+	// another value. HasRange is true when either is set.
+	Min, Max uint64
+	HasRange bool
+
 	// Swap16 marks a packed field whose octet pairs are swapped (swap16).
 	Swap16 bool
 
@@ -904,6 +910,19 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 		f.OnlyValues = strings.Split(values, "|")
 		if slices.Contains(f.OnlyValues, "") {
 			return fmt.Errorf("empty only value in %q", mod)
+		}
+	case "min", "max":
+		v, err := strconv.ParseUint(arg, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid %s: %q", name, mod)
+		}
+		if !f.HasRange {
+			f.Min, f.Max, f.HasRange = 0, math.MaxUint64, true
+		}
+		if name == "min" {
+			f.Min = v
+		} else {
+			f.Max = v
 		}
 	case "bias":
 		bias, err := strconv.ParseUint(arg, 10, 32)
