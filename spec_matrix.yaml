@@ -272,7 +272,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestVoiceBurstTypeString
-              - TestVoiceBurstTypeString_InvalidReturnsUnknown
+              - TestVoiceBurstTypeString_Invalid
 
       - section: "6.2"
         title: "Data and control"
