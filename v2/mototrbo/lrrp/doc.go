@@ -8,7 +8,9 @@
 // caller.
 //
 // A latitude is a sign bit, set for south, and 31 bits of magnitude; a
-// longitude is a two's complement number. Radios in Buenos Aires and
+// longitude is a two's complement number in units of 360/2^32 degrees, so
+// +180 and -180 are the same value, 0x80000000, which decodes as -180.
+// Radios in Buenos Aires and
 // Australia send the latitude so (SDRTrunk issue 1118 and pull request 1114;
 // VIGIA 8dc426d modules/lrrpDecoder.js and its logged reports).
 package lrrp

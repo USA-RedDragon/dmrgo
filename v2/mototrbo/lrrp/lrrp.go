@@ -126,7 +126,7 @@ type Point2D struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 }
 
 // Circle2D is a position with its accuracy (token 0x51).
@@ -137,7 +137,7 @@ type Circle2D struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 	// Radius is the radius of the circle that holds the position, in
 	// meters.
 	Radius float64 `dmr:"ufloatvar"`
@@ -151,7 +151,7 @@ type Point3D struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 	// Altitude is in meters.
 	Altitude float64 `dmr:"sfloatvar"`
 }
@@ -165,7 +165,7 @@ type Point3DWhole struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 	// Altitude is in meters.
 	Altitude int32 `dmr:"sintvar"`
 }
@@ -180,7 +180,7 @@ type Circle3DWhole struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 	// Radius is the radius of the circle that holds the position, in
 	// meters.
 	Radius uint32 `dmr:"uintvar"`
@@ -199,7 +199,7 @@ type Point3DAccuracy struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 	// Altitude is in meters.
 	Altitude float64 `dmr:"sfloatvar"`
 	// AltitudeAccuracy is in meters.
@@ -215,7 +215,7 @@ type Circle3D struct {
 	// and the other 31 bits the magnitude, as radios send it.
 	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
-	Longitude float64 `dmr:"i32,scale:360/32"`
+	Longitude float64 `dmr:"i32,wrap,scale:360/32"`
 	// Radius is the radius of the circle that holds the position, in
 	// meters.
 	Radius float64 `dmr:"ufloatvar"`
