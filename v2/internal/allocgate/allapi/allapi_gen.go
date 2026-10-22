@@ -1101,6 +1101,7 @@ var api = [...]any{
 	(*transport_dmrd.Config).TXFrequency,
 	(*transport_dmrd.Config).URL,
 	(*transport_dmrd.Control).AppendBinary,
+	(*transport_dmrd.Control).LoginSalt,
 	(*transport_dmrd.DMRPlusOptions).AppendText,
 	(*transport_dmrd.Data).AppendBinary,
 	(*transport_dmrd.Data).Call,

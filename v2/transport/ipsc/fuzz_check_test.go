@@ -39,9 +39,13 @@ func checkPacket(t *testing.T, p []byte) {
 			_, _ = back.SetRawBurst(raw, h)
 		}
 	}
-	if c, err := ipsc.DecodeControl(p); err == nil && c.Opcode != ipsc.OpPeerListReply {
+	if c, err := ipsc.DecodeControl(p); err == nil {
+		want := p
+		if c.Opcode == ipsc.OpPeerListReply {
+			want = p[:7]
+		}
 		out, err := c.AppendBinary(nil)
-		if err != nil || !bytes.Equal(out, p) {
+		if err != nil || !bytes.Equal(out, want) {
 			t.Fatalf("control round trip %x: %x %v", p, out, err)
 		}
 	}

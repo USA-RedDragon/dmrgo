@@ -1071,6 +1071,7 @@ var entryPoints = map[string]any{
 	"dmrgo_dmrd_config_url":                                            dmrgo_dmrd_config_url,
 	"dmrgo_dmrd_config_of":                                             dmrgo_dmrd_config_of,
 	"dmrgo_dmrd_control_append_binary":                                 dmrgo_dmrd_control_append_binary,
+	"dmrgo_dmrd_control_login_salt":                                    dmrgo_dmrd_control_login_salt,
 	"dmrgo_dmrd_dmr_plus_options_append_text":                          dmrgo_dmrd_dmr_plus_options_append_text,
 	"dmrgo_dmrd_data_append_binary":                                    dmrgo_dmrd_data_append_binary,
 	"dmrgo_dmrd_data_call":                                             dmrgo_dmrd_data_call,

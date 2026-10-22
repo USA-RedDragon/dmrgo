@@ -3739,9 +3739,9 @@ struct dmrgo_dmrd_config_t {
 struct dmrgo_dmrd_control_t {
 	/* Command is the message. */
 	dmrgo_dmrd_command_t command;
-	/* ID is the repeater ID. In a DialectMMDVM RPTACK that answers RPTL it holds the salt instead, as DMRGateway reads it. */
+	/* ID is the repeater ID. In a DialectMMDVM RPTACK it is the 4 octets after the tag, which are the salt in the RPTACK that answers RPTL, as DMRGateway reads them; LoginSalt returns them. */
 	uint32_t id;
-	/* Salt is the salt of a DialectHBRP MSTACK that answers RPTL. HasSalt reports whether the message carries it. */
+	/* Salt is the salt of the acknowledgement that answers RPTL, with HasSalt: the DialectHBRP MSTACK in both directions, and the DialectMMDVM RPTACK for an encoder, which then writes Salt in place of ID. A decoder cannot tell that RPTACK from another one, so it leaves Salt zero there; use LoginSalt. */
 	uint32_t salt;
 	/* HasSalt reports whether Salt is set. */
 	bool has_salt;
@@ -4006,8 +4006,10 @@ struct dmrgo_ipsc_control_t {
 	dmrgo_ipsc_mode_t mode;
 	/* Flags is the flags of the sender (0x90, 0x91, 0x96 to 0x99). */
 	dmrgo_ipsc_flags_t flags;
-	/* Peers is the number of peers in an OpRegisterReply, or the length in octets of the peer list of an OpPeerListReply. */
+	/* Peers is the number of peers in an OpRegisterReply. */
 	uint16_t peers;
+	/* ListLen is the length in octets of the peer list of an OpPeerListReply, 11 for each peer. */
+	uint16_t list_len;
 	/* Version is the protocol version (0x90, 0x91, 0x94 to 0x97), for example 04 02 04 01. */
 	uint8_t version[4];
 };
@@ -9770,6 +9772,8 @@ int dmrgo_dmrd_config_url(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t 
 int dmrgo_dmrd_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_config_t *out, bool *out_ok);
 /* Go: dmrd.Control.AppendBinary. AppendBinary appends the message c in dialect d to dst. It returns dst unchanged and an error when d has no such message, or when Text is set on a message without text, and DMRGO_ERR_NIL_RECEIVER for a nil c. */
 int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_dmrd_dialect_t d);
+/* Go: dmrd.Control.LoginSalt. LoginSalt returns the salt of the acknowledgement c that answers RPTL: the 4 octets of a DialectMMDVM RPTACK, or Salt of a DialectHBRP MSTACK with HasSalt. */
+int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
 /* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not OptionAbsent to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. */
 int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 53. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
