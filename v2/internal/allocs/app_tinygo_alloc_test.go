@@ -53,7 +53,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"shortdata.DecodeHyteraText", func() { _, err = shortdata.DecodeHyteraText(hsms) }},
 		{"shortdata.HyteraText.TextUTF8", func() { _ = h.TextUTF8(buf[:0]) }},
 		{"shortdata.HyteraText.AppendBinary", func() { _, err = h.AppendBinary(buf[:0]) }},
-		{"shortdata.Text", func() { _, err = shortdata.Text(buf[:0], enums.DDUTF16LE, h.Text) }},
+		{"shortdata.DecodeText", func() { _, err = shortdata.DecodeText(buf[:0], enums.DDUTF16LE, h.Text) }},
 		{"shortdata.AppendText", func() { _, err = shortdata.AppendText(buf[:0], enums.DDUTF16LE, []byte("HYT TEST")) }},
 		{"tms.DecodeMessage", func() { _, err = tms.DecodeMessage(d.Payload) }},
 		{"tms.Message.AppendBinary", func() { _, err = m.AppendBinary(buf[:0]) }},

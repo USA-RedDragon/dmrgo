@@ -33,7 +33,7 @@ func textSeeds(add func(format uint8, data []byte)) {
 
 func fuzzText(t *testing.T, format uint8, data []byte) {
 	f := enums.DDFormat(format & 0x3F)
-	got, err := shortdata.Text(nil, f, data)
+	got, err := shortdata.DecodeText(nil, f, data)
 	if err != nil {
 		if !errors.Is(err, shortdata.ErrFormat) || len(got) != 0 {
 			t.Fatalf("Text(%s, %x) = %q, %v", f, data, got, err)
@@ -57,7 +57,7 @@ func fuzzText(t *testing.T, format uint8, data []byte) {
 	if err != nil {
 		t.Fatalf("AppendText(%s, %q): %v", f, got, err)
 	}
-	back, err := shortdata.Text(nil, f, enc)
+	back, err := shortdata.DecodeText(nil, f, enc)
 	if err != nil || !bytes.Equal(back, got) {
 		t.Fatalf("round trip of %q through %s gave %q, %v", got, f, back, err)
 	}

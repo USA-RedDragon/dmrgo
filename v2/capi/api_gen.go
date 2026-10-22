@@ -32732,6 +32732,40 @@ func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_shortdata_decode_text
+func dmrgo_shortdata_decode_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
+	r0, r1 := g_shortdata.DecodeText(a_dst, g_enums.DDFormat(c_format), a_data)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_shortdata_hytera_text_append_binary
 func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -32869,40 +32903,6 @@ func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	return C.DMRGO_OK
-}
-
-//export dmrgo_shortdata_text
-func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	nf_dst := int(*c_dst_len)
-	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
-	a_dst := full_dst[:*c_dst_len]
-	if c_data == nil && c_data_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_data []byte
-	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
-	r0, r1 := g_shortdata.Text(a_dst, g_enums.DDFormat(c_format), a_data)
-	_ = r0
-	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
-	}
 	return C.DMRGO_OK
 }
 

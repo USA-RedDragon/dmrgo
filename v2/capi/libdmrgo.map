@@ -1365,11 +1365,11 @@ DMRGO_1 {
 		dmrgo_pdu_vote_now_parms_string;
 		dmrgo_shortdata_append_text;
 		dmrgo_shortdata_decode_hytera_text;
+		dmrgo_shortdata_decode_text;
 		dmrgo_shortdata_hytera_text_append_binary;
 		dmrgo_shortdata_hytera_text_set_text_utf8;
 		dmrgo_shortdata_hytera_text_string;
 		dmrgo_shortdata_hytera_text_text_utf8;
-		dmrgo_shortdata_text;
 		dmrgo_sms_anytone_text_append_binary;
 		dmrgo_sms_anytone_text_set_text_utf8;
 		dmrgo_sms_anytone_text_string;

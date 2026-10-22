@@ -1064,7 +1064,7 @@ var api = [...]any{
 	(*shortdata.HyteraText).TextUTF8,
 	shortdata.AppendText,
 	shortdata.DecodeHyteraText,
-	shortdata.Text,
+	shortdata.DecodeText,
 	(*sms.AnyToneText).AppendBinary,
 	(*sms.AnyToneText).SetTextUTF8,
 	(*sms.AnyToneText).String,
