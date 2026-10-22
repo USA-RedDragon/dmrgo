@@ -13,15 +13,16 @@ import (
 type kind int
 
 const (
-	dstName   = "dst"
-	userParam = "DMRGO_USER_T user"
-	cFalse    = "false"
-	cBool     = "bool"
-	cFloat    = "float"
-	cDouble   = "double"
-	cDuration = "dmrgo_duration_t"
-	lockCode  = "code"
-	lockType  = "type"
+	dstName    = "dst"
+	userParam  = "DMRGO_USER_T user"
+	cFalse     = "false"
+	cBool      = "bool"
+	cFloat     = "float"
+	cDouble    = "double"
+	cDuration  = "dmrgo_duration_t"
+	lockCode   = "code"
+	methString = "String"
+	lockType   = "type"
 )
 
 const (

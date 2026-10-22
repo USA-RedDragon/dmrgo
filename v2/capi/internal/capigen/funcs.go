@@ -683,9 +683,9 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 		if err := g.needDeps(recv.named); err != nil {
 			return "", err
 		}
-		var eff *effect
-		if rk == rValPtr {
-			eff = g.methodEffects(-1)
+		eff := g.methodEffects(-1)
+		if rk == rValVal {
+			eff = elemOnly(eff, recv.named)
 		}
 		d := recv.c + " *" + self
 		if eff == nil || !eff.any() {
@@ -882,6 +882,25 @@ func (g *gen) methodEffects(param int) *effect {
 
 // cVisible keeps the part of e that the C form of a value of type t can
 // see: the exported fields of a struct that are not handles.
+// elemOnly keeps the writes of e that a value receiver of type t makes
+// visible to its caller: the elements of its slice and pointer fields.
+func elemOnly(e *effect, t types.Type) *effect {
+	out := &effect{}
+	s := structOf(t)
+	if s == nil {
+		if e.get("")&eElem != 0 {
+			out.mark("", eElem)
+		}
+		return out
+	}
+	for f := range s.Fields() {
+		if e.get(f.Name())&eElem != 0 || e.all && isRef(f.Type()) {
+			out.mark(f.Name(), eElem)
+		}
+	}
+	return out
+}
+
 func (g *gen) cVisible(t types.Type, e *effect) *effect {
 	s := structOf(t)
 	if s == nil || e.all {
@@ -1047,7 +1066,7 @@ func (g *gen) mapSliceResult(sm *sigmap, n string, sl *types.Slice, r string) er
 
 func (g *gen) stateful(w *strings.Builder, sm *sigmap, sig *types.Signature, cname string, rk recvKind, plain bool) (bool, string) {
 	if !plain || (rk != rHandle && rk != rOpen) || (!sm.arena && len(sm.slices) == 0) || g.curMethod == nil ||
-		g.curMethod.Name() == "String" || g.curMethod.Name() == "Error" {
+		g.curMethod.Name() == methString || g.curMethod.Name() == "Error" {
 		return false, ""
 	}
 	note, err := g.precheck(w, sm, sig, cname)
