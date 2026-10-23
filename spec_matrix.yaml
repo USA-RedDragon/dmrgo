@@ -143,6 +143,7 @@ ignore_files:
   - v2/csbk/rand.go
   - v2/bs/errors.go
   - v2/bs/nocopy.go
+  - v2/bs/express.go
   - v2/bs/repeater.go
   - v2/bs/types.go
   - v2/trunk/capplus.go

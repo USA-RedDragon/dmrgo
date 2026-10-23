@@ -119,17 +119,32 @@ type Config struct {
 	// Repeater makes its own.
 	Scratch *layer2.Burst
 	// Jitter is the playout delay of the network jitter buffer of each
-	// slot, a voice.Jitter, which puts the bursts from a network source
-	// back in the order of Hint.Seq and plays them this long after the
-	// first burst of a stream arrived, as the Jitter of MMDVMHost does. 0
-	// means voice.DefaultJitter (360 ms), and a negative value turns the
-	// buffer off, so that each burst is taken as it comes. At most
-	// voice.MaxJitter. RF bursts, and bursts without Hint.HasSeq, are taken
-	// as they come. In ModeRF the Repeater takes a burst from the buffer up
-	// to one burst period and Lead before its time, because the outbound
-	// channel takes the voice of a slot that far ahead. The voice.Jitter doc
-	// gives the rules for late, lost and duplicate bursts, stalls and new
-	// streams.
+	// slot, a voice.Jitter, which puts the voice bursts from a network
+	// source back in the order of Hint.Seq and plays them this long after
+	// the first burst of a stream arrived, as the Jitter of MMDVMHost does.
+	// Voice bursts are the voice bursts, the Voice LC Header, the PI Header
+	// and the Terminator with LC. 0 means voice.DefaultJitter (360 ms), and
+	// a negative value turns the buffer off, so that each burst is taken as
+	// it comes. At most voice.MaxJitter. RF bursts, and bursts without
+	// Hint.HasSeq, are taken as they come. In ModeRF the Repeater takes a
+	// burst from the buffer up to one burst period and Lead before its time,
+	// because the outbound channel takes the voice of a slot that far ahead.
+	// The voice.Jitter doc gives the rules for late, lost and duplicate
+	// bursts, stalls and new streams.
+	//
+	// Data, CSBK, MBC and other bursts of a network source have no playout
+	// delay. Such a burst is taken when it comes, in ModeRF as soon as the
+	// data queue of the slot has room, with these exceptions. A burst after
+	// a gap in Hint.Seq waits for the gap to fill for at most one burst
+	// period (60 ms) after the first burst behind the gap came, because the
+	// blocks of unconfirmed data must go out in order; a stream whose gaps
+	// never fill, such as one of a sender that counts both slots, does not
+	// wait again. A copy of a burst taken is dropped, and a burst that comes
+	// after a later one of its stream is taken late. A burst of a data
+	// stream that a source starts while its voice is still in the jitter
+	// buffer waits for that voice to play, because the slot carries one
+	// call at a time: until the Terminator of the call plays, or the buffer
+	// holds no more voice of the source.
 	Jitter time.Duration
 }
 
@@ -150,6 +165,7 @@ type slot struct {
 	rx    *voice.Receiver
 	tx    *voice.Transmitter
 	jit   *voice.Jitter
+	ex    express
 	state SlotState
 	owner Source
 
@@ -197,6 +213,7 @@ type Repeater struct {
 	pendingMax int
 	pendingAge time.Duration
 	lead       time.Duration
+	jitDelay   time.Duration
 	chanAuth   ChannelAuth
 	authRsp    time.Duration
 	authSel    time.Duration
@@ -236,7 +253,8 @@ func New(cfg *Config) (*Repeater, error) {
 		callHang: orDefault(cfg.CallHang, constants.TCallHang), dataHang: orDefault(cfg.DataHang, constants.TDataHangtime),
 		inactivity: orDefault(cfg.Inactivity, DefaultInactivity), lost: orDefault(cfg.Lost, voice.DefaultLost),
 		pendingMax: cfg.Pending, pendingAge: orDefault(cfg.PendingAge, DefaultPendingAge), lead: cfg.Lead, b: cfg.Scratch,
-		authRsp: cfg.ChanAuthResponse, authSel: orDefault(cfg.ChanAuthSelect, constants.TBSChanAuthSel)}
+		authRsp: cfg.ChanAuthResponse, authSel: orDefault(cfg.ChanAuthSelect, constants.TBSChanAuthSel),
+		jitDelay: orDefault(cfg.Jitter, voice.DefaultJitter)}
 	if cfg.Mode == ModeRF {
 		r.chanAuth = cfg.ChannelAuth
 	}
@@ -276,7 +294,7 @@ func New(cfg *Config) (*Repeater, error) {
 		r.b = layer2.NewBurst()
 	}
 	headers := max(cfg.Headers, 1)
-	for i := range r.slots {
+	for i := range len(r.slots) {
 		s := &r.slots[i]
 		s.id = enums.Slot(i + 1)
 		rx, err := voice.NewReceiver(&voice.ReceiverConfig{Lost: r.lost, Hang: -1, Scratch: r.b})
@@ -320,11 +338,12 @@ func (r *Repeater) Reset() {
 	if r.b == nil {
 		return
 	}
-	for i := range r.slots {
+	for i := range len(r.slots) {
 		s := &r.slots[i]
 		s.rx.Reset()
 		s.tx.Reset()
 		s.jit.Reset()
+		s.ex.reset()
 		s.state, s.hasCall, s.rejected, s.head, s.count, s.npend = SlotIdle, false, false, 0, 0, 0
 	}
 	r.keyed = r.mode == ModeNetwork
@@ -386,10 +405,12 @@ func (s *slot) busy() bool {
 // A burst whose h.Slot is not Slot1 or Slot2, or a burst to a zero
 // Repeater, is dropped with no output; CheckSlot tells a bad slot. A nil
 // raw is a transport frame without a burst: only h applies, and
-// Hint.SyncLost ends a call of from on the slot. A burst or frame from a
-// network source with Hint.HasSeq goes into the jitter buffer of the slot,
-// Config.Jitter, and a later Tick takes it in its place. It allocates only
-// when dst has no room for MaxOutputs outputs.
+// Hint.SyncLost ends a call of from on the slot. A voice burst or frame
+// from a network source with Hint.HasSeq goes into the jitter buffer of the
+// slot, Config.Jitter, and a later Tick takes it in its place; another
+// burst is taken at once unless Config.Jitter says it waits, and then a
+// later Tick takes it. It allocates only when dst has no room for
+// MaxOutputs outputs.
 func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) []Output {
 	if r == nil {
 		return dst
@@ -399,7 +420,7 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		return dst
 	}
 	dst = r.timers(now, dst)
-	if !from.RF && r.slot(h.Slot).jit.Push(now, raw, h, from.Peer) != voice.JitterBypass {
+	if !from.RF && r.network(now, r.slot(h.Slot), raw, &h, from) == routeDone {
 		return r.flush(now, dst)
 	}
 	return r.take(now, raw, &h, from, dst, true)
@@ -431,7 +452,8 @@ func (r *Repeater) take(now time.Duration, raw *layer2.RawBurst, h *layer2.Hint,
 // results of b. The Repeater sends b as it encodes it again. The jitter
 // buffer, Config.Jitter, holds b as it encodes it again, and a b whose
 // payload FEC failed as a frame without a burst; a Tick then takes it as
-// Inbound takes a burst. It allocates only when dst has no room for
+// Inbound takes a burst. A burst that Config.Jitter says waits is held in
+// the same way. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, from Source, dst []Output) []Output {
 	if r == nil {
@@ -448,7 +470,7 @@ func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, fr
 				r.enc, raw = enc, &r.enc
 			}
 		}
-		if r.slot(h.Slot).jit.Push(now, raw, h, from.Peer) != voice.JitterBypass {
+		if r.network(now, r.slot(h.Slot), raw, &h, from) == routeDone {
 			return r.flush(now, dst)
 		}
 	}
@@ -643,8 +665,8 @@ func (r *Repeater) Reject(s enums.Slot) error {
 // Tick runs the timers that are due at now and, in ModeRF while keyed,
 // appends the next outbound burst when now has reached its Due time minus
 // Config.Lead. Each Tick appends at most one outbound burst, and takes at
-// most one burst from the jitter buffers, Config.Jitter; a late caller
-// calls Tick until Deadline is in the future. In ModeNetwork it appends the
+// most one burst from the jitter buffers and the bursts that wait,
+// Config.Jitter; a late caller calls Tick until Deadline is in the future. In ModeNetwork it appends the
 // regenerated bursts that are due. It allocates only when dst has no room
 // for MaxOutputs outputs.
 func (r *Repeater) Tick(now time.Duration, dst []Output) []Output {
@@ -655,7 +677,10 @@ func (r *Repeater) Tick(now time.Duration, dst []Output) []Output {
 		return dst
 	}
 	dst = r.timers(now, dst)
-	dst = r.release(now, dst)
+	var took bool
+	if dst, took = r.expressRelease(now, dst); !took {
+		dst = r.release(now, dst)
+	}
 	if r.mode == ModeNetwork {
 		return r.flush(now, dst)
 	}
@@ -691,8 +716,11 @@ func (r *Repeater) release(now time.Duration, dst []Output) []Output {
 		first, second = second, first
 	}
 	s := first
+	late := s.jit.Stats().Late
 	if !s.jit.Pop(now, &r.pkt) {
-		if s = second; !s.jit.Pop(now, &r.pkt) {
+		s = second
+		late = s.jit.Stats().Late
+		if !s.jit.Pop(now, &r.pkt) {
 			return dst
 		}
 	}
@@ -700,6 +728,7 @@ func (r *Repeater) release(now time.Duration, dst []Output) []Output {
 	if r.pkt.HasBurst {
 		raw = &r.pkt.Burst
 	}
+	s.poppedVoice(now, r.pkt.Source, voiceEnds(&r.pkt.Hint, raw), s.jit.Stats().Late-late)
 	return r.take(r.pkt.Due, raw, &r.pkt.Hint, Source{Peer: r.pkt.Source}, dst, false)
 }
 
@@ -733,7 +762,7 @@ func (r *Repeater) Deadline() (at time.Duration, ok bool) {
 			d.add(r.lastActivity + r.inactivity)
 		}
 	}
-	for i := range r.slots {
+	for i := range len(r.slots) {
 		s := &r.slots[i]
 		if t, tok := s.rx.Deadline(); tok {
 			d.add(t)
@@ -742,6 +771,9 @@ func (r *Repeater) Deadline() (at time.Duration, ok bool) {
 			d.add(t)
 		}
 		if t, tok := s.jit.Deadline(); tok {
+			d.add(t)
+		}
+		if t, tok := r.expressDeadline(s); tok {
 			d.add(t)
 		}
 		if s.rejected {
@@ -775,7 +807,7 @@ func (d *deadline) add(t time.Duration) {
 }
 
 func (r *Repeater) timers(now time.Duration, dst []Output) []Output {
-	for i := range r.slots {
+	for i := range len(r.slots) {
 		s := &r.slots[i]
 		if s.rejected {
 			s.rejected = false
@@ -833,9 +865,9 @@ func (r *Repeater) timers(now time.Duration, dst []Output) []Output {
 }
 
 func (r *Repeater) quiet() bool {
-	for i := range r.slots {
+	for i := range len(r.slots) {
 		s := &r.slots[i]
-		if s.state != SlotIdle || s.count > 0 || s.tx.State() != voice.TransmitterIdle || s.jit.Len() > 0 {
+		if s.state != SlotIdle || s.count > 0 || s.tx.State() != voice.TransmitterIdle || s.jit.Len() > 0 || s.ex.n > 0 {
 			return false
 		}
 	}
@@ -1186,7 +1218,7 @@ func (r *Repeater) flush(now time.Duration, dst []Output) []Output {
 	if r.mode != ModeNetwork {
 		return dst
 	}
-	for i := range r.slots {
+	for i := range len(r.slots) {
 		s := &r.slots[i]
 		if s.jitterDueAt(now) {
 			continue
