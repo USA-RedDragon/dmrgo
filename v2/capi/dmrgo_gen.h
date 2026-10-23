@@ -1003,7 +1003,7 @@ struct dmrgo_bs_config_t {
 	dmrgo_duration_t lost;
 	/* Timeout is the longest call. 0 means DMRGO_CONSTANTS_TTO (180 s). A longer call ends with a Terminator and the rest of it is dropped. */
 	dmrgo_duration_t timeout;
-	/* Headers is the number of Voice LC Headers that start a repeated call. 0 means 1, at most DMRGO_VOICE_MAX_HEADERS. */
+	/* Headers is the number of Voice LC Headers that start a repeated call. 0 means 1, at most DMRGO_VOICE_MAX_HEADERS. A call that the Repeater joins late, without its Voice LC Header, starts with one header, as dmrgo_voice_transmitter_relay does. */
 	int64_t headers;
 	/* Terminators is the number of Terminators with LC that end a repeated call, before the call hang time. 0 means 1, at most DMRGO_VOICE_MAX_TERMINATORS. */
 	int64_t terminators;
@@ -5429,13 +5429,13 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_layer2_sync_source_t source;
 	/* Silence is the 72-bit slot that fills a burst when no voice is queued, and pads the last superframe, packed as dmrgo_layer2_raw_burst_voice_slots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. A relayed call with a FID other than DMRGO_ENUMS_FID_STANDARDIZED and DMRGO_ENUMS_FID_MOTOROLA, such as a Codec2 call, repeats its last vocoder slot in place of Silence once it has one, as MMDVMHost does, because the silence of one codec is noise to another. */
 	uint8_t silence[9];
-	/* Headers is the number of Voice LC Headers before burst A. 0 means 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most DMRGO_VOICE_MAX_HEADERS. MMDVMHost sends 3 as a duplex repeater. */
+	/* Headers is the number of Voice LC Headers before burst A. 0 means 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most DMRGO_VOICE_MAX_HEADERS. MMDVMHost sends 3 as a duplex repeater. dmrgo_voice_transmitter_relay sends one header for a call that the Receiver joined late, one whose dmrgo_voice_call_t.origin is not DMRGO_VOICE_ORIGIN_HEADER, so that its voice is not held back. */
 	int64_t headers;
 	/* Terminators is the number of Terminators with LC at the end of a call. 0 means 1; at most DMRGO_VOICE_MAX_TERMINATORS. */
 	int64_t terminators;
 	/* Timeout is the transmit timeout T_TO. 0 means DMRGO_CONSTANTS_TTO (180 s), and a negative value turns it off (ETSI TS 102 361-2 clause 6.1). */
 	dmrgo_duration_t timeout;
-	/* Queue is the number of vocoder slots buffered. 0 means Headers+2 bursts, DMRGO_VOICE_DEFAULT_QUEUE for 0 or 1 Headers; at most DMRGO_VOICE_MAX_QUEUE. It must hold Headers+1 bursts, so that a relayed late entry can send its headers first. */
+	/* Queue is the number of vocoder slots buffered. 0 means Headers+2 bursts, DMRGO_VOICE_DEFAULT_QUEUE for 0 or 1 Headers; at most DMRGO_VOICE_MAX_QUEUE. It must hold Headers+1 bursts. */
 	int64_t queue;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. */
 	dmrgo_duration_t lead;
