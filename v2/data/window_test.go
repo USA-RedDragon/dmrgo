@@ -99,32 +99,34 @@ func (l *winLink) run(msgs []*data.Message, end time.Duration) {
 			}
 		}
 	}
+	send := func(outs []data.Output) {
+		if len(outs) > data.MaxOutputs {
+			l.t.Fatalf("%d outputs", len(outs))
+		}
+		for _, o := range outs {
+			if o.Kind == data.OutputDone {
+				l.done = append(l.done, o)
+				continue
+			}
+			l.headerOf(&o)
+			k := [2]uint8{o.Seq, o.Try}
+			i := idx[k]
+			idx[k]++
+			if l.drop == nil || !l.drop(o.Seq, o.Try, i) {
+				handle(l.rx.Burst(o.Due, &o.Burst, layer2.Hint{}, ev[:0]))
+			}
+		}
+	}
 	for now := time.Duration(0); now <= end; now += 10 * time.Millisecond {
 		for len(queue) > 0 && queue[0].at <= now {
-			out = l.tx.Burst(queue[0].at, &queue[0].raw, layer2.Hint{}, out[:0])
-			if len(out) > data.MaxOutputs {
-				l.t.Fatalf("%d outputs", len(out))
-			}
-			l.done = append(l.done, out...)
+			send(l.tx.Burst(queue[0].at, &queue[0].raw, layer2.Hint{}, out[:0]))
 			queue = queue[1:]
 		}
 		if at, ok := l.rx.Deadline(); ok && at <= now {
 			handle(l.rx.Tick(now, ev[:0]))
 		}
 		if at, ok := l.tx.Deadline(); ok && at <= now {
-			for _, o := range l.tx.Tick(now, out[:0]) {
-				if o.Kind == data.OutputDone {
-					l.done = append(l.done, o)
-					continue
-				}
-				l.headerOf(&o)
-				k := [2]uint8{o.Seq, o.Try}
-				i := idx[k]
-				idx[k]++
-				if l.drop == nil || !l.drop(o.Seq, o.Try, i) {
-					handle(l.rx.Burst(o.Due, &o.Burst, layer2.Hint{}, ev[:0]))
-				}
-			}
+			send(l.tx.Tick(now, out[:0]))
 		}
 		if l.tx.State() == data.SenderIdle && len(queue) == 0 {
 			return
