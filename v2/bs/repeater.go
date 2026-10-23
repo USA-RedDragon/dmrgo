@@ -729,7 +729,7 @@ func (r *Repeater) Deadline() (at time.Duration, ok bool) {
 	var d deadline
 	if r.mode == ModeRF && r.keyed {
 		d.add(r.next - r.lead)
-		if r.inactivity >= 0 {
+		if r.inactivity >= 0 && r.quiet() {
 			d.add(r.lastActivity + r.inactivity)
 		}
 	}
