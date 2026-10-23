@@ -236,6 +236,10 @@ func seqDelta(seq, ref, mask uint16) int {
 //     next packet, as after the clock jumped forward, plays it at once and
 //     the rest 60 ms apart.
 //
+// A Jitter delays each packet that it takes by the playout delay, which
+// only voice needs. A caller with data, CSBK or MBC bursts passes them
+// around it, as bs.Repeater does.
+//
 // The zero Jitter passes every packet through. Make it with NewJitter. A
 // Jitter is not safe for concurrent use and must not be copied.
 type Jitter struct {
