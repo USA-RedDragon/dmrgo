@@ -842,7 +842,7 @@ func (r *Receiver) fragment(m *packet.Message) (fragmented, joined, ok bool) {
 }
 
 func (r *Receiver) missing() packet.Response {
-	if !r.cur.full || r.cur.format != pdu.FormatConfirmed {
+	if r.cur.format != pdu.FormatConfirmed {
 		return packet.ResponseNACKPacketCRC
 	}
 	return packet.ResponseSACK
@@ -986,6 +986,10 @@ func (r *Receiver) answer(now time.Duration, resp packet.Response, out []Event) 
 	switch {
 	case resp == packet.ResponseSACK && current:
 		r.pkt, err = r.asm.Response()
+		if errors.Is(err, packet.ErrNoFirstTry) {
+			resp = packet.ResponseNACKPacketCRC
+			r.pkt, err = r.build.NewResponse(&r.to, resp, nil)
+		}
 	case resp == packet.ResponseSACK:
 		for i := range r.rd.Retry {
 			r.rd.Retry[i] = true
