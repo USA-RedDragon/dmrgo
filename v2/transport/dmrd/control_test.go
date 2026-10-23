@@ -147,6 +147,27 @@ func TestClassify(t *testing.T) {
 	}
 }
 
+func TestClassifyConfigOfCallsignStartingWithL(t *testing.T) {
+	t.Parallel()
+
+	hbrp := []byte("RPTCLU1ABC  0004017B")
+	hbrp = append(hbrp, bytes.Repeat([]byte(" "), 306-len(hbrp))...)
+	if got := dmrd.Classify(hbrp, dmrd.DialectHBRP); got != dmrd.CommandRPTC {
+		t.Errorf("HBRP RPTC of LU1ABC: %v, want RPTC", got)
+	}
+	if id, ok := dmrd.RepeaterID(hbrp, dmrd.DialectHBRP); !ok || id != 0x0004017B {
+		t.Errorf("HBRP RPTC of LU1ABC: ID %d %v, want %d", id, ok, 0x0004017B)
+	}
+	if got := dmrd.Classify([]byte("RPTCL0004017B"), dmrd.DialectHBRP); got != dmrd.CommandRPTCL {
+		t.Errorf("HBRP RPTCL: %v, want RPTCL", got)
+	}
+	mmdvm := append([]byte("RPTC"), 0x4C, 0x00, 0x01, 0x7B)
+	mmdvm = append(mmdvm, bytes.Repeat([]byte(" "), 302-len(mmdvm))...)
+	if got := dmrd.Classify(mmdvm, dmrd.DialectMMDVM); got != dmrd.CommandRPTC {
+		t.Errorf("MMDVM RPTC whose ID starts with L: %v, want RPTC", got)
+	}
+}
+
 func TestLoginSalt(t *testing.T) {
 	t.Parallel()
 

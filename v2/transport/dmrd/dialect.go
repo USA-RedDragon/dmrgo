@@ -227,18 +227,30 @@ func (c Command) inDialect(d Dialect) bool {
 }
 
 // Classify returns the command of packet p in dialect d by its tag, or
-// CommandUnknown when no tag of d matches. A longer tag wins, so RPTCL is
-// not read as RPTC. The OpenBridge tags DMRE, BCKA, BCSQ, BCST and BCVE
-// match in every dialect.
+// CommandUnknown when no tag of d matches. A longer tag wins when p has the
+// length of its command, so RPTCL is not read as RPTC, and an RPTC whose
+// callsign or ID starts with L is not read as RPTCL. The OpenBridge tags
+// DMRE, BCKA, BCSQ, BCST and BCVE match in every dialect.
 func Classify(p []byte, d Dialect) Command {
 	best, n := CommandUnknown, 0
 	for c := CommandDMRD; c <= CommandBCVE; c++ {
 		t := c.tag()
-		if len(t) > n && hasTag(p, t) && c.inDialect(d) {
+		if len(t) > n && hasTag(p, t) && c.inDialect(d) && (best == CommandUnknown || c.fits(p, d)) {
 			best, n = c, len(t)
 		}
 	}
 	return best
+}
+
+func (c Command) fits(p []byte, d Dialect) bool {
+	switch c.shape(d) {
+	case shapeBinID:
+		return len(p) == len(c.tag())+4
+	case shapeHexID:
+		return len(p) == len(c.tag())+8
+	default:
+		return true
+	}
 }
 
 // RepeaterID returns the repeater ID of the message p of dialect d, by its
