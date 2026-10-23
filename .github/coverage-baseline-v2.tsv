@@ -19,8 +19,8 @@ v2/data/bound.go	3	3
 v2/data/event.go	28	26
 v2/data/message.go	36	31
 v2/data/nocopy.go	0	0
-v2/data/receiver.go	482	461
-v2/data/sender.go	379	358
+v2/data/receiver.go	486	461
+v2/data/sender.go	380	359
 v2/enums/access.go	5	5
 v2/enums/ack_reason.go	55	55
 v2/enums/activity_id.go	11	11
