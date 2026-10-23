@@ -390,6 +390,16 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 	}
 	kind := enums.ServiceKind(a.ServiceKind)
 	switch {
+	case kind == enums.ServiceKindCancelCall:
+		// ETSI TS 102 361-4 clauses 6.6.1.2.2 and 6.6.1.5
+		if m.u.alsWait && m.u.alsFrom == a.SourceAddress {
+			m.u.alsWait = false
+		}
+		if m.pending && m.pendingFrom == a.SourceAddress {
+			m.pending = false
+			out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
+		}
+		return m.ackU(m.replyDue(now), slot, enums.AckReasonMSAccepted, a.SourceAddress, out)
 	case m.udtRequest() && m.u.ahoyFrom != 0 && a.SourceAddress == m.u.ahoyFrom &&
 		(kind == m.u.ahoyKind || m.req == reqDivert):
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
@@ -405,7 +415,7 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 		if m.u.noDuplex {
 			return m.ackU(m.replyDue(now), slot, enums.AckReasonMSDuplexNotSupported, a.SourceAddress, out)
 		}
-		m.pending, m.pendingEnd = true, now+m.pendingTO
+		m.pending, m.pendingEnd, m.pendingFrom = true, now+m.pendingTO, a.SourceAddress
 		return m.ackU(m.replyDue(now), slot, enums.AckReasonMSAccepted, a.SourceAddress, out)
 	case kind == enums.ServiceKindIndividualVoice && a.ALS && m.req == reqNone:
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
@@ -413,7 +423,7 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 			return m.ackU(m.replyDue(now), slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
 		}
 		m.u.alsWait, m.u.alsEnd, m.u.alsFrom = true, now+constants.TALSRequestLifeSpanDefault, a.SourceAddress
-		m.pending, m.pendingEnd = true, now+m.pendingTO
+		m.pending, m.pendingEnd, m.pendingFrom = true, now+m.pendingTO, a.SourceAddress
 		return m.ackU(m.replyDue(now), slot, enums.AckReasonMessageAccepted, a.SourceAddress, out)
 	}
 	return m.ahoy(now, a, h, out)

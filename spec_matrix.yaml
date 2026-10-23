@@ -2606,6 +2606,31 @@ documents:
 
       - section: "6.6.1.2"
         title: "Call Cancellation"
+        source_files:
+          - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
+          - v2/trunk/ms_udt.go
+          - v2/trunk/tscc.go
+          - v2/trunk/tscc_services.go
+          - v2/trunk/tscc_udt.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestTSCC_CancelCall
+              - TestTSCC_CancelCallAfterGrant
+              - TestTSCC_CancelCallWithoutSetup
+              - TestTSCC_CancelDuplexCall
+              - TestTSCC_CancelCallDuringSupplementaryData
+              - TestTSCC_CancelRepeatedDuplexCall
+              - TestTSCC_AnswerWaitsForItsAhoy
+              - TestTSCC_CancelReplacedDuplexCall
+              - TestTSCC_CancelAckIsNotAStatusAnswer
+              - TestMS_CancelBeforeRandomAccess
+              - TestMS_CancelCall
+              - TestMS_CancelCallRefused
+              - TestMS_RepeatedCallCancelRefused
+              - TestMS_CancelledCall
+              - TestCancelCallEndsTheWaitForTheGrant
 
       - section: "6.6.1.3"
         title: "Acknowledgements Sent to Calling MS"

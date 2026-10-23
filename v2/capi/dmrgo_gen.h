@@ -7531,7 +7531,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_TALKGROUPS 32
 /* Go: trunk.OutputAccepted. OutputAccepted reports that the TSCC accepted a request of the MS that needs no payload channel, such as a status call, a transmit interrupt or an IP connection advice. */
 #define DMRGO_TRUNK_OUTPUT_ACCEPTED ((dmrgo_trunk_output_kind_t)19)
-/* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in dmrgo_trunk_output_t.grant: an individual call that the MS answers, or a radio check. */
+/* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in dmrgo_trunk_output_t.grant: an individual call that the MS answers, a radio check, or with Service DMRGO_ENUMS_SERVICE_KIND_CANCEL_CALL the end of the call from dmrgo_trunk_grant_t.source that the MS answered before its grant. */
 #define DMRGO_TRUNK_OUTPUT_AHOY ((dmrgo_trunk_output_kind_t)9)
 /* Go: trunk.OutputAmbient. OutputAmbient reports that the MS joined the Ambient Listening Service call of dmrgo_trunk_output_t.grant: it transmits without an action of its user until it ends the call at T_ALS or T_ALS_E. */
 #define DMRGO_TRUNK_OUTPUT_AMBIENT ((dmrgo_trunk_output_kind_t)17)

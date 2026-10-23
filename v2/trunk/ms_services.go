@@ -505,7 +505,7 @@ func (m *MS) svcAck(now time.Duration, a *pdu.AckOutboundPDU, h *layer2.Hint, ou
 		return m.resume(now, out), true
 	case reqIP:
 		return m.ipAck(now, r, out), true
-	case reqNone, reqRegister, reqDereg, reqCall, reqShortData, reqPoll, reqDivert, reqDGNA:
+	case reqNone, reqRegister, reqDereg, reqCall, reqCancel, reqShortData, reqPoll, reqDivert, reqDGNA:
 	}
 	return out, false
 }
