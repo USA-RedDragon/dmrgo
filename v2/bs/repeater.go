@@ -139,8 +139,11 @@ type Config struct {
 	// period (60 ms) after the first burst behind the gap came, because the
 	// blocks of unconfirmed data must go out in order; a stream whose gaps
 	// never fill, such as one of a sender that counts both slots, does not
-	// wait again. A copy of a burst taken is dropped, and a burst that comes
-	// after a later one of its stream is taken late. A burst of a data
+	// wait again. A rate 1/2, 3/4 or 1 data block whose own Data Header has
+	// not come yet waits for it at most one superframe (360 ms) after the
+	// block came, because a block without its header is dropped. A copy of
+	// a burst taken is dropped, and a burst that comes after a later one of
+	// its stream is taken late. A burst of a data
 	// stream that a source starts while its voice is still in the jitter
 	// buffer waits for that voice to play, because the slot carries one
 	// call at a time: until the Terminator of the call plays, or the buffer
@@ -1188,6 +1191,9 @@ func (r *Repeater) endData(now time.Duration, s *slot, reason voice.EndReason, d
 	dst, o = appendOutput(dst, OutputCallEnd)
 	o.Slot, o.From, o.Service, o.Call, o.End = s.id, s.owner, ServiceData, s.call, reason
 	s.state = SlotIdle
+	if !s.owner.RF {
+		s.dataEnded(s.owner.Peer)
+	}
 	if s.confirmed && reason == 0 && r.dataHang >= 0 {
 		s.state, s.hangUntil = SlotDataHang, now+r.dataHang
 	}

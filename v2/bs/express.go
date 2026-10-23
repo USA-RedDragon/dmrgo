@@ -13,6 +13,7 @@ const (
 	expressKeys    = 4
 	expressHistory = 64
 	expressHold    = burstPeriod
+	expressHeader  = 6 * burstPeriod
 )
 
 type expressKey struct {
@@ -29,6 +30,7 @@ type expressKey struct {
 	last      time.Duration
 	relAt     time.Duration
 	dataSince time.Duration
+	header    bool
 }
 
 type expressPkt struct {
@@ -38,6 +40,7 @@ type expressPkt struct {
 	arr    time.Duration
 	need   uint32
 	key    int
+	block  bool
 	burst  bool
 	behind bool
 	used   bool
@@ -116,7 +119,7 @@ func (e *express) key(src uint32, h *layer2.Hint, now, idle time.Duration) int {
 		k := &e.keys[i]
 		if k.used && k.src == src && k.hasStream == h.HasStream && (!h.HasStream || k.stream == h.Stream) {
 			if now-k.last > idle && !e.holds(i) {
-				k.started, k.seen, k.skips, k.voice = false, 0, false, false
+				k.started, k.seen, k.skips, k.voice, k.header = false, 0, false, false, false
 			}
 			k.last = now
 			return i
@@ -365,6 +368,8 @@ func (r *Repeater) network(now time.Duration, s *slot, raw *layer2.RawBurst, h *
 	_, at, waits := s.expressNext(r)
 	p := &s.ex.pkts[free]
 	p.h, p.src, p.arr, p.key, p.burst, p.behind, p.need = *h, from.Peer, now, ki, raw != nil, false, 0
+	dt, ok := dataTypeOf(h, raw)
+	p.block = ok && (dt == enums.DataTypeRate12 || dt == enums.DataTypeRate34 || dt == enums.DataTypeRate1)
 	if raw != nil {
 		p.raw = *raw
 	}
@@ -411,6 +416,9 @@ func (r *Repeater) readyAt(s *slot, p *expressPkt) (time.Duration, bool) {
 	if d > 0 && d < expressHistory && !k.skips {
 		at = max(at, first+expressHold)
 	}
+	if p.block && !k.header && (s.state != SlotData || s.owner != Source{Peer: p.src}) {
+		at = max(at, p.arr+expressHeader)
+	}
 	if p.behind {
 		at = max(at, min(s.ex.popAt, s.ex.now))
 	}
@@ -420,7 +428,10 @@ func (r *Repeater) readyAt(s *slot, p *expressPkt) (time.Duration, bool) {
 func (r *Repeater) released(now time.Duration, s *slot, p *expressPkt) {
 	k := &s.ex.keys[p.key]
 	k.relAt = now
-	if d := k.delta(p.h.Seq); k.started && d > 0 && d < expressHistory {
+	if dt, ok := dataTypeOf(&p.h, p.rawOf()); ok && dt == enums.DataTypeDataHeader {
+		k.header = true
+	}
+	if d := k.delta(p.h.Seq); k.started && d > 0 && d < expressHistory && !p.block {
 		k.skips = true
 	}
 	k.mark(p.h.Seq)
@@ -478,4 +489,19 @@ func (r *Repeater) expressRelease(now time.Duration, dst []Output) ([]Output, bo
 	}
 	h := p.h
 	return r.take(now, raw, &h, Source{Peer: p.src}, dst, false), true
+}
+
+func (p *expressPkt) rawOf() *layer2.RawBurst {
+	if p.burst {
+		return &p.raw
+	}
+	return nil
+}
+
+func (s *slot) dataEnded(src uint32) {
+	for i := range len(s.ex.keys) {
+		if k := &s.ex.keys[i]; k.used && k.src == src {
+			k.header = false
+		}
+	}
 }
