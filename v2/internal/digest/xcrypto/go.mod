@@ -1,6 +1,6 @@
 module github.com/USA-RedDragon/dmrgo/v2/internal/digest/xcrypto
 
-go 1.27.3
+go 1.26.0
 
 require (
 	github.com/USA-RedDragon/dmrgo/v2 v2.0.0

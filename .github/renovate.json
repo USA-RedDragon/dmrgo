@@ -5,9 +5,15 @@
   ],
   "packageRules": [
     {
-      "description": "v2/go.mod declares the minimum Go version of the library, not the Go version of CI.",
-      "matchFileNames": ["v2/go.mod"],
-      "matchDepTypes": ["golang"],
+      "description": "The library modules declare their minimum Go version, not the Go version of CI.",
+      "matchFileNames": [
+        "v2/go.mod",
+        "v2/capi/go.mod",
+        "v2/internal/digest/xcrypto/go.mod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
       "enabled": false
     }
   ]
