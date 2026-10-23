@@ -11,6 +11,34 @@ const (
 	CSBKMotorolaRadioCheck   CSBKOpcode = 0b00100100 // radio check request and answer
 )
 
+func (opcode CSBKOpcode) motorolaString() string {
+	if opcode == CSBKMotorolaCallAlert {
+		return "Motorola Call Alert (FID 0x10)"
+	}
+	if opcode == CSBKMotorolaCallAlertAck {
+		return "Motorola Call Alert Ack (FID 0x10)"
+	}
+	if opcode == CSBKMotorolaRadioCheck {
+		return "Motorola Radio Check (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusSiteStatus {
+		return "Capacity Plus Site Status (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusNeighbors {
+		return "Capacity Plus Neighbors (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusDataRevertAnnouncement {
+		return "Capacity Plus Data Revert Announcement (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusDataRevertGrant {
+		return "Capacity Plus Data Revert Grant (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusPreamble {
+		return "Capacity Plus Preamble (FID 0x10)"
+	}
+	return opcode.unknownString()
+}
+
 // MotorolaRadioCheckPDU is the payload of a Motorola radio check CSBK
 // (FID 0x10, opcode 0x24). The request and the answer have the same
 // layout: octets 4 to 6 hold the radio that asked for the check, and
