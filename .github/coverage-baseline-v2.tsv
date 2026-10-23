@@ -222,7 +222,7 @@ v2/transport/dmrd/control.go	120	119
 v2/transport/dmrd/control_layout_decode_gen.go	290	264
 v2/transport/dmrd/data.go	44	44
 v2/transport/dmrd/data_decode_gen.go	86	86
-v2/transport/dmrd/dialect.go	105	104
+v2/transport/dmrd/dialect.go	109	107
 v2/transport/dmrd/dmrdauth/auth.go	69	69
 v2/transport/dmrd/dmrdauth/errors.go	2	1
 v2/transport/dmrd/dmrdsession/bridge.go	60	57
