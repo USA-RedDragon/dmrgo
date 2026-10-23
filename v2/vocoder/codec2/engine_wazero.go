@@ -21,17 +21,17 @@ func newRuntime(cfg wazero.RuntimeConfig) (wazero.Runtime, error) {
 	rt := wazero.NewRuntimeWithConfig(ctx, cfg)
 	if _, err := wasi_snapshot_preview1.Instantiate(ctx, rt); err != nil {
 		_ = rt.Close(ctx)
-		return nil, &causeError{"codec2: WASI", err}
+		return nil, newCauseError("codec2: WASI", err)
 	}
 	return rt, nil
 }
 
-type wazeroCompiled struct {
+type engineModule struct {
 	rt       wazero.Runtime
 	compiled wazero.CompiledModule
 }
 
-func compile(wasm []byte) (compiled, error) {
+func compile(wasm []byte) (*engineModule, error) {
 	rt, err := sharedRuntime()
 	if err != nil {
 		return nil, err
@@ -39,17 +39,17 @@ func compile(wasm []byte) (compiled, error) {
 	return compileIn(rt, wasm)
 }
 
-func compileIn(rt wazero.Runtime, wasm []byte) (compiled, error) {
+func compileIn(rt wazero.Runtime, wasm []byte) (*engineModule, error) {
 	ctx := context.Background()
 	c, err := rt.CompileModule(ctx, wasm)
 	if err != nil {
-		return nil, &causeError{"codec2: compile the WebAssembly module", err}
+		return nil, newCauseError("codec2: compile the WebAssembly module", err)
 	}
 	if !hasExports(c) {
 		_ = c.Close(ctx)
 		return nil, errExports
 	}
-	return &wazeroCompiled{rt: rt, compiled: c}, nil
+	return &engineModule{rt: rt, compiled: c}, nil
 }
 
 func hasExports(c wazero.CompiledModule) bool {
@@ -74,34 +74,34 @@ func hasExports(c wazero.CompiledModule) bool {
 	return true
 }
 
-func (w *wazeroCompiled) close() error {
+func (w *engineModule) close() error {
 	return w.compiled.Close(context.Background())
 }
 
-func (w *wazeroCompiled) instantiate() (instance, error) {
+func (w *engineModule) instantiate() (*engineInstance, error) {
 	mod, err := w.rt.InstantiateModule(context.Background(), w.compiled,
 		wazero.NewModuleConfig().WithName("").WithStartFunctions("_initialize"))
 	if err != nil {
-		return nil, &causeError{"codec2: instantiate the WebAssembly module", err}
+		return nil, newCauseError("codec2: instantiate the WebAssembly module", err)
 	}
-	inst := &wazeroInstance{mod: mod, mem: mod.Memory()}
+	inst := &engineInstance{mod: mod, mem: mod.Memory()}
 	for fn := range exportCount {
 		inst.fns[fn] = mod.ExportedFunction(fn.name())
 	}
 	return inst, nil
 }
 
-type wazeroInstance struct {
+type engineInstance struct {
 	mod   api.Module
 	mem   api.Memory
 	fns   [exportCount]api.Function
 	stack [3]uint64
 }
 
-func (w *wazeroInstance) call1(fn export, a uint32) (uint32, error) {
+func (w *engineInstance) call1(fn export, a uint32) (uint32, error) {
 	w.stack[0] = uint64(a)
 	if err := w.fns[fn].CallWithStack(context.Background(), w.stack[:]); err != nil {
-		return 0, &causeError{"codec2: " + fn.name(), err}
+		return 0, err
 	}
 	if _, _, results := fn.spec(); results == 0 {
 		return 0, nil
@@ -109,15 +109,12 @@ func (w *wazeroInstance) call1(fn export, a uint32) (uint32, error) {
 	return api.DecodeU32(w.stack[0]), nil
 }
 
-func (w *wazeroInstance) call3(fn export, a, b, c uint32) error {
+func (w *engineInstance) call3(fn export, a, b, c uint32) error {
 	w.stack = [3]uint64{uint64(a), uint64(b), uint64(c)}
-	if err := w.fns[fn].CallWithStack(context.Background(), w.stack[:]); err != nil {
-		return &causeError{"codec2: " + fn.name(), err}
-	}
-	return nil
+	return w.fns[fn].CallWithStack(context.Background(), w.stack[:])
 }
 
-func (w *wazeroInstance) read(off uint32, dst []byte) bool {
+func (w *engineInstance) read(off uint32, dst []byte) bool {
 	n := len(dst)
 	if n < 0 || n > math.MaxUint32 {
 		return false
@@ -130,10 +127,10 @@ func (w *wazeroInstance) read(off uint32, dst []byte) bool {
 	return true
 }
 
-func (w *wazeroInstance) write(off uint32, src []byte) bool {
+func (w *engineInstance) write(off uint32, src []byte) bool {
 	return w.mem.Write(off, src)
 }
 
-func (w *wazeroInstance) close() {
+func (w *engineInstance) close() {
 	_ = w.mod.Close(context.Background())
 }

@@ -41,16 +41,20 @@ func (e *wrapError) Unwrap() error {
 }
 
 type causeError struct {
-	msg   string
-	cause error
+	msg  string
+	errs []error
+}
+
+func newCauseError(msg string, cause error) *causeError {
+	return &causeError{msg: msg + ": " + cause.Error(), errs: []error{ErrUnavailable, cause}}
 }
 
 func (e *causeError) Error() string {
-	return e.msg + ": " + e.cause.Error()
+	return e.msg
 }
 
 func (e *causeError) Unwrap() []error {
-	return []error{ErrUnavailable, e.cause}
+	return e.errs
 }
 
 type export int
@@ -95,19 +99,6 @@ func (fn export) name() string {
 	return n
 }
 
-type compiled interface {
-	instantiate() (instance, error)
-	close() error
-}
-
-type instance interface {
-	call1(fn export, a uint32) (uint32, error)
-	call3(fn export, a, b, c uint32) error
-	read(off uint32, dst []byte) bool
-	write(off uint32, src []byte) bool
-	close()
-}
-
 var embedded = sync.OnceValues(func() (*Module, error) {
 	return NewModule(embeddedWASM)
 })
@@ -117,7 +108,7 @@ var embedded = sync.OnceValues(func() (*Module, error) {
 // Close.
 type Module struct {
 	mu       sync.Mutex
-	compiled compiled
+	compiled *engineModule
 }
 
 // NewModule compiles a WebAssembly build of libcodec2, such as one that
@@ -135,7 +126,9 @@ func NewModule(wasm []byte) (*Module, error) {
 }
 
 // Close frees the compiled code once no Codec uses it. Codecs made from m
-// keep working, and New with m returns ErrClosed. Close is idempotent.
+// keep working, and New with m returns ErrClosed. Close is idempotent. A
+// Close that waits for a New of another goroutine with m can allocate once,
+// for the runtime record of the waiting goroutine.
 func (m *Module) Close() error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
@@ -150,7 +143,7 @@ func (m *Module) Close() error {
 	return err
 }
 
-func (m *Module) instantiate() (instance, error) {
+func (m *Module) instantiate() (*engineInstance, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.compiled == nil {
@@ -168,7 +161,7 @@ func (m *Module) instantiate() (instance, error) {
 // libcodec2 belongs to the instance, so the decoded PCM depends only on the
 // frames that the Codec decoded before.
 type Codec struct {
-	inst    instance
+	inst    *engineInstance
 	enc     uint32
 	dec     [2]uint32
 	pcm     uint32
@@ -183,7 +176,7 @@ type Codec struct {
 	cleanup runtime.Cleanup
 }
 
-func closeInstance(inst instance) {
+func closeInstance(inst *engineInstance) {
 	inst.close()
 }
 
@@ -246,19 +239,27 @@ func New(p *Config) (*Codec, error) {
 	return c, nil
 }
 
+func (c *Codec) call1(fn export, a uint32) (uint32, error) {
+	r, err := c.inst.call1(fn, a)
+	if err != nil {
+		return 0, newCauseError("codec2: "+fn.name(), err)
+	}
+	return r, nil
+}
+
 func (c *Codec) create(m Mode) (uint32, error) {
-	st, err := c.inst.call1(fnCreate, m.wasmMode())
+	st, err := c.call1(fnCreate, m.wasmMode())
 	if err != nil {
 		return 0, err
 	}
 	if st == 0 {
 		return 0, errCreate
 	}
-	spf, err := c.inst.call1(fnSamplesPerFrame, st)
+	spf, err := c.call1(fnSamplesPerFrame, st)
 	if err != nil {
 		return 0, err
 	}
-	bpf, err := c.inst.call1(fnBitsPerFrame, st)
+	bpf, err := c.call1(fnBitsPerFrame, st)
 	if err != nil {
 		return 0, err
 	}
@@ -269,7 +270,7 @@ func (c *Codec) create(m Mode) (uint32, error) {
 }
 
 func (c *Codec) setup(mode, encMode Mode) error {
-	buf, err := c.inst.call1(fnMalloc, 2*FrameSamples+8)
+	buf, err := c.call1(fnMalloc, 2*FrameSamples+8)
 	if err != nil {
 		return err
 	}
@@ -297,12 +298,12 @@ func (c *Codec) setup(mode, encMode Mode) error {
 		return errMalloc
 	}
 	if err := c.inst.call3(fnEncode, tmp, c.bits, c.pcm); err != nil {
-		return err
+		return newCauseError("codec2: "+fnEncode.name(), err)
 	}
 	if !c.inst.read(c.bits, c.silence[:c.nbytes]) {
 		return errMalloc
 	}
-	_, err = c.inst.call1(fnDestroy, tmp)
+	_, err = c.call1(fnDestroy, tmp)
 	return err
 }
 
@@ -389,10 +390,11 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	if c.inst.call3(fnEncode, c.enc, c.bits, c.pcm) != nil {
 		return [9]byte{}, errTrap
 	}
-	var slot [9]byte
-	if !c.inst.read(c.bits, slot[:c.nbytes]) {
+	if !c.inst.read(c.bits, c.buf[:c.nbytes]) {
 		return [9]byte{}, errTrap
 	}
+	var slot [9]byte
+	copy(slot[:], c.buf[:c.nbytes])
 	return slot, nil
 }
 
