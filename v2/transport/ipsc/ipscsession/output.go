@@ -30,16 +30,20 @@ const (
 
 // RegisterVersionDefault returns the protocol version that a Peer or
 // Master sends in a register request or reply (0x90, 0x91, 0x94, 0x95)
-// when its config leaves RegisterVersion zero, as an XPR 8400 sends it.
+// when its config leaves RegisterVersion zero: 04 08 04 00, the version
+// that an XPR 8400 sends in its register request.
 func RegisterVersionDefault() [4]byte {
 	return [4]byte{0x04, 0x08, 0x04, 0x00}
 }
 
 // AliveVersionDefault returns the protocol version that a Peer or Master
 // sends in a keepalive request or reply (0x96, 0x97) when its config
-// leaves AliveVersion zero, as an XPR 8400 sends it.
+// leaves AliveVersion zero: 04 08 04 00, the version of an XPR 8400. In a
+// keepalive request an XPR 8400 does not send a version of its own: it
+// echoes the version of the last register or keepalive reply of the
+// master, and it takes any version from the master.
 func AliveVersionDefault() [4]byte {
-	return [4]byte{0x04, 0x02, 0x04, 0x01}
+	return [4]byte{0x04, 0x08, 0x04, 0x00}
 }
 
 // MaxPacket is the longest packet in octets that the machines take or

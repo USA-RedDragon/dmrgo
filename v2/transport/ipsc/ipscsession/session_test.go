@@ -55,7 +55,7 @@ func TestMasterReplaysXPR8400(t *testing.T) {
 	t.Parallel()
 
 	lines := readXPR(t)
-	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Flags: ipsc.Flags{0, 0, 0, 0x1d}, RegisterVersion: [4]byte{4, 2, 4, 1}})
+	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Flags: ipsc.Flags{0, 0, 0, 0x1d}, RegisterVersion: [4]byte{4, 2, 4, 1}, AliveVersion: [4]byte{4, 2, 4, 1}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,11 +106,60 @@ func TestMasterSendsXPR8400Versions(t *testing.T) {
 		in   []byte
 		at   int
 		want []byte
-	}{{reg, 12, reg[10:14]}, {alive, 10, alive[10:14]}, {peerReg, 5, reg[10:14]}} {
+	}{{reg, 12, reg[10:14]}, {alive, 10, reg[10:14]}, {peerReg, 5, reg[10:14]}} {
 		s := sends(m.Packet(time.Second, xprAddr, step.in, nil, nil))
 		if len(s) != 1 || len(s[0]) < step.at+4 || !bytes.Equal(s[0][step.at:step.at+4], step.want) {
 			t.Fatalf("%x: %x, want version %x", step.in, s, step.want)
 		}
+	}
+}
+
+// xprRig is the link setup between an XPR 8400 and a master that sent
+// 04 08 04 00, from runC.ipsc.log lines 1 to 4, 7 and 8 of the rig run
+// dmrgo-rfcap/runs/xpr-ipsc2hbrp-20261022, without the HMAC trailers.
+var xprRig = func() map[string][]byte {
+	m := map[string][]byte{}
+	for k, v := range map[string]string{
+		"reg":        "900004ce2e6a0002805c04080400",
+		"regReply":   "91003010af6a0000001d000104080400",
+		"list":       "920004ce2e",
+		"listReply":  "93003010af000b0004ce2ec0a800e7c3506a",
+		"alive":      "960004ce2e6a0002805c04080400",
+		"aliveReply": "97003010af6a0000001d04080400",
+	} {
+		m[k], _ = hex.DecodeString(v)
+	}
+	return m
+}()
+
+func TestMasterReplaysXPR8400Rig(t *testing.T) {
+	t.Parallel()
+
+	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 0x3010af, Flags: ipsc.Flags{0, 0, 0, 0x1d}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, step := range [][2]string{{"reg", "regReply"}, {"list", "listReply"}, {"alive", "aliveReply"}} {
+		s := sends(m.Packet(time.Second, xprAddr, xprRig[step[0]], nil, nil))
+		if len(s) != 1 || !bytes.Equal(s[0], xprRig[step[1]]) {
+			t.Fatalf("%s: %x, want %x", step[0], s, xprRig[step[1]])
+		}
+	}
+}
+
+func TestPeerReplaysXPR8400Rig(t *testing.T) {
+	t.Parallel()
+
+	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 0x0004ce2e, Flags: ipsc.Flags{0, 0x02, 0x80, 0x5c}, Master: masterAddr})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := sends(p.Tick(0, nil)); len(s) != 1 || !bytes.Equal(s[0], xprRig["reg"]) {
+		t.Fatalf("register %x, want %x", s, xprRig["reg"])
+	}
+	p.Packet(0, masterAddr, xprRig["regReply"], nil)
+	if s := sends(p.Tick(5*time.Second, nil)); len(s) != 2 || !bytes.Equal(s[0], xprRig["alive"]) || !bytes.Equal(s[1], xprRig["list"]) {
+		t.Fatalf("keepalive and list request %x, want %x %x", s, xprRig["alive"], xprRig["list"])
 	}
 }
 
@@ -119,7 +168,7 @@ func TestPeerReplaysXPR8400(t *testing.T) {
 
 	lines := readXPR(t)
 	const xpr = 0x0004ce2e
-	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: xpr, Flags: ipsc.Flags{0, 0, 0x80, 0xdc}, Master: masterAddr})
+	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: xpr, Flags: ipsc.Flags{0, 0, 0x80, 0xdc}, AliveVersion: [4]byte{4, 2, 4, 1}, Master: masterAddr})
 	if err != nil {
 		t.Fatal(err)
 	}
