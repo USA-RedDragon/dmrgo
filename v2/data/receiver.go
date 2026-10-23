@@ -730,7 +730,10 @@ func (r *Receiver) udtBlock(b *layer2.Burst, out []Event) []Event {
 	return out
 }
 
+// ETSI TS 102 361-3 clause 5.4.2.1: the source waits for the response
+// only after the last block of its try.
 func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err error, out []Event) []Event {
+	now += time.Duration(r.cur.pending) * slotPeriod
 	r.cur.pending = 0
 	if done && m.Header.Format() == pdu.FormatResponsePacket {
 		return r.response(m, err, out)

@@ -9,6 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -89,5 +90,74 @@ func TestReceiverSelectiveRetryOfResend(t *testing.T) {
 		if len(l.got) != 1 || !bytes.Equal(l.got[0], payload(200)) {
 			t.Errorf("%v: delivered %x", rate, l.got)
 		}
+	}
+}
+
+func TestReceiverAnswersAfterLastBlockOfResend(t *testing.T) {
+	t.Parallel()
+	tx := newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1})
+	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
+	m := message(t, 200)
+	m.Header = sapHeader(t, enums.SAPUDPIPHeaderCompression, 0, false)
+	if err := tx.Send(0, m); err != nil {
+		t.Fatal(err)
+	}
+	type pending struct {
+		at  time.Duration
+		raw layer2.RawBurst
+	}
+	var queue []pending
+	var lastBurst, ackDue time.Duration
+	responses := 0
+	handle := func(ev []data.Event) {
+		for _, e := range ev {
+			if e.Kind != data.EventRespond {
+				continue
+			}
+			responses++
+			if responses <= 2 {
+				continue
+			}
+			if e.Response == packet.ResponseACK && ackDue == 0 {
+				ackDue = e.Due
+			}
+			queue = append(queue, pending{e.Due, e.Burst})
+		}
+	}
+	tries := map[uint8]int{}
+	var done []data.Output
+	for now := time.Duration(0); tx.State() != data.SenderIdle && now < 20*time.Second; now += 10 * time.Millisecond {
+		for len(queue) > 0 && queue[0].at <= now {
+			done = append(done, tx.Burst(queue[0].at, &queue[0].raw, layer2.Hint{}, nil)...)
+			queue = queue[1:]
+		}
+		handle(rx.Tick(now, nil))
+		for _, o := range tx.Tick(now, nil) {
+			if o.Kind == data.OutputDone {
+				done = append(done, o)
+				continue
+			}
+			i := tries[o.Try]
+			tries[o.Try]++
+			if o.Try == 2 {
+				lastBurst = o.Due
+			}
+			if o.Try == 1 && i == 3 {
+				continue
+			}
+			handle(rx.Burst(o.Due, &o.Burst, layer2.Hint{}, nil))
+		}
+	}
+	var last data.Output
+	for _, o := range done {
+		if o.Kind == data.OutputDone {
+			last = o
+		}
+	}
+	if last.Result != data.ResultDelivered || last.Try != 2 {
+		t.Fatalf("done %+v, tries %v", last, tries)
+	}
+	if ackDue <= lastBurst {
+		t.Errorf("ACK due at %v, before or at the last burst of try 2 at %v", ackDue, lastBurst)
 	}
 }
