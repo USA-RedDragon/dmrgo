@@ -291,6 +291,9 @@ type Sender struct {
 	pre          int
 	heard        bool
 	heardAt      time.Duration
+	hasResp      bool
+	respFrom     uint32
+	respAt       time.Duration
 	idleSearch   time.Duration
 	holdoff      time.Duration
 	responseWait time.Duration
@@ -415,7 +418,7 @@ func (s *Sender) Reset() {
 		return
 	}
 
-	s.state, s.busy = SenderIdle, false
+	s.state, s.busy, s.hasResp = SenderIdle, false, false
 	s.n, s.win, s.cur, s.closed = 0, 0, 0, false
 	s.link = nil
 	s.peers.reset()
@@ -514,7 +517,7 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	switch {
 	case s.n == 1:
 		s.asm.Reset()
-		s.start(now, false)
+		s.start(now, s.hasResp && s.respFrom == s.call.Target && now-s.respAt <= DefaultHang)
 	case !s.closed && s.state != SenderWaitResponse:
 		s.join(s.n - 1)
 	}
@@ -733,6 +736,7 @@ func statusIsNS(code packet.Response) bool {
 }
 
 func (s *Sender) answered(now time.Duration, code packet.Response, j int, status uint8, rd *packet.ResponseData, dst []Output) []Output {
+	s.hasResp, s.respFrom, s.respAt = true, s.call.Target, now
 	w, k := s.win, 0
 	renumber := code == packet.ResponseNACKOutOfSequence && !s.resync && s.link != nil && status != s.slots[s.ord[0]].ns &&
 		(!s.link.hasAcked || status == s.link.acked)

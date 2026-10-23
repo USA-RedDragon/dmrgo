@@ -478,3 +478,67 @@ func TestSenderStrings(t *testing.T) {
 		}
 	}
 }
+
+func TestSenderOnePreambleAfterResponse(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		gap  time.Duration
+		want int
+	}{{0, 1}, {data.DefaultHang + 100*time.Millisecond, data.DefaultPreambles}} {
+		tx := newSender(t, &data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1, Access: enums.AccessImpolite})
+		rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
+		var queue []layer2.RawBurst
+		var dues []time.Duration
+		csbks := map[int]int{}
+		sent := 0
+		now := time.Duration(0)
+		send := func() {
+			if err := tx.Send(now, message(t, 20)); err != nil {
+				t.Fatal(err)
+			}
+			sent++
+		}
+		send()
+		var doneAt time.Duration
+		for ; now < 20*time.Second && sent <= 2; now += 10 * time.Millisecond {
+			for len(queue) > 0 && dues[0] <= now {
+				for _, o := range tx.Burst(dues[0], &queue[0], layer2.Hint{}, nil) {
+					if o.Kind == data.OutputDone {
+						doneAt = now
+					}
+				}
+				queue, dues = queue[1:], dues[1:]
+			}
+			for _, e := range rx.Tick(now, nil) {
+				if e.Kind == data.EventRespond {
+					queue, dues = append(queue, e.Burst), append(dues, e.Due)
+				}
+			}
+			for _, o := range tx.Tick(now, nil) {
+				if o.Kind == data.OutputDone {
+					doneAt = now
+					continue
+				}
+				if o.Hint.DataType == enums.DataTypeCSBK {
+					csbks[sent]++
+				}
+				for _, e := range rx.Burst(o.Due, &o.Burst, layer2.Hint{}, nil) {
+					if e.Kind == data.EventRespond {
+						queue, dues = append(queue, e.Burst), append(dues, e.Due)
+					}
+				}
+			}
+			if tx.State() == data.SenderIdle && doneAt > 0 {
+				if sent == 2 {
+					break
+				}
+				if now >= doneAt+c.gap {
+					send()
+				}
+			}
+		}
+		if csbks[1] != data.DefaultPreambles || csbks[2] != c.want {
+			t.Errorf("gap %v: %d and %d preambles, want %d and %d", c.gap, csbks[1], csbks[2], data.DefaultPreambles, c.want)
+		}
+	}
+}
