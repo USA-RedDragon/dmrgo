@@ -2,6 +2,7 @@ package pdu_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"unicode/utf8"
 
@@ -27,6 +28,7 @@ func talkerAliasSeeds(add func(alias string, format, order uint8, extra []byte))
 	add("Jacob McSwain KI5VMF", uint8(layer3.TalkerAliasISOEightBit), uint8(0x1B), []byte{})
 	add("Grüße aus Texas 73", uint8(layer3.TalkerAliasUTF8), uint8(0x27), []byte{})
 	add("日本語のエイリアス", uint8(layer3.TalkerAliasUTF16), uint8(0x93), []byte{})
+	add("73\x00\x00", uint8(layer3.TalkerAliasUTF16), uint8(0), []byte{})
 	add("", uint8(layer3.TalkerAliasUTF8), uint8(0), []byte{0x10, 0x00, 0xC0, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46})
 }
 
@@ -47,6 +49,7 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 	if !utf8.ValidString(alias) && tf != layer3.TalkerAliasUTF8 {
 		want = string([]rune(alias))
 	}
+	want = strings.TrimRight(want, "\x00")
 	decoded := make([]pdu.FullLinkControl, len(lcs))
 	for i := range lcs {
 		lcs[i].BurstDataType = enums.DataTypeVoiceLCHeader
@@ -65,9 +68,9 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 		t.Fatalf("EncodeTalkerAlias(%q, %s) header is %s", alias, tf, decoded[0].String())
 	}
 	got, err := pdu.TalkerAlias(&header, blocks...)
-	if tf == layer3.TalkerAliasUTF8 && !utf8.ValidString(alias) {
-		if k, ok := cutUTF8(alias); ok {
-			if err != nil || got != alias[:k] {
+	if tf == layer3.TalkerAliasUTF8 && !utf8.ValidString(want) {
+		if k, ok := cutUTF8(want); ok {
+			if err != nil || got != want[:k] {
 				t.Fatalf("TalkerAlias of cut UTF-8 %q: %q %v", alias, got, err)
 			}
 			return
