@@ -58,6 +58,21 @@ jobs:
       - name: Compare BLAKE2b with golang.org/x/crypto
         run: CGO_ENABLED=0 go test -C v2/internal/digest/xcrypto ./...
 
+  examples-udp-tests:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Test the UDP example
+        run: go test -C examples/udp -race ./...
+
   race-tests:
     runs-on: ubuntu-24.04
 
