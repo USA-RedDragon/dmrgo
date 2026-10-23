@@ -73,6 +73,8 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - [conformance](v2/examples/conformance/main.go): byte-for-byte re-encode of every capture.
 - [tinygo](v2/examples/tinygo/main.go): decode, follow and relay a call on a microcontroller (see [TinyGo](#tinygo)).
 
+The [udp](examples/udp) example is its own module (`go run -C examples/udp .`): filled forms as UDP datagrams over DMR confirmed data, between two simulated radios on a channel with bit errors, with the size of each form encoding and the time per form at each rate.
+
 ## Features
 
 - Bursts (`layer2`):
