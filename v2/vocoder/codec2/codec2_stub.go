@@ -1,10 +1,14 @@
-//go:build !cgo || nocodec2 || tinygo
+//go:build nocodec2 || tinygo
 
 package codec2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
+
+// Backend is the name of the backend of this build: "native", "wasm" or
+// "stub".
+const Backend = "stub"
 
 // Codec is a Codec2 vocoder.Codec. This build has no libcodec2, so New
 // always returns ErrUnavailable and every method reports ErrUnavailable.

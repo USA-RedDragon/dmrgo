@@ -5,14 +5,19 @@ import "errors"
 // Errors returned by the package. Match them with errors.Is.
 var (
 	// ErrUnavailable is returned when the package was built without
-	// libcodec2 (CGO_ENABLED=0, -tags nocodec2 or TinyGo), and wrapped by
-	// New when libcodec2 cannot make a state for a mode or has another
-	// frame size for it.
+	// libcodec2 (-tags nocodec2 or TinyGo), and wrapped by New when
+	// libcodec2 cannot make a state for a mode or has another frame size
+	// for it, and by the WebAssembly backend when its module cannot be
+	// compiled or run.
 	ErrUnavailable = errors.New("codec2: built without libcodec2")
 	// ErrUnsupportedMode is returned for a Mode other than Mode2400 or Mode3200.
 	ErrUnsupportedMode = errors.New("codec2: unsupported mode")
 	// ErrFrameLength is returned when Encode gets other than FrameSamples samples.
 	ErrFrameLength = errors.New("codec2: wrong number of samples")
-	// ErrClosed is returned when a closed Codec is used.
+	// ErrClosed is returned when a closed Codec is used, and by New for a
+	// closed Module.
 	ErrClosed = errors.New("codec2: codec is closed")
+	// ErrNotWASM is returned by NewModule in a build without the
+	// WebAssembly backend.
+	ErrNotWASM = errors.New("codec2: built without the WebAssembly backend")
 )
