@@ -1,5 +1,4 @@
 abi 1
-prerelease
 code DMRGO_ERR_CONFIG -100
 code DMRGO_ERR_FIELD_RANGE -101
 code DMRGO_ERR_NIL_ARGUMENT -102
