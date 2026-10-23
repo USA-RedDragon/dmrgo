@@ -471,7 +471,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.1.1.1 | Availability of calling MS | unimplemented | - | - |
 | 6.6.1.1.2 | Availability of Called Party as part of a Call | verified | 3/3 passed | `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.1.1.3 | General MS Radio Check | verified | 1/1 passed | `v2/trunk/ms_access.go` |
-| 6.6.1.2 | Call Cancellation | verified | 15/15 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/ms_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/tscc_services.go`, `v2/trunk/tscc_udt.go` |
+| 6.6.1.2 | Call Cancellation | verified | 16/16 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/ms_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/tscc_services.go`, `v2/trunk/tscc_udt.go` |
 | 6.6.1.3 | Acknowledgements Sent to Calling MS | verified | 3/3 passed | `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.1.4 | Called Party (MS) Answering Mechanism (OACSU) | verified | 2/2 passed | `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.1.4.1 | FOACSU - Called Party Accepts the Call | unimplemented | - | - |

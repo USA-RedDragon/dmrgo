@@ -704,7 +704,7 @@ func (t *TSCC) udtAck(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 		if o.kind == opNone || o.stage != stAck || o.called != from && (o.kind != opPoll || o.caller != from) {
 			continue
 		}
-		if o.kind == opDuplex && t.queued(o.ahoy) {
+		if o.called == from && a.TargetAddress != o.caller || o.kind == opDuplex && t.queued(o.ahoy) {
 			continue
 		}
 		op := *o
