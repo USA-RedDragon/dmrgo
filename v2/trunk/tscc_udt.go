@@ -380,10 +380,12 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 	if !t.addOp(op) {
 		return t.refuse(src, enums.AckReasonSysBusyRefused, out), true
 	}
+	to := uint32(0)
 	if op.kind != opShortData {
+		to = target
 		t.sendAck(src, enums.AckReasonWait)
 	}
-	t.sendAhoy(a, 0, true)
+	t.sendAhoy(a, to, true)
 	if o := t.duplexOp(src, target); op.kind == opDuplex && o != nil {
 		o.ahoy, _ = t.svc.cs.Encode()
 	}
