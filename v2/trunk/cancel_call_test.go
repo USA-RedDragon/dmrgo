@@ -358,6 +358,52 @@ func TestTSCC_CancelRepeatedDuplexCall(t *testing.T) {
 	}
 }
 
+func TestTSCC_CancelAckIsNotAnAnswerForAnotherCaller(t *testing.T) {
+	t.Parallel()
+	const other = 3120003
+	p := newCancelProbe(t)
+	p.random(enums.ServiceKindIndividualVoice)
+	p.inbound(func(c *pdu.CSBK) error {
+		return c.SetRandomAccess(pdu.RandomAccessPDU{ServiceKind: uint8(enums.ServiceKindDuplexVoice), TargetAddress: cancelCalled, SourceAddress: other})
+	})
+	p.run(30)
+	p.random(enums.ServiceKindCancelCall)
+	p.run(20)
+	p.answer()
+	p.run(20)
+	if p.calls() != 0 {
+		t.Errorf("B's C_ACKU to A started a call: %+v", p.events)
+	}
+	p.inbound(func(c *pdu.CSBK) error {
+		return c.SetAckInbound(pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: other, AdditionalInfo: cancelCalled})
+	})
+	p.run(20)
+	if p.calls() != 1 {
+		t.Errorf("B's C_ACKU to C started no call: %+v", p.events)
+	}
+}
+
+func TestTSCC_AnswerGoesToItsCaller(t *testing.T) {
+	t.Parallel()
+	const other = 3120003
+	p := newCancelProbe(t)
+	p.random(enums.ServiceKindIndividualVoice)
+	p.inbound(func(c *pdu.CSBK) error {
+		return c.SetRandomAccess(pdu.RandomAccessPDU{ServiceKind: uint8(enums.ServiceKindDuplexVoice), TargetAddress: cancelCalled, SourceAddress: other})
+	})
+	p.run(30)
+	p.answer()
+	p.run(20)
+	if p.calls() != 1 {
+		t.Fatalf("B's C_ACKU to A started %d calls: %+v", p.calls(), p.events)
+	}
+	for _, e := range p.events {
+		if e.Kind == trunk.TSCCCallStart && (e.Grant.Source != cancelCaller || e.Grant.Target != cancelCalled) {
+			t.Errorf("B's C_ACKU to A started %+v", e.Grant)
+		}
+	}
+}
+
 func TestTSCC_AnswerWaitsForItsAhoy(t *testing.T) {
 	t.Parallel()
 	p := newCancelProbe(t)
@@ -427,6 +473,30 @@ func TestTSCC_CancelAckIsNotAStatusAnswer(t *testing.T) {
 	for _, e := range p.events {
 		if e.Kind == trunk.TSCCStatus {
 			t.Errorf("B's C_ACKU to the C_AHOY Cancel Call delivered the status: %+v", e)
+		}
+	}
+}
+
+func TestTSCC_AnswerIsNotAGatewayAck(t *testing.T) {
+	t.Parallel()
+	p := newCancelProbe(t)
+	var a trunk.Appended
+	if err := a.SetText(enums.UDTISO8, []byte("gateway text")); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.ts.SendShortData(p.now, false, cancelCalled, &a); err != nil {
+		t.Fatal(err)
+	}
+	p.random(enums.ServiceKindIndividualVoice)
+	p.run(20)
+	p.answer()
+	p.run(20)
+	if p.calls() != 1 {
+		t.Errorf("B's C_ACKU to A started %d calls, want 1", p.calls())
+	}
+	for _, e := range p.events {
+		if e.Kind == trunk.TSCCDelivered {
+			t.Errorf("B's C_ACKU to A delivered the gateway data: %+v", e)
 		}
 	}
 }

@@ -2622,6 +2622,7 @@ documents:
               - TestTSCC_CancelDuplexCall
               - TestTSCC_CancelCallDuringSupplementaryData
               - TestTSCC_CancelRepeatedDuplexCall
+              - TestTSCC_CancelAckIsNotAnAnswerForAnotherCaller
               - TestTSCC_AnswerWaitsForItsAhoy
               - TestTSCC_CancelReplacedDuplexCall
               - TestTSCC_CancelAckIsNotAStatusAnswer
