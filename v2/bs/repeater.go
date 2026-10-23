@@ -71,7 +71,9 @@ type Config struct {
 	// call ends with a Terminator and the rest of it is dropped.
 	Timeout time.Duration
 	// Headers is the number of Voice LC Headers that start a repeated call.
-	// 0 means 1, at most voice.MaxHeaders.
+	// 0 means 1, at most voice.MaxHeaders. A call that the Repeater joins
+	// late, without its Voice LC Header, starts with one header, as
+	// voice.Transmitter.Relay does.
 	Headers int
 	// Terminators is the number of Terminators with LC that end a repeated
 	// call, before the call hang time. 0 means 1, at most

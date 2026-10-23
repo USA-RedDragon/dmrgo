@@ -63,7 +63,9 @@ type TransmitterConfig struct {
 	Silence [9]byte
 	// Headers is the number of Voice LC Headers before burst A. 0 means
 	// 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most MaxHeaders.
-	// MMDVMHost sends 3 as a duplex repeater.
+	// MMDVMHost sends 3 as a duplex repeater. Transmitter.Relay sends one
+	// header for a call that the Receiver joined late, one whose
+	// Call.Origin is not OriginHeader, so that its voice is not held back.
 	Headers int
 	// Terminators is the number of Terminators with LC at the end of a
 	// call. 0 means 1; at most MaxTerminators.
@@ -73,8 +75,7 @@ type TransmitterConfig struct {
 	Timeout time.Duration
 	// Queue is the number of vocoder slots buffered. 0 means Headers+2
 	// bursts, DefaultQueue for 0 or 1 Headers; at most MaxQueue. It must
-	// hold Headers+1 bursts, so that a relayed late entry can send its
-	// headers first.
+	// hold Headers+1 bursts.
 	Queue int
 	// Lead makes Tick emit a burst this long before its Due time, so that
 	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
@@ -781,11 +782,11 @@ func (t *Transmitter) dropOwn() {
 
 func (t *Transmitter) header(o *Output) {
 	switch {
-	case t.sent >= t.headers && t.piPending() && t.vopts.PIHeader != nil:
+	case t.sent >= t.wantHeaders() && t.piPending() && t.vopts.PIHeader != nil:
 		o.Burst, _ = t.vt.PIHeader()
 		o.Hint = t.dataHint(enums.DataTypePIHeader)
 		t.piSent = true
-	case t.sent >= t.headers && t.piPending():
+	case t.sent >= t.wantHeaders() && t.piPending():
 		o.Burst, o.Hint = t.relayPI, t.dataHint(enums.DataTypePIHeader)
 		t.piSent = true
 	default:
@@ -795,7 +796,7 @@ func (t *Transmitter) header(o *Output) {
 }
 
 func (t *Transmitter) headersDone() bool {
-	if t.sent < t.headers || t.piPending() {
+	if t.sent < t.wantHeaders() || t.piPending() {
 		return false
 	}
 	if t.relay && t.length == 0 && !t.stopping && t.sent < MaxHeaders {
@@ -803,6 +804,13 @@ func (t *Transmitter) headersDone() bool {
 	}
 	t.state, t.sent = TransmitterVoice, 0
 	return true
+}
+
+func (t *Transmitter) wantHeaders() int {
+	if t.relay && t.call.Origin != OriginHeader {
+		return 1
+	}
+	return t.headers
 }
 
 func (t *Transmitter) piPending() bool {
@@ -903,7 +911,12 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // EventCallStart starts it with its headers, the first due at now plus
 // TransmitterConfig.Lead, so that each burst goes out as it comes and is
 // due Lead later, voice is queued, a PI Header
-// is sent after the headers, and an EventCallEnd ends it. Voice that comes
+// is sent after the headers, and an EventCallEnd ends it. A call that
+// starts with a Voice LC Header, Call.Origin OriginHeader, gets
+// TransmitterConfig.Headers headers. A late entry, any other Origin, gets
+// one header, and its first voice burst is due one burst after it. When
+// no voice is queued after the headers, Relay sends more headers until
+// voice comes, up to MaxHeaders in all. Voice that comes
 // before its EventCallStart is dropped and counted, as is voice that does
 // not fit in the queue. A lost burst becomes a fill, whether a later
 // EventVoice reports it in Lost or the queue is empty when its Tick comes:
