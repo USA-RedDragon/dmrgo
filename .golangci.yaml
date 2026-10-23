@@ -149,7 +149,7 @@ linters:
         linters:
           - paralleltest
         text: ^Function Test(Allocs\w*|TinyGo(Allocs|CallerStorage)|FuzzSeeds) missing the call to method parallel
-      - path: (v2/(capi|internal/digest/xcrypto)|examples/udp)/go\.mod$
+      - path: (v2/(capi|internal/digest/xcrypto)|examples/(udp|tcp))/go\.mod$
         linters:
           - gomoddirectives
         text: local replacement

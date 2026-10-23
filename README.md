@@ -73,7 +73,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - [conformance](v2/examples/conformance/main.go): byte-for-byte re-encode of every capture.
 - [tinygo](v2/examples/tinygo/main.go): decode, follow and relay a call on a microcontroller (see [TinyGo](#tinygo)).
 
-The [udp](examples/udp) example is its own module (`go run -C examples/udp .`): filled forms as UDP datagrams over DMR confirmed data, between two simulated radios on a channel with bit errors, with the size of each form encoding and the time per form at each rate.
+The [udp](examples/udp) and [tcp](examples/tcp) examples are their own modules, run with `go run -C examples/<name> .`. udp sends filled forms as UDP datagrams over DMR confirmed data, between two simulated radios on a channel with bit errors, and measures the size of each form encoding and the time per form at each rate. tcp runs a TN3270 session over TCP/IPv4 over DMR, with the TCP of gVisor netstack, on a simplex and a duplex channel.
 
 ## Features
 
