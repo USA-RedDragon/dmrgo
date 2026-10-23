@@ -42,6 +42,7 @@ const (
 	typeInt     = "int"
 	typeFloat64 = "float64"
 	typeInt64   = "int64"
+	typeStr     = "string"
 )
 
 // CRCWidths maps each supported CRC algorithm to its width in bits.
@@ -78,6 +79,11 @@ type Field struct {
 
 	// Signed marks a two's complement integer field.
 	Signed bool
+
+	// StringMethod is the method of the struct that String calls for the
+	// text of the field (string:method), in place of the field's own
+	// String method.
+	StringMethod string
 
 	DelegateNoPtr bool // true if the delegate constructor returns a value
 	Stride        int  // for array delegates: each element spans Stride bits
@@ -722,8 +728,8 @@ func parseGetter(arg string, baseTypes map[string]string) (Field, error) {
 	case FieldInt, FieldRaw, FieldDelegate, FieldPacked, FieldLongitude, FieldLatitude:
 		return f, fmt.Errorf("getter %s must be a bool or an unsigned integer", f.Name)
 	}
-	if f.Signed || f.Encoding != EncodingBits || f.Bias != 0 {
-		return f, fmt.Errorf("getter %s takes no signed, encoding or bias modifier", f.Name)
+	if f.Signed || f.Encoding != EncodingBits || f.Bias != 0 || f.StringMethod != "" {
+		return f, fmt.Errorf("getter %s takes no signed, encoding, bias or string modifier", f.Name)
 	}
 	f.Doc = strings.Join(parts[3:], " ")
 	f.Getter = true
@@ -924,6 +930,14 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 		} else {
 			f.Max = v
 		}
+	case "string":
+		if !token.IsIdentifier(arg) {
+			return fmt.Errorf("string modifier must name a method: %q", mod)
+		}
+		if f.StringMethod != "" {
+			return fmt.Errorf("duplicate string modifier: %q", mod)
+		}
+		f.StringMethod = arg
 	case "bias":
 		bias, err := strconv.ParseUint(arg, 10, 32)
 		if err != nil || bias == 0 {
@@ -1083,6 +1097,8 @@ func validateModifiers(f *Field) error {
 		return errors.New("union requires raw")
 	case f.Union && f.NoEncode:
 		return errors.New("union and no_encode cannot be combined")
+	case f.StringMethod != "" && (f.Union || f.Stride > 0):
+		return errors.New("string: cannot be combined with union or stride")
 	case f.OnlyField != "" && f.Kind != FieldUint && f.Kind != FieldInt && f.Kind != FieldEnum:
 		return errors.New("only: requires an integer field")
 	case f.Signed && (f.Kind != FieldInt || !isSignedBase(f.BaseType)):
@@ -1163,7 +1179,7 @@ func checkIntWidth(f *Field) error {
 	switch f.BaseType {
 	case "", typeInt, "uint", typeInt64, "uint64", "uintptr":
 		return nil
-	case "float32", typeFloat64, typeBool, "string", "complex64", "complex128":
+	case "float32", typeFloat64, typeBool, typeStr, "complex64", "complex128":
 		return fmt.Errorf("type %s cannot hold an integer field", f.GoType)
 	}
 	if w := basicWidth(f.BaseType); w > 0 && f.BitWidth > w {
@@ -1523,7 +1539,7 @@ func resolveType(f *Field, goType string, baseTypes map[string]string) {
 
 func resolveBase(name string, baseTypes map[string]string) string {
 	for range 8 {
-		if basicWidth(name) > 0 || name == "float32" || name == typeFloat64 || name == "string" {
+		if basicWidth(name) > 0 || name == "float32" || name == typeFloat64 || name == typeStr {
 			return name
 		}
 		next, ok := baseTypes[name]

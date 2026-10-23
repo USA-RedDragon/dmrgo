@@ -68,6 +68,17 @@ type T struct {
 	)
 }
 
+func TestStringModifierCallsTheMethod(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `type Op uint8
+type T struct {
+	A Op    `+"`dmr:\"bits:0-3,enum,string:aName\"`"+`
+	B uint8 `+"`dmr:\"bits:4-7\"`"+`
+}`)
+	assertContains(t, out, `"T{ A: " + s.aName() + ", B: "`)
+}
+
 func TestUnknownCRCAlgorithmIsRejected(t *testing.T) {
 	t.Parallel()
 

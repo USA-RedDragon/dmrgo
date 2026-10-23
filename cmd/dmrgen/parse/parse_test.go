@@ -143,6 +143,28 @@ type T struct {
 			want: "unrecognized modifier",
 		},
 		{
+			name: "string modifier without a method name",
+			src: `type T struct {
+	A uint8 ` + "`dmr:\"bits:0-7,string:a.b\"`" + `
+}`,
+			want: "string modifier must name a method",
+		},
+		{
+			name: "repeated string modifier",
+			src: `type T struct {
+	A uint8 ` + "`dmr:\"bits:0-7,string:a,string:b\"`" + `
+}`,
+			want: "duplicate string modifier",
+		},
+		{
+			name: "string modifier on a union field",
+			src: `type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,union,string:r\"`" + `
+}`,
+			want: "string: cannot be combined with union or stride",
+		},
+		{
 			name: "removed fallback flag",
 			src: `type T struct {
 	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
@@ -889,7 +911,12 @@ type T struct {
 		{
 			name: "getter with bias",
 			src:  "// dmr:get K uint8 bits:8-15,bias:1 the kind\n// dmr:variant A Sub Op=1\n" + fields,
-			want: "getter K takes no signed, encoding or bias modifier",
+			want: "getter K takes no signed, encoding, bias or string modifier",
+		},
+		{
+			name: "getter with string",
+			src:  "// dmr:get K uint8 bits:8-15,string:kName the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K takes no signed, encoding, bias or string modifier",
 		},
 		{
 			name: "getter only: on unknown field",

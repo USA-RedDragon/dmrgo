@@ -703,6 +703,11 @@ func (t *stringText) field(field parse.Field, pdu parse.PDUStruct, sep string) b
 		return false
 	}
 	t.str(sep + field.Name + ": ")
+	if field.StringMethod != "" {
+		call := func() *Statement { return Id("s").Dot(field.StringMethod).Call() }
+		t.value("%s", call(), call())
+		return true
+	}
 	switch field.Kind {
 	case parse.FieldBool:
 		t.value("%t", src(), text("Bool", src()))
