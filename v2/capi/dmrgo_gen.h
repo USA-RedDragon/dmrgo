@@ -4120,7 +4120,7 @@ struct dmrgo_ipsc_control_t {
 	uint16_t peers;
 	/* ListLen is the length in octets of the peer list of a DMRGO_IPSC_OP_PEER_LIST_REPLY, 11 for each peer. */
 	uint16_t list_len;
-	/* Version is the protocol version (0x90, 0x91, 0x94 to 0x97). An XPR 8400 sends 04 08 04 00 in a register request and 04 02 04 01 in a keepalive request. */
+	/* Version is the protocol version (0x90, 0x91, 0x94 to 0x97). An XPR 8400 sends its own version, 04 08 04 00, in a register request. In a keepalive request it echoes the version of the last reply of the master. */
 	uint8_t version[4];
 };
 
@@ -7219,7 +7219,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSC_FLAG_XNL_MASTER ((dmrgo_ipsc_flag_t)54)
 /* Go: ipsc.FlagXNLSlave. octet 3 bit 5: XNL slave */
 #define DMRGO_IPSC_FLAG_XNL_SLAVE ((dmrgo_ipsc_flag_t)53)
-/* Go: ipsc.FlagXNLStatus. octet 3 bit 7: XNL connected */
+/* Go: ipsc.FlagXNLStatus. octet 3 bit 7: XNL connected; an XPR 8400 copies it from the last reply of the master */
 #define DMRGO_IPSC_FLAG_XNL_STATUS ((dmrgo_ipsc_flag_t)55)
 /* Go: ipsc.OpAliveReply. keepalive reply from the master */
 #define DMRGO_IPSC_OP_ALIVE_REPLY ((dmrgo_ipsc_opcode_t)151)
@@ -10384,7 +10384,7 @@ int dmrgo_ipscauth_new_key(const uint8_t k[20], dmrgo_ipscauth_key_t **out);
 int dmrgo_ipscauth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 /* Go: ipscsession.AddrOf. AddrOf returns the Addr of the IP address ip and the UDP port port, as a UDP socket address holds them: ip is 4 octets, or 16 octets of an IPv4-mapped IPv6 address. */
 int dmrgo_ipscsession_addr_of(const uint8_t *ip, size_t ip_len, int64_t port, dmrgo_ipscsession_addr_t *a, bool *ok);
-/* Go: ipscsession.AliveVersionDefault. AliveVersionDefault returns the protocol version that a Peer or Master sends in a keepalive request or reply (0x96, 0x97) when its config leaves AliveVersion zero, as an XPR 8400 sends it. */
+/* Go: ipscsession.AliveVersionDefault. AliveVersionDefault returns the protocol version that a Peer or Master sends in a keepalive request or reply (0x96, 0x97) when its config leaves AliveVersion zero: 04 08 04 00, the version of an XPR 8400. */
 int dmrgo_ipscsession_alive_version_default(uint8_t out[4]);
 /* dmrgo_ipscsession_master_free frees the handle. self may be NULL. */
 int dmrgo_ipscsession_master_free(dmrgo_ipscsession_master_t *self);
@@ -10472,7 +10472,7 @@ int dmrgo_ipscsession_peer_tick_need(dmrgo_ipscsession_peer_t *self, dmrgo_durat
 int dmrgo_ipscsession_peer_tick(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Reason.String. String returns the name of the Reason. */
 int dmrgo_ipscsession_reason_string(dmrgo_ipscsession_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ipscsession.RegisterVersionDefault. RegisterVersionDefault returns the protocol version that a Peer or Master sends in a register request or reply (0x90, 0x91, 0x94, 0x95) when its config leaves RegisterVersion zero, as an XPR 8400 sends it. */
+/* Go: ipscsession.RegisterVersionDefault. RegisterVersionDefault returns the protocol version that a Peer or Master sends in a register request or reply (0x90, 0x91, 0x94, 0x95) when its config leaves RegisterVersion zero: 04 08 04 00, the version that an XPR 8400 sends in its register request. */
 int dmrgo_ipscsession_register_version_default(uint8_t out[4]);
 /* Go: ipscsession.State.String. String returns the name of the State. */
 int dmrgo_ipscsession_state_string(dmrgo_ipscsession_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

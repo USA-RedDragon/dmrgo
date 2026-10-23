@@ -123,7 +123,7 @@ const (
 	FlagCSBK            Flag = 0x27 // octet 2 bit 7: CSBK calls
 	FlagRepeaterMonitor Flag = 0x26 // octet 2 bit 6: repeater call monitoring
 	FlagConsoleApp      Flag = 0x25 // octet 2 bit 5: console application
-	FlagXNLStatus       Flag = 0x37 // octet 3 bit 7: XNL connected
+	FlagXNLStatus       Flag = 0x37 // octet 3 bit 7: XNL connected; an XPR 8400 copies it from the last reply of the master
 	FlagXNLMaster       Flag = 0x36 // octet 3 bit 6: XNL master
 	FlagXNLSlave        Flag = 0x35 // octet 3 bit 5: XNL slave
 	FlagAuth            Flag = 0x34 // octet 3 bit 4: packets carry an HMAC-SHA1 trailer
