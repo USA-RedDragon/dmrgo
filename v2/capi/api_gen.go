@@ -4446,6 +4446,10 @@ func dmrgo_vocoder_codec_from_vtable(c_vt *C.dmrgo_vocoder_codec_vtable_t, c_out
 func in_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) (d g_vocoder_codec2.Config) {
 	d.Mode = g_vocoder_codec2.Mode(s.mode)
 	d.FID = g_enums.FID(s.fid)
+	d.WASM = nil
+	if s.wasm != nil {
+		d.WASM = get_vocoder_codec2_Module(s.wasm).v
+	}
 	return
 }
 
@@ -7455,6 +7459,10 @@ func out_vocoder_codec2_Config(d *C.dmrgo_codec2_config_t, s *g_vocoder_codec2.C
 	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.mode = C.dmrgo_codec2_mode_t(s.Mode)
 	d.fid = C.dmrgo_enums_fid_t(s.FID)
+	if s.WASM != nil {
+		panic(argPanic{})
+	}
+	d.wasm = nil
 }
 
 func fromC_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) g_vocoder_codec2.Config {
@@ -8158,6 +8166,18 @@ func get_vocoder_codec2_Codec(p *C.dmrgo_codec2_codec_t) *h_vocoder_codec2_Codec
 
 func new_vocoder_codec2_Codec(v *g_vocoder_codec2.Codec) *C.dmrgo_codec2_codec_t {
 	return (*C.dmrgo_codec2_codec_t)(newHandle(&h_vocoder_codec2_Codec{v: v}))
+}
+
+type h_vocoder_codec2_Module struct {
+	v *g_vocoder_codec2.Module
+}
+
+func get_vocoder_codec2_Module(p *C.dmrgo_codec2_module_t) *h_vocoder_codec2_Module {
+	return lookup[*h_vocoder_codec2_Module](unsafe.Pointer(p))
+}
+
+func new_vocoder_codec2_Module(v *g_vocoder_codec2.Module) *C.dmrgo_codec2_module_t {
+	return (*C.dmrgo_codec2_module_t)(newHandle(&h_vocoder_codec2_Module{v: v}))
 }
 
 type h_vocoder_dvsi_Codec struct {
@@ -46845,6 +46865,32 @@ func dmrgo_codec2_codec_silence(c_self *C.dmrgo_codec2_codec_t, c_out *C.uint8_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_codec2_module_free
+func dmrgo_codec2_module_free(c_self *C.dmrgo_codec2_module_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_vocoder_codec2_Module(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_codec2_module_close
+func dmrgo_codec2_module_close(c_self *C.dmrgo_codec2_module_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_codec2_Module(c_self)
+	r0 := h.v.Close()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_codec2_new
 func dmrgo_codec2_new(c_p *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -46867,6 +46913,36 @@ func dmrgo_codec2_new(c_p *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec
 	*c_out = nil
 	if r0 != nil {
 		*c_out = new_vocoder_codec2_Codec(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_codec2_new_module
+func dmrgo_codec2_new_module(c_data *C.uint8_t, c_data_len C.size_t, c_out **C.dmrgo_codec2_module_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_vocoder_codec2.NewModule(a_data)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_vocoder_codec2_Module(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -49646,6 +49722,8 @@ func errCode1(e error) C.int {
 		return -205
 	case g_vocoder_codec2.ErrFrameLength:
 		return -206
+	case g_vocoder_codec2.ErrNotWASM:
+		return -227
 	case g_vocoder_codec2.ErrUnavailable:
 		return -207
 	case g_vocoder_codec2.ErrUnsupportedMode:
@@ -49958,6 +50036,8 @@ func codeErr(code C.int) error {
 		return g_vocoder_codec2.ErrClosed
 	case -206:
 		return g_vocoder_codec2.ErrFrameLength
+	case -227:
+		return g_vocoder_codec2.ErrNotWASM
 	case -207:
 		return g_vocoder_codec2.ErrUnavailable
 	case -208:
@@ -50222,6 +50302,8 @@ func knownCode(code C.int) bool {
 	case -205:
 		return true
 	case -206:
+		return true
+	case -227:
 		return true
 	case -207:
 		return true

@@ -119,6 +119,17 @@ linters:
         linters:
           - gochecknoglobals
         text: ^libMu is a global variable
+      # The WebAssembly backend compiles the embedded module once, in one
+      # wazero runtime, for every Codec of the process.
+      - path: v2/vocoder/codec2/(wasmcodec|engine_wazero)\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(embedded|sharedRuntime) is a global variable
+      # PCM samples cross into the module memory as the bits of each int16.
+      - path: v2/vocoder/codec2/wasmcodec\.go$
+        linters:
+          - gosec
+        text: ^G115.*(int16 -> uint16|uint16 -> int16)
       # Read-only static values that a call returns or points to, so that it
       # does not allocate: the zero options and response data for a nil
       # argument.

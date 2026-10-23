@@ -71,6 +71,7 @@ type gate struct {
 	g         *callGraph
 	p         *program
 	isLib     func(string) bool
+	reached   map[string]bool
 	next      map[string]string
 	noGrow    map[string]string
 	declBy    map[string]*declFunc
@@ -94,6 +95,28 @@ type cut struct {
 	without    map[string]string
 }
 
+func reachedOutsideWazero(pkgs []listedPackage, lib map[string]bool) map[string]bool {
+	imports := map[string][]string{}
+	for _, p := range pkgs {
+		imports[p.ImportPath] = p.Imports
+	}
+	reached := map[string]bool{}
+	var walk func(string)
+	walk = func(path string) {
+		if reached[path] || inWazero(path+".x") {
+			return
+		}
+		reached[path] = true
+		for _, i := range imports[path] {
+			walk(i)
+		}
+	}
+	for path := range lib {
+		walk(path)
+	}
+	return reached
+}
+
 func newGate(t *testing.T, patterns []string, env ...string) *gate {
 	t.Helper()
 	pkgs := listPackages(t, patterns, env...)
@@ -109,7 +132,7 @@ func newGate(t *testing.T, patterns []string, env ...string) *gate {
 	isLib := func(path string) bool { return lib[path] }
 	bodies := disassemble(t, pkgs)
 	facts := readCompilerFacts(t)
-	gt := &gate{t: t, g: newCallGraph(bodies, facts.noReturn), p: loadProgram(t, pkgs, isLib), isLib: isLib, full: full, declBy: map[string]*declFunc{}, unknown: map[string]bool{}, callerFns: map[string]bool{}}
+	gt := &gate{t: t, g: newCallGraph(bodies, facts.noReturn), p: loadProgram(t, pkgs, isLib), isLib: isLib, reached: reachedOutsideWazero(pkgs, lib), full: full, declBy: map[string]*declFunc{}, unknown: map[string]bool{}, callerFns: map[string]bool{}}
 	gt.resolveInterfaceCalls()
 	gt.resolveFuncValueCalls()
 	gt.growth = facts.growth
@@ -172,7 +195,7 @@ func (gt *gate) paths() {
 func (gt *gate) resolveInterfaceCalls() {
 	byName := map[string][]string{}
 	for name, bs := range gt.g.bodies {
-		if pkg, m, ok := methodSym(name); ok && !gt.isLib(pkg) && !ifaceWrapper(name, bs) {
+		if pkg, m, ok := methodSym(name); ok && !gt.isLib(pkg) && gt.reached[pkg] && !ifaceWrapper(name, bs) {
 			byName[m] = append(byName[m], name)
 		}
 	}
@@ -180,9 +203,16 @@ func (gt *gate) resolveInterfaceCalls() {
 	callerNode := map[string]string{}
 	unresolved := map[string]bool{}
 	for name, bs := range gt.g.bodies {
+		if inWazero(name) {
+			continue
+		}
 		for _, b := range bs {
 			for arg := range b.ifaceMethods {
 				targets, ok := cache[arg]
+				if !ok && inWazero(strings.TrimPrefix(arg, "type:")) {
+					ok = true
+					cache[arg] = nil
+				}
 				if !ok {
 					m, err := gt.p.resolveIfaceMethod(arg)
 					switch {

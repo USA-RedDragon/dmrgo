@@ -312,6 +312,10 @@ func newCallGraph(bodies map[string][]*body, noReturn []string) *callGraph {
 	}
 	for name, bs := range bodies {
 		e := map[string]bool{}
+		if inWazero(name) {
+			g.edges[name] = e
+			continue
+		}
 		rt := inRuntime(name)
 		for _, b := range bs {
 			l := lives[b]
@@ -351,6 +355,10 @@ func newCallGraph(bodies map[string][]*body, noReturn []string) *callGraph {
 func inRuntime(sym string) bool {
 	pkg := symPackage(sym)
 	return pkg == "runtime" || strings.HasPrefix(pkg, "runtime/") || strings.HasPrefix(pkg, "internal/runtime/")
+}
+
+func inWazero(sym string) bool {
+	return strings.HasPrefix(symPackage(sym), "github.com/tetratelabs/wazero")
 }
 
 func (g *callGraph) addEdge(from, to string) {

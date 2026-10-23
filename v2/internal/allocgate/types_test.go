@@ -31,6 +31,7 @@ type program struct {
 	lib   map[string]*libPackage
 	order []*libPackage
 	gc    types.Importer
+	src   types.Importer
 }
 
 type gateImporter struct{ p *program }
@@ -111,6 +112,19 @@ func (p *program) lookupType(path, name string) types.Type {
 		if pkg, err = p.gc.Import(path); err != nil {
 			return nil
 		}
+	}
+	if obj, ok := pkg.Scope().Lookup(name).(*types.TypeName); ok {
+		return obj.Type()
+	}
+	if p.lib[path] != nil || token.IsExported(name) {
+		return nil
+	}
+	if p.src == nil {
+		p.src = importer.ForCompiler(p.fset, "source", nil)
+	}
+	pkg, err := p.src.Import(path)
+	if err != nil {
+		return nil
 	}
 	if obj, ok := pkg.Scope().Lookup(name).(*types.TypeName); ok {
 		return obj.Type()
