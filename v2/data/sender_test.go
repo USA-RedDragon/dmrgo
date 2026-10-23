@@ -122,27 +122,29 @@ func (l *link) run(m *data.Message, end time.Duration) {
 			}
 		}
 	}
+	send := func(outs []data.Output) {
+		for _, o := range outs {
+			if o.Kind == data.OutputDone {
+				l.done = append(l.done, o)
+				continue
+			}
+			i := idx[o.Try]
+			idx[o.Try]++
+			if l.drop == nil || !l.drop(o.Try, i) {
+				handle(l.rx.Burst(o.Due, &o.Burst, layer2.Hint{}, ev[:0]))
+			}
+		}
+	}
 	for now := time.Duration(0); now <= end; now += 10 * time.Millisecond {
 		for len(queue) > 0 && queue[0].at <= now {
-			out = l.tx.Burst(queue[0].at, &queue[0].raw, layer2.Hint{}, out[:0])
-			l.done = append(l.done, out...)
+			send(l.tx.Burst(queue[0].at, &queue[0].raw, layer2.Hint{}, out[:0]))
 			queue = queue[1:]
 		}
 		if at, ok := l.rx.Deadline(); ok && at <= now {
 			handle(l.rx.Tick(now, ev[:0]))
 		}
 		if at, ok := l.tx.Deadline(); ok && at <= now {
-			for _, o := range l.tx.Tick(now, out[:0]) {
-				if o.Kind == data.OutputDone {
-					l.done = append(l.done, o)
-					continue
-				}
-				i := idx[o.Try]
-				idx[o.Try]++
-				if l.drop == nil || !l.drop(o.Try, i) {
-					handle(l.rx.Burst(o.Due, &o.Burst, layer2.Hint{}, ev[:0]))
-				}
-			}
+			send(l.tx.Tick(now, out[:0]))
 		}
 		if len(l.done) > 0 && l.tx.State() == data.SenderIdle {
 			return
