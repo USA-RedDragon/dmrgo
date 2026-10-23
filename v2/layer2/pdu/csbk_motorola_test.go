@@ -2,6 +2,7 @@ package pdu_test
 
 import (
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -130,5 +131,57 @@ func TestMotorolaCSBKOtherFID(t *testing.T) {
 	}
 	if s.Opcode != 0 || s.FID != 0 {
 		t.Errorf("failed Set changed the CSBK: %+v", s)
+	}
+}
+
+func TestMotorolaCSBKString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		vector, name, view string
+	}{
+		{motoRadioCheckRequest, "Opcode: Motorola Radio Check (FID 0x10),", "MotorolaRadioCheckPDU{"},
+		{motoRadioCheckAnswer, "Opcode: Motorola Radio Check (FID 0x10),", "MotorolaRadioCheckPDU{"},
+		{motoCallAlert, "Opcode: Motorola Call Alert (FID 0x10),", "MotorolaCallAlertPDU{"},
+		{motoCallAlertAck, "Opcode: Motorola Call Alert Ack (FID 0x10),", "MotorolaCallAlertAckPDU{"},
+	}
+	for _, tt := range tests {
+		c := pdu.DecodeCSBK(motoBytes(t, tt.vector))
+		if s := c.String(); !strings.Contains(s, tt.name) || !strings.Contains(s, tt.view) {
+			t.Errorf("%s: %s", tt.vector, s)
+		}
+	}
+}
+
+func TestCSBKStringOpcodeNameFollowsFID(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		op   pdu.CSBKOpcode
+		fid  enums.FID
+		name string
+	}{
+		{pdu.CSBKRandomAccess, 0, "Opcode: C_RAND PDU,"},
+		{pdu.CSBKAckOutbound, 0, "Opcode: C_ACKD PDU,"},
+		{pdu.CSBKMaintenance, 0, "Opcode: P_MAINT PDU,"},
+		{pdu.CSBKPreamble, 0, "Opcode: Preamble PDU,"},
+		{pdu.CSBKCapacityPlusSiteStatus, 0, "Opcode: Unknown CSBKOpcode: 00111110,"},
+		{pdu.CSBKCapacityPlusNeighbors, 0, "Opcode: Unknown CSBKOpcode: 00111011,"},
+		{pdu.CSBKCapacityPlusDataRevertAnnouncement, 0, "Opcode: Unknown CSBKOpcode: 00101001,"},
+		{pdu.CSBKMaintenance, enums.FIDMotorola, "Opcode: Capacity Plus Data Revert Grant (FID 0x10),"},
+		{pdu.CSBKPreamble, enums.FIDMotorola, "Opcode: Capacity Plus Preamble (FID 0x10),"},
+		{pdu.CSBKCapacityPlusSiteStatus, enums.FIDMotorola, "Opcode: Capacity Plus Site Status (FID 0x10),"},
+		{pdu.CSBKAloha, enums.FIDMotorola, "Opcode: Unknown CSBKOpcode: 00011001,"},
+		{pdu.CSBKRandomAccess, enums.FIDHYTScienceTech2, "Opcode: Unknown CSBKOpcode: 00011111,"},
+	}
+	for _, tt := range tests {
+		c := pdu.CSBK{Opcode: tt.op, FID: tt.fid}
+		if s := c.String(); !strings.Contains(s, tt.name) {
+			t.Errorf("opcode %#x FID %#x: %s", byte(tt.op), byte(tt.fid), s)
+		}
+		m := pdu.MBCHeader{Opcode: tt.op, FID: tt.fid}
+		if s := m.String(); !strings.Contains(s, tt.name) {
+			t.Errorf("MBC opcode %#x FID %#x: %s", byte(tt.op), byte(tt.fid), s)
+		}
 	}
 }

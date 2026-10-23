@@ -50,6 +50,13 @@ const (
 // (FID 0x10) for a value that has no standard opcode. It allocates only for
 // a value without a name.
 func (opcode CSBKOpcode) String() string {
+	if name := opcode.standardString(); name != "" {
+		return name
+	}
+	return opcode.vendorString()
+}
+
+func (opcode CSBKOpcode) standardString() string {
 	switch opcode {
 	case CSBKBSOutboundActivation:
 		return "BS Outbound Activation PDU or TD_GRANT_MI PDU"
@@ -106,21 +113,33 @@ func (opcode CSBKOpcode) String() string {
 	case CSBKMove:
 		return "C_MOVE PDU"
 	default:
-		return opcode.vendorString()
+		return ""
 	}
 }
 
 func (opcode CSBKOpcode) vendorString() string {
-	if opcode == CSBKCapacityPlusSiteStatus {
-		return "Capacity Plus Site Status (FID 0x10)"
+	if opcode == CSBKCapacityPlusSiteStatus || opcode == CSBKCapacityPlusNeighbors || opcode == CSBKCapacityPlusDataRevertAnnouncement {
+		return opcode.motorolaString()
 	}
-	if opcode == CSBKCapacityPlusNeighbors {
-		return "Capacity Plus Neighbors (FID 0x10)"
-	}
-	if opcode == CSBKCapacityPlusDataRevertAnnouncement {
-		return "Capacity Plus Data Revert Announcement (FID 0x10)"
-	}
+	return opcode.unknownString()
+}
+
+func (opcode CSBKOpcode) unknownString() string {
 	return "Unknown CSBKOpcode: " + text.Digits(uint64(opcode), 8, 1)
+}
+
+func csbkOpcodeName(opcode CSBKOpcode, fid enums.FID) string {
+	if name := opcode.standardString(); fid == enums.FIDStandardized && name != "" {
+		return name
+	}
+	if fid == enums.FIDMotorola {
+		return opcode.motorolaString()
+	}
+	return opcode.unknownString()
+}
+
+func (s *CSBK) opcodeName() string {
+	return csbkOpcodeName(s.Opcode, s.FID)
 }
 
 // BSOutboundActivationPDU is the BS outbound activation (BS_Dwn_Act) CSBK
@@ -511,11 +530,11 @@ const (
 //dmr:variant MotorolaCallAlert MotorolaCallAlertPDU Opcode=CSBKMotorolaCallAlert FID=enums.FIDMotorola
 //dmr:variant MotorolaCallAlertAck MotorolaCallAlertAckPDU Opcode=CSBKMotorolaCallAlertAck FID=enums.FIDMotorola
 type CSBK struct {
-	LastBlock   bool       `dmr:"bit:0"`          // LB bit, true for the last block
-	ProtectFlag bool       `dmr:"bit:1"`          // PF bit
-	Opcode      CSBKOpcode `dmr:"bits:2-7,enum"`  // CSBKO, selects the payload
-	FID         enums.FID  `dmr:"bits:8-15,enum"` // feature set ID, selects the payload with Opcode
-	FEC         fec.Result `dmr:"-"`              // result of the CRC check
+	LastBlock   bool       `dmr:"bit:0"`                           // LB bit, true for the last block
+	ProtectFlag bool       `dmr:"bit:1"`                           // PF bit
+	Opcode      CSBKOpcode `dmr:"bits:2-7,enum,string:opcodeName"` // CSBKO, selects the payload
+	FID         enums.FID  `dmr:"bits:8-15,enum"`                  // feature set ID, selects the payload with Opcode
+	FEC         fec.Result `dmr:"-"`                               // result of the CRC check
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
 	// Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst,
 	// which a network relay can rewrite. Each SetX resets it, except the two
