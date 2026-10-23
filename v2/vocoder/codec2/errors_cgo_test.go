@@ -1,4 +1,4 @@
-//go:build cgo && !nocodec2 && !tinygo
+//go:build cgo && !nocodec2 && !tinygo && (codec2native || !codec2wasm)
 
 package codec2
 

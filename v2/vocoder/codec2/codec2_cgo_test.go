@@ -1,4 +1,4 @@
-//go:build cgo && !nocodec2 && !tinygo
+//go:build !nocodec2 && !tinygo
 
 package codec2
 
@@ -327,6 +327,8 @@ func encodeBytes(t *testing.T, mode Mode, pcm []int16) []byte {
 	return out
 }
 
+var decodeTolerance = map[string]int{"native": 0, "wasm": 1}[Backend]
+
 func lookTools(t *testing.T) {
 	t.Helper()
 	for _, tool := range []string{"c2enc", "c2dec"} {
@@ -398,7 +400,7 @@ func TestMatchesC2Dec(t *testing.T) {
 				t.Fatalf("mode %d, decoder %d: %d samples, c2dec %d", mode, decMode, len(got), len(want))
 			}
 			for i := range got {
-				if got[i] != want[i] {
+				if d := int(got[i]) - int(want[i]); d > decodeTolerance || d < -decodeTolerance {
 					t.Fatalf("mode %d, decoder %d: sample %d is %d, c2dec %d", mode, decMode, i, got[i], want[i])
 				}
 			}

@@ -301,7 +301,8 @@
 //     transport/mmdvm decoders.
 //   - codec2.ErrUnavailable, codec2.ErrUnsupportedMode,
 //     codec2.ErrFrameLength, codec2.ErrClosed: returned by the Codec2
-//     Codec.
+//     Codec; codec2.ErrNotWASM: returned by codec2.NewModule in a build
+//     without the WebAssembly backend.
 //   - dvsi.ErrIncomplete, dvsi.ErrStart, dvsi.ErrType, dvsi.ErrLength,
 //     dvsi.ErrParity, dvsi.ErrField, dvsi.ErrChannel, dvsi.ErrSamples,
 //     dvsi.ErrBits, dvsi.ErrStatus, dvsi.ErrTimeout, dvsi.ErrPort,

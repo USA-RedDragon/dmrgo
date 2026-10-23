@@ -3,7 +3,6 @@
 package codec2
 
 import (
-	"context"
 	_ "embed"
 	"encoding/binary"
 	"runtime"
@@ -11,9 +10,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 )
 
 // Backend is the name of the backend of this build: "native", "wasm" or
@@ -57,104 +53,85 @@ func (e *causeError) Unwrap() []error {
 	return []error{ErrUnavailable, e.cause}
 }
 
-type wasmRuntime struct {
-	rt  wazero.Runtime
-	err error
-}
+type export int
 
-var (
-	rtOnce   sync.Once
-	rtShared wasmRuntime
-	embOnce  sync.Once
-	embMod   *Module
-	embErr   error
+const (
+	fnMalloc export = iota
+	fnFree
+	fnCreate
+	fnDestroy
+	fnEncode
+	fnDecode
+	fnSamplesPerFrame
+	fnBitsPerFrame
+	exportCount
 )
 
-func sharedRuntime() (wazero.Runtime, error) {
-	rtOnce.Do(func() {
-		ctx := context.Background()
-		rt := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-		if _, err := wasi_snapshot_preview1.Instantiate(ctx, rt); err != nil {
-			_ = rt.Close(ctx)
-			rtShared.err = &causeError{"codec2: WASI", err}
-			return
-		}
-		rtShared.rt = rt
-	})
-	return rtShared.rt, rtShared.err
+func (fn export) spec() (name string, params, results int) {
+	switch fn {
+	case fnMalloc:
+		return "malloc", 1, 1
+	case fnFree:
+		return "free", 1, 0
+	case fnCreate:
+		return "codec2_create", 1, 1
+	case fnDestroy:
+		return "codec2_destroy", 1, 0
+	case fnEncode:
+		return "codec2_encode", 3, 0
+	case fnDecode:
+		return "codec2_decode", 3, 0
+	case fnSamplesPerFrame:
+		return "codec2_samples_per_frame", 1, 1
+	case fnBitsPerFrame:
+		return "codec2_bits_per_frame", 1, 1
+	case exportCount:
+	}
+	return "", 0, 0
 }
 
-func embeddedModule() (*Module, error) {
-	embOnce.Do(func() {
-		embMod, embErr = NewModule(embeddedWASM)
-	})
-	return embMod, embErr
+func (fn export) name() string {
+	n, _, _ := fn.spec()
+	return n
 }
+
+type compiled interface {
+	instantiate() (instance, error)
+	close() error
+}
+
+type instance interface {
+	call1(fn export, a uint32) (uint32, error)
+	call3(fn export, a, b, c uint32) error
+	read(off uint32, dst []byte) bool
+	write(off uint32, src []byte) bool
+	close()
+}
+
+var embedded = sync.OnceValues(func() (*Module, error) {
+	return NewModule(embeddedWASM)
+})
 
 // Module is a compiled WebAssembly build of libcodec2 for Config.WASM. A
 // Module is safe for concurrent use, and its Codecs keep working after
 // Close.
 type Module struct {
 	mu       sync.Mutex
-	compiled wazero.CompiledModule
-}
-
-var wantExports = [...]struct {
-	name    string
-	params  int
-	results int
-}{
-	{"malloc", 1, 1},
-	{"free", 1, 0},
-	{"codec2_create", 1, 1},
-	{"codec2_destroy", 1, 0},
-	{"codec2_encode", 3, 0},
-	{"codec2_decode", 3, 0},
-	{"codec2_samples_per_frame", 1, 1},
-	{"codec2_bits_per_frame", 1, 1},
+	compiled compiled
 }
 
 // NewModule compiles a WebAssembly build of libcodec2, such as one that
-// wasm/build.sh makes from a changed libcodec2, for Config.WASM. It returns
-// an error that wraps ErrUnavailable when wasm is not a valid module or
-// lacks a function of the libcodec2 API, and ErrNotWASM in a build without
-// the WebAssembly backend. It allocates the Module and the compiled code.
+// wasm/build.sh makes from a changed libcodec2, for Config.WASM. The module
+// must follow the interface in the package documentation. It returns an
+// error that wraps ErrUnavailable when wasm is not a valid module or lacks a
+// function of that interface, and ErrNotWASM in a build without the
+// WebAssembly backend. It allocates the Module and the compiled code.
 func NewModule(wasm []byte) (*Module, error) {
-	rt, err := sharedRuntime()
+	c, err := compile(wasm)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
-	compiled, err := rt.CompileModule(ctx, wasm)
-	if err != nil {
-		return nil, &causeError{"codec2: compile the WebAssembly module", err}
-	}
-	if !hasExports(compiled) {
-		_ = compiled.Close(ctx)
-		return nil, errExports
-	}
-	return &Module{compiled: compiled}, nil
-}
-
-func hasExports(compiled wazero.CompiledModule) bool {
-	if _, ok := compiled.ExportedMemories()["memory"]; !ok {
-		return false
-	}
-	fns := compiled.ExportedFunctions()
-	for _, want := range wantExports {
-		def, ok := fns[want.name]
-		if !ok || len(def.ParamTypes()) != want.params || len(def.ResultTypes()) != want.results {
-			return false
-		}
-		for _, types := range [][]api.ValueType{def.ParamTypes(), def.ResultTypes()} {
-			for _, t := range types {
-				if t != api.ValueTypeI32 {
-					return false
-				}
-			}
-		}
-	}
-	return true
+	return &Module{compiled: c}, nil
 }
 
 // Close frees the compiled code once no Codec uses it. Codecs made from m
@@ -168,27 +145,18 @@ func (m *Module) Close() error {
 	if m.compiled == nil {
 		return nil
 	}
-	err := m.compiled.Close(context.Background())
+	err := m.compiled.close()
 	m.compiled = nil
 	return err
 }
 
-func (m *Module) instantiate() (api.Module, error) {
+func (m *Module) instantiate() (instance, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.compiled == nil {
 		return nil, ErrClosed
 	}
-	rt, err := sharedRuntime()
-	if err != nil {
-		return nil, err
-	}
-	mod, err := rt.InstantiateModule(context.Background(), m.compiled,
-		wazero.NewModuleConfig().WithName("").WithStartFunctions("_initialize"))
-	if err != nil {
-		return nil, &causeError{"codec2: instantiate the WebAssembly module", err}
-	}
-	return mod, nil
+	return m.compiled.instantiate()
 }
 
 // Codec is a Codec2 vocoder.Codec that runs libcodec2 compiled to
@@ -200,26 +168,23 @@ func (m *Module) instantiate() (api.Module, error) {
 // libcodec2 belongs to the instance, so the decoded PCM depends only on the
 // frames that the Codec decoded before.
 type Codec struct {
-	mod     api.Module
-	mem     api.Memory
-	encode  api.Function
-	decode  api.Function
-	enc     uint64
-	dec     [2]uint64
+	inst    instance
+	enc     uint32
+	dec     [2]uint32
 	pcm     uint32
 	bits    uint32
-	stack   [3]uint64
 	mode    Mode
 	fid     enums.FID
 	nbytes  int
 	silence [9]byte
 	frame   [72 / 8]byte
+	buf     [2 * FrameSamples]byte
 	det     detector
 	cleanup runtime.Cleanup
 }
 
-func closeInstance(mod api.Module) {
-	_ = mod.Close(context.Background())
+func closeInstance(inst instance) {
+	inst.close()
 }
 
 func (m Mode) index() int {
@@ -229,7 +194,7 @@ func (m Mode) index() int {
 	return 0
 }
 
-func (m Mode) wasmMode() uint64 {
+func (m Mode) wasmMode() uint32 {
 	if m == Mode3200 {
 		return 0
 	}
@@ -255,11 +220,11 @@ func New(p *Config) (*Codec, error) {
 	}
 	m := cfg.WASM
 	if m == nil {
-		if m, err = embeddedModule(); err != nil {
+		if m, err = embedded(); err != nil {
 			return nil, err
 		}
 	}
-	mod, err := m.instantiate()
+	inst, err := m.instantiate()
 	if err != nil {
 		return nil, err
 	}
@@ -268,64 +233,50 @@ func New(p *Config) (*Codec, error) {
 		encMode = Mode2400
 	}
 	c := &Codec{
-		mod:    mod,
-		mem:    mod.Memory(),
-		encode: mod.ExportedFunction("codec2_encode"),
-		decode: mod.ExportedFunction("codec2_decode"),
+		inst:   inst,
 		mode:   cfg.Mode,
 		fid:    cfg.FID,
 		nbytes: encMode.frameBytes(),
 	}
 	if err := c.setup(cfg.Mode, encMode); err != nil {
-		closeInstance(mod)
+		closeInstance(inst)
 		return nil, err
 	}
-	c.cleanup = runtime.AddCleanup(c, closeInstance, mod)
+	c.cleanup = runtime.AddCleanup(c, closeInstance, inst)
 	return c, nil
 }
 
-func (c *Codec) call(name string, params ...uint64) (uint64, error) {
-	res, err := c.mod.ExportedFunction(name).Call(context.Background(), params...)
-	if err != nil {
-		return 0, &causeError{"codec2: " + name, err}
-	}
-	if len(res) == 0 {
-		return 0, nil
-	}
-	return res[0], nil
-}
-
-func (c *Codec) create(m Mode) (uint64, error) {
-	st, err := c.call("codec2_create", m.wasmMode())
+func (c *Codec) create(m Mode) (uint32, error) {
+	st, err := c.inst.call1(fnCreate, m.wasmMode())
 	if err != nil {
 		return 0, err
 	}
-	if uint32(st) == 0 {
+	if st == 0 {
 		return 0, errCreate
 	}
-	spf, err := c.call("codec2_samples_per_frame", st)
+	spf, err := c.inst.call1(fnSamplesPerFrame, st)
 	if err != nil {
 		return 0, err
 	}
-	bpf, err := c.call("codec2_bits_per_frame", st)
+	bpf, err := c.inst.call1(fnBitsPerFrame, st)
 	if err != nil {
 		return 0, err
 	}
-	if int32(spf) != FrameSamples || int32(bpf) != int32(m.frameBytes()*8) {
+	if spf != FrameSamples || int(bpf) != m.frameBytes()*8 {
 		return 0, errFrameSize
 	}
 	return st, nil
 }
 
 func (c *Codec) setup(mode, encMode Mode) error {
-	buf, err := c.call("malloc", 2*FrameSamples+8)
+	buf, err := c.inst.call1(fnMalloc, 2*FrameSamples+8)
 	if err != nil {
 		return err
 	}
-	if uint32(buf) == 0 {
+	if buf == 0 {
 		return errMalloc
 	}
-	c.pcm, c.bits = uint32(buf), uint32(buf)+2*FrameSamples
+	c.pcm, c.bits = buf, buf+2*FrameSamples
 
 	tmp, err := c.create(encMode)
 	if err != nil {
@@ -342,18 +293,16 @@ func (c *Codec) setup(mode, encMode Mode) error {
 		}
 	}
 
-	if !c.mem.Write(c.pcm, make([]byte, 2*FrameSamples)) {
+	if !c.inst.write(c.pcm, c.buf[:]) {
 		return errMalloc
 	}
-	if _, err := c.call("codec2_encode", tmp, uint64(c.bits), uint64(c.pcm)); err != nil {
+	if err := c.inst.call3(fnEncode, tmp, c.bits, c.pcm); err != nil {
 		return err
 	}
-	frame, ok := c.mem.Read(c.bits, uint32(c.nbytes))
-	if !ok {
+	if !c.inst.read(c.bits, c.silence[:c.nbytes]) {
 		return errMalloc
 	}
-	copy(c.silence[:], frame)
-	_, err = c.call("codec2_destroy", tmp)
+	_, err = c.inst.call1(fnDestroy, tmp)
 	return err
 }
 
@@ -425,29 +374,25 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 		return [9]byte{}, dmrgo.ErrNilReceiver
 	}
 
-	if c.mod == nil {
+	if c.inst == nil {
 		return [9]byte{}, ErrClosed
 	}
 	if len(pcm) != FrameSamples {
 		return [9]byte{}, ErrFrameLength
 	}
-	in, ok := c.mem.Read(c.pcm, 2*FrameSamples)
-	if !ok {
-		return [9]byte{}, errTrap
-	}
 	for i, s := range pcm {
-		binary.LittleEndian.PutUint16(in[2*i:], uint16(s))
+		binary.LittleEndian.PutUint16(c.buf[2*i:], uint16(s))
 	}
-	c.stack = [3]uint64{c.enc, uint64(c.bits), uint64(c.pcm)}
-	if c.encode.CallWithStack(context.Background(), c.stack[:]) != nil {
+	if !c.inst.write(c.pcm, c.buf[:]) {
 		return [9]byte{}, errTrap
 	}
-	out, ok := c.mem.Read(c.bits, uint32(c.nbytes))
-	if !ok {
+	if c.inst.call3(fnEncode, c.enc, c.bits, c.pcm) != nil {
 		return [9]byte{}, errTrap
 	}
 	var slot [9]byte
-	copy(slot[:], out)
+	if !c.inst.read(c.bits, slot[:c.nbytes]) {
+		return [9]byte{}, errTrap
+	}
 	return slot, nil
 }
 
@@ -463,7 +408,7 @@ func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 		return dst, dmrgo.ErrNilReceiver
 	}
 
-	if c.mod == nil {
+	if c.inst == nil {
 		return dst, ErrClosed
 	}
 	c.frame = slot
@@ -474,19 +419,17 @@ func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	n := len(dst)
 	dst = append(dst, make([]int16, FrameSamples)...)
 	pcm := dst[n:]
-	if !c.mem.Write(c.bits, c.frame[:8]) {
+	if !c.inst.write(c.bits, c.frame[:8]) {
 		return dst, errTrap
 	}
-	c.stack = [3]uint64{c.dec[m.index()], uint64(c.pcm), uint64(c.bits)}
-	if c.decode.CallWithStack(context.Background(), c.stack[:]) != nil {
+	if c.inst.call3(fnDecode, c.dec[m.index()], c.pcm, c.bits) != nil {
 		return dst, errTrap
 	}
-	out, ok := c.mem.Read(c.pcm, 2*FrameSamples)
-	if !ok {
+	if !c.inst.read(c.pcm, c.buf[:]) {
 		return dst, errTrap
 	}
 	for i := range pcm {
-		pcm[i] = int16(binary.LittleEndian.Uint16(out[2*i:]))
+		pcm[i] = int16(binary.LittleEndian.Uint16(c.buf[2*i:]))
 	}
 	return dst, nil
 }
@@ -498,11 +441,11 @@ func (c *Codec) Close() error {
 		return dmrgo.ErrNilReceiver
 	}
 
-	if c.mod == nil {
+	if c.inst == nil {
 		return nil
 	}
 	c.cleanup.Stop()
-	closeInstance(c.mod)
-	c.mod, c.mem, c.encode, c.decode = nil, nil, nil, nil
+	closeInstance(c.inst)
+	c.inst = nil
 	return nil
 }

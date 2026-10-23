@@ -639,6 +639,8 @@ typedef struct dmrgo_vocoder_codec_vtable_t dmrgo_vocoder_codec_vtable_t;
 typedef struct dmrgo_codec2_codec_t dmrgo_codec2_codec_t;
 /* Go: codec2.Config. Config selects how a Codec encodes and decodes. */
 typedef struct dmrgo_codec2_config_t dmrgo_codec2_config_t;
+/* Go: codec2.Module. Module is a compiled WebAssembly build of libcodec2 for dmrgo_codec2_config_t.wasm. */
+typedef struct dmrgo_codec2_module_t dmrgo_codec2_module_t;
 /* Go: dvsi.Codec. Codec is a dmrgo_vocoder_codec_t that runs on a DVSI chip at the DMR AMBE+2 rate. */
 typedef struct dmrgo_dvsi_codec_t dmrgo_dvsi_codec_t;
 /* Go: dvsi.Config. Config selects how New sets up the chip. */
@@ -5249,6 +5251,8 @@ struct dmrgo_codec2_config_t {
 	dmrgo_codec2_mode_t mode;
 	/* FID is the Feature set ID to send in the Full LC. Zero selects DMRGO_CODEC2_DEFAULT_FID. FID 0 is the ETSI feature set, which repeaters treat as AMBE, so it cannot be selected. */
 	dmrgo_enums_fid_t fid;
+	/* WASM is a WebAssembly build of libcodec2 from NewModule that the WebAssembly backend runs in place of the module embedded in the package. NULL selects the embedded module. The cgo backend links the system libcodec2 and ignores WASM. */
+	dmrgo_codec2_module_t *wasm;
 };
 
 struct dmrgo_dvsi_config_t {
@@ -5497,6 +5501,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_BS_SLOT (-105)
 #define DMRGO_ERR_CODEC2_CLOSED (-205)
 #define DMRGO_ERR_CODEC2_FRAME_LENGTH (-206)
+#define DMRGO_ERR_CODEC2_NOT_WASM (-227)
 #define DMRGO_ERR_CODEC2_UNAVAILABLE (-207)
 #define DMRGO_ERR_CODEC2_UNSUPPORTED_MODE (-208)
 #define DMRGO_ERR_CONFIG (-100)
@@ -7669,6 +7674,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNKAUTH_KEY_LEN 16
 /* Go: trunkauth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
 #define DMRGO_TRUNKAUTH_MAX_CHALLENGE 16776415
+/* Go: codec2.Backend. Backend is the name of the backend of this build: "native", "wasm" or "stub". */
+#define DMRGO_CODEC2_BACKEND "native"
 /* Go: codec2.DefaultFID. DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2 calls. */
 #define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_fid_t)194)
 /* Go: codec2.FrameSamples. FrameSamples is the number of 8 kHz PCM samples in one Codec2 frame. */
@@ -11000,8 +11007,14 @@ int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out
 int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 /* Go: codec2.Codec.Silence. Silence returns 20 ms of digital silence encoded with a fresh encoder state in the mode that Encode uses. */
 int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
+/* dmrgo_codec2_module_free frees the handle. self may be NULL. */
+int dmrgo_codec2_module_free(dmrgo_codec2_module_t *self);
+/* Go: codec2.Module.Close. Close does nothing. */
+int dmrgo_codec2_module_close(dmrgo_codec2_module_t *self);
 /* Go: codec2.New. New creates a Codec2 codec with the given configuration. It returns DMRGO_ERR_CODEC2_UNSUPPORTED_MODE for a Mode other than DMRGO_CODEC2_MODE_AUTO, DMRGO_CODEC2_MODE2400 or DMRGO_CODEC2_MODE3200, and an error that wraps DMRGO_ERR_CODEC2_UNAVAILABLE when libcodec2 cannot create a codec state. p may be NULL. */
 int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **out);
+/* Go: codec2.NewModule. NewModule returns DMRGO_ERR_CODEC2_NOT_WASM because this build has no WebAssembly backend. */
+int dmrgo_codec2_new_module(const uint8_t *data, size_t data_len, dmrgo_codec2_module_t **out);
 /* Go: dvsi.AppendChannel. AppendChannel appends a channel packet that asks the chip to decode bits channel bits, packed MSB first in data, which must hold (bits+7)/8 bytes (AMBE-3000R manual Table 106). It returns DMRGO_ERR_DVSI_CHANNEL for a channel outside 0 to DMRGO_DVSI_MAX_CHANNEL and DMRGO_ERR_DVSI_BITS for bits outside DMRGO_DVSI_MIN_BITS to DMRGO_DVSI_MAX_BITS or data of another length, with dst unchanged. */
 int dmrgo_dvsi_append_channel(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const uint8_t *data, size_t data_len, int64_t bits, bool parity);
 /* Go: dvsi.AppendParityMode. AppendParityMode appends a control packet with a PKT_PARITYMODE field that turns the parity field of later packets on or off. */

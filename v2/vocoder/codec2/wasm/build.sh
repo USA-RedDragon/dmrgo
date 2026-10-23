@@ -95,7 +95,11 @@ cflags=(
 objects=()
 for f in "${sources[@]}"; do
 	o=$obj/$(basename "$f" .c).o
-	"$CC" "${cflags[@]}" -c -o "$o" "$f"
+	extra=()
+	if [ "$(basename "$f")" = lsp.c ]; then
+		extra=(-O0)
+	fi
+	"$CC" "${cflags[@]}" "${extra[@]}" -c -o "$o" "$f"
 	objects+=("$o")
 done
 
