@@ -1,4 +1,4 @@
-//go:build !nocodec2 && !tinygo
+//go:build !nocodec2 && !tinygo && !(js && wasm)
 
 package codec2
 

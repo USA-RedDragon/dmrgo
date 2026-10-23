@@ -3,7 +3,9 @@
 package codec2
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"math"
 	"os"
@@ -325,6 +327,22 @@ func encodeBytes(t *testing.T, mode Mode, pcm []int16) []byte {
 		out = append(out, frame...)
 	}
 	return out
+}
+
+func TestEncodeMatchesLibcodec2(t *testing.T) {
+	t.Parallel()
+
+	want := map[Mode]string{
+		Mode2400: "3c83d62e923ffa8f5ccf92d7da1afb47e407eccabf5f72c45c2e6cd429937f18",
+		Mode3200: "eddc244569099b03255dc1bac01f0085ce917a09e8ab2255783f1fce149abe77",
+	}
+	pcm := voiced(50)
+	for _, mode := range allModes() {
+		sum := sha256.Sum256(encodeBytes(t, mode, pcm))
+		if got := hex.EncodeToString(sum[:]); got != want[mode] {
+			t.Errorf("mode %d: frames hash to %s, libcodec2 1.2.0 to %s", mode, got, want[mode])
+		}
+	}
 }
 
 var decodeTolerance = map[string]int{"native": 0, "wasm": 1}[Backend]
