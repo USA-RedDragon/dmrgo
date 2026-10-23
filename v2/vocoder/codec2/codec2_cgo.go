@@ -1,4 +1,4 @@
-//go:build cgo && !nocodec2 && !tinygo
+//go:build cgo && !nocodec2 && !tinygo && (codec2native || !codec2wasm)
 
 package codec2
 
@@ -16,6 +16,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
+
+// Backend is the name of the backend of this build: "native", "wasm" or
+// "stub".
+const Backend = "native"
 
 var libMu sync.Mutex
 

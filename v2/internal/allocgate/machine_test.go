@@ -27,6 +27,7 @@ type listedPackage struct {
 	Export          string
 	CompiledGoFiles []string
 	CgoFiles        []string
+	Imports         []string
 	Standard        bool
 	DepOnly         bool
 	Error           *struct{ Err string }
@@ -42,7 +43,7 @@ func listPackages(t *testing.T, patterns []string, env ...string) []listedPackag
 	if err != nil {
 		t.Fatal(err)
 	}
-	args := append([]string{"list", "-deps", "-export", "-compiled", "-json=ImportPath,Dir,Export,CompiledGoFiles,CgoFiles,Standard,DepOnly,Error"}, patterns...)
+	args := append([]string{"list", "-deps", "-export", "-compiled", "-json=ImportPath,Dir,Export,CompiledGoFiles,CgoFiles,Imports,Standard,DepOnly,Error"}, patterns...)
 	cmd := exec.CommandContext(t.Context(), "go", args...)
 	cmd.Dir = root
 	cmd.Env = append(gateEnv(), env...)

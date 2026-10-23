@@ -224,6 +224,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "codec2: codec is closed";
 	case -206:
 		return "codec2: wrong number of samples";
+	case -227:
+		return "codec2: built without the WebAssembly backend";
 	case -207:
 		return "codec2: built without libcodec2";
 	case -208:
