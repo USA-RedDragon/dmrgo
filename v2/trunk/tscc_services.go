@@ -45,6 +45,7 @@ type statusOp struct {
 	called uint32
 	status Status
 	until  time.Duration
+	ahoy   [12]byte
 }
 
 type rcOp struct {
@@ -114,6 +115,22 @@ func (t *TSCC) enqueueTo(addr uint32, reply bool) {
 		return
 	}
 	t.push(p, addr, reply)
+}
+
+func (t *TSCC) unqueue(p [12]byte) {
+	if p == [12]byte{} {
+		return
+	}
+	n := 0
+	for i := range t.qLen {
+		q := t.queue[(t.qHead+i)%queueLen]
+		if q.p == p {
+			continue
+		}
+		t.queue[(t.qHead+n)%queueLen] = q
+		n++
+	}
+	t.qLen = n
 }
 
 func (t *TSCC) sendCSBK(addr uint32, reply bool) {
@@ -476,6 +493,19 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 	if t.cfg.Reg && t.regIndex(src) < 0 {
 		return t.refuse(src, enums.AckReasonMSNotRegistered, out)
 	}
+	// ETSI TS 102 361-4 clauses 6.2.1.1.4 and 6.6.1.2.2
+	for i := range t.svc.status {
+		op := &t.svc.status[i]
+		if !op.used || op.caller != src {
+			continue
+		}
+		if !o.Group && op.called == target {
+			t.sendAck(src, enums.AckReasonWait)
+			return out
+		}
+		t.unqueue(op.ahoy)
+		*op = statusOp{}
+	}
 	if o.Group {
 		if st == StatusPoll {
 			return t.refuse(src, enums.AckReasonNotSupported, out)
@@ -483,14 +513,6 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 		t.statusAhoy(o.Group, target, src, st, r.ServiceOptions)
 		t.ackFrom(src, enums.AckReasonMessageAccepted, 0, 0)
 		return append(out, TSCCOutput{Kind: TSCCStatus, Grant: Grant{Service: enums.ServiceKindStatusTransport, Group: true, Target: target, Source: src}, Status: st, Ack: enums.AckReasonMessageAccepted})
-	}
-	for i := range t.svc.status {
-		if op := &t.svc.status[i]; op.used && op.caller == src {
-			if op.called == target {
-				t.sendAck(src, enums.AckReasonWait)
-			}
-			return out
-		}
 	}
 	if t.cfg.Reg && t.regIndex(target) < 0 {
 		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out)
@@ -525,6 +547,7 @@ func (t *TSCC) statusStart(now time.Duration, caller, from, target uint32, st St
 		}
 		*op = statusOp{used: true, caller: caller, from: from, called: target, status: st, until: now + t.cfg.AnswerTimeout}
 		t.statusAhoy(false, target, from, st, opts)
+		op.ahoy, _ = t.svc.cs.Encode()
 		return true
 	}
 	return false
@@ -704,6 +727,7 @@ func (t *TSCC) svcTimers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 			continue
 		}
 		op.used = false
+		t.unqueue(op.ahoy)
 		if op.caller != 0 {
 			t.ackFrom(op.caller, enums.AckReasonMSAwayRefused, 0, op.called)
 		}

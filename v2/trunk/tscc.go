@@ -304,6 +304,7 @@ type setup struct {
 	called uint32
 	until  time.Duration
 	opts   uint8
+	ahoy   [12]byte
 }
 
 // TSCC is a Tier III dedicated TSCC with its payload channels, for a single
@@ -570,6 +571,19 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		return t.refuse(src, enums.AckReasonMSNotRegistered, out)
 	}
 	group := enums.ServiceKind(r.ServiceKind) == enums.ServiceKindTalkgroupVoice
+	// ETSI TS 102 361-4 clauses 6.2.1.1.4 and 6.6.1.2.2
+	for i := range t.setups {
+		st := &t.setups[i]
+		if !st.used || st.caller != src {
+			continue
+		}
+		if !group && st.called == r.TargetAddress {
+			t.sendAck(src, enums.AckReasonWait)
+			return out
+		}
+		t.unqueue(st.ahoy)
+		*st = setup{}
+	}
 	if i := t.findCall(group, r.TargetAddress, src); i >= 0 {
 		t.sendGrant(i)
 		return out
@@ -581,14 +595,6 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out)
 	}
 	for i := range t.setups {
-		if st := &t.setups[i]; st.used && st.caller == src {
-			if st.called == r.TargetAddress {
-				t.sendAck(src, enums.AckReasonWait)
-			}
-			return out
-		}
-	}
-	for i := range t.setups {
 		st := &t.setups[i]
 		if st.used {
 			continue
@@ -598,6 +604,7 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		t.cs = pdu.CSBK{LastBlock: true}
 		if t.cs.SetAhoy(pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceKindIndividualVoice),
 			TargetAddress: r.TargetAddress, SourceAddress: src}) == nil {
+			st.ahoy, _ = t.cs.Encode()
 			t.enqueueTo(r.TargetAddress, true)
 		}
 		return out
@@ -670,7 +677,7 @@ func (t *TSCC) answer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 	called := a.AdditionalInfo
 	for i := range t.setups {
 		st := &t.setups[i]
-		if !st.used || st.called != called {
+		if !st.used || st.called != called || st.caller != a.TargetAddress {
 			continue
 		}
 		st.used = false
@@ -867,6 +874,7 @@ func (t *TSCC) timers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		st := &t.setups[i]
 		if st.used && now >= st.until {
 			st.used = false
+			t.unqueue(st.ahoy)
 			out = t.refuse(st.caller, enums.AckReasonMSAwayRefused, out)
 		}
 	}
