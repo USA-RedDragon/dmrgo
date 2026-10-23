@@ -117,9 +117,9 @@ func (t *TSCC) enqueueTo(addr uint32, reply bool) {
 	t.push(p, addr, reply)
 }
 
-func (t *TSCC) unqueue(p [12]byte) {
+func (t *TSCC) unqueue(p [12]byte) bool {
 	if p == [12]byte{} {
-		return
+		return false
 	}
 	n := 0
 	for i := range t.qLen {
@@ -130,7 +130,21 @@ func (t *TSCC) unqueue(p [12]byte) {
 		t.queue[(t.qHead+n)%queueLen] = q
 		n++
 	}
+	removed := n != t.qLen
 	t.qLen = n
+	return removed
+}
+
+func (t *TSCC) queued(p [12]byte) bool {
+	if p == [12]byte{} {
+		return false
+	}
+	for i := range t.qLen {
+		if t.queue[(t.qHead+i)%queueLen].p == p {
+			return true
+		}
+	}
+	return false
 }
 
 func (t *TSCC) sendCSBK(addr uint32, reply bool) {
@@ -428,7 +442,7 @@ func (t *TSCC) svcAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutp
 	}
 	for i := range s.status {
 		op := &s.status[i]
-		if !op.used || op.called != src || op.from != a.TargetAddress {
+		if !op.used || op.called != src || op.from != a.TargetAddress || t.queued(op.ahoy) {
 			continue
 		}
 		op.used = false
@@ -876,6 +890,20 @@ func (t *TSCC) suplStart(now time.Duration, r *pdu.RandomAccessPDU) bool {
 	t.svc.supl[free] = suplOp{used: true, rand: *r, until: now + t.cfg.AnswerTimeout}
 	t.sendAhoy(pdu.AhoyPDU{UAB: r.Reserved >> 2, ServiceKind: r.ServiceKind, TargetAddress: r.SourceAddress, SourceAddress: constants.GatewaySUPLI}, 0, true)
 	return true
+}
+
+func (t *TSCC) suplDrop(caller, called uint32) bool {
+	dropped := false
+	for i := range t.svc.supl {
+		op := &t.svc.supl[i]
+		k := enums.ServiceKind(op.rand.ServiceKind)
+		if op.used && op.rand.SourceAddress == caller && op.rand.TargetAddress == called &&
+			(k == enums.ServiceKindIndividualVoice || k == enums.ServiceKindTalkgroupVoice) {
+			*op = suplOp{}
+			dropped = true
+		}
+	}
+	return dropped
 }
 
 func (t *TSCC) suplDownload(now time.Duration, op *suplOp, out []TSCCOutput) []TSCCOutput {

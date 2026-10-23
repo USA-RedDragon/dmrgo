@@ -44,8 +44,9 @@ const (
 	// the reason of a C_NACKD.
 	OutputRefused
 	// OutputAhoy reports a C_AHOY for the MS, with the call in
-	// Output.Grant: an individual call that the MS answers, or a radio
-	// check.
+	// Output.Grant: an individual call that the MS answers, a radio
+	// check, or with Service enums.ServiceKindCancelCall the end of the
+	// call from Grant.Source that the MS answered before its grant.
 	OutputAhoy
 	// OutputUDT reports a UDT delivery, which UDT returns until the next
 	// call of the machine.

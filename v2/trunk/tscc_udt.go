@@ -51,6 +51,7 @@ type udtOp struct {
 	gateway uint32
 	opts    uint8
 	emerg   bool
+	ahoy    [12]byte
 }
 
 type diversion struct {
@@ -355,6 +356,14 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 	if t.cfg.Reg && t.regIndex(target) < 0 {
 		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out), true
 	}
+	if o := t.duplexOp(src, target); o != nil {
+		if o.svc == kind {
+			t.sendAck(src, enums.AckReasonWait)
+			return out, true
+		}
+		t.unqueue(o.ahoy)
+		*o = udtOp{}
+	}
 	op := udtOp{caller: src, called: target, until: now + constants.TNPTimerDefault, svc: kind, opts: r.ServiceOptions}
 	a := pdu.AhoyPDU{ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewaySDMI, UAB: blocks - 1}
 	switch kind {
@@ -375,7 +384,19 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 		t.sendAck(src, enums.AckReasonWait)
 	}
 	t.sendAhoy(a, 0, true)
+	if o := t.duplexOp(src, target); op.kind == opDuplex && o != nil {
+		o.ahoy, _ = t.svc.cs.Encode()
+	}
 	return out, true
+}
+
+func (t *TSCC) duplexOp(caller, called uint32) *udtOp {
+	for i := range t.u.ops {
+		if op := &t.u.ops[i]; op.kind == opDuplex && op.caller == caller && op.called == called {
+			return op
+		}
+	}
+	return nil
 }
 
 func (t *TSCC) divertRequest(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
@@ -681,6 +702,9 @@ func (t *TSCC) udtAck(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 	for i := range t.u.ops {
 		o := &t.u.ops[i]
 		if o.kind == opNone || o.stage != stAck || o.called != from && (o.kind != opPoll || o.caller != from) {
+			continue
+		}
+		if o.kind == opDuplex && t.queued(o.ahoy) {
 			continue
 		}
 		op := *o

@@ -149,6 +149,12 @@ func (m *MS) answer(now time.Duration, r enums.AckReason, from uint32, out []Out
 	if m.req == reqNone || m.staleAck(from) {
 		return out
 	}
+	if m.req == reqCancel {
+		return m.cancelAnswer(r, out)
+	}
+	if m.req == reqCall && r == enums.AckReasonCallCancelRefused {
+		return out
+	}
 	m.ra = raIdle
 	switch m.req {
 	case reqDereg:
@@ -180,9 +186,23 @@ func (m *MS) answer(now time.Duration, r enums.AckReason, from uint32, out []Out
 		}
 	case reqShortData, reqPoll, reqDivert, reqDGNA:
 		return m.udtAnswer(now, r, out)
-	case reqNone, reqStatus, reqInterrupt, reqIP:
+	case reqNone, reqCancel, reqStatus, reqInterrupt, reqIP:
 	}
 	m.waitAnswer, m.reqUntil = true, now+m.answerTO()
+	return out
+}
+
+func (m *MS) cancelAnswer(r enums.AckReason, out []Output) []Output {
+	switch {
+	case r == enums.AckReasonMessageAccepted:
+		return m.fail(ReasonCancelled, r, out)
+	case r == enums.AckReasonCallCancelRefused:
+		m.req, m.kind, m.ra = reqCall, m.callKind, raIdle
+		m.waitAnswer, m.reqUntil = true, m.callUntil
+		return out
+	case r.Type() == enums.AckNACK:
+		return m.fail(ReasonNack, r, out)
+	}
 	return out
 }
 
@@ -265,7 +285,7 @@ func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Outpu
 		if a.Group {
 			return out
 		}
-		m.pending, m.pendingEnd = true, now+m.pendingTO
+		m.pending, m.pendingEnd, m.pendingFrom = true, now+m.pendingTO, a.SourceAddress
 	case enums.ServiceKindRegistration:
 	default:
 		return out

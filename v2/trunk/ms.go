@@ -145,6 +145,7 @@ const (
 	reqRegister
 	reqDereg
 	reqCall
+	reqCancel
 )
 
 type sysArea struct {
@@ -199,21 +200,24 @@ type MS struct {
 	berIdx     int
 	berN       int
 
-	ra         raState
-	frames     int
-	retries    int
-	raStart    time.Duration
-	req        request
-	reqUntil   time.Duration
-	waitAnswer bool
-	deregEnd   time.Duration
-	kind       enums.ServiceKind
-	target     uint32
-	options    uint8
-	emergency  bool
-	ownCall    bool
-	pendingEnd time.Duration
-	pending    bool
+	ra          raState
+	frames      int
+	retries     int
+	raStart     time.Duration
+	req         request
+	reqUntil    time.Duration
+	waitAnswer  bool
+	deregEnd    time.Duration
+	kind        enums.ServiceKind
+	callKind    enums.ServiceKind
+	callUntil   time.Duration
+	target      uint32
+	options     uint8
+	emergency   bool
+	ownCall     bool
+	pendingEnd  time.Duration
+	pendingFrom uint32
+	pending     bool
 
 	auth   authChallenge
 	tx     pdu.CSBK
@@ -482,14 +486,29 @@ func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
 
 // Cancel stops the running request. It appends OutputRefused with
 // ReasonCancelled when one ran, and allocates only when dst has no room
-// for MaxOutputs outputs.
+// for MaxOutputs outputs. A call whose C_RAND the MS has sent is not
+// stopped at once: the MS asks the TSCC to cancel it with a Cancel Call
+// random access, and appends OutputRefused with ReasonCancelled when the
+// TSCC accepts. The call can still mature: then OutputTune follows as for
+// any grant. After a C_NACKD Call_Cancel_Refused the MS waits for the call
+// again. Another C_NACKD for the cancellation gives OutputRefused with
+// ReasonNack. (ETSI TS 102 361-4 clause 6.6.1.2.1)
 func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
 	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
 	dst = m.timers(now, dst)
-	if m.req == reqNone || m.req == reqDereg {
+	switch {
+	case m.req == reqNone || m.req == reqDereg || m.req == reqCancel:
+		return dst
+	case m.req == reqCall && m.retries > 0:
+		m.callKind, m.callUntil = m.kind, m.reqUntil
+		if !m.waitAnswer {
+			m.callUntil = now + m.callTO
+		}
+		m.kind = enums.ServiceKindCancelCall
+		m.startAccess(now, reqCancel, m.target, 0, m.emergency)
 		return dst
 	}
 	return m.fail(ReasonCancelled, 0, dst)
@@ -785,7 +804,7 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 			if before == StateControl && m.f.state == StatePayload {
 				g := &m.f.call
 				m.ownCall = g.Source == m.addr
-				if m.req == reqCall && (m.ownCall || g.Target == m.addr) {
+				if (m.req == reqCall || m.req == reqCancel) && (m.ownCall || g.Target == m.addr) {
 					m.done()
 				}
 				m.pending = false

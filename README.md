@@ -270,12 +270,12 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | Metric | Count |
 | --- | --- |
 | Total sections | 233 |
-| Verified (tests pass) | 198 |
+| Verified (tests pass) | 199 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 32 |
+| Unimplemented | 31 |
 
-**Overall: 198/233 verified (85.0%)**
+**Overall: 199/233 verified (85.4%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -435,7 +435,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-98 sections: 68 verified, 0 failing, 3 untested, 27 unimplemented.
+98 sections: 69 verified, 0 failing, 3 untested, 26 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -471,7 +471,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.1.1.1 | Availability of calling MS | unimplemented | - | - |
 | 6.6.1.1.2 | Availability of Called Party as part of a Call | verified | 3/3 passed | `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.1.1.3 | General MS Radio Check | verified | 1/1 passed | `v2/trunk/ms_access.go` |
-| 6.6.1.2 | Call Cancellation | unimplemented | - | - |
+| 6.6.1.2 | Call Cancellation | verified | 15/15 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/ms_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/tscc_services.go`, `v2/trunk/tscc_udt.go` |
 | 6.6.1.3 | Acknowledgements Sent to Calling MS | verified | 3/3 passed | `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.1.4 | Called Party (MS) Answering Mechanism (OACSU) | verified | 2/2 passed | `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.1.4.1 | FOACSU - Called Party Accepts the Call | unimplemented | - | - |

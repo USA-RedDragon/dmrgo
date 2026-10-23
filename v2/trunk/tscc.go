@@ -563,6 +563,8 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 	switch enums.ServiceKind(r.ServiceKind) {
 	case enums.ServiceKindRegistration:
 		return t.registration(now, r, out)
+	case enums.ServiceKindCancelCall:
+		return t.cancelCall(r, out)
 	case enums.ServiceKindTalkgroupVoice, enums.ServiceKindIndividualVoice:
 	default:
 		return t.refuse(src, enums.AckReasonNotSupported, out)
@@ -610,6 +612,53 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		return out
 	}
 	return t.refuse(src, enums.AckReasonSysBusyRefused, out)
+}
+
+func (t *TSCC) cancelCall(r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
+	src, called := r.SourceAddress, r.TargetAddress
+	if t.cfg.Reg && t.regIndex(src) < 0 {
+		return t.refuse(src, enums.AckReasonMSNotRegistered, out)
+	}
+	// ETSI TS 102 361-4 clauses 6.6.1.2.1 and 6.6.1.2.2
+	for i := range t.setups {
+		if st := &t.setups[i]; st.used && st.caller == src && st.called == called {
+			t.abandon(st.ahoy, called, src)
+			*st = setup{}
+			t.sendAck(src, enums.AckReasonMessageAccepted)
+			return out
+		}
+	}
+	if op := t.duplexOp(src, called); op != nil {
+		t.abandon(op.ahoy, called, src)
+		for op != nil {
+			*op = udtOp{}
+			op = t.duplexOp(src, called)
+		}
+		t.sendAck(src, enums.AckReasonMessageAccepted)
+		return out
+	}
+	if t.suplDrop(src, called) {
+		t.sendAck(src, enums.AckReasonMessageAccepted)
+		return out
+	}
+	for i := range 2 * t.cfg.PayloadLen {
+		g := &t.calls[i].grant
+		if t.calls[i].active && (g.Source == src && g.Target == called || duplex(g) && g.Source == called && g.Target == src) {
+			return t.refuse(src, enums.AckReasonCallCancelRefused, out)
+		}
+	}
+	t.sendAck(src, enums.AckReasonMessageAccepted)
+	return out
+}
+
+func (t *TSCC) abandon(ahoy [12]byte, called, caller uint32) {
+	if t.unqueue(ahoy) {
+		return
+	}
+	t.cs = pdu.CSBK{LastBlock: true}
+	if t.cs.SetAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindCancelCall), TargetAddress: called, SourceAddress: caller}) == nil {
+		t.enqueueTo(called, true)
+	}
 }
 
 func (t *TSCC) challenge(now time.Duration, src uint32, opts, ps uint8, out []TSCCOutput) []TSCCOutput {
@@ -677,7 +726,7 @@ func (t *TSCC) answer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 	called := a.AdditionalInfo
 	for i := range t.setups {
 		st := &t.setups[i]
-		if !st.used || st.called != called || st.caller != a.TargetAddress {
+		if !st.used || st.called != called || st.caller != a.TargetAddress || t.queued(st.ahoy) {
 			continue
 		}
 		st.used = false
