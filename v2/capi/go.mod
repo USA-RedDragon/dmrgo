@@ -2,7 +2,7 @@ module github.com/USA-RedDragon/dmrgo/v2/capi
 
 go 1.24.0
 
-require github.com/USA-RedDragon/dmrgo/v2 v2.0.1
+require github.com/USA-RedDragon/dmrgo/v2 v2.0.2
 
 require (
 	github.com/tetratelabs/wazero v1.11.0 // indirect
