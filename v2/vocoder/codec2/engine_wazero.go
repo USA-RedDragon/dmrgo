@@ -115,8 +115,8 @@ func (w *engineInstance) call3(fn export, a, b, c uint32) error {
 }
 
 func (w *engineInstance) read(off uint32, dst []byte) bool {
-	n := len(dst)
-	if n < 0 || n > math.MaxUint32 {
+	n := uint64(len(dst))
+	if n > math.MaxUint32 {
 		return false
 	}
 	b, ok := w.mem.Read(off, uint32(n))
