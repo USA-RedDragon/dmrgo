@@ -70,7 +70,7 @@ func TestMS_RandomAccessSlotGrid(t *testing.T) {
 		for _, own := range []enums.Slot{enums.Slot1, enums.Slot2} {
 			g := slotGrid{t0: time.Second, offset: offset}
 			x := g.inbound(own)
-			busyAt := func(k int) bool { return (k*2654435761)>>7&1 == 1 }
+			busyAt := func(k int) bool { return (uint32(k)*2654435761)>>7&1 == 1 }
 			sends := 0
 			for seed := range uint64(16) {
 				ms, err := trunk.NewMS(&trunk.MSConfig{Address: msAddr, Slot: own, Seed: seed, NoRegistration: true, RandomTimeout: -1})

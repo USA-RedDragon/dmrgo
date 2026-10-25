@@ -61,6 +61,24 @@ jobs:
       - name: Codec2 tests on the browser engine in Node
         run: GOOS=js GOARCH=wasm go test -C v2 -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./vocoder/codec2/
 
+  32-bit:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: v2/go.mod
+
+      - name: Build and vet for arm
+        run: GOARCH=arm CGO_ENABLED=0 go vet -C v2 ./...
+
+      - name: Build and vet for 386
+        run: GOARCH=386 CGO_ENABLED=0 go vet -C v2 ./...
+
   xcrypto-tests:
     runs-on: ubuntu-24.04
 
