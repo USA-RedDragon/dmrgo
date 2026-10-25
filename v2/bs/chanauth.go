@@ -19,7 +19,7 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 		s.authed = true
 		return dst, false
 	case SlotChanAuthSelect:
-		if burst, source, voiceAuth, ok := r.chanAuthPDU(b, raw); ok && source < s.authSource {
+		if burst, source, voiceAuth, ok := r.chanAuthPDU(b, raw); ok && source < s.authSource && r.hangFits(s.authPrev, s, voiceAuth) {
 			s.auth, s.authFrom, s.authSource, s.authVoice = burst, from, source, voiceAuth
 			if s.authPrev == SlotIdle {
 				r.authActivity(s, raw, voiceAuth)
@@ -43,7 +43,7 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 		return dst, false
 	}
 	burst, source, voiceAuth, ok := r.chanAuthPDU(b, raw)
-	if !ok || s.state == SlotCallHang && (!voiceAuth || !sameTarget(&r.lc, &s.call)) {
+	if !ok || !r.hangFits(s.state, s, voiceAuth) {
 		return dst, false
 	}
 	var lc *pdu.LCBytes
@@ -64,6 +64,10 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 		return r.forward(now, s, from, dst), true
 	}
 	return r.authSelected(now, s, dst), true
+}
+
+func (r *Repeater) hangFits(state SlotState, s *slot, voiceAuth bool) bool {
+	return state != SlotCallHang || voiceAuth && sameTarget(&r.lc, &s.call)
 }
 
 func (r *Repeater) authActivity(s *slot, raw *layer2.RawBurst, voiceAuth bool) {

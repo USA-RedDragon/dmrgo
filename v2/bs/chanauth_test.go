@@ -372,3 +372,36 @@ func TestChanAuthMatch(t *testing.T) {
 		t.Fatalf("call hang ended during ChanAuth: %v", st)
 	}
 }
+
+// ETSI TS 102 361-2 clause 5.1.1.6.1.2, ETSI TS 102 361-1 clause 5.2.1.4
+func TestChanAuthSelectInHangTime(t *testing.T) {
+	t.Parallel()
+
+	for _, other := range []string{"voice", "csbk"} {
+		d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthMultiSite, CallHang: 3 * time.Second})
+		at := 1500 * time.Millisecond
+		d.until(at)
+		if st := d.r.SlotState(enums.Slot1); st != bs.SlotCallHang {
+			t.Fatalf("%s: before the request: %v", other, st)
+		}
+		d.in(at, enums.Slot1, bs.Source{RF: true}, header(t, 9, 3120005))
+		if st := d.r.SlotState(enums.Slot1); st != bs.SlotChanAuthSelect {
+			t.Fatalf("%s: after the request: %v", other, st)
+		}
+		burst := header(t, 93, 3120001)
+		if other == "csbk" {
+			burst = preCSBK(t, 3120001)
+		}
+		d.in(at+60*time.Millisecond, enums.Slot1, bs.Source{Peer: 7}, burst)
+		dts, src := slotBursts(t, d.until(at+600*time.Millisecond))
+		var got []uint32
+		for i, dt := range dts {
+			if dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypeCSBK {
+				got = append(got, src[i])
+			}
+		}
+		if len(got) == 0 || got[0] != 3120005 {
+			t.Errorf("%s: selected %v %v, want the call to 9 from 3120005", other, dts, src)
+		}
+	}
+}
