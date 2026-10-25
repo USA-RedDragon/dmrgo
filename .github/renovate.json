@@ -3,6 +3,11 @@
   "extends": [
     "local>USA-RedDragon/renovate-configs"
   ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodTidyAll",
+    "gomodUpdateImportPaths"
+  ],
   "packageRules": [
     {
       "description": "The library modules declare their minimum Go version, not the Go version of CI.",
