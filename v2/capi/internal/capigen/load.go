@@ -170,7 +170,7 @@ func firstSentence(s string) string {
 }
 
 func (l *loader) packages() ([]*types.Package, error) {
-	skipDirs := []string{"capi", "cmd", "examples", "internal"}
+	skipDirs := []string{"capi", "cmd", "examples"}
 	var paths []string
 	err := filepath.WalkDir(l.root, func(p string, d os.DirEntry, err error) error {
 		if err != nil || !d.IsDir() {
@@ -178,7 +178,7 @@ func (l *loader) packages() ([]*types.Package, error) {
 		}
 		rel, _ := filepath.Rel(l.root, p)
 		rel = filepath.ToSlash(rel)
-		if d.Name() == "testdata" || slices.ContainsFunc(skipDirs, func(s string) bool { return rel == s || strings.HasPrefix(rel, s+"/") }) {
+		if d.Name() == "testdata" || d.Name() == "internal" || slices.ContainsFunc(skipDirs, func(s string) bool { return rel == s || strings.HasPrefix(rel, s+"/") }) {
 			return filepath.SkipDir
 		}
 		bp, err := l.ctx.ImportDir(p, 0)
