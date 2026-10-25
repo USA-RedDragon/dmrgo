@@ -120,6 +120,10 @@ ignore_files:
   - v2/vocoder/codec2/codec2_native_nocgo.go
   - v2/vocoder/codec2/engine_js.go
   - v2/vocoder/codec2/engine_wazero.go
+  - v2/vocoder/codec2/engine_aot.go
+  - v2/vocoder/codec2/engine_select_aot.go
+  - v2/vocoder/codec2/engine_select_compiler.go
+  - v2/vocoder/codec2/internal/aot/codec2.go
   - v2/vocoder/codec2/module_nowasm.go
   - v2/vocoder/codec2/wasmcodec.go
   - v2/vocoder/dvsi/codec.go

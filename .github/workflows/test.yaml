@@ -79,6 +79,18 @@ jobs:
       - name: Build and vet for 386
         run: GOARCH=386 CGO_ENABLED=0 go vet -C v2 ./...
 
+      - name: Codec2 tests on 386
+        run: GOARCH=386 CGO_ENABLED=0 go test -C v2 ./vocoder/codec2/...
+
+      - name: Codec2 tests on amd64 with the translated engine
+        run: CGO_ENABLED=0 go test -C v2 -tags codec2aot ./vocoder/codec2/...
+
+      - name: Install qemu-user-static
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static
+
+      - name: Codec2 allocation and engine tests on arm
+        run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm-static -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
+
   xcrypto-tests:
     runs-on: ubuntu-24.04
 

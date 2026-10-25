@@ -2,15 +2,19 @@
 // encodes 8 kHz PCM into 72-bit DMR vocoder frames and decodes them, in the
 // DMR framing that QRadioLink uses.
 //
-// With cgo the package binds the system libcodec2, so a build that imports
-// it needs a C compiler and libcodec2 with its pkg-config file (pkg-config
-// name codec2), for example the libcodec2-dev package on Debian. Without
-// them the build fails with "Package 'codec2' not found". With
-// CGO_ENABLED=0, or -tags codec2wasm, the package runs libcodec2 compiled to
-// WebAssembly instead: in wazero, and under GOOS=js GOARCH=wasm in the
-// WebAssembly engine of the browser or Node. Backend names the backend of a
-// build. Both backends encode the same frames; a decoded sample of the
-// WebAssembly backend can differ from the native one by 1, because its math
+// With cgo the package binds the system libcodec2, so a build that imports it
+// needs a C compiler and libcodec2 with its pkg-config file (pkg-config name
+// codec2), for example the libcodec2-dev package on Debian. Without them the
+// build fails with "Package 'codec2' not found". With CGO_ENABLED=0, or -tags
+// codec2wasm, the package runs libcodec2 compiled to WebAssembly instead: in
+// wazero, which compiles it to machine code on amd64 and arm64, as Go code
+// that wasm2go translated from the same module on other platforms, such as
+// 386 and arm, where wazero has no compiler, and under GOOS=js GOARCH=wasm in
+// the WebAssembly engine of the browser or Node. -tags codec2aot selects the
+// translated code on every platform, for example for an amd64 CPU without
+// SSE4.1, where wazero interprets. Backend names the backend of a build. Both
+// backends encode the same frames; the decoded samples of the WebAssembly
+// backend can differ from the native ones by small amounts, because its math
 // library differs in the last bit. Build with -tags nocodec2 to remove
 // libcodec2 entirely; New then returns ErrUnavailable. TinyGo builds always
 // use this path.

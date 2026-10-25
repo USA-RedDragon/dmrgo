@@ -100,7 +100,11 @@ func (fn export) name() string {
 }
 
 var embedded = sync.OnceValues(func() (*Module, error) {
-	return NewModule(embeddedWASM)
+	c, err := compileEmbedded()
+	if err != nil {
+		return nil, err
+	}
+	return &Module{compiled: c}, nil
 })
 
 // Module is a compiled WebAssembly build of libcodec2 for Config.WASM. A
@@ -117,6 +121,14 @@ type Module struct {
 // error that wraps ErrUnavailable when wasm is not a valid module or lacks a
 // function of that interface, and ErrNotWASM in a build without the
 // WebAssembly backend. It allocates the Module and the compiled code.
+//
+// wazero runs the module, also on platforms where the embedded module runs
+// as translated Go code. wazero compiles it to machine code on arm64 and on
+// amd64 with SSE4.1, under Linux, macOS, Windows, FreeBSD and NetBSD, and
+// amd64 also under DragonFly BSD, Solaris and illumos. Elsewhere, such as on
+// 386 and arm, wazero interprets it and allocates for each call into the
+// module, so every Encode and Decode of a Codec from the Module allocates,
+// about 1,400 to 1,900 times per frame.
 func NewModule(wasm []byte) (*Module, error) {
 	c, err := compile(wasm)
 	if err != nil {
@@ -369,7 +381,11 @@ func (c *Codec) Silence() [9]byte {
 
 // Encode encodes exactly FrameSamples samples into one 72-bit frame, in
 // Mode2400 for ModeAuto. It returns an error that wraps ErrUnavailable when
-// libcodec2 traps. It does not allocate when pcm has FrameSamples samples.
+// libcodec2 traps. It does not allocate when pcm has FrameSamples samples,
+// except where wazero interprets the module (a NewModule module on a
+// platform where wazero has no compiler, and the embedded module on an amd64
+// CPU without SSE4.1 in a build without -tags codec2aot), and under
+// GOOS=js, where each call into the module allocates JavaScript values.
 func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	if c == nil {
 		return [9]byte{}, dmrgo.ErrNilReceiver
@@ -404,7 +420,9 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 // ErrClosed after Close, with dst unchanged, and an error that wraps
 // ErrUnavailable when libcodec2 traps, with dst extended by FrameSamples
 // zero samples. It does not allocate when dst has room for FrameSamples
-// more samples.
+// more samples, except where wazero interprets the module, as for Encode,
+// and under GOOS=js, where each call into the module allocates JavaScript
+// values.
 func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	if c == nil {
 		return dst, dmrgo.ErrNilReceiver

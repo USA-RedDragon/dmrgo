@@ -20,6 +20,14 @@ import (
 
 func newCodec(t *testing.T, cfg Config) *Codec {
 	t.Helper()
+	if cfg.WASM == nil {
+		cfg.WASM = testModule(t)
+	}
+	return newCodecOf(t, cfg)
+}
+
+func newCodecOf(t *testing.T, cfg Config) *Codec {
+	t.Helper()
 	c, err := New(&cfg)
 	if err != nil {
 		t.Fatalf("New(%+v): %v", cfg, err)

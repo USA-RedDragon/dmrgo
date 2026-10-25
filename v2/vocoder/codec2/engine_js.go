@@ -70,6 +70,10 @@ func hasExports(wa, mod js.Value) bool {
 	return true
 }
 
+func compileEmbedded() (*engineModule, error) {
+	return compile(embeddedWASM)
+}
+
 func (m *engineModule) close() error {
 	m.mod = js.Undefined()
 	return nil

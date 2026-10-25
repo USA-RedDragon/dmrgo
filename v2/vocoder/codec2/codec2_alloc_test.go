@@ -5,18 +5,38 @@ package codec2
 import "testing"
 
 func TestAllocsAutoDecode(t *testing.T) {
-	c := newCodec(t, Config{})
-	slots := encodeAll(t, newCodec(t, Config{Mode: Mode3200}), voiced(4))
-	dst := make([]int16, 0, FrameSamples)
-	i := 0
-	allocs := testing.AllocsPerRun(100, func() {
-		dst, _ = c.Decode(dst[:0], slots[i%len(slots)])
-		i++
-		if i%7 == 0 {
-			c.Reset()
+	for i, m := range allocModules(t) {
+		c := newCodecOf(t, Config{WASM: m})
+		slots := encodeAll(t, newCodecOf(t, Config{Mode: Mode3200, WASM: m}), voiced(4))
+		dst := make([]int16, 0, FrameSamples)
+		n := 0
+		allocs := testing.AllocsPerRun(100, func() {
+			dst, _ = c.Decode(dst[:0], slots[n%len(slots)])
+			n++
+			if n%7 == 0 {
+				c.Reset()
+			}
+		})
+		if allocs != 0 {
+			t.Errorf("module %d: Decode in ModeAuto: %.1f allocations", i, allocs)
 		}
-	})
-	if allocs != 0 {
-		t.Errorf("Decode in ModeAuto: %.1f allocations", allocs)
+	}
+}
+
+func TestAllocsEncode(t *testing.T) {
+	pcm := voiced(4)
+	for i, m := range allocModules(t) {
+		for _, mode := range []Mode{Mode2400, Mode3200} {
+			c := newCodecOf(t, Config{Mode: mode, WASM: m})
+			n := 0
+			allocs := testing.AllocsPerRun(100, func() {
+				off := (n % 4) * FrameSamples
+				_, _ = c.Encode(pcm[off : off+FrameSamples])
+				n++
+			})
+			if allocs != 0 {
+				t.Errorf("module %d: Encode in mode %d: %.1f allocations", i, mode, allocs)
+			}
+		}
 	}
 }
