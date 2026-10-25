@@ -147,6 +147,36 @@ jobs:
       - name: Check the allocation table of the README against the gate
         run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
 
+  codec2-backends:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - run: go generate ./...
+
+      - name: Build and test the default backend with cgo and without libcodec2
+        run: |
+          mkdir -p "$RUNNER_TEMP/no-pkgconfig"
+          export PKG_CONFIG_PATH="$RUNNER_TEMP/no-pkgconfig" PKG_CONFIG_LIBDIR="$RUNNER_TEMP/no-pkgconfig"
+          if pkg-config --exists codec2; then echo "::error::pkg-config still finds codec2"; exit 1; fi
+          CGO_ENABLED=1 go build -C v2 ./...
+          CGO_ENABLED=1 go test -C v2 ./vocoder/codec2/... ./examples/transcoder/...
+
+      - name: Install libcodec2
+        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config codec2
+
+      - name: Test the native backend
+        run: |
+          CGO_ENABLED=1 go vet -C v2 -tags codec2native ./...
+          CGO_ENABLED=1 go test -C v2 -tags codec2native -race ./vocoder/codec2/... ./examples/transcoder/...
+
   abi-release:
     runs-on: ubuntu-24.04
 
@@ -183,6 +213,9 @@ jobs:
 
       - name: Build libdmrgo and run the C test program
         run: make -C v2/capi test
+
+      - name: Build libdmrgo with the native Codec2 backend and run the C test program
+        run: GOFLAGS=-tags=codec2native make -C v2/capi BUILD=build-native test
 
       - name: Build libdmrgo without libcodec2
         run: go build -C v2/capi -tags nocodec2 -buildmode=c-shared -o build/libdmrgo-nocodec2.so .

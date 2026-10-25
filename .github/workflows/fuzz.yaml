@@ -78,6 +78,14 @@ jobs:
           NAME: ${{ matrix.name }}
         run: go test -C v2 -run '^$' -fuzz "^${NAME}\$" -fuzztime "$FUZZTIME" "$PKG"
 
+      - name: Fuzz the native Codec2 backend
+        if: matrix.dir == 'vocoder/codec2'
+        env:
+          FUZZTIME: ${{ inputs.fuzztime || '10m' }}
+          PKG: ${{ matrix.pkg }}
+          NAME: ${{ matrix.name }}
+        run: go test -C v2 -tags codec2native -run '^$' -fuzz "^${NAME}\$" -fuzztime "$FUZZTIME" "$PKG"
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
