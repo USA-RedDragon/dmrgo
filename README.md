@@ -189,7 +189,15 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 
 ## Codec2
 
-`vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. Build with `-tags nocodec2` or `CGO_ENABLED=0` to leave it out: `codec2.New` then returns `codec2.ErrUnavailable`. TinyGo builds always leave it out.
+`vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. With `CGO_ENABLED=0` or `-tags codec2wasm` it runs an embedded WebAssembly build of libcodec2 instead, with no C toolchain:
+
+| Platform | Engine |
+| --- | --- |
+| amd64 and arm64 on Linux, macOS, Windows, FreeBSD and NetBSD, and amd64 on DragonFly BSD, Solaris and illumos | wazero, compiled to machine code |
+| Every other platform, such as 386 and arm, and every platform with `-tags codec2aot` | Go code that wasm2go translates from the same module (`go generate`) |
+| `GOOS=js GOARCH=wasm` | The WebAssembly engine of the browser or Node |
+
+`Encode` and `Decode` do not allocate with cgo, wazero or the translated code. A replacement module from `codec2.NewModule` always runs in wazero, which allocates on each call where it has no compiler, and so does the embedded module on an amd64 CPU without SSE4.1 unless the build uses `-tags codec2aot`. Build with `-tags nocodec2` to leave Codec2 out: `codec2.New` then returns `codec2.ErrUnavailable`. TinyGo builds always leave it out.
 
 Create a codec with `codec2.New`:
 
