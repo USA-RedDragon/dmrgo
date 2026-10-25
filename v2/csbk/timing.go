@@ -340,9 +340,12 @@ func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // CT_CSBK that the radio sends. The SYNC of b, or else h.Slot, tells the
 // slot of b; a burst of unknown slot counts as one in the provisioned
 // slot. The CT_CSBKs of the radio go in its provisioned slot on the slot
-// timing that it took, and none starts before the slot of the last CT_CSBK
+// timing that it took, and none starts before the slot of the last burst
 // heard ends, 30 ms after now: now is the start of that burst, which fills
-// its slot. So the beacon that a radio sends at once when a CT_CSBK
+// its slot. A burst heard after CT_RHOT started counts as RF activity
+// while it fills its slot, as a busy Channel does: a CT_RHOT that ends on
+// it waits another CT_RHOT (ETSI TS 102 361-2 clauses 6.2.2.3.1 to
+// 6.2.2.3.5). The beacon that a radio sends at once when a CT_CSBK
 // appoints it the leader (ETSI TS 102 361-2 clause 6.2.3.7) goes in the
 // first slot that can carry it: 30 ms after the CT_CSBK when it came in the
 // other slot, and 60 ms after it when it came in the provisioned slot. ETSI
@@ -355,17 +358,19 @@ func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst 
 		return dst
 	}
 
-	dst = m.Tick(now, dst)
 	if !m.joined {
 		return dst
 	}
+	if b != nil {
+		m.rxAt, m.hasRx, m.rxOther = now, true, m.otherSlot(b, h.Slot)
+	}
+	dst = m.Tick(now, dst)
 	kind, c, octets := classify(b)
 	ct, ok := c.AsChannelTiming()
 	if kind != rxCSBK || !ok {
 		return dst
 	}
 	m.emitted = false
-	m.rxAt, m.hasRx, m.rxOther = now, true, m.otherSlot(b, h.Slot)
 	rx := &ct
 	if m.pend != ctNone {
 		var eval bool
@@ -739,9 +744,12 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	}
 	m.timers(now)
 	if m.pend != ctNone && m.sending == 0 && now >= m.pendAt {
+		due := m.slotAt(m.pendAt + m.lead)
+		busy := m.busy || m.hasRx && m.rxAt > m.pendStart && now < m.rxAt+BurstInterval/2
 		switch {
-		case !m.busy:
-			m.sendDue = m.slotAt(m.pendAt + m.lead)
+		case !busy && now < due-m.lead:
+		case !busy:
+			m.sendDue = due
 			m.sending = m.fill(m.sendDue - m.lead)
 			m.sendBurst, _ = m.encode()
 			if m.sending > 0 && m.state >= TimingLeaderAndTimingKnown {
@@ -844,8 +852,10 @@ func (m *Timing) Deadline() (at time.Duration, ok bool) {
 	switch {
 	case m.sending > 0:
 		d.add(m.sendDue - m.lead)
-	case m.pend != ctNone:
+	case m.pend != ctNone && m.busy:
 		d.add(m.pendAt)
+	case m.pend != ctNone:
+		d.add(m.slotAt(m.pendAt+m.lead) - m.lead)
 	}
 	return d.at, d.ok
 }
