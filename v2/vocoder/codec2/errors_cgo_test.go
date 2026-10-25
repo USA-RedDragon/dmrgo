@@ -1,4 +1,4 @@
-//go:build cgo && !nocodec2 && !tinygo && (codec2native || !codec2wasm)
+//go:build cgo && codec2native && !nocodec2 && !tinygo
 
 package codec2
 
@@ -15,5 +15,13 @@ func TestStateErrorsAreErrUnavailable(t *testing.T) {
 	}
 	if !errors.Is(errFrameSize, ErrUnavailable) {
 		t.Errorf("errFrameSize = %v, want ErrUnavailable", errFrameSize)
+	}
+}
+
+func TestNativeTagSelectsNativeBackend(t *testing.T) {
+	t.Parallel()
+
+	if Backend != "native" {
+		t.Errorf("Backend = %q with -tags codec2native, want \"native\"", Backend)
 	}
 }

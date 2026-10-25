@@ -171,14 +171,14 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 
 | What may allocate | When | Functions |
 | --- | --- | ---: |
-| The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 6 |
+| The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 7 |
 | A String, GoString or Error method | When the text is built, for a person to read. | 294 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
-| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 43 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 44 |
 | An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 267 |
 | An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 9 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
-| A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 5 |
+| A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 4 |
 | A method of an interface that the library declares for the caller to implement, such as the Read and Write of a dvsi.Port | When the method of the caller allocates. The code of the library on the path does not. | 2 |
 | The runtime print functions, which the runtime calls on its debug paths | Never: they format into fixed buffers that the gate cannot prove are large enough. | 1 |
 
@@ -196,7 +196,15 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 
 ## Codec2
 
-`vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. With `CGO_ENABLED=0` or `-tags codec2wasm` it runs an embedded WebAssembly build of libcodec2 instead, with no C toolchain:
+`vocoder/codec2` runs libcodec2 (LGPL 2.1) compiled to WebAssembly by default, with or without cgo. Such a build needs no C compiler and no system libcodec2. `codec2.Backend` names the backend of a build.
+
+| Build | Backend |
+| --- | --- |
+| Default, with or without cgo | `wasm`: the embedded WebAssembly build of libcodec2 |
+| `-tags codec2native` | `native`: the system libcodec2 with cgo. The build needs cgo, a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. |
+| `-tags nocodec2`, and every TinyGo build | `stub`: `codec2.New` returns `codec2.ErrUnavailable` |
+
+The WebAssembly backend runs in one of these engines:
 
 | Platform | Engine |
 | --- | --- |
@@ -204,7 +212,9 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 | Every other platform, such as 386 and arm, and every platform with `-tags codec2aot` | Go code that wasm2go translates from the same module (`go generate`) |
 | `GOOS=js GOARCH=wasm` | The WebAssembly engine of the browser or Node |
 
-`Encode` and `Decode` do not allocate with cgo, wazero or the translated code. A replacement module from `codec2.NewModule` always runs in wazero, which allocates on each call where it has no compiler, and so does the embedded module on an amd64 CPU without SSE4.1 unless the build uses `-tags codec2aot`. Build with `-tags nocodec2` to leave Codec2 out: `codec2.New` then returns `codec2.ErrUnavailable`. TinyGo builds always leave it out.
+`Encode` and `Decode` do not allocate with the native backend, wazero or the translated code. A replacement module from `codec2.NewModule` always runs in wazero, which allocates on each call where it has no compiler, and so does the embedded module on an amd64 CPU without SSE4.1 unless the build uses `-tags codec2aot`.
+
+Earlier versions used the native backend in every cgo build, and the tag `codec2wasm` selected the WebAssembly backend there. The tag is still accepted and changes nothing. libdmrgo follows the same rule, so build it with `GOFLAGS=-tags=codec2native make -C v2/capi` for the native backend. Its header comes from the native build, so `DMRGO_CODEC2_BACKEND` is `"native"` in every build. The decoded samples of the WebAssembly backend can differ from the native ones by small amounts; the encoded frames are the same.
 
 Create a codec with `codec2.New`:
 

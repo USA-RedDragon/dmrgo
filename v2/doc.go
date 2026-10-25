@@ -168,7 +168,8 @@
 //   - cmd/dmrrf: a command that writes DMR test transmissions as I/Q or FM
 //     modulator audio and decodes DMR from I/Q or discriminator audio.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
-//   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
+//   - vocoder/codec2: a Codec2 Codec (libcodec2 in WebAssembly, or the
+//     system libcodec2 with -tags codec2native).
 //   - vocoder/dvsi: the packet protocol of the DVSI AMBE-3000R and
 //     AMBE-3003 chips, and a Codec with such a chip.
 //   - privacy: opt-in privacy: the algorithm and key ID of an encrypted

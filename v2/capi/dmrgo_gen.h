@@ -5541,7 +5541,7 @@ struct dmrgo_codec2_config_t {
 	dmrgo_codec2_mode_t mode;
 	/* FID is the Feature set ID to send in the Full LC. Zero selects DMRGO_CODEC2_DEFAULT_FID. FID 0 is the ETSI feature set, which repeaters treat as AMBE, so it cannot be selected. */
 	dmrgo_enums_fid_t fid;
-	/* WASM is a WebAssembly build of libcodec2 from NewModule that the WebAssembly backend runs in place of the module embedded in the package. NULL selects the embedded module. The cgo backend links the system libcodec2 and ignores WASM. */
+	/* WASM is a WebAssembly build of libcodec2 from NewModule that the WebAssembly backend runs in place of the module embedded in the package. NULL selects the embedded module. The native backend of -tags codec2native links the system libcodec2 and ignores WASM. */
 	dmrgo_codec2_module_t *wasm;
 };
 

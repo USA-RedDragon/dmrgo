@@ -35,8 +35,8 @@ type Config struct {
 	FID enums.FID
 	// WASM is a WebAssembly build of libcodec2 from NewModule that the
 	// WebAssembly backend runs in place of the module embedded in the
-	// package. Nil selects the embedded module. The cgo backend links the
-	// system libcodec2 and ignores WASM.
+	// package. Nil selects the embedded module. The native backend of
+	// -tags codec2native links the system libcodec2 and ignores WASM.
 	WASM *Module
 }
 

@@ -38,6 +38,7 @@ type loader struct {
 func newLoader(root string) *loader {
 	ctx := build.Default
 	ctx.CgoEnabled = true
+	ctx.BuildTags = []string{"codec2native"}
 	ctx.GOOS, ctx.GOARCH = "linux", "amd64"
 	fset := token.NewFileSet()
 	return &loader{
