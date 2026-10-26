@@ -61,7 +61,7 @@ jobs:
       - name: Codec2 tests on the browser engine in Node
         run: GOOS=js GOARCH=wasm go test -C v2 -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./vocoder/codec2/
 
-  32-bit:
+  arch-32bit:
     runs-on: ubuntu-24.04
 
     steps:
