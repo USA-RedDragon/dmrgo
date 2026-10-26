@@ -273,3 +273,30 @@ func TestDeviceDCMode(t *testing.T) {
 		t.Errorf("rejected DCMODE reply % x, DCMODE_IN %#x", got, d.DCMode(0))
 	}
 }
+
+func TestDeviceStatusPerChannel(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(1)
+	s := hex.EncodeToString(pairs[0].Slot[:])
+	d := dvsisim.New(pairs, dvsisim.Options{NoParityPin: true, Datagram: true, Channels: 3})
+	_, _ = d.Write(packet(t, 0, "41 0a 0431 0754 2400 0000 0000 6f48 0b 03", false))
+	_ = reply(t, d)
+	_, _ = d.Write(packet(t, 0, "16 0001", false))
+	_ = reply(t, d)
+	_, _ = d.Write(packet(t, 1, "41 01 48 "+s, false))
+	if got := reply(t, d); len(got) != 4+1+2+320 {
+		t.Errorf("channel 1 reply after PKT_SPCHFMT for channel 0 has %d bytes, want no CMODE field", len(got))
+	}
+	_, _ = d.Write(packet(t, 0, "41 16 0001", false))
+	if got := reply(t, d); !bytes.Equal(got, []byte{0x61, 0x00, 0x04, 0x00, 0x41, 0x00, 0x16, 0x00}) {
+		t.Errorf("channel 1 SPCHFMT reply % x", got)
+	}
+	_, _ = d.Write(packet(t, 1, "41 01 48 "+s, false))
+	if got := reply(t, d); len(got) != 4+1+2+320+3 || !bytes.Equal(got[len(got)-3:], []byte{0x02, 0x00, 0x02}) {
+		t.Errorf("channel 1 reply after its PKT_SPCHFMT ends % x", got[max(0, len(got)-3):])
+	}
+	if len(d.Errs) > 0 {
+		t.Errorf("errors %q", d.Errs)
+	}
+}

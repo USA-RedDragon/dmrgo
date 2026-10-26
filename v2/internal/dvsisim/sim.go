@@ -2,12 +2,11 @@
 // packet mode for tests. A Device is an io.ReadWriter that parses the
 // packets written to it with its own parser, checks them against the
 // manuals, and answers with stored frame and audio pairs. It reports the
-// decoder status in a CMODE field of each speech packet after a PKT_SPCHFMT
-// field asks for it, and repeats frames while LOST_FRAME is set. Like the
-// chip, it keeps DCMODE_IN until a CMODE or PKT_DCMODE field or a reset
-// changes it. Faults can
-// be injected: garbage bytes before a reply, lost replies, short reads and
-// datagram reads.
+// decoder status in a CMODE field of each speech packet of a channel after a
+// PKT_SPCHFMT field for that channel asks for it, and repeats frames while
+// LOST_FRAME is set. Like the chip, it keeps DCMODE_IN until a CMODE or
+// PKT_DCMODE field or a reset changes it. Faults can be injected: garbage
+// bytes before a reply, lost replies, short reads and datagram reads.
 package dvsisim
 
 import (
@@ -117,7 +116,7 @@ type Device struct {
 	parity bool
 	rate   [3]bool
 	init   [3]bool
-	status bool
+	status [3]bool
 	dcmode [3]uint16
 	repeat [3]int
 	last   [3][160]int16
@@ -166,7 +165,7 @@ func New(pairs []Pair, opt Options) *Device {
 func (d *Device) powerUp() {
 	d.parity = !d.opt.NoParityPin
 	d.rate, d.init = [3]bool{}, [3]bool{}
-	d.status, d.dcmode, d.repeat = false, [3]uint16{}, [3]int{}
+	d.status, d.dcmode, d.repeat = [3]bool{}, [3]uint16{}, [3]int{}
 }
 
 // Parity reports whether parity fields are on.
@@ -450,7 +449,7 @@ func (d *Device) control(f []byte) {
 			if d.opt.RejectSpeechFormat {
 				st = 1
 			} else {
-				d.status = f[1]&3 == 1
+				d.status[ch] = f[1]&3 == 1
 			}
 			r = append(r, id, st)
 			f = f[2:]
@@ -567,7 +566,7 @@ func (d *Device) channel(f []byte) {
 	if ch > 0 {
 		r = append(r, 0x40+byte(ch))
 	}
-	cmode := d.status && !d.opt.NoCMode
+	cmode := d.status[ch] && !d.opt.NoCMode
 	if cmode && d.opt.CModeFirst {
 		r = append(r, 0x02, byte(flags>>8), byte(flags))
 	}

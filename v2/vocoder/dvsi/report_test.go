@@ -205,15 +205,16 @@ func TestCodecStatusPackets(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := p.writes[len(p.writes)-2]; !slices.Equal(got, []byte{0x61, 0x00, 0x03, 0x00, 0x16, 0x00, 0x01}) {
-			t.Errorf("channel %d: PKT_SPCHFMT packet % x", ch, got)
-		}
 		var chField []byte
 		if ch > 0 {
 			chField = []byte{0x41}
 		}
 		n := byte(len(chField))
-		want := slices.Concat([]byte{0x61, 0x00, 3 + n, 0x00}, chField, []byte{0x06, 0x00, 0x00})
+		want := slices.Concat([]byte{0x61, 0x00, 3 + n, 0x00}, chField, []byte{0x16, 0x00, 0x01})
+		if got := p.writes[len(p.writes)-2]; !slices.Equal(got, want) {
+			t.Errorf("channel %d: PKT_SPCHFMT packet % x, want % x", ch, got, want)
+		}
+		want = slices.Concat([]byte{0x61, 0x00, 3 + n, 0x00}, chField, []byte{0x06, 0x00, 0x00})
 		if got := p.writes[len(p.writes)-1]; !slices.Equal(got, want) {
 			t.Errorf("channel %d: PKT_DCMODE packet % x, want % x", ch, got, want)
 		}

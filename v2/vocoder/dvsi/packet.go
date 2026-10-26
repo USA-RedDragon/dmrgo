@@ -174,8 +174,9 @@ const (
 	dcmodeToneFrame   = 0x8000
 )
 
-func appendSpeechFormat(dst []byte, parity bool) []byte {
+func appendSpeechFormat(dst []byte, channel int, parity bool) []byte {
 	dst, start := begin(dst, TypeControl)
+	dst, _ = appendChannelField(dst, channel)
 	return finish(append(dst, byte(fieldSpeechFormat), 0x00, 0x01), start, parity)
 }
 

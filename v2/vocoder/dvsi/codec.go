@@ -83,23 +83,23 @@ type Codec struct {
 var _ vocoder.Codec = (*Codec)(nil)
 
 // New sets up the chip behind port for the DMR AMBE+2 rate and returns a
-// Codec for it. Unless cfg.NoReset, it first sends 350 zero bytes, which
-// end any packet the chip is in the middle of, and a reset packet, and
-// waits for PKT_READY, as xlxd ambed does. Then it sets the parity mode,
-// reads the product name and version, sets the rate of cfg.Channel with
-// AppendRateDMR, and with a PKT_SPCHFMT field of 0x0001 has the chip put
+// Codec for it. Unless cfg.NoReset, it first sends 350 zero bytes, which end
+// any packet the chip is in the middle of, and a reset packet, and waits for
+// PKT_READY, as xlxd ambed does. Then it sets the parity mode, reads the
+// product name and version, sets the rate of cfg.Channel with AppendRateDMR,
+// and with a PKT_SPCHFMT field of 0x0001 for cfg.Channel has the chip put
 // the decoder status DCMODE_OUT in a CMODE field of each speech packet
 // (AMBE-3000R manual Tables 63 and 64). Last, a PKT_DCMODE field of 0x0000
-// clears the DCMODE_IN flags of cfg.Channel, which the chip keeps until
-// they are changed, so that a LOST_FRAME left set by an earlier user of the
+// clears the DCMODE_IN flags of cfg.Channel, which the chip keeps until they
+// are changed, so that a LOST_FRAME left set by an earlier user of the
 // channel does not make the chip repeat every frame (Tables 14 and 36). A
 // nil cfg means the zero Config. It returns dmrgo.ErrNilArgument for a nil
 // port, ErrChannel for a channel outside 0 to MaxChannel, ErrTimeout when
 // the chip does not reply, ErrSpeechFormat when it rejects the PKT_SPCHFMT
 // field, ErrStatus when it rejects another field, with a text that names
-// PKT_DCMODE for that field, and the errors of port. It allocates the
-// Codec, the product and version strings, the query packet that
-// resynchronizes it after a timeout, and the PKT_DCMODE packet.
+// PKT_DCMODE for that field, and the errors of port. It allocates the Codec,
+// the product and version strings, the query packet that resynchronizes it
+// after a timeout, and the PKT_DCMODE packet.
 func New(port Port, cfg *Config) (*Codec, error) {
 	var conf Config
 	if cfg != nil {
@@ -147,7 +147,7 @@ func New(port Port, cfg *Config) (*Codec, error) {
 		return nil, err
 	}
 	c.consume(n)
-	_, n, err = c.control(appendSpeechFormat(c.tx[:0], c.parity))
+	_, n, err = c.control(appendSpeechFormat(c.tx[:0], c.channel, c.parity))
 	if errors.Is(err, ErrStatus) {
 		return nil, ErrSpeechFormat
 	}
