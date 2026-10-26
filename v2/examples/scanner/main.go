@@ -112,14 +112,12 @@ func generatedCall() ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	var gps pdu.FullLinkControl
-	if err := gps.SetGPSInfo(pdu.FLCGPSInfo{
-		PositionError: layer3.PositionLessThan20M, Longitude: -88.4321, Latitude: 27.1234,
-	}); err != nil {
+	gps, err := pdu.FLCGPSInfo{PositionError: layer3.PositionLessThan20M, Longitude: -88.4321, Latitude: 27.1234}.FullLinkControl()
+	if err != nil {
 		return nil, err
 	}
-	var lc pdu.FullLinkControl
-	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3141592}); err != nil {
+	lc, err := pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3141592}.FullLinkControl()
+	if err != nil {
 		return nil, err
 	}
 	rotation = append(rotation, gps)

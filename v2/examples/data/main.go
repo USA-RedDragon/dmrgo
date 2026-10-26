@@ -100,9 +100,9 @@ func unconfirmed(w io.Writer) error {
 	text := "Hello from dmrgo, unconfirmed SMS test"
 	payload := append(udpHeader[:], text...)
 
-	var h pdu.DataHeader
-	if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}); err != nil {
+	h, err := pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}.DataHeader()
+	if err != nil {
 		return err
 	}
 	p, err := packet.NewPacket(h, payload, enums.DataTypeRate12)
@@ -133,10 +133,10 @@ func unconfirmed(w io.Writer) error {
 
 func confirmed(w io.Writer) error {
 	lip := []byte("LIP: 41.878,-87.629,hdg=90,v=12")
-	var h pdu.DataHeader
-	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
+	h, err := pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
-		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}); err != nil {
+		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}.DataHeader()
+	if err != nil {
 		return err
 	}
 	p, err := packet.NewPacket(h, lip, enums.DataTypeRate34)

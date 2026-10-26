@@ -45,23 +45,22 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	if err != nil {
 		return err
 	}
-	csbks := make([]*pdu.CSBK, 7)
-	for i := range csbks {
-		csbks[i] = &pdu.CSBK{LastBlock: true}
+	builds := []func() (pdu.CSBK, error){
+		pdu.AlohaPDU{TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}.CSBK,
+		pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}.CSBK,
+		pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}.CSBK,
+		pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
+		pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
+		pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}.CSBK,
+		pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}.CSBK,
 	}
-	if err := errors.Join(
-		csbks[0].SetAloha(pdu.AlohaPDU{
-			TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}),
-		csbks[1].SetBroadcast(pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}),
-		csbks[2].SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{
-			PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}),
-		csbks[3].SetPrivateVoiceGrant(pdu.PrivateVoiceGrantPDU{
-			PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}),
-		csbks[4].SetAhoy(pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}),
-		csbks[5].SetAckOutbound(pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}),
-		csbks[6].SetMove(pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}),
-	); err != nil {
-		return err
+	csbks := make([]*pdu.CSBK, len(builds))
+	for i, build := range builds {
+		c, err := build()
+		if err != nil {
+			return err
+		}
+		csbks[i] = &c
 	}
 	for _, c := range csbks {
 		got, b, err := roundTripCSBK(c, layer2.SyncSourceBS)
@@ -123,11 +122,11 @@ func encodeMatchesBuild(w io.Writer, c *pdu.CSBK) error {
 
 func opcode0x38(w io.Writer) error {
 	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, TargetAddress: 9, SourceAddress: 3120001}
-	c := &pdu.CSBK{LastBlock: true}
-	if err := c.SetTalkgroupDataGrantMultiItem(mi); err != nil {
+	c, err := mi.CSBK()
+	if err != nil {
 		return err
 	}
-	got, _, err := roundTripCSBK(c, layer2.SyncSourceBS)
+	got, _, err := roundTripCSBK(&c, layer2.SyncSourceBS)
 	if err != nil {
 		return err
 	}
@@ -144,11 +143,11 @@ func opcode0x38(w io.Writer) error {
 
 func randomAccess(w io.Writer) error {
 	ra := pdu.RandomAccessPDU{TargetAddress: 9, SourceAddress: 3120001}
-	c := &pdu.CSBK{LastBlock: true}
-	if err := c.SetRandomAccess(ra); err != nil {
+	c, err := ra.CSBK()
+	if err != nil {
 		return err
 	}
-	got, b, err := roundTripCSBK(c, layer2.SyncSourceMS)
+	got, b, err := roundTripCSBK(&c, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -161,8 +160,8 @@ func randomAccess(w io.Writer) error {
 
 func mbcGrant(w io.Writer) error {
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
-	var hdr pdu.MBCHeader
-	if err := hdr.SetTalkgroupVoiceGrant(grant); err != nil {
+	hdr, err := grant.MBCHeader()
+	if err != nil {
 		return err
 	}
 	cgap := pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: colorCode,
