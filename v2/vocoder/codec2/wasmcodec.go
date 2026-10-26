@@ -10,6 +10,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // Backend is the name of the backend of this build: "native", "wasm" or
@@ -415,21 +416,24 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 }
 
 // Decode decodes one 72-bit frame, appends its FrameSamples samples to dst
-// and returns the extended slice. The bits after the Codec2 frame are
-// ignored, except that ModeAuto detects the mode from them. It returns
-// ErrClosed after Close, with dst unchanged, and an error that wraps
-// ErrUnavailable when libcodec2 traps, with dst extended by FrameSamples
-// zero samples. It does not allocate when dst has room for FrameSamples
+// and returns the extended slice and a report on the frame. The bits after
+// the Codec2 frame are ignored, except that ModeAuto detects the mode from
+// them. The DMR framing of Codec2 has no FEC, so the report has
+// CountsKnown and no corrected bits, and Output is always OutputVoice;
+// Frame is FrameInvalid when a bit after the Codec2 frame of the decoded
+// mode is set, else FrameGood. It returns ErrClosed after Close, with dst
+// unchanged, and an error that wraps ErrUnavailable when libcodec2 traps,
+// with dst extended by FrameSamples zero samples, both with a zero report. It does not allocate when dst has room for FrameSamples
 // more samples, except where wazero interprets the module, as for Encode,
 // and under GOOS=js, where each call into the module allocates JavaScript
 // values.
-func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
+func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, vocoder.FrameReport, error) {
 	if c == nil {
-		return dst, dmrgo.ErrNilReceiver
+		return dst, vocoder.FrameReport{}, dmrgo.ErrNilReceiver
 	}
 
 	if c.inst == nil {
-		return dst, ErrClosed
+		return dst, vocoder.FrameReport{}, ErrClosed
 	}
 	c.frame = slot
 	m := c.mode
@@ -440,22 +444,39 @@ func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	dst = append(dst, make([]int16, FrameSamples)...)
 	pcm := dst[n:]
 	if !c.inst.write(c.bits, c.frame[:8]) {
-		return dst, errTrap
+		return dst, vocoder.FrameReport{}, errTrap
 	}
 	if c.inst.call3(fnDecode, c.dec[m.index()], c.pcm, c.bits) != nil {
-		return dst, errTrap
+		return dst, vocoder.FrameReport{}, errTrap
 	}
 	if !c.inst.read(c.pcm, c.buf[:]) {
-		return dst, errTrap
+		return dst, vocoder.FrameReport{}, errTrap
 	}
 	for i := range pcm {
 		pcm[i] = int16(binary.LittleEndian.Uint16(c.buf[2*i:]))
 	}
-	return dst, nil
+	return dst, m.report(&slot), nil
 }
 
-// Close frees the module instance and its libcodec2 states. Later Encode
-// and Decode calls return ErrClosed. Close is idempotent.
+// DecodeLost appends FrameSamples zero samples in place of a frame that
+// never arrived, and returns the extended slice and a report with Frame
+// FrameLost and Output OutputSilence. libcodec2 has no concealment for
+// Mode2400 and Mode3200, so the decoder state does not change. It returns
+// ErrClosed after Close, with dst unchanged. It does not allocate when dst
+// has room for FrameSamples more samples.
+func (c *Codec) DecodeLost(dst []int16) ([]int16, vocoder.FrameReport, error) {
+	if c == nil {
+		return dst, vocoder.FrameReport{}, dmrgo.ErrNilReceiver
+	}
+
+	if c.inst == nil {
+		return dst, vocoder.FrameReport{}, ErrClosed
+	}
+	return append(dst, make([]int16, FrameSamples)...), vocoder.FrameReport{Frame: vocoder.FrameLost, Output: vocoder.OutputSilence}, nil
+}
+
+// Close frees the module instance and its libcodec2 states. Later Encode,
+// Decode and DecodeLost calls return ErrClosed. Close is idempotent.
 func (c *Codec) Close() error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver

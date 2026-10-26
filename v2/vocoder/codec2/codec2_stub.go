@@ -4,6 +4,7 @@ package codec2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // Backend is the name of the backend of this build: "native", "wasm" or
@@ -74,13 +75,22 @@ func (c *Codec) Encode([]int16) ([9]byte, error) {
 	return [9]byte{}, ErrUnavailable
 }
 
-// Decode returns dst and ErrUnavailable.
-func (c *Codec) Decode(dst []int16, _ [9]byte) ([]int16, error) {
+// Decode returns dst, a zero report and ErrUnavailable.
+func (c *Codec) Decode(dst []int16, _ [9]byte) ([]int16, vocoder.FrameReport, error) {
 	if c == nil {
-		return dst, ErrUnavailable
+		return dst, vocoder.FrameReport{}, ErrUnavailable
 	}
 
-	return dst, ErrUnavailable
+	return dst, vocoder.FrameReport{}, ErrUnavailable
+}
+
+// DecodeLost returns dst, a zero report and ErrUnavailable.
+func (c *Codec) DecodeLost(dst []int16) ([]int16, vocoder.FrameReport, error) {
+	if c == nil {
+		return dst, vocoder.FrameReport{}, ErrUnavailable
+	}
+
+	return dst, vocoder.FrameReport{}, ErrUnavailable
 }
 
 // Close does nothing.

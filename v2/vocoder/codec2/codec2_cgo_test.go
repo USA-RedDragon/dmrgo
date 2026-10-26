@@ -91,7 +91,7 @@ func decodeAll(t *testing.T, c *Codec, slots [][9]byte) []int16 {
 	t.Helper()
 	pcm := make([]int16, 0, len(slots)*FrameSamples)
 	for _, slot := range slots {
-		out, err := c.Decode(nil, slot)
+		out, _, err := c.Decode(nil, slot)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,7 +133,7 @@ func TestSeparateCodecsConcurrently(t *testing.T) {
 			for off := 0; off < len(pcm); off += FrameSamples {
 				slot, err := c.Encode(pcm[off : off+FrameSamples])
 				if err == nil {
-					_, err = c.Decode(nil, slot)
+					_, _, err = c.Decode(nil, slot)
 				}
 				if err != nil {
 					done <- err
@@ -180,11 +180,11 @@ func TestClose(t *testing.T) {
 	if _, err := c.Encode(make([]int16, FrameSamples)); !errors.Is(err, ErrClosed) {
 		t.Errorf("Encode after Close error = %v", err)
 	}
-	if pcm, err := c.Decode(nil, [9]byte{}); pcm != nil || !errors.Is(err, ErrClosed) {
+	if pcm, _, err := c.Decode(nil, [9]byte{}); pcm != nil || !errors.Is(err, ErrClosed) {
 		t.Errorf("Decode after Close = %v, %v", pcm, err)
 	}
 	dst := []int16{1, 2}
-	if got, err := c.Decode(dst, [9]byte{}); len(got) != len(dst) || !errors.Is(err, ErrClosed) {
+	if got, _, err := c.Decode(dst, [9]byte{}); len(got) != len(dst) || !errors.Is(err, ErrClosed) {
 		t.Errorf("Decode after Close = %v, %v", got, err)
 	}
 }
@@ -197,7 +197,7 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := c.Decode([]int16{7, 8}, slot)
+	got, _, err := c.Decode([]int16{7, 8}, slot)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,7 +470,7 @@ func TestAutoDecode(t *testing.T) {
 			var out []int16
 			for i, slot := range slots {
 				var err error
-				if out, err = c.Decode(out, slot); err != nil {
+				if out, _, err = c.Decode(out, slot); err != nil {
 					t.Fatal(err)
 				}
 				want := mode

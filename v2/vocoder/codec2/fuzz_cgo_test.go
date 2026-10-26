@@ -47,7 +47,7 @@ func FuzzCodec2(f *testing.F) {
 		pcm, k := fuzzPCM(pool, base, pattern, n, short)
 		auto := newCodec(t, Config{})
 		for range 2 {
-			if out, err := auto.Decode(nil, slot); err != nil || len(out) != FrameSamples {
+			if out, _, err := auto.Decode(nil, slot); err != nil || len(out) != FrameSamples {
 				t.Fatalf("ModeAuto: Decode(%x) = %d samples, %v", slot, len(out), err)
 			}
 		}
@@ -57,10 +57,10 @@ func FuzzCodec2(f *testing.F) {
 		for _, mode := range allModes() {
 			nb := mode.frameBytes()
 			a := newCodec(t, Config{Mode: mode})
-			if out, err := a.Decode(nil, slot); err != nil || len(out) != FrameSamples {
+			if out, _, err := a.Decode(nil, slot); err != nil || len(out) != FrameSamples {
 				t.Fatalf("mode %d: Decode(%x) = %d samples, %v", mode, slot, len(out), err)
 			}
-			if out, err := a.Decode(make([]int16, 3), slot); err != nil || len(out) != 3+a.FrameSamples() {
+			if out, _, err := a.Decode(make([]int16, 3), slot); err != nil || len(out) != 3+a.FrameSamples() {
 				t.Fatalf("mode %d: Decode(%x) = %d samples, %v", mode, slot, len(out), err)
 			}
 

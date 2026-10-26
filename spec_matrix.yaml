@@ -126,6 +126,7 @@ ignore_files:
   - v2/vocoder/codec2/engine_select_compiler.go
   - v2/vocoder/codec2/internal/aot/codec2.go
   - v2/vocoder/codec2/module_nowasm.go
+  - v2/vocoder/codec2/report.go
   - v2/vocoder/codec2/wasmcodec.go
   - v2/vocoder/dvsi/codec.go
   - v2/vocoder/dvsi/errors.go

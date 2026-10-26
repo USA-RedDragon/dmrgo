@@ -11,7 +11,7 @@ func TestAllocsAutoDecode(t *testing.T) {
 		dst := make([]int16, 0, FrameSamples)
 		n := 0
 		allocs := testing.AllocsPerRun(100, func() {
-			dst, _ = c.Decode(dst[:0], slots[n%len(slots)])
+			dst, _, _ = c.Decode(dst[:0], slots[n%len(slots)])
 			n++
 			if n%7 == 0 {
 				c.Reset()
@@ -37,6 +37,23 @@ func TestAllocsEncode(t *testing.T) {
 			if allocs != 0 {
 				t.Errorf("module %d: Encode in mode %d: %.1f allocations", i, mode, allocs)
 			}
+		}
+	}
+}
+
+func TestAllocsDecodeLost(t *testing.T) {
+	for i, m := range allocModules(t) {
+		c := newCodecOf(t, Config{WASM: m})
+		slots := encodeAll(t, newCodecOf(t, Config{WASM: m}), voiced(4))
+		dst := make([]int16, 0, FrameSamples)
+		n := 0
+		allocs := testing.AllocsPerRun(100, func() {
+			dst, _, _ = c.DecodeLost(dst[:0])
+			dst, _, _ = c.Decode(dst[:0], slots[n%len(slots)])
+			n++
+		})
+		if allocs != 0 {
+			t.Errorf("module %d: DecodeLost and Decode: %.1f allocations", i, allocs)
 		}
 	}
 }
