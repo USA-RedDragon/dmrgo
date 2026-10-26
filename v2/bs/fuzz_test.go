@@ -1,15 +1,12 @@
 package bs_test
 
 import (
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -190,33 +187,8 @@ func FuzzRepeater(f *testing.F) {
 
 func corpusFiles(t *testing.T, name string) []fuzzInput {
 	t.Helper()
-	files, err := filepath.Glob(filepath.Join("testdata/fuzz", name, "*"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	out := make([]fuzzInput, 0, len(files))
-	for _, f := range files {
-		data, err := os.ReadFile(f)
-		if err != nil {
-			t.Fatal(err)
-		}
-		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-		if len(lines) != 5 || lines[0] != "go test fuzz v1" || !strings.HasPrefix(lines[1], "[]byte(") {
-			t.Fatalf("%s: not a FuzzRepeater input", f)
-		}
-		s, err := strconv.Unquote(strings.TrimSuffix(strings.TrimPrefix(lines[1], "[]byte("), ")"))
-		if err != nil {
-			t.Fatalf("%s: %v", f, err)
-		}
-		var n [3]uint8
-		for i, l := range lines[2:] {
-			v, err := strconv.ParseUint(strings.TrimSuffix(strings.TrimPrefix(l, "uint8("), ")"), 0, 8)
-			if err != nil || !strings.HasPrefix(l, "uint8(") {
-				t.Fatalf("%s: line %d: %q", f, i+3, l)
-			}
-			n[i] = uint8(v)
-		}
-		out = append(out, fuzzInput{data: []byte(s), loop: n[0], reps: n[1], step: n[2]})
-	}
+	var out []fuzzInput
+	var in fuzzInput
+	fuzztest.Corpus(t, name, func() { out = append(out, in) }, &in.data, &in.loop, &in.reps, &in.step)
 	return out
 }

@@ -24,6 +24,7 @@ ignore_files:
   - v2/internal/bits/bits.go
   - v2/internal/text/text.go
   - v2/internal/text/texttest/texttest.go
+  - v2/internal/fuzztest/corpus.go
   - v2/internal/fuzztest/loop.go
   - v2/internal/unpacked/unpacked.go
   - v2/internal/pcg/pcg.go

@@ -1,0 +1,7 @@
+go test fuzz v1
+byte('x')
+byte(0x05)
+uint8(7)
+uint32(9)
+bool(true)
+[]byte("ab")
