@@ -468,3 +468,78 @@ func TestCapacityPlusCSBKString(t *testing.T) {
 		}
 	}
 }
+
+func forumOctets(t *testing.T, s string) [12]byte {
+	t.Helper()
+	b, err := hex.DecodeString(s)
+	if err != nil || len(b) != 12 {
+		t.Fatalf("bad vector %q", s)
+	}
+	return [12]byte(b)
+}
+
+func TestCapacityPlusForumMultiBlock(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		first, last string
+		rest        uint8
+		groups      map[uint8]uint8
+		radios      map[uint8]uint16
+	}{
+		{"BE10A2000080B000010180A1", "BE1062D80001000000000373", 2, nil, map[uint8]uint16{1: 1, 3: 472, 4: 1}},
+		{"BE10A200008090000100A7CE", "BE106201000000000000C380", 2, nil, map[uint8]uint16{1: 1, 4: 1}},
+		{"BE10820000808703E702552A", "BE10428701FB028F0000DE3E", 2, nil, map[uint8]uint16{1: 999, 6: 647, 7: 507, 8: 655}},
+		{"BE10820000808503E702B842", "BE104287028F000000007E5D", 2, nil, map[uint8]uint16{1: 999, 6: 647, 8: 655}},
+		{"BE1084400100802000DE6212", "BE1044000000000000008042", 4, map[uint8]uint8{2: 1}, map[uint8]uint16{3: 222}},
+	}
+	for _, tt := range tests {
+		var a pdu.CapacityPlusSiteStatusAssembler
+		for i, s := range []string{tt.first, tt.last} {
+			c := pdu.DecodeCSBK(forumOctets(t, s))
+			p, ok := c.AsCapacityPlusSiteStatus()
+			if c.FEC.Uncorrectable || !ok || p.RestLSN != tt.rest {
+				t.Fatalf("%s: block %d: %+v %t", tt.first, i, p, ok)
+			}
+			wantSeg := pdu.CapacityPlusSegmentFirst
+			if i == 1 {
+				wantSeg = pdu.CapacityPlusSegmentLast
+			}
+			done, err := a.Add(&p)
+			if p.Segment != wantSeg || err != nil || done != (i == 1) {
+				t.Fatalf("%s: block %d: %v %t %v", tt.first, i, p.Segment, done, err)
+			}
+		}
+		act, err := a.Activity()
+		if err != nil || act.RestLSN != tt.rest {
+			t.Fatalf("%s: %+v %v", tt.first, act, err)
+		}
+		for lsn := uint8(1); lsn <= 16; lsn++ {
+			tg, okG := act.Talkgroup(lsn)
+			if want, ok := tt.groups[lsn]; okG != ok || tg != want {
+				t.Errorf("%s: LSN %d talkgroup %d %t, want %d %t", tt.first, lsn, tg, okG, want, ok)
+			}
+			r, okR := act.RadioTarget(lsn)
+			if want, ok := tt.radios[lsn]; okR != ok || r != want {
+				t.Errorf("%s: LSN %d radio %d %t, want %d %t", tt.first, lsn, r, okR, want, ok)
+			}
+		}
+	}
+}
+
+func TestCapacityPlusForumPrivateGrant(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		lc   string
+		rest uint8
+	}{{"07100000520904520A50ED7F", 4}, {"07100000520903520AEDFD71", 3}} {
+		lc := pdu.DecodeFullLinkControl(forumOctets(t, tt.lc), enums.DataTypeVoiceLCHeader)
+		g, ok := lc.AsCapacityPlusPrivateVoiceGrant()
+		want := pdu.CapacityPlusPrivateVoiceGrant{TargetAddress: 21001, RestLSN: tt.rest, SourceAddress: 21002}
+		if lc.FEC.Uncorrectable || !ok || g != want {
+			t.Errorf("%s: %+v %t, want %+v", tt.lc, g, ok, want)
+		}
+		if _, ok := lc.AsCapacityPlusGroupVoiceGrant(); ok {
+			t.Errorf("%s: read as a group grant", tt.lc)
+		}
+	}
+}
