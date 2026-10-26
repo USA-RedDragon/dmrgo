@@ -22,12 +22,8 @@ type Tables struct {
 	GaloisLog                 [256]uint8   // GF(2^8) logarithm table, polynomial 0x11D
 	AMBEScrambleTable         [4096]uint32 // AMBE 24-bit scramble mask per 12-bit A value
 
-	Golay23_12_7Encoding   []uint32     // Golay(23,12,7) codeword shifted left by 1, per 12-bit data value
-	Golay23_12_7Syndrome   [4096]uint32 // Golay(23,12,7) error pattern per syndrome, 0xFFFFFFFF if uncorrectable
-	Golay24_12_8Encoding   []uint32     // Golay(24,12,8) codeword per 12-bit data value
-	Golay24_12_8Syndrome   [4096]uint32 // Golay(24,12,8) error pattern per syndrome, 0xFFFFFFFF if uncorrectable
-	EncoderStateTransition []byte       // trellis 3/4 encoder symbol at index state*8+tribit
-	InterleaveMatrix       []byte       // trellis 3/4 dibit interleave order
+	EncoderStateTransition []byte // trellis 3/4 encoder symbol at index state*8+tribit
+	InterleaveMatrix       []byte // trellis 3/4 dibit interleave order
 
 	Trellis34Transition   [][]byte   // trellis 3/4 tribit per [state][symbol], 0xFF if invalid
 	Trellis34BranchDibits []byte     // trellis 3/4 dibit pair per branch state*8+tribit
@@ -117,32 +113,12 @@ func All() *Tables {
 
 	wg.Add(1)
 	go func() {
-		t.Golay23_12_7Encoding = Golay23_12_7Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay24_12_8Encoding = Golay24_12_8Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
 		t.EncoderStateTransition = EncoderStateTransition()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
 		t.InterleaveMatrix = InterleaveMatrix()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay23_12_7Syndrome = Golay23_12_7Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay24_12_8Syndrome = Golay24_12_8Syndrome()
 		wg.Done()
 	}()
 	wg.Wait()

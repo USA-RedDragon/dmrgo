@@ -1,7 +1,6 @@
 package golay
 
 import (
-	"math/bits"
 	"math/rand"
 	"testing"
 	"time"
@@ -70,17 +69,6 @@ func TestGolay23127(t *testing.T) {
 			case decoded != data:
 				t.Errorf("Data 0x%03x (3 errors): Decoded as 0x%03x", data, decoded)
 			}
-		}
-	}
-}
-
-func TestGolay23127IsPerfect(t *testing.T) {
-	t.Parallel()
-
-	for s := range 2048 {
-		pattern := golay_23_12_7_syndrome_table[s]
-		if pattern == 0xFFFFFFFF || bits.OnesCount32(pattern) > 3 || golay23ComputeSyndrome(pattern) != s {
-			t.Fatalf("syndrome %#x maps to pattern %#x", s, pattern)
 		}
 	}
 }

@@ -113,12 +113,12 @@ func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
 func TestEncodeGolay24128ExtendsGolay23127(t *testing.T) {
 	t.Parallel()
 
-	if got := Encode23127(1); got != golay23GenPoly {
-		t.Fatalf("Encode23127(1) = %#x, want g(x) %#x", got, golay23GenPoly)
+	if got := Encode23127(1); got != 0xC75 {
+		t.Fatalf("Encode23127(1) = %#x, want g(x) 0xc75", got)
 	}
 	for d := range uint16(4096) {
 		cw23 := Encode23127(d)
-		if cw23>>11 != uint32(d) || golay23ComputeSyndrome(cw23) != 0 {
+		if cw23>>11 != uint32(d) || remainderC75(cw23) != 0 {
 			t.Fatalf("Encode23127(%#x) = %#x is not a systematic codeword", d, cw23)
 		}
 		cw24 := Encode24128(d)
@@ -148,4 +148,13 @@ func TestDecodeGolayWideInput(t *testing.T) {
 			t.Errorf("Golay(23,12) %08x: data %03x result %+v, want data 5a5 with only Uncorrectable", cw23|high, data, res)
 		}
 	}
+}
+
+func remainderC75(w uint32) uint32 {
+	for i := 11; i >= 0; i-- {
+		if w&(1<<(i+11)) != 0 {
+			w ^= 0xC75 << i
+		}
+	}
+	return w & 0x7FF
 }

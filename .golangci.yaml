@@ -169,10 +169,10 @@ linters:
           - gocritic
         text: ^dupSubExpr
       # Lookup tables of the FEC decoders, which TinyGo keeps in flash.
-      - path: v2/internal/(fec/golay/golay_20_8_7|fec/quadraticresidue/quadratic_residue_16_7_6)\.go$
+      - path: v2/internal/(fec/golay/golay_(20_8_7|24_12_8)|fec/quadraticresidue/quadratic_residue_16_7_6)\.go$
         linters:
           - gochecknoglobals
-        text: ^(rows2087|rows) is a global variable
+        text: ^(rows2087|rows24|cols24|rows) is a global variable
       # The no-panic test walks every kind of reflect value in one switch.
       - path: v2/internal/allocgate/allapi/nopanic_test\.go$
         linters:

@@ -6,22 +6,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-const golay23GenPoly = 0xC75
-
-func golay23ComputeSyndrome(received uint32) int {
-	dividend := received
-	for i := 11; i >= 0; i-- {
-		if dividend&(1<<(i+11)) != 0 {
-			dividend ^= golay23GenPoly << i
-		}
-	}
-	return int(dividend & 0x7FF)
-}
-
 // Encode23127 returns the 23-bit Golay (23,12,7) codeword of the low
 // 12 bits of data: the data bits in bits 22 to 11, the parity in bits 10 to 0.
 func Encode23127(data uint16) uint32 {
-	return golay_23_12_7_table[data&0xFFF] >> 1
+	return Encode24128(data) >> 1
 }
 
 // Decode23127 decodes a 23-bit Golay (23,12,7) word into 12 data bits. The
@@ -37,20 +25,12 @@ func Decode23127(received uint32) (data uint16, result fec.Result) {
 		return data, result
 	}
 
-	syndrome := golay23ComputeSyndrome(received)
-
-	if syndrome == 0 {
-		return uint16(received >> 11), result
-	}
-
-	errPattern := golay_23_12_7_syndrome_table[syndrome]
-	if errPattern == 0xFFFFFFFF {
+	errPattern, ok := errors24(received<<1 | uint32((bits.OnesCount32(received)+1)&1))
+	if !ok {
 		result.Uncorrectable = true
 		return uint16(received >> 11), result
 	}
-
-	corrected := received ^ errPattern
+	errPattern >>= 1
 	result.ErrorsCorrected = bits.OnesCount32(errPattern)
-
-	return uint16(corrected >> 11 & 0xFFFF), result
+	return uint16((received ^ errPattern) >> 11 & 0xFFFF), result
 }
