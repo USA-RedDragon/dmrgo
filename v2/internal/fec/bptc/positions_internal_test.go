@@ -1,6 +1,9 @@
 package bptc
 
-import "testing"
+import (
+	"math/bits"
+	"testing"
+)
 
 func checkPositions(t *testing.T, name string, n, syndromes int, syndrome func(p int) int, pos func(s int) int) {
 	t.Helper()
@@ -33,4 +36,27 @@ func TestHammingPositionsLocateSingleErrors(t *testing.T) {
 		func(s int) int { return wordPos(h1611PosLo, h1611PosHi, h1611PosTop, s) })
 	checkPositions(t, "17,12", 17, 32, func(p int) int { return rowSyndrome17_12(1 << p) },
 		func(s int) int { return wordPos(h1712PosLo, h1712PosHi, h1712PosTop, s) })
+}
+
+func TestEmbeddedLCColumnsAndWeights(t *testing.T) {
+	t.Parallel()
+
+	for c := range 16 {
+		if got, want := int(column16_11(c)), rowSyndrome16_11(1<<c); got != want {
+			t.Errorf("column %d: syndrome %d, want %d", c, got, want)
+		}
+	}
+	least := [32]int{}
+	for s := range least {
+		least[s] = 17
+	}
+	for p := range 1 << 16 {
+		s := rowSyndrome16_11(uint16(p))
+		least[s] = min(least[s], bits.OnesCount16(uint16(p)))
+	}
+	for s, want := range least {
+		if got := minWeight16_11(s); got != want {
+			t.Errorf("syndrome %d: least weight %d, want %d", s, got, want)
+		}
+	}
 }

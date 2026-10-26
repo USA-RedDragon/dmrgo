@@ -33,15 +33,16 @@ const EmbeddedMaxErrors = 8
 func DecodeEmbeddedWithCheck(fragments [4]uint32, check func(info [10]byte) bool) ([10]byte, fec.Result) {
 	s := embeddedLCSearch{best: EmbeddedMaxErrors, check: check, rows: embeddedLCMatrix(fragments)}
 	for row := range s.rows {
-		s.syndromes[row] = rowSyndrome16_11(s.rows[row])
+		s.syndromes[row] = uint8(rowSyndrome16_11(s.rows[row]) & 0x1F)
 		s.parity ^= s.rows[row]
 	}
 	result := fec.Result{BitsChecked: 128}
-	if s.parity == 0 && s.syndromes == [8]int{} {
+	if s.parity == 0 && s.syndromes == [8]uint8{} {
 		info := embeddedLCInfo(&s.rows)
 		result.Uncorrectable = check != nil && !check(info)
 		return info, result
 	}
+	s.prepare()
 	s.run(7)
 	for derived := 6; derived >= 0 && s.best >= 5; derived-- {
 		s.run(derived)
@@ -57,17 +58,28 @@ func DecodeEmbeddedWithCheck(fragments [4]uint32, check func(info [10]byte) bool
 
 type embeddedLCSearch struct {
 	rows         [8]uint16
-	syndromes    [8]int
+	syndromes    [8]uint8
 	parity       uint16
 	order        [7]uint8
 	derived      int
 	minRemaining [8]int
 	errors       [8]uint16
+	columns      [16]uint8
+	positions    [32]int8
 	check        func([10]byte) bool
 	best         int
 	found        bool
 	ambiguous    bool
 	info         [10]byte
+}
+
+func (s *embeddedLCSearch) prepare() {
+	for c := range s.columns {
+		s.columns[c] = column16_11(c)
+	}
+	for syndrome := range s.positions {
+		s.positions[syndrome] = wordPos8(h1611PosLo, h1611PosHi, h1611PosTop, syndrome)
+	}
 }
 
 func (s *embeddedLCSearch) run(derived int) {
@@ -81,12 +93,35 @@ func (s *embeddedLCSearch) run(derived int) {
 	}
 	s.minRemaining[7] = 5
 	if derived == 7 {
-		s.minRemaining[7] = embeddedLCMinWeight[s.syndromes[7]]
+		s.minRemaining[7] = minWeight16_11(int(s.syndromes[7]))
 	}
 	for i := 6; i >= 0; i-- {
-		s.minRemaining[i] = s.minRemaining[i+1] + embeddedLCMinWeight[s.syndromes[s.order[i]]]
+		s.minRemaining[i] = s.minRemaining[i+1] + minWeight16_11(int(s.syndromes[s.order[i]]))
 	}
 	s.search(0, 0, 0)
+}
+
+const h1611Columns uint64 = 0x72d36eaae3fd79
+
+func column16_11(c int) uint8 {
+	if c >= 11 {
+		return 1 << (c - 11)
+	}
+	return uint8(h1611Columns >> (5 * c) & 0x1F)
+}
+
+func pos16_11(syndrome int) int {
+	return wordPos(h1611PosLo, h1611PosHi, h1611PosTop, syndrome)
+}
+
+func minWeight16_11(syndrome int) int {
+	switch {
+	case syndrome == 0:
+		return 0
+	case pos16_11(syndrome) >= 0:
+		return 1
+	}
+	return 2
 }
 
 func (s *embeddedLCSearch) search(depth int, sum uint16, weight int) {
@@ -101,14 +136,48 @@ func (s *embeddedLCSearch) search(depth int, sum uint16, weight int) {
 		return
 	}
 	row := s.order[depth]
-	syndrome := s.syndromes[row]
-	for w := embeddedLCMinWeight[syndrome]; w < 5; w += 2 {
+	syndrome := int(s.syndromes[row])
+	for w := minWeight16_11(syndrome); w < 5; w += 2 {
 		if weight+w+s.minRemaining[depth+1] > s.best {
 			return
 		}
-		for _, e := range embeddedLCPatterns[embeddedLCPatternStart[syndrome*5+w]:embeddedLCPatternStart[syndrome*5+w+1]] {
-			s.errors[row] = e
-			s.search(depth+1, sum^e, weight+w)
+		next := weight + w
+		switch w {
+		case 0:
+			s.try(row, depth, sum, next, 0)
+		case 1:
+			e := uint16(1) << s.positions[syndrome]
+			s.try(row, depth, sum^e, next, e)
+		case 2:
+			for c1 := range int8(16) {
+				if c2 := s.positions[uint8(syndrome&0x1F)^s.columns[c1]]; c2 > c1 {
+					e := uint16(1)<<c1 | 1<<c2
+					s.try(row, depth, sum^e, next, e)
+				}
+			}
+		case 3:
+			for c1 := range int8(16) {
+				s1 := uint8(syndrome&0x1F) ^ s.columns[c1]
+				for c2 := c1 + 1; c2 < 16; c2++ {
+					if c3 := s.positions[s1^s.columns[c2]]; c3 > c2 {
+						e := uint16(1)<<c1 | 1<<c2 | 1<<c3
+						s.try(row, depth, sum^e, next, e)
+					}
+				}
+			}
+		default:
+			for c1 := range int8(16) {
+				s1 := uint8(syndrome&0x1F) ^ s.columns[c1]
+				for c2 := c1 + 1; c2 < 16; c2++ {
+					s2 := s1 ^ s.columns[c2]
+					for c3 := c2 + 1; c3 < 16; c3++ {
+						if c4 := s.positions[s2^s.columns[c3]]; c4 > c3 {
+							e := uint16(1)<<c1 | 1<<c2 | 1<<c3 | 1<<c4
+							s.try(row, depth, sum^e, next, e)
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -191,4 +260,9 @@ func EncodeEmbedded(info [10]byte) [4]uint32 {
 	}
 	left, right = transpose8(left), transpose8(right)
 	return [4]uint32{uint32(left >> 32), uint32(left & 0xFFFFFFFF), uint32(right >> 32), uint32(right & 0xFFFFFFFF)}
+}
+
+func (s *embeddedLCSearch) try(row uint8, depth int, sum uint16, weight int, e uint16) {
+	s.errors[row] = e
+	s.search(depth+1, sum, weight)
 }

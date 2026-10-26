@@ -104,6 +104,25 @@ func BenchmarkEmbedded(b *testing.B) {
 			_, _ = bptc.DecodeEmbedded(noise)
 		}
 	})
+	r := rand.New(rand.NewSource(7))
+	var hard [64][4]uint32
+	for i := range hard {
+		var info [10]byte
+		r.Read(info[:])
+		info[9] &= 0xF8
+		hard[i] = bptc.EncodeEmbedded(info)
+		for _, p := range r.Perm(128)[:4+i%5] {
+			hard[i][p/32] ^= 1 << (31 - p%32)
+		}
+	}
+	b.Run("Decode/4to8errors", func(b *testing.B) {
+		b.ReportAllocs()
+		i := 0
+		for b.Loop() {
+			_, _ = bptc.DecodeEmbeddedWithCheck(hard[i&63], evenInfo)
+			i++
+		}
+	})
 	b.Run("Encode", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

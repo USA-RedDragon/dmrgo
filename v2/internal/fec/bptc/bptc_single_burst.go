@@ -100,12 +100,16 @@ const (
 )
 
 func wordPos(lo, hi uint64, top uint32, syndrome int) int {
+	return int(wordPos8(lo, hi, top, syndrome))
+}
+
+func wordPos8(lo, hi uint64, top uint32, syndrome int) int8 {
 	positions := lo
 	if syndrome&16 != 0 {
 		positions = hi
 	}
 	n := positions>>(4*(syndrome&15))&0xF | uint64(top>>(syndrome&31)&1)<<4
-	return int(n&0x1F) - 1
+	return int8(n&0x1F) - 1
 }
 
 func rowSyndrome16_11(row uint16) int {

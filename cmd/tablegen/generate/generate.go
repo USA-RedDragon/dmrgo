@@ -13,18 +13,6 @@ import (
 // package under dmrRoot, the v2 directory. It stops at the first write error
 // and returns it.
 func WriteAll(tables *compute.Tables, dmrRoot string) error {
-	if err := writeFile(dmrRoot, "internal/fec/bptc", "bptc",
-		writeTable("embeddedLCPatterns", tables.EmbeddedLCPatterns),
-		jen.Line(),
-		jen.Line(),
-		writeTable("embeddedLCPatternStart", tables.EmbeddedLCPatternStart[:]),
-		jen.Line(),
-		jen.Line(),
-		writeTable("embeddedLCMinWeight", tables.EmbeddedLCMinWeight[:]),
-	); err != nil {
-		return err
-	}
-
 	if err := writeFile(dmrRoot, "layer2/pdu", "pdu",
 		writePackedBits("prFill", tables.PRFillBits[:]),
 	); err != nil {

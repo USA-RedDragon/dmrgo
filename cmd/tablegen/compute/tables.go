@@ -20,10 +20,7 @@ type Tables struct {
 	Trellis34BranchDibits []byte     // trellis 3/4 dibit pair per branch state*8+tribit
 	Trellis34BranchMetric [][]uint64 // trellis 3/4 Viterbi cost per [received dibit pair][state], tribit t in byte t
 
-	PRFillBits             [96]uint8 // PR FILL information bits of an idle burst
-	EmbeddedLCPatterns     []uint16  // embedded LC row error patterns of weight up to 4, by syndrome and weight
-	EmbeddedLCPatternStart [161]int  // start of the patterns of syndrome s and weight w at index s*5+w
-	EmbeddedLCMinWeight    [32]int   // least pattern weight per syndrome, -1 for none
+	PRFillBits [96]uint8 // PR FILL information bits of an idle burst
 
 	ISO8859High [][]uint16 // code point of octets 0xA0 to 0xFF per ISO/IEC 8859 part 2 to 16, 0 if undefined
 }
@@ -83,7 +80,6 @@ func All() *Tables {
 
 	t.PRFillBits = PRFillBits()
 	t.ISO8859High = ISO8859High()
-	t.EmbeddedLCPatterns, t.EmbeddedLCPatternStart, t.EmbeddedLCMinWeight = EmbeddedLCPatterns()
 
 	wg.Wait()
 	return t
