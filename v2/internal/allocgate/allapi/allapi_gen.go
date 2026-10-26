@@ -24,6 +24,7 @@ import (
 	internal_fec_quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	internal_fec_reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
+	internal_fsktx "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
 	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	internal_wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
@@ -40,6 +41,7 @@ import (
 	mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	privacy "github.com/USA-RedDragon/dmrgo/v2/privacy"
+	rf "github.com/USA-RedDragon/dmrgo/v2/rf"
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
@@ -336,6 +338,7 @@ var api = [...]any{
 	internal_fec_bptc.Decode196,
 	internal_fec_bptc.DecodeCACH,
 	internal_fec_bptc.DecodeEmbedded,
+	internal_fec_bptc.DecodeEmbeddedStrict,
 	internal_fec_bptc.DecodeEmbeddedWithCheck,
 	internal_fec_bptc.DecodeRows,
 	internal_fec_bptc.DecodeSingleBurst,
@@ -366,6 +369,24 @@ var api = [...]any{
 	internal_fec_reedsolomon.Encode,
 	internal_fec_trellis.Decode,
 	internal_fec_trellis.Encode,
+	(*internal_fsktx.Audio).AppendSymbol,
+	(*internal_fsktx.IQ).AppendS16,
+	(*internal_fsktx.IQ).AppendS8,
+	(*internal_fsktx.IQ).Key,
+	(*internal_fsktx.MCUAudio).Init,
+	(*internal_fsktx.MCUAudio).Samples,
+	(*internal_fsktx.MCUAudio).Symbol,
+	(*internal_fsktx.MCUIQ).Init,
+	(*internal_fsktx.MCUIQ).Key,
+	(*internal_fsktx.MCUIQ).Samples,
+	(*internal_fsktx.MCUIQ).Symbol,
+	internal_fsktx.AudioTable.Hz,
+	internal_fsktx.AudioTable.Span,
+	internal_fsktx.Dibits,
+	internal_fsktx.NewAudio,
+	internal_fsktx.NewIQ,
+	internal_fsktx.Table24k,
+	internal_fsktx.Table48k,
 	(*internal_pcg.Source).Duration,
 	(*internal_pcg.Source).Uint32,
 	internal_pcg.New,
@@ -1181,6 +1202,31 @@ var api = [...]any{
 	privacy.NewReceiver,
 	privacy.NewTransmitter,
 	privacy.Service.String,
+	(*rf.Burst).Decoded,
+	(*rf.Burst).Hint,
+	(*rf.Burst).Timed,
+	(*rf.DiscReceiver).AppendBursts,
+	(*rf.DiscReceiver).AppendFlush,
+	(*rf.DiscReceiver).DeviationHz,
+	(*rf.DiscReceiver).Flush,
+	(*rf.DiscReceiver).Init,
+	(*rf.DiscReceiver).OffsetHz,
+	(*rf.DiscReceiver).Write,
+	(*rf.LowIQReceiver).Flush,
+	(*rf.LowIQReceiver).Init,
+	(*rf.LowIQReceiver).WriteBaseband,
+	(*rf.LowIQReceiver).WriteIQ16,
+	(*rf.Monitor).Burst,
+	(*rf.Monitor).Reset,
+	(*rf.Receiver).DeviationHz,
+	(*rf.Receiver).Flush,
+	(*rf.Receiver).MaxBursts,
+	(*rf.Receiver).OffsetHz,
+	(*rf.Receiver).Write,
+	(*rf.Receiver).WriteBaseband,
+	rf.New,
+	rf.NewDisc,
+	rf.NewLowIQ,
 	(*shortdata.HyteraText).AppendBinary,
 	(*shortdata.HyteraText).SetTextUTF8,
 	(*shortdata.HyteraText).String,

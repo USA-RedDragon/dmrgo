@@ -20,7 +20,7 @@ import (
 
 const moduleRoot = "../.."
 
-var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/dvsisim", "internal/fecref", "internal/fuzztest", "internal/outputdigest", "internal/text/texttest", "internal/unpacked", "vocoder/codec2/internal/aot"}
+var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/dvsisim", "internal/fecref", "internal/fuzztest", "internal/outputdigest", "internal/rftx", "internal/text/texttest", "internal/unpacked", "vocoder/codec2/internal/aot"}
 
 func libraryPackages(t *testing.T) []string {
 	t.Helper()
