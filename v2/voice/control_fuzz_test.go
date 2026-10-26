@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -56,24 +57,6 @@ type controlInput struct {
 	from, to, reps uint8
 }
 
-func controlLoop(n int, from, to, reps uint8) (lo, hi, total int) {
-	lo = min(int(from), n)
-	hi = max(min(int(to), n), lo)
-	return lo, hi, min(n+int(reps)*(hi-lo), maxControlOps)
-}
-
-func controlIndex(s, lo, hi int, reps uint8) int {
-	if s < hi {
-		return s
-	}
-	s -= hi
-	w := int(reps) * (hi - lo)
-	if s < w {
-		return lo + s%(hi-lo)
-	}
-	return hi + s - w
-}
-
 func controlScript(t testing.TB, p []layer2.RawBurst, in *controlInput) {
 	t.Helper()
 	c0, c1 := in.c0, in.c1
@@ -101,9 +84,9 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in *controlInput) {
 		}
 	}
 	ops := in.ops[:min(len(in.ops), maxControl)]
-	lo, hi, total := controlLoop(len(ops)/2, in.from, in.to, in.reps)
+	lo, hi, total := fuzztest.Loop(len(ops)/2, in.from, in.to, in.reps, maxControlOps)
 	for s := range total {
-		i := 2 * controlIndex(s, lo, hi, in.reps)
+		i := 2 * fuzztest.Index(s, lo, hi, in.reps)
 		op, arg := ops[i], ops[i+1]
 		now += time.Duration(arg&0x0F) * 15 * time.Millisecond
 		raw := p[int(arg>>4)%len(p)]

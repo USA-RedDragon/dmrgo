@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -23,28 +24,19 @@ type opSeed struct {
 }
 
 type opScript struct {
-	ops                  []byte
-	lo, hi, total, width int
+	ops           []byte
+	lo, hi, total int
+	reps          uint8
 }
 
 func (s opSeed) script() opScript {
 	in := s.ops[:min(len(s.ops), maxScript)]
-	n := len(in) / 2
-	lo := min(int(s.from), n)
-	hi := max(min(int(s.to), n), lo)
-	w := int(s.reps) * (hi - lo)
-	return opScript{ops: in, lo: lo, hi: hi, total: min(n+w, maxFuzzOps), width: w}
+	lo, hi, total := fuzztest.Loop(len(in)/2, s.from, s.to, s.reps, maxFuzzOps)
+	return opScript{ops: in, lo: lo, hi: hi, total: total, reps: s.reps}
 }
 
 func (s *opScript) op(i int) (kind, arg byte) {
-	if i >= s.hi {
-		i -= s.hi
-		if i < s.width {
-			i = s.lo + i%(s.hi-s.lo)
-		} else {
-			i = s.hi + i - s.width
-		}
-	}
+	i = fuzztest.Index(i, s.lo, s.hi, s.reps)
 	return s.ops[2*i], s.ops[2*i+1]
 }
 

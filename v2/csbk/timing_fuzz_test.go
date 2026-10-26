@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -48,9 +49,9 @@ func timingScript(t testing.TB, cfg uint8, in []byte, from, to, reps uint8) {
 		}
 	}
 	in = in[:min(len(in), maxTimingScript)]
-	lo, hi, total := scriptLoop(len(in)/9, from, to, reps)
+	lo, hi, total := fuzztest.Loop(len(in)/9, from, to, reps, maxFuzzOps)
 	for s := range total {
-		i := 9 * scriptIndex(s, lo, hi, reps)
+		i := 9 * fuzztest.Index(s, lo, hi, reps)
 		op, f := in[i], in[i+1:i+9]
 		switch op & 7 {
 		case 0, 1, 2:

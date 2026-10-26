@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
@@ -70,31 +71,6 @@ func fuzzSeeds() []fuzzInput {
 	}
 }
 
-func scriptLoop(n int, from, to, reps uint8) (lo, hi, total int) {
-	lo = min(int(from), n)
-	hi = max(min(int(to), n), lo)
-	return lo, hi, min(n+int(reps)*(hi-lo), maxSteps)
-}
-
-func scriptIndex(s, lo, hi int, reps uint8) int {
-	if s < hi {
-		return s
-	}
-	s -= hi
-	w := int(reps) * (hi - lo)
-	if s < w {
-		return lo + s%(hi-lo)
-	}
-	return hi + s - w
-}
-
-func scriptRepeat(s, lo, hi int, reps uint8) int {
-	if s < hi || hi == lo || s-hi >= int(reps)*(hi-lo) {
-		return 0
-	}
-	return (s-hi)/(hi-lo) + 1
-}
-
 func fuzzPackets(pool [][]byte, in fuzzInput, f func(pk []byte, from int, dt time.Duration)) {
 	ops := in.ops[:min(len(in.ops), maxOps)]
 	raw := in.raw[:min(len(in.raw), maxRaw)]
@@ -108,12 +84,12 @@ func fuzzPackets(pool [][]byte, in fuzzInput, f func(pk []byte, from int, dt tim
 		}
 		list = append(list, fuzzPacket{pk: pk, from: int(ops[i+1]), dt: time.Duration(ops[i+2]) * 100 * time.Millisecond, raw: isRaw})
 	}
-	lo, hi, total := scriptLoop(len(list), in.from, in.to, in.reps)
+	lo, hi, total := fuzztest.Loop(len(list), in.from, in.to, in.reps, maxSteps)
 	for s := range total {
-		p := list[scriptIndex(s, lo, hi, in.reps)]
+		p := list[fuzztest.Index(s, lo, hi, in.reps)]
 		pk := append([]byte{}, p.pk...)
 		if p.raw && len(pk) > repeatOctet {
-			pk[repeatOctet] ^= byte(scriptRepeat(s, lo, hi, in.reps))
+			pk[repeatOctet] ^= byte(fuzztest.Repeat(s, lo, hi, in.reps))
 		}
 		f(pk, p.from, p.dt)
 	}

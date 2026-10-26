@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -120,31 +121,13 @@ func (g *rig) step(t testing.TB, op, arg byte) {
 	g.check(t, op)
 }
 
-func scriptLoop(n int, from, to, reps uint8) (lo, hi, total int) {
-	lo = min(int(from), n)
-	hi = max(min(int(to), n), lo)
-	return lo, hi, min(n+int(reps)*(hi-lo), maxFuzzOps)
-}
-
-func scriptIndex(s, lo, hi int, reps uint8) int {
-	if s < hi {
-		return s
-	}
-	s -= hi
-	w := int(reps) * (hi - lo)
-	if s < w {
-		return lo + s%(hi-lo)
-	}
-	return hi + s - w
-}
-
 func runScript(t testing.TB, g *rig, in []byte, from, to, reps uint8) {
 	t.Helper()
 	in = in[:min(len(in), maxScript)]
 	n := len(in) / 2
-	lo, hi, total := scriptLoop(n, from, to, reps)
+	lo, hi, total := fuzztest.Loop(n, from, to, reps, maxFuzzOps)
 	for s := range total {
-		i := 2 * scriptIndex(s, lo, hi, reps)
+		i := 2 * fuzztest.Index(s, lo, hi, reps)
 		g.step(t, in[i], in[i+1])
 	}
 }
