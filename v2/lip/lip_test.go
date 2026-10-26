@@ -3,6 +3,7 @@ package lip_test
 import (
 	"bytes"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -447,7 +448,7 @@ func TestElementOutOfRange(t *testing.T) {
 	t.Parallel()
 	pdu := []byte{0xFF, 0xFF}
 	for _, e := range []lip.Element{
-		{Offset: 1 << 60, Bits: 8}, {Offset: 8, Bits: 1 << 60}, {Offset: 1<<63 - 1, Bits: 1<<63 - 1}, {Offset: -1, Bits: 8}, {Offset: 12, Bits: 5},
+		{Offset: math.MaxInt >> 3, Bits: 8}, {Offset: 8, Bits: math.MaxInt >> 3}, {Offset: math.MaxInt, Bits: math.MaxInt}, {Offset: -1, Bits: 8}, {Offset: 12, Bits: 5},
 	} {
 		if v := e.Uint(pdu); v != 0 {
 			t.Errorf("%+v: Uint = %x", e, v)
