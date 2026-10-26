@@ -21,6 +21,8 @@ jobs:
           - v2/capi
           - v2/internal/digest/xcrypto
           - cmd/dmrgen
+          - cmd/rxbench
+          - cmd/rxsweep
           - cmd/speccheck
           - cmd/tablegen
           - examples/udp

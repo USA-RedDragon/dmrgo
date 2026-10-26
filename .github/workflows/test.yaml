@@ -211,8 +211,24 @@ jobs:
             tinygo build -target="$target" -o "tinygo-$target.elf" ./examples/tinygo
           done
 
+      - name: Build the receiver and modulator examples for WebAssembly
+        run: |
+          for target in wasm wasip1; do
+            for example in rxdisc txaudio txiq; do
+              tinygo build -target="$target" -o "$example-$target.wasm" "./examples/$example"
+            done
+          done
+
+      - name: Build the Tier 0 receiver example without a heap
+        run: tinygo build -target=feather-m4 -gc=none -scheduler=none -size short -o rxdisc.elf ./examples/rxdisc
+
+      - name: Build the Tier 0 modulator examples without a heap
+        run: |
+          tinygo build -target=feather-m4 -gc=none -scheduler=none -size short -o txaudio.elf ./examples/txaudio
+          tinygo build -target=feather-m4 -gc=none -scheduler=none -size short -o txiq.elf ./examples/txiq
+
       - name: Test the library
-        run: tinygo test $(go list ./... | grep -v -e /cmd/ -e /examples/) ./examples/tinygo
+        run: tinygo test $(go list ./... | grep -v -e /cmd/ -e /examples/ -e /rf$) ./examples/tinygo
 
       - name: Test the example at the pico stack size
         run: tinygo test -stack-size=8KB ./examples/tinygo
@@ -223,7 +239,7 @@ jobs:
           tinygo test -stack-size=8KB -gc=conservative ./internal/allocs
 
       - name: Check the heap allocation sites of the whole API for the pico and riscv-qemu
-        run: DMRGO_TINYGO_ALLOCS=1 go test -run TestTinyGoHeapAllocations -v ./internal/allocgate
+        run: DMRGO_TINYGO_ALLOCS=1 go test -run 'TestTinyGoHeapAllocations|TestTinyGoTablesInFlash' -v ./internal/allocgate
 
   unit-tests:
     uses: ./.github/workflows/unit-test.yaml
