@@ -1646,6 +1646,7 @@ sym int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **
 sym int dmrgo_codec2_new_module(const uint8_t *data, size_t data_len, dmrgo_codec2_module_t **out);
 sym int dmrgo_config_error_error(const dmrgo_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_config_error_last(dmrgo_config_error_t *out, bool *ok);
+sym int dmrgo_csbk_new_match(dmrgo_enums_fid_t fid, const dmrgo_pdu_csbk_opcode_t *opcodes, size_t opcodes_len, dmrgo_csbk_match_t *out);
 sym int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
 sym int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
 sym int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);

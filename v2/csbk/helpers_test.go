@@ -91,6 +91,15 @@ func mustRequester(t *testing.T, cfg *csbk.RequesterConfig) *csbk.Requester {
 	return q
 }
 
+func mustMatch(t *testing.T, fid enums.FID, opcodes ...pdu.CSBKOpcode) csbk.Match {
+	t.Helper()
+	m, err := csbk.NewMatch(fid, opcodes...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return m
+}
+
 func mustPreambles(t *testing.T, cfg *csbk.PreamblesConfig) *csbk.Preambles {
 	t.Helper()
 	p, err := csbk.NewPreambles(cfg)

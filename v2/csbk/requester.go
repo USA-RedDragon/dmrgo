@@ -80,7 +80,8 @@ type RequestOptions struct {
 // Match describes the answer that ends a request of Requester.Request: a
 // CSBK with feature set FID and one of the first N Opcodes, addressed from
 // the target of the request to its source. A NACK_Rsp from the target that
-// names the opcode of the request also ends it.
+// names the opcode of the request also ends it. NewMatch makes a Match
+// and sets N.
 type Match struct {
 	// FID is the feature set ID of the answer.
 	FID enums.FID
@@ -88,6 +89,18 @@ type Match struct {
 	Opcodes [4]pdu.CSBKOpcode
 	// N is the number of Opcodes that are used, from 1 to 4.
 	N int
+}
+
+// NewMatch returns the Match of an answer with feature set fid and one of
+// opcodes, with N set to the number of opcodes. It returns a
+// *dmrgo.ConfigError for no opcodes or more than 4.
+func NewMatch(fid enums.FID, opcodes ...pdu.CSBKOpcode) (Match, error) {
+	m := Match{FID: fid, N: len(opcodes)}
+	if m.N < 1 || m.N > len(m.Opcodes) {
+		return Match{}, errMatch
+	}
+	copy(m.Opcodes[:], opcodes)
+	return m, nil
 }
 
 // RequesterState is the state of a Requester.

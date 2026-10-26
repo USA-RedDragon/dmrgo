@@ -70,6 +70,7 @@ DMRGO_2 {
 		dmrgo_codec2_new_module;
 		dmrgo_config_error_error;
 		dmrgo_config_error_last;
+		dmrgo_csbk_new_match;
 		dmrgo_csbk_new_preambles;
 		dmrgo_csbk_new_requester;
 		dmrgo_csbk_new_responder;

@@ -8322,6 +8322,8 @@ int dmrgo_bs_service_string(dmrgo_bs_service_t self, char *out, size_t out_cap, 
 int dmrgo_bs_slot_state_string(dmrgo_bs_slot_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.State.String. String returns the name of the state. */
 int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: csbk.NewMatch. NewMatch returns the Match of an answer with feature set fid and one of opcodes, with N set to the number of opcodes. It returns a DMRGO_ERR_CONFIG for no opcodes or more than 4. */
+int dmrgo_csbk_new_match(dmrgo_enums_fid_t fid, const dmrgo_pdu_csbk_opcode_t *opcodes, size_t opcodes_len, dmrgo_csbk_match_t *out);
 /* Go: csbk.NewPreambles. NewPreambles returns a Preambles for cfg. cfg may be NULL. */
 int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
 /* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, Retries above DMRGO_CSBK_MAX_RETRIES, a negative Lead or a Slot other than DMRGO_ENUMS_SLOT_UNKNOWN, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */

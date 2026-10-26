@@ -237,7 +237,7 @@ func TestRequesterCustom(t *testing.T) {
 		t.Fatal(err)
 	}
 	q := mustRequester(t, nil)
-	if err := q.Request(0, pdu.CSBKBytes(req), csbk.Match{Opcodes: [4]pdu.CSBKOpcode{pdu.CSBKMaintenance}, N: 1}, nil); err != nil {
+	if err := q.Request(0, pdu.CSBKBytes(req), mustMatch(t, enums.FIDStandardized, pdu.CSBKMaintenance), nil); err != nil {
 		t.Fatal(err)
 	}
 	sent := run(t, q, 0)

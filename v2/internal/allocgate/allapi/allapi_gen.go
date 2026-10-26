@@ -133,6 +133,7 @@ var api = [...]any{
 	(*csbk.Wakeup).State,
 	(*csbk.Wakeup).Tick,
 	(*csbk.Wakeup).Wake,
+	csbk.NewMatch,
 	csbk.NewPreambles,
 	csbk.NewRequester,
 	csbk.NewResponder,

@@ -40,6 +40,7 @@ var entryPoints = map[string]any{
 	"dmrgo_bs_service_string":                                          dmrgo_bs_service_string,
 	"dmrgo_bs_slot_state_string":                                       dmrgo_bs_slot_state_string,
 	"dmrgo_bs_state_string":                                            dmrgo_bs_state_string,
+	"dmrgo_csbk_new_match":                                             dmrgo_csbk_new_match,
 	"dmrgo_csbk_new_preambles":                                         dmrgo_csbk_new_preambles,
 	"dmrgo_csbk_new_requester":                                         dmrgo_csbk_new_requester,
 	"dmrgo_csbk_new_responder":                                         dmrgo_csbk_new_responder,

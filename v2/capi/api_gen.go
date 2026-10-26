@@ -218,6 +218,13 @@ func out_bs_Output(d *C.dmrgo_bs_output_t, s *g_bs.Output, oc *outc) {
 	d.reason = C.dmrgo_bs_reason_t(s.Reason)
 }
 
+func out_csbk_Match(d *C.dmrgo_csbk_match_t, s *g_csbk.Match, oc *outc) {
+	_ = oc
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
+	*(*[4]g_layer2_pdu.CSBKOpcode)(unsafe.Pointer(&d.opcodes)) = s.Opcodes
+	d.n = C.int64_t(s.N)
+}
+
 func in_csbk_PreamblesConfig(s *C.dmrgo_csbk_preambles_config_t) (d g_csbk.PreamblesConfig) {
 	d.Scratch = nil
 	if s.scratch != nil {
@@ -5004,13 +5011,6 @@ func fromC_bs_Source(s *C.dmrgo_bs_source_t) g_bs.Source {
 	return in_bs_Source(s)
 }
 
-func out_csbk_Match(d *C.dmrgo_csbk_match_t, s *g_csbk.Match, oc *outc) {
-	_ = oc
-	d.fid = C.dmrgo_enums_fid_t(s.FID)
-	*(*[4]g_layer2_pdu.CSBKOpcode)(unsafe.Pointer(&d.opcodes)) = s.Opcodes
-	d.n = C.int64_t(s.N)
-}
-
 func fromC_csbk_Match(s *C.dmrgo_csbk_match_t) g_csbk.Match {
 	return in_csbk_Match(s)
 }
@@ -9391,6 +9391,32 @@ func dmrgo_bs_state_string(c_self C.dmrgo_bs_state_t, c_out *C.char, c_out_cap C
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_new_match
+func dmrgo_csbk_new_match(c_fid C.dmrgo_enums_fid_t, c_opcodes *C.dmrgo_pdu_csbk_opcode_t, c_opcodes_len C.size_t, c_out *C.dmrgo_csbk_match_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_opcodes), c_opcodes_len, unsafe.Sizeof(*c_opcodes)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_opcodes == nil && c_opcodes_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_opcodes []g_layer2_pdu.CSBKOpcode
+	a_opcodes = cSlice[g_layer2_pdu.CSBKOpcode](unsafe.Pointer(c_opcodes), c_opcodes_len)
+	r0, r1 := g_csbk.NewMatch(g_enums.FID(c_fid), a_opcodes...)
+	_ = r0
+	if c_out != nil {
+		out_csbk_Match(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
