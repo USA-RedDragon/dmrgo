@@ -24,6 +24,15 @@ const (
 
 const gridRowMask = 1<<15 - 1
 
+const (
+	h1511Pos = 0x358b271f4a6e9dc0
+	h139Pos  = 0x1369050d284c7ba0
+)
+
+func nibblePos(positions uint64, syndrome int) int {
+	return int(positions>>(4*(syndrome&15))&0xF) - 1
+}
+
 func rowSyndrome15_11(row uint16) int {
 	return bits.OnesCount16(row&h1511Check0)&1 | bits.OnesCount16(row&h1511Check1)&1<<1 |
 		bits.OnesCount16(row&h1511Check2)&1<<2 | bits.OnesCount16(row&h1511Check3)&1<<3
@@ -141,14 +150,14 @@ func hammingCorrect(rows *[13]uint16) bool {
 		for bad := (s[0] | s[1] | s[2] | s[3]) & gridRowMask; bad != 0; bad &= bad - 1 {
 			c := bits.TrailingZeros16(bad)
 			syndrome := int(s[0]>>c&1 | s[1]>>c&1<<1 | s[2]>>c&1<<2 | s[3]>>c&1<<3)
-			if bitPos := hamming13_9_syndrome_table[syndrome]; bitPos != -1 {
+			if bitPos := nibblePos(h139Pos, syndrome); bitPos != -1 {
 				rows[bitPos] ^= 1 << c
 				fixing = true
 			}
 		}
 
 		for r := range rows {
-			if bitPos := hamming15_11_syndrome_table[rowSyndrome15_11(rows[r])]; bitPos != -1 {
+			if bitPos := nibblePos(h1511Pos, rowSyndrome15_11(rows[r])); bitPos != -1 {
 				rows[r] ^= 1 << bitPos
 				fixing = true
 			}

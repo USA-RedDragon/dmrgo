@@ -19,6 +19,12 @@ const (
 
 const cachRowMask = 1<<17 - 1
 
+const (
+	h1712PosLo  = 0x05008b0040af0ed0
+	h1712PosHi  = 0x20061000390c0071
+	h1712PosTop = 0x00010100
+)
+
 func rowSyndrome17_12(row uint32) int {
 	return bits.OnesCount32(row&h1712Check0)&1 | bits.OnesCount32(row&h1712Check1)&1<<1 |
 		bits.OnesCount32(row&h1712Check2)&1<<2 | bits.OnesCount32(row&h1712Check3)&1<<3 |
@@ -80,7 +86,7 @@ func correctCACHMatrix(rows *[4]uint32) {
 				if syndromes[row] == 0 {
 					continue
 				}
-				if errPos := hamming17_12_syndrome_table[syndromes[row]]; errPos >= 0 {
+				if errPos := wordPos(h1712PosLo, h1712PosHi, h1712PosTop, syndromes[row]); errPos >= 0 {
 					rows[row] ^= 1 << errPos
 					fixing = true
 				}

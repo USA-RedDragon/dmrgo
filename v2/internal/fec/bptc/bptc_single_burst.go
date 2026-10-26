@@ -77,7 +77,7 @@ func correctHamming16_11(row uint16) (uint16, bool) {
 	if s == 0 {
 		return row, true
 	}
-	errPos := hamming16_11_syndrome_table[s]
+	errPos := wordPos(h1611PosLo, h1611PosHi, h1611PosTop, s)
 	if errPos < 0 {
 		return row, false
 	}
@@ -92,6 +92,21 @@ const (
 	h1611Check3 = 1<<0 | 1<<1 | 1<<2 | 1<<4 | 1<<6 | 1<<7 | 1<<10 | 1<<14
 	h1611Check4 = 1<<0 | 1<<2 | 1<<5 | 1<<6 | 1<<8 | 1<<9 | 1<<10 | 1<<15
 )
+
+const (
+	h1611PosLo  = 0x0580200f400e0dc0
+	h1611PosHi  = 0x300b07100a609000
+	h1611PosTop = 0x00010000
+)
+
+func wordPos(lo, hi uint64, top uint32, syndrome int) int {
+	positions := lo
+	if syndrome&16 != 0 {
+		positions = hi
+	}
+	n := positions>>(4*(syndrome&15))&0xF | uint64(top>>(syndrome&31)&1)<<4
+	return int(n&0x1F) - 1
+}
 
 func rowSyndrome16_11(row uint16) int {
 	return bits.OnesCount16(row&h1611Check0)&1 | bits.OnesCount16(row&h1611Check1)&1<<1 |

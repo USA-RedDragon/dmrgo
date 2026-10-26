@@ -1,0 +1,36 @@
+package bptc
+
+import "testing"
+
+func checkPositions(t *testing.T, name string, n, syndromes int, syndrome func(p int) int, pos func(s int) int) {
+	t.Helper()
+	want := make([]int, syndromes)
+	for s := range want {
+		want[s] = -1
+	}
+	for p := range n {
+		want[syndrome(p)] = p
+	}
+	for s, w := range want {
+		if got := pos(s); got != w {
+			t.Errorf("%s syndrome %d: position %d, want %d", name, s, got, w)
+		}
+	}
+}
+
+func TestHammingPositionsLocateSingleErrors(t *testing.T) {
+	t.Parallel()
+
+	checkPositions(t, "15,11", 15, 16, func(p int) int { return rowSyndrome15_11(1 << p) },
+		func(s int) int { return nibblePos(h1511Pos, s) })
+	checkPositions(t, "13,9", 13, 16, func(p int) int {
+		var rows [13]uint16
+		rows[p] = 1
+		c := columnSyndromes(&rows)
+		return int(c[0]&1 | c[1]&1<<1 | c[2]&1<<2 | c[3]&1<<3)
+	}, func(s int) int { return nibblePos(h139Pos, s) })
+	checkPositions(t, "16,11", 16, 32, func(p int) int { return rowSyndrome16_11(1 << p) },
+		func(s int) int { return wordPos(h1611PosLo, h1611PosHi, h1611PosTop, s) })
+	checkPositions(t, "17,12", 17, 32, func(p int) int { return rowSyndrome17_12(1 << p) },
+		func(s int) int { return wordPos(h1712PosLo, h1712PosHi, h1712PosTop, s) })
+}

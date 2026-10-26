@@ -85,7 +85,7 @@ func TestHamming16_11_SyndromeTableLocatesSingleErrors(t *testing.T) {
 			cw := hamming16_11Codeword(d)
 			cw[pos] ^= 1
 			s := syndrome16_11(cw)
-			if got := hamming16_11_syndrome_table[s]; got != pos {
+			if got := wordPos(h1611PosLo, h1611PosHi, h1611PosTop, s); got != pos {
 				t.Fatalf("data %011b error at %d: syndrome %d maps to %d", d, pos, s, got)
 			}
 		}

@@ -7,10 +7,6 @@ import "sync"
 // Tables holds every computed FEC lookup table.
 type Tables struct {
 	DM                        [256]uint8  // BPTC(196,96) deinterleave index, (i*181) mod 196
-	Hamming15_11Syndrome      [16]int     // Hamming(15,11,3) bit position per syndrome, -1 for none
-	Hamming13_9Syndrome       [16]int     // Hamming(13,9,3) bit position per syndrome, -1 for none
-	Hamming16_11Syndrome      [32]int     // Hamming(16,11,4) bit position per syndrome, -1 for none
-	Hamming17_12Syndrome      [32]int     // Hamming(17,12,3) bit position per syndrome, -1 for none
 	CRC32                     [256]uint32 // CRC-32 byte table, polynomial 0x04C11DB7
 	CRC7                      [256]uint8  // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
 	CRC8                      [256]uint8  // CRC-8 byte table, polynomial 0x107
@@ -44,26 +40,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.DM = DM()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Hamming15_11Syndrome = Hamming15_11Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Hamming13_9Syndrome = Hamming13_9Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Hamming16_11Syndrome = Hamming16_11Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Hamming17_12Syndrome = Hamming17_12Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
