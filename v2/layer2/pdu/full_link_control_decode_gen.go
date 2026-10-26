@@ -321,6 +321,83 @@ func (s *FullLinkControl) SetTerminatorDataLinkControl(p FLCTerminatorDataLinkCo
 	return nil
 }
 
+// FullLinkControl returns the FullLinkControl that carries s, as
+// FullLinkControl.SetGroupVoice sets it, with the other fields zero. It
+// returns the errors of SetGroupVoice, and then the zero FullLinkControl.
+// Set BurstDataType before Encode. (ETSI TS 102 361-2 clause 7.1.1.1, Table
+// 7.1)
+func (s FLCGroupVoice) FullLinkControl() (FullLinkControl, error) {
+	u := FullLinkControl{}
+	if err := u.SetGroupVoice(s); err != nil {
+		return FullLinkControl{}, err
+	}
+	return u, nil
+}
+
+// FullLinkControl returns the FullLinkControl that carries s, as
+// FullLinkControl.SetUnitToUnit sets it, with the other fields zero. It
+// returns the errors of SetUnitToUnit, and then the zero FullLinkControl.
+// Set BurstDataType before Encode. (ETSI TS 102 361-2 clause 7.1.1.2, Table
+// 7.2)
+func (s FLCUnitToUnit) FullLinkControl() (FullLinkControl, error) {
+	u := FullLinkControl{}
+	if err := u.SetUnitToUnit(s); err != nil {
+		return FullLinkControl{}, err
+	}
+	return u, nil
+}
+
+// FullLinkControl returns the FullLinkControl that carries s, as
+// FullLinkControl.SetGPSInfo sets it, with the other fields zero. It returns
+// the errors of SetGPSInfo, and then the zero FullLinkControl. Set
+// BurstDataType before Encode. (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3)
+func (s FLCGPSInfo) FullLinkControl() (FullLinkControl, error) {
+	u := FullLinkControl{}
+	if err := u.SetGPSInfo(s); err != nil {
+		return FullLinkControl{}, err
+	}
+	return u, nil
+}
+
+// FullLinkControl returns the FullLinkControl that carries s, as
+// FullLinkControl.SetTalkerAliasHeader sets it, with the other fields zero.
+// It returns the errors of SetTalkerAliasHeader, and then the zero
+// FullLinkControl. Set BurstDataType before Encode. (ETSI TS 102 361-2
+// clause 7.1.1.4, Table 7.4)
+func (s FLCTalkerAliasHeader) FullLinkControl() (FullLinkControl, error) {
+	u := FullLinkControl{}
+	if err := u.SetTalkerAliasHeader(s); err != nil {
+		return FullLinkControl{}, err
+	}
+	return u, nil
+}
+
+// FullLinkControl returns the FullLinkControl that carries s, as
+// FullLinkControl.SetTalkerAliasBlock sets it with flco, with the other
+// fields zero. It returns the errors of SetTalkerAliasBlock, and then the
+// zero FullLinkControl. Set BurstDataType before Encode. (ETSI TS 102 361-2
+// clause 7.1.1.5, Table 7.5)
+func (s FLCTalkerAliasBlock) FullLinkControl(flco enums.FLCO) (FullLinkControl, error) {
+	u := FullLinkControl{}
+	if err := u.SetTalkerAliasBlock(flco, s); err != nil {
+		return FullLinkControl{}, err
+	}
+	return u, nil
+}
+
+// FullLinkControl returns the FullLinkControl that carries s, as
+// FullLinkControl.SetTerminatorDataLinkControl sets it, with the other
+// fields zero. It returns the errors of SetTerminatorDataLinkControl, and
+// then the zero FullLinkControl. Set BurstDataType before Encode. (ETSI TS
+// 102 361-3 clause 7.1.1.1, Table 7.1)
+func (s FLCTerminatorDataLinkControl) FullLinkControl() (FullLinkControl, error) {
+	u := FullLinkControl{}
+	if err := u.SetTerminatorDataLinkControl(s); err != nil {
+		return FullLinkControl{}, err
+	}
+	return u, nil
+}
+
 // ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1
 func decodeFLCGroupVoice(data [7]byte) FLCGroupVoice {
 	var result FLCGroupVoice

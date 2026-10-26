@@ -462,6 +462,137 @@ func (s *MBCHeader) SetBroadcast(p BroadcastPDU) error {
 	return nil
 }
 
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetPrivateVoiceGrant sets it, with the other fields zero. It
+// returns the errors of SetPrivateVoiceGrant, and then the zero MBCHeader.
+// (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s PrivateVoiceGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetPrivateVoiceGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetTalkgroupVoiceGrant sets it, with the other fields zero. It
+// returns the errors of SetTalkgroupVoiceGrant, and then the zero MBCHeader.
+// (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s TalkgroupVoiceGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetTalkgroupVoiceGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetBroadcastTalkgroupVoiceGrant sets it, with the other fields
+// zero. It returns the errors of SetBroadcastTalkgroupVoiceGrant, and then
+// the zero MBCHeader. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s BroadcastTalkgroupVoiceGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetBroadcastTalkgroupVoiceGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetPrivateDataGrant sets it, with the other fields zero. It
+// returns the errors of SetPrivateDataGrant, and then the zero MBCHeader.
+// (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s PrivateDataGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetPrivateDataGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetTalkgroupDataGrant sets it, with the other fields zero. It
+// returns the errors of SetTalkgroupDataGrant, and then the zero MBCHeader.
+// (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s TalkgroupDataGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetTalkgroupDataGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetDuplexPrivateVoiceGrant sets it, with the other fields zero.
+// It returns the errors of SetDuplexPrivateVoiceGrant, and then the zero
+// MBCHeader. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s DuplexPrivateVoiceGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetDuplexPrivateVoiceGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetDuplexPrivateDataGrant sets it, with the other fields zero.
+// It returns the errors of SetDuplexPrivateDataGrant, and then the zero
+// MBCHeader. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s DuplexPrivateDataGrantPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetDuplexPrivateDataGrant(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetPrivateDataGrantMultiItem sets it, with the other fields
+// zero. It returns the errors of SetPrivateDataGrantMultiItem, and then the
+// zero MBCHeader. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s PrivateDataGrantMultiItemPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetPrivateDataGrantMultiItem(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as
+// MBCHeader.SetTalkgroupDataGrantMultiItem sets it, with the other fields
+// zero. It returns the errors of SetTalkgroupDataGrantMultiItem, and then
+// the zero MBCHeader. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+func (s TalkgroupDataGrantMultiItemPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetTalkgroupDataGrantMultiItem(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as MBCHeader.SetMove sets
+// it, with the other fields zero. It returns the errors of SetMove, and then
+// the zero MBCHeader. (ETSI TS 102 361-4 clause 7.1.1.1.3)
+func (s MovePDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetMove(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
+// MBCHeader returns the MBCHeader that carries s, as MBCHeader.SetBroadcast
+// sets it, with the other fields zero. It returns the errors of
+// SetBroadcast, and then the zero MBCHeader. (ETSI TS 102 361-4 clause
+// 7.1.1.1.5, Table 7.20, clause 7.2.19)
+func (s BroadcastPDU) MBCHeader() (MBCHeader, error) {
+	u := MBCHeader{}
+	if err := u.SetBroadcast(s); err != nil {
+		return MBCHeader{}, err
+	}
+	return u, nil
+}
+
 // DecodeMBCContinuation decodes an MBCContinuation. data holds the 96 bits
 // of the PDU packed, the first bit in the most significant bit of data[0].
 // (ETSI TS 102 361-1 clause 7.4.1)

@@ -2792,6 +2792,349 @@ func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
 	return nil
 }
 
+// CSBK returns the CSBK that carries s, as
+// CSBK.SetUnitToUnitVoiceServiceRequest sets it, with LastBlock true and the
+// other fields zero. It returns the errors of
+// SetUnitToUnitVoiceServiceRequest, and then the zero CSBK. (ETSI TS 102
+// 361-2 clause 7.1.2.2)
+func (s UnitToUnitVoiceServiceRequestPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetUnitToUnitVoiceServiceRequest(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as
+// CSBK.SetUnitToUnitVoiceServiceAnswerResponse sets it, with LastBlock true
+// and the other fields zero. It returns the errors of
+// SetUnitToUnitVoiceServiceAnswerResponse, and then the zero CSBK. (ETSI TS
+// 102 361-2 clause 7.1.2.3)
+func (s UnitToUnitVoiceServiceAnswerResponsePDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetUnitToUnitVoiceServiceAnswerResponse(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetNegativeAcknowledgement
+// sets it, with LastBlock true and the other fields zero. It returns the
+// errors of SetNegativeAcknowledgement, and then the zero CSBK. (ETSI TS 102
+// 361-2 clause 7.1.2.4)
+func (s NegativeAcknowledgementPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetNegativeAcknowledgement(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetPreamble sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetPreamble, and then the zero CSBK. (ETSI TS 102 361-2 clause 7.1.2.5)
+func (s PreamblePDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetPreamble(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetChannelTiming sets it,
+// with LastBlock true and the other fields zero. It returns the errors of
+// SetChannelTiming, and then the zero CSBK. (ETSI TS 102 361-2 clause
+// 7.1.2.6, Table 7.8)
+func (s ChannelTimingPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetChannelTiming(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetPrivateVoiceGrant sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetPrivateVoiceGrant, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.1.1)
+func (s PrivateVoiceGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetPrivateVoiceGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetTalkgroupVoiceGrant sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetTalkgroupVoiceGrant, and then the zero CSBK. (ETSI TS 102 361-4
+// clause 7.1.1.1.1)
+func (s TalkgroupVoiceGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetTalkgroupVoiceGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as
+// CSBK.SetBroadcastTalkgroupVoiceGrant sets it, with LastBlock true and the
+// other fields zero. It returns the errors of
+// SetBroadcastTalkgroupVoiceGrant, and then the zero CSBK. (ETSI TS 102
+// 361-4 clause 7.1.1.1.1)
+func (s BroadcastTalkgroupVoiceGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetBroadcastTalkgroupVoiceGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetPrivateDataGrant sets it,
+// with LastBlock true and the other fields zero. It returns the errors of
+// SetPrivateDataGrant, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.1.1)
+func (s PrivateDataGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetPrivateDataGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetTalkgroupDataGrant sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetTalkgroupDataGrant, and then the zero CSBK. (ETSI TS 102 361-4
+// clause 7.1.1.1.1)
+func (s TalkgroupDataGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetTalkgroupDataGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetDuplexPrivateVoiceGrant
+// sets it, with LastBlock true and the other fields zero. It returns the
+// errors of SetDuplexPrivateVoiceGrant, and then the zero CSBK. (ETSI TS 102
+// 361-4 clause 7.1.1.1.1)
+func (s DuplexPrivateVoiceGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetDuplexPrivateVoiceGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetDuplexPrivateDataGrant
+// sets it, with LastBlock true and the other fields zero. It returns the
+// errors of SetDuplexPrivateDataGrant, and then the zero CSBK. (ETSI TS 102
+// 361-4 clause 7.1.1.1.1)
+func (s DuplexPrivateDataGrantPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetDuplexPrivateDataGrant(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetPrivateDataGrantMultiItem
+// sets it, with LastBlock true and the other fields zero. It returns the
+// errors of SetPrivateDataGrantMultiItem, and then the zero CSBK. (ETSI TS
+// 102 361-4 clause 7.1.1.1.1)
+func (s PrivateDataGrantMultiItemPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetPrivateDataGrantMultiItem(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetMove sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetMove, and then the zero CSBK. (ETSI TS 102 361-4 clause 7.1.1.1.3)
+func (s MovePDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetMove(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAloha sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetAloha, and then the zero CSBK. (ETSI TS 102 361-4 clause 7.1.1.1.4)
+func (s AlohaPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAloha(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetBroadcast sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetBroadcast, and then the zero CSBK. (ETSI TS 102 361-4 clause 7.1.1.1.5,
+// Table 7.20, clause 7.2.19)
+func (s BroadcastPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetBroadcast(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetClear sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetClear, and then the zero CSBK. (ETSI TS 102 361-4 clause 7.1.1.3.2)
+func (s ClearPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetClear(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetProtect sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetProtect, and then the zero CSBK. (ETSI TS 102 361-4 clause 7.1.1.3.3)
+func (s ProtectPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetProtect(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAhoy sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetAhoy, and then the zero CSBK. (ETSI TS 102 361-4 clauses 7.1.1.1.6 and
+// 7.1.1.3.4)
+func (s AhoyPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAhoy(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAckOutbound sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetAckOutbound, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.1.7)
+func (s AckOutboundPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAckOutbound(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAckInbound sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetAckInbound, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.2.3)
+func (s AckInboundPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAckInbound(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAckOutboundPayload sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetAckOutboundPayload, and then the zero CSBK. (ETSI TS 102 361-4
+// clause 7.1.1.3.5)
+func (s AckOutboundPayloadPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAckOutboundPayload(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAckInboundPayload sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetAckInboundPayload, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.4.2)
+func (s AckInboundPayloadPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAckInboundPayload(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetRandomAccess sets it,
+// with LastBlock true and the other fields zero. It returns the errors of
+// SetRandomAccess, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.2.1)
+func (s RandomAccessPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetRandomAccess(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetAckvitation sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetAckvitation, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.2.2)
+func (s AckvitationPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetAckvitation(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetMaintenance sets it, with
+// LastBlock true and the other fields zero. It returns the errors of
+// SetMaintenance, and then the zero CSBK. (ETSI TS 102 361-4 clause
+// 7.1.1.4.3)
+func (s MaintenancePDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetMaintenance(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetMotorolaRadioCheck sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetMotorolaRadioCheck, and then the zero CSBK.
+func (s MotorolaRadioCheckPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetMotorolaRadioCheck(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetMotorolaCallAlert sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetMotorolaCallAlert, and then the zero CSBK.
+func (s MotorolaCallAlertPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetMotorolaCallAlert(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the CSBK that carries s, as CSBK.SetMotorolaCallAlertAck sets
+// it, with LastBlock true and the other fields zero. It returns the errors
+// of SetMotorolaCallAlertAck, and then the zero CSBK.
+func (s MotorolaCallAlertAckPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetMotorolaCallAlertAck(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
 var (
 	errBSOutboundActivationPDUBSAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,

@@ -82,3 +82,21 @@ func ExampleBroadcastPDU_AsLocalTime() {
 	// Output:
 	// true 10/21 11:49:50 UTC-5
 }
+
+// ExampleMotorolaRadioCheckPDU_CSBK builds the Motorola radio check that a radio
+// sends, in one expression, and encodes it.
+func ExampleMotorolaRadioCheckPDU_CSBK() {
+	c, err := pdu.MotorolaRadioCheckPDU{RequesterAddress: 3140598, CheckedAddress: 3191868}.CSBK()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	bits, err := c.Encode()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("%x %v\n", bits, c.LastBlock)
+	// Output:
+	// a41000002febf630b43c0637 true
+}

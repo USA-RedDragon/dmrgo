@@ -25,7 +25,59 @@ func emitUnion(f *File, pdu parse.PDUStruct, ev *errVars) error {
 			return err
 		}
 	}
+	for _, v := range pdu.Variants {
+		emitBuilder(f, pdu, v)
+	}
 	return nil
+}
+
+// emitBuilder writes the value constructor of the variant v: a method of the
+// payload type, named after the union PDU, that returns the PDU that carries
+// the payload. A payload type of more than one variant gets none, as the
+// method name would not say which.
+func emitBuilder(f *File, pdu parse.PDUStruct, v parse.Variant) {
+	if slices.ContainsFunc(pdu.Variants, func(w parse.Variant) bool { return w.Name != v.Name && w.Type == v.Type }) {
+		return
+	}
+	var params, args []Code
+	var names []string
+	for _, c := range v.Conds {
+		if !settable(pdu, c) || c.Guard != nil || len(c.Values) == 1 {
+			continue
+		}
+		name := setParamName(c.Field)
+		names = append(names, name)
+		params = append(params, Id(name).Add(qualType(*pdu.FieldByName(c.Field), pdu)))
+		args = append(args, Id(name))
+	}
+	args = append(args, Id("s"))
+	set := pdu.Name + ".Set" + v.Name
+	doc := pdu.Name + " returns the " + pdu.Name + " that carries s, as " + set + " sets it"
+	if len(names) > 0 {
+		doc += " with " + andList(names)
+	}
+	doc += ", with "
+	values := Dict{}
+	for _, b := range pdu.Builds {
+		doc += b.Field + " " + b.Values[0] + " and "
+		values[Id(b.Field)] = emitDispatchConstant(b.Values[0], pdu)
+	}
+	doc += "the other fields zero. It returns the errors of Set" + v.Name + ", and then the zero " + pdu.Name + "."
+	if len(pdu.Inputs) > 0 {
+		doc += " Set " + andList(pdu.Inputs) + " before Encode."
+	}
+	if t := pdu.Types[v.Type]; t != nil && t.SpecRef != "" {
+		doc += " (" + t.SpecRef + ")"
+	}
+	comment(f, doc)
+	f.Func().Params(Id("s").Id(v.Type)).Id(pdu.Name).Params(params...).Params(Id(pdu.Name), Error()).Block(
+		Id("u").Op(":=").Id(pdu.Name).Values(values),
+		If(Err().Op(":=").Id("u").Dot("Set"+v.Name).Call(args...), Err().Op("!=").Nil()).Block(
+			Return(Id(pdu.Name).Values(), Err()),
+		),
+		Return(Id("u"), Nil()),
+	)
+	f.Line()
 }
 
 func emitGetter(f *File, pdu parse.PDUStruct, union *parse.Field, g parse.Field) error {
@@ -183,7 +235,7 @@ func setParamName(field string) string {
 		name = strings.ToLower(field)
 	}
 	switch name {
-	case "s", "p", "raw", "err", "t", "ok":
+	case "s", "p", "raw", "err", "t", "u", "ok":
 		return "_" + name
 	}
 	return name

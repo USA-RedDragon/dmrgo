@@ -9,7 +9,10 @@
 // its opcode or format selects the layout of the bits. AsX decodes
 // RawPayload as the payload X and reports false when the opcode selects
 // another payload. SetX encodes the payload X into RawPayload and sets the
-// opcode with it. A caller that changes Opcode, FID, FLCO or SLCO by hand
+// opcode with it. A method of the payload named after its PDU, such as
+// PreamblePDU.CSBK or ConfirmedDataHeader.DataHeader, returns a new PDU that
+// carries it, as SetX sets a zero PDU; a CSBK built so also has LastBlock
+// set. A caller that changes Opcode, FID, FLCO or SLCO by hand
 // changes the layout that the same bits are read with. The payloads have no DecodeX
 // or Encode of their own. No decode allocates. (ETSI TS 102 361-1 clause 9)
 //

@@ -420,6 +420,102 @@ func (s *DataHeader) SetProprietary(p ProprietaryHeader) error {
 	return nil
 }
 
+// DataHeader returns the DataHeader that carries s, as
+// DataHeader.SetUnconfirmed sets it, with the other fields zero. It returns
+// the errors of SetUnconfirmed, and then the zero DataHeader. (ETSI TS 102
+// 361-1 clause 9.2.6)
+func (s UnconfirmedDataHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetUnconfirmed(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as
+// DataHeader.SetConfirmed sets it, with the other fields zero. It returns
+// the errors of SetConfirmed, and then the zero DataHeader. (ETSI TS 102
+// 361-1 clause 9.2.1, Table 9.10)
+func (s ConfirmedDataHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetConfirmed(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as
+// DataHeader.SetResponse sets it, with the other fields zero. It returns the
+// errors of SetResponse, and then the zero DataHeader. (ETSI TS 102 361-1
+// clause 9.2.4, Table 9.13)
+func (s ResponsePacketHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetResponse(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as
+// DataHeader.SetDefinedData sets it, with the other fields zero. It returns
+// the errors of SetDefinedData, and then the zero DataHeader. (ETSI TS 102
+// 361-1 clause 9.2.12, Table 9.17C)
+func (s DefinedDataHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetDefinedData(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as
+// DataHeader.SetStatusPrecoded sets it, with the other fields zero. It
+// returns the errors of SetStatusPrecoded, and then the zero DataHeader.
+// (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A)
+func (s StatusPrecodedHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetStatusPrecoded(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as DataHeader.SetRawData
+// sets it, with the other fields zero. It returns the errors of SetRawData,
+// and then the zero DataHeader. (ETSI TS 102 361-1 clause 9.2.11, Table
+// 9.17B)
+func (s RawDataHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetRawData(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as DataHeader.SetUDT
+// sets it, with the other fields zero. It returns the errors of SetUDT, and
+// then the zero DataHeader. (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D,
+// ETSI TS 102 361-4 Tables 7.24 and 7.28)
+func (s UDTHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetUDT(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
+// DataHeader returns the DataHeader that carries s, as
+// DataHeader.SetProprietary sets it, with the other fields zero. It returns
+// the errors of SetProprietary, and then the zero DataHeader. (ETSI TS 102
+// 361-1 clause 9.2.9, Table 9.17)
+func (s ProprietaryHeader) DataHeader() (DataHeader, error) {
+	u := DataHeader{}
+	if err := u.SetProprietary(s); err != nil {
+		return DataHeader{}, err
+	}
+	return u, nil
+}
+
 // ETSI TS 102 361-1 clause 9.2.1, Table 9.10
 func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 	var result ConfirmedDataHeader

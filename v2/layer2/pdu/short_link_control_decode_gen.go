@@ -351,6 +351,51 @@ func (s *ShortLC) SetPSysParms(p ShortLCPSysParms) error {
 	return nil
 }
 
+// ShortLC returns the ShortLC that carries s, as ShortLC.SetNullMessage sets
+// it, with the other fields zero. It returns the errors of SetNullMessage,
+// and then the zero ShortLC. (ETSI TS 102 361-2 clause 7.1.3.1)
+func (s ShortLCNullMessage) ShortLC() (ShortLC, error) {
+	u := ShortLC{}
+	if err := u.SetNullMessage(s); err != nil {
+		return ShortLC{}, err
+	}
+	return u, nil
+}
+
+// ShortLC returns the ShortLC that carries s, as ShortLC.SetActivityUpdate
+// sets it, with the other fields zero. It returns the errors of
+// SetActivityUpdate, and then the zero ShortLC. (ETSI TS 102 361-2 clause
+// 7.1.3.2)
+func (s ShortLCActivityUpdate) ShortLC() (ShortLC, error) {
+	u := ShortLC{}
+	if err := u.SetActivityUpdate(s); err != nil {
+		return ShortLC{}, err
+	}
+	return u, nil
+}
+
+// ShortLC returns the ShortLC that carries s, as ShortLC.SetCSysParms sets
+// it, with the other fields zero. It returns the errors of SetCSysParms, and
+// then the zero ShortLC. (ETSI TS 102 361-4 clause 7.1.2.1)
+func (s ShortLCCSysParms) ShortLC() (ShortLC, error) {
+	u := ShortLC{}
+	if err := u.SetCSysParms(s); err != nil {
+		return ShortLC{}, err
+	}
+	return u, nil
+}
+
+// ShortLC returns the ShortLC that carries s, as ShortLC.SetPSysParms sets
+// it, with the other fields zero. It returns the errors of SetPSysParms, and
+// then the zero ShortLC. (ETSI TS 102 361-4 clause 7.1.2.2)
+func (s ShortLCPSysParms) ShortLC() (ShortLC, error) {
+	u := ShortLC{}
+	if err := u.SetPSysParms(s); err != nil {
+		return ShortLC{}, err
+	}
+	return u, nil
+}
+
 var (
 	errShortLCNullMessageReservedRange = &dmrgo.FieldRangeError{
 		Bits:  24,

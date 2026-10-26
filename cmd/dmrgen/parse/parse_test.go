@@ -1118,3 +1118,39 @@ type Other struct {
 		t.Errorf("DecodeFuncName(Other) = %q", got)
 	}
 }
+
+func TestParseBuildDirective(t *testing.T) {
+	t.Parallel()
+
+	const union = `type Sub struct {
+	X uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}
+
+type T struct {
+	LB  bool    ` + "`dmr:\"bit:0\"`" + `
+	Op  uint8   ` + "`dmr:\"bits:1-7\"`" + `
+	Raw [1]byte ` + "`dmr:\"bits:8-15,raw,union\"`" + `
+}
+`
+	src := func(directives string) string {
+		return "package p\n\n" + strings.Replace(union, "type T struct", directives+"// dmr:variant A Sub Op=1\ntype T struct", 1)
+	}
+	pdus, err := parse.Source("t.go", src("// dmr:build LB=true\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var builds []parse.VariantCond
+	for _, p := range pdus {
+		if p.Name == "T" {
+			builds = p.Builds
+		}
+	}
+	if len(builds) != 1 || builds[0].Field != "LB" || builds[0].Values[0] != "true" {
+		t.Fatalf("Builds %+v", builds)
+	}
+	for _, bad := range []string{"// dmr:build LB\n", "// dmr:build Nope=true\n", "// dmr:build Raw=1\n", "// dmr:build LB=true\n// dmr:build LB=false\n"} {
+		if _, err := parse.Source("t.go", src(bad)); err == nil {
+			t.Errorf("%q: no error", bad)
+		}
+	}
+}

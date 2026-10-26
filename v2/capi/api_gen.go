@@ -20577,6 +20577,29 @@ func dmrgo_packet_response_of(c_h *C.dmrgo_pdu_response_packet_header_t, c_out *
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_ack_inbound_pdu_csbk
+func dmrgo_pdu_ack_inbound_pdu_csbk(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AckInboundPDU
+	x = in_layer2_pdu_AckInboundPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_ack_inbound_pdu_string
 func dmrgo_pdu_ack_inbound_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -20597,6 +20620,29 @@ func dmrgo_pdu_ack_inbound_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_o
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_ack_inbound_payload_pdu_csbk
+func dmrgo_pdu_ack_inbound_payload_pdu_csbk(c_self *C.dmrgo_pdu_ack_inbound_payload_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AckInboundPayloadPDU
+	x = in_layer2_pdu_AckInboundPayloadPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -20625,6 +20671,29 @@ func dmrgo_pdu_ack_inbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_pa
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_ack_outbound_pdu_csbk
+func dmrgo_pdu_ack_outbound_pdu_csbk(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AckOutboundPDU
+	x = in_layer2_pdu_AckOutboundPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_ack_outbound_pdu_string
 func dmrgo_pdu_ack_outbound_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -20649,6 +20718,29 @@ func dmrgo_pdu_ack_outbound_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_ack_outbound_payload_pdu_csbk
+func dmrgo_pdu_ack_outbound_payload_pdu_csbk(c_self *C.dmrgo_pdu_ack_outbound_payload_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AckOutboundPayloadPDU
+	x = in_layer2_pdu_AckOutboundPayloadPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_ack_outbound_payload_pdu_string
 func dmrgo_pdu_ack_outbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_payload_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -20669,6 +20761,29 @@ func dmrgo_pdu_ack_outbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_ackvitation_pdu_csbk
+func dmrgo_pdu_ackvitation_pdu_csbk(c_self *C.dmrgo_pdu_ackvitation_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AckvitationPDU
+	x = in_layer2_pdu_AckvitationPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -20739,6 +20854,29 @@ func dmrgo_pdu_adjacent_site_parms_string(c_self *C.dmrgo_pdu_adjacent_site_parm
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_ahoy_pdu_csbk
+func dmrgo_pdu_ahoy_pdu_csbk(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AhoyPDU
+	x = in_layer2_pdu_AhoyPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_ahoy_pdu_string
 func dmrgo_pdu_ahoy_pdu_string(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -20759,6 +20897,29 @@ func dmrgo_pdu_ahoy_pdu_string(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.char, c_
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_aloha_pdu_csbk
+func dmrgo_pdu_aloha_pdu_csbk(c_self *C.dmrgo_pdu_aloha_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.AlohaPDU
+	x = in_layer2_pdu_AlohaPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -20917,6 +21078,29 @@ func dmrgo_pdu_bcap_continuation_string(c_self *C.dmrgo_pdu_bcap_continuation_t,
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_bs_outbound_activation_pdu_csbk
+func dmrgo_pdu_bs_outbound_activation_pdu_csbk(c_self *C.dmrgo_pdu_bs_outbound_activation_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BSOutboundActivationPDU
+	x = *(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -21155,6 +21339,52 @@ func dmrgo_pdu_broadcast_pdu_as_vote_now(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_broadcast_pdu_csbk
+func dmrgo_pdu_broadcast_pdu_csbk(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_pdu_mbc_header
+func dmrgo_pdu_broadcast_pdu_mbc_header(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_broadcast_pdu_string
 func dmrgo_pdu_broadcast_pdu_string(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -21175,6 +21405,52 @@ func dmrgo_pdu_broadcast_pdu_string(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_csbk
+func dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_csbk(c_self *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
+	x = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_mbc_header
+func dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
+	x = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -23835,6 +24111,29 @@ func dmrgo_pdu_chan_freq_parms_string(c_self *C.dmrgo_pdu_chan_freq_parms_t, c_o
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_channel_timing_pdu_csbk
+func dmrgo_pdu_channel_timing_pdu_csbk(c_self *C.dmrgo_pdu_channel_timing_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ChannelTimingPDU
+	x = in_layer2_pdu_ChannelTimingPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_channel_timing_pdu_string
 func dmrgo_pdu_channel_timing_pdu_string(c_self *C.dmrgo_pdu_channel_timing_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23859,6 +24158,29 @@ func dmrgo_pdu_channel_timing_pdu_string(c_self *C.dmrgo_pdu_channel_timing_pdu_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_clear_pdu_csbk
+func dmrgo_pdu_clear_pdu_csbk(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ClearPDU
+	x = in_layer2_pdu_ClearPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_clear_pdu_string
 func dmrgo_pdu_clear_pdu_string(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23879,6 +24201,29 @@ func dmrgo_pdu_clear_pdu_string(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.char, 
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_confirmed_data_header_data_header
+func dmrgo_pdu_confirmed_data_header_data_header(c_self *C.dmrgo_pdu_confirmed_data_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ConfirmedDataHeader
+	x = in_layer2_pdu_ConfirmedDataHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -25032,6 +25377,29 @@ func dmrgo_pdu_decode_unified_single_block_data(c_data *C.uint8_t, c_out *C.dmrg
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_defined_data_header_data_header
+func dmrgo_pdu_defined_data_header_data_header(c_self *C.dmrgo_pdu_defined_data_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DefinedDataHeader
+	x = in_layer2_pdu_DefinedDataHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_defined_data_header_string
 func dmrgo_pdu_defined_data_header_string(c_self *C.dmrgo_pdu_defined_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -25056,6 +25424,52 @@ func dmrgo_pdu_defined_data_header_string(c_self *C.dmrgo_pdu_defined_data_heade
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_duplex_private_data_grant_pdu_csbk
+func dmrgo_pdu_duplex_private_data_grant_pdu_csbk(c_self *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DuplexPrivateDataGrantPDU
+	x = in_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_duplex_private_data_grant_pdu_mbc_header
+func dmrgo_pdu_duplex_private_data_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DuplexPrivateDataGrantPDU
+	x = in_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_duplex_private_data_grant_pdu_string
 func dmrgo_pdu_duplex_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -25076,6 +25490,52 @@ func dmrgo_pdu_duplex_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_duplex_p
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_duplex_private_voice_grant_pdu_csbk
+func dmrgo_pdu_duplex_private_voice_grant_pdu_csbk(c_self *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DuplexPrivateVoiceGrantPDU
+	x = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_duplex_private_voice_grant_pdu_mbc_header
+func dmrgo_pdu_duplex_private_voice_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DuplexPrivateVoiceGrantPDU
+	x = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -25374,6 +25834,29 @@ func dmrgo_pdu_encode_talker_alias_into(c_dst *C.dmrgo_pdu_full_link_control_t, 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_flc_gps_info_full_link_control
+func dmrgo_pdu_flc_gps_info_full_link_control(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FLCGPSInfo
+	x = *(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.FullLinkControl()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_flc_gps_info_string
 func dmrgo_pdu_flc_gps_info_string(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -25394,6 +25877,29 @@ func dmrgo_pdu_flc_gps_info_string(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_flc_group_voice_full_link_control
+func dmrgo_pdu_flc_group_voice_full_link_control(c_self *C.dmrgo_pdu_flc_group_voice_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FLCGroupVoice
+	x = in_layer2_pdu_FLCGroupVoice(&(*c_self))
+	r0, r1 := x.FullLinkControl()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -25422,6 +25928,29 @@ func dmrgo_pdu_flc_group_voice_string(c_self *C.dmrgo_pdu_flc_group_voice_t, c_o
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_flc_talker_alias_block_full_link_control
+func dmrgo_pdu_flc_talker_alias_block_full_link_control(c_self *C.dmrgo_pdu_flc_talker_alias_block_t, c_flco C.dmrgo_enums_flco_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FLCTalkerAliasBlock
+	x = *(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.FullLinkControl(g_enums.FLCO(c_flco))
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_flc_talker_alias_block_string
 func dmrgo_pdu_flc_talker_alias_block_string(c_self *C.dmrgo_pdu_flc_talker_alias_block_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -25442,6 +25971,29 @@ func dmrgo_pdu_flc_talker_alias_block_string(c_self *C.dmrgo_pdu_flc_talker_alia
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_flc_talker_alias_header_full_link_control
+func dmrgo_pdu_flc_talker_alias_header_full_link_control(c_self *C.dmrgo_pdu_flc_talker_alias_header_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FLCTalkerAliasHeader
+	x = *(*g_layer2_pdu.FLCTalkerAliasHeader)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.FullLinkControl()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -25470,6 +26022,29 @@ func dmrgo_pdu_flc_talker_alias_header_string(c_self *C.dmrgo_pdu_flc_talker_ali
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_flc_terminator_data_link_control_full_link_control
+func dmrgo_pdu_flc_terminator_data_link_control_full_link_control(c_self *C.dmrgo_pdu_flc_terminator_data_link_control_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FLCTerminatorDataLinkControl
+	x = in_layer2_pdu_FLCTerminatorDataLinkControl(&(*c_self))
+	r0, r1 := x.FullLinkControl()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_flc_terminator_data_link_control_string
 func dmrgo_pdu_flc_terminator_data_link_control_string(c_self *C.dmrgo_pdu_flc_terminator_data_link_control_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -25490,6 +26065,29 @@ func dmrgo_pdu_flc_terminator_data_link_control_string(c_self *C.dmrgo_pdu_flc_t
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_flc_unit_to_unit_full_link_control
+func dmrgo_pdu_flc_unit_to_unit_full_link_control(c_self *C.dmrgo_pdu_flc_unit_to_unit_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FLCUnitToUnit
+	x = in_layer2_pdu_FLCUnitToUnit(&(*c_self))
+	r0, r1 := x.FullLinkControl()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -27385,6 +27983,29 @@ func dmrgo_pdu_mvap_continuation_string(c_self *C.dmrgo_pdu_mvap_continuation_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_maintenance_pdu_csbk
+func dmrgo_pdu_maintenance_pdu_csbk(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MaintenancePDU
+	x = in_layer2_pdu_MaintenancePDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_maintenance_pdu_string
 func dmrgo_pdu_maintenance_pdu_string(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27433,6 +28054,29 @@ func dmrgo_pdu_mass_reg_parms_string(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_motorola_call_alert_ack_pdu_csbk
+func dmrgo_pdu_motorola_call_alert_ack_pdu_csbk(c_self *C.dmrgo_pdu_motorola_call_alert_ack_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MotorolaCallAlertAckPDU
+	x = *(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_motorola_call_alert_ack_pdu_string
 func dmrgo_pdu_motorola_call_alert_ack_pdu_string(c_self *C.dmrgo_pdu_motorola_call_alert_ack_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27453,6 +28097,29 @@ func dmrgo_pdu_motorola_call_alert_ack_pdu_string(c_self *C.dmrgo_pdu_motorola_c
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_motorola_call_alert_pdu_csbk
+func dmrgo_pdu_motorola_call_alert_pdu_csbk(c_self *C.dmrgo_pdu_motorola_call_alert_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MotorolaCallAlertPDU
+	x = *(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -27509,6 +28176,29 @@ func dmrgo_pdu_motorola_radio_check_pdu_addresses(c_self *C.dmrgo_pdu_motorola_r
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_motorola_radio_check_pdu_csbk
+func dmrgo_pdu_motorola_radio_check_pdu_csbk(c_self *C.dmrgo_pdu_motorola_radio_check_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MotorolaRadioCheckPDU
+	x = in_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_motorola_radio_check_pdu_string
 func dmrgo_pdu_motorola_radio_check_pdu_string(c_self *C.dmrgo_pdu_motorola_radio_check_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27533,6 +28223,52 @@ func dmrgo_pdu_motorola_radio_check_pdu_string(c_self *C.dmrgo_pdu_motorola_radi
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_move_pdu_csbk
+func dmrgo_pdu_move_pdu_csbk(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MovePDU
+	x = in_layer2_pdu_MovePDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_move_pdu_mbc_header
+func dmrgo_pdu_move_pdu_mbc_header(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MovePDU
+	x = in_layer2_pdu_MovePDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_move_pdu_string
 func dmrgo_pdu_move_pdu_string(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27553,6 +28289,29 @@ func dmrgo_pdu_move_pdu_string(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.char, c_
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_negative_acknowledgement_pdu_csbk
+func dmrgo_pdu_negative_acknowledgement_pdu_csbk(c_self *C.dmrgo_pdu_negative_acknowledgement_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.NegativeAcknowledgementPDU
+	x = *(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -27830,6 +28589,29 @@ func dmrgo_pdu_pr_fill_bits(c_out *C.uint8_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_preamble_pdu_csbk
+func dmrgo_pdu_preamble_pdu_csbk(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PreamblePDU
+	x = in_layer2_pdu_PreamblePDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_preamble_pdu_string
 func dmrgo_pdu_preamble_pdu_string(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27850,6 +28632,52 @@ func dmrgo_pdu_preamble_pdu_string(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_private_data_grant_multi_item_pdu_csbk
+func dmrgo_pdu_private_data_grant_multi_item_pdu_csbk(c_self *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PrivateDataGrantMultiItemPDU
+	x = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_private_data_grant_multi_item_pdu_mbc_header
+func dmrgo_pdu_private_data_grant_multi_item_pdu_mbc_header(c_self *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PrivateDataGrantMultiItemPDU
+	x = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -27878,6 +28706,52 @@ func dmrgo_pdu_private_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_priv
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_private_data_grant_pdu_csbk
+func dmrgo_pdu_private_data_grant_pdu_csbk(c_self *C.dmrgo_pdu_private_data_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PrivateDataGrantPDU
+	x = in_layer2_pdu_PrivateDataGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_private_data_grant_pdu_mbc_header
+func dmrgo_pdu_private_data_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_private_data_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PrivateDataGrantPDU
+	x = in_layer2_pdu_PrivateDataGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_private_data_grant_pdu_string
 func dmrgo_pdu_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_private_data_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27898,6 +28772,52 @@ func dmrgo_pdu_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_private_data_gr
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_private_voice_grant_pdu_csbk
+func dmrgo_pdu_private_voice_grant_pdu_csbk(c_self *C.dmrgo_pdu_private_voice_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PrivateVoiceGrantPDU
+	x = in_layer2_pdu_PrivateVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_private_voice_grant_pdu_mbc_header
+func dmrgo_pdu_private_voice_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_private_voice_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.PrivateVoiceGrantPDU
+	x = in_layer2_pdu_PrivateVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -27926,6 +28846,29 @@ func dmrgo_pdu_private_voice_grant_pdu_string(c_self *C.dmrgo_pdu_private_voice_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_proprietary_header_data_header
+func dmrgo_pdu_proprietary_header_data_header(c_self *C.dmrgo_pdu_proprietary_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ProprietaryHeader
+	x = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_proprietary_header_string
 func dmrgo_pdu_proprietary_header_string(c_self *C.dmrgo_pdu_proprietary_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27950,6 +28893,29 @@ func dmrgo_pdu_proprietary_header_string(c_self *C.dmrgo_pdu_proprietary_header_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_protect_pdu_csbk
+func dmrgo_pdu_protect_pdu_csbk(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ProtectPDU
+	x = in_layer2_pdu_ProtectPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_protect_pdu_string
 func dmrgo_pdu_protect_pdu_string(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27970,6 +28936,29 @@ func dmrgo_pdu_protect_pdu_string(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.ch
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_random_access_pdu_csbk
+func dmrgo_pdu_random_access_pdu_csbk(c_self *C.dmrgo_pdu_random_access_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.RandomAccessPDU
+	x = in_layer2_pdu_RandomAccessPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -28517,6 +29506,29 @@ func dmrgo_pdu_rate34_data_string(c_self *C.dmrgo_pdu_rate34_data_t, c_out *C.ch
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_raw_data_header_data_header
+func dmrgo_pdu_raw_data_header_data_header(c_self *C.dmrgo_pdu_raw_data_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.RawDataHeader
+	x = in_layer2_pdu_RawDataHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_raw_data_header_string
 func dmrgo_pdu_raw_data_header_string(c_self *C.dmrgo_pdu_raw_data_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -28556,6 +29568,29 @@ func dmrgo_pdu_reg_window_time(c_w C.uint8_t, c_duration *C.dmrgo_duration_t, c_
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_response_packet_header_data_header
+func dmrgo_pdu_response_packet_header_data_header(c_self *C.dmrgo_pdu_response_packet_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ResponsePacketHeader
+	x = in_layer2_pdu_ResponsePacketHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -28962,6 +29997,29 @@ func dmrgo_pdu_short_lc_string(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.char, c_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_short_lc_activity_update_short_lc
+func dmrgo_pdu_short_lc_activity_update_short_lc(c_self *C.dmrgo_pdu_short_lc_activity_update_t, c_out *C.dmrgo_pdu_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLCActivityUpdate
+	x = *(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.ShortLC()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_short_lc_activity_update_string
 func dmrgo_pdu_short_lc_activity_update_string(c_self *C.dmrgo_pdu_short_lc_activity_update_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29036,6 +30094,29 @@ func dmrgo_pdu_short_lc_c_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_c_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_short_lc_c_sys_parms_short_lc
+func dmrgo_pdu_short_lc_c_sys_parms_short_lc(c_self *C.dmrgo_pdu_short_lc_c_sys_parms_t, c_out *C.dmrgo_pdu_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLCCSysParms
+	x = in_layer2_pdu_ShortLCCSysParms(&(*c_self))
+	r0, r1 := x.ShortLC()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_short_lc_c_sys_parms_site_id
 func dmrgo_pdu_short_lc_c_sys_parms_site_id(c_self *C.dmrgo_pdu_short_lc_c_sys_parms_t, c_out *C.uint16_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29096,6 +30177,29 @@ func dmrgo_pdu_short_lc_c_sys_parms_sys_code(c_self *C.dmrgo_pdu_short_lc_c_sys_
 	_ = r0
 	if c_out != nil {
 		*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_null_message_short_lc
+func dmrgo_pdu_short_lc_null_message_short_lc(c_self *C.dmrgo_pdu_short_lc_null_message_t, c_out *C.dmrgo_pdu_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLCNullMessage
+	x = *(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.ShortLC()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -29176,6 +30280,29 @@ func dmrgo_pdu_short_lc_p_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_p_
 	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_p_sys_parms_short_lc
+func dmrgo_pdu_short_lc_p_sys_parms_short_lc(c_self *C.dmrgo_pdu_short_lc_p_sys_parms_t, c_out *C.dmrgo_pdu_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLCPSysParms
+	x = in_layer2_pdu_ShortLCPSysParms(&(*c_self))
+	r0, r1 := x.ShortLC()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -29410,6 +30537,29 @@ func dmrgo_pdu_slot_type_info_slot_type(c_self C.dmrgo_pdu_slot_type_info_t, c_o
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_status_precoded_header_data_header
+func dmrgo_pdu_status_precoded_header_data_header(c_self *C.dmrgo_pdu_status_precoded_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.StatusPrecodedHeader
+	x = in_layer2_pdu_StatusPrecodedHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -29868,6 +31018,52 @@ func dmrgo_pdu_talker_alias_blocks(c_format C.dmrgo_layer3_talker_alias_data_for
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_csbk
+func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_csbk(c_self *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TalkgroupDataGrantMultiItemPDU
+	x = in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_mbc_header
+func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_mbc_header(c_self *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TalkgroupDataGrantMultiItemPDU
+	x = in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string
 func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29892,6 +31088,52 @@ func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_ta
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_talkgroup_data_grant_pdu_csbk
+func dmrgo_pdu_talkgroup_data_grant_pdu_csbk(c_self *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TalkgroupDataGrantPDU
+	x = in_layer2_pdu_TalkgroupDataGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_talkgroup_data_grant_pdu_mbc_header
+func dmrgo_pdu_talkgroup_data_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TalkgroupDataGrantPDU
+	x = in_layer2_pdu_TalkgroupDataGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_talkgroup_data_grant_pdu_string
 func dmrgo_pdu_talkgroup_data_grant_pdu_string(c_self *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29912,6 +31154,52 @@ func dmrgo_pdu_talkgroup_data_grant_pdu_string(c_self *C.dmrgo_pdu_talkgroup_dat
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_talkgroup_voice_grant_pdu_csbk
+func dmrgo_pdu_talkgroup_voice_grant_pdu_csbk(c_self *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TalkgroupVoiceGrantPDU
+	x = in_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_talkgroup_voice_grant_pdu_mbc_header
+func dmrgo_pdu_talkgroup_voice_grant_pdu_mbc_header(c_self *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, c_out *C.dmrgo_pdu_mbc_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TalkgroupVoiceGrantPDU
+	x = in_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_self))
+	r0, r1 := x.MBCHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -30007,6 +31295,29 @@ func dmrgo_pdu_udp_ipv4_compressed_header_string(c_self *C.dmrgo_pdu_udp_ipv4_co
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_udt_header_data_header
+func dmrgo_pdu_udt_header_data_header(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.UDTHeader
+	x = in_layer2_pdu_UDTHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_udt_header_string
 func dmrgo_pdu_udt_header_string(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -30046,6 +31357,29 @@ func dmrgo_pdu_udt_opcode_string(c_self C.dmrgo_pdu_udt_opcode_t, c_out *C.char,
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_unconfirmed_data_header_data_header
+func dmrgo_pdu_unconfirmed_data_header_data_header(c_self *C.dmrgo_pdu_unconfirmed_data_header_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.UnconfirmedDataHeader
+	x = in_layer2_pdu_UnconfirmedDataHeader(&(*c_self))
+	r0, r1 := x.DataHeader()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -30141,6 +31475,29 @@ func dmrgo_pdu_unified_single_block_data_string(c_self *C.dmrgo_pdu_unified_sing
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_csbk
+func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_csbk(c_self *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU
+	x = in_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string
 func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(c_self *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -30161,6 +31518,29 @@ func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(c_self *C.d
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_unit_to_unit_voice_service_request_pdu_csbk
+func dmrgo_pdu_unit_to_unit_voice_service_request_pdu_csbk(c_self *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU
+	x = in_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&(*c_self))
+	r0, r1 := x.CSBK()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_CSBK(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

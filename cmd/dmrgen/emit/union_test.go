@@ -348,3 +348,40 @@ type T struct {
 		"} else if v, ok := s.AsExtra(); ok {",
 	)
 }
+
+func TestUnionBuilders(t *testing.T) {
+	t.Parallel()
+
+	out := generateUnion(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+type Two struct {
+	Y uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:build LB=true
+// dmr:variant A Sub Op=1
+// dmr:variant B Two Op=2
+// dmr:variant C Two Op=3
+// dmr:variant D Sub2 U=1|2 Op=4
+type T struct {
+	LB  bool    `+"`dmr:\"bit:0\"`"+`
+	U   uint8   `+"`dmr:\"bits:1-2\"`"+`
+	Op  uint8   `+"`dmr:\"bits:3-7\"`"+`
+	Raw [1]byte `+"`dmr:\"bits:8-15,raw,union\"`"+`
+}
+
+type Sub2 struct {
+	Z uint8 `+"`dmr:\"bits:0-7\"`"+`
+}`)
+	assertContains(t, out,
+		"// T returns the T that carries s, as T.SetA sets it, with LB true and the\n// other fields zero. It returns the errors of SetA, and then the zero T.\n"+
+			"func (s Sub) T() (T, error) {\n\tu := T{LB: true}\n\tif err := u.SetA(s); err != nil {\n\t\treturn T{}, err\n\t}\n\treturn u, nil\n}",
+		"func (s Sub2) T(_u uint8) (T, error) {\n\tu := T{LB: true}\n\tif err := u.SetD(_u, s); err != nil {",
+		"func (s *T) SetD(_u uint8, p Sub2) error {",
+	)
+	if strings.Contains(out, "func (s Two) T(") {
+		t.Errorf("builder for a payload type of two variants\n%s", out)
+	}
+}

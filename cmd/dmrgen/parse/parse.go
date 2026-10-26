@@ -288,6 +288,11 @@ type PDUStruct struct {
 	// method sets Field to Value.
 	Resets []VariantCond
 
+	// Builds holds the dmr:build Field=Value directives: the value
+	// constructor of each variant type starts from the zero struct with
+	// Field set to Value.
+	Builds []VariantCond
+
 	// StringAs holds the dmr:string_as directives: hand-written AsX
 	// methods that String tries, in order, after the variants.
 	StringAs []string
@@ -618,7 +623,7 @@ func parseDirective(pdu *PDUStruct, text string, baseTypes map[string]string) er
 		pdu.Consts = append(pdu.Consts, c)
 	case directiveFrame, directiveView, directiveMagic:
 		return parseLayoutDirective(pdu, name, arg)
-	case "dmr:dispatch_if", "dmr:variant", "dmr:get", "dmr:reset", "dmr:string_as":
+	case "dmr:dispatch_if", "dmr:variant", "dmr:get", "dmr:reset", "dmr:build", "dmr:string_as":
 		return parseUnionDirective(pdu, name, arg, baseTypes)
 	case "dmr:fec_mask":
 		if pdu.FECMask != nil {
@@ -652,6 +657,12 @@ func parseUnionDirective(pdu *PDUStruct, name, arg string, baseTypes map[string]
 			return fmt.Errorf("dmr:reset %q is not Field=Value", arg)
 		}
 		pdu.Resets = append(pdu.Resets, VariantCond{Field: field, Values: []string{value}})
+	case "dmr:build":
+		field, value, ok := strings.Cut(arg, "=")
+		if !ok || !token.IsIdentifier(field) || !isQualifiedIdent(value) {
+			return fmt.Errorf("dmr:build %q is not Field=Value", arg)
+		}
+		pdu.Builds = append(pdu.Builds, VariantCond{Field: field, Values: []string{value}})
 	case "dmr:string_as":
 		if !token.IsExported(arg) {
 			return fmt.Errorf("dmr:string_as %q is not an exported name", arg)
@@ -1241,8 +1252,8 @@ func checkUnion(pdu *PDUStruct) error {
 		union = &pdu.Fields[i]
 	}
 	switch {
-	case union == nil && (len(pdu.Variants) > 0 || len(pdu.Getters) > 0 || pdu.DispatchIf != nil || len(pdu.Resets) > 0 || len(pdu.StringAs) > 0):
-		return errors.New("dmr:variant, dmr:get, dmr:reset, dmr:string_as and dmr:dispatch_if need a union field")
+	case union == nil && (len(pdu.Variants) > 0 || len(pdu.Getters) > 0 || pdu.DispatchIf != nil || len(pdu.Resets) > 0 || len(pdu.Builds) > 0 || len(pdu.StringAs) > 0):
+		return errors.New("dmr:variant, dmr:get, dmr:reset, dmr:build, dmr:string_as and dmr:dispatch_if need a union field")
 	case union == nil:
 		return nil
 	case len(pdu.Variants) == 0:
@@ -1289,6 +1300,12 @@ func checkResets(pdu *PDUStruct) error {
 		f := pdu.FieldByName(r.Field)
 		if f == nil || f.Union || f.GoType == typeBool {
 			return fmt.Errorf("dmr:reset field %q is not an integer field of the struct", r.Field)
+		}
+	}
+	for i, b := range pdu.Builds {
+		f := pdu.FieldByName(b.Field)
+		if f == nil || f.Union || slices.ContainsFunc(pdu.Builds[:i], func(c VariantCond) bool { return c.Field == b.Field }) {
+			return fmt.Errorf("dmr:build field %q is not a field of the struct, or is the union or set twice", b.Field)
 		}
 	}
 	for _, name := range pdu.StringAs {

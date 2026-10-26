@@ -529,6 +529,7 @@ const (
 //dmr:variant MotorolaRadioCheck MotorolaRadioCheckPDU Opcode=CSBKMotorolaRadioCheck FID=enums.FIDMotorola
 //dmr:variant MotorolaCallAlert MotorolaCallAlertPDU Opcode=CSBKMotorolaCallAlert FID=enums.FIDMotorola
 //dmr:variant MotorolaCallAlertAck MotorolaCallAlertAckPDU Opcode=CSBKMotorolaCallAlertAck FID=enums.FIDMotorola
+//dmr:build LastBlock=true
 type CSBK struct {
 	LastBlock   bool       `dmr:"bit:0"`                           // LB bit, true for the last block
 	ProtectFlag bool       `dmr:"bit:1"`                           // PF bit
@@ -600,6 +601,31 @@ func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) 
 	}
 	s.setOpcode0x38(payload, Opcode0x38TalkgroupDataGrantMultiItem)
 	return nil
+}
+
+// CSBK returns the BS_Dwn_Act CSBK that carries s, as
+// CSBK.SetBSOutboundActivation sets it, with LastBlock true and the other
+// fields zero. It returns the errors of SetBSOutboundActivation, and then the
+// zero CSBK. (ETSI TS 102 361-2 clause 7.1.2.1)
+func (s BSOutboundActivationPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetBSOutboundActivation(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
+}
+
+// CSBK returns the TD_GRANT_MI CSBK that carries s, as
+// CSBK.SetTalkgroupDataGrantMultiItem sets it, with LastBlock true and the
+// other fields zero. It returns the errors of
+// SetTalkgroupDataGrantMultiItem, and then the zero CSBK. (ETSI TS 102 361-4
+// clause 7.1.1.1.1)
+func (s TalkgroupDataGrantMultiItemPDU) CSBK() (CSBK, error) {
+	u := CSBK{LastBlock: true}
+	if err := u.SetTalkgroupDataGrantMultiItem(s); err != nil {
+		return CSBK{}, err
+	}
+	return u, nil
 }
 
 func (s *CSBK) setOpcode0x38(payload [8]byte, hint Opcode0x38Hint) {
