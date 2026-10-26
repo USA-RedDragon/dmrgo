@@ -113,6 +113,7 @@ ignore_files:
   - v2/examples/trunking/main.go
   - v2/fec/fec.go
   - v2/vocoder/ambe_payload.go
+  - v2/vocoder/report.go
   - v2/vocoder/codec2/codec2.go
   - v2/vocoder/codec2/codec2_cgo.go
   - v2/vocoder/codec2/codec2_stub.go

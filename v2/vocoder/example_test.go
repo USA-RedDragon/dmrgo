@@ -20,13 +20,17 @@ func (lsbCodec) Encode(pcm []int16) ([9]byte, error) {
 	return s, nil
 }
 
-func (lsbCodec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
+func (lsbCodec) Decode(dst []int16, slot [9]byte) ([]int16, vocoder.FrameReport, error) {
 	n := len(dst)
 	dst = append(dst, make([]int16, 160)...)
 	for i := range 72 {
 		dst[n+i] = int16(slot[i/8] >> (7 - i%8) & 1)
 	}
-	return dst, nil
+	return dst, vocoder.FrameReport{}, nil
+}
+
+func (lsbCodec) DecodeLost(dst []int16) ([]int16, vocoder.FrameReport, error) {
+	return append(dst, make([]int16, 160)...), vocoder.FrameReport{Frame: vocoder.FrameLost, Output: vocoder.OutputSilence}, nil
 }
 
 func (lsbCodec) Reset() {}
@@ -35,7 +39,8 @@ func (lsbCodec) Silence() [9]byte { return [9]byte{} }
 func (lsbCodec) FID() enums.FID   { return enums.FIDStandardized }
 
 // ExampleCodec implements Codec with a toy codec that keeps the lowest bit
-// of the first 72 samples, and runs one frame through it.
+// of the first 72 samples, runs one frame through it, and fills a lost
+// frame.
 func ExampleCodec() {
 	var c vocoder.Codec = lsbCodec{}
 	defer c.Close()
@@ -43,10 +48,13 @@ func ExampleCodec() {
 	pcm := make([]int16, c.FrameSamples())
 	pcm[0], pcm[2] = 1, 1
 	slot, _ := c.Encode(pcm)
-	out, _ := c.Decode(nil, slot)
-	fmt.Println(c.FID(), out[:4])
+	out, rep, _ := c.Decode(nil, slot)
+	fmt.Println(c.FID(), out[:4], rep.Frame, rep.Output)
+	out, rep, _ = c.DecodeLost(out)
+	fmt.Println(len(out), rep.Frame, rep.Output)
 	// Output:
-	// Standardized FID [1 0 1 0]
+	// Standardized FID [1 0 1 0] Good Voice
+	// 320 Lost Silence
 }
 
 // ExampleDecodeAMBE72 corrects one bit error in the silence frame.

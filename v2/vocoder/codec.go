@@ -21,9 +21,19 @@ type Codec interface {
 	// Encode encodes exactly FrameSamples samples into one 72-bit frame.
 	Encode(pcm []int16) ([9]byte, error)
 	// Decode decodes one 72-bit frame, appends its FrameSamples samples to
-	// dst and returns the extended slice. On error it returns dst unchanged.
-	// It allocates only when dst has no room for FrameSamples more samples.
-	Decode(dst []int16, slot [9]byte) ([]int16, error)
+	// dst and returns the extended slice and a report on the frame. A
+	// frame that the codec finds erased or invalid, and replaces, is
+	// not an error: the report tells it. Decode returns an error only for
+	// misuse or a failure of the codec, such as a closed Codec, and then
+	// returns dst unchanged. It allocates only when dst has no room for
+	// FrameSamples more samples.
+	Decode(dst []int16, slot [9]byte) ([]int16, FrameReport, error)
+	// DecodeLost appends FrameSamples samples in place of a frame that
+	// never arrived, such as a repeat of the frame before or silence, and
+	// returns the extended slice and a report with Frame FrameLost. It
+	// returns errors as Decode does. It allocates only when dst has no room
+	// for FrameSamples more samples.
+	DecodeLost(dst []int16) ([]int16, FrameReport, error)
 	// Reset starts a new call: the decoder drops what it learned from the
 	// frames of the call before, such as a detected mode. A Codec without
 	// such state does nothing.
