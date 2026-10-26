@@ -70,6 +70,7 @@ type Codec struct {
 	stale    bool
 	lost     bool
 	query    []byte
+	clear    []byte
 	product  string
 	version  string
 	rxN      int
@@ -88,13 +89,17 @@ var _ vocoder.Codec = (*Codec)(nil)
 // reads the product name and version, sets the rate of cfg.Channel with
 // AppendRateDMR, and with a PKT_SPCHFMT field of 0x0001 has the chip put
 // the decoder status DCMODE_OUT in a CMODE field of each speech packet
-// (AMBE-3000R manual Tables 63 and 64). A nil cfg means the zero Config.
-// It returns dmrgo.ErrNilArgument for a nil port, ErrChannel for a channel
-// outside 0 to MaxChannel, ErrTimeout when the chip does not reply,
-// ErrSpeechFormat when it rejects the PKT_SPCHFMT field, ErrStatus when it
-// rejects another field, and the errors of port. It allocates the Codec and the product
-// and version strings, and the query packet that resynchronizes it after a
-// timeout.
+// (AMBE-3000R manual Tables 63 and 64). Last, a PKT_DCMODE field of 0x0000
+// clears the DCMODE_IN flags of cfg.Channel, which the chip keeps until
+// they are changed, so that a LOST_FRAME left set by an earlier user of the
+// channel does not make the chip repeat every frame (Tables 14 and 36). A
+// nil cfg means the zero Config. It returns dmrgo.ErrNilArgument for a nil
+// port, ErrChannel for a channel outside 0 to MaxChannel, ErrTimeout when
+// the chip does not reply, ErrSpeechFormat when it rejects the PKT_SPCHFMT
+// field, ErrStatus when it rejects another field, with a text that names
+// PKT_DCMODE for that field, and the errors of port. It allocates the
+// Codec, the product and version strings, the query packet that
+// resynchronizes it after a timeout, and the PKT_DCMODE packet.
 func New(port Port, cfg *Config) (*Codec, error) {
 	var conf Config
 	if cfg != nil {
@@ -127,6 +132,7 @@ func New(port Port, cfg *Config) (*Codec, error) {
 	}
 	c.consume(n)
 	c.query = AppendQuery(nil, c.parity)
+	c.clear = appendDCMode(nil, c.channel, 0, c.parity)
 	p, n, err := c.control(AppendQuery(c.tx[:0], c.parity))
 	if err != nil {
 		return nil, err
@@ -149,7 +155,23 @@ func New(port Port, cfg *Config) (*Codec, error) {
 		return nil, err
 	}
 	c.consume(n)
+	if err := c.clearDCMode(); err != nil {
+		return nil, err
+	}
 	return c, nil
+}
+
+func (c *Codec) clearDCMode() error {
+	_, n, err := c.control(c.clear)
+	if errors.Is(err, ErrStatus) {
+		return errDCMode
+	}
+	if err != nil {
+		return err
+	}
+	c.consume(n)
+	c.lost = false
+	return nil
 }
 
 func (c *Codec) reset() error {
@@ -512,13 +534,27 @@ func report(mode cmode, lost bool) vocoder.FrameReport {
 func (c *Codec) Reset() {}
 
 // Close marks the Codec closed; later Encode, Decode and DecodeLost calls
-// return ErrClosed. It does not close the Port. Close is idempotent and returns
-// nil.
+// return ErrClosed. When the last decode request was DecodeLost, Close first
+// clears LOST_FRAME with a PKT_DCMODE field of 0x0000, so that the chip does
+// not keep repeating frames for the next user of the channel, and returns
+// ErrTimeout when the chip does not reply, ErrStatus when it rejects the
+// field, and the errors of the Port; the Codec is closed in any case. It
+// does not close the Port. Close is idempotent; a later Close returns nil.
+// It does not allocate.
 func (c *Codec) Close() error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
+	if c.closed {
+		return nil
+	}
 	c.closed = true
-	return nil
+	if !c.lost || c.port == nil {
+		return nil
+	}
+	if err := c.resync(); err != nil {
+		return err
+	}
+	return c.clearDCMode()
 }

@@ -3,7 +3,9 @@ package dvsi_test
 import (
 	"errors"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
@@ -203,7 +205,7 @@ func TestCodecStatusPackets(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := p.writes[len(p.writes)-1]; !slices.Equal(got, []byte{0x61, 0x00, 0x03, 0x00, 0x16, 0x00, 0x01}) {
+		if got := p.writes[len(p.writes)-2]; !slices.Equal(got, []byte{0x61, 0x00, 0x03, 0x00, 0x16, 0x00, 0x01}) {
 			t.Errorf("channel %d: PKT_SPCHFMT packet % x", ch, got)
 		}
 		var chField []byte
@@ -211,10 +213,14 @@ func TestCodecStatusPackets(t *testing.T) {
 			chField = []byte{0x41}
 		}
 		n := byte(len(chField))
+		want := slices.Concat([]byte{0x61, 0x00, 3 + n, 0x00}, chField, []byte{0x06, 0x00, 0x00})
+		if got := p.writes[len(p.writes)-1]; !slices.Equal(got, want) {
+			t.Errorf("channel %d: PKT_DCMODE packet % x, want % x", ch, got, want)
+		}
 		if _, _, err := c.DecodeLost(nil); err != nil {
 			t.Fatal(err)
 		}
-		want := slices.Concat([]byte{0x61, 0x00, 3 + n, 0x01}, chField, []byte{0x02, 0x00, 0x04})
+		want = slices.Concat([]byte{0x61, 0x00, 3 + n, 0x01}, chField, []byte{0x02, 0x00, 0x04})
 		if got := p.writes[len(p.writes)-1]; !slices.Equal(got, want) {
 			t.Errorf("channel %d: lost frame packet % x, want % x", ch, got, want)
 		}
@@ -229,4 +235,188 @@ func TestCodecStatusPackets(t *testing.T) {
 		}
 		checkSim(t, p.Device)
 	}
+}
+
+func TestCodecLeftLostFrame(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(3)
+	tests := []struct {
+		name  string
+		opt   dvsisim.Options
+		cfg   dvsi.Config
+		crash bool
+	}{
+		{"AMBE-3000R left by a client that crashed", dvsisim.Options{}, dvsi.Config{NoReset: true}, true},
+		{"AMBEserver datagrams", dvsisim.Options{Datagram: true}, dvsi.Config{NoReset: true}, false},
+		{"AMBE-3003 channel 1", dvsisim.Options{Channels: 3}, dvsi.Config{Channel: 1, NoReset: true}, false},
+		{"AMBE-3003 channel 2 left by a client that crashed", dvsisim.Options{Channels: 3, Chunk: 3}, dvsi.Config{Channel: 2, NoReset: true, NoParity: true}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			d := dvsisim.New(pairs, tt.opt)
+			old, err := dvsi.New(d, &dvsi.Config{Channel: tt.cfg.Channel, NoParity: tt.cfg.NoParity})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.crash {
+				if _, _, err := old.Decode(nil, pairs[0].Slot); err != nil {
+					t.Fatal(err)
+				}
+				if _, _, err := old.DecodeLost(nil); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				d.SetDCMode(tt.cfg.Channel, dvsisim.LostFrame)
+			}
+			if d.DCMode(tt.cfg.Channel) != dvsisim.LostFrame {
+				t.Fatalf("DCMODE_IN %#x, want LOST_FRAME left set", d.DCMode(tt.cfg.Channel))
+			}
+			c, err := dvsi.New(d, &tt.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if d.DCMode(tt.cfg.Channel) != 0 {
+				t.Errorf("DCMODE_IN %#x after New, want 0", d.DCMode(tt.cfg.Channel))
+			}
+			lost := d.Counts.Lost
+			for i, p := range pairs {
+				pcm, rep, err := c.Decode(nil, p.Slot)
+				if err != nil {
+					t.Fatalf("Decode %d: %v", i, err)
+				}
+				if !slices.Equal(pcm, p.PCM[:]) || rep != (vocoder.FrameReport{}) {
+					t.Errorf("Decode %d: right audio %v, report %+v", i, slices.Equal(pcm, p.PCM[:]), rep)
+				}
+			}
+			if d.Counts.Lost != lost {
+				t.Errorf("the device repeated %d frames", d.Counts.Lost-lost)
+			}
+			checkSim(t, d)
+		})
+	}
+}
+
+func TestCodecDCModeRejected(t *testing.T) {
+	t.Parallel()
+
+	for _, opt := range []dvsisim.Options{{RejectDCMode: true}, {RejectDCMode: true, Channels: 3, Datagram: true}} {
+		d := dvsisim.New(dvsisim.Pairs(1), opt)
+		cfg := dvsi.Config{}
+		if opt.Channels == 3 {
+			cfg.Channel = 2
+		}
+		c, err := dvsi.New(d, &cfg)
+		if c != nil || !errors.Is(err, dvsi.ErrStatus) || errors.Is(err, dvsi.ErrSpeechFormat) || !strings.Contains(err.Error(), "PKT_DCMODE") {
+			t.Errorf("%+v: New with a rejected PKT_DCMODE field = codec %v, %v", opt, c != nil, err)
+		}
+		if d.Counts.DCMode != 1 {
+			t.Errorf("%+v: New sent %d PKT_DCMODE fields, want 1", opt, d.Counts.DCMode)
+		}
+		checkSim(t, d)
+	}
+}
+
+func TestCodecCloseClearsLostFrame(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(2)
+	for _, opt := range []dvsisim.Options{{}, {Datagram: true}, {Channels: 3, Chunk: 1}} {
+		cfg := dvsi.Config{}
+		if opt.Channels == 3 {
+			cfg.Channel = 1
+		}
+		d := dvsisim.New(pairs, opt)
+		c, err := dvsi.New(d, &cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := c.Decode(nil, pairs[0].Slot); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := c.DecodeLost(nil); err != nil {
+			t.Fatal(err)
+		}
+		sent := d.Counts.DCMode
+		if err := c.Close(); err != nil {
+			t.Errorf("%+v: Close after DecodeLost = %v", opt, err)
+		}
+		if d.DCMode(cfg.Channel) != 0 || d.Counts.DCMode != sent+1 {
+			t.Errorf("%+v: DCMODE_IN %#x after Close, %d PKT_DCMODE fields sent by Close", opt, d.DCMode(cfg.Channel), d.Counts.DCMode-sent)
+		}
+		if err := c.Close(); err != nil || d.Counts.DCMode != sent+1 {
+			t.Errorf("%+v: second Close = %v, %d PKT_DCMODE fields", opt, err, d.Counts.DCMode-sent)
+		}
+		checkSim(t, d)
+
+		d = dvsisim.New(pairs, opt)
+		c, err = dvsi.New(d, &cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := c.DecodeLost(nil); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := c.Decode(nil, pairs[1].Slot); err != nil {
+			t.Fatal(err)
+		}
+		sent = d.Counts.DCMode
+		if err := c.Close(); err != nil || d.Counts.DCMode != sent || d.DCMode(cfg.Channel) != 0 {
+			t.Errorf("%+v: Close after Decode = %v, %d PKT_DCMODE fields, DCMODE_IN %#x", opt, err, d.Counts.DCMode-sent, d.DCMode(cfg.Channel))
+		}
+		checkSim(t, d)
+	}
+}
+
+func TestCodecCloseErrors(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(1)
+	d := dvsisim.New(pairs, dvsisim.Options{})
+	c, err := dvsi.New(d, &dvsi.Config{Timeout: 10 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := c.DecodeLost(nil); err != nil {
+		t.Fatal(err)
+	}
+	d.Drop = 1
+	if err := c.Close(); !errors.Is(err, dvsi.ErrTimeout) {
+		t.Errorf("Close with no reply = %v", err)
+	}
+	if _, _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, dvsi.ErrClosed) {
+		t.Errorf("Decode after a failed Close = %v", err)
+	}
+	if err := c.Close(); err != nil {
+		t.Errorf("second Close = %v", err)
+	}
+	checkSim(t, d)
+
+	boom := errors.New("boom")
+	fp := &failPort{Device: dvsisim.New(pairs, dvsisim.Options{})}
+	c, err = dvsi.New(fp, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := c.DecodeLost(nil); err != nil {
+		t.Fatal(err)
+	}
+	fp.err = boom
+	if err := c.Close(); !errors.Is(err, boom) {
+		t.Errorf("Close with a failing Write = %v", err)
+	}
+	checkSim(t, fp.Device)
+}
+
+type failPort struct {
+	*dvsisim.Device
+	err error
+}
+
+func (p *failPort) Write(b []byte) (int, error) {
+	if p.err != nil {
+		return 0, p.err
+	}
+	return p.Device.Write(b)
 }

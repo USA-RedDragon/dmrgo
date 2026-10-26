@@ -1,6 +1,9 @@
 package dvsi
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // Errors returned by the package. Match them with errors.Is.
 var (
@@ -45,3 +48,5 @@ var (
 	// ErrClosed is returned when a closed Codec is used.
 	ErrClosed = errors.New("dvsi: codec is closed")
 )
+
+var errDCMode = fmt.Errorf("%w: rejected the decoder mode reset (PKT_DCMODE)", ErrStatus)

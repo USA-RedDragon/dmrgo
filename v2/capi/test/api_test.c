@@ -1031,7 +1031,7 @@ struct chip {
 	uint8_t out[4096];
 	size_t out_n;
 	int parity;
-	int decodes, encodes;
+	int decodes, encodes, dcmodes;
 };
 
 static const uint8_t chip_slot[9] = {0xB9, 0xE8, 0x81, 0x52, 0x61, 0x73, 0x00, 0x2A, 0x6B};
@@ -1069,6 +1069,7 @@ static void chip_packet(struct chip *c) {
 		static const uint8_t query[] = "\x30" "AMBE3000R\0" "\x31" "V120\0";
 		static const uint8_t rate[] = {0x0A, 0x00, 0x0B, 0x00};
 		static const uint8_t spchfmt[] = {0x16, 0x00};
+		static const uint8_t dcmode[] = {0x06, 0x00};
 		uint8_t pm[2] = {0x3F, 0x00};
 		switch (p.fields[0]) {
 		case DMRGO_DVSI_FIELD_RESET:
@@ -1089,6 +1090,11 @@ static void chip_packet(struct chip *c) {
 		case 0x16:
 			CHECK(p.fields_len == 3 && p.fields[1] == 0x00 && p.fields[2] == 0x01);
 			chip_reply(c, 0, spchfmt, sizeof spchfmt);
+			break;
+		case 0x06:
+			CHECK(p.fields_len == 3 && p.fields[1] == 0x00 && p.fields[2] == 0x00);
+			c->dcmodes++;
+			chip_reply(c, 0, dcmode, sizeof dcmode);
 			break;
 		default:
 			failures++;
@@ -1172,7 +1178,7 @@ static void test_dvsi(void) {
 	OK(dmrgo_dvsi_codec_encode(codec, pcm, 160, slot));
 	CHECK(memcmp(slot, chip_slot, 9) == 0);
 	CHECK(dmrgo_dvsi_codec_encode(codec, pcm, 100, slot) == DMRGO_ERR_DVSI_SAMPLES);
-	CHECK(c.decodes == 1 && c.encodes == 1 && c.parity == 1);
+	CHECK(c.decodes == 1 && c.encodes == 1 && c.parity == 1 && c.dcmodes == 1);
 	OK(dmrgo_dvsi_codec_close(codec));
 	CHECK((n = 0, dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot, NULL)) == DMRGO_ERR_DVSI_CLOSED);
 	CHECK((n = 0, dmrgo_dvsi_codec_decode_lost(codec, pcm, 160, &n, NULL, NULL)) == DMRGO_ERR_DVSI_CLOSED);

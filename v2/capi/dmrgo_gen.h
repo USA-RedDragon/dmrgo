@@ -11081,7 +11081,7 @@ int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_
 int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
 /* dmrgo_dvsi_codec_free frees the handle. self may be NULL. */
 int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
-/* Go: dvsi.Codec.Close. Close marks the Codec closed; later Encode, Decode and DecodeLost calls return DMRGO_ERR_DVSI_CLOSED. */
+/* Go: dvsi.Codec.Close. Close marks the Codec closed; later Encode, Decode and DecodeLost calls return DMRGO_ERR_DVSI_CLOSED. When the last decode request was DecodeLost, Close first clears LOST_FRAME with a PKT_DCMODE field of 0x0000, so that the chip does not keep repeating frames for the next user of the channel, and returns DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, DMRGO_ERR_DVSI_STATUS when it rejects the field, and the errors of the Port; the Codec is closed in any case. */
 int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
 /* dmrgo_dvsi_codec_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
@@ -11109,7 +11109,7 @@ int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
 int dmrgo_dvsi_codec_version_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
 /* Go: dvsi.Codec.Version. Version returns the version string that the chip reported in New. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_version_need gives (DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS items). */
 int dmrgo_dvsi_codec_version(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dvsi.New. New sets up the chip behind port for the DMR AMBE+2 rate and returns a Codec for it. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL port, DMRGO_ERR_DVSI_CHANNEL for a channel outside 0 to DMRGO_DVSI_MAX_CHANNEL, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, DMRGO_ERR_DVSI_SPEECH_FORMAT when it rejects the PKT_SPCHFMT field, DMRGO_ERR_DVSI_STATUS when it rejects another field, and the errors of port. port and cfg may be NULL. */
+/* Go: dvsi.New. New sets up the chip behind port for the DMR AMBE+2 rate and returns a Codec for it. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL port, DMRGO_ERR_DVSI_CHANNEL for a channel outside 0 to DMRGO_DVSI_MAX_CHANNEL, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, DMRGO_ERR_DVSI_SPEECH_FORMAT when it rejects the PKT_SPCHFMT field, DMRGO_ERR_DVSI_STATUS when it rejects another field, with a text that names PKT_DCMODE for that field, and the errors of port. port and cfg may be NULL. */
 int dmrgo_dvsi_new(dmrgo_dvsi_port_t *port, const dmrgo_dvsi_config_t *cfg, dmrgo_dvsi_codec_t **out);
 /* Go: dvsi.Packet.AppendChannelData. AppendChannelData appends the bits of the CHAND field of a channel packet, packed MSB first, to dst and returns the extended slice, the number of bits and the channel of the field. It returns DMRGO_ERR_DVSI_FIELD when p is not a channel packet with one CHAND field and known fields only, and DMRGO_ERR_DVSI_BITS for bits outside DMRGO_DVSI_MIN_BITS to DMRGO_DVSI_MAX_BITS, with dst unchanged. */
 int dmrgo_dvsi_packet_append_channel_data(const dmrgo_dvsi_packet_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n, int64_t *n2);

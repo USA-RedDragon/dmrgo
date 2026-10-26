@@ -225,3 +225,51 @@ func TestDeviceStatus(t *testing.T) {
 		t.Errorf("rejected SPCHFMT reply %x", got)
 	}
 }
+
+func TestDeviceDCMode(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(2)
+	d := dvsisim.New(pairs, dvsisim.Options{NoParityPin: true, Datagram: true, Channels: 3})
+	_, _ = d.Write(packet(t, 0, "41 0a 0431 0754 2400 0000 0000 6f48 0b 03", false))
+	_ = reply(t, d)
+	d.SetDCMode(1, dvsisim.LostFrame)
+	d.SetDCMode(3, dvsisim.LostFrame)
+	d.SetDCMode(-1, dvsisim.LostFrame)
+	if d.DCMode(1) != dvsisim.LostFrame || d.DCMode(0) != 0 || d.DCMode(3) != 0 || d.DCMode(-1) != 0 {
+		t.Errorf("DCMODE_IN %#x %#x %#x %#x", d.DCMode(0), d.DCMode(1), d.DCMode(3), d.DCMode(-1))
+	}
+	s := pairs[1].Slot
+	_, _ = d.Write(packet(t, 1, "41 01 48 "+hex.EncodeToString(s[:]), false))
+	_ = reply(t, d)
+	if d.Counts.Lost != 1 {
+		t.Errorf("a frame on a channel left with LOST_FRAME was not repeated: %+v", d.Counts)
+	}
+	_, _ = d.Write(packet(t, 0, "41 06 0000", false))
+	if got := reply(t, d); !bytes.Equal(got, []byte{0x61, 0x00, 0x04, 0x00, 0x41, 0x00, 0x06, 0x00}) {
+		t.Errorf("DCMODE reply % x", got)
+	}
+	if d.DCMode(1) != 0 || d.Counts.DCMode != 1 {
+		t.Errorf("DCMODE_IN %#x after PKT_DCMODE 0x0000, counts %+v", d.DCMode(1), d.Counts)
+	}
+	_, _ = d.Write(packet(t, 0, "06 0004", false))
+	_ = reply(t, d)
+	if d.DCMode(0) != dvsisim.LostFrame || len(d.Errs) > 0 {
+		t.Errorf("DCMODE_IN %#x after PKT_DCMODE 0x0004, errors %q", d.DCMode(0), d.Errs)
+	}
+	_, _ = d.Write(packet(t, 0, "06 0008", false))
+	if got := reply(t, d); !bytes.Equal(got, []byte{0x61, 0x00, 0x02, 0x00, 0x06, 0x01}) || len(d.Errs) != 1 || !strings.Contains(d.Errs[0], "DCMODE is not") {
+		t.Errorf("DCMODE 0x0008 reply % x, errors %q", got, d.Errs)
+	}
+	d.Errs = nil
+	_, _ = d.Write(packet(t, 0, "06 00", false))
+	if len(d.Errs) == 0 || !strings.Contains(d.Errs[0], "short DCMODE") {
+		t.Errorf("short DCMODE: errors %q", d.Errs)
+	}
+	d = dvsisim.New(pairs, dvsisim.Options{RejectDCMode: true, NoParityPin: true})
+	d.SetDCMode(0, dvsisim.LostFrame)
+	_, _ = d.Write(packet(t, 0, "06 0000", false))
+	if got := reply(t, d); !bytes.Equal(got, []byte{0x61, 0x00, 0x02, 0x00, 0x06, 0x01}) || d.DCMode(0) != dvsisim.LostFrame {
+		t.Errorf("rejected DCMODE reply % x, DCMODE_IN %#x", got, d.DCMode(0))
+	}
+}

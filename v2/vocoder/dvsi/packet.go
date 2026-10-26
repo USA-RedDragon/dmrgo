@@ -77,6 +77,7 @@ const (
 	fieldChannelData  Field = 0x01
 	fieldCMode        Field = 0x02
 	fieldSamples      Field = 0x03
+	fieldDCMode       Field = 0x06
 	fieldTone         Field = 0x08
 	fieldSpeechFormat Field = 0x16
 	fieldChannelData4 Field = 0x17
@@ -176,6 +177,12 @@ const (
 func appendSpeechFormat(dst []byte, parity bool) []byte {
 	dst, start := begin(dst, TypeControl)
 	return finish(append(dst, byte(fieldSpeechFormat), 0x00, 0x01), start, parity)
+}
+
+func appendDCMode(dst []byte, channel int, mode uint16, parity bool) []byte {
+	dst, start := begin(dst, TypeControl)
+	dst, _ = appendChannelField(dst, channel)
+	return finish(append(dst, byte(fieldDCMode), byte(mode>>8), byte(mode&0xFF)), start, parity)
 }
 
 func appendCMode(dst []byte, channel int, slot *[FrameBits / 8]byte, mode uint16, parity bool) []byte {

@@ -3,7 +3,9 @@
 // packets written to it with its own parser, checks them against the
 // manuals, and answers with stored frame and audio pairs. It reports the
 // decoder status in a CMODE field of each speech packet after a PKT_SPCHFMT
-// field asks for it, and repeats frames while LOST_FRAME is set. Faults can
+// field asks for it, and repeats frames while LOST_FRAME is set. Like the
+// chip, it keeps DCMODE_IN until a CMODE or PKT_DCMODE field or a reset
+// changes it. Faults can
 // be injected: garbage bytes before a reply, lost replies, short reads and
 // datagram reads.
 package dvsisim
@@ -63,6 +65,8 @@ type Options struct {
 	// NoCMode accepts a PKT_SPCHFMT field but sends no CMODE field, as a
 	// device that does not report the decoder status.
 	NoCMode bool
+	// RejectDCMode answers every PKT_DCMODE field with an error status.
+	RejectDCMode bool
 }
 
 // The DCMODE_IN and DCMODE_OUT flags that the Device uses (AMBE-3000R
@@ -100,8 +104,9 @@ func (timeoutError) Timeout() bool { return true }
 type Counts struct {
 	Reset, Parity, Query, Rate, Decode, Encode int
 	// SpeechFormat counts PKT_SPCHFMT fields, Lost the frames repeated for
-	// LOST_FRAME, and CMode the channel packets with a CMODE field.
-	SpeechFormat, Lost, CMode int
+	// LOST_FRAME, CMode the channel packets with a CMODE field, and DCMode
+	// the PKT_DCMODE fields.
+	SpeechFormat, Lost, CMode, DCMode int
 }
 
 // Device is a simulated chip. It is safe for concurrent use.
@@ -185,6 +190,27 @@ func (d *Device) Configured(ch int) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.rate[ch] && d.init[ch]
+}
+
+// SetDCMode sets DCMODE_IN of channel ch to m, as a previous user of the
+// channel left it. It does nothing for a channel the Device does not have.
+func (d *Device) SetDCMode(ch int, m uint16) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if ch >= 0 && ch < d.opt.Channels {
+		d.dcmode[ch] = m
+	}
+}
+
+// DCMode returns DCMODE_IN of channel ch, or 0 for a channel the Device
+// does not have.
+func (d *Device) DCMode(ch int) uint16 {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if ch < 0 || ch >= d.opt.Channels {
+		return 0
+	}
+	return d.dcmode[ch]
 }
 
 func (d *Device) fail(s string) {
@@ -428,6 +454,13 @@ func (d *Device) control(f []byte) {
 			}
 			r = append(r, id, st)
 			f = f[2:]
+		case id == 0x06:
+			if len(f) < 2 {
+				d.fail("short DCMODE")
+				return
+			}
+			r = append(r, id, d.setDCMode(ch, uint16(f[0])<<8|uint16(f[1])))
+			f = f[2:]
 		case id == 0x2F:
 			if len(f) < 1 {
 				d.fail("short parity field")
@@ -440,6 +473,19 @@ func (d *Device) control(f []byte) {
 		}
 	}
 	d.reply(0x00, r)
+}
+
+func (d *Device) setDCMode(ch int, m uint16) byte {
+	d.Counts.DCMode++
+	switch {
+	case m != 0 && m != LostFrame:
+		d.fail("DCMODE is not 0x0000 or 0x0004")
+		return 1
+	case d.opt.RejectDCMode:
+		return 1
+	}
+	d.dcmode[ch] = m
+	return 0
 }
 
 func (d *Device) dataChannel(f []byte) (int, []byte, bool) {
