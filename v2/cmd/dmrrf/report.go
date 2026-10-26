@@ -37,16 +37,18 @@ func b01(v bool) int {
 
 func lcFields(lc *pdu.FullLinkControl) string {
 	s := fmt.Sprintf("flco=%d fid=0x%02x", lc.FLCO, uint8(lc.FID))
+	_, group := lc.AsGroupVoice()
+	_, private := lc.AsUnitToUnit()
 	switch {
-	case lc.GroupVoice != nil:
+	case group:
 		s += " group"
-	case lc.UnitToUnit != nil:
+	case private:
 		s += " private"
 	}
 	if dst, src, ok := lc.Addresses(); ok {
 		s += fmt.Sprintf(" src=%d dst=%d", src, dst)
 	}
-	if so, ok := lc.ServiceOptions(); ok && (lc.GroupVoice != nil || lc.UnitToUnit != nil) {
+	if so, ok := lc.ServiceOptions(); ok && (group || private) {
 		s += fmt.Sprintf(" privacy=%d emergency=%d", b01(so.IsPrivacy), b01(so.IsEmergency))
 	}
 	return s
@@ -143,7 +145,7 @@ func (p *Reporter) Burst(r rf.Burst) {
 		p.printf("           decode error: %v", err)
 		return
 	}
-	lc, lcDone, lcErr := ch.voice.Receive(b)
+	lc, lcDone, lcErr := ch.voice.Receive(b, nil)
 	if r.Voice != enums.VoiceBurstUnknown {
 		b.VoiceBurst = r.Voice
 	}
@@ -183,12 +185,12 @@ func (p *Reporter) Burst(r rf.Burst) {
 		p.printf("pi %s algid=0x%02x mfid=0x%02x keyid=0x%02x mi=0x%08x dst=%d fec=%s", t, d.AlgorithmID, uint8(d.MFID), d.KeyID, d.MessageIndicator, d.Destination, fecString(d.FEC))
 	}
 	m, ok, err := ch.asm.AddBurst(b)
+	h, isResponse := m.Header.AsResponse()
 	switch {
 	case err != nil:
 		p.printf("           packet: %v", err)
-	case ok && m.Header.ResponsePacketHeader != nil:
-		h := m.Header.ResponsePacketHeader
-		r, _ := packet.ResponseOf(h)
+	case ok && isResponse:
+		r, _ := packet.ResponseOf(&h)
 		line := fmt.Sprintf("response %s %s class=%d type=%d status=%d %d -> %d", t, strings.ReplaceAll(r.String(), " ", "_"),
 			h.ResponseClass, h.ResponseType, h.ResponseStatus, h.LLIDSource, h.LLIDDestination)
 		if m.Response != nil {
@@ -201,7 +203,7 @@ func (p *Reporter) Burst(r rf.Burst) {
 }
 
 func slcFields(s *pdu.ShortLC) string {
-	if a := s.ActivityUpdate; a != nil {
+	if a, ok := s.AsActivityUpdate(); ok {
 		return fmt.Sprintf("slco=%d activity ts1=0x%x hash1=0x%02x ts2=0x%x hash2=0x%02x", s.SLCO, uint8(a.TS1ActivityID), a.HashTS1, uint8(a.TS2ActivityID), a.HashTS2)
 	}
 	return fmt.Sprintf("slco=%d %s", s.SLCO, s.String())

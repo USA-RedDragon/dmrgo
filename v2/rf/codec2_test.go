@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -14,11 +13,11 @@ import (
 
 func codec2Call(t *testing.T, n int, late bool, cn float64) ([]complex64, [][9]byte, float64) {
 	t.Helper()
-	gv, err := (&pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3191868}).Encode()
-	if err != nil {
+	var lc pdu.FullLinkControl
+	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3191868}); err != nil {
 		t.Fatal(err)
 	}
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: 0xC2, RawPayload: gv}
+	lc.FID = 0xC2
 	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 7, Source: layer2.SyncSourceMS})
 	if err != nil {
 		t.Fatal(err)

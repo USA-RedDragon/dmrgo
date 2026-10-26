@@ -2,6 +2,7 @@ package rftx
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -112,6 +113,8 @@ func rateOf(name string) (enums.DataType, bool, error) {
 	return 0, false, fmt.Errorf("unknown data sequence %q", name)
 }
 
+var errNoResponse = errors.New("rftx: the response packet has no response header")
+
 // DataPacket segments the test message into a packet at the rate the
 // sequence name selects: confirmed for data12, data34 and data1, and
 // unconfirmed for data12u, data34u and data1u.
@@ -120,28 +123,27 @@ func DataPacket(name string, cfg SeqConfig) (packet.Packet, error) {
 	if err != nil {
 		return packet.Packet{}, err
 	}
-	h := pdu.DataHeader{
-		Format: pdu.FormatConfirmed,
-		ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+	var h pdu.DataHeader
+	if confirmed {
+		err = h.SetConfirmed(pdu.ConfirmedDataHeader{
 			Group:             cfg.Group,
 			ResponseRequested: !cfg.Group,
 			SAP:               enums.SAPShortData,
 			LLIDDestination:   cfg.Dest,
 			LLIDSource:        cfg.Source,
 			FullMessageFlag:   true,
-		},
+		})
+	} else {
+		err = h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
+			Group:           cfg.Group,
+			SAP:             enums.SAPShortData,
+			LLIDDestination: cfg.Dest,
+			LLIDSource:      cfg.Source,
+			FullMessageFlag: true,
+		})
 	}
-	if !confirmed {
-		h = pdu.DataHeader{
-			Format: pdu.FormatUnconfirmed,
-			UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-				Group:           cfg.Group,
-				SAP:             enums.SAPShortData,
-				LLIDDestination: cfg.Dest,
-				LLIDSource:      cfg.Source,
-				FullMessageFlag: true,
-			},
-		}
+	if err != nil {
+		return packet.Packet{}, err
 	}
 	return packet.NewPacket(h, []byte(cfg.Message), rate)
 }
@@ -189,7 +191,10 @@ func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, erro
 	if err != nil {
 		return nil, nil, err
 	}
-	h := p.Header.ResponsePacketHeader
+	h, ok := p.Header.AsResponse()
+	if !ok {
+		return nil, nil, errNoResponse
+	}
 	info = append(info, fmt.Sprintf("response %s class=%d type=%d status=%d %d -> %d", r, h.ResponseClass, h.ResponseType, h.ResponseStatus, h.LLIDSource, h.LLIDDestination))
 	b, err := packet.Bursts(&p, cfg.ColorCode, cfg.source())
 	return b, info, err
@@ -206,16 +211,16 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 
 // ETSI TS 102 361-3 clause 9.2.8
 func smsBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
-	h := pdu.DataHeader{
-		Format: pdu.FormatShortDataDefined,
-		DefinedDataHeader: &pdu.DefinedDataHeader{
-			Group:           cfg.Group,
-			SAP:             enums.SAPShortData,
-			LLIDDestination: cfg.Dest,
-			LLIDSource:      cfg.Source,
-			DefinedData:     enums.DDFormat(cfg.DefinedData),
-			FullMessageFlag: true,
-		},
+	var h pdu.DataHeader
+	if err := h.SetDefinedData(pdu.DefinedDataHeader{
+		Group:           cfg.Group,
+		SAP:             enums.SAPShortData,
+		LLIDDestination: cfg.Dest,
+		LLIDSource:      cfg.Source,
+		DefinedData:     enums.DDFormat(cfg.DefinedData),
+		FullMessageFlag: true,
+	}); err != nil {
+		return nil, err
 	}
 	u := utf16.Encode([]rune(cfg.Message))
 	text := make([]byte, 0, 2*len(u)+2)
@@ -241,16 +246,15 @@ func withPreambles(cfg SeqConfig, data []layer2.RawBurst) ([]layer2.RawBurst, er
 	blocks := byte(toFollow)
 	var out []layer2.RawBurst
 	for range cfg.Preambles {
-		c := &pdu.CSBK{
-			LastBlock: true,
-			Opcode:    pdu.CSBKPreamble,
-			PreamblePDU: &pdu.PreamblePDU{
-				Data:               true,
-				Group:              cfg.Group,
-				CSBKBlocksToFollow: blocks,
-				TargetAddress:      cfg.Dest,
-				SourceAddress:      cfg.Source,
-			},
+		c := &pdu.CSBK{LastBlock: true}
+		if err := c.SetPreamble(pdu.PreamblePDU{
+			Data:               true,
+			Group:              cfg.Group,
+			CSBKBlocksToFollow: blocks,
+			TargetAddress:      cfg.Dest,
+			SourceAddress:      cfg.Source,
+		}); err != nil {
+			return nil, err
 		}
 		b, err := layer2.BuildBurst(c, cfg.ColorCode, cfg.source())
 		if err != nil {
@@ -274,15 +278,14 @@ func motorolaCSBKBursts(alert bool, cfg SeqConfig) ([]layer2.RawBurst, error) {
 	}
 	var out []layer2.RawBurst
 	for i := range cfg.Preambles {
-		c := &pdu.CSBK{
-			LastBlock: true,
-			Opcode:    pdu.CSBKPreamble,
-			PreamblePDU: &pdu.PreamblePDU{
-				Group:              cfg.Group,
-				CSBKBlocksToFollow: byte(cfg.Preambles - i),
-				TargetAddress:      cfg.Dest,
-				SourceAddress:      cfg.Source,
-			},
+		c := &pdu.CSBK{LastBlock: true}
+		if err := c.SetPreamble(pdu.PreamblePDU{
+			Group:              cfg.Group,
+			CSBKBlocksToFollow: byte(cfg.Preambles - i),
+			TargetAddress:      cfg.Dest,
+			SourceAddress:      cfg.Source,
+		}); err != nil {
+			return nil, err
 		}
 		b, err := layer2.BuildBurst(c, cfg.ColorCode, cfg.source())
 		if err != nil {
@@ -393,8 +396,11 @@ const (
 
 // ETSI TS 102 361-4 clause 7.1.1.1.1
 func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
-	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}}
+	var h pdu.MBCHeader
+	if err := h.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}); err != nil {
+		return nil, nil, err
+	}
 	c := pdu.CGAPContinuation{
 		LastBlock: true,
 		Opcode:    pdu.CSBKTalkgroupVoiceGrant,
@@ -414,10 +420,13 @@ func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 }
 
 func tier3Bursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
-	csbks := []*pdu.CSBK{
-		{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{SiteTSSync: true, NRandWait: 4, Backoff: 1, SysIdentCode: tier3SysCode, MSAddress: cfg.Dest}},
-		{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: tier3Channel, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}},
-		{LastBlock: true, Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{PhysicalChannel: tier3Channel, MSAddress: cfg.Dest}},
+	csbks := []*pdu.CSBK{{LastBlock: true}, {LastBlock: true}, {LastBlock: true}}
+	if err := errors.Join(
+		csbks[0].SetAloha(pdu.AlohaPDU{SiteTSSync: true, NRandWait: 4, Backoff: 1, SysIdentCode: tier3SysCode, MSAddress: cfg.Dest}),
+		csbks[1].SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: tier3Channel, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}),
+		csbks[2].SetMove(pdu.MovePDU{PhysicalChannel: tier3Channel, MSAddress: cfg.Dest}),
+	); err != nil {
+		return nil, nil, err
 	}
 	var out []layer2.RawBurst
 	for _, c := range csbks {
@@ -569,7 +578,10 @@ func BSStream(bursts []layer2.RawBurst, cfg SeqConfig, activity enums.ActivityID
 				au.TS2ActivityID, au.HashTS2 = activity, hash
 			}
 		}
-		slc := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate, ActivityUpdate: au}
+		var slc pdu.ShortLC
+		if err := slc.SetActivityUpdate(*au); err != nil {
+			return nil, err
+		}
 		for ts := range 2 {
 			s := BSSlot{Burst: idle}
 			active := ts == cfg.Slot && busy(f)

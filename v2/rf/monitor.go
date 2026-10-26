@@ -62,7 +62,6 @@ type Monitor struct {
 type monitorChannel struct {
 	voice layer2.VoiceReceiver
 	flc   pdu.FullLinkControl
-	p     pdu.FullLinkControlPayloads
 	lc    pdu.LCBytes
 	hasLC bool
 }
@@ -124,7 +123,8 @@ func (m *Monitor) Burst(dst *layer2.Burst, b *Burst) (MonitorBurst, error) {
 		return out, err
 	}
 	ch := &m.ch[h.Slot]
-	if ok, _ := ch.voice.ReceiveInto(&ch.flc, &ch.p, lb); ok {
+	var ok bool
+	if ch.flc, ok, _ = ch.voice.Receive(lb, nil); ok {
 		ch.set(&ch.flc)
 		out.LCDone = true
 	}

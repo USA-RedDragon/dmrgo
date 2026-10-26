@@ -309,7 +309,7 @@ func TestLoopbackPreamble(t *testing.T) {
 			t.Fatal(err)
 		}
 		if c, ok := b.Data.(*pdu.CSBK); ok && c.Opcode == pdu.CSBKPreamble {
-			p := c.PreamblePDU
+			p, _ := c.AsPreamble()
 			if c.FEC.Uncorrectable || !p.Data || p.TargetAddress != cfg.Dest || p.SourceAddress != cfg.Source {
 				t.Errorf("preamble %+v %+v", c, p)
 			}
@@ -410,10 +410,10 @@ func TestLoopbackTier3(t *testing.T) {
 		case *pdu.CSBK:
 			got = append(got, fmt.Sprintf("csbk %d", d.Opcode))
 		case *pdu.MBCHeader:
-			g := d.TalkgroupVoiceGrantPDU
+			g, _ := d.AsTalkgroupVoiceGrant()
 			got = append(got, fmt.Sprintf("mbc %d %d->%d ch 0x%x", d.Opcode, g.SourceAddress, g.TargetAddress, g.PhysicalChannel))
 		case *pdu.MBCContinuation:
-			c := d.AsCGAP()
+			c := d.CGAP()
 			got = append(got, fmt.Sprintf("cgap %v %d MHz %d", c.FEC.Uncorrectable, c.CdefParms.TXMHz, c.CdefParms.TXKHz))
 		}
 	}

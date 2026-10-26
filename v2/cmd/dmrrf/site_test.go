@@ -55,17 +55,17 @@ func TestLoopbackT3Site(t *testing.T) {
 	for _, b := range decodeAll(t, siteLoop(t, built, iq, rate, 0, built.Slots)) {
 		switch d := b.Data.(type) {
 		case *pdu.CSBK:
-			if g := d.TalkgroupVoiceGrantPDU; g != nil {
+			if g, ok := d.AsTalkgroupVoiceGrant(); ok {
 				got = append(got, fmt.Sprintf("grant ch=%d ts2=%t late=%t %d->%d", g.PhysicalChannel, g.LogicalChannel, g.LateEntry, g.SourceAddress, g.TargetAddress))
 			}
 		case *pdu.MBCHeader:
-			if g := d.TalkgroupVoiceGrantPDU; g != nil {
+			if g, ok := d.AsTalkgroupVoiceGrant(); ok {
 				got = append(got, fmt.Sprintf("mbc grant ch=0x%x ts2=%t %d->%d", g.PhysicalChannel, g.LogicalChannel, g.SourceAddress, g.TargetAddress))
 			}
 		case *pdu.MBCContinuation:
-			if c := d.AsCGAP(); c.Opcode == pdu.CSBKTalkgroupVoiceGrant {
+			if c := d.CGAP(); c.Opcode == pdu.CSBKTalkgroupVoiceGrant {
 				got = append(got, fmt.Sprintf("cgap ch=%d rx=%d tx=%d bad=%t", c.CdefParms.Channel, c.CdefParms.RXFrequencyHz(), c.CdefParms.TXFrequencyHz(), c.FEC.Uncorrectable))
-			} else if c := d.AsBCAP(); c.Opcode == pdu.CSBKBroadcast {
+			} else if c := d.BCAP(); c.Opcode == pdu.CSBKBroadcast {
 				got = append(got, fmt.Sprintf("bcap ch=%d rx=%d tx=%d bad=%t", c.CdefParms.Channel, c.CdefParms.RXFrequencyHz(), c.CdefParms.TXFrequencyHz(), c.FEC.Uncorrectable))
 			}
 		}

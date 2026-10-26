@@ -613,7 +613,7 @@ func TestSoftEmbeddedLC(t *testing.T) {
 				hb := softHardBurst(&llr[i])
 				frags[i] = hb.EmbeddedData()
 			}
-			hard, hres := layer2.DecodeEmbeddedLC(frags, false)
+			hard, hres := layer2.DecodeEmbeddedLC(frags)
 			if copies == 2 {
 				soft, _ := d.decodeEmbeddedLC(&llr, nil)
 				errs = append(errs, softBool(hard != lc), softBool(soft != lc))

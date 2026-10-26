@@ -26,17 +26,23 @@ type echoCodec struct {
 	slots [][9]byte
 }
 
-func (c *echoCodec) Close() error            { return nil }
-func (c *echoCodec) FrameSamples() int       { return 160 }
-func (c *echoCodec) Silence() [9]byte        { return vocoder.AMBESilenceSlot() }
-func (c *echoCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
+func (c *echoCodec) Close() error      { return nil }
+func (c *echoCodec) FrameSamples() int { return 160 }
+func (c *echoCodec) Silence() [9]byte  { return vocoder.AMBESilenceSlot() }
+func (c *echoCodec) FID() enums.FID    { return enums.FIDStandardized }
 
 func (c *echoCodec) Encode([]int16) ([9]byte, error) { return [9]byte{}, errors.New("not used") }
 
-func (c *echoCodec) Decode(slot [9]byte) ([]int16, error) {
+func (c *echoCodec) Reset() {}
+
+func (c *echoCodec) Decode(dst []int16, slot [9]byte) ([]int16, vocoder.FrameReport, error) {
 	c.slots = append(c.slots, slot)
 	pcm := dvsisim.Echo(slot)
-	return pcm[:], nil
+	return append(dst, pcm[:]...), vocoder.FrameReport{}, nil
+}
+
+func (c *echoCodec) DecodeLost(dst []int16) ([]int16, vocoder.FrameReport, error) {
+	return append(dst, make([]int16, 160)...), vocoder.FrameReport{Frame: vocoder.FrameLost}, nil
 }
 
 func weakSlots(t *testing.T) [][9]byte {
@@ -76,9 +82,14 @@ func checkPCM(t *testing.T, path string, slots [][9]byte) {
 
 func runWeak(t *testing.T, spec string) (string, string) {
 	t.Helper()
+	return runWeakWith(t, spec, newSoftware)
+}
+
+func runWeakWith(t *testing.T, spec string, software func() (vocoder.Codec, error)) (string, string) {
+	t.Helper()
 	pcm := filepath.Join(t.TempDir(), "voice.pcm")
 	var out bytes.Buffer
-	err := run([]string{"rx", "-i", weakCapture, "-rate", "256000", "-ambe", spec, "-pcm", pcm}, &out)
+	err := runIO([]string{"rx", "-i", weakCapture, "-rate", "256000", "-ambe", spec, "-pcm", pcm}, stdio{in: os.Stdin, out: &out, msg: &out, software: software})
 	if err != nil {
 		t.Fatalf("-ambe %s: %v\n%s", spec, err, out.String())
 	}
@@ -116,16 +127,13 @@ func TestAMBESoftware(t *testing.T) {
 
 	slots := weakSlots(t)
 	args := []string{"rx", "-i", weakCapture, "-rate", "256000", "-ambe", "software"}
-	if err := run(args, io.Discard); err == nil || !strings.Contains(err.Error(), `no codec registered as "ambe"`) {
-		t.Errorf("-ambe software before the codec is registered: %v", err)
+	if err := run(args, io.Discard); err == nil || !strings.Contains(err.Error(), "no software AMBE+2 codec") {
+		t.Errorf("-ambe software in a build without one: %v", err)
 	}
 	rec := &echoCodec{}
-	if err := vocoder.Register(softwareCodec, func() (vocoder.Codec, error) { return rec, nil }); err != nil {
-		t.Fatal(err)
-	}
-	pcm, out := runWeak(t, "software")
+	pcm, out := runWeakWith(t, "software", func() (vocoder.Codec, error) { return rec, nil })
 	checkPCM(t, pcm, slots)
-	if !strings.Contains(out, "ambe: software codec ambe") || len(rec.slots) != len(slots) {
+	if !strings.Contains(out, "ambe: software codec") || len(rec.slots) != len(slots) {
 		t.Errorf("%d frames decoded\n%s", len(rec.slots), out)
 	}
 }

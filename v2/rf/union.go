@@ -376,11 +376,11 @@ func (u *discUnion) embedded(x *Burst) {
 		d, _ := u.main[j].Decoded()
 		mf[k] = d.EmbeddedData()
 	}
-	if _, r := layer2.DecodeEmbeddedLC(tw, true); r.Uncorrectable {
+	if _, ok := strictEmbeddedLC(tw); !ok {
 		return
 	}
 	if whole {
-		if _, r := layer2.DecodeEmbeddedLC(mf, true); !r.Uncorrectable {
+		if _, ok := strictEmbeddedLC(mf); ok {
 			return
 		}
 	}

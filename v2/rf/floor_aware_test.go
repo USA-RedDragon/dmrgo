@@ -178,9 +178,9 @@ func (e *floorEval) awareELC(i int, ts benchSlot) {
 	for k := range gf {
 		gf[k], wf[k] = bursts[k].EmbeddedData(), tb[k].EmbeddedData()
 	}
-	wantLC, _ := layer2.DecodeEmbeddedLC(wf, true)
-	lc, res := layer2.DecodeEmbeddedLC(gf, true)
-	e.add("elc", ok && !res.Uncorrectable && lc == wantLC)
+	wantLC, _ := strictEmbeddedLC(wf)
+	lc, lcOK := strictEmbeddedLC(gf)
+	e.add("elc", ok && lcOK && lc == wantLC)
 }
 
 func (e *floorEval) awareData(i int, cc enums.ColorCode) {

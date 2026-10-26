@@ -15,12 +15,11 @@ import (
 )
 
 const (
-	softwareCodec  = "ambe"
 	defaultBaud    = 460800
 	ambeserverPort = "2460"
 )
 
-const ambeUsage = `AMBE+2 decoder for -pcm: "software" for the codec registered as "ambe" (only in a build that registers one), "serial:<device>[@<baud>]" for a DVSI chip on a serial port (default 460800 baud), or "ambeserver:<host>[:<port>]" for an AMBEserver (default port 2460)`
+const ambeUsage = `AMBE+2 decoder for -pcm: "software" for the software codec of the build (only in a build that adds one), "serial:<device>[@<baud>]" for a DVSI chip on a serial port (default 460800 baud), or "ambeserver:<host>[:<port>]" for an AMBEserver (default port 2460)`
 
 type ambeBackend struct {
 	codec vocoder.Codec
@@ -28,24 +27,23 @@ type ambeBackend struct {
 	desc  string
 }
 
-func openAMBE(spec string) (*ambeBackend, error) {
+var errNoSoftware = errors.New("-ambe software: this build of dmrrf has no software AMBE+2 codec")
+
+func openAMBE(spec string, software func() (vocoder.Codec, error)) (*ambeBackend, error) {
 	kind, arg, _ := strings.Cut(spec, ":")
 	switch kind {
 	case "software":
 		if arg != "" {
 			return nil, fmt.Errorf("-ambe %q: software takes no argument", spec)
 		}
-		if err := registerSoftware(); err != nil {
-			return nil, err
+		if software == nil {
+			return nil, errNoSoftware
 		}
-		c, err := vocoder.New(softwareCodec)
-		if errors.Is(err, vocoder.ErrUnknownCodec) {
-			return nil, errors.New(`-ambe software: this build of dmrrf has no codec registered as "ambe"`)
-		}
+		c, err := software()
 		if err != nil {
 			return nil, err
 		}
-		return &ambeBackend{codec: c, close: c.Close, desc: "software codec " + softwareCodec}, nil
+		return &ambeBackend{codec: c, close: c.Close, desc: "software codec"}, nil
 	case "serial":
 		path, b, hasBaud := strings.Cut(arg, "@")
 		baud := defaultBaud
@@ -98,6 +96,7 @@ type audioOut struct {
 	w      io.Writer
 	frames int
 	err    error
+	pcm    []int16
 	buf    []byte
 }
 
@@ -105,11 +104,12 @@ func (a *audioOut) decode(slot [9]byte) {
 	if a.err != nil {
 		return
 	}
-	pcm, err := a.codec.Decode(slot)
+	pcm, _, err := a.codec.Decode(a.pcm[:0], slot)
 	if err != nil {
 		a.err = err
 		return
 	}
+	a.pcm = pcm
 	a.buf = a.buf[:0]
 	for _, s := range pcm {
 		v := uint16(int(s) & 0xFFFF)

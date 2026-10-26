@@ -18,22 +18,24 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 type stdio struct {
 	in       io.Reader
 	out, msg io.Writer
+	software func() (vocoder.Codec, error)
 }
 
 func main() {
-	if err := runIO(os.Args[1:], stdio{os.Stdin, os.Stdout, os.Stderr}); err != nil {
+	if err := runIO(os.Args[1:], stdio{in: os.Stdin, out: os.Stdout, msg: os.Stderr, software: newSoftware}); err != nil {
 		fmt.Fprintln(os.Stderr, "dmrrf:", err)
 		os.Exit(1)
 	}
 }
 
 func run(args []string, w io.Writer) error {
-	return runIO(args, stdio{os.Stdin, w, w})
+	return runIO(args, stdio{in: os.Stdin, out: w, msg: w, software: newSoftware})
 }
 
 func runIO(args []string, std stdio) error {
@@ -520,7 +522,7 @@ func runRX(args []string, std stdio) (err error) {
 	}
 	var audio *audioOut
 	if *ambeSpec != "" {
-		a, err := openAMBE(*ambeSpec)
+		a, err := openAMBE(*ambeSpec, std.software)
 		if err != nil {
 			return err
 		}

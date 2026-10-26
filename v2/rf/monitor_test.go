@@ -56,8 +56,7 @@ func TestMonitorCall(t *testing.T) {
 				}
 			}
 			if r.HasLC {
-				dst, src, ok := r.LC.Addresses()
-				if g, _ := r.LC.Group(); !ok || !g || dst != 9 || src != 3191868 {
+				if g, dst, src, ok := r.LC.Call(); !ok || !g || dst != 9 || src != 3191868 {
 					t.Errorf("slot %d: LC %x", slot, r.LC)
 				}
 			}

@@ -169,9 +169,9 @@ func (s *benchScorer) voice(truth []benchSlot, i int, r Burst, data layer2.RawBu
 		for j := range wf {
 			wf[j] = truth[i-2*(3-j)].burst.EmbeddedData()
 		}
-		wantLC, _ := layer2.DecodeEmbeddedLC(wf, true)
-		lc, res := layer2.DecodeEmbeddedLC(s.frags[ts.sf], true)
-		s.add("elc", s.nfrag[ts.sf] == 4 && !res.Uncorrectable && lc == wantLC)
+		wantLC, _ := strictEmbeddedLC(wf)
+		lc, lcOK := strictEmbeddedLC(s.frags[ts.sf])
+		s.add("elc", s.nfrag[ts.sf] == 4 && lcOK && lc == wantLC)
 	}
 }
 

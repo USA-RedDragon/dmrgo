@@ -1,5 +1,7 @@
 package main
 
-func registerSoftware() error {
-	return nil
+import "github.com/USA-RedDragon/dmrgo/v2/vocoder"
+
+func newSoftware() (vocoder.Codec, error) {
+	return nil, errNoSoftware
 }

@@ -131,7 +131,7 @@ func TestFormatInference(t *testing.T) {
 		{[]string{"tx", "-seq", "data12"}, "tx needs -o"},
 		{[]string{"cal", "-i", wav}, "cal needs I/Q"},
 	} {
-		if err := runIO(c.args, stdio{bytes.NewReader(nil), io.Discard, io.Discard}); err == nil || !strings.Contains(err.Error(), c.want) {
+		if err := runIO(c.args, stdio{in: bytes.NewReader(nil), out: io.Discard, msg: io.Discard}); err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("dmrrf %s: %v, want %q", strings.Join(c.args, " "), err, c.want)
 		}
 	}
@@ -169,7 +169,7 @@ func TestPipe(t *testing.T) {
 		var txMsg bytes.Buffer
 		done := make(chan error, 1)
 		go func() {
-			err := runIO(append([]string{"tx", "-seq", "data12", "-o", "-"}, c.tx...), stdio{nil, pw, &txMsg})
+			err := runIO(append([]string{"tx", "-seq", "data12", "-o", "-"}, c.tx...), stdio{out: pw, msg: &txMsg})
 			pw.CloseWithError(err)
 			done <- err
 		}()
@@ -195,7 +195,7 @@ func TestOSPipe(t *testing.T) {
 	}
 	done := make(chan error, 1)
 	go func() {
-		err := runIO([]string{"tx", "-seq", "data12", "-o", "-", "-format", "cu8", "-rate", "2048000"}, stdio{nil, w, io.Discard})
+		err := runIO([]string{"tx", "-seq", "data12", "-o", "-", "-format", "cu8", "-rate", "2048000"}, stdio{out: w, msg: io.Discard})
 		done <- errors.Join(err, w.Close())
 	}()
 	out := runText(t, stdio{in: r}, "rx", "-i", "-", "-format", "cu8", "-rate", "2048000")

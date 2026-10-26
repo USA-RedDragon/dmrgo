@@ -65,34 +65,54 @@ func siteBursts(cfg SeqConfig, lead, callEnd, end int) ([]layer2.RawBurst, error
 		return nil, err
 	}
 	control, traffic := siteChannels()
-	aloha := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{
-		SiteTSSync: true, ActiveConn: true, NRandWait: 4, Backoff: 1, SysIdentCode: sys}}
+	aloha := &pdu.CSBK{LastBlock: true}
+	if err := aloha.SetAloha(pdu.AlohaPDU{
+		SiteTSSync: true, ActiveConn: true, NRandWait: 4, Backoff: 1, SysIdentCode: sys}); err != nil {
+		return nil, err
+	}
 	var units [][]layer2.Data
 	for _, ch := range []siteChannel{control, traffic} {
-		h := &pdu.MBCHeader{Opcode: pdu.CSBKBroadcast, BroadcastPDU: &pdu.BroadcastPDU{
-			AnnouncementType: enums.AnnouncementChanFreq, Backoff: 1, SysIdentCode: sys, BroadcastParms2: uint32(ch.parms.Channel)}}
+		h := &pdu.MBCHeader{}
+		if err := h.SetBroadcast(pdu.BroadcastPDU{
+			AnnouncementType: enums.AnnouncementChanFreq, Backoff: 1, SysIdentCode: sys, BroadcastParms2: uint32(ch.parms.Channel)}); err != nil {
+			return nil, err
+		}
 		c := &pdu.BCAPContinuation{LastBlock: true, Opcode: pdu.CSBKBroadcast, CdefParms: ch.parms}
 		units = append(units, []layer2.Data{aloha}, []layer2.Data{h, c})
 	}
-	grant := func(late bool) *pdu.TalkgroupVoiceGrantPDU {
-		return &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: traffic.parms.Channel, LogicalChannel: true, LateEntry: late,
+	grant := func(late bool) pdu.TalkgroupVoiceGrantPDU {
+		return pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: traffic.parms.Channel, LogicalChannel: true, LateEntry: late,
 			TargetAddress: cfg.Dest, SourceAddress: cfg.Source}
+	}
+	grantCSBK := func(late bool) (*pdu.CSBK, error) {
+		c := &pdu.CSBK{LastBlock: true}
+		return c, c.SetTalkgroupVoiceGrant(grant(late))
 	}
 	abs := grant(false)
 	abs.PhysicalChannel = 0xFFF
+	absHeader := &pdu.MBCHeader{}
+	if err := absHeader.SetTalkgroupVoiceGrant(abs); err != nil {
+		return nil, err
+	}
 	var data []layer2.Data
 	granted, next := false, 0
 	for u := 0; len(data) < end; {
 		f := len(data)
 		switch {
 		case !granted && f >= lead:
-			data = append(data,
-				&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: grant(false)},
-				&pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: abs},
+			c, err := grantCSBK(false)
+			if err != nil {
+				return nil, err
+			}
+			data = append(data, c, absHeader,
 				&pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: cfg.ColorCode, CdefParms: traffic.parms})
 			granted, next = true, f+siteRegrant
 		case granted && f >= next && f < callEnd:
-			data = append(data, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: grant(true)})
+			c, err := grantCSBK(true)
+			if err != nil {
+				return nil, err
+			}
+			data = append(data, c)
 			next = f + siteRegrant
 		default:
 			data = append(data, units[u%len(units)]...)
@@ -123,7 +143,10 @@ func controlStream(bursts []layer2.RawBurst, cc enums.ColorCode) ([]BSSlot, erro
 		if err := sp.SetSysCode(siteSysCode()); err != nil {
 			return nil, err
 		}
-		slc := pdu.ShortLC{SLCO: enums.SLCOCSysParms, CSysParms: sp}
+		var slc pdu.ShortLC
+		if err := slc.SetCSysParms(*sp); err != nil {
+			return nil, err
+		}
 		for ts := range 2 {
 			s := BSSlot{Burst: idle}
 			if ts == 0 && f < len(bursts) {
