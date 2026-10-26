@@ -141,3 +141,33 @@ func TestMMDVMHostLinkCapture(t *testing.T) {
 		t.Errorf("%d DMRD packets, want 16", n)
 	}
 }
+
+func TestClassifyUnknownDialectCaptures(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name string
+		d    dmrd.Dialect
+	}{
+		{"dmrgateway-master.txt", dmrd.DialectMMDVM},
+		{"mmdvmhost-dmrgateway.txt", dmrd.DialectLocal},
+	} {
+		n := 0
+		for i, c := range readCapture(t, tt.name) {
+			cmd := dmrd.Classify(c.p, tt.d)
+			want := dmrd.CommandUnknown
+			switch cmd {
+			case dmrd.CommandDMRD, dmrd.CommandDMRE, dmrd.CommandBCKA, dmrd.CommandBCSQ, dmrd.CommandBCST, dmrd.CommandBCVE:
+				want = cmd
+				n++
+			default:
+			}
+			if got := dmrd.Classify(c.p, dmrd.DialectUnknown); got != want {
+				t.Errorf("%s packet %d: DialectUnknown %v, %v %v", tt.name, i, got, tt.d, cmd)
+			}
+		}
+		if n == 0 {
+			t.Errorf("%s: no DMRD or OpenBridge packet", tt.name)
+		}
+	}
+}

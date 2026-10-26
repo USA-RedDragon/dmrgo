@@ -139,6 +139,11 @@ func TestClassify(t *testing.T) {
 		{"DMRE", dmrd.DialectHBRP, dmrd.CommandDMRE},
 		{"RPT", dmrd.DialectMMDVM, dmrd.CommandUnknown},
 		{"RPTL", dmrd.DialectUnknown, dmrd.CommandUnknown},
+		{"RPTC0000", dmrd.DialectUnknown, dmrd.CommandUnknown},
+		{"DMRA", dmrd.DialectUnknown, dmrd.CommandUnknown},
+		{"DMRD", dmrd.DialectUnknown, dmrd.CommandDMRD},
+		{"BCKA", dmrd.DialectUnknown, dmrd.CommandBCKA},
+		{"DMRD", dmrd.Dialect(9), dmrd.CommandUnknown},
 	}
 	for _, tt := range tests {
 		if got := dmrd.Classify([]byte(tt.p), tt.d); got != tt.want {

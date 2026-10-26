@@ -7,7 +7,10 @@ type Dialect uint8
 
 // The Dialect values.
 const (
-	// DialectUnknown is the zero value. No call takes it.
+	// DialectUnknown is the zero value. Classify and RepeaterID take it for
+	// a packet of a dialect that is not known, and then match only the
+	// tags that are the same in every dialect: DMRD and the OpenBridge
+	// tags. No other call takes it.
 	DialectUnknown Dialect = iota
 	// DialectMMDVM is the protocol that DMRGateway speaks to a master and
 	// that BrandMeister, DMR+, HBlink, FreeDMR and DMRHub masters accept:
@@ -211,16 +214,16 @@ func (c Command) shape(d Dialect) shape {
 }
 
 func (c Command) inDialect(d Dialect) bool {
-	if c == CommandUnknown || d == DialectUnknown || d > DialectLocal {
+	if c == CommandUnknown || d > DialectLocal {
 		return false
 	}
 	switch c {
 	case CommandDMRD, CommandDMRE, CommandBCKA, CommandBCSQ, CommandBCST, CommandBCVE:
 		return true
 	case CommandDMRA, CommandDMRG:
-		return d != DialectHBRP
+		return d == DialectMMDVM || d == DialectLocal
 	case CommandRPTC:
-		return d != DialectLocal
+		return d == DialectMMDVM || d == DialectHBRP
 	default:
 	}
 	return c.shape(d) != shapeNone
@@ -230,7 +233,8 @@ func (c Command) inDialect(d Dialect) bool {
 // CommandUnknown when no tag of d matches. A longer tag wins when p has the
 // length of its command, so RPTCL is not read as RPTC, and an RPTC whose
 // callsign or ID starts with L is not read as RPTCL. The OpenBridge tags
-// DMRE, BCKA, BCSQ, BCST and BCVE match in every dialect.
+// DMRE, BCKA, BCSQ, BCST and BCVE match in every dialect, and DMRD and
+// those tags are the only ones that match in DialectUnknown.
 func Classify(p []byte, d Dialect) Command {
 	best, n := CommandUnknown, 0
 	for c := CommandDMRD; c <= CommandBCVE; c++ {
