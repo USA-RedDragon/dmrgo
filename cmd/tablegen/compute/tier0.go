@@ -91,17 +91,6 @@ func ReverseConstellation() [][]int8 {
 	return rev
 }
 
-// SingleBurstBPTCInterleave computes the encode matrix index of each
-// transmit index of the single burst BPTC, where the transmit index is the
-// matrix index times 17 mod 32 (ETSI TS 102 361-1 clause B.2.2).
-func SingleBurstBPTCInterleave() [32]uint8 {
-	var table [32]uint8
-	for i := 0; i < 32; i++ {
-		table[(i*17)%32] = uint8(i)
-	}
-	return table
-}
-
 // CRC32Table computes the byte-at-a-time CRC-32 lookup table for
 // polynomial 0x04C11DB7 (ETSI TS 102 361-1 clause B.3.9).
 func CRC32Table() [256]uint32 {

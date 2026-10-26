@@ -6,19 +6,17 @@ import "sync"
 
 // Tables holds every computed FEC lookup table.
 type Tables struct {
-	CRC32                     [256]uint32 // CRC-32 byte table, polynomial 0x04C11DB7
-	CRC7                      [256]uint8  // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
-	CRC8                      [256]uint8  // CRC-8 byte table, polynomial 0x107
-	CRC9                      [256]uint16 // CRC-9 byte table, polynomial 0x259, register MSB-aligned
-	SingleBurstBPTCInterleave [32]uint8   // single-burst BPTC encode matrix index per transmit index
-	ReverseConstellation      [][]int8    // trellis 3/4 dibit pair per symbol index
-	GaloisExp                 [256]uint8  // GF(2^8) exponent table, polynomial 0x11D
-	GaloisLog                 [256]uint8  // GF(2^8) logarithm table, polynomial 0x11D
+	CRC32                [256]uint32 // CRC-32 byte table, polynomial 0x04C11DB7
+	CRC7                 [256]uint8  // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
+	CRC8                 [256]uint8  // CRC-8 byte table, polynomial 0x107
+	CRC9                 [256]uint16 // CRC-9 byte table, polynomial 0x259, register MSB-aligned
+	ReverseConstellation [][]int8    // trellis 3/4 dibit pair per symbol index
+	GaloisExp            [256]uint8  // GF(2^8) exponent table, polynomial 0x11D
+	GaloisLog            [256]uint8  // GF(2^8) logarithm table, polynomial 0x11D
 
 	EncoderStateTransition []byte // trellis 3/4 encoder symbol at index state*8+tribit
 	InterleaveMatrix       []byte // trellis 3/4 dibit interleave order
 
-	Trellis34Transition   [][]byte   // trellis 3/4 tribit per [state][symbol], 0xFF if invalid
 	Trellis34BranchDibits []byte     // trellis 3/4 dibit pair per branch state*8+tribit
 	Trellis34BranchMetric [][]uint64 // trellis 3/4 Viterbi cost per [received dibit pair][state], tribit t in byte t
 
@@ -54,11 +52,6 @@ func All() *Tables {
 	}()
 	wg.Add(1)
 	go func() {
-		t.SingleBurstBPTCInterleave = SingleBurstBPTCInterleave()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
 		t.ReverseConstellation = ReverseConstellation()
 		wg.Done()
 	}()
@@ -83,7 +76,6 @@ func All() *Tables {
 
 	wg.Add(1)
 	go func() {
-		t.Trellis34Transition = Trellis34Transition(t.EncoderStateTransition)
 		t.Trellis34BranchDibits = Trellis34BranchDibits(t.EncoderStateTransition, t.ReverseConstellation)
 		t.Trellis34BranchMetric = Trellis34BranchMetric(t.Trellis34BranchDibits)
 		wg.Done()

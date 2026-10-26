@@ -14,9 +14,6 @@ import (
 // and returns it.
 func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	if err := writeFile(dmrRoot, "internal/fec/bptc", "bptc",
-		writeTable("single_burst_bptc_interleave", tables.SingleBurstBPTCInterleave[:]),
-		jen.Line(),
-		jen.Line(),
 		writeTable("embeddedLCPatterns", tables.EmbeddedLCPatterns),
 		jen.Line(),
 		jen.Line(),
@@ -69,9 +66,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		jen.Line(),
 		jen.Line(),
 		writeTable("interleave_matrix", tables.InterleaveMatrix),
-		jen.Line(),
-		jen.Line(),
-		writeTable2D("trellis34_transition_table", tables.Trellis34Transition),
 		jen.Line(),
 		jen.Line(),
 		writeTable2D("trellis34_reverse_constellation", tables.ReverseConstellation),
