@@ -34,7 +34,7 @@ func TestRun(t *testing.T) {
 		_ = c.Close()
 		want = append(want,
 			"codec2: 50 frames -> 20 bursts, rx FID 0xc2, 3191868 -> 9990, 3 embedded LCs, slots equal true",
-			"codec2 decode: 8640 samples, audible true",
+			"codec2 decode: 8640 samples, 54 good frames, audible true",
 		)
 	}
 	for _, s := range want {

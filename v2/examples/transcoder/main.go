@@ -220,12 +220,17 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	}
 	defer func() { _ = dec.Close() }()
 	var out []int16
+	good := 0
 	for _, s := range c.slots {
-		if out, err = dec.Decode(out, s); err != nil {
+		var rep vocoder.FrameReport
+		if out, rep, err = dec.Decode(out, s); err != nil {
 			return err
 		}
+		if rep.Frame == vocoder.FrameGood {
+			good++
+		}
 	}
-	_, _ = fmt.Fprintf(w, "codec2 decode: %d samples, audible %t\n", len(out), rms(out) > 500)
+	_, _ = fmt.Fprintf(w, "codec2 decode: %d samples, %d good frames, audible %t\n", len(out), good, rms(out) > 500)
 	return nil
 }
 

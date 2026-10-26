@@ -138,7 +138,7 @@ The [udp](examples/udp) and [tcp](examples/tcp) examples are their own modules, 
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
-  - A `Codec` interface and a Codec2 codec (`vocoder/codec2`).
+  - A `Codec` interface and a Codec2 codec (`vocoder/codec2`). `Decode` returns a `FrameReport` for each frame: whether the frame was good, lost, erased or invalid, whether the samples are voice, a tone, a repeat or silence, and the bits that the FEC corrected. `DecodeLost` fills a frame that never arrived.
   - AMBE+2 on a DVSI AMBE-3000R or AMBE-3003 chip (`vocoder/dvsi`), such as a ThumbDV, a DVstick or an AMBEserver. See [DVSI](#dvsi).
 - A C API (`v2/capi`): libdmrgo, a shared library with the C form of the whole library (`dmrgo.h` and `dmrgo_gen.h`). It is a module of its own, so its cgo stays out of `v2`. `make -C v2/capi` builds it, and `make -C v2/capi static` builds `libdmrgo.a`, a static archive whose only global symbols are the C API. The C ABI has its own number, `DMRGO_ABI_VERSION`, which is independent of the Go module version and changes only when a C declaration breaks programs built against the older header; the soname `libdmrgo.so.N` follows it. Config, options and vtable structs start with `size_t size`, so they can get members at the end without a new ABI version. The library has no version of its own: `dmrgo_version` gives the v2 tag that it was built from, and the capi module is never tagged.
 - No cgo in the `v2` module outside `vocoder/codec2`.
@@ -211,6 +211,8 @@ enc, err := codec2.New(nil)
 | Default mode | `ModeAuto`: decode detects the mode of each call, encode uses `Mode2400` |
 | Feature set ID | `0xC2` in the Full LC (self-assigned, compatible with QRadioLink) |
 | Silence | `Silence()` is 20 ms of silence in the encode mode |
+| Frame report | `CountsKnown` is true and no bits are corrected. `FrameInvalid` when a bit after the Codec2 frame is set. |
+| Lost frames | `DecodeLost` outputs 20 ms of zero samples (`OutputSilence`): libcodec2 has no concealment for these modes |
 
 Nothing on the air identifies the mode, so `ModeAuto` detects it from the padding: `Mode2400` leaves bytes 6 to 8 of each slot zero, and `Mode3200` only byte 8. Five clean frames (100 ms) decide the mode, and `DecodeMode()` reports it. Call `Reset()` at the start of each call. A decoder in a fixed mode decodes only that mode.
 
@@ -233,7 +235,19 @@ codec, err := dvsi.New(conn, nil)
 | AMBEserver | UDP, port 2460, one packet per datagram |
 | Microcontroller UART | Any type with `Read` and `Write`; the package builds with TinyGo |
 
-`New` resets the chip, turns on the parity field, reads the product name and version, and sets the rate 3600 bit/s with 2450 bit/s of speech (rate index 33). The chip does the AMBE+2 FEC, so `Decode` takes the 72 on-air bits of a vocoder slot, as `layer2.RawBurst.VoiceSlots` returns them.
+`New` resets the chip, turns on the parity field, reads the product name and version, sets the rate 3600 bit/s with 2450 bit/s of speech (rate index 33), and has the chip put its decoder status in each speech packet (`PKT_SPCHFMT`). `New` returns `dvsi.ErrSpeechFormat` when the chip rejects that. The chip does the AMBE+2 FEC, so `Decode` takes the 72 on-air bits of a vocoder slot, as `layer2.RawBurst.VoiceSlots` returns them.
+
+`Decode` reports the decoder status of the chip in its `FrameReport`:
+
+| DCMODE_OUT flags | `Frame` | `Output` |
+| --- | --- | --- |
+| `TONE_FRAME`, `DATA_INVALID` 0 | `FrameGood` | `OutputTone` |
+| `VOICE_ACTIVE` 0, `DATA_INVALID` 0 | `FrameGood` | `OutputSilence` |
+| `VOICE_ACTIVE` 1, `DATA_INVALID` 1 | `FrameErased` | `OutputRepeat` |
+| `VOICE_ACTIVE` 0, `DATA_INVALID` 1 | `FrameErased` | `OutputSilence` |
+| `VOICE_ACTIVE` 1, `DATA_INVALID` 0 | `FrameGood` | `OutputVoice` |
+
+The chip reports no bit counts, so `CountsKnown` is false. `DecodeLost` sets `LOST_FRAME`: the chip repeats the frame before, and after 2 repeats outputs comfort noise. The next `Decode` clears `LOST_FRAME`.
 
 ## TinyGo
 
