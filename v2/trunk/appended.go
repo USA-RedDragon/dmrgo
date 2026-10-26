@@ -583,6 +583,29 @@ func (a *Appended) LIP(dst []byte) ([]byte, error) {
 	return append(dst, a.Data[:(total-4*int(a.PadNibble))/8]...), nil
 }
 
+// ShortReport returns the LIP short location report that a TSCC rebuilds
+// from the USBD poll response r for end to end LIP: the position, its
+// error, the velocity and the direction of r, and the reason for sending
+// 32, a response to an immediate request. ok is false for a reserved
+// Reason, and for a nil r. The hashed source address has no place in the
+// report. (ETSI TS 102 361-4 clauses 6.6.11.3.2 and 6.6.11.3.3)
+func (r *USBDLIPResponse) ShortReport() (s LIPShortReport, ok bool) {
+	if r == nil || r.Reason != 0 {
+		return LIPShortReport{}, false
+	}
+	return LIPShortReport{
+		TimeElapsed:    r.TimeElapsed,
+		Longitude:      r.Longitude,
+		Latitude:       r.Latitude,
+		PositionError:  r.PositionError,
+		Velocity:       r.Velocity,
+		Direction:      r.Direction,
+		AdditionalData: lipReasonImmediateResponse,
+	}, true
+}
+
+const lipReasonImmediateResponse = 32
+
 // Appended returns the appended data of u, with the UDT Format and the pad
 // nibbles of its header. (ETSI TS 102 361-4 clause 6.5.1)
 func (u *UDT) Appended() Appended {

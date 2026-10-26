@@ -3224,6 +3224,7 @@ sym int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t *u, boo
 sym int dmrgo_trunk_tscc_usbd(dmrgo_trunk_tscc_t *self, dmrgo_pdu_unified_single_block_data_t *out);
 sym int dmrgo_trunk_udt_appended(const dmrgo_trunk_udt_t *self, dmrgo_trunk_appended_t *out);
 sym int dmrgo_trunk_usbd_lip_response_encode(const dmrgo_trunk_usbd_lip_response_t *self, uint8_t out[10]);
+sym int dmrgo_trunk_usbd_lip_response_short_report(const dmrgo_trunk_usbd_lip_response_t *self, dmrgo_trunk_lip_short_report_t *s, bool *ok);
 sym int dmrgo_trunk_usbd_lip_response_string(const dmrgo_trunk_usbd_lip_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_usbd_poll_request_encode(const dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
 sym int dmrgo_trunk_usbd_poll_request_string(const dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

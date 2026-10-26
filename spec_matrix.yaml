@@ -2941,6 +2941,7 @@ documents:
             names:
               - TestTSCC_Polling
               - TestMS_USBDPoll
+              - TestUSBDLIPResponse_ShortReport
 
       - section: "7.1.1"
         title: "Control Signalling Block (CSBK/MBC/UDT) PDUs"

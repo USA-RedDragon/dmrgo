@@ -1623,6 +1623,7 @@ var entryPoints = map[string]any{
 	"dmrgo_trunk_tscc_output_kind_string":                              dmrgo_trunk_tscc_output_kind_string,
 	"dmrgo_trunk_udt_appended":                                         dmrgo_trunk_udt_appended,
 	"dmrgo_trunk_usbd_lip_response_encode":                             dmrgo_trunk_usbd_lip_response_encode,
+	"dmrgo_trunk_usbd_lip_response_short_report":                       dmrgo_trunk_usbd_lip_response_short_report,
 	"dmrgo_trunk_usbd_lip_response_string":                             dmrgo_trunk_usbd_lip_response_string,
 	"dmrgo_trunk_usbd_poll_request_encode":                             dmrgo_trunk_usbd_poll_request_encode,
 	"dmrgo_trunk_usbd_poll_request_string":                             dmrgo_trunk_usbd_poll_request_string,

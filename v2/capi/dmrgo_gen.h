@@ -11425,6 +11425,8 @@ int dmrgo_trunk_tscc_output_kind_string(dmrgo_trunk_tscc_output_kind_t self, cha
 int dmrgo_trunk_udt_appended(const dmrgo_trunk_udt_t *self, dmrgo_trunk_appended_t *out);
 /* Go: trunk.USBDLIPResponse.Encode. Encode encodes a USBDLIPResponse. */
 int dmrgo_trunk_usbd_lip_response_encode(const dmrgo_trunk_usbd_lip_response_t *self, uint8_t out[10]);
+/* Go: trunk.USBDLIPResponse.ShortReport. ShortReport returns the LIP short location report that a TSCC rebuilds from the USBD poll response r for end to end LIP: the position, its error, the velocity and the direction of r, and the reason for sending 32, a response to an immediate request. */
+int dmrgo_trunk_usbd_lip_response_short_report(const dmrgo_trunk_usbd_lip_response_t *self, dmrgo_trunk_lip_short_report_t *s, bool *ok);
 /* Go: trunk.USBDLIPResponse.String. String returns the fields of s as text, for printing. */
 int dmrgo_trunk_usbd_lip_response_string(const dmrgo_trunk_usbd_lip_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.USBDPollRequest.Encode. Encode encodes a USBDPollRequest. */

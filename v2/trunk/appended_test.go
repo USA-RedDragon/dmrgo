@@ -296,3 +296,22 @@ func TestAppended_NMEAIPLIP(t *testing.T) {
 		t.Errorf("47 octets: %v", err)
 	}
 }
+
+func TestUSBDLIPResponse_ShortReport(t *testing.T) {
+	t.Parallel()
+	r := trunk.USBDLIPResponse{TimeElapsed: 1, Longitude: -90, Latitude: 45, PositionError: layer3.PositionAccuracy(2), Velocity: 28, Direction: 4, HashedSource: 0x5A}
+	s, ok := r.ShortReport()
+	want := trunk.LIPShortReport{TimeElapsed: 1, Longitude: -90, Latitude: 45, PositionError: layer3.PositionAccuracy(2), Velocity: 28, Direction: 4, AdditionalData: 32}
+	if !ok || s != want {
+		t.Errorf("ShortReport = %+v %t, want %+v", s, ok, want)
+	}
+	for reason := uint8(1); reason < 8; reason++ {
+		r.Reason = reason
+		if _, ok := r.ShortReport(); ok {
+			t.Errorf("reserved reason %d gives a report", reason)
+		}
+	}
+	if _, ok := (*trunk.USBDLIPResponse)(nil).ShortReport(); ok {
+		t.Error("nil gives a report")
+	}
+}

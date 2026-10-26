@@ -1581,6 +1581,7 @@ var api = [...]any{
 	(*trunk.TSCC).USBD,
 	(*trunk.UDT).Appended,
 	(*trunk.USBDLIPResponse).Encode,
+	(*trunk.USBDLIPResponse).ShortReport,
 	(*trunk.USBDLIPResponse).String,
 	(*trunk.USBDPollRequest).Encode,
 	(*trunk.USBDPollRequest).String,

@@ -48431,6 +48431,30 @@ func dmrgo_trunk_usbd_lip_response_encode(c_self *C.dmrgo_trunk_usbd_lip_respons
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_usbd_lip_response_short_report
+func dmrgo_trunk_usbd_lip_response_short_report(c_self *C.dmrgo_trunk_usbd_lip_response_t, c_s *C.dmrgo_trunk_lip_short_report_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.USBDLIPResponse
+	x = *(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.ShortReport()
+	_ = r0
+	_ = r1
+	if c_s != nil {
+		out_trunk_LIPShortReport(&(*c_s), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_usbd_lip_response_string
 func dmrgo_trunk_usbd_lip_response_string(c_self *C.dmrgo_trunk_usbd_lip_response_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)

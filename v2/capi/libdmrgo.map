@@ -1669,6 +1669,7 @@ DMRGO_2 {
 		dmrgo_trunk_tscc_usbd;
 		dmrgo_trunk_udt_appended;
 		dmrgo_trunk_usbd_lip_response_encode;
+		dmrgo_trunk_usbd_lip_response_short_report;
 		dmrgo_trunk_usbd_lip_response_string;
 		dmrgo_trunk_usbd_poll_request_encode;
 		dmrgo_trunk_usbd_poll_request_string;

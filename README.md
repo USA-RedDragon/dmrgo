@@ -529,7 +529,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.8 | Dynamic Group Numbering Assignment Service | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go`, `v2/trunk/control.go` |
 | 6.6.9 | Full-Duplex MS to MS Voice Call Procedures | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
 | 6.6.10 | Full-Duplex MS to MS Packet Data Call Procedures | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
-| 6.6.11 | Unified Single Block Data Polling Service | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/appended_formats.go` |
+| 6.6.11 | Unified Single Block Data Polling Service | verified | 3/3 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/appended_formats.go` |
 | 7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | verified | 17/17 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go`, `v2/enums/announcement_type.go` |
 | 7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/cdef_parms.go` |
 | 7.1.2 | Short Link Control PDUs | verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
