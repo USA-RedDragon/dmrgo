@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"regexp"
 	"slices"
@@ -218,5 +219,41 @@ func checkWordSplits(t *testing.T, out *capigen.Output) {
 	bad = slices.Compact(bad)
 	if len(bad) > 0 {
 		t.Errorf("dmrgo_gen.h has %d names with two words run together, such as %q", len(bad), bad[:min(len(bad), 20)])
+	}
+}
+
+func TestGenerateBreakBumpsEveryFile(t *testing.T) {
+	t.Parallel()
+
+	lock, err := os.ReadFile("abi.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(string(lock), "\n")
+	var abi int
+	if _, err := fmt.Sscanf(lines[0], "abi %d", &abi); err != nil {
+		t.Fatal(err)
+	}
+	i := slices.IndexFunc(lines, func(l string) bool { return strings.HasPrefix(l, "type struct ") && strings.HasSuffix(l, " };") })
+	if i < 0 {
+		t.Fatal("no struct in abi.txt")
+	}
+	lines[i] = strings.TrimSuffix(lines[i], " };") + " int64_t gone; };"
+	out, err := capigen.Generate(".", []byte(strings.Join(lines, "\n")), capigen.Options{Break: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(out.Broken) == 0 {
+		t.Fatal("no change of the C ABI")
+	}
+	want := abi + 1
+	if !strings.HasPrefix(string(out.Lock), fmt.Sprintf("abi %d\n", want)) {
+		t.Errorf("abi.txt starts %q, want abi %d", out.Lock[:min(len(out.Lock), 8)], want)
+	}
+	if !strings.HasPrefix(string(out.Map), fmt.Sprintf("DMRGO_%d {", want)) {
+		t.Errorf("libdmrgo.map starts %q, want DMRGO_%d", out.Map[:min(len(out.Map), 10)], want)
+	}
+	if !bytes.Contains(out.H, []byte(fmt.Sprintf("\n#define DMRGO_ABI_VERSION %d\n", want))) {
+		t.Errorf("dmrgo_gen.h has %q, want DMRGO_ABI_VERSION %d", regexp.MustCompile(`#define DMRGO_ABI_VERSION \d+`).Find(out.H), want)
 	}
 }
