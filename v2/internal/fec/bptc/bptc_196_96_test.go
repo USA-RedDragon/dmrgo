@@ -33,7 +33,7 @@ func TestBPTC19696Decode(t *testing.T) {
 
 		encodedErr := encoded
 		pos := rand.Intn(196)
-		for pos == int(dm[0]) {
+		for pos == 0 {
 			pos = rand.Intn(196)
 		}
 		encodedErr[pos] ^= 1

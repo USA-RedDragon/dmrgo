@@ -1,15 +1,5 @@
 package compute
 
-// DM computes the BPTC(196,96) deinterleave matrix. Entry i is
-// (i * 181) mod 196.
-func DM() [256]uint8 {
-	var dm [256]uint8
-	for i := range 256 {
-		dm[i] = uint8((i * 181) % 196)
-	}
-	return dm
-}
-
 // CRC7Table computes the byte-at-a-time CRC-7 lookup table for polynomial
 // x⁷ + x⁵ + x² + x + 1 (ETSI TS 102 361-1 clause B.3.13), for a register
 // that holds the 7 CRC bits in its top bits.

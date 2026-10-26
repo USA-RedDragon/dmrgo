@@ -37,7 +37,7 @@ func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
 		_, enc := randomBPTC19696(r)
 		var g [196]unpacked.Bit
 		for i := range g {
-			g[i] = enc[dm[i]]
+			g[i] = enc[interleaved(i)]
 		}
 		if rows := gridRows(&g); !gridSyndromesZero(&rows) {
 			t.Fatalf("encoded grid has a nonzero row or column syndrome")
@@ -53,8 +53,8 @@ func TestBPTC19696_AllDoubleErrorsCorrected(t *testing.T) {
 	for p := 1; p < 196; p++ {
 		for q := p + 1; q < 196; q++ {
 			rx := enc
-			rx[dm[p]] ^= 1
-			rx[dm[q]] ^= 1
+			rx[interleaved(p)] ^= 1
+			rx[interleaved(q)] ^= 1
 			got, res := decode196Bits(rx)
 			if got != data || res.Uncorrectable || res.ErrorsCorrected != 2 {
 				t.Fatalf("grid bits %d,%d: data match=%v result=%+v", p, q, got == data, res)
@@ -75,7 +75,7 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 		}
 		var g [196]unpacked.Bit
 		for i := range g {
-			g[i] = rx[dm[i]]
+			g[i] = rx[interleaved(i)]
 		}
 		received := gridRows(&g)
 		rows := received
@@ -98,10 +98,32 @@ func TestBPTC19696_ColumnsFirstCorrection(t *testing.T) {
 	r := rand.New(rand.NewSource(11))
 	data, enc := randomBPTC19696(r)
 	for _, p := range []int{124, 128, 172, 173} {
-		enc[dm[p]] ^= 1
+		enc[interleaved(p)] ^= 1
 	}
 	got, res := decode196Bits(enc)
 	if got != data || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("data match=%v result=%+v", got == data, res)
+	}
+}
+
+func interleaved(i int) int {
+	return i * 181 % 196
+}
+
+func TestGridPosInvertsGridBit(t *testing.T) {
+	t.Parallel()
+
+	for row := range 13 {
+		for col := range 15 {
+			p := GridBit(row, col)
+			if r, c, ok := GridPos(p); r != row || c != col || !ok || p != interleaved(1+15*row+col) {
+				t.Fatalf("GridBit(%d, %d) = %d, GridPos = %d, %d, %v", row, col, p, r, c, ok)
+			}
+		}
+	}
+	for _, p := range []int{-1, 0, 196, 1 << 20} {
+		if _, _, ok := GridPos(p); ok {
+			t.Fatalf("GridPos(%d) is in the grid", p)
+		}
 	}
 }

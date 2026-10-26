@@ -6,7 +6,6 @@ import "sync"
 
 // Tables holds every computed FEC lookup table.
 type Tables struct {
-	DM                        [256]uint8  // BPTC(196,96) deinterleave index, (i*181) mod 196
 	CRC32                     [256]uint32 // CRC-32 byte table, polynomial 0x04C11DB7
 	CRC7                      [256]uint8  // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
 	CRC8                      [256]uint8  // CRC-8 byte table, polynomial 0x107
@@ -37,11 +36,6 @@ func All() *Tables {
 
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
-		t.DM = DM()
-		wg.Done()
-	}()
 	wg.Add(1)
 	go func() {
 		t.CRC32 = CRC32Table()

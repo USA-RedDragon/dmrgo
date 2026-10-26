@@ -14,9 +14,6 @@ import (
 // and returns it.
 func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	if err := writeFile(dmrRoot, "internal/fec/bptc", "bptc",
-		writeTable("dm", tables.DM[:]),
-		jen.Line(),
-		jen.Line(),
 		writeTable("single_burst_bptc_interleave", tables.SingleBurstBPTCInterleave[:]),
 		jen.Line(),
 		jen.Line(),

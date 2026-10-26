@@ -67,34 +67,39 @@ func Rows(info [25]byte) [13]uint16 {
 	}
 	words[3] = uint64(info[24]) << 56
 	var rows [13]uint16
-	i := 1
+	p := uint(0)
 	for r := range rows {
 		var row uint16
 		for c := range 15 {
-			p := dm[i]
+			p = nextBit(p)
 			row |= uint16(words[p>>6&3]>>(63-p&63)&1) << c
-			i++
 		}
 		rows[r] = row
 	}
 	return rows
 }
 
+func nextBit(p uint) uint {
+	if p += 181; p >= 196 {
+		p -= 196
+	}
+	return p
+}
+
 // GridPos returns the row and column of the grid that information bit p of
 // a block, 0 to 195, lands in, and false for a bit outside the grid.
 func GridPos(p int) (row, col int, ok bool) {
-	for i := 1; i < 196; i++ {
-		if int(dm[i]) == p {
-			return (i - 1) / 15, (i - 1) % 15, true
-		}
+	if p <= 0 || p >= 196 {
+		return 0, 0, false
 	}
-	return 0, 0, false
+	i := p * 13 % 196
+	return (i - 1) / 15, (i - 1) % 15, true
 }
 
 // GridBit returns the information bit of a block, 1 to 195, that lands in
 // row and col of the grid.
 func GridBit(row, col int) int {
-	return int(dm[1+15*row+col])
+	return (1 + 15*row + col) * 181 % 196
 }
 
 // DecodeRows corrects a copy of the rows of a BPTC(196,96) grid that Rows
@@ -184,12 +189,11 @@ func hammingCorrect(rows *[13]uint16) bool {
 func Encode196(data [12]byte, reserved uint8) [25]byte {
 	rows := EncodeRows(&data, reserved)
 	var words [4]uint64
-	i := 1
+	p := uint(0)
 	for _, row := range rows {
 		for c := range 15 {
-			p := dm[i]
+			p = nextBit(p)
 			words[p>>6&3] |= uint64(row>>c&1) << (63 - p&63)
-			i++
 		}
 	}
 	var info [25]byte
