@@ -391,6 +391,24 @@ typedef struct dmrgo_layer3_short_data_service_options_t dmrgo_layer3_short_data
 typedef struct dmrgo_layer3_status_service_options_t dmrgo_layer3_status_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
+/* Go: lip.Element. Element is a type 5 information element of a LIP PDU, as NextElement finds it: its identifier and where its data lies in the PDU. */
+typedef struct dmrgo_lip_element_t dmrgo_lip_element_t;
+/* Go: lip.EnableDisable. EnableDisable is the LOCATION REPORTING ENABLE/DISABLE REQUEST or RESPONSE PDU, which every MS that supports LIP handles. */
+typedef struct dmrgo_lip_enable_disable_t dmrgo_lip_enable_disable_t;
+/* Go: lip.Header. Header is the start of a LIP PDU: the PDU type and, for PDU type 1, the PDU type extension and the request/response bit. */
+typedef struct dmrgo_lip_header_t dmrgo_lip_header_t;
+/* Go: lip.ImmediateRequest. ImmediateRequest is the IMMEDIATE LOCATION REPORT REQUEST PDU. */
+typedef struct dmrgo_lip_immediate_request_t dmrgo_lip_immediate_request_t;
+/* Go: lip.Location. Location is the location data of a long location report: the shape and the fields that it codes. */
+typedef struct dmrgo_lip_location_t dmrgo_lip_location_t;
+/* Go: lip.LongReport. LongReport is the LONG LOCATION REPORT PDU: the time, location and velocity data and the additional data. */
+typedef struct dmrgo_lip_long_report_t dmrgo_lip_long_report_t;
+/* Go: lip.ReportAck. ReportAck is the LOCATION REPORT ACKNOWLEDGEMENT PDU, the answer to a LongReport with AckRequested. */
+typedef struct dmrgo_lip_report_ack_t dmrgo_lip_report_ack_t;
+/* Go: lip.Time. Time is the time data of a long location report: the time elapsed since the position was found, or the time of the position. */
+typedef struct dmrgo_lip_time_t dmrgo_lip_time_t;
+/* Go: lip.Velocity. Velocity is the velocity data of a long location report: the velocity type and the fields that it codes. */
+typedef struct dmrgo_lip_velocity_t dmrgo_lip_velocity_t;
 /* Go: location.Decoder. Decoder decodes positions. */
 typedef struct dmrgo_location_decoder_t dmrgo_location_decoder_t;
 /* Go: location.Fix. Fix is a position that a radio reported. */
@@ -837,6 +855,18 @@ typedef uint8_t dmrgo_layer3_position_accuracy_t;
 typedef uint8_t dmrgo_layer3_source_type_t;
 /* Go: layer3.TalkerAliasDataFormat. TalkerAliasDataFormat is the 2-bit character encoding of a talker alias (ETSI TS 102 361-2 clause 7.2.18, Table 7.25). */
 typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+/* Go: lip.ElementID. ElementID is the type 5 element identifier of an optional information element. */
+typedef uint8_t dmrgo_lip_element_id_t;
+/* Go: lip.Extension. Extension is the PDU type extension of a LIP PDU of PDU type 1. */
+typedef uint8_t dmrgo_lip_extension_t;
+/* Go: lip.ReportType. ReportType is the kind of location report that a request asks for (ETSI TS 100 392-18-1 clause 6.3.65). */
+typedef uint8_t dmrgo_lip_report_type_t;
+/* Go: lip.Shape. Shape is the location shape of the location data. */
+typedef uint8_t dmrgo_lip_shape_t;
+/* Go: lip.TimeType. TimeType is the kind of the time data of a long location report (ETSI TS 100 392-18-1 clause 6.3.81). */
+typedef uint8_t dmrgo_lip_time_type_t;
+/* Go: lip.VelocityType. VelocityType is the kind of the velocity data of a long location report (ETSI TS 100 392-18-1 clause 6.3.90). */
+typedef uint8_t dmrgo_lip_velocity_type_t;
 /* Go: location.Format. Format is the format that a position came in. */
 typedef uint8_t dmrgo_location_format_t;
 /* Go: ars.Encoding. Encoding is the 5-bit coding of the identifiers of a registration. */
@@ -3344,6 +3374,137 @@ struct dmrgo_layer3_voice_service_options_t {
 	uint8_t priority_level;
 };
 
+struct dmrgo_lip_enable_disable_t {
+	/* Response is true for the response PDU, false for the request. */
+	bool response;
+	/* AckRequested asks for an acknowledgement. Only the request codes it. */
+	bool ack_requested;
+	/* Flags holds the location reporting enable flags, flag 1 in the most significant bit: flag 1 enables location reporting and flag 2 the recording of backlog location reports. The other flags are reserved, 0. */
+	uint8_t flags;
+	/* Elements is the bit offset of the first type 5 element. DecodeEnableDisable sets it; Encode ignores it. */
+	int64_t elements;
+};
+
+struct dmrgo_lip_header_t {
+	/* Short is true for PDU type 0, the short location report. The other fields are then zero. */
+	bool short_;
+	/* Extension is the PDU type extension of PDU type 1. */
+	dmrgo_lip_extension_t extension;
+	/* Response is the request/response bit, true for a response, for an Extension with HasResponseBit. */
+	bool response;
+};
+
+struct dmrgo_lip_immediate_request_t {
+	/* ReportType is the kind of report that the request asks for. */
+	dmrgo_lip_report_type_t report_type;
+	/* Elements is the bit offset of the first type 5 element. DecodeImmediateRequest sets it; Encode ignores it. */
+	int64_t elements;
+};
+
+struct dmrgo_lip_time_t {
+	/* Type tells which fields are coded. */
+	dmrgo_lip_time_type_t type;
+	/* Elapsed is the time elapsed code for DMRGO_LIP_TIME_ELAPSED: 0 under 5 s, 1 under 5 min, 2 under 30 min, 3 not known. */
+	uint8_t elapsed;
+	/* Day is the day of the month, 1 to 31, for DMRGO_LIP_TIME_POSITION. */
+	uint8_t day;
+	/* Hour is the UTC hour, 0 to 23, for DMRGO_LIP_TIME_POSITION. */
+	uint8_t hour;
+	/* Minute is the minute, 0 to 59, for DMRGO_LIP_TIME_POSITION. */
+	uint8_t minute;
+	/* Second is the second, 0 to 59, for DMRGO_LIP_TIME_POSITION. */
+	uint8_t second;
+};
+
+struct dmrgo_lip_location_t {
+	/* Shape tells which fields are coded. */
+	dmrgo_lip_shape_t shape;
+	/* Longitude is in degrees, -180 to 180, east positive, in steps of 360/2^25 degrees. Every shape but DMRGO_LIP_SHAPE_NONE codes it. */
+	double longitude;
+	/* Latitude is in degrees, -90 to 90, north positive, in steps of 180/2^24 degrees. Every shape but DMRGO_LIP_SHAPE_NONE codes it. */
+	double latitude;
+	/* Uncertainty is the horizontal position uncertainty of the circle shapes. */
+	uint8_t uncertainty;
+	/* HalfMajor is half of the major axis of the ellipse shapes. */
+	uint8_t half_major;
+	/* HalfMinor is half of the minor axis of the ellipse shapes. */
+	uint8_t half_minor;
+	/* Angle is the angle of the major axis of the ellipse shapes. */
+	uint8_t angle;
+	/* Confidence is the confidence level of the ellipse and arc shapes: 0 for 50 %, 1 68 %, 2 80 %, 3 90 %, 4 95 %, 5 99 %, 6 99.9 % and 7 not known. */
+	uint8_t confidence;
+	/* AltitudeUserDefined is the location altitude type of the shapes with an altitude: true for a user defined reference, false for the WGS84 ellipsoid. */
+	bool altitude_user_defined;
+	/* Altitude is the altitude code of the shapes with an altitude: 1 is -200 m, in steps of 1 m to 1201 (1000 m), 2 m to 1926 (2450 m) and 75 m to 2047 (11525 m or more). 0 is reserved. */
+	uint16_t altitude;
+	/* AltitudeUncertainty is the location altitude uncertainty code of the shapes with an altitude uncertainty. */
+	uint8_t altitude_uncertainty;
+	/* InnerRadius is the inner radius of DMRGO_LIP_SHAPE_ARC in steps of 2 m. */
+	uint16_t inner_radius;
+	/* OuterRadius is the outer radius of DMRGO_LIP_SHAPE_ARC in steps of 2 m. */
+	uint16_t outer_radius;
+	/* StartAngle is the start angle of DMRGO_LIP_SHAPE_ARC. */
+	uint8_t start_angle;
+	/* StopAngle is the stop angle of DMRGO_LIP_SHAPE_ARC. */
+	uint8_t stop_angle;
+	/* PositionError is the position error of DMRGO_LIP_SHAPE_POINT_POSITION_ERROR. */
+	dmrgo_layer3_position_accuracy_t position_error;
+};
+
+struct dmrgo_lip_velocity_t {
+	/* Type tells which fields are coded. */
+	dmrgo_lip_velocity_type_t type;
+	/* Horizontal is the horizontal velocity code. Every type but DMRGO_LIP_VELOCITY_NONE codes it. */
+	uint8_t horizontal;
+	/* HorizontalUncertainty is the horizontal velocity uncertainty of the types with uncertainties. */
+	uint8_t horizontal_uncertainty;
+	/* Down is the vertical velocity sign, true for downwards, of the types with a vertical velocity. */
+	bool down;
+	/* Vertical is the vertical velocity code of the types with a vertical velocity. */
+	uint8_t vertical;
+	/* VerticalUncertainty is the vertical velocity uncertainty of DMRGO_LIP_VELOCITY_HORIZONTAL_VERTICAL_UNCERTAIN and DMRGO_LIP_VELOCITY_ALL. */
+	uint8_t vertical_uncertainty;
+	/* Direction is the direction of travel extended, in steps of 360/256 degrees clockwise from north, of the types with a direction. */
+	uint8_t direction;
+	/* DirectionUncertainty is the direction of travel uncertainty of DMRGO_LIP_VELOCITY_HORIZONTAL_DIRECTION_UNCERTAIN and DMRGO_LIP_VELOCITY_ALL. */
+	uint8_t direction_uncertainty;
+};
+
+struct dmrgo_lip_long_report_t {
+	/* Time is the time data. */
+	dmrgo_lip_time_t time;
+	/* Location is the location data. */
+	dmrgo_lip_location_t location;
+	/* Velocity is the velocity data. */
+	dmrgo_lip_velocity_t velocity;
+	/* AckRequested asks for a location report acknowledgement. */
+	bool ack_requested;
+	/* UserDefined is the type of additional data: true when AdditionalData is user defined data, false for the reason for sending. */
+	bool user_defined;
+	/* AdditionalData is the reason for sending or the user defined data. */
+	uint8_t additional_data;
+	/* Elements is the bit offset of the first type 5 element. DecodeLongReport sets it; Encode ignores it. */
+	int64_t elements;
+};
+
+struct dmrgo_lip_report_ack_t {
+	/* Reserved is reserved for result reasons, 0. */
+	uint8_t reserved;
+	/* Elements is the bit offset of the first type 5 element. DecodeReportAck sets it; Encode ignores it. */
+	int64_t elements;
+};
+
+struct dmrgo_lip_element_t {
+	/* ID is the type 5 element identifier. */
+	dmrgo_lip_element_id_t id;
+	/* Offset is the bit offset of the element data in the PDU. */
+	int64_t offset;
+	/* Bits is the length of the element data in bits. For a length of 8 octets or more it holds the fill bits too. */
+	int64_t bits;
+	/* Next is the bit offset of the element after it. */
+	int64_t next;
+};
+
 struct dmrgo_location_fix_t {
 	/* Format is the format of the report. */
 	dmrgo_location_format_t format;
@@ -5582,6 +5743,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_LAYER2_SYNC_SOURCE (-130)
 #define DMRGO_ERR_LAYER2_VOICE_POSITION (-131)
 #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-132)
+#define DMRGO_ERR_LIP_ELEMENT (-229)
+#define DMRGO_ERR_LIP_PDU_TYPE (-230)
+#define DMRGO_ERR_LIP_SHAPE (-231)
+#define DMRGO_ERR_LIP_SHORT (-232)
+#define DMRGO_ERR_LIP_TIME_TYPE (-233)
 #define DMRGO_ERR_LOCATION_NO_FIX (-158)
 #define DMRGO_ERR_LOCATION_NO_POSITION (-159)
 #define DMRGO_ERR_LRRP_LENGTH (-162)
@@ -6952,6 +7118,126 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 /* Go: layer3.TalkerAliasUTF8. Unicode UTF-8 */
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+/* Go: lip.ElementAltitudeAccuracy. location altitude and location altitude accuracy */
+#define DMRGO_LIP_ELEMENT_ALTITUDE_ACCURACY ((dmrgo_lip_element_id_t)5)
+/* Go: lip.ElementBacklogAvailable. backlog information available, 10 bits */
+#define DMRGO_LIP_ELEMENT_BACKLOG_AVAILABLE ((dmrgo_lip_element_id_t)23)
+/* Go: lip.ElementBacklogContinuation. backlog continuation state */
+#define DMRGO_LIP_ELEMENT_BACKLOG_CONTINUATION ((dmrgo_lip_element_id_t)24)
+/* Go: lip.ElementDefaultLifetime. default enable/disable lifetime, 2 bits */
+#define DMRGO_LIP_ELEMENT_DEFAULT_LIFETIME ((dmrgo_lip_element_id_t)9)
+/* Go: lip.ElementDestination. location information destination */
+#define DMRGO_LIP_ELEMENT_DESTINATION ((dmrgo_lip_element_id_t)4)
+/* Go: lip.ElementDirectionAccuracy. direction of travel and direction of travel accuracy */
+#define DMRGO_LIP_ELEMENT_DIRECTION_ACCURACY ((dmrgo_lip_element_id_t)0)
+/* Go: lip.ElementExtendedUserData. extended user defined data */
+#define DMRGO_LIP_ELEMENT_EXTENDED_USER_DATA ((dmrgo_lip_element_id_t)1)
+/* Go: lip.ElementIdentification. terminal or location identification */
+#define DMRGO_LIP_ELEMENT_IDENTIFICATION ((dmrgo_lip_element_id_t)17)
+/* Go: lip.ElementMaxInformationAge. maximum information age, 7 bits */
+#define DMRGO_LIP_ELEMENT_MAX_INFORMATION_AGE ((dmrgo_lip_element_id_t)7)
+/* Go: lip.ElementMaxResponseTime. maximum response time, 7 bits */
+#define DMRGO_LIP_ELEMENT_MAX_RESPONSE_TIME ((dmrgo_lip_element_id_t)8)
+/* Go: lip.ElementMessageReference. location message reference, 8 bits */
+#define DMRGO_LIP_ELEMENT_MESSAGE_REFERENCE ((dmrgo_lip_element_id_t)6)
+/* Go: lip.ElementPositionAccuracy. horizontal position and horizontal position accuracy */
+#define DMRGO_LIP_ELEMENT_POSITION_ACCURACY ((dmrgo_lip_element_id_t)2)
+/* Go: lip.ElementRequestPriority. request priority, 2 bits */
+#define DMRGO_LIP_ELEMENT_REQUEST_PRIORITY ((dmrgo_lip_element_id_t)11)
+/* Go: lip.ElementResultCode. result code, 8 bits */
+#define DMRGO_LIP_ELEMENT_RESULT_CODE ((dmrgo_lip_element_id_t)12)
+/* Go: lip.ElementSDSType1Value. SDS type-1 value, 16 bits */
+#define DMRGO_LIP_ELEMENT_SDS_TYPE1_VALUE ((dmrgo_lip_element_id_t)13)
+/* Go: lip.ElementStartTime. start time, 22 bits */
+#define DMRGO_LIP_ELEMENT_START_TIME ((dmrgo_lip_element_id_t)14)
+/* Go: lip.ElementStatusValue. status value, 16 bits */
+#define DMRGO_LIP_ELEMENT_STATUS_VALUE ((dmrgo_lip_element_id_t)15)
+/* Go: lip.ElementStopTime. stop time, 22 bits */
+#define DMRGO_LIP_ELEMENT_STOP_TIME ((dmrgo_lip_element_id_t)16)
+/* Go: lip.ElementTemporaryControl. temporary control parameter definition */
+#define DMRGO_LIP_ELEMENT_TEMPORARY_CONTROL ((dmrgo_lip_element_id_t)22)
+/* Go: lip.ElementTriggerDefinition. trigger definition */
+#define DMRGO_LIP_ELEMENT_TRIGGER_DEFINITION ((dmrgo_lip_element_id_t)19)
+/* Go: lip.ElementTriggerRemoval. trigger removal */
+#define DMRGO_LIP_ELEMENT_TRIGGER_REMOVAL ((dmrgo_lip_element_id_t)20)
+/* Go: lip.ElementVelocityAccuracy. horizontal velocity and horizontal velocity accuracy */
+#define DMRGO_LIP_ELEMENT_VELOCITY_ACCURACY ((dmrgo_lip_element_id_t)3)
+/* Go: lip.ElementVerticalAccuracy. vertical velocity and vertical velocity accuracy */
+#define DMRGO_LIP_ELEMENT_VERTICAL_ACCURACY ((dmrgo_lip_element_id_t)21)
+/* Go: lip.ExtensionAddModifyTrigger. add/modify trigger request or response */
+#define DMRGO_LIP_EXTENSION_ADD_MODIFY_TRIGGER ((dmrgo_lip_extension_t)6)
+/* Go: lip.ExtensionBacklog. backlog request or response */
+#define DMRGO_LIP_EXTENSION_BACKLOG ((dmrgo_lip_extension_t)12)
+/* Go: lip.ExtensionBasicParameters. basic location parameters request or response */
+#define DMRGO_LIP_EXTENSION_BASIC_PARAMETERS ((dmrgo_lip_extension_t)5)
+/* Go: lip.ExtensionEnableDisable. location reporting enable/disable request or response */
+#define DMRGO_LIP_EXTENSION_ENABLE_DISABLE ((dmrgo_lip_extension_t)10)
+/* Go: lip.ExtensionImmediateReport. immediate location report request */
+#define DMRGO_LIP_EXTENSION_IMMEDIATE_REPORT ((dmrgo_lip_extension_t)1)
+/* Go: lip.ExtensionLongReport. long location report */
+#define DMRGO_LIP_EXTENSION_LONG_REPORT ((dmrgo_lip_extension_t)3)
+/* Go: lip.ExtensionRemoveTrigger. remove trigger request or response */
+#define DMRGO_LIP_EXTENSION_REMOVE_TRIGGER ((dmrgo_lip_extension_t)7)
+/* Go: lip.ExtensionReportAck. location report acknowledgement */
+#define DMRGO_LIP_EXTENSION_REPORT_ACK ((dmrgo_lip_extension_t)4)
+/* Go: lip.ExtensionReportBasicParams. report basic location parameters request or response */
+#define DMRGO_LIP_EXTENSION_REPORT_BASIC_PARAMS ((dmrgo_lip_extension_t)9)
+/* Go: lip.ExtensionReportTrigger. report trigger request or response */
+#define DMRGO_LIP_EXTENSION_REPORT_TRIGGER ((dmrgo_lip_extension_t)8)
+/* Go: lip.ExtensionTemporaryControl. location reporting temporary control request or response */
+#define DMRGO_LIP_EXTENSION_TEMPORARY_CONTROL ((dmrgo_lip_extension_t)11)
+/* Go: lip.ReportLongElapsed. a long location report with DMRGO_LIP_TIME_ELAPSED */
+#define DMRGO_LIP_REPORT_LONG_ELAPSED ((dmrgo_lip_report_type_t)1)
+/* Go: lip.ReportLongNoTime. a long location report without time */
+#define DMRGO_LIP_REPORT_LONG_NO_TIME ((dmrgo_lip_report_type_t)0)
+/* Go: lip.ReportLongPosition. a long location report with DMRGO_LIP_TIME_POSITION */
+#define DMRGO_LIP_REPORT_LONG_POSITION ((dmrgo_lip_report_type_t)2)
+/* Go: lip.ReportShort. a short location report */
+#define DMRGO_LIP_REPORT_SHORT ((dmrgo_lip_report_type_t)3)
+/* Go: lip.ShapeArc. a point, the radii, the angles and Confidence */
+#define DMRGO_LIP_SHAPE_ARC ((dmrgo_lip_shape_t)9)
+/* Go: lip.ShapeCircle. a point and Uncertainty */
+#define DMRGO_LIP_SHAPE_CIRCLE ((dmrgo_lip_shape_t)2)
+/* Go: lip.ShapeCircleAltitude. a circle and the altitude */
+#define DMRGO_LIP_SHAPE_CIRCLE_ALTITUDE ((dmrgo_lip_shape_t)5)
+/* Go: lip.ShapeCircleAltitudeUncertainty. a circle, the altitude and AltitudeUncertainty */
+#define DMRGO_LIP_SHAPE_CIRCLE_ALTITUDE_UNCERTAINTY ((dmrgo_lip_shape_t)7)
+/* Go: lip.ShapeEllipse. a point, the axes, Angle and Confidence */
+#define DMRGO_LIP_SHAPE_ELLIPSE ((dmrgo_lip_shape_t)3)
+/* Go: lip.ShapeEllipseAltitude. an ellipse and the altitude */
+#define DMRGO_LIP_SHAPE_ELLIPSE_ALTITUDE ((dmrgo_lip_shape_t)6)
+/* Go: lip.ShapeEllipseAltitudeUncertainty. an ellipse, the altitude and AltitudeUncertainty */
+#define DMRGO_LIP_SHAPE_ELLIPSE_ALTITUDE_UNCERTAINTY ((dmrgo_lip_shape_t)8)
+/* Go: lip.ShapeNone. no position */
+#define DMRGO_LIP_SHAPE_NONE ((dmrgo_lip_shape_t)0)
+/* Go: lip.ShapePoint. longitude and latitude */
+#define DMRGO_LIP_SHAPE_POINT ((dmrgo_lip_shape_t)1)
+/* Go: lip.ShapePointAltitude. a point and the altitude */
+#define DMRGO_LIP_SHAPE_POINT_ALTITUDE ((dmrgo_lip_shape_t)4)
+/* Go: lip.ShapePointPositionError. a point and PositionError */
+#define DMRGO_LIP_SHAPE_POINT_POSITION_ERROR ((dmrgo_lip_shape_t)10)
+/* Go: lip.TimeElapsed. dmrgo_lip_time_t.elapsed */
+#define DMRGO_LIP_TIME_ELAPSED ((dmrgo_lip_time_type_t)1)
+/* Go: lip.TimeNone. no time */
+#define DMRGO_LIP_TIME_NONE ((dmrgo_lip_time_type_t)0)
+/* Go: lip.TimePosition. dmrgo_lip_time_t.day to dmrgo_lip_time_t.second */
+#define DMRGO_LIP_TIME_POSITION ((dmrgo_lip_time_type_t)2)
+/* Go: lip.VelocityAll. Horizontal, Vertical, Direction and their uncertainties */
+#define DMRGO_LIP_VELOCITY_ALL ((dmrgo_lip_velocity_type_t)7)
+/* Go: lip.VelocityHorizontal. Horizontal */
+#define DMRGO_LIP_VELOCITY_HORIZONTAL ((dmrgo_lip_velocity_type_t)1)
+/* Go: lip.VelocityHorizontalDirection. Horizontal and Direction */
+#define DMRGO_LIP_VELOCITY_HORIZONTAL_DIRECTION ((dmrgo_lip_velocity_type_t)5)
+/* Go: lip.VelocityHorizontalDirectionUncertain. Horizontal, Direction and their uncertainties */
+#define DMRGO_LIP_VELOCITY_HORIZONTAL_DIRECTION_UNCERTAIN ((dmrgo_lip_velocity_type_t)6)
+/* Go: lip.VelocityHorizontalUncertainty. Horizontal and its uncertainty */
+#define DMRGO_LIP_VELOCITY_HORIZONTAL_UNCERTAINTY ((dmrgo_lip_velocity_type_t)2)
+/* Go: lip.VelocityHorizontalVertical. Horizontal and Vertical */
+#define DMRGO_LIP_VELOCITY_HORIZONTAL_VERTICAL ((dmrgo_lip_velocity_type_t)3)
+/* Go: lip.VelocityHorizontalVerticalUncertain. Horizontal, Vertical and their uncertainties */
+#define DMRGO_LIP_VELOCITY_HORIZONTAL_VERTICAL_UNCERTAIN ((dmrgo_lip_velocity_type_t)4)
+/* Go: lip.VelocityNone. no velocity */
+#define DMRGO_LIP_VELOCITY_NONE ((dmrgo_lip_velocity_type_t)0)
 /* Go: location.FormatHDAP. FormatHDAP is a Hytera HDAP location protocol message to UDP port 3003: the answer to a standard request, a condition report or an emergency report. */
 #define DMRGO_LOCATION_FORMAT_HDAP ((dmrgo_location_format_t)3)
 /* Go: location.FormatLRRP. FormatLRRP is a MOTOTRBO LRRP report to UDP port 4001, as MOTOTRBO and Hytera radios send. */
@@ -9951,6 +10237,46 @@ int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_op
 int dmrgo_layer3_voice_service_options_string(const dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.VoiceServiceOptionsOf. VoiceServiceOptionsOf decodes a VoiceServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
 int dmrgo_layer3_voice_service_options_of(uint8_t field, dmrgo_layer3_voice_service_options_t *out);
+/* Go: lip.AppendElement. AppendElement adds a type 5 element with the identifier id and the first n bits of data, packed the first bit most significant, at bit offset bits of the PDU dst, such as the output of an Encode. It returns DMRGO_ERR_LIP_ELEMENT for an n out of 1 to 1072 or longer than data, or an id over 30, and DMRGO_ERR_LIP_SHORT for a dst shorter than bits. */
+int dmrgo_lip_append_element(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t bits, dmrgo_lip_element_id_t id, const uint8_t *data, size_t data_len, int64_t n, int64_t *n2);
+/* Go: lip.DecodeEnableDisable. DecodeEnableDisable decodes the LOCATION REPORTING ENABLE/DISABLE REQUEST or RESPONSE PDU pdu. It returns DMRGO_ERR_LIP_PDU_TYPE for another PDU and DMRGO_ERR_LIP_SHORT for a PDU that ends early. */
+int dmrgo_lip_decode_enable_disable(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_enable_disable_t *out);
+/* Go: lip.DecodeHeader. DecodeHeader decodes the start of the LIP PDU pdu. It returns DMRGO_ERR_LIP_SHORT for a PDU without the bits of the header, and DMRGO_ERR_LIP_PDU_TYPE for the reserved PDU types 2 and 3. */
+int dmrgo_lip_decode_header(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_header_t *out);
+/* Go: lip.DecodeImmediateRequest. DecodeImmediateRequest decodes the IMMEDIATE LOCATION REPORT REQUEST PDU pdu. It returns DMRGO_ERR_LIP_PDU_TYPE for another PDU or a response, and DMRGO_ERR_LIP_SHORT for a PDU that ends early. */
+int dmrgo_lip_decode_immediate_request(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_immediate_request_t *out);
+/* Go: lip.DecodeLongReport. DecodeLongReport decodes the LONG LOCATION REPORT PDU pdu. It returns DMRGO_ERR_LIP_PDU_TYPE for another PDU, DMRGO_ERR_LIP_SHORT for a PDU that ends early, and DMRGO_ERR_LIP_TIME_TYPE and DMRGO_ERR_LIP_SHAPE for a reserved time type or location shape. */
+int dmrgo_lip_decode_long_report(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_long_report_t *out);
+/* Go: lip.DecodeReportAck. DecodeReportAck decodes the LOCATION REPORT ACKNOWLEDGEMENT PDU pdu. It returns DMRGO_ERR_LIP_PDU_TYPE for another PDU and DMRGO_ERR_LIP_SHORT for a PDU that ends early. */
+int dmrgo_lip_decode_report_ack(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_report_ack_t *out);
+/* Go: lip.Element.AppendData. AppendData appends the data of e in the PDU pdu to dst, packed the first bit in the most significant bit of the first octet and 0 bits after the last, and returns dst. */
+int dmrgo_lip_element_append_data(const dmrgo_lip_element_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *pdu, size_t pdu_len);
+/* Go: lip.Element.Uint. Uint returns the data of e in the PDU pdu as an unsigned integer, the first bit most significant, for an element of up to 64 bits, such as the location message reference or the result code. */
+int dmrgo_lip_element_uint(const dmrgo_lip_element_t *self, const uint8_t *pdu, size_t pdu_len, uint64_t *out);
+/* Go: lip.ElementID.String. String returns the name of the ElementID. */
+int dmrgo_lip_element_id_string(dmrgo_lip_element_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lip.EnableDisable.Encode. Encode appends the PDU of e to dst, with 0 bits after its last bit, and returns dst and the number of bits of the PDU. It returns DMRGO_ERR_ARG for a NULL self, and allocates only to grow dst. */
+int dmrgo_lip_enable_disable_encode(const dmrgo_lip_enable_disable_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+/* Go: lip.Extension.HasResponseBit. HasResponseBit reports whether a PDU with the extension e carries the request/response bit after the extension: the immediate location report request and the request and response PDUs from DMRGO_LIP_EXTENSION_BASIC_PARAMETERS to DMRGO_LIP_EXTENSION_BACKLOG. */
+int dmrgo_lip_extension_has_response_bit(dmrgo_lip_extension_t self, bool *out);
+/* Go: lip.Extension.String. String returns the name of the Extension. */
+int dmrgo_lip_extension_string(dmrgo_lip_extension_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lip.ImmediateRequest.Encode. Encode appends the PDU of q to dst, with 0 bits after its last bit, and returns dst and the number of bits of the PDU. It returns a DMRGO_ERR_FIELD_RANGE for a ReportType over 3 and DMRGO_ERR_ARG for a NULL self, and allocates only to grow dst. */
+int dmrgo_lip_immediate_request_encode(const dmrgo_lip_immediate_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+/* Go: lip.LongReport.Encode. Encode appends the PDU of l to dst, with 0 bits after its last bit, and returns dst and the number of bits of the PDU. It returns a DMRGO_ERR_FIELD_RANGE for a field that does not fit, DMRGO_ERR_LIP_TIME_TYPE and DMRGO_ERR_LIP_SHAPE for a reserved time type or location shape, and DMRGO_ERR_ARG for a NULL self. */
+int dmrgo_lip_long_report_encode(const dmrgo_lip_long_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+/* Go: lip.NextElement. NextElement reads the type 5 element that starts at bit at of the PDU pdu, such as the Elements offset of a decoded PDU or the Next of the element before. It returns DMRGO_ERR_LIP_SHORT for an element that ends after the PDU or an at out of range, and DMRGO_ERR_LIP_ELEMENT for the extended identifier or the reserved length extension. */
+int dmrgo_lip_next_element(const uint8_t *pdu, size_t pdu_len, int64_t at, dmrgo_lip_element_t *e, bool *ok);
+/* Go: lip.ReportAck.Encode. Encode appends the PDU of a to dst, with 0 bits after its last bit, and returns dst and the number of bits of the PDU. It returns DMRGO_ERR_ARG for a NULL self, and allocates only to grow dst. */
+int dmrgo_lip_report_ack_encode(const dmrgo_lip_report_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+/* Go: lip.ReportType.String. String returns the name of the ReportType. */
+int dmrgo_lip_report_type_string(dmrgo_lip_report_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lip.Shape.String. String returns the name of the Shape. */
+int dmrgo_lip_shape_string(dmrgo_lip_shape_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lip.TimeType.String. String returns the name of the TimeType. */
+int dmrgo_lip_time_type_string(dmrgo_lip_time_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lip.VelocityType.String. String returns the name of the VelocityType. */
+int dmrgo_lip_velocity_type_string(dmrgo_lip_velocity_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_location_decoder_new makes a zero dmrgo_location_decoder_t. */
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */

@@ -136,6 +136,8 @@
 //   - shortdata: the text of the short data service, in the coding that its
 //     DD format names.
 //   - location: positions in every format that radios report.
+//   - lip: the ETSI Location Information Protocol that a UDT carries in
+//     the LIP format.
 //   - nmea: the NMEA 0183 RMC sentence that radios send as a position
 //     report in a data packet.
 //   - mototrbo/ars, mototrbo/lrrp, mototrbo/tms: the MOTOTRBO registration,
@@ -284,6 +286,8 @@
 //     that is not a location report, and with the Fix for a report
 //     without a position. Package location also returns the errors of the
 //     ip, lrrp, nmea and hdap packages.
+//   - lip.ErrShort, lip.ErrPDUType, lip.ErrShape, lip.ErrTimeType,
+//     lip.ErrElement: returned by the LIP decoders and encoders.
 //   - nmea.ErrSentence, nmea.ErrChecksum, nmea.ErrField: returned by
 //     nmea.ParseRMC.
 //   - ars.ErrShort, ars.ErrLength, tms.ErrShort, tms.ErrLength,

@@ -126,6 +126,16 @@ const char *dmrgo__gen_strerror(int status) {
 		return "pdu: talker alias too long";
 	case -157:
 		return "pdu: the opcode does not select the payload";
+	case -229:
+		return "lip: type 5 element not defined";
+	case -230:
+		return "lip: wrong PDU type";
+	case -231:
+		return "lip: location shape not defined";
+	case -232:
+		return "lip: PDU too short";
+	case -233:
+		return "lip: time type not defined";
 	case -158:
 		return "location: packet carries no position";
 	case -159:

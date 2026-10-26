@@ -27,6 +27,7 @@ import (
 	g_layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	g_layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	g_layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	g_lip "github.com/USA-RedDragon/dmrgo/v2/lip"
 	g_location "github.com/USA-RedDragon/dmrgo/v2/location"
 	g_mototrbo_ars "github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	g_mototrbo_lrrp "github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
@@ -2706,6 +2707,155 @@ func in_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) (d
 	d.IsBroadcast = bool(s.is_broadcast)
 	d.Reserved = bool(s.reserved)
 	d.PriorityLevel = uint8(s.priority_level)
+	return
+}
+
+func out_lip_EnableDisable(d *C.dmrgo_lip_enable_disable_t, s *g_lip.EnableDisable, oc *outc) {
+	_ = oc
+	d.response = C.bool(s.Response)
+	d.ack_requested = C.bool(s.AckRequested)
+	d.flags = C.uint8_t(s.Flags)
+	d.elements = C.int64_t(s.Elements)
+}
+
+func out_lip_Header(d *C.dmrgo_lip_header_t, s *g_lip.Header, oc *outc) {
+	_ = oc
+	d.short_ = C.bool(s.Short)
+	d.extension = C.dmrgo_lip_extension_t(s.Extension)
+	d.response = C.bool(s.Response)
+}
+
+func out_lip_ImmediateRequest(d *C.dmrgo_lip_immediate_request_t, s *g_lip.ImmediateRequest, oc *outc) {
+	_ = oc
+	d.report_type = C.dmrgo_lip_report_type_t(s.ReportType)
+	d.elements = C.int64_t(s.Elements)
+}
+
+func out_lip_Location(d *C.dmrgo_lip_location_t, s *g_lip.Location, oc *outc) {
+	_ = oc
+	d.shape = C.dmrgo_lip_shape_t(s.Shape)
+	d.longitude = C.double(s.Longitude)
+	d.latitude = C.double(s.Latitude)
+	d.uncertainty = C.uint8_t(s.Uncertainty)
+	d.half_major = C.uint8_t(s.HalfMajor)
+	d.half_minor = C.uint8_t(s.HalfMinor)
+	d.angle = C.uint8_t(s.Angle)
+	d.confidence = C.uint8_t(s.Confidence)
+	d.altitude_user_defined = C.bool(s.AltitudeUserDefined)
+	d.altitude = C.uint16_t(s.Altitude)
+	d.altitude_uncertainty = C.uint8_t(s.AltitudeUncertainty)
+	d.inner_radius = C.uint16_t(s.InnerRadius)
+	d.outer_radius = C.uint16_t(s.OuterRadius)
+	d.start_angle = C.uint8_t(s.StartAngle)
+	d.stop_angle = C.uint8_t(s.StopAngle)
+	d.position_error = C.dmrgo_layer3_position_accuracy_t(s.PositionError)
+}
+
+func out_lip_Velocity(d *C.dmrgo_lip_velocity_t, s *g_lip.Velocity, oc *outc) {
+	_ = oc
+	d._type = C.dmrgo_lip_velocity_type_t(s.Type)
+	d.horizontal = C.uint8_t(s.Horizontal)
+	d.horizontal_uncertainty = C.uint8_t(s.HorizontalUncertainty)
+	d.down = C.bool(s.Down)
+	d.vertical = C.uint8_t(s.Vertical)
+	d.vertical_uncertainty = C.uint8_t(s.VerticalUncertainty)
+	d.direction = C.uint8_t(s.Direction)
+	d.direction_uncertainty = C.uint8_t(s.DirectionUncertainty)
+}
+
+func out_lip_LongReport(d *C.dmrgo_lip_long_report_t, s *g_lip.LongReport, oc *outc) {
+	_ = oc
+	*(*g_lip.Time)(unsafe.Pointer(&d.time)) = s.Time
+	out_lip_Location(&d.location, &s.Location, oc)
+	out_lip_Velocity(&d.velocity, &s.Velocity, oc)
+	d.ack_requested = C.bool(s.AckRequested)
+	d.user_defined = C.bool(s.UserDefined)
+	d.additional_data = C.uint8_t(s.AdditionalData)
+	d.elements = C.int64_t(s.Elements)
+}
+
+func out_lip_ReportAck(d *C.dmrgo_lip_report_ack_t, s *g_lip.ReportAck, oc *outc) {
+	_ = oc
+	d.reserved = C.uint8_t(s.Reserved)
+	d.elements = C.int64_t(s.Elements)
+}
+
+func in_lip_Element(s *C.dmrgo_lip_element_t) (d g_lip.Element) {
+	d.ID = g_lip.ElementID(s.id)
+	d.Offset = int(s.offset)
+	d.Bits = int(s.bits)
+	d.Next = int(s.next)
+	return
+}
+
+func in_lip_EnableDisable(s *C.dmrgo_lip_enable_disable_t) (d g_lip.EnableDisable) {
+	d.Response = bool(s.response)
+	d.AckRequested = bool(s.ack_requested)
+	d.Flags = uint8(s.flags)
+	d.Elements = int(s.elements)
+	return
+}
+
+func in_lip_ImmediateRequest(s *C.dmrgo_lip_immediate_request_t) (d g_lip.ImmediateRequest) {
+	d.ReportType = g_lip.ReportType(s.report_type)
+	d.Elements = int(s.elements)
+	return
+}
+
+func in_lip_Location(s *C.dmrgo_lip_location_t) (d g_lip.Location) {
+	d.Shape = g_lip.Shape(s.shape)
+	d.Longitude = float64(s.longitude)
+	d.Latitude = float64(s.latitude)
+	d.Uncertainty = uint8(s.uncertainty)
+	d.HalfMajor = uint8(s.half_major)
+	d.HalfMinor = uint8(s.half_minor)
+	d.Angle = uint8(s.angle)
+	d.Confidence = uint8(s.confidence)
+	d.AltitudeUserDefined = bool(s.altitude_user_defined)
+	d.Altitude = uint16(s.altitude)
+	d.AltitudeUncertainty = uint8(s.altitude_uncertainty)
+	d.InnerRadius = uint16(s.inner_radius)
+	d.OuterRadius = uint16(s.outer_radius)
+	d.StartAngle = uint8(s.start_angle)
+	d.StopAngle = uint8(s.stop_angle)
+	d.PositionError = g_layer3.PositionAccuracy(s.position_error)
+	return
+}
+
+func in_lip_Velocity(s *C.dmrgo_lip_velocity_t) (d g_lip.Velocity) {
+	d.Type = g_lip.VelocityType(s._type)
+	d.Horizontal = uint8(s.horizontal)
+	d.HorizontalUncertainty = uint8(s.horizontal_uncertainty)
+	d.Down = bool(s.down)
+	d.Vertical = uint8(s.vertical)
+	d.VerticalUncertainty = uint8(s.vertical_uncertainty)
+	d.Direction = uint8(s.direction)
+	d.DirectionUncertainty = uint8(s.direction_uncertainty)
+	return
+}
+
+func in_lip_LongReport(s *C.dmrgo_lip_long_report_t) (d g_lip.LongReport) {
+	d.Time = *(*g_lip.Time)(unsafe.Pointer(&s.time))
+	d.Location = in_lip_Location(&s.location)
+	d.Velocity = in_lip_Velocity(&s.velocity)
+	d.AckRequested = bool(s.ack_requested)
+	d.UserDefined = bool(s.user_defined)
+	d.AdditionalData = uint8(s.additional_data)
+	d.Elements = int(s.elements)
+	return
+}
+
+func out_lip_Element(d *C.dmrgo_lip_element_t, s *g_lip.Element, oc *outc) {
+	_ = oc
+	d.id = C.dmrgo_lip_element_id_t(s.ID)
+	d.offset = C.int64_t(s.Offset)
+	d.bits = C.int64_t(s.Bits)
+	d.next = C.int64_t(s.Next)
+}
+
+func in_lip_ReportAck(s *C.dmrgo_lip_report_ack_t) (d g_lip.ReportAck) {
+	d.Reserved = uint8(s.reserved)
+	d.Elements = int(s.elements)
 	return
 }
 
@@ -6145,6 +6295,69 @@ func fromC_layer3_StatusServiceOptions(s *C.dmrgo_layer3_status_service_options_
 
 func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) g_layer3.VoiceServiceOptions {
 	return in_layer3_VoiceServiceOptions(s)
+}
+
+func fromC_lip_Element(s *C.dmrgo_lip_element_t) g_lip.Element {
+	return in_lip_Element(s)
+}
+
+func fromC_lip_EnableDisable(s *C.dmrgo_lip_enable_disable_t) g_lip.EnableDisable {
+	return in_lip_EnableDisable(s)
+}
+
+func in_lip_Header(s *C.dmrgo_lip_header_t) (d g_lip.Header) {
+	d.Short = bool(s.short_)
+	d.Extension = g_lip.Extension(s.extension)
+	d.Response = bool(s.response)
+	return
+}
+
+func fromC_lip_Header(s *C.dmrgo_lip_header_t) g_lip.Header {
+	return in_lip_Header(s)
+}
+
+func fromC_lip_ImmediateRequest(s *C.dmrgo_lip_immediate_request_t) g_lip.ImmediateRequest {
+	return in_lip_ImmediateRequest(s)
+}
+
+func fromC_lip_Location(s *C.dmrgo_lip_location_t) g_lip.Location {
+	return in_lip_Location(s)
+}
+
+func fromC_lip_LongReport(s *C.dmrgo_lip_long_report_t) g_lip.LongReport {
+	return in_lip_LongReport(s)
+}
+
+func fromC_lip_ReportAck(s *C.dmrgo_lip_report_ack_t) g_lip.ReportAck {
+	return in_lip_ReportAck(s)
+}
+
+func in_lip_Time(s *C.dmrgo_lip_time_t) (d g_lip.Time) {
+	d.Type = g_lip.TimeType(s._type)
+	d.Elapsed = uint8(s.elapsed)
+	d.Day = uint8(s.day)
+	d.Hour = uint8(s.hour)
+	d.Minute = uint8(s.minute)
+	d.Second = uint8(s.second)
+	return
+}
+
+func out_lip_Time(d *C.dmrgo_lip_time_t, s *g_lip.Time, oc *outc) {
+	_ = oc
+	d._type = C.dmrgo_lip_time_type_t(s.Type)
+	d.elapsed = C.uint8_t(s.Elapsed)
+	d.day = C.uint8_t(s.Day)
+	d.hour = C.uint8_t(s.Hour)
+	d.minute = C.uint8_t(s.Minute)
+	d.second = C.uint8_t(s.Second)
+}
+
+func fromC_lip_Time(s *C.dmrgo_lip_time_t) g_lip.Time {
+	return in_lip_Time(s)
+}
+
+func fromC_lip_Velocity(s *C.dmrgo_lip_velocity_t) g_lip.Velocity {
+	return in_lip_Velocity(s)
 }
 
 func in_location_Fix(s *C.dmrgo_location_fix_t) (d g_location.Fix) {
@@ -32781,6 +32994,537 @@ func dmrgo_layer3_voice_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_lay
 	return C.DMRGO_OK
 }
 
+//export dmrgo_lip_append_element
+func dmrgo_lip_append_element(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_bits C.int64_t, c_id C.dmrgo_lip_element_id_t, c_data *C.uint8_t, c_data_len C.size_t, c_n C.int64_t, c_n2 *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
+	r0, r1, r2 := g_lip.AppendElement(a_dst, int(c_bits), g_lip.ElementID(c_id), a_data, int(c_n))
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_n2 != nil {
+		*c_n2 = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_decode_enable_disable
+func dmrgo_lip_decode_enable_disable(c_pdu *C.uint8_t, c_pdu_len C.size_t, c_out *C.dmrgo_lip_enable_disable_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0, r1 := g_lip.DecodeEnableDisable(a_pdu)
+	_ = r0
+	if c_out != nil {
+		out_lip_EnableDisable(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_decode_header
+func dmrgo_lip_decode_header(c_pdu *C.uint8_t, c_pdu_len C.size_t, c_out *C.dmrgo_lip_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0, r1 := g_lip.DecodeHeader(a_pdu)
+	_ = r0
+	if c_out != nil {
+		out_lip_Header(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_decode_immediate_request
+func dmrgo_lip_decode_immediate_request(c_pdu *C.uint8_t, c_pdu_len C.size_t, c_out *C.dmrgo_lip_immediate_request_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0, r1 := g_lip.DecodeImmediateRequest(a_pdu)
+	_ = r0
+	if c_out != nil {
+		out_lip_ImmediateRequest(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_decode_long_report
+func dmrgo_lip_decode_long_report(c_pdu *C.uint8_t, c_pdu_len C.size_t, c_out *C.dmrgo_lip_long_report_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0, r1 := g_lip.DecodeLongReport(a_pdu)
+	_ = r0
+	if c_out != nil {
+		out_lip_LongReport(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_decode_report_ack
+func dmrgo_lip_decode_report_ack(c_pdu *C.uint8_t, c_pdu_len C.size_t, c_out *C.dmrgo_lip_report_ack_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0, r1 := g_lip.DecodeReportAck(a_pdu)
+	_ = r0
+	if c_out != nil {
+		out_lip_ReportAck(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_element_append_data
+func dmrgo_lip_element_append_data(c_self *C.dmrgo_lip_element_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_pdu *C.uint8_t, c_pdu_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_lip.Element
+	x = in_lip_Element(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0 := x.AppendData(a_dst, a_pdu)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_element_uint
+func dmrgo_lip_element_uint(c_self *C.dmrgo_lip_element_t, c_pdu *C.uint8_t, c_pdu_len C.size_t, c_out *C.uint64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_lip.Element
+	x = in_lip_Element(&(*c_self))
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0 := x.Uint(a_pdu)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_element_id_string
+func dmrgo_lip_element_id_string(c_self C.dmrgo_lip_element_id_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_lip.ElementID(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_enable_disable_encode
+func dmrgo_lip_enable_disable_encode(c_self *C.dmrgo_lip_enable_disable_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_lip.EnableDisable
+	x = in_lip_EnableDisable(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2 := x.Encode(a_dst)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_n != nil {
+		*c_n = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_extension_has_response_bit
+func dmrgo_lip_extension_has_response_bit(c_self C.dmrgo_lip_extension_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_lip.Extension(c_self).HasResponseBit()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_extension_string
+func dmrgo_lip_extension_string(c_self C.dmrgo_lip_extension_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_lip.Extension(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_immediate_request_encode
+func dmrgo_lip_immediate_request_encode(c_self *C.dmrgo_lip_immediate_request_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_lip.ImmediateRequest
+	x = in_lip_ImmediateRequest(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2 := x.Encode(a_dst)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_n != nil {
+		*c_n = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_long_report_encode
+func dmrgo_lip_long_report_encode(c_self *C.dmrgo_lip_long_report_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_lip.LongReport
+	x = in_lip_LongReport(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2 := x.Encode(a_dst)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_n != nil {
+		*c_n = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_next_element
+func dmrgo_lip_next_element(c_pdu *C.uint8_t, c_pdu_len C.size_t, c_at C.int64_t, c_e *C.dmrgo_lip_element_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_pdu), c_pdu_len, unsafe.Sizeof(*c_pdu)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
+	r0, r1, r2 := g_lip.NextElement(a_pdu, int(c_at))
+	_ = r0
+	_ = r1
+	if c_e != nil {
+		out_lip_Element(&(*c_e), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_report_ack_encode
+func dmrgo_lip_report_ack_encode(c_self *C.dmrgo_lip_report_ack_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_n *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_lip.ReportAck
+	x = in_lip_ReportAck(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2 := x.Encode(a_dst)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_n != nil {
+		*c_n = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_report_type_string
+func dmrgo_lip_report_type_string(c_self C.dmrgo_lip_report_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_lip.ReportType(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_shape_string
+func dmrgo_lip_shape_string(c_self C.dmrgo_lip_shape_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_lip.Shape(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_time_type_string
+func dmrgo_lip_time_type_string(c_self C.dmrgo_lip_time_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_lip.TimeType(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lip_velocity_type_string
+func dmrgo_lip_velocity_type_string(c_self C.dmrgo_lip_velocity_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_lip.VelocityType(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_location_decoder_new
 func dmrgo_location_decoder_new(c_out **C.dmrgo_location_decoder_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -51366,6 +52110,16 @@ func errCode1(e error) C.int {
 		return -156
 	case g_layer2_pdu.ErrWrongOpcode:
 		return -157
+	case g_lip.ErrElement:
+		return -229
+	case g_lip.ErrPDUType:
+		return -230
+	case g_lip.ErrShape:
+		return -231
+	case g_lip.ErrShort:
+		return -232
+	case g_lip.ErrTimeType:
+		return -233
 	case g_location.ErrNoFix:
 		return -158
 	case g_location.ErrNoPosition:
@@ -51682,6 +52436,16 @@ func codeErr(code C.int) error {
 		return g_layer2_pdu.ErrTalkerAliasLength
 	case -157:
 		return g_layer2_pdu.ErrWrongOpcode
+	case -229:
+		return g_lip.ErrElement
+	case -230:
+		return g_lip.ErrPDUType
+	case -231:
+		return g_lip.ErrShape
+	case -232:
+		return g_lip.ErrShort
+	case -233:
+		return g_lip.ErrTimeType
 	case -158:
 		return g_location.ErrNoFix
 	case -159:
@@ -51950,6 +52714,16 @@ func knownCode(code C.int) bool {
 	case -156:
 		return true
 	case -157:
+		return true
+	case -229:
+		return true
+	case -230:
+		return true
+	case -231:
+		return true
+	case -232:
+		return true
+	case -233:
 		return true
 	case -158:
 		return true

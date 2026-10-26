@@ -33,6 +33,7 @@ import (
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	lip "github.com/USA-RedDragon/dmrgo/v2/lip"
 	location "github.com/USA-RedDragon/dmrgo/v2/location"
 	mototrbo_ars "github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	mototrbo_lrrp "github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
@@ -1070,6 +1071,26 @@ var api = [...]any{
 	layer3.TalkerAliasDataFormat.String,
 	layer3.VoiceServiceOptions.Field,
 	layer3.VoiceServiceOptionsOf,
+	(*lip.EnableDisable).Encode,
+	(*lip.ImmediateRequest).Encode,
+	(*lip.LongReport).Encode,
+	(*lip.ReportAck).Encode,
+	lip.AppendElement,
+	lip.DecodeEnableDisable,
+	lip.DecodeHeader,
+	lip.DecodeImmediateRequest,
+	lip.DecodeLongReport,
+	lip.DecodeReportAck,
+	lip.Element.AppendData,
+	lip.Element.Uint,
+	lip.ElementID.String,
+	lip.Extension.HasResponseBit,
+	lip.Extension.String,
+	lip.NextElement,
+	lip.ReportType.String,
+	lip.Shape.String,
+	lip.TimeType.String,
+	lip.VelocityType.String,
 	(*location.Decoder).Decode,
 	location.Format.String,
 	(*mototrbo_ars.Header).AppendBinary,

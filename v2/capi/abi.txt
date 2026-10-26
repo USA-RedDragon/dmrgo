@@ -128,6 +128,11 @@ code DMRGO_ERR_VOICE_QUEUE_FULL -225
 code DMRGO_ERR_VOICE_TIMED_OUT -226
 code DMRGO_ERR_CODEC2_NOT_WASM -227
 code DMRGO_ERR_DVSI_SPEECH_FORMAT -228
+code DMRGO_ERR_LIP_ELEMENT -229
+code DMRGO_ERR_LIP_PDU_TYPE -230
+code DMRGO_ERR_LIP_SHAPE -231
+code DMRGO_ERR_LIP_SHORT -232
+code DMRGO_ERR_LIP_TIME_TYPE -233
 prefix github.com/USA-RedDragon/dmrgo/v2 dmrgo_
 prefix github.com/USA-RedDragon/dmrgo/v2/bs dmrgo_bs_
 prefix github.com/USA-RedDragon/dmrgo/v2/constants dmrgo_constants_
@@ -142,6 +147,7 @@ prefix github.com/USA-RedDragon/dmrgo/v2/layer2/framer dmrgo_framer_
 prefix github.com/USA-RedDragon/dmrgo/v2/layer2/packet dmrgo_packet_
 prefix github.com/USA-RedDragon/dmrgo/v2/layer2/pdu dmrgo_pdu_
 prefix github.com/USA-RedDragon/dmrgo/v2/layer3 dmrgo_layer3_
+prefix github.com/USA-RedDragon/dmrgo/v2/lip dmrgo_lip_
 prefix github.com/USA-RedDragon/dmrgo/v2/location dmrgo_location_
 prefix github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars dmrgo_ars_
 prefix github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp dmrgo_lrrp_
@@ -844,6 +850,11 @@ sym #define DMRGO_ERR_LAYER2_SYNC_PATTERN (-129)
 sym #define DMRGO_ERR_LAYER2_SYNC_SOURCE (-130)
 sym #define DMRGO_ERR_LAYER2_VOICE_POSITION (-131)
 sym #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-132)
+sym #define DMRGO_ERR_LIP_ELEMENT (-229)
+sym #define DMRGO_ERR_LIP_PDU_TYPE (-230)
+sym #define DMRGO_ERR_LIP_SHAPE (-231)
+sym #define DMRGO_ERR_LIP_SHORT (-232)
+sym #define DMRGO_ERR_LIP_TIME_TYPE (-233)
 sym #define DMRGO_ERR_LOCATION_NO_FIX (-158)
 sym #define DMRGO_ERR_LOCATION_NO_POSITION (-159)
 sym #define DMRGO_ERR_LRRP_LENGTH (-162)
@@ -1099,6 +1110,66 @@ sym #define DMRGO_LAYER3_TALKER_ALIAS_ISO_EIGHT_BIT ((dmrgo_layer3_talker_alias_
 sym #define DMRGO_LAYER3_TALKER_ALIAS_SEVEN_BIT ((dmrgo_layer3_talker_alias_data_format_t)0)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+sym #define DMRGO_LIP_ELEMENT_ALTITUDE_ACCURACY ((dmrgo_lip_element_id_t)5)
+sym #define DMRGO_LIP_ELEMENT_BACKLOG_AVAILABLE ((dmrgo_lip_element_id_t)23)
+sym #define DMRGO_LIP_ELEMENT_BACKLOG_CONTINUATION ((dmrgo_lip_element_id_t)24)
+sym #define DMRGO_LIP_ELEMENT_DEFAULT_LIFETIME ((dmrgo_lip_element_id_t)9)
+sym #define DMRGO_LIP_ELEMENT_DESTINATION ((dmrgo_lip_element_id_t)4)
+sym #define DMRGO_LIP_ELEMENT_DIRECTION_ACCURACY ((dmrgo_lip_element_id_t)0)
+sym #define DMRGO_LIP_ELEMENT_EXTENDED_USER_DATA ((dmrgo_lip_element_id_t)1)
+sym #define DMRGO_LIP_ELEMENT_IDENTIFICATION ((dmrgo_lip_element_id_t)17)
+sym #define DMRGO_LIP_ELEMENT_MAX_INFORMATION_AGE ((dmrgo_lip_element_id_t)7)
+sym #define DMRGO_LIP_ELEMENT_MAX_RESPONSE_TIME ((dmrgo_lip_element_id_t)8)
+sym #define DMRGO_LIP_ELEMENT_MESSAGE_REFERENCE ((dmrgo_lip_element_id_t)6)
+sym #define DMRGO_LIP_ELEMENT_POSITION_ACCURACY ((dmrgo_lip_element_id_t)2)
+sym #define DMRGO_LIP_ELEMENT_REQUEST_PRIORITY ((dmrgo_lip_element_id_t)11)
+sym #define DMRGO_LIP_ELEMENT_RESULT_CODE ((dmrgo_lip_element_id_t)12)
+sym #define DMRGO_LIP_ELEMENT_SDS_TYPE1_VALUE ((dmrgo_lip_element_id_t)13)
+sym #define DMRGO_LIP_ELEMENT_START_TIME ((dmrgo_lip_element_id_t)14)
+sym #define DMRGO_LIP_ELEMENT_STATUS_VALUE ((dmrgo_lip_element_id_t)15)
+sym #define DMRGO_LIP_ELEMENT_STOP_TIME ((dmrgo_lip_element_id_t)16)
+sym #define DMRGO_LIP_ELEMENT_TEMPORARY_CONTROL ((dmrgo_lip_element_id_t)22)
+sym #define DMRGO_LIP_ELEMENT_TRIGGER_DEFINITION ((dmrgo_lip_element_id_t)19)
+sym #define DMRGO_LIP_ELEMENT_TRIGGER_REMOVAL ((dmrgo_lip_element_id_t)20)
+sym #define DMRGO_LIP_ELEMENT_VELOCITY_ACCURACY ((dmrgo_lip_element_id_t)3)
+sym #define DMRGO_LIP_ELEMENT_VERTICAL_ACCURACY ((dmrgo_lip_element_id_t)21)
+sym #define DMRGO_LIP_EXTENSION_ADD_MODIFY_TRIGGER ((dmrgo_lip_extension_t)6)
+sym #define DMRGO_LIP_EXTENSION_BACKLOG ((dmrgo_lip_extension_t)12)
+sym #define DMRGO_LIP_EXTENSION_BASIC_PARAMETERS ((dmrgo_lip_extension_t)5)
+sym #define DMRGO_LIP_EXTENSION_ENABLE_DISABLE ((dmrgo_lip_extension_t)10)
+sym #define DMRGO_LIP_EXTENSION_IMMEDIATE_REPORT ((dmrgo_lip_extension_t)1)
+sym #define DMRGO_LIP_EXTENSION_LONG_REPORT ((dmrgo_lip_extension_t)3)
+sym #define DMRGO_LIP_EXTENSION_REMOVE_TRIGGER ((dmrgo_lip_extension_t)7)
+sym #define DMRGO_LIP_EXTENSION_REPORT_ACK ((dmrgo_lip_extension_t)4)
+sym #define DMRGO_LIP_EXTENSION_REPORT_BASIC_PARAMS ((dmrgo_lip_extension_t)9)
+sym #define DMRGO_LIP_EXTENSION_REPORT_TRIGGER ((dmrgo_lip_extension_t)8)
+sym #define DMRGO_LIP_EXTENSION_TEMPORARY_CONTROL ((dmrgo_lip_extension_t)11)
+sym #define DMRGO_LIP_REPORT_LONG_ELAPSED ((dmrgo_lip_report_type_t)1)
+sym #define DMRGO_LIP_REPORT_LONG_NO_TIME ((dmrgo_lip_report_type_t)0)
+sym #define DMRGO_LIP_REPORT_LONG_POSITION ((dmrgo_lip_report_type_t)2)
+sym #define DMRGO_LIP_REPORT_SHORT ((dmrgo_lip_report_type_t)3)
+sym #define DMRGO_LIP_SHAPE_ARC ((dmrgo_lip_shape_t)9)
+sym #define DMRGO_LIP_SHAPE_CIRCLE ((dmrgo_lip_shape_t)2)
+sym #define DMRGO_LIP_SHAPE_CIRCLE_ALTITUDE ((dmrgo_lip_shape_t)5)
+sym #define DMRGO_LIP_SHAPE_CIRCLE_ALTITUDE_UNCERTAINTY ((dmrgo_lip_shape_t)7)
+sym #define DMRGO_LIP_SHAPE_ELLIPSE ((dmrgo_lip_shape_t)3)
+sym #define DMRGO_LIP_SHAPE_ELLIPSE_ALTITUDE ((dmrgo_lip_shape_t)6)
+sym #define DMRGO_LIP_SHAPE_ELLIPSE_ALTITUDE_UNCERTAINTY ((dmrgo_lip_shape_t)8)
+sym #define DMRGO_LIP_SHAPE_NONE ((dmrgo_lip_shape_t)0)
+sym #define DMRGO_LIP_SHAPE_POINT ((dmrgo_lip_shape_t)1)
+sym #define DMRGO_LIP_SHAPE_POINT_ALTITUDE ((dmrgo_lip_shape_t)4)
+sym #define DMRGO_LIP_SHAPE_POINT_POSITION_ERROR ((dmrgo_lip_shape_t)10)
+sym #define DMRGO_LIP_TIME_ELAPSED ((dmrgo_lip_time_type_t)1)
+sym #define DMRGO_LIP_TIME_NONE ((dmrgo_lip_time_type_t)0)
+sym #define DMRGO_LIP_TIME_POSITION ((dmrgo_lip_time_type_t)2)
+sym #define DMRGO_LIP_VELOCITY_ALL ((dmrgo_lip_velocity_type_t)7)
+sym #define DMRGO_LIP_VELOCITY_HORIZONTAL ((dmrgo_lip_velocity_type_t)1)
+sym #define DMRGO_LIP_VELOCITY_HORIZONTAL_DIRECTION ((dmrgo_lip_velocity_type_t)5)
+sym #define DMRGO_LIP_VELOCITY_HORIZONTAL_DIRECTION_UNCERTAIN ((dmrgo_lip_velocity_type_t)6)
+sym #define DMRGO_LIP_VELOCITY_HORIZONTAL_UNCERTAINTY ((dmrgo_lip_velocity_type_t)2)
+sym #define DMRGO_LIP_VELOCITY_HORIZONTAL_VERTICAL ((dmrgo_lip_velocity_type_t)3)
+sym #define DMRGO_LIP_VELOCITY_HORIZONTAL_VERTICAL_UNCERTAIN ((dmrgo_lip_velocity_type_t)4)
+sym #define DMRGO_LIP_VELOCITY_NONE ((dmrgo_lip_velocity_type_t)0)
 sym #define DMRGO_LOCATION_FORMAT_HDAP ((dmrgo_location_format_t)3)
 sym #define DMRGO_LOCATION_FORMAT_LRRP ((dmrgo_location_format_t)2)
 sym #define DMRGO_LOCATION_FORMAT_NMEA ((dmrgo_location_format_t)1)
@@ -2322,6 +2393,26 @@ sym int dmrgo_layer3_voice_service_options_encode(const dmrgo_layer3_voice_servi
 sym int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_voice_service_options_of(uint8_t field, dmrgo_layer3_voice_service_options_t *out);
 sym int dmrgo_layer3_voice_service_options_string(const dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lip_append_element(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t bits, dmrgo_lip_element_id_t id, const uint8_t *data, size_t data_len, int64_t n, int64_t *n2);
+sym int dmrgo_lip_decode_enable_disable(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_enable_disable_t *out);
+sym int dmrgo_lip_decode_header(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_header_t *out);
+sym int dmrgo_lip_decode_immediate_request(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_immediate_request_t *out);
+sym int dmrgo_lip_decode_long_report(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_long_report_t *out);
+sym int dmrgo_lip_decode_report_ack(const uint8_t *pdu, size_t pdu_len, dmrgo_lip_report_ack_t *out);
+sym int dmrgo_lip_element_append_data(const dmrgo_lip_element_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *pdu, size_t pdu_len);
+sym int dmrgo_lip_element_id_string(dmrgo_lip_element_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lip_element_uint(const dmrgo_lip_element_t *self, const uint8_t *pdu, size_t pdu_len, uint64_t *out);
+sym int dmrgo_lip_enable_disable_encode(const dmrgo_lip_enable_disable_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+sym int dmrgo_lip_extension_has_response_bit(dmrgo_lip_extension_t self, bool *out);
+sym int dmrgo_lip_extension_string(dmrgo_lip_extension_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lip_immediate_request_encode(const dmrgo_lip_immediate_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+sym int dmrgo_lip_long_report_encode(const dmrgo_lip_long_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+sym int dmrgo_lip_next_element(const uint8_t *pdu, size_t pdu_len, int64_t at, dmrgo_lip_element_t *e, bool *ok);
+sym int dmrgo_lip_report_ack_encode(const dmrgo_lip_report_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+sym int dmrgo_lip_report_type_string(dmrgo_lip_report_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lip_shape_string(dmrgo_lip_shape_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lip_time_type_string(dmrgo_lip_time_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lip_velocity_type_string(dmrgo_lip_velocity_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
 sym int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
 sym int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
@@ -3328,6 +3419,12 @@ sym typedef uint8_t dmrgo_layer3_additional_information_field_t;
 sym typedef uint8_t dmrgo_layer3_position_accuracy_t;
 sym typedef uint8_t dmrgo_layer3_source_type_t;
 sym typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+sym typedef uint8_t dmrgo_lip_element_id_t;
+sym typedef uint8_t dmrgo_lip_extension_t;
+sym typedef uint8_t dmrgo_lip_report_type_t;
+sym typedef uint8_t dmrgo_lip_shape_t;
+sym typedef uint8_t dmrgo_lip_time_type_t;
+sym typedef uint8_t dmrgo_lip_velocity_type_t;
 sym typedef uint8_t dmrgo_location_format_t;
 sym typedef uint8_t dmrgo_lrrp_document_id_t;
 sym typedef uint8_t dmrgo_mmdvm_command_t;
@@ -3469,6 +3566,15 @@ type struct dmrgo_layer3_service_options_t { bool is_emergency; bool is_privacy;
 type struct dmrgo_layer3_short_data_service_options_t { bool is_privacy; bool is_supp_data; };
 type struct dmrgo_layer3_status_service_options_t { bool group; bool is_supp_data; uint8_t status_high; };
 type struct dmrgo_layer3_voice_service_options_t { bool is_emergency; bool is_privacy; bool is_supp_data; bool is_broadcast; bool reserved; uint8_t priority_level; };
+type struct dmrgo_lip_element_t { dmrgo_lip_element_id_t id; int64_t offset; int64_t bits; int64_t next; };
+type struct dmrgo_lip_enable_disable_t { bool response; bool ack_requested; uint8_t flags; int64_t elements; };
+type struct dmrgo_lip_header_t { bool short_; dmrgo_lip_extension_t extension; bool response; };
+type struct dmrgo_lip_immediate_request_t { dmrgo_lip_report_type_t report_type; int64_t elements; };
+type struct dmrgo_lip_location_t { dmrgo_lip_shape_t shape; double longitude; double latitude; uint8_t uncertainty; uint8_t half_major; uint8_t half_minor; uint8_t angle; uint8_t confidence; bool altitude_user_defined; uint16_t altitude; uint8_t altitude_uncertainty; uint16_t inner_radius; uint16_t outer_radius; uint8_t start_angle; uint8_t stop_angle; dmrgo_layer3_position_accuracy_t position_error; };
+type struct dmrgo_lip_long_report_t { dmrgo_lip_time_t time; dmrgo_lip_location_t location; dmrgo_lip_velocity_t velocity; bool ack_requested; bool user_defined; uint8_t additional_data; int64_t elements; };
+type struct dmrgo_lip_report_ack_t { uint8_t reserved; int64_t elements; };
+type struct dmrgo_lip_time_t { dmrgo_lip_time_type_t type; uint8_t elapsed; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; };
+type struct dmrgo_lip_velocity_t { dmrgo_lip_velocity_type_t type; uint8_t horizontal; uint8_t horizontal_uncertainty; bool down; uint8_t vertical; uint8_t vertical_uncertainty; uint8_t direction; uint8_t direction_uncertainty; };
 type struct dmrgo_location_fix_t { dmrgo_location_format_t format; uint32_t source; uint32_t destination; bool valid; double latitude; double longitude; double altitude; bool has_altitude; double radius; bool has_radius; double speed; bool has_speed; double course; bool has_course; uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; bool has_time; uint32_t result; bool has_result; uint8_t request_id[16]; uint8_t request_id_length; };
 type struct dmrgo_lrrp_circle2d_t { double latitude; double longitude; double radius; };
 type struct dmrgo_lrrp_circle3d_t { double latitude; double longitude; double radius; double altitude; double altitude_accuracy; };

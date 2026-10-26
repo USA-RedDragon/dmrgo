@@ -3264,7 +3264,22 @@ documents:
         source_files:
           - v2/trunk/appended.go
           - v2/trunk/appended_formats.go
+          - v2/lip/control.go
+          - v2/lip/element.go
+          - v2/lip/errors.go
+          - v2/lip/lip.go
+          - v2/lip/report.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestAppended_NMEAIPLIP
+          - package: github.com/USA-RedDragon/dmrgo/v2/lip
+            names:
+              - TestLongReportShapes
+              - TestLongReportVelocityAndTime
+              - TestCoordinatesMatchShortReport
+              - TestElements
+              - TestElementErrors
+              - TestControlPDUs
+              - TestDecodeErrors
+              - TestEncodeErrors
