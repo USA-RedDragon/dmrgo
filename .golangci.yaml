@@ -87,6 +87,12 @@ linters:
       # Tests use math/rand, narrowing conversions of bounded loop values,
       # repeated literal test vectors, and fixtures in package variables that
       # they only read.
+      # rxsweep runs the test binaries that it builds and the -m4 command
+      # that its user names, on paths under its -out directory.
+      - path: cmd/rxsweep/(run|space)\.go$
+        linters:
+          - gosec
+        text: ^G(204|703)
       - path: _test\.go
         linters:
           - dogsled
@@ -103,6 +109,38 @@ linters:
         linters:
           - gosec
         text: ^G115
+      # The fixed-point receiver of Tier 0 narrows values whose range its
+      # levels, rings and saturations bound; a check on each conversion
+      # would cost cycles of its 4 MHz budget on a Cortex-M4F.
+      - path: v2/rf/(lean|leanfec|leanfront|discrx|discfront|iqdisc|iq0front|iqlow|iqdsp|lagtab)\.go$
+        linters:
+          - gosec
+        text: ^G115
+      # run96 is the 9.6 kHz loop of the audio front end of Tier 0 in one
+      # function, so that its state stays in registers on a Cortex-M4F; a
+      # call per branch would cost cycles of its 4 MHz budget.
+      - path: v2/rf/discrx\.go$
+        linters:
+          - gocyclo
+        text: run96
+      # The fixed-point modulators of Tier 0 narrow values whose range the
+      # pulse tables and the phase accumulator bound; a check on each
+      # conversion would cost cycles of the 4 MHz budget of a Cortex-M4F.
+      - path: v2/internal/fsktx/(mcu|mcuiq|host)\.go$
+        linters:
+          - gosec
+        text: ^G115
+      # rftx simulates channel noise, which needs reproducible seeds, not
+      # secure randomness.
+      - path: v2/internal/rftx/channel\.go$
+        linters:
+          - gosec
+        text: ^G404
+      # rxdisc, txaudio and txiq keep the receiver or the modulator in
+      # static memory, which is the point of the examples.
+      - path: v2/examples/(rxdisc|txaudio|txiq)/main\.go$
+        linters:
+          - gochecknoglobals
       # texttest fills test values from math/rand, for tests only.
       - path: v2/internal/text/texttest/
         linters:
@@ -114,6 +152,19 @@ linters:
         linters:
           - gochecknoglobals
         text: ^(syncPatterns|cachDeinterleaveTable|cachInterleaveTable|allSyncPatterns|voiceSyncPatterns|dataSyncPatterns|shortLCFragmentLCSS) is a global variable
+      # The read-only tables of the Jacobian correction of logAdd and its
+      # slope.
+      - path: v2/rf/exact\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(jacobian|jacobianSlope) is a global variable
+      # The read-only tables of the Tier 0 receiver: the SYNC distances per
+      # nibble, the Lagrange weights of the strobes, and the reciprocals
+      # and arctangents of the I/Q front.
+      - path: v2/rf/(lean|lagtab|iqlow)\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(syncNib|lagrangeTab|iqLowRecip64|iqLowAtan64|iqLowAtan|iqLowTab) is a global variable
       # libcodec2 keeps process-wide state that one mutex guards.
       - path: v2/vocoder/codec2/codec2_cgo\.go$
         linters:
@@ -149,8 +200,9 @@ linters:
         linters:
           - gochecknoglobals
         text: ^(crcAlgorithms|fecCodecs|CRCWidths) is a global variable
-      # speccheck runs go test with test names from spec_matrix.yaml.
-      - path: cmd/speccheck/main\.go$
+      # speccheck runs go test with test names from spec_matrix.yaml, and
+      # rxbench runs the dmrrf sweep and writes README.md under the root.
+      - path: cmd/(speccheck|rxbench)/main\.go$
         linters:
           - gosec
         text: G204|G703
@@ -164,15 +216,40 @@ linters:
         linters:
           - gomoddirectives
         text: local replacement
-      - path: v2/capi/abi2?\.go$
+      - path: v2/capi/abi[23]?\.go$
         linters:
           - gocritic
         text: ^dupSubExpr
-      # Lookup tables of the FEC decoders, which TinyGo keeps in flash.
-      - path: v2/internal/(fec/golay/golay_(20_8_7|24_12_8)|fec/quadraticresidue/quadratic_residue_16_7_6)\.go$
+      # //go:section is a TinyGo directive that puts the hot receiver
+      # loops in their own linker sections.
+      - path: v2/rf/(lean|discrx|iqlow)\.go$
+        linters:
+          - gocheckcompilerdirectives
+        text: "compiler directive unrecognized: //go:section"
+      # fixBPTC is one hot loop of the Tier 0 receiver, tuned for TinyGo
+      # -opt z; split, it costs cycles on the Cortex-M4F.
+      - path: v2/rf/leanfec\.go$
+        linters:
+          - gocyclo
+        text: \(\*leanCore\)\.fixBPTC
+      # testing.AllocsPerRun counts the allocations of every goroutine.
+      - path: v2/rf/monitor_test\.go$
+        linters:
+          - paralleltest
+        text: ^Function TestMonitorAllocs missing the call to method parallel
+      # Lookup tables of the FEC decoders and the transmitter, which TinyGo
+      # keeps in flash.
+      - path: v2/internal/(fec/golay/golay_(20_8_7|24_12_8)|fec/quadraticresidue/quadratic_residue_16_7_6|fsktx/mcu|fsktx/shapepred)\.go$
         linters:
           - gochecknoglobals
-        text: ^(rows2087|rows24|cols24|rows) is a global variable
+        text: ^(rows2087|rows24|cols24|rows|code5|predPulse) is a global variable
+      # NewAudio and NewIQ check every field of their config in one place,
+      # and fitKern is the long fit of a test.
+      - path: v2/internal/fsktx/(host\.go|shapefit_test\.go)$
+        linters:
+          - gocyclo
+          - unparam
+        text: (NewAudio|NewIQ|fitKern)
       # The no-panic test walks every kind of reflect value in one switch.
       - path: v2/internal/allocgate/allapi/nopanic_test\.go$
         linters:
@@ -201,6 +278,11 @@ linters:
         linters:
           - revive
         text: "^unused-parameter: parameter 'now' seems to be unused"
+      # symQ is called from the Thumb-2 build of iqlowhalf_dsp.go only.
+      - path: v2/rf/lean\.go$
+        linters:
+          - unused
+        text: ^func symQ is unused
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:
