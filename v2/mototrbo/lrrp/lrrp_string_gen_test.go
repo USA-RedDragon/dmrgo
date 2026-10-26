@@ -99,7 +99,7 @@ func TestReportStringMatchesFmt(t *testing.T) {
 }
 
 func (s *Request) fmtString() string {
-	return fmt.Sprintf("Request{ RequestID: %v, ShortRequestID: %d, Periodic: %t, OneShot: %t, Interval: %d, Distance: %d, TriggerCondition: %v, ProtocolVersion: %d, Accuracy: %t, AccuracyAndTime: %t, Time: %t, Altitude: %t, Speed: %t, Direction: %t, VerticalSpeed: %t, LevelOfConfidence: %d }", s.RequestID, s.ShortRequestID, s.Periodic, s.OneShot, s.Interval, s.Distance, s.TriggerCondition, s.ProtocolVersion, s.Accuracy, s.AccuracyAndTime, s.Time, s.Altitude, s.Speed, s.Direction, s.VerticalSpeed, s.LevelOfConfidence)
+	return fmt.Sprintf("Request{ RequestID: %v, ShortRequestID: %d, Periodic: %t, OneShot: %t, Interval: %d, Distance: %d, TriggerCondition: %v, ProtocolVersion: %d, Accuracy: %t, AccuracyAndTime: %t, MaxInfoAge: %d, Time: %t, Altitude: %t, Speed: %t, Direction: %t, VerticalSpeed: %t, LevelOfConfidence: %d }", s.RequestID, s.ShortRequestID, s.Periodic, s.OneShot, s.Interval, s.Distance, s.TriggerCondition, s.ProtocolVersion, s.Accuracy, s.AccuracyAndTime, s.MaxInfoAge, s.Time, s.Altitude, s.Speed, s.Direction, s.VerticalSpeed, s.LevelOfConfidence)
 }
 
 func TestRequestStringMatchesFmt(t *testing.T) {

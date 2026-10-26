@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#define DMRGO_ABI_VERSION 2
+#define DMRGO_ABI_VERSION 3
 
 /* DMRGO_USER_T is the type of the user value of a callback or vtable. The library builds with uintptr_t, which has the same size and passing. */
 #ifndef DMRGO_USER_T
@@ -3675,6 +3675,9 @@ struct dmrgo_lrrp_request_t {
 	bool accuracy;
 	/* AccuracyAndTime asks for the accuracy and the time of the position. */
 	bool accuracy_and_time;
+	/* MaxInfoAge is the age, in seconds, of the oldest position that the report may carry: the require-max-info-age token. */
+	uint32_t max_info_age;
+	bool has_max_info_age;
 	/* Time asks for the time of the position. */
 	bool time;
 	/* Altitude asks for the altitude. */

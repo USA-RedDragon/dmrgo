@@ -333,6 +333,10 @@ type Request struct {
 	Accuracy bool `dmr:"flag,token:0x50"`
 	// AccuracyAndTime asks for the accuracy and the time of the position.
 	AccuracyAndTime bool `dmr:"flag,token:0x51"`
+	// MaxInfoAge is the age, in seconds, of the oldest position that the
+	// report may carry: the require-max-info-age token.
+	MaxInfoAge    uint32 `dmr:"uintvar,token:0x42"`
+	HasMaxInfoAge bool   `dmr:"-"`
 	// Time asks for the time of the position.
 	Time bool `dmr:"flag,token:0x52"`
 	// Altitude asks for the altitude.

@@ -1107,6 +1107,20 @@ func decodeRequestAt(result *Request, data []byte, _o int) (int, error) {
 			result.Accuracy = true
 		case 0x51:
 			result.AccuracyAndTime = true
+		case 0x42:
+			_vMaxInfoAge, _on, _st := wire.Uintvar(data, _o)
+			if _st != wire.OK {
+				if _st == wire.Short {
+					return 0, ErrShort
+				}
+				return 0, ErrVarint
+			}
+			if _vMaxInfoAge>>32 != 0 {
+				return 0, ErrVarint
+			}
+			result.MaxInfoAge = uint32(_vMaxInfoAge)
+			_o = _on
+			result.HasMaxInfoAge = true
 		case 0x52:
 			result.Time = true
 		case 0x54:
@@ -1178,6 +1192,10 @@ func (s *Request) AppendBinary(dst []byte) ([]byte, error) {
 	if s.AccuracyAndTime {
 		dst = append(dst, 0x51)
 	}
+	if s.HasMaxInfoAge {
+		dst = append(dst, 0x42)
+		dst = wire.AppendUintvar(dst, uint64(s.MaxInfoAge))
+	}
 	if s.Time {
 		dst = append(dst, 0x52)
 	}
@@ -1208,7 +1226,7 @@ func (s *Request) String() string {
 		return "<nil>"
 	}
 
-	return "Request{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Periodic: " + text.Bool(s.Periodic) + ", OneShot: " + text.Bool(s.OneShot) + ", Interval: " + text.Int(int64(s.Interval)) + ", Distance: " + text.Int(int64(s.Distance)) + ", TriggerCondition: " + s.TriggerCondition.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Accuracy: " + text.Bool(s.Accuracy) + ", AccuracyAndTime: " + text.Bool(s.AccuracyAndTime) + ", Time: " + text.Bool(s.Time) + ", Altitude: " + text.Bool(s.Altitude) + ", Speed: " + text.Bool(s.Speed) + ", Direction: " + text.Bool(s.Direction) + ", VerticalSpeed: " + text.Bool(s.VerticalSpeed) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + " }"
+	return "Request{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Periodic: " + text.Bool(s.Periodic) + ", OneShot: " + text.Bool(s.OneShot) + ", Interval: " + text.Int(int64(s.Interval)) + ", Distance: " + text.Int(int64(s.Distance)) + ", TriggerCondition: " + s.TriggerCondition.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Accuracy: " + text.Bool(s.Accuracy) + ", AccuracyAndTime: " + text.Bool(s.AccuracyAndTime) + ", MaxInfoAge: " + text.Int(int64(s.MaxInfoAge)) + ", Time: " + text.Bool(s.Time) + ", Altitude: " + text.Bool(s.Altitude) + ", Speed: " + text.Bool(s.Speed) + ", Direction: " + text.Bool(s.Direction) + ", VerticalSpeed: " + text.Bool(s.VerticalSpeed) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + " }"
 }
 
 // DecodeMessageInto decodes a Message from data. It returns ErrShort when
