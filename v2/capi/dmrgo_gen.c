@@ -162,6 +162,12 @@ const char *dmrgo__gen_strerror(int status) {
 		return "nmea: field is malformed or out of range";
 	case -170:
 		return "nmea: not an RMC sentence";
+	case -234:
+		return "privacy: the amateur service forbids encryption";
+	case -235:
+		return "privacy: no room for another key";
+	case -236:
+		return "privacy: transmitter not started";
 	case -171:
 		return "shortdata: character does not fit the DD format";
 	case -172:

@@ -33,6 +33,7 @@ import (
 	g_mototrbo_lrrp "github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 	g_mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
+	g_privacy "github.com/USA-RedDragon/dmrgo/v2/privacy"
 	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	g_sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	g_transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
@@ -3219,6 +3220,70 @@ func out_nmea_RMC(d *C.dmrgo_nmea_rmc_t, s *g_nmea.RMC, oc *outc) {
 	d.mode = C.uint8_t(s.Mode)
 }
 
+func out_privacy_Info(d *C.dmrgo_privacy_info_t, s *g_privacy.Info, oc *outc) {
+	_ = oc
+	d.encrypted = C.bool(s.Encrypted)
+	d.header = C.bool(s.Header)
+	d.mfid = C.dmrgo_enums_fid_t(s.MFID)
+	d.algorithm = C.dmrgo_privacy_algorithm_t(s.Algorithm)
+	d.key_id = C.uint8_t(s.KeyID)
+	d.mi = C.uint32_t(s.MI)
+	d.decrypting = C.bool(s.Decrypting)
+}
+
+func in_privacy_TransmitterConfig(s *C.dmrgo_privacy_transmitter_config_t) (d g_privacy.TransmitterConfig) {
+	d.Key = nil
+	if s.key != nil {
+		d.Key = get_privacy_Key(s.key).v
+	}
+	d.Service = g_privacy.Service(s.service)
+	return
+}
+
+func in_voice_Call(s *C.dmrgo_voice_call_t) (d g_voice.Call) {
+	d.Group = bool(s.group)
+	d.Target = uint32(s.target)
+	d.Source = uint32(s.source)
+	d.Options = in_layer3_ServiceOptions(&s.options)
+	d.FID = g_enums.FID(s.fid)
+	d.LC = *(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&s.lc))
+	d.Origin = g_voice.Origin(s.origin)
+	d.Stream = uint32(s.stream)
+	return
+}
+
+func in_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) (d g_voice.FrameQuality) {
+	d.ErrorsCorrected = uint8(s.errors_corrected)
+	d.Bad = bool(s.bad)
+	return
+}
+
+func in_voice_Event(s *C.dmrgo_voice_event_t) (d g_voice.Event) {
+	d.Kind = g_voice.EventKind(s.kind)
+	d.Call = in_voice_Call(&s.call)
+	d.Position = g_enums.VoiceBurstType(s.position)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	for i0 := range d.Frames {
+		d.Frames[i0] = in_voice_FrameQuality(&s.frames[i0])
+	}
+	d.Lost = uint8(s.lost)
+	d.LC = in_layer2_pdu_FullLinkControl(&s.lc)
+	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
+	d.Reason = g_voice.EndReason(s.reason)
+	d.Stats = *(*g_voice.Stats)(unsafe.Pointer(&s.stats))
+	return
+}
+
+func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
+	d.Kind = g_voice.OutputKind(s.kind)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Due = time.Duration(s.due)
+	d.Hint = in_layer2_Hint(&s.hint)
+	d.Fill = bool(s.fill)
+	d.Reason = g_voice.EndReason(s.reason)
+	return
+}
+
 func out_shortdata_HyteraText(d *C.dmrgo_shortdata_hytera_text_t, s *g_shortdata.HyteraText, oc *outc) {
 	_ = oc
 	d.field = C.uint16_t(s.Field)
@@ -4846,40 +4911,6 @@ func out_voice_Event(d *C.dmrgo_voice_event_t, s *g_voice.Event, oc *outc) {
 	d.text_len = C.size_t(len(s.Text))
 	d.reason = C.dmrgo_voice_end_reason_t(s.Reason)
 	*(*g_voice.Stats)(unsafe.Pointer(&d.stats)) = s.Stats
-}
-
-func in_voice_Call(s *C.dmrgo_voice_call_t) (d g_voice.Call) {
-	d.Group = bool(s.group)
-	d.Target = uint32(s.target)
-	d.Source = uint32(s.source)
-	d.Options = in_layer3_ServiceOptions(&s.options)
-	d.FID = g_enums.FID(s.fid)
-	d.LC = *(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&s.lc))
-	d.Origin = g_voice.Origin(s.origin)
-	d.Stream = uint32(s.stream)
-	return
-}
-
-func in_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) (d g_voice.FrameQuality) {
-	d.ErrorsCorrected = uint8(s.errors_corrected)
-	d.Bad = bool(s.bad)
-	return
-}
-
-func in_voice_Event(s *C.dmrgo_voice_event_t) (d g_voice.Event) {
-	d.Kind = g_voice.EventKind(s.kind)
-	d.Call = in_voice_Call(&s.call)
-	d.Position = g_enums.VoiceBurstType(s.position)
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	for i0 := range d.Frames {
-		d.Frames[i0] = in_voice_FrameQuality(&s.frames[i0])
-	}
-	d.Lost = uint8(s.lost)
-	d.LC = in_layer2_pdu_FullLinkControl(&s.lc)
-	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
-	d.Reason = g_voice.EndReason(s.reason)
-	d.Stats = *(*g_voice.Stats)(unsafe.Pointer(&s.stats))
-	return
 }
 
 type st_voice_CallOptions struct {
@@ -6627,6 +6658,35 @@ func fromC_nmea_RMC(s *C.dmrgo_nmea_rmc_t) g_nmea.RMC {
 	return in_nmea_RMC(s)
 }
 
+func in_privacy_Info(s *C.dmrgo_privacy_info_t) (d g_privacy.Info) {
+	d.Encrypted = bool(s.encrypted)
+	d.Header = bool(s.header)
+	d.MFID = g_enums.FID(s.mfid)
+	d.Algorithm = g_privacy.Algorithm(s.algorithm)
+	d.KeyID = uint8(s.key_id)
+	d.MI = uint32(s.mi)
+	d.Decrypting = bool(s.decrypting)
+	return
+}
+
+func fromC_privacy_Info(s *C.dmrgo_privacy_info_t) g_privacy.Info {
+	return in_privacy_Info(s)
+}
+
+func out_privacy_TransmitterConfig(d *C.dmrgo_privacy_transmitter_config_t, s *g_privacy.TransmitterConfig, oc *outc) {
+	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
+	if s.Key != nil {
+		panic(argPanic{})
+	}
+	d.key = nil
+	d.service = C.dmrgo_privacy_service_t(s.Service)
+}
+
+func fromC_privacy_TransmitterConfig(s *C.dmrgo_privacy_transmitter_config_t) g_privacy.TransmitterConfig {
+	return in_privacy_TransmitterConfig(s)
+}
+
 func fromC_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) g_shortdata.HyteraText {
 	return in_shortdata_HyteraText(s)
 }
@@ -7868,16 +7928,6 @@ func fromC_voice_JitterStats(s *C.dmrgo_voice_jitter_stats_t) g_voice.JitterStat
 	return in_voice_JitterStats(s)
 }
 
-func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
-	d.Kind = g_voice.OutputKind(s.kind)
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	d.Due = time.Duration(s.due)
-	d.Hint = in_layer2_Hint(&s.hint)
-	d.Fill = bool(s.fill)
-	d.Reason = g_voice.EndReason(s.reason)
-	return
-}
-
 func fromC_voice_Output(s *C.dmrgo_voice_output_t) g_voice.Output {
 	return in_voice_Output(s)
 }
@@ -8231,6 +8281,42 @@ func get_location_Decoder(p *C.dmrgo_location_decoder_t) *h_location_Decoder {
 
 func new_location_Decoder(v *g_location.Decoder) *C.dmrgo_location_decoder_t {
 	return (*C.dmrgo_location_decoder_t)(newHandle(&h_location_Decoder{v: v}))
+}
+
+type h_privacy_Key struct {
+	v *g_privacy.Key
+}
+
+func get_privacy_Key(p *C.dmrgo_privacy_key_t) *h_privacy_Key {
+	return lookup[*h_privacy_Key](unsafe.Pointer(p))
+}
+
+func new_privacy_Key(v *g_privacy.Key) *C.dmrgo_privacy_key_t {
+	return (*C.dmrgo_privacy_key_t)(newHandle(&h_privacy_Key{v: v}))
+}
+
+type h_privacy_Receiver struct {
+	v *g_privacy.Receiver
+}
+
+func get_privacy_Receiver(p *C.dmrgo_privacy_receiver_t) *h_privacy_Receiver {
+	return lookup[*h_privacy_Receiver](unsafe.Pointer(p))
+}
+
+func new_privacy_Receiver(v *g_privacy.Receiver) *C.dmrgo_privacy_receiver_t {
+	return (*C.dmrgo_privacy_receiver_t)(newHandle(&h_privacy_Receiver{v: v}))
+}
+
+type h_privacy_Transmitter struct {
+	v *g_privacy.Transmitter
+}
+
+func get_privacy_Transmitter(p *C.dmrgo_privacy_transmitter_t) *h_privacy_Transmitter {
+	return lookup[*h_privacy_Transmitter](unsafe.Pointer(p))
+}
+
+func new_privacy_Transmitter(v *g_privacy.Transmitter) *C.dmrgo_privacy_transmitter_t {
+	return (*C.dmrgo_privacy_transmitter_t)(newHandle(&h_privacy_Transmitter{v: v}))
 }
 
 type h_transport_dmrd_dmrdauth_BridgeKey struct {
@@ -35413,6 +35499,382 @@ func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_privacy_algorithm_string
+func dmrgo_privacy_algorithm_string(c_self C.dmrgo_privacy_algorithm_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_privacy.Algorithm(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_from_pi_header
+func dmrgo_privacy_from_pi_header(c_h *C.dmrgo_pdu_pi_header_t, c_out *C.dmrgo_privacy_info_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_h g_layer2_pdu.PIHeader
+	var p_h *g_layer2_pdu.PIHeader
+	if c_h != nil {
+		a_h = in_layer2_pdu_PIHeader(&(*c_h))
+		p_h = &a_h
+	}
+	r0 := g_privacy.FromPIHeader(p_h)
+	_ = r0
+	if c_out != nil {
+		out_privacy_Info(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_key_free
+func dmrgo_privacy_key_free(c_self *C.dmrgo_privacy_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_privacy_Key(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_key_algorithm
+func dmrgo_privacy_key_algorithm(c_self *C.dmrgo_privacy_key_t, c_out *C.dmrgo_privacy_algorithm_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Key(c_self)
+	r0 := h.v.Algorithm()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_privacy_algorithm_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_key_id
+func dmrgo_privacy_key_id(c_self *C.dmrgo_privacy_key_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Key(c_self)
+	r0 := h.v.ID()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_new_aes_key
+func dmrgo_privacy_new_aes_key(c_id C.uint8_t, c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_privacy_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_key), c_key_len, unsafe.Sizeof(*c_key)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_key == nil && c_key_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_key []byte
+	a_key = cSlice[byte](unsafe.Pointer(c_key), c_key_len)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_privacy.NewAESKey(uint8(c_id), a_key)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_privacy_Key(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_new_arc4_key
+func dmrgo_privacy_new_arc4_key(c_id C.uint8_t, c_key *C.uint8_t, c_out **C.dmrgo_privacy_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_key == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_privacy.NewARC4Key(uint8(c_id), *(*[5]byte)(unsafe.Pointer(c_key)))
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_privacy_Key(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_new_basic_key
+func dmrgo_privacy_new_basic_key(c_key C.uint16_t, c_out **C.dmrgo_privacy_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_privacy.NewBasicKey(uint16(c_key))
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_privacy_Key(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_new_receiver
+func dmrgo_privacy_new_receiver(c_out **C.dmrgo_privacy_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_privacy.NewReceiver()
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_privacy_Receiver(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_new_transmitter
+func dmrgo_privacy_new_transmitter(c_cfg *C.dmrgo_privacy_transmitter_config_t, c_out **C.dmrgo_privacy_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_privacy.TransmitterConfig
+	var p_cfg *g_privacy.TransmitterConfig
+	var z_cfg C.dmrgo_privacy_transmitter_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_cfg != nil {
+		a_cfg = in_privacy_TransmitterConfig(&z_cfg)
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_privacy.NewTransmitter(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_privacy_Transmitter(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_receiver_free
+func dmrgo_privacy_receiver_free(c_self *C.dmrgo_privacy_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_privacy_Receiver(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_receiver_add_key
+func dmrgo_privacy_receiver_add_key(c_self *C.dmrgo_privacy_receiver_t, c_k *C.dmrgo_privacy_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Receiver(c_self)
+	var a_k *g_privacy.Key
+	if c_k != nil {
+		a_k = get_privacy_Key(c_k).v
+	}
+	r0 := h.v.AddKey(a_k)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_receiver_event
+func dmrgo_privacy_receiver_event(c_self *C.dmrgo_privacy_receiver_t, c_e *C.dmrgo_voice_event_t, c_frames *C.dmrgo_vocoder_ambe_frame_t, c_out *C.dmrgo_privacy_info_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Receiver(c_self)
+	var a_e g_voice.Event
+	var p_e *g_voice.Event
+	if c_e != nil {
+		a_e = in_voice_Event(&(*c_e))
+		p_e = &a_e
+	}
+	r0 := h.v.Event(p_e, (*[3]g_vocoder.AMBEFrame)(unsafe.Pointer(c_frames)))
+	_ = r0
+	if c_out != nil {
+		out_privacy_Info(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_receiver_info
+func dmrgo_privacy_receiver_info(c_self *C.dmrgo_privacy_receiver_t, c_out *C.dmrgo_privacy_info_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Receiver(c_self)
+	r0 := h.v.Info()
+	_ = r0
+	if c_out != nil {
+		out_privacy_Info(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_receiver_reset
+func dmrgo_privacy_receiver_reset(c_self *C.dmrgo_privacy_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Receiver(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_service_string
+func dmrgo_privacy_service_string(c_self C.dmrgo_privacy_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_privacy.Service(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_transmitter_free
+func dmrgo_privacy_transmitter_free(c_self *C.dmrgo_privacy_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_privacy_Transmitter(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_transmitter_output
+func dmrgo_privacy_transmitter_output(c_self *C.dmrgo_privacy_transmitter_t, c_o *C.dmrgo_voice_output_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Transmitter(c_self)
+	var a_o g_voice.Output
+	var p_o *g_voice.Output
+	if c_o != nil {
+		a_o = in_voice_Output(&(*c_o))
+		p_o = &a_o
+	}
+	r0 := h.v.Output(p_o)
+	var ws_o C.dmrgo_voice_output_t
+	if c_o != nil {
+		ws_o = *c_o
+		*(*g_layer2.RawBurst)(unsafe.Pointer(&ws_o.burst)) = a_o.Burst
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_o != nil {
+		*c_o = ws_o
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_transmitter_pi_header
+func dmrgo_privacy_transmitter_pi_header(c_self *C.dmrgo_privacy_transmitter_t, c_target C.uint32_t, c_h *C.dmrgo_pdu_pi_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Transmitter(c_self)
+	r0, r1 := h.v.PIHeader(uint32(c_target))
+	_ = r0
+	_ = r1
+	if c_h != nil {
+		out_layer2_pdu_PIHeader(&(*c_h), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_transmitter_start
+func dmrgo_privacy_transmitter_start(c_self *C.dmrgo_privacy_transmitter_t, c_mi C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Transmitter(c_self)
+	h.v.Start(uint32(c_mi))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_shortdata_append_text
 func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -52170,6 +52632,12 @@ func errCode1(e error) C.int {
 		return -169
 	case g_nmea.ErrSentence:
 		return -170
+	case g_privacy.ErrAmateur:
+		return -234
+	case g_privacy.ErrKeysFull:
+		return -235
+	case g_privacy.ErrNotStarted:
+		return -236
 	case g_shortdata.ErrCharacter:
 		return -171
 	case g_shortdata.ErrFormat:
@@ -52496,6 +52964,12 @@ func codeErr(code C.int) error {
 		return g_nmea.ErrField
 	case -170:
 		return g_nmea.ErrSentence
+	case -234:
+		return g_privacy.ErrAmateur
+	case -235:
+		return g_privacy.ErrKeysFull
+	case -236:
+		return g_privacy.ErrNotStarted
 	case -171:
 		return g_shortdata.ErrCharacter
 	case -172:
@@ -52774,6 +53248,12 @@ func knownCode(code C.int) bool {
 	case -169:
 		return true
 	case -170:
+		return true
+	case -234:
+		return true
+	case -235:
+		return true
+	case -236:
 		return true
 	case -171:
 		return true

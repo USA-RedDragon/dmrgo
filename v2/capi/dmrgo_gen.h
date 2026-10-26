@@ -455,6 +455,16 @@ typedef struct dmrgo_tms_sequence_high_t dmrgo_tms_sequence_high_t;
 typedef struct dmrgo_tms_sequence_low_t dmrgo_tms_sequence_low_t;
 /* Go: nmea.RMC. RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). */
 typedef struct dmrgo_nmea_rmc_t dmrgo_nmea_rmc_t;
+/* Go: privacy.Info. Info is what a Receiver knows about the privacy of the current call. */
+typedef struct dmrgo_privacy_info_t dmrgo_privacy_info_t;
+/* Go: privacy.Key. Key is one privacy key with its algorithm and key ID. */
+typedef struct dmrgo_privacy_key_t dmrgo_privacy_key_t;
+/* Go: privacy.Receiver. Receiver removes the privacy of the voice calls that a dmrgo_voice_receiver_t reports. */
+typedef struct dmrgo_privacy_receiver_t dmrgo_privacy_receiver_t;
+/* Go: privacy.Transmitter. Transmitter applies the privacy of one key to the calls of a dmrgo_voice_transmitter_t. */
+typedef struct dmrgo_privacy_transmitter_t dmrgo_privacy_transmitter_t;
+/* Go: privacy.TransmitterConfig. TransmitterConfig configures NewTransmitter. */
+typedef struct dmrgo_privacy_transmitter_config_t dmrgo_privacy_transmitter_config_t;
 /* Go: shortdata.HyteraText. HyteraText is the data of the defined data text that AnyTone radios send in H-SMS mode, with SAP short data and DD format 1. */
 typedef struct dmrgo_shortdata_hytera_text_t dmrgo_shortdata_hytera_text_t;
 /* Go: sms.AnyToneText. AnyToneText is the payload of the text that AnyTone radios send to UDP port 5016 in their DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE. */
@@ -887,6 +897,10 @@ typedef uint32_t dmrgo_lrrp_trigger_condition_t;
 typedef uint8_t dmrgo_tms_encoding_t;
 /* Go: tms.Type. Type is the kind of a message: the control bit and the 4-bit PDU type of the first header octet. */
 typedef uint8_t dmrgo_tms_type_t;
+/* Go: privacy.Algorithm. Algorithm is the algorithm ID octet of a PI header with FID 0x10. */
+typedef uint8_t dmrgo_privacy_algorithm_t;
+/* Go: privacy.Service. Service is the radio service of a transmitting station. */
+typedef uint8_t dmrgo_privacy_service_t;
 /* Go: sms.Format. Format is the format of a text message. */
 typedef uint8_t dmrgo_sms_format_t;
 /* Go: dmrd.Command. Command is the kind of a message, named by its tag. */
@@ -3897,6 +3911,95 @@ struct dmrgo_nmea_rmc_t {
 	uint8_t mode;
 };
 
+struct dmrgo_privacy_info_t {
+	/* Encrypted reports that the call is encrypted: its LC sets the Privacy service option, or a PI header came. */
+	bool encrypted;
+	/* Header reports that a PI header with a good CRC came, so that MFID, Algorithm, KeyID and MI are set. */
+	bool header;
+	/* MFID is the FID of the PI header. Algorithm, KeyID and MI follow the layout of FID 0x10; for another FID they hold its octets 0, 2 and 3 to 6 as they are. */
+	dmrgo_enums_fid_t mfid;
+	/* Algorithm is the algorithm ID of the PI header. */
+	dmrgo_privacy_algorithm_t algorithm;
+	/* KeyID is the key ID of the PI header. */
+	uint8_t key_id;
+	/* MI is the 32-bit message indicator of the PI header. */
+	uint32_t mi;
+	/* Decrypting reports that the Receiver holds the key of the call and returns its frames in the clear. */
+	bool decrypting;
+};
+
+struct dmrgo_privacy_transmitter_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
+	/* Key is the key of the calls. */
+	dmrgo_privacy_key_t *key;
+	/* Service is the radio service of the station. It must be stated, and it must not be DMRGO_PRIVACY_SERVICE_AMATEUR. */
+	dmrgo_privacy_service_t service;
+};
+
+struct dmrgo_voice_frame_quality_t {
+	/* ErrorsCorrected is the number of bit errors that the Golay codes corrected, at most 255. */
+	uint8_t errors_corrected;
+	/* Bad reports that section A of the frame was uncorrectable. */
+	bool bad;
+};
+
+struct dmrgo_voice_stats_t {
+	/* Bursts is the number of voice bursts of the call. */
+	uint32_t bursts;
+	/* Lost is the number of voice bursts that did not arrive. */
+	uint32_t lost;
+	/* Duplicates is the number of bursts dropped as copies of an earlier one, voice bursts and Voice LC Headers. */
+	uint32_t duplicates;
+	/* Late is the number of voice bursts dropped because their sequence number was behind the last one. */
+	uint32_t late;
+	/* BitsChecked is the number of vocoder bits that the AMBE+2 FEC covered. */
+	uint32_t bits_checked;
+	/* BitErrors is the number of bit errors that the AMBE+2 FEC corrected. BitErrors / BitsChecked is the bit error rate, as dmrgo_fec_ber_calculator_t counts it. */
+	uint32_t bit_errors;
+	/* Duration is the time from the start of the call to its end. */
+	dmrgo_duration_t duration;
+};
+
+struct dmrgo_voice_event_t {
+	/* Kind is the kind of the event. */
+	dmrgo_voice_event_kind_t kind;
+	/* Call is the call the event belongs to. For voice before the LC is known, its Origin is DMRGO_VOICE_ORIGIN_UNKNOWN. */
+	dmrgo_voice_call_t call;
+	/* Position is the superframe position of a voice burst, or DMRGO_ENUMS_VOICE_BURST_UNKNOWN when no evidence placed it. */
+	dmrgo_enums_voice_burst_type_t position;
+	/* Burst is the voice burst or the PI Header as received. */
+	dmrgo_layer2_raw_burst_t burst;
+	/* Frames is the FEC result of each vocoder slot of a voice burst. */
+	dmrgo_voice_frame_quality_t frames[3];
+	/* Lost is the number of voice bursts lost just before this one, at most 255. For the first voice burst after a Voice LC Header or PI Header, it is the number lost after the header. */
+	uint8_t lost;
+	/* LC is the embedded LC of a DMRGO_VOICE_EVENT_EMBEDDED. */
+	dmrgo_pdu_full_link_control_t lc;
+	/* Text is the alias of a DMRGO_VOICE_EVENT_TALKER_ALIAS, in UTF-8, at most DMRGO_PDU_TALKER_ALIAS_MAX_TEXT bytes. */
+	uint8_t *text;
+	size_t text_len;
+	/* Reason is why the call ended. */
+	dmrgo_voice_end_reason_t reason;
+	/* Stats counts what the Receiver saw during the call. */
+	dmrgo_voice_stats_t stats;
+};
+
+struct dmrgo_voice_output_t {
+	/* Kind is the kind of the output. */
+	dmrgo_voice_output_kind_t kind;
+	/* Burst is the burst to send. */
+	dmrgo_layer2_raw_burst_t burst;
+	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
+	dmrgo_duration_t due;
+	/* Hint is what the burst is, for a transport: DMRGO_LAYER2_KIND_VOICE with the superframe position, or DMRGO_LAYER2_KIND_DATA with the data type of a header, PI Header or terminator, or DMRGO_LAYER2_KIND_REVERSE_CHANNEL. Its Slot is the Slot of the config. */
+	dmrgo_layer2_hint_t hint;
+	/* Fill reports a voice burst with a fill in place of voice that was not queued in time, or with silence that pads the last superframe. The fills that Relay queues for bursts that the Receiver reports lost are voice and do not set it. */
+	bool fill;
+	/* Reason is why the transmission ended: DMRGO_VOICE_END_TERMINATOR after a normal end, DMRGO_VOICE_END_LOST for a relayed call that was lost, DMRGO_VOICE_END_TIMEOUT after T_TO. */
+	dmrgo_voice_end_reason_t reason;
+};
+
 struct dmrgo_shortdata_hytera_text_t {
 	/* Field is a 16-bit value before the text whose meaning is not known: it was 00 00 in four captures and 45 00 in one. Decode keeps it as it is. */
 	uint16_t field;
@@ -5490,69 +5593,6 @@ struct dmrgo_voice_call_options_t {
 	bool hang_time;
 };
 
-struct dmrgo_voice_frame_quality_t {
-	/* ErrorsCorrected is the number of bit errors that the Golay codes corrected, at most 255. */
-	uint8_t errors_corrected;
-	/* Bad reports that section A of the frame was uncorrectable. */
-	bool bad;
-};
-
-struct dmrgo_voice_stats_t {
-	/* Bursts is the number of voice bursts of the call. */
-	uint32_t bursts;
-	/* Lost is the number of voice bursts that did not arrive. */
-	uint32_t lost;
-	/* Duplicates is the number of bursts dropped as copies of an earlier one, voice bursts and Voice LC Headers. */
-	uint32_t duplicates;
-	/* Late is the number of voice bursts dropped because their sequence number was behind the last one. */
-	uint32_t late;
-	/* BitsChecked is the number of vocoder bits that the AMBE+2 FEC covered. */
-	uint32_t bits_checked;
-	/* BitErrors is the number of bit errors that the AMBE+2 FEC corrected. BitErrors / BitsChecked is the bit error rate, as dmrgo_fec_ber_calculator_t counts it. */
-	uint32_t bit_errors;
-	/* Duration is the time from the start of the call to its end. */
-	dmrgo_duration_t duration;
-};
-
-struct dmrgo_voice_event_t {
-	/* Kind is the kind of the event. */
-	dmrgo_voice_event_kind_t kind;
-	/* Call is the call the event belongs to. For voice before the LC is known, its Origin is DMRGO_VOICE_ORIGIN_UNKNOWN. */
-	dmrgo_voice_call_t call;
-	/* Position is the superframe position of a voice burst, or DMRGO_ENUMS_VOICE_BURST_UNKNOWN when no evidence placed it. */
-	dmrgo_enums_voice_burst_type_t position;
-	/* Burst is the voice burst or the PI Header as received. */
-	dmrgo_layer2_raw_burst_t burst;
-	/* Frames is the FEC result of each vocoder slot of a voice burst. */
-	dmrgo_voice_frame_quality_t frames[3];
-	/* Lost is the number of voice bursts lost just before this one, at most 255. For the first voice burst after a Voice LC Header or PI Header, it is the number lost after the header. */
-	uint8_t lost;
-	/* LC is the embedded LC of a DMRGO_VOICE_EVENT_EMBEDDED. */
-	dmrgo_pdu_full_link_control_t lc;
-	/* Text is the alias of a DMRGO_VOICE_EVENT_TALKER_ALIAS, in UTF-8, at most DMRGO_PDU_TALKER_ALIAS_MAX_TEXT bytes. */
-	uint8_t *text;
-	size_t text_len;
-	/* Reason is why the call ended. */
-	dmrgo_voice_end_reason_t reason;
-	/* Stats counts what the Receiver saw during the call. */
-	dmrgo_voice_stats_t stats;
-};
-
-struct dmrgo_voice_output_t {
-	/* Kind is the kind of the output. */
-	dmrgo_voice_output_kind_t kind;
-	/* Burst is the burst to send. */
-	dmrgo_layer2_raw_burst_t burst;
-	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
-	dmrgo_duration_t due;
-	/* Hint is what the burst is, for a transport: DMRGO_LAYER2_KIND_VOICE with the superframe position, or DMRGO_LAYER2_KIND_DATA with the data type of a header, PI Header or terminator, or DMRGO_LAYER2_KIND_REVERSE_CHANNEL. Its Slot is the Slot of the config. */
-	dmrgo_layer2_hint_t hint;
-	/* Fill reports a voice burst with a fill in place of voice that was not queued in time, or with silence that pads the last superframe. The fills that Relay queues for bursts that the Receiver reports lost are voice and do not set it. */
-	bool fill;
-	/* Reason is why the transmission ended: DMRGO_VOICE_END_TERMINATOR after a normal end, DMRGO_VOICE_END_LOST for a relayed call that was lost, DMRGO_VOICE_END_TIMEOUT after T_TO. */
-	dmrgo_voice_end_reason_t reason;
-};
-
 struct dmrgo_voice_interrupter_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
@@ -5787,6 +5827,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-155)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-156)
 #define DMRGO_ERR_PDU_WRONG_OPCODE (-157)
+#define DMRGO_ERR_PRIVACY_AMATEUR (-234)
+#define DMRGO_ERR_PRIVACY_KEYS_FULL (-235)
+#define DMRGO_ERR_PRIVACY_NOT_STARTED (-236)
 #define DMRGO_ERR_SHORTDATA_CHARACTER (-171)
 #define DMRGO_ERR_SHORTDATA_FORMAT (-172)
 #define DMRGO_ERR_SHORTDATA_LENGTH (-173)
@@ -7316,6 +7359,26 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TMS_TYPE_AVAILABILITY ((dmrgo_tms_type_t)16)
 /* Go: tms.TypeText. a text message */
 #define DMRGO_TMS_TYPE_TEXT ((dmrgo_tms_type_t)0)
+/* Go: privacy.AlgorithmAES128. AlgorithmAES128 is AES-128 in OFB mode. */
+#define DMRGO_PRIVACY_ALGORITHM_AES128 ((dmrgo_privacy_algorithm_t)36)
+/* Go: privacy.AlgorithmAES256. AlgorithmAES256 is AES-256 in OFB mode. */
+#define DMRGO_PRIVACY_ALGORITHM_AES256 ((dmrgo_privacy_algorithm_t)37)
+/* Go: privacy.AlgorithmARC4. AlgorithmARC4 is ARC4 (RC4) with a 40-bit key, also called Enhanced Privacy. */
+#define DMRGO_PRIVACY_ALGORITHM_ARC4 ((dmrgo_privacy_algorithm_t)33)
+/* Go: privacy.AlgorithmBasic. AlgorithmBasic is Basic Privacy, a fixed pattern from a 16-bit key. */
+#define DMRGO_PRIVACY_ALGORITHM_BASIC ((dmrgo_privacy_algorithm_t)0)
+/* Go: privacy.AlgorithmDES. AlgorithmDES is DES in OFB mode. */
+#define DMRGO_PRIVACY_ALGORITHM_DES ((dmrgo_privacy_algorithm_t)34)
+/* Go: privacy.MaxKeys. MaxKeys is the most keys that a Receiver holds. */
+#define DMRGO_PRIVACY_MAX_KEYS 16
+/* Go: privacy.ServiceAmateur. ServiceAmateur is the amateur or amateur-satellite service, which forbids messages encoded to obscure their meaning. */
+#define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_privacy_service_t)1)
+/* Go: privacy.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
+#define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_privacy_service_t)2)
+/* Go: privacy.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
+#define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_privacy_service_t)3)
+/* Go: privacy.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
+#define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_privacy_service_t)0)
 /* Go: sms.FormatAnyTone. FormatAnyTone is the text to UDP port 5016 that AnyTone radios send in DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE. */
 #define DMRGO_SMS_FORMAT_ANYTONE ((dmrgo_sms_format_t)3)
 /* Go: sms.FormatDefinedData. FormatDefinedData is a short data packet (DD_HEAD) whose DD format gives the coding of the text. */
@@ -10413,6 +10476,46 @@ int dmrgo_tms_sequence_low_string(const dmrgo_tms_sequence_low_t *self, char *ou
 int dmrgo_tms_type_string(dmrgo_tms_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: nmea.ParseRMC. ParseRMC decodes one RMC sentence from s, from the $ to the two hex digits of the checksum, with an optional CR LF or LF after them. It returns DMRGO_ERR_NMEA_SENTENCE, DMRGO_ERR_NMEA_CHECKSUM or DMRGO_ERR_NMEA_FIELD. */
 int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
+/* Go: privacy.Algorithm.String. String returns the name of the algorithm. */
+int dmrgo_privacy_algorithm_string(dmrgo_privacy_algorithm_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: privacy.FromPIHeader. FromPIHeader returns the Info of the PI header h: Encrypted and Header set and the fields of h. h may be NULL. */
+int dmrgo_privacy_from_pi_header(const dmrgo_pdu_pi_header_t *h, dmrgo_privacy_info_t *out);
+/* dmrgo_privacy_key_free frees the handle. self may be NULL. */
+int dmrgo_privacy_key_free(dmrgo_privacy_key_t *self);
+/* Go: privacy.Key.Algorithm. Algorithm returns the algorithm of the key, or DMRGO_PRIVACY_ALGORITHM_BASIC for a NULL Key. */
+int dmrgo_privacy_key_algorithm(dmrgo_privacy_key_t *self, dmrgo_privacy_algorithm_t *out);
+/* Go: privacy.Key.ID. ID returns the key ID of the key, or 0 for a NULL Key. */
+int dmrgo_privacy_key_id(dmrgo_privacy_key_t *self, uint8_t *out);
+/* Go: privacy.NewAESKey. NewAESKey returns the AES key with the key ID id: AES-128 for 16 octets and AES-256 for 32. It returns a DMRGO_ERR_CONFIG for another length. */
+int dmrgo_privacy_new_aes_key(uint8_t id, uint8_t *key, size_t key_len, dmrgo_privacy_key_t **out);
+/* Go: privacy.NewARC4Key. NewARC4Key returns the 40-bit ARC4 key with the key ID id. */
+int dmrgo_privacy_new_arc4_key(uint8_t id, const uint8_t key[5], dmrgo_privacy_key_t **out);
+/* Go: privacy.NewBasicKey. NewBasicKey returns the Basic Privacy key with the 16-bit value key. */
+int dmrgo_privacy_new_basic_key(uint16_t key, dmrgo_privacy_key_t **out);
+/* Go: privacy.NewReceiver. NewReceiver returns a Receiver without keys. */
+int dmrgo_privacy_new_receiver(dmrgo_privacy_receiver_t **out);
+/* Go: privacy.NewTransmitter. NewTransmitter returns a Transmitter for cfg. It returns DMRGO_ERR_PRIVACY_AMATEUR when cfg->service is DMRGO_PRIVACY_SERVICE_AMATEUR, whatever the key, and a DMRGO_ERR_CONFIG for DMRGO_PRIVACY_SERVICE_UNKNOWN or a Service out of range, so that no encrypting Transmitter exists in the amateur service or in a service not stated. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL cfg or a NULL cfg->key, and a DMRGO_ERR_CONFIG for a Key that is not made with its constructor. cfg may be NULL. */
+int dmrgo_privacy_new_transmitter(const dmrgo_privacy_transmitter_config_t *cfg, dmrgo_privacy_transmitter_t **out);
+/* dmrgo_privacy_receiver_free frees the handle. self may be NULL. */
+int dmrgo_privacy_receiver_free(dmrgo_privacy_receiver_t *self);
+/* Go: privacy.Receiver.AddKey. AddKey adds k to the keys of the Receiver. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL k and DMRGO_ERR_PRIVACY_KEYS_FULL when the Receiver holds DMRGO_PRIVACY_MAX_KEYS other keys. k may be NULL. */
+int dmrgo_privacy_receiver_add_key(dmrgo_privacy_receiver_t *self, dmrgo_privacy_key_t *k);
+/* Go: privacy.Receiver.Event. Event takes the next event e of the dmrgo_voice_receiver_t and returns the Info of its call. e and frames may be NULL. */
+int dmrgo_privacy_receiver_event(dmrgo_privacy_receiver_t *self, const dmrgo_voice_event_t *e, dmrgo_vocoder_ambe_frame_t frames[3], dmrgo_privacy_info_t *out);
+/* Go: privacy.Receiver.Info. Info returns what the Receiver knows about the current call. */
+int dmrgo_privacy_receiver_info(dmrgo_privacy_receiver_t *self, dmrgo_privacy_info_t *out);
+/* Go: privacy.Receiver.Reset. Reset forgets the current call. */
+int dmrgo_privacy_receiver_reset(dmrgo_privacy_receiver_t *self);
+/* Go: privacy.Service.String. String returns the name of the service. */
+int dmrgo_privacy_service_string(dmrgo_privacy_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_privacy_transmitter_free frees the handle. self may be NULL. */
+int dmrgo_privacy_transmitter_free(dmrgo_privacy_transmitter_t *self);
+/* Go: privacy.Transmitter.Output. Output applies the privacy to o in place when it is a voice burst: the three AMBE+2 frames of the burst, fill and silence frames too. It returns DMRGO_ERR_PRIVACY_NOT_STARTED before Start, DMRGO_ERR_NIL_ARGUMENT for a NULL o, and the errors of dmrgo_layer2_raw_burst_set_ambe_frames, which then change nothing. o may be NULL. */
+int dmrgo_privacy_transmitter_output(dmrgo_privacy_transmitter_t *self, dmrgo_voice_output_t *o);
+/* Go: privacy.Transmitter.PIHeader. PIHeader returns the PI header of the call that Start began, for the destination address target. */
+int dmrgo_privacy_transmitter_pi_header(dmrgo_privacy_transmitter_t *self, uint32_t target, dmrgo_pdu_pi_header_t *h, bool *ok);
+/* Go: privacy.Transmitter.Start. Start begins a call with the message indicator mi. */
+int dmrgo_privacy_transmitter_start(dmrgo_privacy_transmitter_t *self, uint32_t mi);
 /* Go: shortdata.AppendText. AppendText appends the UTF-8 text to dst, coded as format says, and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format, or DMRGO_ERR_SHORTDATA_CHARACTER for a character that BCD, 7-bit text or the ISO/IEC 8859 part cannot hold. Invalid UTF-8 gives U+FFFD, or DMRGO_ERR_SHORTDATA_CHARACTER for BCD, 7-bit text and ISO/IEC 8859. */
 int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
 /* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. It returns DMRGO_ERR_SHORTDATA_SHORT when data ends inside a field. */

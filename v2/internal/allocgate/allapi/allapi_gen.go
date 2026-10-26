@@ -39,6 +39,7 @@ import (
 	mototrbo_lrrp "github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 	mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
+	privacy "github.com/USA-RedDragon/dmrgo/v2/privacy"
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
@@ -1157,6 +1158,23 @@ var api = [...]any{
 	mototrbo_tms.NewText,
 	mototrbo_tms.Type.String,
 	nmea.ParseRMC,
+	(*privacy.Key).Algorithm,
+	(*privacy.Key).ID,
+	(*privacy.Receiver).AddKey,
+	(*privacy.Receiver).Event,
+	(*privacy.Receiver).Info,
+	(*privacy.Receiver).Reset,
+	(*privacy.Transmitter).Output,
+	(*privacy.Transmitter).PIHeader,
+	(*privacy.Transmitter).Start,
+	privacy.Algorithm.String,
+	privacy.FromPIHeader,
+	privacy.NewAESKey,
+	privacy.NewARC4Key,
+	privacy.NewBasicKey,
+	privacy.NewReceiver,
+	privacy.NewTransmitter,
+	privacy.Service.String,
 	(*shortdata.HyteraText).AppendBinary,
 	(*shortdata.HyteraText).SetTextUTF8,
 	(*shortdata.HyteraText).String,
