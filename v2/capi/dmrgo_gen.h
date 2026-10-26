@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#define DMRGO_ABI_VERSION 1
+#define DMRGO_ABI_VERSION 2
 
 /* DMRGO_USER_T is the type of the user value of a callback or vtable. The library builds with uintptr_t, which has the same size and passing. */
 #ifndef DMRGO_USER_T
@@ -635,6 +635,8 @@ typedef struct dmrgo_vocoder_ambe_frame_t dmrgo_vocoder_ambe_frame_t;
 /* Go: vocoder.Codec. Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of one of the three vocoder frames of a DMR voice burst, packed, the first bit in the most significant bit of byte 0, as dmrgo_layer2_raw_burst_voice_slots returns them. */
 typedef struct dmrgo_vocoder_codec_t dmrgo_vocoder_codec_t;
 typedef struct dmrgo_vocoder_codec_vtable_t dmrgo_vocoder_codec_vtable_t;
+/* Go: vocoder.FrameReport. FrameReport tells what a Codec found in one vocoder frame and what it put in the samples for it. */
+typedef struct dmrgo_vocoder_frame_report_t dmrgo_vocoder_frame_report_t;
 /* Go: codec2.Codec. Codec is a Codec2 dmrgo_vocoder_codec_t with separate libcodec2 encoder and decoder states. */
 typedef struct dmrgo_codec2_codec_t dmrgo_codec2_codec_t;
 /* Go: codec2.Config. Config selects how a Codec encodes and decodes. */
@@ -917,6 +919,10 @@ typedef uint8_t dmrgo_trunk_status_t;
 typedef uint8_t dmrgo_trunk_stun_action_t;
 /* Go: trunk.TSCCOutputKind. TSCCOutputKind is the kind of a TSCCOutput. */
 typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
+/* Go: vocoder.FrameOutput. FrameOutput is what a Codec put in the samples of one vocoder frame. */
+typedef uint8_t dmrgo_vocoder_frame_output_t;
+/* Go: vocoder.FrameStatus. FrameStatus is what a Codec found in the slot of one vocoder frame. */
+typedef uint8_t dmrgo_vocoder_frame_status_t;
 /* Go: codec2.Mode. Mode is a Codec2 bit rate in bits per second. */
 typedef int64_t dmrgo_codec2_mode_t;
 /* Go: dvsi.Field. Field is a field identifier, the first byte of a field (AMBE-3000R manual Table 31). */
@@ -5225,13 +5231,28 @@ struct dmrgo_trunkauth_entry_t {
 	dmrgo_trunkauth_key_t key;
 };
 
+struct dmrgo_vocoder_frame_report_t {
+	/* Frame is what the codec found in the slot. */
+	dmrgo_vocoder_frame_status_t frame;
+	/* Output is what the codec put in the samples. */
+	dmrgo_vocoder_frame_output_t output;
+	/* CorrectedA is the number of bits, 0 to 4, that the Golay (24,12) code of section A corrected. */
+	uint8_t corrected_a;
+	/* CorrectedB is the number of bits, 0 to 3, that the Golay (23,12) code of section B corrected after the descrambling. */
+	uint8_t corrected_b;
+	/* HighErrorRate reports that the bit error rate that the codec estimates from the recent frames is so high that it mutes or replaces frames. It is false when the codec makes no such estimate. */
+	bool high_error_rate;
+	/* CountsKnown reports that the codec measured CorrectedA and CorrectedB. When it is false both are 0 and unknown, not a count of 0 bits. */
+	bool counts_known;
+};
+
 struct dmrgo_vocoder_codec_vtable_t {
 	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. A function that returns an error gives zero results. */
 	size_t size;
 	DMRGO_USER_T user;
 	int (*close)(DMRGO_USER_T user);
-	/* Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice. */
-	int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+	/* Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice and a report on the frame. */
+	int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
 	/* Encode encodes exactly FrameSamples samples into one 72-bit frame. */
 	int (*encode)(DMRGO_USER_T user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 	/* FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
@@ -5242,6 +5263,8 @@ struct dmrgo_vocoder_codec_vtable_t {
 	int (*silence)(DMRGO_USER_T user, uint8_t out[9]);
 	/* Reset starts a new call: the decoder drops what it learned from the frames of the call before, such as a detected mode. */
 	int (*reset)(DMRGO_USER_T user);
+	/* DecodeLost appends FrameSamples samples in place of a frame that never arrived, such as a repeat of the frame before or silence, and returns the extended slice and a report with Frame DMRGO_VOCODER_FRAME_LOST. */
+	int (*decode_lost)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
 };
 
 struct dmrgo_codec2_config_t {
@@ -5522,6 +5545,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_DVSI_PARITY (-215)
 #define DMRGO_ERR_DVSI_PORT (-216)
 #define DMRGO_ERR_DVSI_SAMPLES (-217)
+#define DMRGO_ERR_DVSI_SPEECH_FORMAT (-228)
 #define DMRGO_ERR_DVSI_START (-218)
 #define DMRGO_ERR_DVSI_STATUS (-219)
 #define DMRGO_ERR_DVSI_TIMEOUT (-220)
@@ -7674,6 +7698,22 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNKAUTH_KEY_LEN 16
 /* Go: trunkauth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
 #define DMRGO_TRUNKAUTH_MAX_CHALLENGE 16776415
+/* Go: vocoder.FrameErased. FrameErased is a frame that the codec received and did not use, because it found too many bit errors in it. */
+#define DMRGO_VOCODER_FRAME_ERASED ((dmrgo_vocoder_frame_status_t)2)
+/* Go: vocoder.FrameGood. FrameGood is a frame that the codec decoded, after any FEC correction. */
+#define DMRGO_VOCODER_FRAME_GOOD ((dmrgo_vocoder_frame_status_t)0)
+/* Go: vocoder.FrameInvalid. FrameInvalid is a slot whose bits are not a valid frame of the vocoder, such as a frame with padding bits set. */
+#define DMRGO_VOCODER_FRAME_INVALID ((dmrgo_vocoder_frame_status_t)3)
+/* Go: vocoder.FrameLost. FrameLost is a frame that never arrived. */
+#define DMRGO_VOCODER_FRAME_LOST ((dmrgo_vocoder_frame_status_t)1)
+/* Go: vocoder.OutputRepeat. OutputRepeat is a repeat of the frame before, in place of a frame that is lost or that the codec did not use. */
+#define DMRGO_VOCODER_OUTPUT_REPEAT ((dmrgo_vocoder_frame_output_t)2)
+/* Go: vocoder.OutputSilence. OutputSilence is silence or comfort noise. */
+#define DMRGO_VOCODER_OUTPUT_SILENCE ((dmrgo_vocoder_frame_output_t)3)
+/* Go: vocoder.OutputTone. OutputTone is a tone, such as a DTMF digit, that the codec decoded from a tone frame. */
+#define DMRGO_VOCODER_OUTPUT_TONE ((dmrgo_vocoder_frame_output_t)1)
+/* Go: vocoder.OutputVoice. OutputVoice is speech that the codec decoded from the frame. */
+#define DMRGO_VOCODER_OUTPUT_VOICE ((dmrgo_vocoder_frame_output_t)0)
 /* Go: codec2.Backend. Backend is the name of the backend of this build: "native", "wasm" or "stub". */
 #define DMRGO_CODEC2_BACKEND "native"
 /* Go: codec2.DefaultFID. DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2 calls. */
@@ -10955,8 +10995,12 @@ int dmrgo_vocoder_codec_free(dmrgo_vocoder_codec_t *self);
 int dmrgo_vocoder_codec_close(dmrgo_vocoder_codec_t *self);
 /* dmrgo_vocoder_codec_decode_need sets *items and *arena to the room that dmrgo_vocoder_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_vocoder_codec_decode_need(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: vocoder.Codec.Decode. Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_codec_decode_need gives. */
-int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+/* Go: vocoder.Codec.Decode. Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice and a report on the frame. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_codec_decode_need gives. */
+int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
+/* dmrgo_vocoder_codec_decode_lost_need sets *items and *arena to the room that dmrgo_vocoder_codec_decode_lost needs for these arguments, without a change to the handle. */
+int dmrgo_vocoder_codec_decode_lost_need(dmrgo_vocoder_codec_t *self, size_t *items, size_t *arena);
+/* Go: vocoder.Codec.DecodeLost. DecodeLost appends FrameSamples samples in place of a frame that never arrived, such as a repeat of the frame before or silence, and returns the extended slice and a report with Frame DMRGO_VOCODER_FRAME_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_codec_decode_lost_need gives. */
+int dmrgo_vocoder_codec_decode_lost(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
 /* Go: vocoder.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame. */
 int dmrgo_vocoder_codec_encode(dmrgo_vocoder_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: vocoder.Codec.FID. FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
@@ -10977,6 +11021,10 @@ int dmrgo_dvsi_codec_as_codec(dmrgo_dvsi_codec_t *self, dmrgo_vocoder_codec_t **
 int dmrgo_vocoder_decode_ambe72(const uint8_t slot[9], dmrgo_vocoder_ambe_frame_t *ambe_frame, dmrgo_fec_result_t *fec);
 /* Go: vocoder.EncodeAMBE72. EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits and returns the 72 on-air bits of one vocoder frame, packed, the first bit in the most significant bit of byte 0: Golay(24,12) on the first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits unprotected, interleaved into the slot. It returns a DMRGO_ERR_FIELD_RANGE when a padding bit of info is set. */
 int dmrgo_vocoder_encode_ambe72(const dmrgo_vocoder_ambe_frame_t *info, uint8_t out[9]);
+/* Go: vocoder.FrameOutput.String. String returns the name of the output. */
+int dmrgo_vocoder_frame_output_string(dmrgo_vocoder_frame_output_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: vocoder.FrameStatus.String. String returns the name of the status. */
+int dmrgo_vocoder_frame_status_string(dmrgo_vocoder_frame_status_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: vocoder.PackAMBEVoice. PackAMBEVoice packs the three frames of a voice burst into the 19-byte IPSC AMBE payload. */
 int dmrgo_vocoder_pack_ambe_voice(const dmrgo_vocoder_ambe_frame_t frames[3], uint8_t out[19]);
 /* Go: vocoder.PackAMBEVoiceFlags. PackAMBEVoiceFlags is PackAMBEVoice that also sets bit 49 when bad[1] is true and bit 99 when bad[2] is true, to flag frames 2 and 3 as bad. */
@@ -10987,12 +11035,16 @@ int dmrgo_vocoder_unpack_ambe_voice(const uint8_t data[19], dmrgo_vocoder_ambe_f
 int dmrgo_vocoder_unpack_ambe_voice_flags(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t frames[3], bool bad[3]);
 /* dmrgo_codec2_codec_free frees the handle. self may be NULL. */
 int dmrgo_codec2_codec_free(dmrgo_codec2_codec_t *self);
-/* Go: codec2.Codec.Close. Close frees the libcodec2 states. Later Encode and Decode calls return DMRGO_ERR_CODEC2_CLOSED. */
+/* Go: codec2.Codec.Close. Close frees the libcodec2 states. Later Encode, Decode and DecodeLost calls return DMRGO_ERR_CODEC2_CLOSED. */
 int dmrgo_codec2_codec_close(dmrgo_codec2_codec_t *self);
 /* dmrgo_codec2_codec_decode_need sets *items and *arena to the room that dmrgo_codec2_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_codec2_codec_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: codec2.Codec.Decode. Decode decodes one 72-bit frame, appends its DMRGO_CODEC2_FRAME_SAMPLES samples to dst and returns the extended slice. It returns DMRGO_ERR_CODEC2_CLOSED after Close, with dst unchanged. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_decode_need gives. */
-int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+/* Go: codec2.Codec.Decode. Decode decodes one 72-bit frame, appends its DMRGO_CODEC2_FRAME_SAMPLES samples to dst and returns the extended slice and a report on the frame. It returns DMRGO_ERR_CODEC2_CLOSED after Close, with dst unchanged and a zero report. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_decode_need gives. */
+int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
+/* dmrgo_codec2_codec_decode_lost_need sets *items and *arena to the room that dmrgo_codec2_codec_decode_lost needs for these arguments, without a change to the handle. */
+int dmrgo_codec2_codec_decode_lost_need(dmrgo_codec2_codec_t *self, size_t *items, size_t *arena);
+/* Go: codec2.Codec.DecodeLost. DecodeLost appends DMRGO_CODEC2_FRAME_SAMPLES zero samples in place of a frame that never arrived, and returns the extended slice and a report with Frame DMRGO_VOCODER_FRAME_LOST and Output DMRGO_VOCODER_OUTPUT_SILENCE. It returns DMRGO_ERR_CODEC2_CLOSED after Close, with dst unchanged. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_decode_lost_need gives. */
+int dmrgo_codec2_codec_decode_lost(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
 /* Go: codec2.Codec.DecodeMode. DecodeMode returns the mode of the frames of the current call: the configured mode, or for DMRGO_CODEC2_MODE_AUTO the detected mode. */
 int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
 /* Go: codec2.Codec.Encode. Encode encodes exactly DMRGO_CODEC2_FRAME_SAMPLES samples into one 72-bit frame, in DMRGO_CODEC2_MODE2400 for DMRGO_CODEC2_MODE_AUTO. */
@@ -11029,12 +11081,16 @@ int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_
 int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
 /* dmrgo_dvsi_codec_free frees the handle. self may be NULL. */
 int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
-/* Go: dvsi.Codec.Close. Close marks the Codec closed; later Encode and Decode calls return DMRGO_ERR_DVSI_CLOSED. */
+/* Go: dvsi.Codec.Close. Close marks the Codec closed; later Encode, Decode and DecodeLost calls return DMRGO_ERR_DVSI_CLOSED. */
 int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
 /* dmrgo_dvsi_codec_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: dvsi.Codec.Decode. Decode has the chip decode one 72-bit frame with FEC, appends the DMRGO_DVSI_FRAME_SAMPLES samples to dst and returns the extended slice. It returns DMRGO_ERR_DVSI_CLOSED after Close, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, and the errors of the Port, with dst unchanged. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_decode_need gives. */
-int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+/* Go: dvsi.Codec.Decode. Decode has the chip decode one 72-bit frame with FEC, appends the DMRGO_DVSI_FRAME_SAMPLES samples to dst and returns the extended slice and a report from the DCMODE_OUT flags of the chip (AMBE-3000R manual Table 15): Output is DMRGO_VOCODER_OUTPUT_TONE for TONE_FRAME, else DMRGO_VOCODER_OUTPUT_SILENCE when VOICE_ACTIVE is 0, else DMRGO_VOCODER_OUTPUT_REPEAT when DATA_INVALID is 1, else DMRGO_VOCODER_OUTPUT_VOICE; Frame is DMRGO_VOCODER_FRAME_ERASED when DATA_INVALID is 1, else DMRGO_VOCODER_FRAME_GOOD. It returns DMRGO_ERR_DVSI_CLOSED after Close, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, and the errors of the Port, with dst unchanged and a zero report. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_decode_need gives. */
+int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
+/* dmrgo_dvsi_codec_decode_lost_need sets *items and *arena to the room that dmrgo_dvsi_codec_decode_lost needs for these arguments, without a change to the handle. */
+int dmrgo_dvsi_codec_decode_lost_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
+/* Go: dvsi.Codec.DecodeLost. DecodeLost has the chip fill a frame that never arrived: it sends a channel packet with no channel bits and a CMODE field that sets LOST_FRAME, and the chip repeats the frame before, or after more than 2 repeats outputs comfort noise (AMBE-3000R manual Tables 14 and 105). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_decode_lost_need gives. */
+int dmrgo_dvsi_codec_decode_lost(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
 /* Go: dvsi.Codec.Encode. Encode has the chip encode exactly DMRGO_DVSI_FRAME_SAMPLES samples into one 72-bit frame with FEC. It returns DMRGO_ERR_DVSI_SAMPLES for another number of samples, DMRGO_ERR_DVSI_CLOSED after Close, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, and the errors of the Port. */
 int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: dvsi.Codec.FID. FID returns DMRGO_ENUMS_FID_STANDARDIZED, the Feature set ID of calls with the ETSI standard vocoder, AMBE+2. */
@@ -11045,7 +11101,7 @@ int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
 int dmrgo_dvsi_codec_product_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
 /* Go: dvsi.Codec.Product. Product returns the product name that the chip reported in New, such as "AMBE3000R". It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_product_need gives (DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS items). */
 int dmrgo_dvsi_codec_product(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dvsi.Codec.Reset. Reset does nothing: the Codec keeps no state between frames. */
+/* Go: dvsi.Codec.Reset. Reset does nothing. */
 int dmrgo_dvsi_codec_reset(dmrgo_dvsi_codec_t *self);
 /* Go: dvsi.Codec.Silence. Silence returns dmrgo_vocoder_ambe_silence_slot. */
 int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
@@ -11053,7 +11109,7 @@ int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
 int dmrgo_dvsi_codec_version_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
 /* Go: dvsi.Codec.Version. Version returns the version string that the chip reported in New. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_version_need gives (DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS items). */
 int dmrgo_dvsi_codec_version(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dvsi.New. New sets up the chip behind port for the DMR AMBE+2 rate and returns a Codec for it. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL port, DMRGO_ERR_DVSI_CHANNEL for a channel outside 0 to DMRGO_DVSI_MAX_CHANNEL, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, DMRGO_ERR_DVSI_STATUS when it rejects a field, and the errors of port. port and cfg may be NULL. */
+/* Go: dvsi.New. New sets up the chip behind port for the DMR AMBE+2 rate and returns a Codec for it. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL port, DMRGO_ERR_DVSI_CHANNEL for a channel outside 0 to DMRGO_DVSI_MAX_CHANNEL, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, DMRGO_ERR_DVSI_SPEECH_FORMAT when it rejects the PKT_SPCHFMT field, DMRGO_ERR_DVSI_STATUS when it rejects another field, and the errors of port. port and cfg may be NULL. */
 int dmrgo_dvsi_new(dmrgo_dvsi_port_t *port, const dmrgo_dvsi_config_t *cfg, dmrgo_dvsi_codec_t **out);
 /* Go: dvsi.Packet.AppendChannelData. AppendChannelData appends the bits of the CHAND field of a channel packet, packed MSB first, to dst and returns the extended slice, the number of bits and the channel of the field. It returns DMRGO_ERR_DVSI_FIELD when p is not a channel packet with one CHAND field and known fields only, and DMRGO_ERR_DVSI_BITS for bits outside DMRGO_DVSI_MIN_BITS to DMRGO_DVSI_MAX_BITS, with dst unchanged. */
 int dmrgo_dvsi_packet_append_channel_data(const dmrgo_dvsi_packet_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n, int64_t *n2);

@@ -1,4 +1,4 @@
-abi 1
+abi 2
 code DMRGO_ERR_CONFIG -100
 code DMRGO_ERR_FIELD_RANGE -101
 code DMRGO_ERR_NIL_ARGUMENT -102
@@ -127,6 +127,7 @@ code DMRGO_ERR_VOICE_NOT_ACTIVE -224
 code DMRGO_ERR_VOICE_QUEUE_FULL -225
 code DMRGO_ERR_VOICE_TIMED_OUT -226
 code DMRGO_ERR_CODEC2_NOT_WASM -227
+code DMRGO_ERR_DVSI_SPEECH_FORMAT -228
 prefix github.com/USA-RedDragon/dmrgo/v2 dmrgo_
 prefix github.com/USA-RedDragon/dmrgo/v2/bs dmrgo_bs_
 prefix github.com/USA-RedDragon/dmrgo/v2/constants dmrgo_constants_
@@ -806,6 +807,7 @@ sym #define DMRGO_ERR_DVSI_LENGTH (-214)
 sym #define DMRGO_ERR_DVSI_PARITY (-215)
 sym #define DMRGO_ERR_DVSI_PORT (-216)
 sym #define DMRGO_ERR_DVSI_SAMPLES (-217)
+sym #define DMRGO_ERR_DVSI_SPEECH_FORMAT (-228)
 sym #define DMRGO_ERR_DVSI_START (-218)
 sym #define DMRGO_ERR_DVSI_STATUS (-219)
 sym #define DMRGO_ERR_DVSI_TIMEOUT (-220)
@@ -1402,6 +1404,14 @@ sym #define DMRGO_TRUNK_TSCC_STUN ((dmrgo_trunk_tscc_output_kind_t)13)
 sym #define DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
 sym #define DMRGO_TRUNK_TSCC_UDT ((dmrgo_trunk_tscc_output_kind_t)9)
 sym #define DMRGO_TRUNK_TSCC_USBD ((dmrgo_trunk_tscc_output_kind_t)10)
+sym #define DMRGO_VOCODER_FRAME_ERASED ((dmrgo_vocoder_frame_status_t)2)
+sym #define DMRGO_VOCODER_FRAME_GOOD ((dmrgo_vocoder_frame_status_t)0)
+sym #define DMRGO_VOCODER_FRAME_INVALID ((dmrgo_vocoder_frame_status_t)3)
+sym #define DMRGO_VOCODER_FRAME_LOST ((dmrgo_vocoder_frame_status_t)1)
+sym #define DMRGO_VOCODER_OUTPUT_REPEAT ((dmrgo_vocoder_frame_output_t)2)
+sym #define DMRGO_VOCODER_OUTPUT_SILENCE ((dmrgo_vocoder_frame_output_t)3)
+sym #define DMRGO_VOCODER_OUTPUT_TONE ((dmrgo_vocoder_frame_output_t)1)
+sym #define DMRGO_VOCODER_OUTPUT_VOICE ((dmrgo_vocoder_frame_output_t)0)
 sym #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 sym #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
 sym #define DMRGO_VOICE_DEFAULT_JITTER 360000000
@@ -1530,7 +1540,9 @@ sym int dmrgo_bs_slot_state_string(dmrgo_bs_slot_state_t self, char *out, size_t
 sym int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_codec2_codec_as_codec(dmrgo_codec2_codec_t *self, dmrgo_vocoder_codec_t **out);
 sym int dmrgo_codec2_codec_close(dmrgo_codec2_codec_t *self);
-sym int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+sym int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
+sym int dmrgo_codec2_codec_decode_lost(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
+sym int dmrgo_codec2_codec_decode_lost_need(dmrgo_codec2_codec_t *self, size_t *items, size_t *arena);
 sym int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
 sym int dmrgo_codec2_codec_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_codec2_codec_encode(dmrgo_codec2_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
@@ -1837,7 +1849,9 @@ sym int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, s
 sym int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
 sym int dmrgo_dvsi_codec_as_codec(dmrgo_dvsi_codec_t *self, dmrgo_vocoder_codec_t **out);
 sym int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
-sym int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+sym int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
+sym int dmrgo_dvsi_codec_decode_lost(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
+sym int dmrgo_dvsi_codec_decode_lost_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
 sym int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 sym int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_fid_t *out);
@@ -3067,7 +3081,9 @@ sym int dmrgo_trunkauth_response(uint32_t challenge, const uint8_t key[16], uint
 sym int dmrgo_vocoder_ambe_silence(dmrgo_vocoder_ambe_frame_t *out);
 sym int dmrgo_vocoder_ambe_silence_slot(uint8_t out[9]);
 sym int dmrgo_vocoder_codec_close(dmrgo_vocoder_codec_t *self);
-sym int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+sym int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report);
+sym int dmrgo_vocoder_codec_decode_lost(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report);
+sym int dmrgo_vocoder_codec_decode_lost_need(dmrgo_vocoder_codec_t *self, size_t *items, size_t *arena);
 sym int dmrgo_vocoder_codec_decode_need(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_vocoder_codec_encode(dmrgo_vocoder_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 sym int dmrgo_vocoder_codec_fid(dmrgo_vocoder_codec_t *self, dmrgo_enums_fid_t *out);
@@ -3078,6 +3094,8 @@ sym int dmrgo_vocoder_codec_reset(dmrgo_vocoder_codec_t *self);
 sym int dmrgo_vocoder_codec_silence(dmrgo_vocoder_codec_t *self, uint8_t out[9]);
 sym int dmrgo_vocoder_decode_ambe72(const uint8_t slot[9], dmrgo_vocoder_ambe_frame_t *ambe_frame, dmrgo_fec_result_t *fec);
 sym int dmrgo_vocoder_encode_ambe72(const dmrgo_vocoder_ambe_frame_t *info, uint8_t out[9]);
+sym int dmrgo_vocoder_frame_output_string(dmrgo_vocoder_frame_output_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_vocoder_frame_status_string(dmrgo_vocoder_frame_status_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_vocoder_pack_ambe_voice(const dmrgo_vocoder_ambe_frame_t frames[3], uint8_t out[19]);
 sym int dmrgo_vocoder_pack_ambe_voice_flags(const dmrgo_vocoder_ambe_frame_t frames[3], const bool bad[3], uint8_t out[19]);
 sym int dmrgo_vocoder_unpack_ambe_voice(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t out[3]);
@@ -3273,6 +3291,8 @@ sym typedef uint8_t dmrgo_trunk_state_t;
 sym typedef uint8_t dmrgo_trunk_status_t;
 sym typedef uint8_t dmrgo_trunk_stun_action_t;
 sym typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
+sym typedef uint8_t dmrgo_vocoder_frame_output_t;
+sym typedef uint8_t dmrgo_vocoder_frame_status_t;
 sym typedef uint8_t dmrgo_voice_end_reason_t;
 sym typedef uint8_t dmrgo_voice_event_kind_t;
 sym typedef uint8_t dmrgo_voice_interrupter_state_t;
@@ -3547,7 +3567,8 @@ type struct dmrgo_trunkauth_entry_t { uint32_t addr; dmrgo_trunkauth_key_t key; 
 type struct dmrgo_trunkauth_key_t { uint8_t k[16]; uint32_t psn; };
 type struct dmrgo_trunkauth_keys_t { dmrgo_trunkauth_entry_t *entries; size_t entries_len; };
 type struct dmrgo_vocoder_ambe_frame_t { uint8_t v[7]; };
-type struct dmrgo_vocoder_codec_vtable_t { size_t size; DMRGO_USER_T user; int (*close)(DMRGO_USER_T user); int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*encode)(DMRGO_USER_T user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(DMRGO_USER_T user, dmrgo_enums_fid_t *out); int (*frame_samples)(DMRGO_USER_T user, int64_t *out); int (*silence)(DMRGO_USER_T user, uint8_t out[9]); int (*reset)(DMRGO_USER_T user); };
+type struct dmrgo_vocoder_codec_vtable_t { size_t size; DMRGO_USER_T user; int (*close)(DMRGO_USER_T user); int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report); int (*encode)(DMRGO_USER_T user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(DMRGO_USER_T user, dmrgo_enums_fid_t *out); int (*frame_samples)(DMRGO_USER_T user, int64_t *out); int (*silence)(DMRGO_USER_T user, uint8_t out[9]); int (*reset)(DMRGO_USER_T user); int (*decode_lost)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report); };
+type struct dmrgo_vocoder_frame_report_t { dmrgo_vocoder_frame_status_t frame; dmrgo_vocoder_frame_output_t output; uint8_t corrected_a; uint8_t corrected_b; bool high_error_rate; bool counts_known; };
 type struct dmrgo_voice_call_options_t { size_t size; bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; bool in_call; bool hang_time; };
 type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; dmrgo_layer3_service_options_t options; dmrgo_enums_fid_t fid; dmrgo_pdu_lc_bytes_t lc; dmrgo_voice_origin_t origin; uint32_t stream; };
 type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_call_t call; dmrgo_enums_voice_burst_type_t position; dmrgo_layer2_raw_burst_t burst; dmrgo_voice_frame_quality_t frames[3]; uint8_t lost; dmrgo_pdu_full_link_control_t lc; uint8_t *text; size_t text_len; dmrgo_voice_end_reason_t reason; dmrgo_voice_stats_t stats; };

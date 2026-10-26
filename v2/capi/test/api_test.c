@@ -242,7 +242,7 @@ static void test_sized(void) {
 	OK(dmrgo_voice_new_transmitter(&big.c, &vt));
 	OK(dmrgo_voice_transmitter_free(vt));
 
-	dmrgo_vocoder_codec_vtable_t vtab = {sizeof vtab, NULL, NULL, NULL, enc_only, NULL, NULL, NULL, NULL};
+	dmrgo_vocoder_codec_vtable_t vtab = {sizeof vtab, NULL, NULL, NULL, enc_only, NULL, NULL, NULL, NULL, NULL};
 	vtab.size = offsetof(dmrgo_vocoder_codec_vtable_t, fid);
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vtab, &c));
@@ -255,7 +255,8 @@ static void test_sized(void) {
 	CHECK(fid == 0);
 	uint8_t slot[9] = {0};
 	size_t n = 0;
-	CHECK(dmrgo_vocoder_codec_decode(c, pcm, 160, &n, NULL, slot) == DMRGO_ERR_NO_METHOD);
+	CHECK(dmrgo_vocoder_codec_decode(c, pcm, 160, &n, NULL, slot, NULL) == DMRGO_ERR_NO_METHOD);
+	CHECK(dmrgo_vocoder_codec_decode_lost(c, pcm, 160, &n, NULL, NULL) == DMRGO_ERR_NO_METHOD);
 	OK(dmrgo_vocoder_codec_free(c));
 	vtab.size = 0;
 	CHECK(dmrgo_vocoder_codec_from_vtable(&vtab, &c) == DMRGO_ERR_ARG);
@@ -645,13 +646,31 @@ static int c_frame_samples(void *user, int64_t *out) {
 	return 0;
 }
 
-static int c_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
+static int c_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *rep) {
 	*need = *len + 160;
 	if (cap < *need)
 		return DMRGO_ERR_SHORT;
 	for (size_t i = 0; i < 160; i++)
 		dst[*len + i] = (int16_t)(slot[0] + *(int *)user);
 	*len += 160;
+	rep->frame = DMRGO_VOCODER_FRAME_ERASED;
+	rep->output = DMRGO_VOCODER_OUTPUT_REPEAT;
+	rep->corrected_a = 3;
+	rep->corrected_b = 2;
+	rep->high_error_rate = true;
+	rep->counts_known = true;
+	return 0;
+}
+
+static int c_decode_lost(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, dmrgo_vocoder_frame_report_t *rep) {
+	(void)user;
+	*need = *len + 160;
+	if (cap < *need)
+		return DMRGO_ERR_SHORT;
+	memset(dst + *len, 0, 160 * sizeof *dst);
+	*len += 160;
+	rep->frame = DMRGO_VOCODER_FRAME_LOST;
+	rep->output = DMRGO_VOCODER_OUTPUT_SILENCE;
 	return 0;
 }
 
@@ -691,9 +710,10 @@ static int c_reset(void *user) {
 
 static int bias = 1000;
 
-static int liar_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
+static int liar_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *rep) {
 	(void)user;
 	(void)slot;
+	(void)rep;
 	*need = *len + 200;
 	if (cap < *need)
 		return DMRGO_ERR_SHORT;
@@ -727,7 +747,7 @@ static int range_encode(void *user, const int16_t *pcm, size_t n, uint8_t out[9]
 }
 
 static void test_positive_status(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, NULL, NULL, positive_encode, NULL, c_frame_samples, NULL, NULL};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, NULL, NULL, positive_encode, NULL, c_frame_samples, NULL, NULL, NULL};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	int16_t pcm[160] = {0};
@@ -784,7 +804,7 @@ static void test_failed_results(void) {
 	OK(dmrgo_trunk_authenticator_response(a, 2, 6, &r, &ok));
 	CHECK(!ok && r == 0);
 	OK(dmrgo_trunk_authenticator_free(a));
-	dmrgo_vocoder_codec_vtable_t cvt = {sizeof cvt, NULL, NULL, NULL, NULL, fid_once, NULL, NULL, NULL};
+	dmrgo_vocoder_codec_vtable_t cvt = {sizeof cvt, NULL, NULL, NULL, NULL, fid_once, NULL, NULL, NULL, NULL};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&cvt, &c));
 	dmrgo_enums_fid_t fid = 0;
@@ -797,7 +817,7 @@ static void test_failed_results(void) {
 }
 
 static void test_liar(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset, NULL};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	uint8_t slot[9] = {0};
@@ -805,13 +825,13 @@ static void test_liar(void) {
 	OK(dmrgo_vocoder_codec_decode_need(c, slot, &items, &ab));
 	CHECK(items == 160);
 	int16_t pcm[400];
-	CHECK(dmrgo_vocoder_codec_decode(c, pcm, items, &n, &need, slot) == DMRGO_ERR_BOUND);
+	CHECK(dmrgo_vocoder_codec_decode(c, pcm, items, &n, &need, slot, NULL) == DMRGO_ERR_BOUND);
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_BOUND);
 	OK(dmrgo_vocoder_codec_free(c));
 }
 
 static void test_vocoder(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, &bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, &bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset, c_decode_lost};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	int64_t fs = 0;
@@ -823,8 +843,18 @@ static void test_vocoder(void) {
 	uint8_t slot[9] = {7};
 	int16_t pcm[200];
 	size_t n = 0;
-	OK(dmrgo_vocoder_codec_decode(c, pcm, 200, &n, NULL, slot));
+	dmrgo_vocoder_frame_report_t rep;
+	memset(&rep, 0xff, sizeof rep);
+	OK(dmrgo_vocoder_codec_decode(c, pcm, 200, &n, NULL, slot, &rep));
 	CHECK(n == 160 && pcm[0] == 1007 && pcm[159] == 1007);
+	CHECK(rep.frame == DMRGO_VOCODER_FRAME_ERASED && rep.output == DMRGO_VOCODER_OUTPUT_REPEAT && rep.corrected_a == 3 && rep.corrected_b == 2 && rep.high_error_rate && rep.counts_known);
+	n = 0;
+	OK(dmrgo_vocoder_codec_decode_lost(c, pcm, 200, &n, NULL, &rep));
+	CHECK(n == 160 && pcm[0] == 0 && rep.frame == DMRGO_VOCODER_FRAME_LOST && rep.output == DMRGO_VOCODER_OUTPUT_SILENCE && !rep.counts_known);
+	char name[16];
+	size_t nl = 0;
+	OK(dmrgo_vocoder_frame_status_string(rep.frame, name, sizeof name, &nl, NULL));
+	CHECK(nl == 4 && strcmp(name, "Lost") == 0);
 	OK(dmrgo_vocoder_codec_reset(c));
 	CHECK(resets == 1);
 	uint8_t enc[9];
@@ -845,8 +875,11 @@ static void test_vocoder(void) {
 	OK(rc);
 	dmrgo_codec2_codec_silence(c2, slot);
 	n = 0;
-	OK(dmrgo_codec2_codec_decode(c2, pcm, 200, &n, NULL, slot));
-	CHECK(n == 160);
+	OK(dmrgo_codec2_codec_decode(c2, pcm, 200, &n, NULL, slot, &rep));
+	CHECK(n == 160 && rep.frame == DMRGO_VOCODER_FRAME_GOOD && rep.output == DMRGO_VOCODER_OUTPUT_VOICE && rep.counts_known);
+	n = 0;
+	OK(dmrgo_codec2_codec_decode_lost(c2, pcm, 200, &n, NULL, &rep));
+	CHECK(n == 160 && pcm[0] == 0 && pcm[159] == 0 && rep.frame == DMRGO_VOCODER_FRAME_LOST && rep.output == DMRGO_VOCODER_OUTPUT_SILENCE);
 	OK(dmrgo_codec2_codec_close(c2));
 	OK(dmrgo_codec2_codec_free(c2));
 	printf("vocoder: C codec and codec2\n");
@@ -1035,6 +1068,7 @@ static void chip_packet(struct chip *c) {
 		static const uint8_t ready[] = {0x39};
 		static const uint8_t query[] = "\x30" "AMBE3000R\0" "\x31" "V120\0";
 		static const uint8_t rate[] = {0x0A, 0x00, 0x0B, 0x00};
+		static const uint8_t spchfmt[] = {0x16, 0x00};
 		uint8_t pm[2] = {0x3F, 0x00};
 		switch (p.fields[0]) {
 		case DMRGO_DVSI_FIELD_RESET:
@@ -1051,6 +1085,10 @@ static void chip_packet(struct chip *c) {
 		case DMRGO_DVSI_FIELD_RATE_P:
 			CHECK(p.fields_len == 15 && p.fields[1] == 0x04 && p.fields[2] == 0x31);
 			chip_reply(c, 0, rate, sizeof rate);
+			break;
+		case 0x16:
+			CHECK(p.fields_len == 3 && p.fields[1] == 0x00 && p.fields[2] == 0x01);
+			chip_reply(c, 0, spchfmt, sizeof spchfmt);
 			break;
 		default:
 			failures++;
@@ -1123,8 +1161,11 @@ static void test_dvsi(void) {
 	CHECK(nl == 9 && strcmp(name, "AMBE3000R") == 0);
 	int16_t pcm[160];
 	size_t n = 0;
-	OK(dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot));
+	dmrgo_vocoder_frame_report_t rep;
+	memset(&rep, 0xff, sizeof rep);
+	OK(dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot, &rep));
 	CHECK(n == 160 && pcm[0] == -8000 && pcm[159] == 7900);
+	CHECK(rep.frame == DMRGO_VOCODER_FRAME_GOOD && rep.output == DMRGO_VOCODER_OUTPUT_VOICE && !rep.counts_known);
 	for (int i = 0; i < 160; i++)
 		pcm[i] = (int16_t)(7 * i);
 	uint8_t slot[9];
@@ -1133,7 +1174,8 @@ static void test_dvsi(void) {
 	CHECK(dmrgo_dvsi_codec_encode(codec, pcm, 100, slot) == DMRGO_ERR_DVSI_SAMPLES);
 	CHECK(c.decodes == 1 && c.encodes == 1 && c.parity == 1);
 	OK(dmrgo_dvsi_codec_close(codec));
-	CHECK((n = 0, dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot)) == DMRGO_ERR_DVSI_CLOSED);
+	CHECK((n = 0, dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot, NULL)) == DMRGO_ERR_DVSI_CLOSED);
+	CHECK((n = 0, dmrgo_dvsi_codec_decode_lost(codec, pcm, 160, &n, NULL, NULL)) == DMRGO_ERR_DVSI_CLOSED);
 	OK(dmrgo_dvsi_codec_free(codec));
 	CHECK(dmrgo_dvsi_port_free(port) == DMRGO_ERR_HANDLE);
 }

@@ -21,10 +21,10 @@ static inline int dmrgo_vocoder_codec_vtable_t__close(const dmrgo_vocoder_codec_
 	return t->close(t->user);
 }
 
-static inline int dmrgo_vocoder_codec_vtable_t__decode(const dmrgo_vocoder_codec_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]) {
+static inline int dmrgo_vocoder_codec_vtable_t__decode(const dmrgo_vocoder_codec_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9], dmrgo_vocoder_frame_report_t *frame_report) {
 	if (!t->decode)
 		return DMRGO_ERR_NO_METHOD;
-	return t->decode(t->user, dst, dst_cap, dst_len, dst_need, slot);
+	return t->decode(t->user, dst, dst_cap, dst_len, dst_need, slot, frame_report);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__encode(const dmrgo_vocoder_codec_vtable_t *t, const int16_t *pcm, size_t pcm_len, uint8_t out[9]) {
@@ -55,6 +55,12 @@ static inline int dmrgo_vocoder_codec_vtable_t__reset(const dmrgo_vocoder_codec_
 	if (!t->reset)
 		return DMRGO_ERR_NO_METHOD;
 	return t->reset(t->user);
+}
+
+static inline int dmrgo_vocoder_codec_vtable_t__decode_lost(const dmrgo_vocoder_codec_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_vocoder_frame_report_t *frame_report) {
+	if (!t->decode_lost)
+		return DMRGO_ERR_NO_METHOD;
+	return t->decode_lost(t->user, dst, dst_cap, dst_len, dst_need, frame_report);
 }
 
 static inline int dmrgo_dvsi_port_vtable_t__read(const dmrgo_dvsi_port_vtable_t *t, uint8_t *p, size_t p_len, int64_t *out) {

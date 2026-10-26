@@ -248,6 +248,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "dvsi: port returned a bad byte count";
 	case -217:
 		return "dvsi: bad number of samples";
+	case -228:
+		return "dvsi: device rejected the decoder status format (PKT_SPCHFMT)";
 	case -218:
 		return "dvsi: no start byte";
 	case -219:

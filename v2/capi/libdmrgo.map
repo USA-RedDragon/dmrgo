@@ -1,4 +1,4 @@
-DMRGO_1 {
+DMRGO_2 {
 	global:
 		dmrgo_abi_version;
 		dmrgo_ars_decode_message;
@@ -53,6 +53,8 @@ DMRGO_1 {
 		dmrgo_codec2_codec_as_codec;
 		dmrgo_codec2_codec_close;
 		dmrgo_codec2_codec_decode;
+		dmrgo_codec2_codec_decode_lost;
+		dmrgo_codec2_codec_decode_lost_need;
 		dmrgo_codec2_codec_decode_mode;
 		dmrgo_codec2_codec_decode_need;
 		dmrgo_codec2_codec_encode;
@@ -360,6 +362,8 @@ DMRGO_1 {
 		dmrgo_dvsi_codec_as_codec;
 		dmrgo_dvsi_codec_close;
 		dmrgo_dvsi_codec_decode;
+		dmrgo_dvsi_codec_decode_lost;
+		dmrgo_dvsi_codec_decode_lost_need;
 		dmrgo_dvsi_codec_decode_need;
 		dmrgo_dvsi_codec_encode;
 		dmrgo_dvsi_codec_fid;
@@ -1595,6 +1599,8 @@ DMRGO_1 {
 		dmrgo_vocoder_ambe_silence_slot;
 		dmrgo_vocoder_codec_close;
 		dmrgo_vocoder_codec_decode;
+		dmrgo_vocoder_codec_decode_lost;
+		dmrgo_vocoder_codec_decode_lost_need;
 		dmrgo_vocoder_codec_decode_need;
 		dmrgo_vocoder_codec_encode;
 		dmrgo_vocoder_codec_fid;
@@ -1605,6 +1611,8 @@ DMRGO_1 {
 		dmrgo_vocoder_codec_silence;
 		dmrgo_vocoder_decode_ambe72;
 		dmrgo_vocoder_encode_ambe72;
+		dmrgo_vocoder_frame_output_string;
+		dmrgo_vocoder_frame_status_string;
 		dmrgo_vocoder_pack_ambe_voice;
 		dmrgo_vocoder_pack_ambe_voice_flags;
 		dmrgo_vocoder_unpack_ambe_voice;

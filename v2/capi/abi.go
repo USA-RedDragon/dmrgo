@@ -520,15 +520,19 @@ func codec2ABI(seed uint64) error {
 			slot[k] = byte(h.rng.IntN(256))
 		}
 		cs := (*C.uint8_t)(unsafe.Pointer(&slot[0]))
-		pcm, gerr := gc.Decode(nil, slot)
+		pcm, grep, gerr := gc.Decode(nil, slot)
 		want := make([]int16, len(pcm))
+		crep := new(C.dmrgo_vocoder_frame_report_t)
 		err := runAppend(h, "codec2.Codec.Decode", want, gerr, func(*C.int16_t) int16 { return 0 },
 			func(it, a *C.size_t) C.int { return C.dmrgo_codec2_codec_decode_need(cc, cs, it, a) },
 			func(d *C.int16_t, c C.size_t, nn, nd *C.size_t, _ unsafe.Pointer, _ C.size_t, _, _ *C.size_t) C.int {
-				return C.dmrgo_codec2_codec_decode(cc, d, c, nn, nd, cs)
+				return C.dmrgo_codec2_codec_decode(cc, d, c, nn, nd, cs, crep)
 			})
 		if err != nil {
 			return err
+		}
+		if got := in_vocoder_FrameReport(crep); gerr == nil && got != grep {
+			return fmt.Errorf("codec2.Codec.Decode: report %+v, want %+v", got, grep)
 		}
 	}
 	return h.recheck()
