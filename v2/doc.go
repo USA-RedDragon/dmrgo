@@ -167,6 +167,9 @@
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //   - vocoder/dvsi: the packet protocol of the DVSI AMBE-3000R and
 //     AMBE-3003 chips, and a Codec with such a chip.
+//   - privacy: opt-in voice privacy: the algorithm and key ID of an
+//     encrypted call, and ARC4, AES and Basic Privacy keystreams for the
+//     AMBE+2 frames of a voice.Receiver and a voice.Transmitter.
 //
 // The C API of the library, libdmrgo, is in v2/capi, a module of its own.
 // It has an ABI number of its own; the README says how it is versioned.
@@ -261,6 +264,10 @@
 //     voice.ErrTimedOut: returned by voice.Transmitter.
 //   - voice.ErrInterruptBusy: returned by voice.Interrupter.Interrupt while
 //     a request runs.
+//   - privacy.ErrKeysFull, privacy.ErrNotStarted: returned by
+//     privacy.Receiver.AddKey and privacy.Transmitter.Output.
+//   - privacy.ErrAmateur: returned by privacy.NewTransmitter for the
+//     amateur service, which forbids encryption.
 //   - data.ErrBusy: returned by data.Sender.Send while a message is in
 //     progress.
 //   - csbk.ErrBusy, csbk.ErrNoAddresses: returned by the requests of the

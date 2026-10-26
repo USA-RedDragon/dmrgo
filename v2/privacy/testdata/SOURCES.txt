@@ -1,0 +1,20 @@
+rc4.txt, aes128.txt, aes256.txt and bp.txt come from the public captures of the
+archive.org item dmr-encrypted-samples_202511 ("Dmr Encrypted Samples.zip", SHA-256
+944fe9af0b8949fe18f25b60238f24c0068c21e52aac966d933cfa9316dd5447, uploaded 2025-11-13,
+Public Domain Mark 1.0), fetched on 2026-10-26: RC4-40.wav, AES-128.wav, AES-256.wav and
+MOTO-BP.wav, 48 kHz discriminator audio. The item publishes the keys: 40-bit 373374ABE8,
+128-bit 373374ABE8E9D13AA90900B9A3101664, 256-bit
+3AF8C96E21BEFDE927EE1D03DF53CFA701516B0642AC7B38643549E2BE79840E, and Basic Privacy key
+number 100.
+
+dsd-fme (lwvmobile/dsd-fme, branch audio_work, build AW 2026-55-g72b3e5e) decoded each
+file twice with -fs -Z, without the key and with it (-1, -H, or -4 -b 100). Line "pi" is
+the PI header payload that it printed (12 octets with the CRC), line "lc" the Voice LC
+Header payload (12 octets with the RS parity; for bp.txt the 9 octets of the embedded LC,
+as that file has no header). Each other line is one AMBE+2 frame in call order, the 49
+bits packed as vocoder.AMBEFrame: the frame as received, then the frame that dsd-fme
+printed with the key.
+
+MOTO-BP.wav sets neither the Privacy service option nor FID 0x10 in its LC. Every frame
+of bp.txt differs from its clear frame by 450245624562 then 7 zero bits, the pattern of
+the 16-bit value 0x4562.
