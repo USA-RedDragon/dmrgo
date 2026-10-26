@@ -81,7 +81,7 @@ func TestStrings(t *testing.T) {
 		{voice.OriginHeader.String(), "Header"},
 		{voice.Origin(9).String(), "Origin(9)"},
 		{voice.EndSuperseded.String(), "Superseded"},
-		{voice.EndReason(0).String(), "EndReason(0)"},
+		{voice.EndReason(0).String(), "None"},
 		{voice.EventTalkerAlias.String(), "TalkerAlias"},
 		{voice.EventKind(0).String(), "EventKind(0)"},
 		{voice.StateLateEntry.String(), "LateEntry"},

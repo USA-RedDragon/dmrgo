@@ -66,7 +66,7 @@ func TestExpressDataTailBeforeVoice(t *testing.T) {
 		}
 		checkData(t, mode.String(), dataOut(got, enums.Slot1), want, func(int) time.Duration { return late })
 		ev := events(got, enums.Slot1)
-		if len(ev) < 2 || ev[1] != "end:Data:EndReason(0)" {
+		if len(ev) < 2 || ev[1] != "end:Data:None" {
 			t.Fatalf("%v: events %v", mode, ev)
 		}
 	}

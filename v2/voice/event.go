@@ -95,7 +95,8 @@ func (o Origin) String() string {
 // EndReason is why a call ended.
 type EndReason uint8
 
-// The EndReason values.
+// The EndReason values. The zero EndReason is no reason, and String
+// names it None.
 const (
 	// EndTerminator is a Terminator with LC.
 	EndTerminator EndReason = iota + 1
@@ -136,6 +137,8 @@ const (
 // without a name.
 func (r EndReason) String() string {
 	switch r {
+	case 0:
+		return "None"
 	case EndTerminator:
 		return "Terminator"
 	case EndDataSync:

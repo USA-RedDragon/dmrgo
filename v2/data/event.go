@@ -63,7 +63,8 @@ func (k EventKind) String() string {
 // EndReason is why a data call ended.
 type EndReason uint8
 
-// The EndReason values.
+// The EndReason values. The zero EndReason is no reason, and String
+// names it None.
 const (
 	// EndQuiet is a time of ReceiverConfig.Hang without a burst.
 	EndQuiet EndReason = iota + 1
@@ -84,6 +85,8 @@ const (
 // without a name.
 func (r EndReason) String() string {
 	switch r {
+	case 0:
+		return "None"
 	case EndQuiet:
 		return "Quiet"
 	case EndIdle:

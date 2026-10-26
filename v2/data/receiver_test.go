@@ -582,7 +582,7 @@ func TestReceiverStrings(t *testing.T) {
 		{data.EventKind(99).String(), "EventKind(99)"},
 		{data.EndQuiet.String(), "Quiet"},
 		{data.EndSuperseded.String(), "Superseded"},
-		{data.EndReason(0).String(), "EndReason(0)"},
+		{data.EndReason(0).String(), "None"},
 		{data.StateReceiving.String(), "Receiving"},
 		{data.State(9).String(), "State(9)"},
 	} {
