@@ -148,10 +148,14 @@ func (u *User) Call() (group bool, target, source uint32) {
 }
 
 // SetCall sets Destination, Source and the group or private opcode of the
-// call. A voice opcode stays voice and a data opcode stays data; another
-// opcode becomes voice when u carries a voice burst and data otherwise. It
-// returns a *dmrgo.FieldRangeError, and changes nothing, when target or
-// source does not fit in 24 bits, and dmrgo.ErrNilReceiver for a nil u.
+// call. A voice opcode stays voice and a data opcode stays data. Another
+// opcode becomes voice when u carries a voice burst, a Voice LC Header or a
+// Terminator with the LC of a group or unit to unit voice call, as a
+// MOTOTRBO repeater sends them, and data otherwise, so on a new User call
+// it after SetRawBurst. A PI Header and a BurstSyncLost packet of a voice
+// call also take a voice opcode, so set Opcode for them first. It returns a
+// *dmrgo.FieldRangeError, and changes nothing, when target or source does
+// not fit in 24 bits, and dmrgo.ErrNilReceiver for a nil u.
 func (u *User) SetCall(group bool, target, source uint32) error {
 	switch {
 	case u == nil:
@@ -163,7 +167,14 @@ func (u *User) SetCall(group bool, target, source uint32) error {
 	}
 	voice := u.Opcode == OpGroupVoice || u.Opcode == OpPrivateVoice
 	if u.Opcode != OpGroupData && u.Opcode != OpPrivateData && !voice {
-		voice = u.IsVoice()
+		switch u.Burst.Type() {
+		case BurstVoice, BurstType(enums.DataTypeVoiceLCHeader):
+			voice = true
+		case BurstType(enums.DataTypeTerminatorWithLC):
+			f := enums.FLCO(u.Data.Octets[0] & 0x3F)
+			voice = u.Data.Bits == 96 && (f == enums.FLCOGroupVoiceChannelUser || f == enums.FLCOUnitToUnitVoiceChannelUser)
+		default:
+		}
 	}
 	u.Opcode = UserOpcode(group, !voice)
 	u.Destination, u.Source = target, source
