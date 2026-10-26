@@ -14,6 +14,7 @@
 # Nested modules under v2/, such as the C API in v2/capi, are not checked.
 
 ignore_files:
+  - v2/privacy/data.go
   - v2/privacy/errors.go
   - v2/privacy/key.go
   - v2/privacy/nocopy.go

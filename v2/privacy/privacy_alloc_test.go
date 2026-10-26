@@ -5,6 +5,7 @@ package privacy_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -38,7 +39,16 @@ func TestAllocs(t *testing.T) {
 		o := voice.Output{Kind: voice.OutputBurst, Burst: raw, Hint: layer2.Hint{Kind: layer2.KindVoice}}
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 		mi := uint32(0)
+		dk := privacy.NewARC4Key(1, [5]byte{1, 2, 3, 4, 5})
+		if err := prx.AddKey(dk); err != nil {
+			t.Fatal(err)
+		}
+		ph := pdu.ProprietaryHeader{MFID: enums.FIDMotorola, ManufacturerData: [8]byte{0x11, 1, 0, 0, 1, 2, 3, 4}}
+		msg := data.Message{Proprietary: &ph, Payload: make([]byte, 1500)}
 		n := testing.AllocsPerRun(200, func() {
+			if !prx.Data(&msg).Decrypting {
+				t.Fatal("no data decryption")
+			}
 			mi++
 			ptx.Start(mi)
 			for range 40 {

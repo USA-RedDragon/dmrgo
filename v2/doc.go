@@ -167,9 +167,10 @@
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //   - vocoder/dvsi: the packet protocol of the DVSI AMBE-3000R and
 //     AMBE-3003 chips, and a Codec with such a chip.
-//   - privacy: opt-in voice privacy: the algorithm and key ID of an
-//     encrypted call, and ARC4, AES and Basic Privacy keystreams for the
-//     AMBE+2 frames of a voice.Receiver and a voice.Transmitter.
+//   - privacy: opt-in privacy: the algorithm and key ID of an encrypted
+//     call or data packet, ARC4, AES and Basic Privacy keystreams for the
+//     AMBE+2 frames of a voice.Receiver and a voice.Transmitter, and ARC4
+//     for the packets of a data.Receiver.
 //
 // The C API of the library, libdmrgo, is in v2/capi, a module of its own.
 // It has an ABI number of its own; the README says how it is versioned.

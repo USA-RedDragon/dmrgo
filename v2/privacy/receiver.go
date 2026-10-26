@@ -18,7 +18,8 @@ type Info struct {
 	// Encrypted reports that the call is encrypted: its LC sets the
 	// Privacy service option, or a PI header came.
 	Encrypted bool
-	// Header reports that a PI header with a good CRC came, so that MFID,
+	// Header reports that a PI header with a good CRC came, or for a data
+	// packet a privacy header (see FromProprietaryHeader), so that MFID,
 	// Algorithm, KeyID and MI are set.
 	Header bool
 	// MFID is the FID of the PI header. Algorithm, KeyID and MI follow the
@@ -62,15 +63,17 @@ func FromPIHeader(h *pdu.PIHeader) Info {
 // NewReceiver. A Receiver is not safe for concurrent use and must not be
 // copied; go vet reports a copy.
 type Receiver struct {
-	keys   [MaxKeys]*Key
-	nKeys  int
-	basic  *Key
-	force  bool
-	info   Info
-	voice  bool
-	burst  int
-	stream stream
-	noCopy noCopy
+	keys    [MaxKeys]*Key
+	nKeys   int
+	basic   *Key
+	force   bool
+	info    Info
+	voice   bool
+	burst   int
+	stream  stream
+	dataRC  arc4
+	dataKey [9]byte
+	noCopy  noCopy
 }
 
 // NewReceiver returns a Receiver without keys. It allocates the Receiver.

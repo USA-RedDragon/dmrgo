@@ -3,6 +3,7 @@ package privacy_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -65,5 +66,8 @@ func runScript(t *testing.T, head, script []byte) {
 		prx.Event(&e, &frames)
 		o := voice.Output{Kind: voice.OutputBurst, Burst: raw, Hint: layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstType(s % 8)}}
 		_ = ptx.Output(&o)
+		ph := pdu.ProprietaryHeader{SAP: enums.SAP(s & 0x0F), MFID: enums.FID(p[1]), ManufacturerData: [8]byte(p[2:10])}
+		msg := data.Message{Proprietary: &ph, Payload: script[i:]}
+		prx.Data(&msg)
 	}
 }

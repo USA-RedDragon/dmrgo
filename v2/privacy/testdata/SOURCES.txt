@@ -18,3 +18,52 @@ printed with the key.
 MOTO-BP.wav sets neither the Privacy service option nor FID 0x10 in its LC. Every frame
 of bp.txt differs from its clear frame by 450245624562 then 7 zero bits, the pattern of
 the 16-bit value 0x4562.
+
+data-rc4.txt is the encrypted data packet of the comment of 2026-10-22 by the dsd-fme
+author on lwvmobile/dsd-fme issue 372 ("Hytera Encrypted PDU Support", fetched
+2026-10-26): a Hytera radio sending a UTF-16BE text message with DMRA RC4, key
+1234567890, key ID 1, MI 0C01A418, as dsd-fme printed it. Line "header" is the first
+header (U_HEAD, SAP 9), "phead" the P_HEAD, "block" each rate 1/2 data block, each 12
+octets with its CRC. Line "plain" is the user data that dsd-fme printed with the key,
+"clear" the user data of the same message sent without encryption, from the same issue;
+the two differ only in octet 0, the IPv4 identification of the compressed header. The
+message CRC of the encrypted packet is that of the encrypted user data.
+The P_HEADs of TestDataCaptureHeaderVariants come from the logs that the dsd-fme author
+posted on lwvmobile/dsd-fme issues 283 and 357 (RC4 privacy headers with key IDs 7 and
+1, an MNIS header) and 372 (a Hytera header, MFID 0x68). Their CRCs hold. The Basic
+Privacy headers of those issues come from RAS systems, whose header CRC the logs do not
+show unmasked, so the tests leave them out.
+
+Search for encrypted DMR data captures with a known key, 2026-10-26:
+- archive.org: advanced search for DMR with encrypted, encryption, rc4, aes, privacy,
+  sample, capture and recording; the uploader and creator of dmr-encrypted-samples_202511
+  (one item, voice only); dmr-cracker (an RC4 key finder, no captures).
+- lwvmobile/dsd-fme issues: 372 (the RC4 data capture above, and Hytera BP data with keys
+  1234567890 and ABCDEF1234), 283 and 357 (encryption headers without keys), 194 (RC4
+  text message captures offered by a user, shared in private), 79, 296 (RC4 voice MP3s
+  with key 1234567ABC), 314, 316, 319, 321, 356, 360. The source files dmr_block.c and
+  dmr_pi.c (data and voice layouts, for cross-checking only).
+- arancormonk/dsd-neo: issues and pull requests on encrypted PDUs (3, 35, 337, 342, 353,
+  496, 498, 550, 746, 762), the test tree (tests/protocol/dmr/test_dmr_block_crypto.c holds
+  synthetic AES and RC4 data cases, not captures; tests/crypto holds cipher tests).
+- DSheirer/sdrtrunk issues (6, 1269, 2376): no encrypted data samples.
+- OK-DMR/ok-dmrlib 1.x (installed copy): privacy flags only, no encrypted data.
+- tylerwatt12/known-key-mbe-samples and MattCheramie/GopherTrunk issues 1187 and 1195:
+  known-key captures of voice only.
+- gophertrunk.org/reference/dmr-encryption and gophertrunk.org/dmr-encryption.html:
+  voice only.
+- sigidwiki.com Digital Mobile Radio (DMR) and its talk page: one ARC4 voice sample, no
+  key, no data.
+- RadioReference forum threads: "Using DSD-FME to Decode Encrypted DMR Samples" (the
+  archive.org voice set), "Request Anytone DMR Arc40 Captures" and the DSD FME thread
+  page 38 (voice), "Sample of DMR with basic privacy recorded with sdr" (a request), "Is
+  this Basic, Enhanced or AES Encryption", "Mototrbo Enhanced and Basic Privacy
+  question", "MOTOTRBO / DMR: Privacy from competitors listening?": no data with keys.
+- brmlab.cz DMR project, cryptomuseum.com DMR, the md380tools group thread "Mototrbo
+  Basic Privacy Key", the MOTOTRBO privacy wiki (cwh050): descriptions, no captures.
+- Moto.Net (pboyd04), named in issue 194: its Encrypter is the XNL login of the
+  network protocol, not air privacy; no captures. node-dmr-lib (rick51231),
+  src/Encryption/ARC4.js: the same ARC4 keying (key, then the 4 MI octets, 256 octets
+  dropped), which agrees with this package; no captures.
+- Academic papers: none found that publishes DMR data captures with keys.
+No public capture with a key exists for AES data, DES data or Basic Privacy data.
