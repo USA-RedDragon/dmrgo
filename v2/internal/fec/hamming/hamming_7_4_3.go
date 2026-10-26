@@ -11,6 +11,8 @@ const (
 	check2 = 0b1101001
 )
 
+const flips uint64 = 0x2010400408020100
+
 func parity(x uint8) uint8 {
 	x ^= x >> 4
 	x ^= x >> 2
@@ -46,5 +48,5 @@ func Decode743(cw uint8) (uint8, fec.Result) {
 		return cw, result
 	}
 	result.ErrorsCorrected = 1
-	return cw ^ 0x40>>hamming743_syndrome_table[s], result
+	return cw ^ uint8(flips>>(8*s)&0xFF), result
 }

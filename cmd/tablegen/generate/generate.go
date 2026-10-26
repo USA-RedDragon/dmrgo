@@ -55,12 +55,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "internal/fec/hamming", "hamming",
-		writeTable("hamming743_syndrome_table", tables.Hamming743Syndrome[:]),
-	); err != nil {
-		return err
-	}
-
 	if err := writeFile(dmrRoot, "internal/crc", "crc",
 		writeTable("crc32_0x04C11DB7", tables.CRC32[:]),
 		jen.Line(),

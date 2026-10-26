@@ -212,30 +212,6 @@ func CRC32Table() [256]uint32 {
 	return table
 }
 
-// Hamming743Syndrome computes the bit position of a single-bit error
-// for each 3-bit syndrome s0<<2 | s1<<1 | s2 of the Hamming(7,4,3) code. A
-// syndrome that matches no bit maps to -1 (ETSI TS 102 361-1 clause B.3.5).
-func Hamming743Syndrome() [8]int {
-	var hCols [7]int
-	for p := 0; p < 7; p++ {
-		var b [7]int
-		b[p] = 1
-		s0 := b[0] ^ b[1] ^ b[2] ^ b[4]
-		s1 := b[1] ^ b[2] ^ b[3] ^ b[5]
-		s2 := b[0] ^ b[1] ^ b[3] ^ b[6]
-		hCols[p] = s0<<2 | s1<<1 | s2
-	}
-
-	var table [8]int
-	for i := range table {
-		table[i] = -1
-	}
-	for p := 0; p < 7; p++ {
-		table[hCols[p]] = p
-	}
-	return table
-}
-
 // Hamming17_12Syndrome computes the bit position of a single-bit
 // error for each 5-bit syndrome of the Hamming(17,12,3) code with generator
 // x^5 + x^2 + 1. A syndrome that matches no bit maps to -1 (ETSI TS 102

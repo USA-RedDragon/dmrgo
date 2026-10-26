@@ -9,7 +9,6 @@ type Tables struct {
 	DM                        [256]uint8  // BPTC(196,96) deinterleave index, (i*181) mod 196
 	Hamming15_11Syndrome      [16]int     // Hamming(15,11,3) bit position per syndrome, -1 for none
 	Hamming13_9Syndrome       [16]int     // Hamming(13,9,3) bit position per syndrome, -1 for none
-	Hamming743Syndrome        [8]int      // Hamming(7,4,3) bit position per syndrome, -1 for none
 	Hamming16_11Syndrome      [32]int     // Hamming(16,11,4) bit position per syndrome, -1 for none
 	Hamming17_12Syndrome      [32]int     // Hamming(17,12,3) bit position per syndrome, -1 for none
 	CRC32                     [256]uint32 // CRC-32 byte table, polynomial 0x04C11DB7
@@ -55,11 +54,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.Hamming13_9Syndrome = Hamming13_9Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Hamming743Syndrome = Hamming743Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
