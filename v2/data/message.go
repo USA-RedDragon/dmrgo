@@ -14,7 +14,9 @@ const slotPeriod = 60 * time.Millisecond
 type Message struct {
 	// Header is the first header of the packet. Its format and payload give
 	// the kind of packet and the addresses. The zero value is a UDT_HEAD with
-	// LLIDs 0; set it with a SetX method of pdu.DataHeader.
+	// LLIDs 0. Set it with a SetX method of pdu.DataHeader, build it from its
+	// payload, such as with pdu.ConfirmedDataHeader.DataHeader, or set an
+	// R_HEAD with Message.SetRawData.
 	Header pdu.DataHeader
 	// Proprietary is the P_HEAD sent as the second header, or nil.
 	Proprietary *pdu.ProprietaryHeader
