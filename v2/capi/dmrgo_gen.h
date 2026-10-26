@@ -3914,7 +3914,7 @@ struct dmrgo_nmea_rmc_t {
 struct dmrgo_privacy_info_t {
 	/* Encrypted reports that the call is encrypted: its LC sets the Privacy service option, or a PI header came. */
 	bool encrypted;
-	/* Header reports that a PI header with a good CRC came, so that MFID, Algorithm, KeyID and MI are set. */
+	/* Header reports that a PI header with a good CRC came, or for a data packet a privacy header (see FromProprietaryHeader), so that MFID, Algorithm, KeyID and MI are set. */
 	bool header;
 	/* MFID is the FID of the PI header. Algorithm, KeyID and MI follow the layout of FID 0x10; for another FID they hold its octets 0, 2 and 3 to 6 as they are. */
 	dmrgo_enums_fid_t mfid;
@@ -10480,6 +10480,8 @@ int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 int dmrgo_privacy_algorithm_string(dmrgo_privacy_algorithm_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: privacy.FromPIHeader. FromPIHeader returns the Info of the PI header h: Encrypted and Header set and the fields of h. h may be NULL. */
 int dmrgo_privacy_from_pi_header(const dmrgo_pdu_pi_header_t *h, dmrgo_privacy_info_t *out);
+/* Go: privacy.FromProprietaryHeader. FromProprietaryHeader returns the Info of the privacy header h of a data packet: a P_HEAD with FID 0x10 whose first manufacturer octet holds the algorithm in bits 1 to 3 and 1 in its low 4 bits, followed by the key ID, 2 octets and the 32-bit MI. h may be NULL. */
+int dmrgo_privacy_from_proprietary_header(const dmrgo_pdu_proprietary_header_t *h, dmrgo_privacy_info_t *out);
 /* dmrgo_privacy_key_free frees the handle. self may be NULL. */
 int dmrgo_privacy_key_free(dmrgo_privacy_key_t *self);
 /* Go: privacy.Key.Algorithm. Algorithm returns the algorithm of the key, or DMRGO_PRIVACY_ALGORITHM_BASIC for a NULL Key. */
@@ -10492,6 +10494,8 @@ int dmrgo_privacy_new_aes_key(uint8_t id, uint8_t *key, size_t key_len, dmrgo_pr
 int dmrgo_privacy_new_arc4_key(uint8_t id, const uint8_t key[5], dmrgo_privacy_key_t **out);
 /* Go: privacy.NewBasicKey. NewBasicKey returns the Basic Privacy key with the 16-bit value key. */
 int dmrgo_privacy_new_basic_key(uint16_t key, dmrgo_privacy_key_t **out);
+/* Go: privacy.NewBasicKeyNumber. NewBasicKeyNumber returns the Basic Privacy key of the key number n that a radio shows, 1 to 255. */
+int dmrgo_privacy_new_basic_key_number(uint8_t n, dmrgo_privacy_key_t **out);
 /* Go: privacy.NewReceiver. NewReceiver returns a Receiver without keys. */
 int dmrgo_privacy_new_receiver(dmrgo_privacy_receiver_t **out);
 /* Go: privacy.NewTransmitter. NewTransmitter returns a Transmitter for cfg. It returns DMRGO_ERR_PRIVACY_AMATEUR when cfg->service is DMRGO_PRIVACY_SERVICE_AMATEUR, whatever the key, and a DMRGO_ERR_CONFIG for DMRGO_PRIVACY_SERVICE_UNKNOWN or a Service out of range, so that no encrypting Transmitter exists in the amateur service or in a service not stated. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL cfg or a NULL cfg->key, and a DMRGO_ERR_CONFIG for a Key that is not made with its constructor. cfg may be NULL. */
@@ -10500,8 +10504,12 @@ int dmrgo_privacy_new_transmitter(const dmrgo_privacy_transmitter_config_t *cfg,
 int dmrgo_privacy_receiver_free(dmrgo_privacy_receiver_t *self);
 /* Go: privacy.Receiver.AddKey. AddKey adds k to the keys of the Receiver. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL k and DMRGO_ERR_PRIVACY_KEYS_FULL when the Receiver holds DMRGO_PRIVACY_MAX_KEYS other keys. k may be NULL. */
 int dmrgo_privacy_receiver_add_key(dmrgo_privacy_receiver_t *self, dmrgo_privacy_key_t *k);
+/* Go: privacy.Receiver.Data. Data removes the privacy of the data packet m in place and returns its Info. m may be NULL. */
+int dmrgo_privacy_receiver_data(dmrgo_privacy_receiver_t *self, dmrgo_data_message_t *m, dmrgo_privacy_info_t *out);
 /* Go: privacy.Receiver.Event. Event takes the next event e of the dmrgo_voice_receiver_t and returns the Info of its call. e and frames may be NULL. */
 int dmrgo_privacy_receiver_event(dmrgo_privacy_receiver_t *self, const dmrgo_voice_event_t *e, dmrgo_vocoder_ambe_frame_t frames[3], dmrgo_privacy_info_t *out);
+/* Go: privacy.Receiver.ForceBasic. ForceBasic sets whether the Receiver applies its Basic Privacy key to every voice call without a PI header, also when the LC does not set the Privacy service option, as some radios send Basic Privacy. */
+int dmrgo_privacy_receiver_force_basic(dmrgo_privacy_receiver_t *self, bool on);
 /* Go: privacy.Receiver.Info. Info returns what the Receiver knows about the current call. */
 int dmrgo_privacy_receiver_info(dmrgo_privacy_receiver_t *self, dmrgo_privacy_info_t *out);
 /* Go: privacy.Receiver.Reset. Reset forgets the current call. */

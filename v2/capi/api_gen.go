@@ -35539,6 +35539,21 @@ func dmrgo_privacy_from_pi_header(c_h *C.dmrgo_pdu_pi_header_t, c_out *C.dmrgo_p
 	return C.DMRGO_OK
 }
 
+//export dmrgo_privacy_from_proprietary_header
+func dmrgo_privacy_from_proprietary_header(c_h *C.dmrgo_pdu_proprietary_header_t, c_out *C.dmrgo_privacy_info_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_privacy.FromProprietaryHeader((*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(c_h)))
+	_ = r0
+	if c_out != nil {
+		out_privacy_Info(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_privacy_key_free
 func dmrgo_privacy_key_free(c_self *C.dmrgo_privacy_key_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35653,6 +35668,25 @@ func dmrgo_privacy_new_basic_key(c_key C.uint16_t, c_out **C.dmrgo_privacy_key_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_privacy_new_basic_key_number
+func dmrgo_privacy_new_basic_key_number(c_n C.uint8_t, c_out **C.dmrgo_privacy_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_privacy.NewBasicKeyNumber(uint8(c_n))
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_privacy_Key(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_privacy_new_receiver
 func dmrgo_privacy_new_receiver(c_out **C.dmrgo_privacy_receiver_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35734,6 +35768,29 @@ func dmrgo_privacy_receiver_add_key(c_self *C.dmrgo_privacy_receiver_t, c_k *C.d
 	return C.DMRGO_OK
 }
 
+//export dmrgo_privacy_receiver_data
+func dmrgo_privacy_receiver_data(c_self *C.dmrgo_privacy_receiver_t, c_m *C.dmrgo_data_message_t, c_out *C.dmrgo_privacy_info_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Receiver(c_self)
+	var a_m g_data.Message
+	var p_m *g_data.Message
+	var s_m st_data_Message
+	if c_m != nil {
+		a_m = in_data_Message(&(*c_m), &s_m)
+		p_m = &a_m
+	}
+	r0 := h.v.Data(p_m)
+	_ = r0
+	if c_out != nil {
+		out_privacy_Info(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_privacy_receiver_event
 func dmrgo_privacy_receiver_event(c_self *C.dmrgo_privacy_receiver_t, c_e *C.dmrgo_voice_event_t, c_frames *C.dmrgo_vocoder_ambe_frame_t, c_out *C.dmrgo_privacy_info_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35750,6 +35807,18 @@ func dmrgo_privacy_receiver_event(c_self *C.dmrgo_privacy_receiver_t, c_e *C.dmr
 	if c_out != nil {
 		out_privacy_Info(&(*c_out), &r0, oc)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_privacy_receiver_force_basic
+func dmrgo_privacy_receiver_force_basic(c_self *C.dmrgo_privacy_receiver_t, c_on C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_privacy_Receiver(c_self)
+	h.v.ForceBasic(bool(c_on))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
