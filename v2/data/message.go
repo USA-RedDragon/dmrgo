@@ -3,6 +3,7 @@ package data
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -38,6 +39,22 @@ type Message struct {
 	Fragmented bool
 	// Fragments is the number of fragments of a reassembled message.
 	Fragments uint16
+}
+
+// SetRawData sets m.Header to an R_HEAD that carries p, for Sender.Send,
+// which sets its Appended Blocks, so p.AppendedBlocks does not matter.
+// pdu.DataHeader.SetRawData takes only 1 to 63, as an Appended Blocks of 0
+// makes the header an SP_HEAD, so SetRawData writes 1 in its place. It
+// returns the errors of pdu.DataHeader.SetRawData for the other fields, and
+// then leaves m as it is. (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B)
+func (m *Message) SetRawData(p pdu.RawDataHeader) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+	if p.AppendedBlocks == 0 {
+		p.AppendedBlocks = 1
+	}
+	return m.Header.SetRawData(p)
 }
 
 // Call is the parties of a data call.

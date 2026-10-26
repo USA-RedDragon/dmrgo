@@ -1405,6 +1405,31 @@ struct dmrgo_data_event_t {
 	dmrgo_data_stats_t stats;
 };
 
+struct dmrgo_pdu_raw_data_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
+	uint8_t appended_blocks;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Source Port (SP) */
+	uint8_t source_port;
+	/* Destination Port (DP) */
+	uint8_t destination_port;
+	/* Selective Automatic Repeat reQuest (SARQ) */
+	bool sarq;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* Bit Padding field */
+	uint8_t bit_padding;
+};
+
 struct dmrgo_data_receiver_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
@@ -3054,31 +3079,6 @@ struct dmrgo_pdu_defined_data_header_t {
 	uint32_t llid_source;
 	/* Defined Data format (DD) */
 	dmrgo_enums_dd_format_t defined_data;
-	/* Selective Automatic Repeat reQuest (SARQ) */
-	bool sarq;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* Bit Padding field */
-	uint8_t bit_padding;
-};
-
-struct dmrgo_pdu_raw_data_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
-	uint8_t appended_blocks;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Source Port (SP) */
-	uint8_t source_port;
-	/* Destination Port (DP) */
-	uint8_t destination_port;
 	/* Selective Automatic Repeat reQuest (SARQ) */
 	bool sarq;
 	/* Full Message Flag (F) */
@@ -8165,6 +8165,8 @@ int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t
 int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 /* Go: data.EventKind.String. String returns the name of the kind. */
 int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: data.Message.SetRawData. SetRawData sets self->header to an R_HEAD that carries p, for dmrgo_data_sender_send, which sets its Appended Blocks, so p->appended_blocks does not matter. */
+int dmrgo_data_message_set_raw_data(dmrgo_data_message_t *self, const dmrgo_pdu_raw_data_header_t *p);
 /* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, or a DMRGO_DATA_MAX_BLOCKS, Peers, MaxFragment or DMRGO_DATA_MAX_MESSAGE out of range. cfg may be NULL. */
 int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
 /* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, a Preambles, Retries, DMRGO_DATA_MAX_BLOCKS, Peers or Window out of range, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT_UNKNOWN, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */

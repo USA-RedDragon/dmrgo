@@ -1654,6 +1654,7 @@ sym int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, 
 sym int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 sym int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_data_message_set_raw_data(dmrgo_data_message_t *self, const dmrgo_pdu_raw_data_header_t *p);
 sym int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
 sym int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
 sym int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);

@@ -441,9 +441,8 @@ func (s *Sender) State() SenderState {
 // zero value means rate 1/2. Send copies the header and m.Payload, so the
 // caller can reuse them. It sets the block count, pad octets and Full
 // Message Flag, so the Blocks to Follow or Appended Blocks of m.Header does
-// not matter. A DD_HEAD can leave its Appended Blocks 0, but
-// pdu.DataHeader.SetRawData needs 1 to 63, as an Appended Blocks of 0 makes
-// the header an SP_HEAD (ETSI TS 102 361-1 Table 9.17A). For a C_HEAD it
+// not matter. A DD_HEAD can leave its Appended Blocks 0, and
+// Message.SetRawData sets an R_HEAD without one. For a C_HEAD it
 // sets N(S) from the link, S (with SenderConfig.Resync), FSN 1000, a
 // message in one fragment, and the Response Requested flag on the last
 // message of a window only. A DD_HEAD or R_HEAD message is confirmed when

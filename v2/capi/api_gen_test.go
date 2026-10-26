@@ -136,6 +136,7 @@ var entryPoints = map[string]any{
 	"dmrgo_data_end_reason_string":                                     dmrgo_data_end_reason_string,
 	"dmrgo_data_event_icmp":                                            dmrgo_data_event_icmp,
 	"dmrgo_data_event_kind_string":                                     dmrgo_data_event_kind_string,
+	"dmrgo_data_message_set_raw_data":                                  dmrgo_data_message_set_raw_data,
 	"dmrgo_data_new_receiver":                                          dmrgo_data_new_receiver,
 	"dmrgo_data_new_sender":                                            dmrgo_data_new_sender,
 	"dmrgo_data_output_icmp":                                           dmrgo_data_output_icmp,

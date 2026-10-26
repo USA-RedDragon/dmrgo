@@ -394,6 +394,34 @@ func in_data_Event(s *C.dmrgo_data_event_t, st *st_data_Event) (d g_data.Event) 
 	return
 }
 
+func out_fec_Result(d *C.dmrgo_fec_result_t, s *g_fec.Result, oc *outc) {
+	_ = oc
+	d.bits_checked = C.int64_t(s.BitsChecked)
+	d.errors_corrected = C.int64_t(s.ErrorsCorrected)
+	d.uncorrectable = C.bool(s.Uncorrectable)
+}
+
+func out_layer2_pdu_DataHeader(d *C.dmrgo_pdu_data_header_t, s *g_layer2_pdu.DataHeader, oc *outc) {
+	_ = oc
+	out_fec_Result(&d.fec, &s.FEC, oc)
+	*(*[10]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
+}
+
+func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.SAP(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
 type st_data_ReceiverConfig struct {
 	p_ColorCode g_enums.ColorCode
 }
@@ -462,19 +490,6 @@ func out_data_Call(d *C.dmrgo_data_call_t, s *g_data.Call, oc *outc) {
 	d.group = C.bool(s.Group)
 	d.target = C.uint32_t(s.Target)
 	d.source = C.uint32_t(s.Source)
-}
-
-func out_fec_Result(d *C.dmrgo_fec_result_t, s *g_fec.Result, oc *outc) {
-	_ = oc
-	d.bits_checked = C.int64_t(s.BitsChecked)
-	d.errors_corrected = C.int64_t(s.ErrorsCorrected)
-	d.uncorrectable = C.bool(s.Uncorrectable)
-}
-
-func out_layer2_pdu_DataHeader(d *C.dmrgo_pdu_data_header_t, s *g_layer2_pdu.DataHeader, oc *outc) {
-	_ = oc
-	out_fec_Result(&d.fec, &s.FEC, oc)
-	*(*[10]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
 }
 
 func out_data_Message(d *C.dmrgo_data_message_t, s *g_data.Message, oc *outc) {
@@ -2364,21 +2379,6 @@ func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.DefinedData = g_enums.DDFormat(s.defined_data)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.SAP(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
 	d.SARQ = bool(s.sarq)
 	d.FullMessageFlag = bool(s.full_message_flag)
 	d.BitPadding = uint8(s.bit_padding)
@@ -11722,6 +11722,35 @@ func dmrgo_data_event_kind_string(c_self C.dmrgo_data_event_kind_t, c_out *C.cha
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_message_set_raw_data
+func dmrgo_data_message_set_raw_data(c_self *C.dmrgo_data_message_t, c_p *C.dmrgo_pdu_raw_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_data.Message
+	var xs st_data_Message
+	x = in_data_Message(&(*c_self), &xs)
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.RawDataHeader
+	a_p = in_layer2_pdu_RawDataHeader(&(*c_p))
+	r0 := x.SetRawData(a_p)
+	var ws_self C.dmrgo_data_message_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self.header, &x.Header, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }

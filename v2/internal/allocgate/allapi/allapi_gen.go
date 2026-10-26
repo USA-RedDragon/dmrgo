@@ -147,6 +147,7 @@ var api = [...]any{
 	csbk.TimingState.String,
 	csbk.WakeupState.String,
 	(*data.Event).ICMP,
+	(*data.Message).SetRawData,
 	(*data.Output).ICMP,
 	(*data.Receiver).Burst,
 	(*data.Receiver).Deadline,
