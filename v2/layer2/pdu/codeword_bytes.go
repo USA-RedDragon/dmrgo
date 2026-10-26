@@ -113,6 +113,12 @@ func fullLCMask(dt enums.DataType) ([3]byte, error) {
 // and 11 for a PI Header, CSBK, MBC Header, Data Header or USBD. For other
 // data types it returns an error that wraps ErrNoBlockCRC, and for a nil p
 // dmrgo.ErrNilArgument, and leaves p unchanged.
+//
+// Seal writes the check bits of ETSI TS 102 361-1. Use it for a burst sent
+// on air and for any network peer other than MMDVMHost. For a burst sent
+// to MMDVMHost over DMRD, use layer2.MMDVMHostSeal: it writes the same check
+// bits for the data types above except USBD, which MMDVMHost discards, and
+// also seals an MBC Continuation in the form that MMDVMHost checks.
 func Seal(p *[12]byte, dt enums.DataType) error {
 	if p == nil {
 		return dmrgo.ErrNilArgument

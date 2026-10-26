@@ -103,3 +103,36 @@ func TestMMDVMHostSeal_NilPayload(t *testing.T) {
 		}
 	}
 }
+
+func TestMMDVMHostSeal_AgainstSeal(t *testing.T) {
+	t.Parallel()
+
+	rng := rand.New(rand.NewSource(7))
+	for _, dt := range []enums.DataType{
+		enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader,
+		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader,
+	} {
+		for range 50 {
+			var a [12]byte
+			rng.Read(a[:])
+			b := a
+			if errA, errB := layer2.MMDVMHostSeal(dt, &a), pdu.Seal(&b, dt); errA != nil || errB != nil || a != b {
+				t.Fatalf("dt %v: MMDVMHostSeal %x %v, Seal %x %v", dt, a, errA, b, errB)
+			}
+		}
+	}
+	p := [12]byte{1, 2, 3}
+	if err := pdu.Seal(&p, enums.DataTypeMBCContinuation); !errors.Is(err, pdu.ErrNoBlockCRC) {
+		t.Errorf("Seal MBC Continuation: %v", err)
+	}
+	if err := layer2.MMDVMHostSeal(enums.DataTypeMBCContinuation, &p); err != nil {
+		t.Errorf("MMDVMHostSeal MBC Continuation: %v", err)
+	}
+	p = [12]byte{1, 2, 3}
+	if err := pdu.Seal(&p, enums.DataTypeUnifiedSingleBlock); err != nil {
+		t.Errorf("Seal USBD: %v", err)
+	}
+	if err := layer2.MMDVMHostSeal(enums.DataTypeUnifiedSingleBlock, &p); !errors.Is(err, layer2.ErrDataType) {
+		t.Errorf("MMDVMHostSeal USBD: %v", err)
+	}
+}
