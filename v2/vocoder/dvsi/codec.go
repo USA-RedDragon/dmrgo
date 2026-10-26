@@ -2,6 +2,7 @@ package dvsi
 
 import (
 	"bytes"
+	"errors"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -53,8 +54,8 @@ type timeouter interface {
 }
 
 // Codec is a vocoder.Codec that runs on a DVSI chip at the DMR AMBE+2
-// rate. Each Decode and Encode sends one packet and waits for the reply.
-// After a Decode or Encode that got no reply, the next one first sends a
+// rate. Each Decode, DecodeLost and Encode sends one packet and waits for
+// the reply. After a request that got no reply, the next one first sends a
 // product ID query and drops the replies that come before its response,
 // so that a late reply does not answer a later request. A Codec is not
 // safe for concurrent use, and Codecs that share one Port must not be used
@@ -67,6 +68,7 @@ type Codec struct {
 	parity   bool
 	closed   bool
 	stale    bool
+	lost     bool
 	query    []byte
 	product  string
 	version  string
@@ -83,11 +85,14 @@ var _ vocoder.Codec = (*Codec)(nil)
 // Codec for it. Unless cfg.NoReset, it first sends 350 zero bytes, which
 // end any packet the chip is in the middle of, and a reset packet, and
 // waits for PKT_READY, as xlxd ambed does. Then it sets the parity mode,
-// reads the product name and version, and sets the rate of cfg.Channel
-// with AppendRateDMR. A nil cfg means the zero Config. It returns
-// dmrgo.ErrNilArgument for a nil port, ErrChannel for a channel outside 0
-// to MaxChannel, ErrTimeout when the chip does not reply, ErrStatus when it rejects
-// a field, and the errors of port. It allocates the Codec and the product
+// reads the product name and version, sets the rate of cfg.Channel with
+// AppendRateDMR, and with a PKT_SPCHFMT field of 0x0001 has the chip put
+// the decoder status DCMODE_OUT in a CMODE field of each speech packet
+// (AMBE-3000R manual Tables 63 and 64). A nil cfg means the zero Config.
+// It returns dmrgo.ErrNilArgument for a nil port, ErrChannel for a channel
+// outside 0 to MaxChannel, ErrTimeout when the chip does not reply,
+// ErrSpeechFormat when it rejects the PKT_SPCHFMT field, ErrStatus when it
+// rejects another field, and the errors of port. It allocates the Codec and the product
 // and version strings, and the query packet that resynchronizes it after a
 // timeout.
 func New(port Port, cfg *Config) (*Codec, error) {
@@ -133,6 +138,14 @@ func New(port Port, cfg *Config) (*Codec, error) {
 	c.consume(n)
 	pkt, _ := AppendRateDMR(c.tx[:0], c.channel, c.parity)
 	if _, n, err = c.control(pkt); err != nil {
+		return nil, err
+	}
+	c.consume(n)
+	_, n, err = c.control(appendSpeechFormat(c.tx[:0], c.parity))
+	if errors.Is(err, ErrStatus) {
+		return nil, ErrSpeechFormat
+	}
+	if err != nil {
 		return nil, err
 	}
 	c.consume(n)
@@ -371,7 +384,7 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 			c.stale = true
 			return slot, err
 		}
-		ch, body, err := p.walk(TypeChannel, fieldChannelData)
+		ch, body, _, err := p.walk(TypeChannel, fieldChannelData)
 		if err != nil || ch != c.channel || body[0] != FrameBits {
 			c.consume(1)
 			continue
@@ -383,50 +396,123 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 }
 
 // Decode has the chip decode one 72-bit frame with FEC, appends the
-// FrameSamples samples to dst and returns the extended slice. It returns
-// ErrClosed after Close, ErrTimeout when the chip does not reply, and the
-// errors of the Port, with dst unchanged. It allocates only when dst has no
-// room for FrameSamples more samples.
-func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
+// FrameSamples samples to dst and returns the extended slice and a report
+// from the DCMODE_OUT flags of the chip (AMBE-3000R manual Table 15):
+// Output is OutputTone for TONE_FRAME, else OutputSilence when
+// VOICE_ACTIVE is 0, else OutputRepeat when DATA_INVALID is 1, else
+// OutputVoice; Frame is FrameErased when DATA_INVALID is 1, else
+// FrameGood. The chip reports no bit counts, so CountsKnown is false. A
+// reply without a CMODE field, which a chip that accepted PKT_SPCHFMT in New
+// does not send, reports FrameGood and OutputVoice. After DecodeLost the
+// request also clears LOST_FRAME. It returns ErrClosed after Close,
+// ErrTimeout when the chip does not reply, and the errors of the Port, with
+// dst unchanged and a zero report. It allocates only when dst has no room
+// for FrameSamples more samples.
+func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, vocoder.FrameReport, error) {
 	if c == nil {
-		return dst, dmrgo.ErrNilReceiver
+		return dst, vocoder.FrameReport{}, dmrgo.ErrNilReceiver
 	}
 
 	if c.closed || c.port == nil {
-		return dst, ErrClosed
+		return dst, vocoder.FrameReport{}, ErrClosed
 	}
 	if err := c.resync(); err != nil {
-		return dst, err
+		return dst, vocoder.FrameReport{}, err
 	}
-	pkt, err := AppendChannel(c.tx[:0], c.channel, slot[:], FrameBits, c.parity)
+	var pkt []byte
+	if c.lost {
+		pkt = appendCMode(c.tx[:0], c.channel, &slot, 0, c.parity)
+	} else {
+		pkt, _ = AppendChannel(c.tx[:0], c.channel, slot[:], FrameBits, c.parity)
+	}
+	out, mode, err := c.decode(dst, pkt)
 	if err != nil {
-		return dst, err
+		return dst, vocoder.FrameReport{}, err
 	}
+	c.lost = false
+	return out, report(mode, false), nil
+}
+
+// DecodeLost has the chip fill a frame that never arrived: it sends a
+// channel packet with no channel bits and a CMODE field that sets
+// LOST_FRAME, and the chip repeats the frame before, or after more than 2
+// repeats outputs comfort noise (AMBE-3000R manual Tables 14 and 105). It
+// appends the FrameSamples samples to dst and returns the extended slice
+// and a report with Frame FrameLost and Output from the DCMODE_OUT flags as
+// for Decode, OutputRepeat for a reply without a CMODE field. It returns
+// the errors of Decode, with dst unchanged and a zero report. It allocates
+// only when dst has no room for FrameSamples more samples.
+func (c *Codec) DecodeLost(dst []int16) ([]int16, vocoder.FrameReport, error) {
+	if c == nil {
+		return dst, vocoder.FrameReport{}, dmrgo.ErrNilReceiver
+	}
+
+	if c.closed || c.port == nil {
+		return dst, vocoder.FrameReport{}, ErrClosed
+	}
+	if err := c.resync(); err != nil {
+		return dst, vocoder.FrameReport{}, err
+	}
+	c.lost = true
+	out, mode, err := c.decode(dst, appendCMode(c.tx[:0], c.channel, nil, dcmodeLostFrame, c.parity))
+	if err != nil {
+		return dst, vocoder.FrameReport{}, err
+	}
+	return out, report(mode, true), nil
+}
+
+func (c *Codec) decode(dst []int16, pkt []byte) ([]int16, cmode, error) {
 	start, err := c.send(pkt)
 	if err != nil {
-		return dst, err
+		return dst, cmode{}, err
 	}
 	for {
 		p, n, err := c.next(start, c.parity, TypeSpeech)
 		if err != nil {
 			c.stale = true
-			return dst, err
+			return dst, cmode{}, err
 		}
 		out, ch, err := p.AppendSamples(dst)
 		if err != nil || ch != c.channel || len(out)-len(dst) != FrameSamples {
 			c.consume(1)
 			continue
 		}
+		_, _, mode, _ := p.walk(TypeSpeech, fieldSpeechData)
 		c.consume(n)
-		return out, nil
+		return out, mode, nil
 	}
 }
 
-// Reset does nothing: the Codec keeps no state between frames.
+func report(mode cmode, lost bool) vocoder.FrameReport {
+	var r vocoder.FrameReport
+	if lost {
+		r.Frame, r.Output = vocoder.FrameLost, vocoder.OutputRepeat
+	}
+	if !mode.ok {
+		return r
+	}
+	invalid := mode.flags&dcmodeDataInvalid != 0
+	switch {
+	case mode.flags&dcmodeToneFrame != 0:
+		r.Output = vocoder.OutputTone
+	case mode.flags&dcmodeVoiceActive == 0:
+		r.Output = vocoder.OutputSilence
+	case invalid:
+		r.Output = vocoder.OutputRepeat
+	default:
+		r.Output = vocoder.OutputVoice
+	}
+	if invalid && !lost {
+		r.Frame = vocoder.FrameErased
+	}
+	return r
+}
+
+// Reset does nothing.
 func (c *Codec) Reset() {}
 
-// Close marks the Codec closed; later Encode and Decode calls return
-// ErrClosed. It does not close the Port. Close is idempotent and returns
+// Close marks the Codec closed; later Encode, Decode and DecodeLost calls
+// return ErrClosed. It does not close the Port. Close is idempotent and returns
 // nil.
 func (c *Codec) Close() error {
 	if c == nil {

@@ -33,6 +33,9 @@ var (
 	// ErrStatus is returned when the chip reports an error in a response
 	// field.
 	ErrStatus = errors.New("dvsi: device reported an error")
+	// ErrSpeechFormat is returned by New when the chip rejects the
+	// PKT_SPCHFMT field that turns on its decoder status.
+	ErrSpeechFormat = errors.New("dvsi: device rejected the decoder status format (PKT_SPCHFMT)")
 	// ErrTimeout is returned when the chip does not reply within
 	// Config.Timeout.
 	ErrTimeout = errors.New("dvsi: device timed out")

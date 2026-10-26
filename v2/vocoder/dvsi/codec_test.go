@@ -23,7 +23,7 @@ func checkSim(t *testing.T, d *dvsisim.Device) {
 func roundTrip(t *testing.T, c *dvsi.Codec, pairs []dvsisim.Pair) {
 	t.Helper()
 	for _, p := range pairs {
-		pcm, err := c.Decode(nil, p.Slot)
+		pcm, _, err := c.Decode(nil, p.Slot)
 		if err != nil {
 			t.Fatalf("Decode: %v", err)
 		}
@@ -100,7 +100,7 @@ func TestCodecInterface(t *testing.T) {
 		t.Errorf("FrameSamples %d, FID %d, Silence %x", vc.FrameSamples(), vc.FID(), vc.Silence())
 	}
 	dst := make([]int16, 3, 3+160)
-	out, err := c.Decode(dst, dvsisim.Pairs(1)[0].Slot)
+	out, _, err := c.Decode(dst, dvsisim.Pairs(1)[0].Slot)
 	if err != nil || len(out) != 163 || &out[0] != &dst[0] {
 		t.Errorf("Decode = %d samples, %v", len(out), err)
 	}
@@ -113,7 +113,7 @@ func TestCodecInterface(t *testing.T) {
 	if err := c.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := c.Decode(nil, [9]byte{}); !errors.Is(err, dvsi.ErrClosed) {
+	if _, _, err := c.Decode(nil, [9]byte{}); !errors.Is(err, dvsi.ErrClosed) {
 		t.Errorf("Decode after Close = %v", err)
 	}
 	if _, err := c.Encode(make([]int16, 160)); !errors.Is(err, dvsi.ErrClosed) {
@@ -126,7 +126,7 @@ func TestCodecZero(t *testing.T) {
 	t.Parallel()
 
 	var c dvsi.Codec
-	if _, err := c.Decode(nil, [9]byte{}); !errors.Is(err, dvsi.ErrClosed) {
+	if _, _, err := c.Decode(nil, [9]byte{}); !errors.Is(err, dvsi.ErrClosed) {
 		t.Errorf("Decode of the zero Codec = %v", err)
 	}
 	if _, err := c.Encode(make([]int16, 160)); !errors.Is(err, dvsi.ErrClosed) {
@@ -182,7 +182,7 @@ func TestCodecResync(t *testing.T) {
 			for i, g := range garbage {
 				for _, p := range pairs {
 					d.Garbage = g
-					pcm, err := c.Decode(nil, p.Slot)
+					pcm, _, err := c.Decode(nil, p.Slot)
 					if err != nil || !slices.Equal(pcm, p.PCM[:]) {
 						t.Fatalf("%+v parity %v, garbage %d %x: Decode = %v", opt, parity, i, g, err)
 					}
@@ -209,7 +209,7 @@ func TestCodecTimeout(t *testing.T) {
 	}
 	d.Drop = 1
 	start := time.Now()
-	if _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, dvsi.ErrTimeout) {
+	if _, _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, dvsi.ErrTimeout) {
 		t.Fatalf("Decode with a lost reply = %v", err)
 	}
 	if el := time.Since(start); el < 20*time.Millisecond || el > time.Second {
@@ -245,11 +245,11 @@ func TestCodecLateReply(t *testing.T) {
 			t.Fatal(err)
 		}
 		d.Late = 1
-		if _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, dvsi.ErrTimeout) {
+		if _, _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, dvsi.ErrTimeout) {
 			t.Fatalf("%+v: Decode with a late reply = %v", opt, err)
 		}
 		for i, p := range pairs[1:] {
-			pcm, err := c.Decode(nil, p.Slot)
+			pcm, _, err := c.Decode(nil, p.Slot)
 			if err != nil || !slices.Equal(pcm, p.PCM[:]) {
 				t.Fatalf("%+v: Decode %d after a late reply = %v, right audio %v", opt, i+1, err, slices.Equal(pcm, p.PCM[:]))
 			}
@@ -321,7 +321,7 @@ func TestCodecPortErrors(t *testing.T) {
 		t.Errorf("SetReadDeadline called %d times on a port that refused the first", nd.deadlines)
 	}
 	dp.fail = boom
-	if _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, boom) {
+	if _, _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, boom) {
 		t.Errorf("Decode with a failing SetReadDeadline = %v", err)
 	}
 

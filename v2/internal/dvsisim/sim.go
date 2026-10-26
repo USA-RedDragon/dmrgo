@@ -1,8 +1,10 @@
 // Package dvsisim simulates a DVSI AMBE-3000R or AMBE-3003 vocoder chip in
 // packet mode for tests. A Device is an io.ReadWriter that parses the
 // packets written to it with its own parser, checks them against the
-// manuals, and answers with stored frame and audio pairs. Faults can be
-// injected: garbage bytes before a reply, lost replies, short reads and
+// manuals, and answers with stored frame and audio pairs. It reports the
+// decoder status in a CMODE field of each speech packet after a PKT_SPCHFMT
+// field asks for it, and repeats frames while LOST_FRAME is set. Faults can
+// be injected: garbage bytes before a reply, lost replies, short reads and
 // datagram reads.
 package dvsisim
 
@@ -53,7 +55,24 @@ type Options struct {
 	// Echo decodes a frame that no pair holds to Echo(slot) in place of
 	// silence and an error.
 	Echo bool
+	// CModeFirst puts the CMODE field of a speech packet before the
+	// SPEECHD field. By default it comes after.
+	CModeFirst bool
+	// RejectSpeechFormat answers a PKT_SPCHFMT field with an error status.
+	RejectSpeechFormat bool
+	// NoCMode accepts a PKT_SPCHFMT field but sends no CMODE field, as a
+	// device that does not report the decoder status.
+	NoCMode bool
 }
+
+// The DCMODE_IN and DCMODE_OUT flags that the Device uses (AMBE-3000R
+// manual Tables 14 and 15).
+const (
+	LostFrame   = 0x0004
+	VoiceActive = 0x0002
+	DataInvalid = 0x0020
+	ToneFrame   = 0x8000
+)
 
 // Echo returns the samples that a Device with Options.Echo decodes slot
 // to when no pair holds it.
@@ -80,6 +99,9 @@ func (timeoutError) Timeout() bool { return true }
 // Counts counts the requests that a Device answered.
 type Counts struct {
 	Reset, Parity, Query, Rate, Decode, Encode int
+	// SpeechFormat counts PKT_SPCHFMT fields, Lost the frames repeated for
+	// LOST_FRAME, and CMode the channel packets with a CMODE field.
+	SpeechFormat, Lost, CMode int
 }
 
 // Device is a simulated chip. It is safe for concurrent use.
@@ -90,6 +112,10 @@ type Device struct {
 	parity bool
 	rate   [3]bool
 	init   [3]bool
+	status bool
+	dcmode [3]uint16
+	repeat [3]int
+	last   [3][160]int16
 	in     [4096]byte
 	inN    int
 	out    [8192]byte
@@ -97,7 +123,7 @@ type Device struct {
 	ends   [64]int
 	endsN  int
 	rbuf   [400]byte
-	pbuf   [3 + 320]byte
+	pbuf   [6 + 320]byte
 	cbuf   [12]byte
 	pcm    [160]int16
 	resp   [128]byte
@@ -113,6 +139,9 @@ type Device struct {
 	late []byte
 	// Reject is the status byte of the response to a RATEP field.
 	Reject byte
+	// Status holds the DCMODE_OUT flags to report for a slot. A slot that
+	// it does not hold reports VoiceActive.
+	Status map[[9]byte]uint16
 	// Errs lists every problem found in the packets written.
 	Errs []string
 	// Counts counts the requests by kind.
@@ -132,6 +161,7 @@ func New(pairs []Pair, opt Options) *Device {
 func (d *Device) powerUp() {
 	d.parity = !d.opt.NoParityPin
 	d.rate, d.init = [3]bool{}, [3]bool{}
+	d.status, d.dcmode, d.repeat = false, [3]uint16{}, [3]int{}
 }
 
 // Parity reports whether parity fields are on.
@@ -381,6 +411,23 @@ func (d *Device) control(f []byte) {
 			d.init[ch] = true
 			r = append(r, id, 0)
 			f = f[1:]
+		case id == 0x16:
+			if len(f) < 2 {
+				d.fail("short SPCHFMT")
+				return
+			}
+			d.Counts.SpeechFormat++
+			if f[0] != 0 || f[1] != 0x01 {
+				d.fail("SPCHFMT is not 0x0001")
+			}
+			st := byte(0)
+			if d.opt.RejectSpeechFormat {
+				st = 1
+			} else {
+				d.status = f[1]&3 == 1
+			}
+			r = append(r, id, st)
+			f = f[2:]
 		case id == 0x2F:
 			if len(f) < 1 {
 				d.fail("short parity field")
@@ -417,33 +464,73 @@ func (d *Device) channel(f []byte) {
 	if !ok {
 		return
 	}
-	if len(f) != 11 || f[0] != 0x01 || f[1] != 72 {
-		d.fail("channel packet is not one CHAND field of 72 bits")
-		return
-	}
-	d.Counts.Decode++
-	slot := [9]byte(f[2:11])
-	pcm := &d.pcm
-	*pcm = [160]int16{}
-	found := false
-	for i := range d.pairs {
-		if d.pairs[i].Slot == slot {
-			pcm, found = &d.pairs[i].PCM, true
-			break
+	var chand []byte
+	for len(f) > 0 {
+		switch {
+		case len(f) >= 11 && f[0] == 0x01 && f[1] == 72 && chand == nil:
+			chand, f = f[2:11], f[11:]
+		case len(f) >= 3 && f[0] == 0x02:
+			d.Counts.CMode++
+			m := uint16(f[1])<<8 | uint16(f[2])
+			if m&^LostFrame != 0 {
+				d.fail("CMODE sets flags other than LOST_FRAME")
+			}
+			d.dcmode[ch], f = m, f[3:]
+		default:
+			d.fail("channel packet has fields other than one CHAND field of 72 bits and CMODE")
+			return
 		}
 	}
-	if !found && d.opt.Echo {
-		d.pcm = Echo(slot)
-	} else if !found {
-		d.fail("unknown frame")
+	d.Counts.Decode++
+	pcm := &d.pcm
+	*pcm = [160]int16{}
+	var flags uint16
+	switch {
+	case d.dcmode[ch]&LostFrame != 0:
+		d.Counts.Lost++
+		d.repeat[ch]++
+		pcm, flags = &d.last[ch], DataInvalid
+		if d.repeat[ch] <= 2 {
+			flags |= VoiceActive
+		}
+	case chand == nil:
+		d.fail("channel packet has no CHAND field and LOST_FRAME is not set")
+		return
+	default:
+		d.repeat[ch] = 0
+		slot := [9]byte(chand)
+		found := false
+		for i := range d.pairs {
+			if d.pairs[i].Slot == slot {
+				pcm, found = &d.pairs[i].PCM, true
+				break
+			}
+		}
+		if !found && d.opt.Echo {
+			d.pcm = Echo(slot)
+		} else if !found {
+			d.fail("unknown frame")
+		}
+		flags = VoiceActive
+		if st, ok := d.Status[slot]; ok {
+			flags = st
+		}
+		d.last[ch] = *pcm
 	}
 	r := d.pbuf[:0]
 	if ch > 0 {
 		r = append(r, 0x40+byte(ch))
 	}
+	cmode := d.status && !d.opt.NoCMode
+	if cmode && d.opt.CModeFirst {
+		r = append(r, 0x02, byte(flags>>8), byte(flags))
+	}
 	r = append(r, 0x00, 160)
 	for _, s := range pcm {
 		r = append(r, byte(uint16(s)>>8), byte(s))
+	}
+	if cmode && !d.opt.CModeFirst {
+		r = append(r, 0x02, byte(flags>>8), byte(flags))
 	}
 	d.reply(0x02, r)
 }

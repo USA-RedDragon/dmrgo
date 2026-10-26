@@ -78,6 +78,7 @@ const (
 	fieldCMode        Field = 0x02
 	fieldSamples      Field = 0x03
 	fieldTone         Field = 0x08
+	fieldSpeechFormat Field = 0x16
 	fieldChannelData4 Field = 0x17
 	fieldGetCfg       Field = 0x36
 	fieldReadCfg      Field = 0x37
@@ -163,6 +164,29 @@ func AppendRateDMR(dst []byte, channel int, parity bool) ([]byte, error) {
 	dst, _ = appendChannelField(dst, channel)
 	dst = append(dst, byte(FieldRateP), 0x04, 0x31, 0x07, 0x54, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6F, 0x48, byte(FieldInit), 0x03)
 	return finish(dst, start, parity), nil
+}
+
+const (
+	dcmodeLostFrame   = 0x0004
+	dcmodeVoiceActive = 0x0002
+	dcmodeDataInvalid = 0x0020
+	dcmodeToneFrame   = 0x8000
+)
+
+func appendSpeechFormat(dst []byte, parity bool) []byte {
+	dst, start := begin(dst, TypeControl)
+	return finish(append(dst, byte(fieldSpeechFormat), 0x00, 0x01), start, parity)
+}
+
+func appendCMode(dst []byte, channel int, slot *[FrameBits / 8]byte, mode uint16, parity bool) []byte {
+	dst, start := begin(dst, TypeChannel)
+	dst, _ = appendChannelField(dst, channel)
+	dst = append(dst, byte(fieldCMode), byte(mode>>8), byte(mode&0xFF))
+	if slot != nil {
+		dst = append(dst, byte(fieldChannelData), FrameBits)
+		dst = append(dst, slot[:]...)
+	}
+	return finish(dst, start, parity)
 }
 
 // AppendChannel appends a channel packet that asks the chip to decode bits
@@ -390,9 +414,14 @@ func (p Packet) failed() bool {
 	return false
 }
 
-func (p Packet) walk(want PacketType, data Field) (channel int, body []byte, err error) {
+type cmode struct {
+	flags uint16
+	ok    bool
+}
+
+func (p Packet) walk(want PacketType, data Field) (channel int, body []byte, mode cmode, err error) {
 	if p.Type != want {
-		return 0, nil, ErrField
+		return 0, nil, mode, ErrField
 	}
 	b := p.Fields
 	found := false
@@ -401,14 +430,14 @@ func (p Packet) walk(want PacketType, data Field) (channel int, body []byte, err
 		switch {
 		case id >= FieldChannel0 && id <= FieldChannel2:
 			if found {
-				return 0, nil, ErrField
+				return 0, nil, mode, ErrField
 			}
 			channel = int(id - FieldChannel0)
 			b = b[1:]
 			continue
 		case id == data && !found:
 			if len(b) < 2 {
-				return 0, nil, ErrField
+				return 0, nil, mode, ErrField
 			}
 			n := int(b[1])
 			if data == fieldSpeechData {
@@ -417,10 +446,14 @@ func (p Packet) walk(want PacketType, data Field) (channel int, body []byte, err
 				n = (n + 7) / 8
 			}
 			if len(b) < 2+n {
-				return 0, nil, ErrField
+				return 0, nil, mode, ErrField
 			}
 			body, found = b[1:2+n], true
 			b = b[2+n:]
+			continue
+		case id == fieldCMode && len(b) >= 3:
+			mode = cmode{flags: uint16(b[1])<<8 | uint16(b[2]), ok: true}
+			b = b[3:]
 			continue
 		}
 		var n int
@@ -431,21 +464,21 @@ func (p Packet) walk(want PacketType, data Field) (channel int, body []byte, err
 			n = 1
 		case fieldChannelData4:
 			if len(b) < 2 {
-				return 0, nil, ErrField
+				return 0, nil, mode, ErrField
 			}
 			n = 1 + (int(b[1])+1)/2
 		default:
-			return 0, nil, ErrField
+			return 0, nil, mode, ErrField
 		}
 		if len(b) < 1+n {
-			return 0, nil, ErrField
+			return 0, nil, mode, ErrField
 		}
 		b = b[1+n:]
 	}
 	if !found {
-		return 0, nil, ErrField
+		return 0, nil, mode, ErrField
 	}
-	return channel, body, nil
+	return channel, body, mode, nil
 }
 
 // AppendSamples appends the samples of the SPEECHD field of a speech packet
@@ -455,7 +488,7 @@ func (p Packet) walk(want PacketType, data Field) (channel int, body []byte, err
 // and ErrSamples for other than MinSamples to MaxSamples samples, with dst
 // unchanged. It allocates only to grow dst.
 func (p Packet) AppendSamples(dst []int16) ([]int16, int, error) {
-	channel, body, err := p.walk(TypeSpeech, fieldSpeechData)
+	channel, body, _, err := p.walk(TypeSpeech, fieldSpeechData)
 	if err != nil {
 		return dst, 0, err
 	}
@@ -476,7 +509,7 @@ func (p Packet) AppendSamples(dst []int16) ([]int16, int, error) {
 // CHAND field and known fields only, and ErrBits for bits outside MinBits to
 // MaxBits, with dst unchanged. It allocates only to grow dst.
 func (p Packet) AppendChannelData(dst []byte) ([]byte, int, int, error) {
-	channel, body, err := p.walk(TypeChannel, fieldChannelData)
+	channel, body, _, err := p.walk(TypeChannel, fieldChannelData)
 	if err != nil {
 		return dst, 0, 0, err
 	}

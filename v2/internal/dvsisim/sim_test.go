@@ -2,6 +2,7 @@ package dvsisim_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"testing"
@@ -162,4 +163,65 @@ func hexBytes(s string) ([]byte, error) {
 		b[i] = v
 	}
 	return b, nil
+}
+
+func TestDeviceStatus(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(1)
+	d := dvsisim.New(pairs, dvsisim.Options{NoParityPin: true, Datagram: true})
+	_, _ = d.Write(packet(t, 0, "0a 0431 0754 2400 0000 0000 6f48 0b 03", false))
+	_ = reply(t, d)
+	_, _ = d.Write(packet(t, 0, "16 0001", false))
+	if got := reply(t, d); !bytes.Equal(got, []byte{0x61, 0x00, 0x02, 0x00, 0x16, 0x00}) {
+		t.Errorf("SPCHFMT reply %x", got)
+	}
+	s := pairs[0].Slot
+	_, _ = d.Write(packet(t, 1, "01 48 "+hex.EncodeToString(s[:]), false))
+	got := reply(t, d)
+	if len(got) != 4+2+320+3 || !bytes.Equal(got[len(got)-3:], []byte{0x02, 0x00, 0x02}) {
+		t.Errorf("decode reply ends % x", got[max(0, len(got)-3):])
+	}
+	for i, want := range []byte{0x22, 0x22, 0x20} {
+		_, _ = d.Write(packet(t, 1, "02 0004", false))
+		got := reply(t, d)
+		if len(got) != 329 || !bytes.Equal(got[len(got)-3:], []byte{0x02, 0x00, want}) || !bytes.Equal(got[6:8], []byte{byte(uint16(pairs[0].PCM[0]) >> 8), byte(pairs[0].PCM[0])}) {
+			t.Errorf("lost frame %d: reply ends % x", i, got[max(0, len(got)-3):])
+		}
+	}
+	if d.Counts.Lost != 3 || d.Counts.CMode != 3 || len(d.Errs) > 0 {
+		t.Errorf("counts %+v, errors %q", d.Counts, d.Errs)
+	}
+	for _, tt := range []struct {
+		in, err string
+	}{
+		{"16 0002", "SPCHFMT is not"},
+		{"16 00", "short SPCHFMT"},
+	} {
+		d.Errs = nil
+		_, _ = d.Write(packet(t, 0, tt.in, false))
+		if len(d.Errs) == 0 || !strings.Contains(d.Errs[0], tt.err) {
+			t.Errorf("%s: errors %q, want %q", tt.in, d.Errs, tt.err)
+		}
+		_ = reply(t, d)
+	}
+	for _, tt := range []struct {
+		in, err string
+	}{
+		{"02 0008", "other than LOST_FRAME"},
+		{"02 0000", "no CHAND"},
+		{"03 a0", "fields other than"},
+	} {
+		d.Errs = nil
+		_, _ = d.Write(packet(t, 1, tt.in, false))
+		if len(d.Errs) == 0 || !strings.Contains(d.Errs[0], tt.err) {
+			t.Errorf("%s: errors %q, want %q", tt.in, d.Errs, tt.err)
+		}
+		_ = reply(t, d)
+	}
+	d = dvsisim.New(pairs, dvsisim.Options{RejectSpeechFormat: true, NoParityPin: true})
+	_, _ = d.Write(packet(t, 0, "16 0001", false))
+	if got := reply(t, d); !bytes.Equal(got, []byte{0x61, 0x00, 0x02, 0x00, 0x16, 0x01}) {
+		t.Errorf("rejected SPCHFMT reply %x", got)
+	}
 }

@@ -7,7 +7,11 @@
 // Port that the caller opens: a USB serial device such as the ThumbDV or a
 // DVSI USB-3000 (DVstick 30), a UART of a microcontroller, or a UDP
 // connection to an AMBEserver. A Codec configures the chip in New and then
-// decodes and encodes one frame per request and reply.
+// decodes and encodes one frame per request and reply. New also turns on
+// the decoder status in the speech packets of the chip, and Decode reports
+// it: whether the chip used the frame, repeated the frame before, or
+// output a tone or comfort noise. DecodeLost has the chip fill a frame that
+// never arrived.
 //
 // The chip does the AMBE+2 FEC, so a slot goes to the chip as the 72
 // on-air bits that layer2.RawBurst.VoiceSlots returns, and the chip returns

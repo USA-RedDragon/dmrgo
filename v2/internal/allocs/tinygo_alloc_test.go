@@ -452,11 +452,13 @@ func tinyDVSIOps(t *testing.T) []tinyOp {
 		d := dvsisim.New(pairs, opt)
 		c := tinyOK(dvsi.New(d, nil))
 		pcm := make([]int16, 0, dvsi.FrameSamples)
-		_, _ = c.Decode(pcm, pairs[0].Slot)
+		_, _, _ = c.Decode(pcm, pairs[0].Slot)
+		_, _, _ = c.DecodeLost(pcm)
 		_, _ = c.Encode(pairs[0].PCM[:])
 		ops = append(ops, tinyOp{"dvsi.Codec " + strconv.Itoa(opt.Chunk), func() {
 			for i := range pairs {
-				pcm, _ = c.Decode(pcm[:0], pairs[i].Slot)
+				pcm, _, _ = c.Decode(pcm[:0], pairs[i].Slot)
+				pcm, _, _ = c.DecodeLost(pcm[:0])
 				_, _ = c.Encode(pairs[i].PCM[:])
 			}
 		}})

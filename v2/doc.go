@@ -305,8 +305,9 @@
 //     without the WebAssembly backend.
 //   - dvsi.ErrIncomplete, dvsi.ErrStart, dvsi.ErrType, dvsi.ErrLength,
 //     dvsi.ErrParity, dvsi.ErrField, dvsi.ErrChannel, dvsi.ErrSamples,
-//     dvsi.ErrBits, dvsi.ErrStatus, dvsi.ErrTimeout, dvsi.ErrPort,
-//     dvsi.ErrClosed: returned by the DVSI packet parser and Codec.
+//     dvsi.ErrBits, dvsi.ErrStatus, dvsi.ErrSpeechFormat, dvsi.ErrTimeout,
+//     dvsi.ErrPort, dvsi.ErrClosed: returned by the DVSI packet parser and
+//     Codec.
 //
 // The packages dmrdauth and ipscauth export no errors. dmrdauth returns
 // errors that wrap dmrd.ErrCommand for a dialect or packet that it does not
