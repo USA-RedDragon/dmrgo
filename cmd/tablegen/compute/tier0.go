@@ -1,29 +1,5 @@
 package compute
 
-// AMBEScrambleTable computes the 24-bit AMBE scramble mask for each
-// 12-bit A value i. The LCG p[n] = (173*p[n-1] + 13849) mod 65536 with seed
-// p[0] = 16*i gives the mask, MSB first: bit k is the MSB of p[k].
-func AMBEScrambleTable() [4096]uint32 {
-	const (
-		lcgMultiplier = 173
-		lcgIncrement  = 13849
-		lcgModulus    = 65536
-		numBits       = 24
-	)
-
-	var table [4096]uint32
-	for i := range 4096 {
-		p := uint32(16 * i)
-		var entry uint32
-		for k := 0; k < numBits; k++ {
-			p = (lcgMultiplier*p + lcgIncrement) & (lcgModulus - 1)
-			entry = (entry << 1) | (p >> 15)
-		}
-		table[i] = entry
-	}
-	return table
-}
-
 // DM computes the BPTC(196,96) deinterleave matrix. Entry i is
 // (i * 181) mod 196.
 func DM() [256]uint8 {

@@ -277,9 +277,9 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe
             names:
-              - TestAMBEScrambleTableValues
-              - TestScrambleTableBitWidth
-              - TestScrambleTableDistribution
+              - TestScrambleValues
+              - TestScrambleBitWidth
+              - TestScrambleDistribution
               - TestEncodeMatchesReference
               - TestDecodeMatchesReference
           - package: github.com/USA-RedDragon/dmrgo/v2/vocoder

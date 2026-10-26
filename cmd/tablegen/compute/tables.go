@@ -6,21 +6,20 @@ import "sync"
 
 // Tables holds every computed FEC lookup table.
 type Tables struct {
-	DM                        [256]uint8   // BPTC(196,96) deinterleave index, (i*181) mod 196
-	Hamming15_11Syndrome      [16]int      // Hamming(15,11,3) bit position per syndrome, -1 for none
-	Hamming13_9Syndrome       [16]int      // Hamming(13,9,3) bit position per syndrome, -1 for none
-	Hamming743Syndrome        [8]int       // Hamming(7,4,3) bit position per syndrome, -1 for none
-	Hamming16_11Syndrome      [32]int      // Hamming(16,11,4) bit position per syndrome, -1 for none
-	Hamming17_12Syndrome      [32]int      // Hamming(17,12,3) bit position per syndrome, -1 for none
-	CRC32                     [256]uint32  // CRC-32 byte table, polynomial 0x04C11DB7
-	CRC7                      [256]uint8   // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
-	CRC8                      [256]uint8   // CRC-8 byte table, polynomial 0x107
-	CRC9                      [256]uint16  // CRC-9 byte table, polynomial 0x259, register MSB-aligned
-	SingleBurstBPTCInterleave [32]uint8    // single-burst BPTC encode matrix index per transmit index
-	ReverseConstellation      [][]int8     // trellis 3/4 dibit pair per symbol index
-	GaloisExp                 [256]uint8   // GF(2^8) exponent table, polynomial 0x11D
-	GaloisLog                 [256]uint8   // GF(2^8) logarithm table, polynomial 0x11D
-	AMBEScrambleTable         [4096]uint32 // AMBE 24-bit scramble mask per 12-bit A value
+	DM                        [256]uint8  // BPTC(196,96) deinterleave index, (i*181) mod 196
+	Hamming15_11Syndrome      [16]int     // Hamming(15,11,3) bit position per syndrome, -1 for none
+	Hamming13_9Syndrome       [16]int     // Hamming(13,9,3) bit position per syndrome, -1 for none
+	Hamming743Syndrome        [8]int      // Hamming(7,4,3) bit position per syndrome, -1 for none
+	Hamming16_11Syndrome      [32]int     // Hamming(16,11,4) bit position per syndrome, -1 for none
+	Hamming17_12Syndrome      [32]int     // Hamming(17,12,3) bit position per syndrome, -1 for none
+	CRC32                     [256]uint32 // CRC-32 byte table, polynomial 0x04C11DB7
+	CRC7                      [256]uint8  // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
+	CRC8                      [256]uint8  // CRC-8 byte table, polynomial 0x107
+	CRC9                      [256]uint16 // CRC-9 byte table, polynomial 0x259, register MSB-aligned
+	SingleBurstBPTCInterleave [32]uint8   // single-burst BPTC encode matrix index per transmit index
+	ReverseConstellation      [][]int8    // trellis 3/4 dibit pair per symbol index
+	GaloisExp                 [256]uint8  // GF(2^8) exponent table, polynomial 0x11D
+	GaloisLog                 [256]uint8  // GF(2^8) logarithm table, polynomial 0x11D
 
 	EncoderStateTransition []byte // trellis 3/4 encoder symbol at index state*8+tribit
 	InterleaveMatrix       []byte // trellis 3/4 dibit interleave order
@@ -102,11 +101,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.GaloisExp, t.GaloisLog = GaloisTables()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.AMBEScrambleTable = AMBEScrambleTable()
 		wg.Done()
 	}()
 	wg.Wait()

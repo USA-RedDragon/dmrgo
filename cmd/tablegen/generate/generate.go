@@ -76,12 +76,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "internal/fec/ambe", "ambe",
-		writeTable("ambeScrambleTable", tables.AMBEScrambleTable[:]),
-	); err != nil {
-		return err
-	}
-
 	if err := writeFile(dmrRoot, "internal/fec/reedsolomon", "reedsolomon",
 		writeTable("galois_exp_table", tables.GaloisExp[:]),
 		jen.Line(),

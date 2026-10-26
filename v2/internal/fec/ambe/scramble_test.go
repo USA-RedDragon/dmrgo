@@ -2,12 +2,12 @@ package ambe
 
 import "testing"
 
-func TestAMBEScrambleTableValues(t *testing.T) {
+func TestScrambleValues(t *testing.T) {
 	t.Parallel()
 
-	expectedValues := []struct {
-		index    int
-		expected uint32
+	for _, tc := range []struct {
+		a    uint16
+		want uint32
 	}{
 		{0, 0x42CC47},
 		{1, 0x19D6FE},
@@ -17,73 +17,44 @@ func TestAMBEScrambleTableValues(t *testing.T) {
 		{5, 0x39650E},
 		{10, 0xD7B745},
 		{100, 0x16C05E},
-	}
-
-	for _, tc := range expectedValues {
-		if tc.index >= len(ambeScrambleTable) {
-			t.Errorf("Test index %d out of range", tc.index)
-			continue
-		}
-		if ambeScrambleTable[tc.index] != tc.expected {
-			t.Errorf("ambeScrambleTable[%d] = 0x%06X, expected 0x%06X", tc.index, ambeScrambleTable[tc.index], tc.expected)
+	} {
+		if got := scramble(tc.a); got != tc.want>>1 {
+			t.Errorf("scramble(%d) = %#06x, want %#06x", tc.a, got, tc.want>>1)
 		}
 	}
 }
 
-func TestScrambleTableBitWidth(t *testing.T) {
+func TestScrambleBitWidth(t *testing.T) {
 	t.Parallel()
 
-	maxValue := uint32(0xFFFFFF)
-	for i, v := range ambeScrambleTable {
-		if v > maxValue {
-			t.Errorf("ambeScrambleTable[%d] = 0x%08X exceeds 24-bit max (0x%06X)", i, v, maxValue)
+	for a := range uint16(4096) {
+		if v := scramble(a); v>>23 != 0 {
+			t.Errorf("scramble(%d) = %#08x is wider than 23 bits", a, v)
 		}
 	}
 }
 
-func TestScrambleTableDistribution(t *testing.T) {
+func TestScrambleDistribution(t *testing.T) {
 	t.Parallel()
 
-	bitCounts := make([]int, 24)
-
-	for _, v := range ambeScrambleTable {
-		for bit := 0; bit < 24; bit++ {
-			if v&(1<<bit) != 0 {
-				bitCounts[bit]++
-			}
+	var counts [23]int
+	for a := range uint16(4096) {
+		v := scramble(a)
+		for bit := range counts {
+			counts[bit] += int(v >> bit & 1)
 		}
 	}
-
-	tableLen := len(ambeScrambleTable)
-	expectedCount := tableLen / 2
-	tolerance := tableLen / 10
-
-	for bit, count := range bitCounts {
-		if count < expectedCount-tolerance || count > expectedCount+tolerance {
-			t.Errorf("Bit %d set %d times out of %d (expected ~%d±%d)",
-				bit, count, tableLen, expectedCount, tolerance)
+	for bit, n := range counts {
+		if n < 2048-409 || n > 2048+409 {
+			t.Errorf("bit %d set %d times out of 4096, want 2048±409", bit, n)
 		}
 	}
 }
 
-func BenchmarkScrambleTableAccess(b *testing.B) {
-	tableLen := len(ambeScrambleTable)
-	for i := 0; i < b.N; i++ {
-		_ = ambeScrambleTable[i%tableLen]
-	}
-}
-
-func BenchmarkScrambleXOR(b *testing.B) {
-	data := make([]byte, 196)
-	for i := range data {
-		data[i] = byte(i)
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		for j := 0; j < len(data); j++ {
-			scrambleVal := ambeScrambleTable[j%len(ambeScrambleTable)]
-			data[j] ^= byte(scrambleVal)
-		}
+func BenchmarkScramble(b *testing.B) {
+	a := uint16(0)
+	for b.Loop() {
+		a++
+		_ = scramble(a & 0xFFF)
 	}
 }

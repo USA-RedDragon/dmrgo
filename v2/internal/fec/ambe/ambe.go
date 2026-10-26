@@ -23,6 +23,16 @@ func columns(slot *[9]byte) (c0, c1, c2, c3 uint32) {
 	return c0, c1, c2, c3
 }
 
+func scramble(a uint16) uint32 {
+	x := a << 4
+	var m uint32
+	for range 23 {
+		x = x*0xAD + 0x3619
+		m = m<<1 | uint32(x>>15)
+	}
+	return m
+}
+
 // Decode reverses Encode and corrects the bit errors that the Golay codes
 // allow. BitsChecked is 47. Uncorrectable reflects only the overall parity
 // check of the Golay(24,12) section A: 4 or more errors in the perfect
@@ -30,7 +40,7 @@ func columns(slot *[9]byte) (c0, c1, c2, c3 uint32) {
 func Decode(slot [9]byte) ([7]byte, fec.Result) {
 	c0, c1, c2, c3 := columns(&slot)
 	a, resA := golay.Decode24128(c0<<6 | c1>>12)
-	b, resB := golay.Decode23127((c1&0xFFF)<<11 | c2>>7 ^ ambeScrambleTable[a]>>1)
+	b, resB := golay.Decode23127((c1&0xFFF)<<11 | c2>>7 ^ scramble(a))
 	c := (c2&0x7F)<<18 | c3
 
 	result := resA.Combine(resB)
@@ -52,12 +62,12 @@ func Encode(frame [7]byte) [9]byte {
 		v = v<<8 | uint64(b)
 	}
 	v >>= 7
-	a := uint32(v >> 37 & 0xFFF)
-	b := uint32(v >> 25 & 0xFFF)
+	a := uint16(v >> 37 & 0xFFF)
+	b := uint16(v >> 25 & 0xFFF)
 	c := uint32(v & 0x1FFFFFF)
 
-	ca := golay.Encode24128(uint16(a))
-	cb := golay.Encode23127(uint16(b)) ^ ambeScrambleTable[a]>>1
+	ca := golay.Encode24128(a)
+	cb := golay.Encode23127(b) ^ scramble(a)
 	c0 := ca >> 6
 	c1 := (ca&0x3F)<<12 | cb>>11
 	c2 := (cb&0x7FF)<<7 | c>>18
@@ -100,6 +110,6 @@ func Errors(slot [9]byte) (a, b int) {
 	if resA.Uncorrectable {
 		return -1, 0
 	}
-	_, resB := golay.Decode23127((c1&0xFFF)<<11 | c2>>7 ^ ambeScrambleTable[d]>>1)
+	_, resB := golay.Decode23127((c1&0xFFF)<<11 | c2>>7 ^ scramble(d))
 	return resA.ErrorsCorrected, resB.ErrorsCorrected
 }
