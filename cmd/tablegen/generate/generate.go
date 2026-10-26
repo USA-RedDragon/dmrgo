@@ -40,15 +40,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "internal/fec/reedsolomon", "reedsolomon",
-		writeTable("galois_exp_table", tables.GaloisExp[:]),
-		jen.Line(),
-		jen.Line(),
-		writeTable("galois_log_table", tables.GaloisLog[:]),
-	); err != nil {
-		return err
-	}
-
 	if err := writeFile(dmrRoot, "internal/fec/trellis", "trellis",
 		writeTable("encoder_state_transition_table", tables.EncoderStateTransition),
 		jen.Line(),

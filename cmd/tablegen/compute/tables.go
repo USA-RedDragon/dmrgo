@@ -11,8 +11,6 @@ type Tables struct {
 	CRC8                 [256]uint8  // CRC-8 byte table, polynomial 0x107
 	CRC9                 [256]uint16 // CRC-9 byte table, polynomial 0x259, register MSB-aligned
 	ReverseConstellation [][]int8    // trellis 3/4 dibit pair per symbol index
-	GaloisExp            [256]uint8  // GF(2^8) exponent table, polynomial 0x11D
-	GaloisLog            [256]uint8  // GF(2^8) logarithm table, polynomial 0x11D
 
 	EncoderStateTransition []byte // trellis 3/4 encoder symbol at index state*8+tribit
 	InterleaveMatrix       []byte // trellis 3/4 dibit interleave order
@@ -50,11 +48,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.ReverseConstellation = ReverseConstellation()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.GaloisExp, t.GaloisLog = GaloisTables()
 		wg.Done()
 	}()
 	wg.Wait()

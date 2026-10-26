@@ -109,21 +109,3 @@ func CRC32Table() [256]uint32 {
 	}
 	return table
 }
-
-// GaloisTables computes the GF(2^8) exponent and logarithm tables for
-// Reed-Solomon(12,9,4) with primitive polynomial 0x11D (ETSI TS 102 361-1
-// clause B.3.6).
-func GaloisTables() (exp [256]uint8, log [256]uint8) {
-	val := uint16(1)
-	for i := 0; i < 256; i++ {
-		exp[i] = uint8(val)
-		if i < 255 {
-			log[uint8(val)] = uint8(i)
-		}
-		val <<= 1
-		if val&0x100 != 0 {
-			val ^= 0x11D
-		}
-	}
-	return exp, log
-}

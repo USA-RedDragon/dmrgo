@@ -173,3 +173,12 @@ func TestReedSolomon1294GaloisMulExhaustive(t *testing.T) {
 		}
 	}
 }
+
+func galoisMul(a, b uint8) uint8 {
+	var p uint8
+	for range 8 {
+		p ^= a & -(b & 1)
+		a, b = xtime(a), b>>1
+	}
+	return p
+}

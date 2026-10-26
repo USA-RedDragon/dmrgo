@@ -36,13 +36,19 @@ func decode(data [dataSize + checksumSize]byte) decodeResult {
 		result.Uncorrectable = true
 		return result
 	}
-	l1, l2, l3 := int(galois_log_table[s[0]]), int(galois_log_table[s[1]]), int(galois_log_table[s[2]])
-	d := (l2 - l1 + 255) % 255
-	if (l3-l2+255)%255 != d || d >= dataSize+checksumSize {
+	t1, t2 := s[0], s[1]
+	d := 0
+	for ; d < dataSize+checksumSize && (t1 != s[1] || t2 != s[2]); d++ {
+		t1, t2 = xtime(t1), xtime(t2)
+	}
+	if d == dataSize+checksumSize {
 		result.Uncorrectable = true
 		return result
 	}
-	value := galois_exp_table[(l1-d+255)%255]
+	value := s[0]
+	for range d {
+		value = xtimeInverse(value)
+	}
 	if pos := dataSize + checksumSize - 1 - d; pos < dataSize {
 		result.Data[pos] ^= value
 	}
@@ -60,10 +66,14 @@ func Encode(data [9]byte) [12]byte {
 	// ETSI TS 102 361-1 equation B.10
 	var r0, r1, r2 uint8
 	for i := 0; i < dataSize; i++ {
-		fb := codeword[i] ^ r0
-		r0 = r1 ^ galoisMul(fb, 0x0E)
-		r1 = r2 ^ galoisMul(fb, 0x38)
-		r2 = galoisMul(fb, 0x40)
+		x1 := xtime(codeword[i] ^ r0)
+		x2 := xtime(x1)
+		x3 := xtime(x2)
+		x4 := xtime(x3)
+		x5 := xtime(x4)
+		r0 = r1 ^ x1 ^ x2 ^ x3
+		r1 = r2 ^ x3 ^ x4 ^ x5
+		r2 = xtime(x5)
 	}
 	codeword[dataSize] = r0
 	codeword[dataSize+1] = r1
@@ -94,14 +104,10 @@ func Check(cw [12]byte) bool {
 
 func calcSyndrome(data *[dataSize + checksumSize]byte, s *syndromes) {
 	var s1, s2, s3 uint8
-	for i, b := range data {
-		if b == 0 {
-			continue
-		}
-		l, d := int(galois_log_table[b]), len(data)-1-i
-		s1 ^= expSum(l, d)
-		s2 ^= expSum(l, 2*d)
-		s3 ^= expSum(l, 3*d)
+	for _, b := range data {
+		s1 = xtime(s1) ^ b
+		s2 = xtime(xtime(s2)) ^ b
+		s3 = xtime(xtime(xtime(s3))) ^ b
 	}
 	*s = syndromes{s1, s2, s3}
 }
@@ -110,16 +116,10 @@ func syndromeHasErrors(s *syndromes) bool {
 	return s[0]|s[1]|s[2] != 0
 }
 
-func galoisMul(a, b uint8) uint8 {
-	if a == 0 || b == 0 {
-		return 0
-	}
-	return expSum(int(galois_log_table[a]), int(galois_log_table[b]))
+func xtime(a uint8) uint8 {
+	return a<<1 ^ 0x1D&-(a>>7)
 }
 
-func expSum(a, b int) uint8 {
-	if a += b; a >= 255 {
-		a -= 255
-	}
-	return galois_exp_table[a]
+func xtimeInverse(a uint8) uint8 {
+	return a>>1 ^ 0x8E&-(a&1)
 }
