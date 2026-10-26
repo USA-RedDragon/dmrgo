@@ -124,6 +124,52 @@ func (s *DataHeader) SetAddresses(destination, source uint32) error {
 	return ErrNoAddresses
 }
 
+// Group returns the Group or Individual flag of the header: true when the
+// destination LLID is a talkgroup. ok is false for a C_RHEAD, whose bit is
+// reserved, a P_HEAD and the reserved formats, as for DataHeaderBytes.Group.
+// (ETSI TS 102 361-1 clause 9.3.1)
+func (s *DataHeader) Group() (group, ok bool) {
+	if s == nil {
+		return false, false
+	}
+	if p, ok := s.AsUnconfirmed(); ok {
+		return p.Group, true
+	}
+	if p, ok := s.AsConfirmed(); ok {
+		return p.Group, true
+	}
+	if p, ok := s.AsDefinedData(); ok {
+		return p.Group, true
+	}
+	if p, ok := s.AsRawData(); ok {
+		return p.Group, true
+	}
+	if p, ok := s.AsStatusPrecoded(); ok {
+		return p.Group, true
+	}
+	if p, ok := s.AsUDT(); ok {
+		return p.Group, true
+	}
+	return false, false
+}
+
+// SetGroup sets the flag that Group returns. It returns ErrNoGroupFlag, and
+// changes nothing, for a header for which Group returns no flag.
+func (s *DataHeader) SetGroup(group bool) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+	if _, ok := s.Group(); !ok {
+		return ErrNoGroupFlag
+	}
+	if group {
+		s.RawPayload[0] |= 0x80
+	} else {
+		s.RawPayload[0] &^= 0x80
+	}
+	return nil
+}
+
 // BlocksToFollow returns the number of blocks after the header: the Blocks
 // to Follow of a U_HEAD, C_HEAD or C_RHEAD, the Appended Blocks of a DD_HEAD
 // or R_HEAD, UAB plus one for a UDT_HEAD, and 0 for an SP_HEAD. ok is false

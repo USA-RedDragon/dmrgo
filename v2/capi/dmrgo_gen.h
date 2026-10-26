@@ -9219,6 +9219,8 @@ int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t ou
 int dmrgo_pdu_data_header_format(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_format_t *out);
 /* Go: pdu.DataHeader.FullMessage. FullMessage returns the Full Message Flag (F) of a U_HEAD, C_HEAD, DD_HEAD or R_HEAD: true for the first try of a packet. */
 int dmrgo_pdu_data_header_full_message(const dmrgo_pdu_data_header_t *self, bool *full, bool *ok);
+/* Go: pdu.DataHeader.Group. Group returns the Group or Individual flag of the header: true when the destination LLID is a talkgroup. */
+int dmrgo_pdu_data_header_group(const dmrgo_pdu_data_header_t *self, bool *group, bool *ok);
 /* Go: pdu.DataHeader.SAP. SAP returns the SAP identifier of the header. */
 int dmrgo_pdu_data_header_sap(const dmrgo_pdu_data_header_t *self, dmrgo_enums_sap_t *sap, bool *ok);
 /* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header. It returns DMRGO_ERR_PDU_NO_ADDRESSES for a proprietary header and a header of an unknown format, and a DMRGO_ERR_FIELD_RANGE when an LLID does not fit in 24 bits, and then changes nothing. */
@@ -9227,6 +9229,8 @@ int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t 
 int dmrgo_pdu_data_header_set_confirmed(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
 /* Go: pdu.DataHeader.SetDefinedData. SetDefinedData makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_defined_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
+/* Go: pdu.DataHeader.SetGroup. SetGroup sets the flag that Group returns. It returns DMRGO_ERR_PDU_NO_GROUP_FLAG, and changes nothing, for a header for which Group returns no flag. */
+int dmrgo_pdu_data_header_set_group(dmrgo_pdu_data_header_t *self, bool group);
 /* Go: pdu.DataHeader.SetProprietary. SetProprietary makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_proprietary(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
 /* Go: pdu.DataHeader.SetRawData. SetRawData makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits or p->appended_blocks is 0, and then leaves s as it is. */

@@ -37,7 +37,8 @@
 //     method, or the AppendedBlocks 0 of DataHeader.SetRawData;
 //   - ErrWrongOpcode when a SetX method that takes the opcode gets one that
 //     does not select X;
-//   - ErrNoAddresses and ErrNoServiceOptions when the PDU has no such field.
+//   - ErrNoAddresses, ErrNoServiceOptions and ErrNoGroupFlag when the PDU has
+//     no such field.
 //
 // # FEC results
 //

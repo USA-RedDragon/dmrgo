@@ -24583,6 +24583,30 @@ func dmrgo_pdu_data_header_full_message(c_self *C.dmrgo_pdu_data_header_t, c_ful
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_data_header_group
+func dmrgo_pdu_data_header_group(c_self *C.dmrgo_pdu_data_header_t, c_group *C.bool, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.Group()
+	_ = r0
+	_ = r1
+	if c_group != nil {
+		*c_group = C.bool(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_data_header_sap
 func dmrgo_pdu_data_header_sap(c_self *C.dmrgo_pdu_data_header_t, c_sap *C.dmrgo_enums_sap_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24673,6 +24697,29 @@ func dmrgo_pdu_data_header_set_defined_data(c_self *C.dmrgo_pdu_data_header_t, c
 	var a_p g_layer2_pdu.DefinedDataHeader
 	a_p = in_layer2_pdu_DefinedDataHeader(&(*c_p))
 	r0 := x.SetDefinedData(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_group
+func dmrgo_pdu_data_header_set_group(c_self *C.dmrgo_pdu_data_header_t, c_group C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0 := x.SetGroup(bool(c_group))
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload

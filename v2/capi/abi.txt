@@ -2623,10 +2623,12 @@ sym int dmrgo_pdu_data_header_data_type(const dmrgo_pdu_data_header_t *self, dmr
 sym int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t out[12]);
 sym int dmrgo_pdu_data_header_format(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_format_t *out);
 sym int dmrgo_pdu_data_header_full_message(const dmrgo_pdu_data_header_t *self, bool *full, bool *ok);
+sym int dmrgo_pdu_data_header_group(const dmrgo_pdu_data_header_t *self, bool *group, bool *ok);
 sym int dmrgo_pdu_data_header_sap(const dmrgo_pdu_data_header_t *self, dmrgo_enums_sap_t *sap, bool *ok);
 sym int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
 sym int dmrgo_pdu_data_header_set_confirmed(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
 sym int dmrgo_pdu_data_header_set_defined_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
+sym int dmrgo_pdu_data_header_set_group(dmrgo_pdu_data_header_t *self, bool group);
 sym int dmrgo_pdu_data_header_set_proprietary(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
 sym int dmrgo_pdu_data_header_set_raw_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_raw_data_header_t *p);
 sym int dmrgo_pdu_data_header_set_response(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_response_packet_header_t *p);

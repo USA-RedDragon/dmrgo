@@ -66,25 +66,8 @@ func sapOf(h *pdu.DataHeader) enums.SAP {
 }
 
 func groupOf(h *pdu.DataHeader) bool {
-	if p, ok := h.AsUnconfirmed(); ok {
-		return p.Group
-	}
-	if p, ok := h.AsConfirmed(); ok {
-		return p.Group
-	}
-	if p, ok := h.AsDefinedData(); ok {
-		return p.Group
-	}
-	if p, ok := h.AsRawData(); ok {
-		return p.Group
-	}
-	if p, ok := h.AsStatusPrecoded(); ok {
-		return p.Group
-	}
-	if p, ok := h.AsUDT(); ok {
-		return p.Group
-	}
-	return false
+	g, _ := h.Group()
+	return g
 }
 
 type peer struct {
