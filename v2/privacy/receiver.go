@@ -56,14 +56,16 @@ func FromPIHeader(h *pdu.PIHeader) Info {
 // Receiver removes the privacy of the voice calls that a voice.Receiver
 // reports. Feed it every event of the voice.Receiver in order. It finds
 // the key of a call from the algorithm and key ID of its PI header, or uses
-// the Basic Privacy key for a call whose LC sets the Privacy service option
-// and that has no PI header before its voice. Make it with
+// the Basic Privacy key for a call whose LC sets the Privacy service option,
+// or for every call with ForceBasic, and that has no PI header before its
+// voice. Make it with
 // NewReceiver. A Receiver is not safe for concurrent use and must not be
 // copied; go vet reports a copy.
 type Receiver struct {
 	keys   [MaxKeys]*Key
 	nKeys  int
 	basic  *Key
+	force  bool
 	info   Info
 	voice  bool
 	burst  int
@@ -106,7 +108,19 @@ func (r *Receiver) AddKey(k *Key) error {
 	return nil
 }
 
-// Reset forgets the current call. It keeps the keys.
+// ForceBasic sets whether the Receiver applies its Basic Privacy key to
+// every voice call without a PI header, also when the LC does not set the
+// Privacy service option, as some radios send Basic Privacy. It is off
+// after NewReceiver. Such a call reports Decrypting, while Encrypted reports only
+// what the call carried on air.
+func (r *Receiver) ForceBasic(on bool) {
+	if r == nil {
+		return
+	}
+	r.force = on
+}
+
+// Reset forgets the current call. It keeps the keys and ForceBasic.
 func (r *Receiver) Reset() {
 	if r == nil {
 		return
@@ -195,7 +209,7 @@ func (r *Receiver) voiceBurst(e *voice.Event, frames *[layer2.VoiceSlotsPerBurst
 	} else {
 		r.burst += 1 + int(e.Lost)
 	}
-	if !r.stream.active() && !r.info.Header && r.info.Encrypted && r.basic != nil {
+	if !r.stream.active() && !r.info.Header && (r.info.Encrypted || r.force) && r.basic != nil {
 		r.stream.start(r.basic, 0)
 		r.info.Decrypting = true
 	}

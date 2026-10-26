@@ -109,10 +109,10 @@ func newVoiceTransmitter(t *testing.T) *voice.Transmitter {
 	return tx
 }
 
-func transmit(t *testing.T, frames []vocoder.AMBEFrame, pi *pdu.PIHeader, each func(o *voice.Output)) {
+func transmit(t *testing.T, call voice.Call, frames []vocoder.AMBEFrame, pi *pdu.PIHeader, each func(o *voice.Output)) {
 	t.Helper()
 	tx := newVoiceTransmitter(t)
-	if err := tx.Start(0, encryptedCall, &voice.CallOptions{PIHeader: pi}); err != nil {
+	if err := tx.Start(0, call, &voice.CallOptions{PIHeader: pi}); err != nil {
 		t.Fatal(err)
 	}
 	out := make([]voice.Output, 0, voice.MaxOutputs)
@@ -142,11 +142,11 @@ func transmit(t *testing.T, frames []vocoder.AMBEFrame, pi *pdu.PIHeader, each f
 
 func receive(t *testing.T, ct []vocoder.AMBEFrame, pi *pdu.PIHeader, prx *privacy.Receiver) (got []vocoder.AMBEFrame, info []privacy.Info) {
 	t.Helper()
-	got, info, _ = receiveWith(t, ct, pi, prx, true, nil)
+	got, info, _ = receiveWith(t, encryptedCall, ct, pi, prx, true, nil)
 	return got, info
 }
 
-func receiveWith(t *testing.T, ct []vocoder.AMBEFrame, pi *pdu.PIHeader, prx *privacy.Receiver, hint bool, drop func(int) bool) (got []vocoder.AMBEFrame, info []privacy.Info, sent []int) {
+func receiveWith(t *testing.T, call voice.Call, ct []vocoder.AMBEFrame, pi *pdu.PIHeader, prx *privacy.Receiver, hint bool, drop func(int) bool) (got []vocoder.AMBEFrame, info []privacy.Info, sent []int) {
 	t.Helper()
 	rx, err := voice.NewReceiver(nil)
 	if err != nil {
@@ -154,7 +154,7 @@ func receiveWith(t *testing.T, ct []vocoder.AMBEFrame, pi *pdu.PIHeader, prx *pr
 	}
 	events := make([]voice.Event, 0, voice.MaxEvents)
 	n := 0
-	transmit(t, ct, pi, func(o *voice.Output) {
+	transmit(t, call, ct, pi, func(o *voice.Output) {
 		h := o.Hint
 		if o.Hint.Kind == layer2.KindVoice {
 			n++
@@ -188,7 +188,7 @@ func TestReceiverLostBursts(t *testing.T) {
 			if err := prx.AddKey(c.key); err != nil {
 				t.Fatal(err)
 			}
-			got, _, sent := receiveWith(t, c.ct, &c.pi, prx, hint, func(i int) bool { return i >= 4 && i < 12 || i == 20 })
+			got, _, sent := receiveWith(t, encryptedCall, c.ct, &c.pi, prx, hint, func(i int) bool { return i >= 4 && i < 12 || i == 20 })
 			if len(got) != 3*len(sent) {
 				t.Fatalf("%s hint %v: %d frames for %d bursts", c.name, hint, len(got), len(sent))
 			}
@@ -296,7 +296,7 @@ func TestTransmitterEncryptsCaptures(t *testing.T) {
 		}
 		var got []vocoder.AMBEFrame
 		sawPI := false
-		transmit(t, c.pt, hdr, func(o *voice.Output) {
+		transmit(t, encryptedCall, c.pt, hdr, func(o *voice.Output) {
 			if err := ptx.Output(o); err != nil {
 				t.Fatal(err)
 			}
@@ -349,5 +349,33 @@ func TestReceiverBasicLateLC(t *testing.T) {
 	prx.Event(&voice.Event{Kind: voice.EventCallStart, Call: encryptedCall}, nil)
 	if in := prx.Event(&voice.Event{Kind: voice.EventVoice, Burst: raw[1]}, &f); !in.Decrypting || f[0] != c.pt[3] {
 		t.Errorf("after the LC: %+v %X, want %X", in, f[0], c.pt[3])
+	}
+}
+
+func TestReceiverForceBasic(t *testing.T) {
+	t.Parallel()
+
+	c := captures(t)[3]
+	plain := voice.Call{Group: true, Target: 1, Source: 1}
+	for _, force := range []bool{false, true} {
+		prx := privacy.NewReceiver()
+		if err := prx.AddKey(c.key); err != nil {
+			t.Fatal(err)
+		}
+		prx.ForceBasic(force)
+		got, infos, _ := receiveWith(t, plain, c.ct, nil, prx, true, nil)
+		want := c.ct
+		if force {
+			want = c.pt
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("force %v frame %d: %X, want %X", force, i, got[i], want[i])
+			}
+		}
+		last := infos[len(infos)-1]
+		if last.Decrypting != force || last.Encrypted || last.Header {
+			t.Errorf("force %v: info %+v", force, last)
+		}
 	}
 }
