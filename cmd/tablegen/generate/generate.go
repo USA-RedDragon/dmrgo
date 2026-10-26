@@ -50,9 +50,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		writeTable2D("trellis34_reverse_constellation", tables.ReverseConstellation),
 		jen.Line(),
 		jen.Line(),
-		writeTable("trellis34BranchDibits", tables.Trellis34BranchDibits),
-		jen.Line(),
-		jen.Line(),
 		writeTable2D("trellis34BranchMetric", tables.Trellis34BranchMetric),
 	); err != nil {
 		return err

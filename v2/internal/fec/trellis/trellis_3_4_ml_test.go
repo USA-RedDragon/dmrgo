@@ -32,7 +32,7 @@ func scalarML(rx *[25]byte) (best [18]byte, metric, paths int) {
 				continue
 			}
 			for in := range 8 {
-				pair := trellis34BranchDibits[s*8+in]
+				pair := branchDibits(uint32(s), uint32(in))
 				c := m[s] + symCost(dib[2*k], pair>>2) + symCost(dib[2*k+1], pair&3)
 				switch {
 				case c < next[in]:

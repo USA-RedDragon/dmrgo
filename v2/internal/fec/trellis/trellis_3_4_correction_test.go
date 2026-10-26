@@ -49,7 +49,7 @@ func TestTrellis34_TablesMatchSpec(t *testing.T) {
 				t.Errorf("state %d input %d: point %d, want %d", s, in, got, b7[s][in])
 			}
 			pair := b8[b7[s][in]]
-			if got, want := trellis34BranchDibits[s*8+in], symbolBits(pair[0])<<2|symbolBits(pair[1]); got != want {
+			if got, want := branchDibits(uint32(s), uint32(in)), symbolBits(pair[0])<<2|symbolBits(pair[1]); got != want {
 				t.Errorf("state %d input %d: dibits %04b, want %04b", s, in, got, want)
 			}
 		}
@@ -238,7 +238,7 @@ func TestTrellis34_NonzeroFinalStateNotFlagged(t *testing.T) {
 		var d [98]byte
 		state := byte(0)
 		for i, tb := range tribits {
-			pair := trellis34BranchDibits[state*8+tb]
+			pair := branchDibits(uint32(state), uint32(tb))
 			d[2*i], d[2*i+1] = pair>>2, pair&3
 			state = tb
 		}

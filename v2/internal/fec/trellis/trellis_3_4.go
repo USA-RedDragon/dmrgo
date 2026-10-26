@@ -36,6 +36,14 @@ func deinterleave(info *[25]byte) [tribits]byte {
 	return pairs
 }
 
+const branchSequences = 0xc30f965a4b871ed2
+
+func branchDibits(state, tribit uint32) byte {
+	shift := state&1*2 + state&4
+	seq := (state>>1 ^ state>>2) & 1
+	return byte(uint64(branchSequences) >> (32*seq + 4*((tribit+shift)&7)) & 0xF)
+}
+
 func less(a, b uint64) uint64 {
 	return (^((a | high) - b) & high) >> 7 * 0xFF
 }
@@ -96,7 +104,7 @@ func Decode(info [25]byte) ([18]byte, fec.Result) {
 	state := uint32(0)
 	for k := tribits - 1; k >= 0; k-- {
 		from := prev[k] >> (3 * state) & 7
-		result.ErrorsCorrected += mathbits.OnesCount8(rx[k] ^ trellis34BranchDibits[from*8+state])
+		result.ErrorsCorrected += mathbits.OnesCount8(rx[k] ^ branchDibits(from, state))
 		if k < tribits-1 {
 			bit := 3 * k
 			v := uint16(state) << (13 - bit&7)
@@ -125,7 +133,7 @@ func Encode(data [18]byte) [25]byte {
 			}
 			in = v >> (13 - bit&7) & 7
 		}
-		pair := trellis34BranchDibits[state*8+in]
+		pair := branchDibits(state, in)
 		d[2*k], d[2*k+1] = pair>>2, pair&3
 		state = in
 	}
