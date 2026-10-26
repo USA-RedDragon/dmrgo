@@ -67,6 +67,11 @@ func decodeEmbedded(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result
 	return unpackEmbeddedInfo(info), res
 }
 
+func decodeEmbeddedStrict(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
+	info, res := bptc.DecodeEmbeddedStrict(embeddedWords(fragments))
+	return unpackEmbeddedInfo(info), res
+}
+
 func decodeEmbeddedWithCheck(fragments [4][32]unpacked.Bit, check func([77]unpacked.Bit) bool) ([77]unpacked.Bit, fec.Result) {
 	info, res := bptc.DecodeEmbeddedWithCheck(embeddedWords(fragments), func(p [10]byte) bool { return check(unpackEmbeddedInfo(p)) })
 	return unpackEmbeddedInfo(info), res
