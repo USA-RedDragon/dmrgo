@@ -1,5 +1,5 @@
 v2/bs/cach.go	23	22
-v2/bs/chanauth.go	101	92
+v2/bs/chanauth.go	102	93
 v2/bs/errors.go	3	3
 v2/bs/express.go	254	244
 v2/bs/nocopy.go	0	0
@@ -13,7 +13,7 @@ v2/csbk/rand.go	8	8
 v2/csbk/requester.go	220	213
 v2/csbk/responder.go	124	115
 v2/csbk/sender.go	67	64
-v2/csbk/timing.go	337	327
+v2/csbk/timing.go	341	331
 v2/csbk/wakeup.go	98	96
 v2/data/bound.go	3	3
 v2/data/event.go	28	26
@@ -51,7 +51,7 @@ v2/examples/data/main.go	143	96
 v2/examples/hotspot/main.go	145	113
 v2/examples/scanner/main.go	170	141
 v2/examples/tinygo/main.go	57	43
-v2/examples/transcoder/main.go	144	112
+v2/examples/transcoder/main.go	148	116
 v2/examples/trunking/main.go	172	120
 v2/fec/fec.go	35	35
 v2/hytera/hdap/gps.go	15	15
@@ -73,7 +73,7 @@ v2/internal/digest/blake2b.go	58	58
 v2/internal/digest/equal.go	7	7
 v2/internal/digest/sha1.go	66	66
 v2/internal/digest/sha256.go	48	48
-v2/internal/dvsisim/sim.go	252	220
+v2/internal/dvsisim/sim.go	292	260
 v2/internal/fec/ambe/ambe.go	52	52
 v2/internal/fec/bptc/bptc_196_96.go	93	92
 v2/internal/fec/bptc/bptc_cach.go	65	65
@@ -278,13 +278,17 @@ v2/trunk/tscc.go	408	377
 v2/trunk/tscc_services.go	507	468
 v2/trunk/tscc_udt.go	421	364
 v2/vocoder/ambe_payload.go	21	21
-v2/vocoder/codec2/codec2.go	8	7
+v2/vocoder/codec2/codec2.go	8	8
 v2/vocoder/codec2/detect.go	15	15
-v2/vocoder/codec2/engine_wazero.go	58	45
-v2/vocoder/codec2/wasmcodec.go	171	140
-v2/vocoder/dvsi/codec.go	193	183
-v2/vocoder/dvsi/packet.go	193	190
+v2/vocoder/codec2/engine_aot.go	56	15
+v2/vocoder/codec2/engine_wazero.go	80	57
+v2/vocoder/codec2/internal/aot/codec2.go	10288	0
+v2/vocoder/codec2/report.go	5	5
+v2/vocoder/codec2/wasmcodec.go	179	151
+v2/vocoder/dvsi/codec.go	231	219
+v2/vocoder/dvsi/packet.go	205	203
 v2/vocoder/frame.go	6	6
+v2/vocoder/report.go	12	12
 v2/voice/chanauth.go	46	42
 v2/voice/event.go	42	42
 v2/voice/interrupter.go	103	102
@@ -292,4 +296,4 @@ v2/voice/jitter.go	275	266
 v2/voice/nocopy.go	0	0
 v2/voice/position.go	23	23
 v2/voice/receiver.go	598	588
-v2/voice/transmitter.go	413	405
+v2/voice/transmitter.go	413	406
