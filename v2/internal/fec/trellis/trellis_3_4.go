@@ -21,8 +21,13 @@ const (
 
 func deinterleave(info *[25]byte) [tribits]byte {
 	var d [dibits]byte
-	for i, j := range interleave_matrix {
-		d[j] = info[i>>2] >> (6 - 2*(i&3)) & 3
+	i := 0
+	for r := 0; r < 8; r += 2 {
+		for j := r; j < dibits; j += 8 {
+			b := info[i>>2] >> (4 - 2*(i&3))
+			d[j], d[j+1] = b>>2&3, b&3
+			i += 2
+		}
 	}
 	var pairs [tribits]byte
 	for k := range pairs {
@@ -125,8 +130,12 @@ func Encode(data [18]byte) [25]byte {
 		state = in
 	}
 	var info [25]byte
-	for i, j := range interleave_matrix {
-		info[i>>2] |= d[j] << (6 - 2*(i&3))
+	i := 0
+	for r := 0; r < 8; r += 2 {
+		for j := r; j < dibits; j += 8 {
+			info[i>>2] |= (d[j]<<2 | d[j+1]) << (4 - 2*(i&3))
+			i += 2
+		}
 	}
 	return info
 }
