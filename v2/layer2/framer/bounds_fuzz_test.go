@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -68,7 +69,7 @@ func FuzzFramerBounds(f *testing.F) {
 	f.Add([]byte{0x05, 0x75, 0x5f, 0xd7, 0xdf, 0x75, 0xf7}, []byte{}, []byte{1}, uint8(1))
 	f.Add([]byte{0x06, 0xd5, 0xd7, 0xf7, 0x7f, 0xd7, 0x57, 0x00}, []byte{}, []byte{3, 2}, uint8(2))
 	f.Fuzz(func(t *testing.T, script, flips, cuts []byte, period uint8) {
-		_ = runFramerBounds(t, fuzzStream(pool, script, flips), cuts[:min(len(cuts), maxCuts)], period)
+		_ = runFramerBounds(t, fuzztest.Stream(pool, script, flips), cuts[:min(len(cuts), maxCuts)], period)
 	})
 }
 

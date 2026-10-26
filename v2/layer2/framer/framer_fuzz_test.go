@@ -1,7 +1,6 @@
 package framer_test
 
 import (
-	"bytes"
 	"math/bits"
 	"reflect"
 	"slices"
@@ -9,63 +8,15 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
 const (
-	maxScript   = 128
-	maxCuts     = 128
-	maxStream   = 4096
-	maxBitFlips = 64
-	maxNoise    = 128
+	maxCuts  = 128
+	maxNoise = 128
 )
-
-func fuzzStream(pool [][33]byte, script, flips []byte) []byte {
-	script = script[:min(len(script), maxScript)]
-	var s []byte
-	for i := 0; i < len(script) && len(s) < maxStream; {
-		op := script[i]
-		i++
-		n := int(op&0x3f) + 1
-		switch op >> 6 {
-		case 0:
-			end := min(i+n, len(script))
-			s = append(s, script[i:end]...)
-			i = end
-		case 1:
-			if i+2 > len(script) {
-				i = len(script)
-				break
-			}
-			count := (int(op&0x3f)<<8 | int(script[i])) + 1
-			s = append(s, bytes.Repeat([]byte{script[i+1]}, min(count, maxStream-len(s)))...)
-			i += 2
-		case 2:
-			if i >= len(script) {
-				break
-			}
-			r := int(script[i]) + 1
-			i++
-			d := min(n, len(s))
-			for k := 0; k < r && d > 0 && len(s) < maxStream; k++ {
-				s = append(s, s[len(s)-d:]...)
-			}
-		case 3:
-			if len(pool) > 0 {
-				b := pool[int(op&0x3f)%len(pool)]
-				s = append(s, b[:]...)
-			}
-		}
-	}
-	s = s[:min(len(s), maxStream)]
-	flips = flips[:min(len(flips), maxBitFlips)]
-	for k := 0; k+1 < len(flips) && len(s) > 0; k += 2 {
-		i := (int(flips[k])<<8 | int(flips[k+1])) % (8 * len(s))
-		s[i/8] ^= 0x80 >> (i % 8)
-	}
-	return s
-}
 
 func syncAt(stream []byte, i int) uint64 {
 	var v uint64
@@ -215,7 +166,7 @@ func framerSeeds(pool [][33]byte) []framerSeed {
 
 func checkFramer(t *testing.T, pool [][33]byte, script, flips, cuts []byte, c byte) {
 	cfg := fuzzConfig(c)
-	stream := fuzzStream(pool, script, flips)
+	stream := fuzztest.Stream(pool, script, flips)
 	cuts = cuts[:min(len(cuts), maxCuts)]
 	whole := newFramer(t, &cfg).Write(stream, 8*len(stream))
 	checkBursts(t, cfg, stream, whole)
