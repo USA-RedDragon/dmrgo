@@ -129,3 +129,27 @@ func TestMessageIndicatorSteps(t *testing.T) {
 		}
 	}
 }
+
+func TestBasicKeyNumber(t *testing.T) {
+	t.Parallel()
+
+	for n, want := range map[uint8]uint16{
+		0: 0, 1: 0x1F00, 3: 0xFC00, 37: 0x712B, 100: 0x4562, 101: 0x5A62, 128: 0x4D89,
+		207: 0xF5C6, 208: 0x40D8, 215: 0x99DB, 223: 0xD3DE, 224: 0x2DE8, 255: 0x98F6,
+	} {
+		if got, w := NewBasicKeyNumber(n).basic, NewBasicKey(want).basic; got != w {
+			t.Errorf("key number %d: pattern %X, want that of %04X, %X", n, got, want, w)
+		}
+	}
+	for n := range 256 {
+		var v uint16
+		for i, b := range [8]uint16{0x1F00, 0xE300, 0x2503, 0x4A05, 0x2618, 0x4B28, 0x2B49, 0x4D89} {
+			if n>>i&1 != 0 {
+				v ^= b
+			}
+		}
+		if got := NewBasicKeyNumber(uint8(n)); got.basic != NewBasicKey(v).basic || got.alg != AlgorithmBasic || got.id != 0 {
+			t.Fatalf("key number %d", n)
+		}
+	}
+}

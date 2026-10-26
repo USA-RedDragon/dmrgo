@@ -91,7 +91,7 @@ func captures(t *testing.T) []*capture {
 		loadCapture(t, "rc4", privacy.NewARC4Key(0x0F, [5]byte{0x37, 0x33, 0x74, 0xAB, 0xE8})),
 		loadCapture(t, "aes128", aesKey(t, 0x0D, "373374ABE8E9D13AA90900B9A3101664")),
 		loadCapture(t, "aes256", aesKey(t, 0x0E, "3AF8C96E21BEFDE927EE1D03DF53CFA701516B0642AC7B38643549E2BE79840E")),
-		loadCapture(t, "bp", privacy.NewBasicKey(0x4562)),
+		loadCapture(t, "bp", privacy.NewBasicKeyNumber(100)),
 	}
 }
 

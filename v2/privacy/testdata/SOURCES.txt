@@ -67,3 +67,9 @@ Search for encrypted DMR data captures with a known key, 2026-10-26:
   dropped), which agrees with this package; no captures.
 - Academic papers: none found that publishes DMR data captures with keys.
 No public capture with a key exists for AES data, DES data or Basic Privacy data.
+
+Basic Privacy key numbers: the spot checks of TestBasicKeyNumber for numbers other than
+208 to 223 are entries of the table in include/bp.h of dsd-fme (audio_work, ISC), which
+equal the XOR rule of NewBasicKeyNumber for 240 of its 256 entries. For 208 to 223 the
+test holds the rule values; the table differs there. The captures test runs bp.txt with
+NewBasicKeyNumber(100), the key number that the archive.org item names.

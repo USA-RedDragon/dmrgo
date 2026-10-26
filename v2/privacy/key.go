@@ -84,10 +84,29 @@ func NewAESKey(id uint8, key []byte) (*Key, error) {
 
 // NewBasicKey returns the Basic Privacy key with the 16-bit value key. Its
 // key ID is 0. The value is not the key number of 1 to 255 that a radio
-// shows. It allocates the Key.
+// shows; NewBasicKeyNumber takes that. It allocates the Key.
 func NewBasicKey(key uint16) *Key {
 	hi, lo := byte(key>>8), byte(key&0xFF)
 	return &Key{alg: AlgorithmBasic, basic: [6]byte{hi, lo & 0x0F, hi, lo, hi, lo}}
+}
+
+// NewBasicKeyNumber returns the Basic Privacy key of the key number n that
+// a radio shows, 1 to 255. Its 16-bit value is the XOR of one base value
+// for each bit set in n: 0x1F00, 0xE300, 0x2503, 0x4A05, 0x2618, 0x4B28,
+// 0x2B49 and 0x4D89 for bits 0 to 7. Number 0 gives the value 0, a key
+// that leaves the frames as they are. The base values come from public
+// reverse engineering (gophertrunk.org/reference/dmr-encryption and
+// include/bp.h of dsd-fme, ISC license); number 100 (0x4562) is confirmed
+// by a public capture. For numbers 208 to 223 the rule differs from the
+// table of dsd-fme, and no radio confirms either. It allocates the Key.
+func NewBasicKeyNumber(n uint8) *Key {
+	var v uint16
+	for i, b := range [8]uint16{0x1F00, 0xE300, 0x2503, 0x4A05, 0x2618, 0x4B28, 0x2B49, 0x4D89} {
+		if n>>i&1 != 0 {
+			v ^= b
+		}
+	}
+	return NewBasicKey(v)
 }
 
 // Algorithm returns the algorithm of the key, or AlgorithmBasic for a nil
