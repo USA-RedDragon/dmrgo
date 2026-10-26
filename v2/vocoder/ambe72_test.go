@@ -115,3 +115,27 @@ func TestAMBESilence(t *testing.T) {
 		t.Fatalf("DecodeAMBE72 = %v %+v", f, res)
 	}
 }
+
+func BenchmarkDecodeAMBE72(b *testing.B) {
+	slots := voiceSlots(b)
+	b.ReportAllocs()
+	i := 0
+	for b.Loop() {
+		_, _ = vocoder.DecodeAMBE72(slots[i%len(slots)])
+		i++
+	}
+}
+
+func BenchmarkEncodeAMBE72(b *testing.B) {
+	slots := voiceSlots(b)
+	frames := make([]vocoder.AMBEFrame, len(slots))
+	for i, s := range slots {
+		frames[i], _ = vocoder.DecodeAMBE72(s)
+	}
+	b.ReportAllocs()
+	i := 0
+	for b.Loop() {
+		_, _ = vocoder.EncodeAMBE72(frames[i%len(frames)])
+		i++
+	}
+}
