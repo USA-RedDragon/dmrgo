@@ -161,8 +161,10 @@
 //   - transport/hytera: Hytera IP Multi-Site Connect.
 //   - transport/mmdvm: the serial protocol of an MMDVM modem.
 //
-// Voice:
+// Radio and voice:
 //
+//   - rf: a receiver that recovers bursts from the I/Q samples of a
+//     software radio.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //   - vocoder/dvsi: the packet protocol of the DVSI AMBE-3000R and
@@ -313,6 +315,9 @@
 //     hytera.ErrCode: returned by the transport/hytera decoders.
 //   - mmdvm.ErrShort, mmdvm.ErrLength, mmdvm.ErrCommand: returned by the
 //     transport/mmdvm decoders.
+//   - rf.ErrWriteTooLong: returned by a receiver without OnBurst for a call
+//     that is too long for its burst buffer. rf.ErrNilBurst: returned by
+//     Monitor.Burst for a nil Monitor or Burst.
 //   - codec2.ErrUnavailable, codec2.ErrUnsupportedMode,
 //     codec2.ErrFrameLength, codec2.ErrClosed: returned by the Codec2
 //     Codec; codec2.ErrNotWASM: returned by codec2.NewModule in a build
@@ -334,8 +339,8 @@
 //     that does not fit in its bits, or a field with a padding bit set.
 //     enums.NewColorCode returns it for a value over 15.
 //   - *ConfigError: a constructor, or a machine method of bs, csbk, data,
-//     trunk or voice, got a config, option or argument field out of range.
-//     Type names the package, such as "trunk" or "dmrdsession".
+//     rf, trunk or voice, got a config, option or argument field out of
+//     range. Type names the package, such as "trunk" or "dmrdsession".
 //
 // # More
 //

@@ -141,6 +141,7 @@ The [udp](examples/udp) and [tcp](examples/tcp) examples are their own modules, 
   - `transport/mmdvm`: the serial protocol between MMDVMHost and an MMDVM or MMDVM_HS modem, for both roles: a stateless frame finder, the DMR data and lost frames with their `layer2.Hint`, version, status, configuration, frequency, mode, ACK and NAK, DMR start, abort, Short LC and ALOHA, and debug frames.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
+- A receiver for software radios (`rf`): it recovers bursts from 8-bit I/Q or complex baseband, with soft-decision decoding of each FEC field and the superframe position of voice bursts. A `Monitor` gives the TDMA channel of each burst and the call on each channel. Its tiers go from a discriminator for a microcontroller to coherent trellis detection for a PC. See [Receiver](#receiver).
 - Vocoders (`vocoder`):
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface and a Codec2 codec (`vocoder/codec2`). `Decode` returns a `FrameReport` for each frame: whether the frame was good, lost, erased or invalid, whether the samples are voice, a tone, a repeat or silence, and the bits that the FEC corrected. `DecodeLost` fills a frame that never arrived.
@@ -265,7 +266,8 @@ tinygo flash -target=pico ./examples/tinygo
 
 The example prints its counts on the serial console once a second.
 
-- CI builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the Raspberry Pi Pico and runs the library tests with TinyGo.
+- CI builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the Raspberry Pi Pico and runs the library tests with TinyGo, except the host sweeps of `rf`.
+- CI builds [v2/examples/rxdisc](v2/examples/rxdisc/main.go), the Tier 0 receiver in static memory, for a Cortex-M4 board with `-gc=none`. The link fails if the receiver allocates.
 - Decode and encode make no heap garbage at the default stack size of these targets (8 KB). TinyGo puts each local variable larger than 256 bytes on the heap, and the library has no such local on those paths. TinyGo also puts on the heap a local of the caller whose address goes into the library, so keep such values in package-level or heap storage, as [Allocation](#allocation) shows.
 - `vocoder/codec2` always uses its stub, so `codec2.New` returns `codec2.ErrUnavailable`.
 
@@ -277,6 +279,120 @@ The example prints its counts on the serial console once a second.
 - libdmrgo, the C API, has its own ABI number (`DMRGO_ABI_VERSION`) and soname (`libdmrgo.so.N`). It is built from the `v2` tag, and `v2/capi` has no tags of its own. A change that breaks C code that compiles against `dmrgo.h`, or a program that links an older libdmrgo, gives a new ABI number and soname. v2.0.0 to v2.0.3 have ABI 1, v2.0.4 and v2.0.5 have ABI 2, and the release after v2.0.5 has ABI 3 (`libdmrgo.so.3`).
 - A config, options or vtable struct of the C API whose first member is `size_t size` is sized. The caller sets `size` to `sizeof` the struct, and the library reads only the members that `size` covers and takes the rest as zero. Thus a minor release can add members at the end of such a struct without a new ABI number, and a program built against older headers works with the newer library. Other structs have a fixed layout.
 
+## Receiver
+
+Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a software radio, or from I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel. Its tiers trade CPU and RAM for sensitivity, from a microcontroller to a PC. [v2/cmd/dmrrf](v2/cmd/dmrrf/README.md) decodes DMR from I/Q or discriminator audio in the file formats of common software radios, and writes test transmissions in the same formats.
+
+<!-- rxbench:begin -->
+| Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU per second of signal | RAM |
+|------|-------|-------|---------------|------|---------------|--------------------------|-----|
+| Best possible (4FSK floor) | - | -1.0 dB | -3.0 dB | -4.1 dB | 0.3 dB | - | - |
+| Audio tier 0 | FM audio, 9.6 kHz, core | 9.6 dB | 6.4 dB | 6.3 dB | 8.2 dB | 0.33 ms | 1,336 B |
+| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 8.2 dB | 6.4 dB | 5.3 dB | 7.9 dB | 1.1 ms | 34 KiB |
+| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 5.0 dB | 4.4 dB | 3.9 dB | 6.3 dB | 8.2 ms | 533 KiB |
+| Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 5.0 dB | 3.9 dB | 3.2 dB | 6.3 dB | 8.1 ms | 1.2 MiB |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.5 dB | 6.4 dB | 8.2 dB | 0.41 ms | 1,408 B |
+| I/Q tier 0 | I/Q, discriminator core | 9.4 dB | 5.5 dB | 5.4 dB | 7.7 dB | 2.2 ms | 18 KiB |
+| I/Q tier 1 | I/Q, soft decoding, noise prediction | 8.0 dB | 5.4 dB | 3.7 dB | 7.1 dB | 2.8 ms | 50 KiB |
+| I/Q tier 2 | I/Q, coherent detection | 4.9 dB | 4.4 dB | 3.2 dB | 5.5 dB | 11 ms | 491 KiB |
+| I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 2.6 dB | 1.8 dB | 1.7 dB | 4.9 dB | 727 ms | 35.5 MiB |
+
+- Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.
+- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 1,936 B of RAM with its stack at 3.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,032 B at 3.9 MHz. No tier allocates after it starts.
+- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.
+- [docs/rx](docs/rx/README.md) tells how the sweep measures and what the floors are.
+
+<details><summary>Sensitivity per payload type</summary>
+
+Eb/N0 in dB for 90% recovery. [docs/rx](docs/rx/README.md) defines the floors.
+
+| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |
+|---------|------------|-----------|-----------|------------|
+| Voice frame (AMBE+2, 49 bits) | -1.0 dB | at least 1.3 dB | 2.3 to 2.9 | 1.9 dB |
+| Voice frame, protected bits (C0 and C1) | -5.3 dB | at least -4.9 dB | 0.4 to 4.6 | -0.7 dB |
+| Data block, rate 1/2 | -3.0 dB | - | at most 3.5 | 0.5 dB |
+| Data block, rate 3/4 | 0.3 dB | at least 1.3 dB | 0.9 to 4.3 | 4.6 dB |
+| Data block, rate 1 | 5.3 dB | 6.5 dB | 1.2 | 6.6 dB |
+| CSBK | -4.1 dB | - | at most 4.5 | 0.3 dB |
+| Voice LC header and terminator | -4.3 dB | - | at most 5.0 | 0.7 dB |
+| Data header | -3.9 dB | - | at most 4.4 | 0.5 dB |
+| Embedded LC | < -6.9 dB | - | - | -2.0 dB |
+| EMB | < -6.9 dB | < -6.9 dB | - | -3.4 dB |
+| Slot type | < -6.9 dB | < -6.9 dB | - | -2.5 dB |
+| SYNC detection | < -6.9 dB | < -6.9 dB | - | < -6.9 dB |
+
+| Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
+|---------|------|------|------|------|------|------|------|------|------|
+| Voice frame (AMBE+2, 49 bits) | 9.6 dB | 8.2 dB | 5.0 dB | 5.0 dB | 10.3 dB | 9.4 dB | 8.0 dB | 4.9 dB | 2.6 dB |
+| Voice frame, protected bits (C0 and C1) | 5.9 dB | 5.2 dB | 4.0 dB | 3.8 dB | 5.4 dB | 4.6 dB | 3.7 dB | 3.1 dB | 1.6 dB |
+| Data block, rate 1/2 | 6.4 dB | 6.4 dB | 4.4 dB | 3.9 dB | 6.5 dB | 5.5 dB | 5.4 dB | 4.4 dB | 1.8 dB |
+| Data block, rate 3/4 | 8.2 dB | 7.9 dB | 6.3 dB | 6.3 dB | 8.2 dB | 7.7 dB | 7.1 dB | 5.5 dB | 4.9 dB |
+| Data block, rate 1 | 11.3 dB | 11.3 dB | 8.3 dB | 8.3 dB | 12.4 dB | 11.2 dB | 11.4 dB | 7.9 dB | 7.7 dB |
+| CSBK | 6.3 dB | 5.3 dB | 3.9 dB | 3.2 dB | 6.4 dB | 5.4 dB | 3.7 dB | 3.2 dB | 1.7 dB |
+| Voice LC header and terminator | 6.4 dB | 5.5 dB | 4.4 dB | 3.6 dB | 6.4 dB | 6.3 dB | 4.1 dB | 3.5 dB | 1.8 dB |
+| Data header | 6.4 dB | 5.3 dB | 4.1 dB | 3.3 dB | 6.4 dB | 5.5 dB | 3.8 dB | 3.4 dB | 1.9 dB |
+| Embedded LC | 9.5 dB | 4.4 dB | 2.6 dB | 2.3 dB | 9.6 dB | 9.3 dB | 2.6 dB | 2.1 dB | 0.4 dB |
+| EMB | 3.9 dB | 3.8 dB | 2.2 dB | 1.9 dB | 2.7 dB | 2.4 dB | 1.9 dB | 1.2 dB | -0.1 dB |
+| Slot type | 4.0 dB | 4.1 dB | 2.0 dB | 2.0 dB | 3.1 dB | 2.7 dB | 2.6 dB | 1.0 dB | -0.4 dB |
+| SYNC detection | 3.7 dB | 3.6 dB | 1.1 dB | 1.1 dB | 2.6 dB | 2.2 dB | 2.0 dB | -0.6 dB | < -0.9 dB |
+
+</details>
+
+<details><summary>Real recordings</summary>
+
+Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR.
+
+| Recording | C/N | Frames | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
+|-----------|-----|--------|------|------|------|------|
+| MS voice relayed, HackRF on the uplink | 9.3 dB | 2013 | 1470 | 1519 | 1821 | 1861 |
+| Late entry voice relayed, HackRF on the uplink | 11.1 dB | 1890 | 1467 | 1501 | 1618 | 1630 |
+| Voice with PI header relayed, HackRF on the uplink | 17.3 dB | 1818 | 1818 | 1818 | 1818 | 1818 |
+| Mixed voice and data, network to air, run 1 | 9.7 dB | 144 | 114 | 117 | 122 | 123 |
+| Mixed voice and data, network to air, run 2 | 10.6 dB | 144 | 118 | 121 | 125 | 125 |
+| Voice, network to air | 10.0 dB | 90 | 88 | 90 | 90 | 90 |
+| Voice, network to air | 11.6 dB | 90 | 84 | 84 | 90 | 90 |
+| Gain sweep, RTL gain 0 dB | 9.9 dB | 51 | 42 | 46 | 50 | 50 |
+| Gain sweep, RTL gain 9.7 dB | 7.3 dB | 54 | 31 | 41 | 44 | 49 |
+| Gain sweep, RTL gain 19.7 dB | 10.4 dB | 51 | 50 | 51 | 51 | 51 |
+| Gain sweep, RTL gain 29.7 dB | 11.2 dB | 54 | 44 | 49 | 50 | 50 |
+
+</details>
+
+<details><summary>Error rate graphs</summary>
+
+Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.
+
+#### FM discriminator audio
+
+![Voice frame, FM discriminator audio: frame error rate against Eb/N0, references and tiers](docs/rx/audio/ambe.svg)
+![Data rate 1/2, FM discriminator audio: frame error rate against Eb/N0, references and tiers](docs/rx/audio/rate12.svg)
+![Data rate 3/4, FM discriminator audio: frame error rate against Eb/N0, references and tiers](docs/rx/audio/rate34.svg)
+![CSBK, FM discriminator audio: frame error rate against Eb/N0, references and tiers](docs/rx/audio/csbk.svg)
+![Embedded LC, FM discriminator audio: frame error rate against Eb/N0, references and tiers](docs/rx/audio/elc.svg)
+![Data rate 1 payload bits, FM discriminator audio: bit error rate against Eb/N0, references and tiers](docs/rx/audio/rate1_bit.svg)
+
+#### I/Q at 9.6 kHz
+
+![Voice frame, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](docs/rx/iqlow/ambe.svg)
+![Data rate 1/2, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](docs/rx/iqlow/rate12.svg)
+![Data rate 3/4, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](docs/rx/iqlow/rate34.svg)
+![CSBK, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](docs/rx/iqlow/csbk.svg)
+![Embedded LC, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](docs/rx/iqlow/elc.svg)
+![Data rate 1 payload bits, I/Q at 9.6 kHz: bit error rate against Eb/N0, references and tiers](docs/rx/iqlow/rate1_bit.svg)
+
+#### I/Q
+
+![Voice frame, I/Q: frame error rate against Eb/N0, references and tiers](docs/rx/iq/ambe.svg)
+![Data rate 1/2, I/Q: frame error rate against Eb/N0, references and tiers](docs/rx/iq/rate12.svg)
+![Data rate 3/4, I/Q: frame error rate against Eb/N0, references and tiers](docs/rx/iq/rate34.svg)
+![CSBK, I/Q: frame error rate against Eb/N0, references and tiers](docs/rx/iq/csbk.svg)
+![Embedded LC, I/Q: frame error rate against Eb/N0, references and tiers](docs/rx/iq/elc.svg)
+![Data rate 1 payload bits, I/Q: bit error rate against Eb/N0, references and tiers](docs/rx/iq/rate1_bit.svg)
+
+</details>
+
+<!-- rxbench:end -->
+
 ## Tooling
 
 - `go generate ./...` from the repository root runs four generators. Do not edit the files they write.
@@ -285,6 +401,7 @@ The example prints its counts on the serial console once a second.
   - `v2/internal/allocgate/apigen` writes the program that calls every export for the allocation gate (`allapi_gen.go`).
   - `v2/capi/internal/capigen` writes the C API of libdmrgo: the `*_gen*` files, `libdmrgo.map` and `abi.txt` in `v2/capi`.
 - `env CGO_ENABLED=0 go run -C cmd/speccheck . -update-readme` runs the tests that `spec_matrix.yaml` maps to each ETSI clause and writes the table below. `-check-readme` fails when the table is out of date.
+- `go run -C cmd/rxbench . -update-readme` runs the receiver sweep of `v2/rf` (about an hour on 32 cores) and writes the receiver tables and the graphs in `docs/rx`. `-check-readme` fails when they differ from the sweep data in `v2/rf/testdata`.
 
 ## ETSI TS 102 361 Specification Coverage
 

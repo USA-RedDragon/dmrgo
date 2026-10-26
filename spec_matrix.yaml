@@ -14,6 +14,28 @@
 # Nested modules under v2/, such as the C API in v2/capi, are not checked.
 
 ignore_files:
+  - v2/cmd/dmrrf/ambe.go
+  - v2/cmd/dmrrf/cal.go
+  - v2/cmd/dmrrf/demod.go
+  - v2/cmd/dmrrf/format.go
+  - v2/cmd/dmrrf/front.go
+  - v2/cmd/dmrrf/main.go
+  - v2/cmd/dmrrf/report.go
+  - v2/cmd/dmrrf/serial_linux.go
+  - v2/cmd/dmrrf/serial_other.go
+  - v2/cmd/dmrrf/software.go
+  - v2/internal/fsktx/audioopt.go
+  - v2/internal/fsktx/host.go
+  - v2/internal/fsktx/mcu.go
+  - v2/internal/fsktx/mcuiq.go
+  - v2/internal/fsktx/rrc.go
+  - v2/internal/fsktx/shapeopt.go
+  - v2/internal/fsktx/shapepred.go
+  - v2/internal/fsktx/symbols.go
+  - v2/internal/rftx/channel.go
+  - v2/internal/rftx/modem.go
+  - v2/internal/rftx/seq.go
+  - v2/internal/rftx/site.go
   - v2/privacy/data.go
   - v2/privacy/errors.go
   - v2/privacy/key.go
@@ -47,6 +69,51 @@ ignore_files:
   - v2/internal/allocgate/testdata/scratch/nofuzz/nofuzz.go
   - v2/layer2/nocopy.go
   - v2/layer2/packet/nocopy.go
+  - v2/rf/acquire.go
+  - v2/rf/burst.go
+  - v2/rf/chan.go
+  - v2/rf/coherent.go
+  - v2/rf/cohext.go
+  - v2/rf/comb.go
+  - v2/rf/disc.go
+  - v2/rf/disc48.go
+  - v2/rf/disccoh.go
+  - v2/rf/discfront.go
+  - v2/rf/discrx.go
+  - v2/rf/discsoft.go
+  - v2/rf/discsoft_tinygo.go
+  - v2/rf/exact.go
+  - v2/rf/ext.go
+  - v2/rf/fastmath.go
+  - v2/rf/fir96.go
+  - v2/rf/fir96_dsp.go
+  - v2/rf/frontend.go
+  - v2/rf/gap.go
+  - v2/rf/hgate.go
+  - v2/rf/iq0front.go
+  - v2/rf/iq0rx.go
+  - v2/rf/iqdisc.go
+  - v2/rf/iqdsp.go
+  - v2/rf/iqdsp_dsp.go
+  - v2/rf/iqlow.go
+  - v2/rf/iqlowhalf_dsp.go
+  - v2/rf/lagtab.go
+  - v2/rf/lean.go
+  - v2/rf/leanfec.go
+  - v2/rf/leanfront.go
+  - v2/rf/monitor.go
+  - v2/rf/npml.go
+  - v2/rf/options.go
+  - v2/rf/packed.go
+  - v2/rf/rawvoice.go
+  - v2/rf/receiver.go
+  - v2/rf/repair.go
+  - v2/rf/softfec.go
+  - v2/rf/softgrid.go
+  - v2/rf/spectrum.go
+  - v2/rf/track.go
+  - v2/rf/twopass.go
+  - v2/rf/union.go
   - v2/transport/dmrd/alias.go
   - v2/transport/dmrd/alias_lc.go
   - v2/transport/dmrd/dmrdauth/auth.go
@@ -117,10 +184,13 @@ ignore_files:
   - v2/examples/conformance/main.go
   - v2/examples/data/main.go
   - v2/examples/hotspot/main.go
+  - v2/examples/rxdisc/main.go
   - v2/examples/scanner/main.go
   - v2/examples/transcoder/main.go
   - v2/examples/tinygo/main.go
   - v2/examples/trunking/main.go
+  - v2/examples/txaudio/main.go
+  - v2/examples/txiq/main.go
   - v2/fec/fec.go
   - v2/vocoder/ambe_payload.go
   - v2/vocoder/report.go
