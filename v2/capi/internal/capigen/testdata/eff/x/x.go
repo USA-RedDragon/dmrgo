@@ -163,3 +163,16 @@ func ReadFirst(m *M) {
 	n := m.N
 	*m = M{N: n + 1}
 }
+
+type holder struct {
+	m M
+	n int
+}
+
+func wrap(m M) *holder { return &holder{m: m} }
+
+func Wrapped(m *M) {
+	c := *m
+	h := wrap(c)
+	h.n = 1
+}

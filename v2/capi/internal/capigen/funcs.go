@@ -919,6 +919,9 @@ func (g *gen) cVisible(t types.Type, e *effect) *effect {
 		if _, isH := g.handleC(ft); isH {
 			continue
 		}
+		if _, isFn := ft.Underlying().(*types.Signature); isFn {
+			bits &^= eElem
+		}
 		out.mark(f.Name(), bits)
 	}
 	return out

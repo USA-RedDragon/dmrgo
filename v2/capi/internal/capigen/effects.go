@@ -503,7 +503,7 @@ func (a *analyzer) write(p apath, lhs ast.Expr, id *ast.Ident) {
 			return
 		}
 		if p.field == "" && a.rootStruct() != nil {
-			a.eff.all = true
+			a.sharedRefs()
 			return
 		}
 		a.eff.mark(p.field, eElem)
@@ -545,8 +545,22 @@ func (a *analyzer) fieldIsSlice(name string) bool {
 	return false
 }
 
+// sharedRefs marks what a copy of the root struct shares with the
+// original: the elements of its reference fields.
+func (a *analyzer) sharedRefs() {
+	for f := range a.rootStruct().Fields() {
+		if isRef(f.Type()) {
+			a.eff.mark(f.Name(), eElem)
+		}
+	}
+}
+
 func (a *analyzer) escape(p apath) {
 	if p.field == "" {
+		if a.rootStruct() != nil && p.copy {
+			a.sharedRefs()
+			return
+		}
 		if a.rootStruct() != nil {
 			a.eff.all = true
 			return
@@ -890,9 +904,9 @@ func (a *analyzer) apply(e *effect, p apath, pt types.Type) {
 		if e.all {
 			if mask == eSet|eElem {
 				a.eff.all = true
-			} else {
-				a.escape(p)
+				return
 			}
+			a.sharedRefs()
 			return
 		}
 		for f, bits := range e.f {
