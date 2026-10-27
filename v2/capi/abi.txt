@@ -998,6 +998,7 @@ sym #define DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
 sym #define DMRGO_IPSCSESSION_REASON_ADDRESS ((dmrgo_ipscsession_reason_t)9)
 sym #define DMRGO_IPSCSESSION_REASON_AUTH ((dmrgo_ipscsession_reason_t)5)
 sym #define DMRGO_IPSCSESSION_REASON_CLOSED ((dmrgo_ipscsession_reason_t)2)
+sym #define DMRGO_IPSCSESSION_REASON_DROPPED ((dmrgo_ipscsession_reason_t)10)
 sym #define DMRGO_IPSCSESSION_REASON_FULL ((dmrgo_ipscsession_reason_t)8)
 sym #define DMRGO_IPSCSESSION_REASON_LIST ((dmrgo_ipscsession_reason_t)4)
 sym #define DMRGO_IPSCSESSION_REASON_MALFORMED ((dmrgo_ipscsession_reason_t)7)
@@ -2185,6 +2186,8 @@ sym int dmrgo_ipscsession_master_adopt_need(dmrgo_ipscsession_master_t *self, dm
 sym int dmrgo_ipscsession_master_close(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ipscsession_master_close_need(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_ipscsession_master_deadline(dmrgo_ipscsession_master_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_ipscsession_master_drop(dmrgo_ipscsession_master_t *self, uint32_t id, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipscsession_master_drop_need(dmrgo_ipscsession_master_t *self, uint32_t id, size_t *items, size_t *arena);
 sym int dmrgo_ipscsession_master_free(dmrgo_ipscsession_master_t *self);
 sym int dmrgo_ipscsession_master_max_output_octets(dmrgo_ipscsession_master_t *self, int64_t *out);
 sym int dmrgo_ipscsession_master_max_outputs(dmrgo_ipscsession_master_t *self, int64_t *out);

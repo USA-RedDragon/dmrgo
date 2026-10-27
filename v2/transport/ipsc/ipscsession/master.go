@@ -46,10 +46,10 @@ type MasterConfig struct {
 
 // Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run
 // it: it registers peers, answers their keepalives, sends the peer list
-// to every peer when one asks for it and when a peer leaves or times out,
-// and passes the voice and data packets of registered peers on. Make it
-// with NewMaster; the zero Master takes no packet. A Master is not safe
-// for concurrent use and must not be copied.
+// to every peer when one asks for it and when a peer leaves, times out or
+// is dropped, and passes the voice and data packets of registered peers
+// on. Make it with NewMaster; the zero Master takes no packet. A Master is
+// not safe for concurrent use and must not be copied.
 type Master struct {
 	l          link
 	timeout    time.Duration
@@ -261,6 +261,36 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 		dst = m.listToAll(dst)
 	}
 	return dst
+}
+
+// Drop removes the registered peer id at once, as Tick does when the peer
+// times out: it reports OutputDown with ReasonDropped and sends the new
+// peer list to the peers left, but sends nothing to the peer, as DMRlink
+// sends nothing to a peer that times out. Packet then takes the peer as
+// one that is not registered, so after a change of the key of the peer
+// its packets with the old key get ReasonAuth until it registers with the
+// new one. ok is false and dst is unchanged when id is not registered. It
+// allocates only when dst has no room for MaxOutputs outputs.
+func (m *Master) Drop(id uint32, dst []Output) (out []Output, ok bool) {
+	if m == nil {
+		return dst, false
+	}
+
+	if m.stopped || m.maxPeers == 0 {
+		return dst, false
+	}
+	i := m.l.find(id)
+	if i < 0 {
+		return dst, false
+	}
+	e := &m.l.peers[i]
+	dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: e.info.Addr, Reason: ReasonDropped})
+	keyed := e.keyed
+	m.l.remove(i)
+	if !keyed {
+		dst = m.listToAll(dst)
+	}
+	return dst, true
 }
 
 func (m *Master) listToAll(dst []Output) []Output {

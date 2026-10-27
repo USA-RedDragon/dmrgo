@@ -63,10 +63,11 @@ func TestAllocsSession(t *testing.T) {
 		ao = m.Adopt(now, cAddr, 4, &key, ao[:0])
 		ao = m.Packet(now, cAddr, must(m.SignFor(4, append(voice[:0], 0x80, 0, 0, 0, 4, 1))), &key, ao[:0])
 		ao = m.Adopt(now, cAddr, 4, nil, ao[:0])
+		ao, _ = m.Drop(4, ao[:0])
 	}
 	run()
 	run()
-	if m.Peers() != 3 || a.Peers() != 1 || !a.PeerAt(0).Up {
+	if m.Peers() != 2 || a.Peers() != 1 || !a.PeerAt(0).Up {
 		t.Fatalf("peers %d %d %+v", m.Peers(), a.Peers(), a.PeerAt(0))
 	}
 	if n := testing.AllocsPerRun(100, run); n != 0 {

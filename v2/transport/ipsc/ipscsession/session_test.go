@@ -493,7 +493,7 @@ func TestNames(t *testing.T) {
 	for k := ipscsession.OutputKind(0); k <= ipscsession.OutputDropped; k++ {
 		_ = k.String()
 	}
-	for r := ipscsession.Reason(0); r <= ipscsession.ReasonAddress; r++ {
+	for r := ipscsession.Reason(0); r <= ipscsession.ReasonDropped; r++ {
 		_ = r.String()
 	}
 	for s := ipscsession.State(0); s <= ipscsession.StateRunning; s++ {

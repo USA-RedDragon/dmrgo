@@ -547,7 +547,7 @@ typedef struct dmrgo_ipsc_voice_t dmrgo_ipsc_voice_t;
 typedef struct dmrgo_ipscauth_key_t dmrgo_ipscauth_key_t;
 /* Go: ipscsession.Addr. Addr is the IPv4 address and UDP port of an IPSC peer, as a peer list carries it. */
 typedef struct dmrgo_ipscsession_addr_t dmrgo_ipscsession_addr_t;
-/* Go: ipscsession.Master. Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run it: it registers peers, answers their keepalives, sends the peer list to every peer when one asks for it and when a peer leaves or times out, and passes the voice and data packets of registered peers on. */
+/* Go: ipscsession.Master. Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run it: it registers peers, answers their keepalives, sends the peer list to every peer when one asks for it and when a peer leaves, times out or is dropped, and passes the voice and data packets of registered peers on. */
 typedef struct dmrgo_ipscsession_master_t dmrgo_ipscsession_master_t;
 /* Go: ipscsession.MasterConfig. MasterConfig configures NewMaster. */
 typedef struct dmrgo_ipscsession_master_config_t dmrgo_ipscsession_master_config_t;
@@ -7693,6 +7693,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSCSESSION_REASON_AUTH ((dmrgo_ipscsession_reason_t)5)
 /* Go: ipscsession.ReasonClosed. ReasonClosed is a de-registration request of the other side. */
 #define DMRGO_IPSCSESSION_REASON_CLOSED ((dmrgo_ipscsession_reason_t)2)
+/* Go: ipscsession.ReasonDropped. ReasonDropped is a Drop of the consumer. */
+#define DMRGO_IPSCSESSION_REASON_DROPPED ((dmrgo_ipscsession_reason_t)10)
 /* Go: ipscsession.ReasonFull. ReasonFull is a registration that MaxPeers leaves no room for. */
 #define DMRGO_IPSCSESSION_REASON_FULL ((dmrgo_ipscsession_reason_t)8)
 /* Go: ipscsession.ReasonList. ReasonList is a peer that a new peer list left out. */
@@ -11016,6 +11018,10 @@ int dmrgo_ipscsession_master_close_need(dmrgo_ipscsession_master_t *self, dmrgo_
 int dmrgo_ipscsession_master_close(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Master.Deadline. Deadline returns the time at which the Master needs a Tick: when the first peer times out. */
 int dmrgo_ipscsession_master_deadline(dmrgo_ipscsession_master_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_ipscsession_master_drop_need sets *items and *arena to the room that dmrgo_ipscsession_master_drop needs for these arguments, without a change to the handle. */
+int dmrgo_ipscsession_master_drop_need(dmrgo_ipscsession_master_t *self, uint32_t id, size_t *items, size_t *arena);
+/* Go: ipscsession.Master.Drop. Drop removes the registered peer id at once, as Tick does when the peer times out: it reports DMRGO_IPSCSESSION_OUTPUT_DOWN with DMRGO_IPSCSESSION_REASON_DROPPED and sends the new peer list to the peers left, but sends nothing to the peer, as DMRlink sends nothing to a peer that times out. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_drop_need gives. */
+int dmrgo_ipscsession_master_drop(dmrgo_ipscsession_master_t *self, uint32_t id, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Master.MaxOutputOctets. MaxOutputOctets returns the most octets that the packets of the outputs of one call of the Master hold, where outputs that share a packet count it once: the packet that the call builds, the body of a DMRGO_IPSCSESSION_OUTPUT_DATA and the de-registration of each peer. */
 int dmrgo_ipscsession_master_max_output_octets(dmrgo_ipscsession_master_t *self, int64_t *out);
 /* Go: ipscsession.Master.MaxOutputs. MaxOutputs returns the most outputs that one call of the Master appends. */
