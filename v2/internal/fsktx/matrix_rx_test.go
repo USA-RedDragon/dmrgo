@@ -304,7 +304,7 @@ func TestTxMatrixReceive(t *testing.T) {
 	lead := ts.withLead(1200)
 	ref, refLead := newRefSig(ts), newRefSig(lead)
 	refs := &refRuns{errs: map[string]*refRun{}}
-	for _, u := range rxUnits(full) {
+	for _, u := range raceUnits(rxUnits(full)) {
 		t.Run(u.String(), func(t *testing.T) {
 			t.Parallel()
 			raw := u.run(t, ts.syms, keyedOn())

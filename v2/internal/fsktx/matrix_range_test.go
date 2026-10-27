@@ -15,7 +15,7 @@ func TestTxMatrixRange(t *testing.T) {
 	if full {
 		n = 3000
 	}
-	for _, u := range levelUnits(full) {
+	for _, u := range raceUnits(levelUnits(full)) {
 		t.Run(u.String(), func(t *testing.T) {
 			t.Parallel()
 			for p := range patCount {
@@ -23,7 +23,7 @@ func TestTxMatrixRange(t *testing.T) {
 			}
 		})
 	}
-	for _, u := range offsetUnits(full) {
+	for _, u := range raceUnits(offsetUnits(full)) {
 		if u.rate > 2400000 && !full {
 			continue
 		}

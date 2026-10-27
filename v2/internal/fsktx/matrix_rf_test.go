@@ -20,12 +20,12 @@ func (u txUnit) fidelityLimit() float64 {
 
 func fidelityUnits(full bool) []txUnit {
 	units := nominal(full)
-	for _, u := range levelUnits(full) {
+	for _, u := range raceUnits(levelUnits(full)) {
 		if u.level >= 100 && (u.offset != 0 || u.level != tableUnits) && (full || u.rate == 48000 || u.rate == 24000) {
 			units = append(units, u)
 		}
 	}
-	for _, u := range offsetUnits(full) {
+	for _, u := range raceUnits(offsetUnits(full)) {
 		if u.ramp == 1 && u.offHz != 0 && (full || u.rate <= 192000) {
 			u.ramp = max(u.rate/1000, 1)
 			units = append(units, u)
@@ -50,7 +50,7 @@ func TestTxMatrixFidelity(t *testing.T) {
 	t.Parallel()
 	full := txFull()
 	ts := newTestStream(t, 2, 40)
-	for _, u := range fidelityUnits(full) {
+	for _, u := range raceUnits(fidelityUnits(full)) {
 		if u.rate > 2400000 && !full {
 			continue
 		}
@@ -75,7 +75,7 @@ func TestTxMatrixSpectrum(t *testing.T) {
 	t.Parallel()
 	full := txFull()
 	ts := newTestStream(t, 3, 40)
-	for _, u := range fidelityUnits(full) {
+	for _, u := range raceUnits(fidelityUnits(full)) {
 		if u.rate > 2400000 && !full || u.format == fmtS8 && u.rate < 1000000 {
 			continue
 		}

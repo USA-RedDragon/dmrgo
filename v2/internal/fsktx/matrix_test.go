@@ -11,11 +11,23 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 func txFull() bool { return os.Getenv("DMRGO_TXMATRIX") == "full" }
+
+func raceUnits(units []txUnit) []txUnit {
+	if !testmode.Race {
+		return units
+	}
+	out := make([]txUnit, 0, len(units)/4+1)
+	for i := 0; i < len(units); i += 4 {
+		out = append(out, units[i])
+	}
+	return out
+}
 
 type txFormat int
 

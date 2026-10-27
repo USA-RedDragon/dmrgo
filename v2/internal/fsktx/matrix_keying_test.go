@@ -8,6 +8,8 @@ import (
 	"math/rand/v2"
 	"slices"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func keyUnits(full bool) []txUnit {
@@ -53,7 +55,7 @@ func (u txUnit) envelope(counts []int, keys []keying, n int) []float64 {
 func TestTxMatrixKeying(t *testing.T) {
 	t.Parallel()
 	full := txFull()
-	for _, u := range keyUnits(full) {
+	for _, u := range raceUnits(keyUnits(full)) {
 		t.Run(u.String(), func(t *testing.T) {
 			t.Parallel()
 			rng := rand.New(rand.NewPCG(uint64(u.rate), uint64(u.ramp)))
@@ -137,7 +139,7 @@ func TestTxMatrixChunking(t *testing.T) {
 	t.Parallel()
 	full := txFull()
 	units := nominal(full)
-	for _, u := range offsetUnits(full) {
+	for _, u := range raceUnits(offsetUnits(full)) {
 		if u.ramp == 1 && u.offHz == -2500 {
 			u.ramp = max(u.rate/1000, 1)
 			units = append(units, u)
@@ -234,7 +236,7 @@ func TestTxMatrixChunking(t *testing.T) {
 func TestTxMatrixLongRun(t *testing.T) {
 	t.Parallel()
 	full := txFull()
-	for _, u := range nominal(full) {
+	for _, u := range raceUnits(nominal(full)) {
 		minutes := 2.0
 		switch {
 		case full && u.rate > 192000:
@@ -243,6 +245,9 @@ func TestTxMatrixLongRun(t *testing.T) {
 			minutes = 180
 		case u.rate > 192000:
 			minutes = 1.0 / 3
+		}
+		if testmode.Race {
+			minutes = 1.0 / 12
 		}
 		if u.rate > 2400000 && !full {
 			continue

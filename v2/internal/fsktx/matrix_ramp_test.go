@@ -36,7 +36,7 @@ func rampUnits(full bool) []txUnit {
 func TestTxMatrixRamp(t *testing.T) {
 	t.Parallel()
 	full := txFull()
-	for _, u := range rampUnits(full) {
+	for _, u := range raceUnits(rampUnits(full)) {
 		t.Run(u.String(), func(t *testing.T) {
 			t.Parallel()
 			lead := 30
