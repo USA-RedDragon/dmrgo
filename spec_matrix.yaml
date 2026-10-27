@@ -56,6 +56,9 @@ ignore_files:
   - v2/internal/fuzztest/corpus.go
   - v2/internal/fuzztest/loop.go
   - v2/internal/fuzztest/stream.go
+  - v2/internal/testmode/norace.go
+  - v2/internal/testmode/race.go
+  - v2/internal/testmode/testmode.go
   - v2/internal/unpacked/unpacked.go
   - v2/internal/pcg/pcg.go
   - v2/internal/allocgate/apigen/apigen.go
