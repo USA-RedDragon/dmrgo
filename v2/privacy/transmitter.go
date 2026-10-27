@@ -72,6 +72,8 @@ type Transmitter struct {
 	voice   bool
 	burst   int
 	stream  stream
+	dataRC  arc4
+	dataKey [9]byte
 	noCopy  noCopy
 }
 

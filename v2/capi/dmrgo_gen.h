@@ -5831,6 +5831,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-156)
 #define DMRGO_ERR_PDU_WRONG_OPCODE (-157)
 #define DMRGO_ERR_PRIVACY_AMATEUR (-234)
+#define DMRGO_ERR_PRIVACY_DATA_ALGORITHM (-237)
 #define DMRGO_ERR_PRIVACY_KEYS_FULL (-235)
 #define DMRGO_ERR_PRIVACY_NOT_STARTED (-236)
 #define DMRGO_ERR_SHORTDATA_CHARACTER (-171)
@@ -10523,6 +10524,8 @@ int dmrgo_privacy_receiver_reset(dmrgo_privacy_receiver_t *self);
 int dmrgo_privacy_service_string(dmrgo_privacy_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_privacy_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_privacy_transmitter_free(dmrgo_privacy_transmitter_t *self);
+/* Go: privacy.Transmitter.Data. Data applies ARC4 privacy to payload in place, the user data of a data packet without the pad octets and the message CRC, with the message indicator mi, and returns the privacy header of the packet: a P_HEAD with FID 0x10 and the SAP sap of the user data that holds the algorithm, the key ID and mi, the layout that FromProprietaryHeader reads. It returns DMRGO_ERR_PRIVACY_DATA_ALGORITHM for a key other than ARC4, as no public capture with a key proves the data framing of the others, and a DMRGO_ERR_CONFIG for a sap over 15, and then leaves payload as it is. */
+int dmrgo_privacy_transmitter_data(dmrgo_privacy_transmitter_t *self, uint32_t mi, dmrgo_enums_sap_t sap, uint8_t *payload, size_t payload_len, dmrgo_pdu_proprietary_header_t *out);
 /* Go: privacy.Transmitter.Output. Output applies the privacy to o in place when it is a voice burst: the three AMBE+2 frames of the burst, fill and silence frames too. It returns DMRGO_ERR_PRIVACY_NOT_STARTED before Start, DMRGO_ERR_NIL_ARGUMENT for a NULL o, and the errors of dmrgo_layer2_raw_burst_set_ambe_frames, which then change nothing. o may be NULL. */
 int dmrgo_privacy_transmitter_output(dmrgo_privacy_transmitter_t *self, dmrgo_voice_output_t *o);
 /* Go: privacy.Transmitter.PIHeader. PIHeader returns the PI header of the call that Start began, for the destination address target. */

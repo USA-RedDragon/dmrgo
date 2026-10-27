@@ -35913,6 +35913,33 @@ func dmrgo_privacy_transmitter_free(c_self *C.dmrgo_privacy_transmitter_t) (rc C
 	return C.DMRGO_OK
 }
 
+//export dmrgo_privacy_transmitter_data
+func dmrgo_privacy_transmitter_data(c_self *C.dmrgo_privacy_transmitter_t, c_mi C.uint32_t, c_sap C.dmrgo_enums_sap_t, c_payload *C.uint8_t, c_payload_len C.size_t, c_out *C.dmrgo_pdu_proprietary_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_privacy_Transmitter(c_self)
+	if c_payload == nil && c_payload_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_payload []byte
+	a_payload = cSlice[byte](unsafe.Pointer(c_payload), c_payload_len)
+	r0, r1 := h.v.Data(uint32(c_mi), g_enums.SAP(c_sap), a_payload)
+	_ = r0
+	if c_out != nil {
+		*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_privacy_transmitter_output
 func dmrgo_privacy_transmitter_output(c_self *C.dmrgo_privacy_transmitter_t, c_o *C.dmrgo_voice_output_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -52733,6 +52760,8 @@ func errCode1(e error) C.int {
 		return -170
 	case g_privacy.ErrAmateur:
 		return -234
+	case g_privacy.ErrDataAlgorithm:
+		return -237
 	case g_privacy.ErrKeysFull:
 		return -235
 	case g_privacy.ErrNotStarted:
@@ -53065,6 +53094,8 @@ func codeErr(code C.int) error {
 		return g_nmea.ErrSentence
 	case -234:
 		return g_privacy.ErrAmateur
+	case -237:
+		return g_privacy.ErrDataAlgorithm
 	case -235:
 		return g_privacy.ErrKeysFull
 	case -236:
@@ -53349,6 +53380,8 @@ func knownCode(code C.int) bool {
 	case -170:
 		return true
 	case -234:
+		return true
+	case -237:
 		return true
 	case -235:
 		return true

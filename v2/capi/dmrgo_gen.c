@@ -164,6 +164,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "nmea: not an RMC sentence";
 	case -234:
 		return "privacy: the amateur service forbids encryption";
+	case -237:
+		return "privacy: no proven data framing for the algorithm";
 	case -235:
 		return "privacy: no room for another key";
 	case -236:

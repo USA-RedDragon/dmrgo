@@ -1167,6 +1167,7 @@ var api = [...]any{
 	(*privacy.Receiver).ForceBasic,
 	(*privacy.Receiver).Info,
 	(*privacy.Receiver).Reset,
+	(*privacy.Transmitter).Data,
 	(*privacy.Transmitter).Output,
 	(*privacy.Transmitter).PIHeader,
 	(*privacy.Transmitter).Start,

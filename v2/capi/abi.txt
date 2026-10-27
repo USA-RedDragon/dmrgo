@@ -136,6 +136,7 @@ code DMRGO_ERR_LIP_TIME_TYPE -233
 code DMRGO_ERR_PRIVACY_AMATEUR -234
 code DMRGO_ERR_PRIVACY_KEYS_FULL -235
 code DMRGO_ERR_PRIVACY_NOT_STARTED -236
+code DMRGO_ERR_PRIVACY_DATA_ALGORITHM -237
 prefix github.com/USA-RedDragon/dmrgo/v2 dmrgo_
 prefix github.com/USA-RedDragon/dmrgo/v2/bs dmrgo_bs_
 prefix github.com/USA-RedDragon/dmrgo/v2/constants dmrgo_constants_
@@ -899,6 +900,7 @@ sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-155)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-156)
 sym #define DMRGO_ERR_PDU_WRONG_OPCODE (-157)
 sym #define DMRGO_ERR_PRIVACY_AMATEUR (-234)
+sym #define DMRGO_ERR_PRIVACY_DATA_ALGORITHM (-237)
 sym #define DMRGO_ERR_PRIVACY_KEYS_FULL (-235)
 sym #define DMRGO_ERR_PRIVACY_NOT_STARTED (-236)
 sym #define DMRGO_ERR_SHORTDATA_CHARACTER (-171)
@@ -3060,6 +3062,7 @@ sym int dmrgo_privacy_receiver_free(dmrgo_privacy_receiver_t *self);
 sym int dmrgo_privacy_receiver_info(dmrgo_privacy_receiver_t *self, dmrgo_privacy_info_t *out);
 sym int dmrgo_privacy_receiver_reset(dmrgo_privacy_receiver_t *self);
 sym int dmrgo_privacy_service_string(dmrgo_privacy_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_privacy_transmitter_data(dmrgo_privacy_transmitter_t *self, uint32_t mi, dmrgo_enums_sap_t sap, uint8_t *payload, size_t payload_len, dmrgo_pdu_proprietary_header_t *out);
 sym int dmrgo_privacy_transmitter_free(dmrgo_privacy_transmitter_t *self);
 sym int dmrgo_privacy_transmitter_output(dmrgo_privacy_transmitter_t *self, dmrgo_voice_output_t *o);
 sym int dmrgo_privacy_transmitter_pi_header(dmrgo_privacy_transmitter_t *self, uint32_t target, dmrgo_pdu_pi_header_t *h, bool *ok);

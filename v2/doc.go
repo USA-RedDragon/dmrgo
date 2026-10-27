@@ -269,6 +269,8 @@
 //     privacy.Receiver.AddKey and privacy.Transmitter.Output.
 //   - privacy.ErrAmateur: returned by privacy.NewTransmitter for the
 //     amateur service, which forbids encryption.
+//   - privacy.ErrDataAlgorithm: returned by privacy.Transmitter.Data for a
+//     key other than ARC4.
 //   - data.ErrBusy: returned by data.Sender.Send while a message is in
 //     progress.
 //   - csbk.ErrBusy, csbk.ErrNoAddresses: returned by the requests of the
