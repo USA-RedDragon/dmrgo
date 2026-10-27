@@ -3,6 +3,7 @@ package privacy
 import (
 	"encoding/binary"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -57,17 +58,54 @@ func (r *Receiver) Data(m *data.Message) Info {
 	if k == nil {
 		return info
 	}
-	copy(r.dataKey[:5], k.arc4[:])
-	binary.BigEndian.PutUint32(r.dataKey[5:], info.MI)
-	r.dataRC.init(r.dataKey[:])
-	for range arc4Drop {
-		r.dataRC.next()
-	}
-	for i := range m.Payload {
-		m.Payload[i] ^= r.dataRC.next()
-	}
-	r.dataRC = arc4{}
-	clear(r.dataKey[:])
+	xorData(&r.dataRC, &r.dataKey, k, info.MI, m.Payload)
 	info.Decrypting = true
 	return info
+}
+
+func xorData(rc *arc4, key *[9]byte, k *Key, mi uint32, p []byte) {
+	copy(key[:5], k.arc4[:])
+	binary.BigEndian.PutUint32(key[5:], mi)
+	rc.init(key[:])
+	for range arc4Drop {
+		rc.next()
+	}
+	for i := range p {
+		p[i] ^= rc.next()
+	}
+	*rc = arc4{}
+	clear(key[:])
+}
+
+// Data applies ARC4 privacy to payload in place, the user data of a data
+// packet without the pad octets and the message CRC, with the message
+// indicator mi, and returns the privacy header of the packet: a P_HEAD
+// with FID 0x10 and the SAP sap of the user data that holds the algorithm,
+// the key ID and mi, the layout that FromProprietaryHeader reads. It XORs
+// payload with the RC4 keystream of the key octets and the 4 MI octets
+// after the first 256 octets, which Receiver.Data removes. For
+// data.Sender.Send, put the header in data.Message.Proprietary and set the
+// SAP of the U_HEAD or C_HEAD to enums.SAPProprietaryPacketData, as radios
+// do. Use a new random mi for each packet, such as 4 octets from
+// crypto/rand: a repeated mi repeats the keystream. Data does not change
+// the voice call of the Transmitter. It returns ErrDataAlgorithm for a key
+// other than ARC4, as no public capture with a key proves the data framing
+// of the others, and a *dmrgo.ConfigError for a sap over 15, and then
+// leaves payload as it is.
+func (t *Transmitter) Data(mi uint32, sap enums.SAP, payload []byte) (pdu.ProprietaryHeader, error) {
+	if t == nil {
+		return pdu.ProprietaryHeader{}, dmrgo.ErrNilReceiver
+	}
+	if t.key == nil || t.key.alg != AlgorithmARC4 {
+		return pdu.ProprietaryHeader{}, ErrDataAlgorithm
+	}
+	if sap > 15 {
+		return pdu.ProprietaryHeader{}, errSAP
+	}
+	xorData(&t.dataRC, &t.dataKey, t.key, mi, payload)
+	h := pdu.ProprietaryHeader{SAP: sap, MFID: enums.FIDMotorola}
+	h.ManufacturerData[0] = byte(t.key.alg&0x07)<<4 | dataEncrypted
+	h.ManufacturerData[1] = t.key.id
+	binary.BigEndian.PutUint32(h.ManufacturerData[4:], mi)
+	return h, nil
 }

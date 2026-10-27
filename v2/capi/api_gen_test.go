@@ -1140,6 +1140,7 @@ var entryPoints = map[string]any{
 	"dmrgo_privacy_receiver_reset":                                     dmrgo_privacy_receiver_reset,
 	"dmrgo_privacy_service_string":                                     dmrgo_privacy_service_string,
 	"dmrgo_privacy_transmitter_free":                                   dmrgo_privacy_transmitter_free,
+	"dmrgo_privacy_transmitter_data":                                   dmrgo_privacy_transmitter_data,
 	"dmrgo_privacy_transmitter_output":                                 dmrgo_privacy_transmitter_output,
 	"dmrgo_privacy_transmitter_pi_header":                              dmrgo_privacy_transmitter_pi_header,
 	"dmrgo_privacy_transmitter_start":                                  dmrgo_privacy_transmitter_start,

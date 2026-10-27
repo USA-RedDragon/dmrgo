@@ -45,9 +45,16 @@ func TestAllocs(t *testing.T) {
 		}
 		ph := pdu.ProprietaryHeader{MFID: enums.FIDMotorola, ManufacturerData: [8]byte{0x11, 1, 0, 0, 1, 2, 3, 4}}
 		msg := data.Message{Proprietary: &ph, Payload: make([]byte, 1500)}
+		dtx, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: dk, Service: privacy.ServiceLandMobile})
+		if err != nil {
+			t.Fatal(err)
+		}
 		n := testing.AllocsPerRun(200, func() {
 			if !prx.Data(&msg).Decrypting {
 				t.Fatal("no data decryption")
+			}
+			if _, err := dtx.Data(mi, enums.SAPShortData, msg.Payload); err != nil {
+				t.Fatal(err)
 			}
 			mi++
 			ptx.Start(mi)
