@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -128,7 +129,7 @@ func TestDiscTier3Superset(t *testing.T) {
 	if testing.Short() {
 		t.Skip("receives many streams with audio Tier2 and Tier3")
 	}
-	seeds := 4
+	seeds := testmode.N(2, 4, 2)
 	if s, err := strconv.Atoi(os.Getenv("DMRGO_UNION_SEEDS")); err == nil {
 		seeds = s
 	}

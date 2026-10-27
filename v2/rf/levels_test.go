@@ -7,7 +7,10 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
+
+func leadStride() int { return testmode.N(3, 1, 3) }
 
 type levelsReceiver struct {
 	hz   int
@@ -105,7 +108,7 @@ func TestDiscLevelsAfterUnlock(t *testing.T) {
 	for _, lr := range levelsReceivers() {
 		t.Run(lr.name(), func(t *testing.T) {
 			t.Parallel()
-			for k := range 40 {
+			for k := 0; k < 40; k += leadStride() {
 				pad := 0.3 + float64(k)*0.0007
 				start := pad + float64(len(f1))/basebandRate + 0.045
 				x := signalBaseband([]signalPart{{pad, f1, e1}, {start, f2, e2}}, start+float64(len(f2))/basebandRate+0.3, 30, 1)
@@ -130,7 +133,7 @@ func TestCarrierLeadIn(t *testing.T) {
 			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
 				t.Parallel()
 				for _, base := range []float64{0.1, 0.5, 2} {
-					for k := range 30 {
+					for k := 0; k < 30; k += leadStride() {
 						lead := base + float64(k)*0.001
 						start := benchPad + lead
 						carrier := make([]float64, int(lead*basebandRate))
@@ -155,7 +158,7 @@ func TestCoherentStart(t *testing.T) {
 	for _, cn := range []float64{20, 40} {
 		t.Run(fmt.Sprint(cn), func(t *testing.T) {
 			t.Parallel()
-			for k := range 60 {
+			for k := 0; k < 60; k += leadStride() {
 				start := benchPad + float64(k)*0.0005
 				x := signalBaseband([]signalPart{{start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, uint64(k)+1)
 				if ex, tot := exactFrom(truth, levelsReceiver{0, Tier2}.receive(t, x), start, 1); ex < tot-2 {
@@ -187,7 +190,7 @@ func TestCarrierLeadInMS(t *testing.T) {
 			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
 				t.Parallel()
 				for _, base := range []float64{0.01, 0.1, 0.5, 2} {
-					for k := range 30 {
+					for k := 0; k < 30; k += leadStride() {
 						lead := base + float64(k)*0.001
 						start := benchPad + lead
 						carrier := make([]float64, int(lead*basebandRate))

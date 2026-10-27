@@ -13,6 +13,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -580,7 +581,10 @@ func TestRxRobust(t *testing.T) {
 	}
 	for _, sn := range []string{"bs", "ms", "msj"} {
 		for _, cn := range []float64{40, 12} {
-			for _, c := range conds {
+			for ci, c := range conds {
+				if !rxRobustRuns(sn, cn, ci) {
+					continue
+				}
 				for _, audio := range []bool{false, true} {
 					if audio && c.iqOnly || !audio && c.audioOnly || c.highCN && cn < 40 {
 						continue
@@ -626,6 +630,10 @@ func TestRxRobust(t *testing.T) {
 			}
 		}
 	}
+}
+
+func rxRobustRuns(stream string, cn float64, cond int) bool {
+	return cn >= 40 || stream == "bs" || testmode.Long()
 }
 
 func rxSecs(v []float64) string {

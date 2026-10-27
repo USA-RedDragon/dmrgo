@@ -1,11 +1,13 @@
 package rf
 
 import (
+	"fmt"
 	"math"
 	"math/rand/v2"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func fadedBaseband(fm, env []float64, fd, cn float64, seed uint64) []complex64 {
@@ -65,6 +67,10 @@ func TestReceiverFading(t *testing.T) {
 	for i := range 18 * cfg.Superframes {
 		msWant = append(msWant, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
 	}
+	seeds := []uint64{10, 11, 12, 13}
+	if !testmode.Long() {
+		seeds = []uint64{10, 12}
+	}
 	for _, c := range []struct {
 		name    string
 		fm, env []float64
@@ -72,18 +78,23 @@ func TestReceiverFading(t *testing.T) {
 		cn      float64
 	}{{"bs", bsFM, bsEnv, bsWant, 25}, {"ms", msFM, msEnv, msWant, 20}} {
 		for _, fd := range []float64{5, 50} {
-			for _, tier := range []Tier{Tier2, Tier3} {
-				var exact int
-				for seed := range uint64(4) {
-					x := fadedBaseband(c.fm, c.env, fd, c.cn, 10+seed)
-					exact += c0c1InOrder(c.want, voiceFrames(receiveBaseband(x, tier)))
+			t.Run(fmt.Sprintf("%s/%g", c.name, fd), func(t *testing.T) {
+				t.Parallel()
+				exact := map[Tier]int{}
+				for _, seed := range seeds {
+					x := fadedBaseband(c.fm, c.env, fd, c.cn, seed)
+					for _, tier := range []Tier{Tier2, Tier3} {
+						exact[tier] += c0c1InOrder(c.want, voiceFrames(receiveBaseband(x, tier)))
+					}
 				}
-				total := 4 * len(c.want)
-				t.Logf("%s fade %g Hz tier %d: C0 and C1 of %d of %d frames exact", c.name, fd, int(tier-Tier0), exact, total)
-				if float64(exact) < 0.98*float64(total) {
-					t.Errorf("%s fade %g Hz tier %d: C0 and C1 of %d of %d frames exact, want 98%%", c.name, fd, int(tier-Tier0), exact, total)
+				total := len(seeds) * len(c.want)
+				for _, tier := range []Tier{Tier2, Tier3} {
+					t.Logf("%s fade %g Hz tier %d: C0 and C1 of %d of %d frames exact", c.name, fd, int(tier-Tier0), exact[tier], total)
+					if float64(exact[tier]) < 0.98*float64(total) {
+						t.Errorf("%s fade %g Hz tier %d: C0 and C1 of %d of %d frames exact, want 98%%", c.name, fd, int(tier-Tier0), exact[tier], total)
+					}
 				}
-			}
+			})
 		}
 	}
 }
