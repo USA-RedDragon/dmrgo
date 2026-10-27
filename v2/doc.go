@@ -165,6 +165,8 @@
 //
 //   - rf: a receiver that recovers bursts from the I/Q samples of a
 //     software radio.
+//   - cmd/dmrrf: a command that writes DMR test transmissions as I/Q or FM
+//     modulator audio and decodes DMR from I/Q or discriminator audio.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //   - vocoder/dvsi: the packet protocol of the DVSI AMBE-3000R and
