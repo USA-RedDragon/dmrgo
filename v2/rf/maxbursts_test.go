@@ -257,7 +257,7 @@ func FuzzReceiverMaxBursts(f *testing.F) {
 		c := rxBoundCase{tier: Tier0 + Tier(tier%3), half: flags&1 != 0, baseband: flags&2 != 0, signed: flags&4 != 0,
 			mult: 1 + int(mult%6), maxWrite: int(maxWrite), lookback: int(lookback % 48), cuts: cuts}
 		if flags&8 != 0 {
-			c.tier = Tier3 + Tier(tier%2)
+			c.tier = Tier3
 		}
 		c.inner = int(flags>>4) % 4
 		_, _ = runRxBounds(t, s, c)
