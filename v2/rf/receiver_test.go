@@ -3,12 +3,15 @@ package rf
 import (
 	"math"
 	"math/rand/v2"
+	"slices"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -338,16 +341,48 @@ func directCalls(t testing.TB, n int) ([]float64, []float64, []benchSlot) {
 	return freq, env, truth
 }
 
+type directSet struct {
+	once       sync.Once
+	fm, env    []float64
+	truth      []benchSlot
+	f200, e200 []float64
+	tier3At200 [6]func() []Burst
+	inputAt200 [6]func() []complex64
+}
+
+var directCache directSet
+
+func directShared(t testing.TB) *directSet {
+	t.Helper()
+	d := &directCache
+	d.once.Do(func() {
+		d.fm, d.env, d.truth = directCalls(t, 4)
+		d.f200, d.e200 = resampleFM(d.fm, d.env, 200)
+		for seed := range d.inputAt200 {
+			d.inputAt200[seed] = sync.OnceValue(func() []complex64 { return noisyFM(d.f200, d.e200, 1400, 5, 40+uint64(seed)) })
+			d.tier3At200[seed] = sync.OnceValue(func() []Burst { return receiveBaseband(d.inputAt200[seed](), Tier3) })
+		}
+	})
+	return d
+}
+
 func TestReceiverDirectModeTiming(t *testing.T) {
 	t.Parallel()
-	fm, env, truth := directCalls(t, 4)
+	d := directShared(t)
+	seeds := testmode.N(6, 6, 2)
 	for _, c := range []struct{ ppm, share float64 }{{0, 0.995}, {200, 0.94}, {-200, 0.94}} {
 		t.Run(strconv.FormatFloat(c.ppm, 'f', -1, 64), func(t *testing.T) {
 			t.Parallel()
-			f, e := resampleFM(fm, env, c.ppm)
+			f, e := resampleFM(d.fm, d.env, c.ppm)
 			var exact, total int
-			for seed := range uint64(6) {
-				sc := scoreMS(truth, receiveBaseband(noisyFM(f, e, 1400, 5, 40+seed), Tier3))
+			for seed := range seeds {
+				var got []Burst
+				if c.ppm == 200 {
+					got = slices.Clone(d.tier3At200[seed]())
+				} else {
+					got = receiveBaseband(noisyFM(f, e, 1400, 5, 40+uint64(seed)), Tier3)
+				}
+				sc := scoreMS(d.truth, got)
 				exact += sc["ambe_c0c1"].Exact
 				total += sc["ambe_c0c1"].Truth
 			}
@@ -361,20 +396,19 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 
 func TestReceiverTwoPass(t *testing.T) {
 	t.Parallel()
-	fm, env, truth := directCalls(t, 4)
-	f, e := resampleFM(fm, env, 200)
+	d := directShared(t)
 	o := tierOptions(Tier3)
 	o.TwoPass = false
 	var one, two, total int
-	for seed := range uint64(6) {
-		x := noisyFM(f, e, 1400, 5, 40+seed)
+	for seed := range testmode.N(6, 6, 2) {
+		x := d.inputAt200[seed]()
 		r := mustNew(Config{Rate: basebandRate, opt: &o})
 		var got []Burst
 		for k := 0; k < len(x); k += 4096 {
 			got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
 		}
-		one += scoreMS(truth, append(got, r.Flush()...))["ambe_c0c1"].Exact
-		sc := scoreMS(truth, receiveBaseband(x, Tier3))["ambe_c0c1"]
+		one += scoreMS(d.truth, append(got, r.Flush()...))["ambe_c0c1"].Exact
+		sc := scoreMS(d.truth, slices.Clone(d.tier3At200[seed]()))["ambe_c0c1"]
 		two += sc.Exact
 		total += sc.Truth
 	}
