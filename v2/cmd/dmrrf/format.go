@@ -137,7 +137,10 @@ func wavHeader(rate float64, channels, samples int) ([]byte, error) {
 	if rate != math.Round(rate) || rate < 1 || rate > math.MaxUint32 {
 		return nil, fmt.Errorf("a WAV file needs a whole sample rate, not %g", rate)
 	}
-	data := samples * channels * 2
+	if samples < 0 || channels < 1 || channels > math.MaxUint16/2 {
+		return nil, errors.New("a WAV file needs a sample count and 1 to 32767 channels")
+	}
+	data := int64(samples) * int64(channels) * 2
 	if data > math.MaxUint32-wavHeaderSize {
 		return nil, errors.New("too long for a WAV file")
 	}

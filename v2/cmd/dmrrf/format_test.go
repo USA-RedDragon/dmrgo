@@ -216,3 +216,15 @@ func TestFloatPathMatchesRaw(t *testing.T) {
 		}
 	}
 }
+
+func TestWAVHeaderBounds(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct{ channels, samples int }{{2, 1 << 30}, {1, -1}, {0, 10}, {1 << 15, 1}} {
+		if _, err := wavHeader(48000, c.channels, c.samples); err == nil {
+			t.Errorf("wavHeader(48000, %d, %d) has no error", c.channels, c.samples)
+		}
+	}
+	if b, err := wavHeader(48000, 2, 1<<29); err != nil || len(b) != wavHeaderSize {
+		t.Errorf("wavHeader of 2 GiB of data: %d bytes, %v", len(b), err)
+	}
+}
