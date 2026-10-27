@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -28,7 +29,7 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(3))
-	n := 200_000
+	n := testmode.N(200_000, 200_000, 10_000)
 	if testing.Short() {
 		n = 20_000
 	}

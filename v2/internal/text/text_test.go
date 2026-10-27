@@ -5,6 +5,8 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func TestInt(t *testing.T) {
@@ -80,7 +82,7 @@ func TestFixed(t *testing.T) {
 		math.SmallestNonzeroFloat64, 1<<52, 1<<53, 180, -180, 90,
 		math.NaN(), math.Inf(1), math.Inf(-1),
 	)
-	for range 100000 {
+	for range testmode.N(100000, 100000, 5000) {
 		vals = append(vals,
 			float64(int32(r.Uint32())>>8)*360/(1<<24),
 			float64(int32(r.Uint32())>>7)*180/(1<<25),

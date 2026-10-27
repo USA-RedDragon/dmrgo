@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -13,7 +14,7 @@ func TestBPTC19696MatchesReference(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(4))
-	n := 1_000_000
+	n := testmode.N(1_000_000, 1_000_000, 20_000)
 	if testing.Short() {
 		n = 50_000
 	}

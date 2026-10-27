@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -13,7 +14,7 @@ func TestCACHMatchesReference(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(2))
-	for n := range 2_000_000 {
+	for n := range testmode.N(2_000_000, 2_000_000, 40_000) {
 		info := r.Uint64() & (1<<36 - 1)
 		var refInfo [36]unpacked.Bit
 		unpacked.PutUint(refInfo[:], info)

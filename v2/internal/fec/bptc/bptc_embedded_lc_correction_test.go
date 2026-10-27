@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -73,7 +74,7 @@ func TestEmbeddedLC_UpToThreeErrorsCorrected(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
 	fr := encodeEmbedded(info)
-	for k := 1; k <= 3; k++ {
+	for k := 1; k <= testmode.N(3, 3, 2); k++ {
 		forEachErrorPattern(128, k, func(pos []int) {
 			got, res := decodeEmbedded(flipEmbedded(fr, pos...))
 			if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
