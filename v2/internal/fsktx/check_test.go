@@ -1,3 +1,5 @@
+//go:build !tinygo
+
 package fsktx
 
 import "github.com/USA-RedDragon/dmrgo/v2/rf"
