@@ -70,7 +70,7 @@ func TestTinyGoTablesInFlash(t *testing.T) {
 	}
 	build := func(ex string) tableSyms {
 		out := filepath.Join(t.TempDir(), ex+".elf")
-		run(t, dir, tinygo, "build", "-target=feather-m4", "-gc=none", "-scheduler=none", "-o", out, "./examples/"+ex)
+		run(t, dir, tinygo, "build", "-target=feather-m4", "-serial=uart", "-gc=none", "-scheduler=none", "-o", out, "./examples/"+ex)
 		return ramTables(t, out)
 	}
 	board := build("ramstub").ram

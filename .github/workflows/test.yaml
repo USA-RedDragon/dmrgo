@@ -220,12 +220,12 @@ jobs:
           done
 
       - name: Build the Tier 0 receiver example without a heap
-        run: tinygo build -target=feather-m4 -gc=none -scheduler=none -size short -o rxdisc.elf ./examples/rxdisc
+        run: tinygo build -target=feather-m4 -serial=uart -gc=none -scheduler=none -size short -o rxdisc.elf ./examples/rxdisc
 
       - name: Build the Tier 0 modulator examples without a heap
         run: |
-          tinygo build -target=feather-m4 -gc=none -scheduler=none -size short -o txaudio.elf ./examples/txaudio
-          tinygo build -target=feather-m4 -gc=none -scheduler=none -size short -o txiq.elf ./examples/txiq
+          tinygo build -target=feather-m4 -serial=uart -gc=none -scheduler=none -size short -o txaudio.elf ./examples/txaudio
+          tinygo build -target=feather-m4 -serial=uart -gc=none -scheduler=none -size short -o txiq.elf ./examples/txiq
 
       - name: Test the library
         run: tinygo test $(go list ./... | grep -v -e /cmd/ -e /examples/ -e /rf$) ./examples/tinygo
