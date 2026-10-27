@@ -259,6 +259,13 @@ type slot struct {
 	limitAt   time.Duration
 	last      packet.Response
 	hasLast   bool
+	prop      pdu.DataHeader
+	hasProp   bool
+}
+
+func (e *slot) sendsProp() bool {
+	full, _ := e.try.Header.FullMessage()
+	return e.hasProp && full
 }
 
 // Sender sends data messages on one logical channel: the preamble CSBKs,
@@ -441,7 +448,18 @@ func (s *Sender) State() SenderState {
 // zero value means rate 1/2. Send copies the header and m.Payload, so the
 // caller can reuse them. It sets the block count, pad octets and Full
 // Message Flag, so the Blocks to Follow or Appended Blocks of m.Header does
-// not matter. A DD_HEAD can leave its Appended Blocks 0, and
+// not matter. With m.Proprietary set, m.Header must be a U_HEAD or C_HEAD:
+// the P_HEAD goes after the header of each try that has the Full Message
+// Flag set, and counts in its Blocks to Follow, as the user data of a
+// packet with a P_HEAD then takes at most 126 blocks. A selective retry
+// sends the header and the blocks that the SACK names, as the receiver
+// keeps the P_HEAD of the first try (ETSI TS 102 361-3 clause 5.4). Every
+// other retry, after a NACK for a bad CRC, no response, or a SACK that
+// names no block of the packet, as for a lost P_HEAD, which the receiver
+// counts as a missing block, sends the first try again with the P_HEAD, as
+// a receiver without the P_HEAD cannot use the packet (ETSI TS 102 361-1
+// clause 9.2.9).
+// Send keeps the SAP of m.Header. A DD_HEAD can leave its Appended Blocks 0, and
 // Message.SetRawData sets an R_HEAD without one. For a C_HEAD it
 // sets N(S) from the link, S (with SenderConfig.Resync), FSN 1000, a
 // message in one fragment, and the Response Requested flag on the last
@@ -454,11 +472,13 @@ func (s *Sender) State() SenderState {
 // header of that window has not gone yet, else in the next window. Send
 // returns ErrBusy for any other message while a message is in progress,
 // dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another header
-// (Field "Header"), a P_HEAD in m.Proprietary (Field "Proprietary") or a
-// confirmed message to a group (Field "Header.Group"), dmrgo.ErrZeroValue
-// on a zero Sender, and the errors of packet.Builder.Segment, such as
-// packet.ErrNoRoom for a message of more than SenderConfig.MaxBlocks blocks
-// and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)
+// (Field "Header"), a P_HEAD in m.Proprietary after another header or with
+// a field out of range (Field "Proprietary") or a confirmed message to a
+// group (Field "Header.Group"), dmrgo.ErrZeroValue on a zero Sender,
+// packet.ErrTooLong for a message with a P_HEAD that needs 127 blocks, and
+// the errors of packet.Builder.Segment, such as packet.ErrNoRoom for a
+// message of more than SenderConfig.MaxBlocks blocks and packet.ErrRate.
+// (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -471,12 +491,18 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	case s.n >= len(s.slots) || s.n > 0 && !s.joins(m):
 		return ErrBusy
 	}
-	if m.Proprietary != nil {
-		return errProprietary
-	}
 	at := s.free()
 	e := &s.slots[at]
 	h := m.Header
+	e.hasProp = m.Proprietary != nil
+	if e.hasProp {
+		f := h.Format()
+		p, err := m.Proprietary.DataHeader()
+		if err != nil || f != pdu.FormatUnconfirmed && f != pdu.FormatConfirmed {
+			return errProprietary
+		}
+		e.prop = p
+	}
 	c, err := sendHeader(&h, e)
 	if err != nil {
 		return err
@@ -508,6 +534,11 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	p, err := e.pb.Segment(h, m.Payload, rate)
 	if err != nil {
 		return err
+	}
+	if e.hasProp {
+		if err := addHeaderBlock(&p.Header); err != nil {
+			return err
+		}
 	}
 	e.pkt, e.try, e.tries, e.hasLast = p, p, 0, false
 	e.limitAt = now + s.txLimit
@@ -550,6 +581,22 @@ func sendHeader(h *pdu.DataHeader, e *slot) (pdu.ConfirmedDataHeader, error) {
 		return pdu.ConfirmedDataHeader{}, h.SetRawData(r)
 	}
 	return pdu.ConfirmedDataHeader{}, errHeader
+}
+
+func addHeaderBlock(h *pdu.DataHeader) error {
+	if u, ok := h.AsUnconfirmed(); ok {
+		if int(u.BlocksToFollow) >= MaxBlocks {
+			return packet.ErrTooLong
+		}
+		u.BlocksToFollow++
+		return h.SetUnconfirmed(u)
+	}
+	c, _ := h.AsConfirmed()
+	if int(c.BlocksToFollow) >= MaxBlocks {
+		return packet.ErrTooLong
+	}
+	c.BlocksToFollow++
+	return h.SetConfirmed(c)
 }
 
 func (s *Sender) joins(m *Message) bool {
@@ -614,6 +661,9 @@ func (s *Sender) prepare(now time.Duration) {
 func (s *Sender) load() {
 	e := &s.slots[s.ord[s.cur]]
 	s.total = 1 + len(e.try.Blocks)
+	if e.sendsProp() {
+		s.total++
+	}
 	if s.cur == 0 {
 		s.total += s.pre
 	}
@@ -781,6 +831,10 @@ func (s *Sender) again(e *slot, rd *packet.ResponseData) {
 			e.try = p
 			return
 		}
+	}
+	if e.hasProp {
+		e.try = e.pkt
+		return
 	}
 	p, err := e.pb.Retry(&e.pkt, nil)
 	if err != nil {
@@ -955,6 +1009,10 @@ func (s *Sender) send(dst []Output) []Output {
 			err = e.try.Header.SetConfirmed(c)
 		}
 		d = &e.try.Header
+	case s.idx == pre+1 && e.sendsProp():
+		d = &e.prop
+	case e.sendsProp():
+		d = e.try.Blocks[s.idx-pre-2]
 	default:
 		d = e.try.Blocks[s.idx-pre-1]
 	}
