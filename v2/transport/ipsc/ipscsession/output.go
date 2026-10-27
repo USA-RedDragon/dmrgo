@@ -144,6 +144,8 @@ const (
 	// ReasonAddress is a de-registration request from an address other
 	// than the one the peer registered from.
 	ReasonAddress
+	// ReasonDropped is a Drop of the consumer.
+	ReasonDropped
 )
 
 // String returns the name of the Reason.
@@ -169,6 +171,8 @@ func (r Reason) String() string {
 		return "Full"
 	case ReasonAddress:
 		return "Address"
+	case ReasonDropped:
+		return "Dropped"
 	}
 	return unknownName
 }

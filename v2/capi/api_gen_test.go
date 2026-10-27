@@ -1386,6 +1386,8 @@ var entryPoints = map[string]any{
 	"dmrgo_ipscsession_master_close_need":                              dmrgo_ipscsession_master_close_need,
 	"dmrgo_ipscsession_master_close":                                   dmrgo_ipscsession_master_close,
 	"dmrgo_ipscsession_master_deadline":                                dmrgo_ipscsession_master_deadline,
+	"dmrgo_ipscsession_master_drop_need":                               dmrgo_ipscsession_master_drop_need,
+	"dmrgo_ipscsession_master_drop":                                    dmrgo_ipscsession_master_drop,
 	"dmrgo_ipscsession_master_max_output_octets":                       dmrgo_ipscsession_master_max_output_octets,
 	"dmrgo_ipscsession_master_max_outputs":                             dmrgo_ipscsession_master_max_outputs,
 	"dmrgo_ipscsession_master_packet_need":                             dmrgo_ipscsession_master_packet_need,

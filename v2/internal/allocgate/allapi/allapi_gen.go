@@ -1396,6 +1396,7 @@ var api = [...]any{
 	(*transport_ipsc_ipscsession.Master).Adopt,
 	(*transport_ipsc_ipscsession.Master).Close,
 	(*transport_ipsc_ipscsession.Master).Deadline,
+	(*transport_ipsc_ipscsession.Master).Drop,
 	(*transport_ipsc_ipscsession.Master).MaxOutputOctets,
 	(*transport_ipsc_ipscsession.Master).MaxOutputs,
 	(*transport_ipsc_ipscsession.Master).Packet,
