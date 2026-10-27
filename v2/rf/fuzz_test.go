@@ -247,8 +247,12 @@ func FuzzReceiverBaseband(f *testing.F) {
 	f.Add(uint8(3), uint8(0), uint8(8), uint8(12), false, uint64(3), seed[:40000])
 	f.Add(uint8(0), uint8(0), uint8(0), uint8(0), true, uint64(1), []byte{0, 0, 0xc0, 0x7f, 0, 0, 0x80, 0x7f})
 	f.Fuzz(func(t *testing.T, tier, half, flags, scale uint8, raw bool, chunkSeed uint64, b []byte) {
-		cfg := fuzzConfig(tier, half, flags&^2, 0, 0, flags>>4)
+		cfg := fuzzConfig(tier, half, flags&^2, 0, uint32(chunkSeed>>32)|1, flags>>4)
 		x := fuzzSamples(b[:min(len(b), 2*fuzzMaxBytes)], scale, raw)
+		most := 1 << 14
+		if cfg.MaxWrite != 0 && flags&8 == 0 {
+			most = min(most, cfg.MaxWrite/2)
+		}
 		run := func(seed uint64, sink *fuzzSink) uint64 {
 			c := cfg
 			if flags&8 != 0 {
@@ -258,7 +262,7 @@ func FuzzReceiverBaseband(f *testing.F) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			chunks := fuzzChunks(len(x), 1<<14, seed)
+			chunks := fuzzChunks(len(x), most, seed)
 			return mallocs(func() {
 				p := 0
 				for _, k := range chunks {
