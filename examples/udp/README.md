@@ -15,7 +15,7 @@ The example is its own Go module, so its zstd dependency (github.com/klauspost/c
 - [link.go](link.go) is the UDP over DMR glue. `ip.AppendCompressed` puts a compressed UDP/IPv4 header (SAP UDP/IP header compression, ETSI TS 102 361-3 clause 7.2.3) on the datagram, and `data.Sender` sends it as a C_HEAD packet. On receive, `data.Receiver` gives the packet and `ip.Decode` gives the datagram back. The radio ID (LLID) carries the address, because a compressed header has no IPv4 addresses. `ip.RadioAddress` maps an LLID to an IPv4 address when a box needs one.
 - [air.go](air.go) is the channel. Each bit of a burst flips with the given bit error rate (BER) at the radio that hears it. Two bursts that overlap in time are both lost. Each radio tells its `data.Sender` when it hears the channel busy, so the Senders use polite channel access.
 - [app.go](app.go) is the form protocol. Each form gets a 16-bit form ID, and the far station sends an ACK datagram for each form it gets. The sender sends the form again when the ACK does not come. The receiver delivers each form ID one time. The application needs both:
-  - A DMR ACK covers one radio hop, not the far application. A failover from AREDN to DMR also needs to know what arrived.
+  - A DMR ACK covers one radio hop, not the far application. A failover from another IP bearer to DMR also needs to know what arrived.
   - The IP bearer service delivers a packet again after its response is lost (ETSI TS 102 361-3 clause 5.4.1.3).
 - [form.go](form.go) and [codec.go](codec.go) are the template, the test forms and the encodings.
 
