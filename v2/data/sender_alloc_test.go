@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -121,5 +122,46 @@ func TestAllocsSenderCorpus(t *testing.T) {
 		if allocs > base {
 			t.Errorf("input %d: %v allocations, %v of them in NewSender", i, allocs, base)
 		}
+	}
+}
+
+func TestAllocsSenderProprietary(t *testing.T) {
+	tx := newSender(t, &data.SenderConfig{Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
+	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
+	prop := testProp
+	m := message(t, 60)
+	m.Header = sapHeader(t, enums.SAPProprietaryPacketData, 0, false)
+	m.Proprietary = &prop
+	out := make([]data.Output, 0, data.MaxOutputs)
+	ev := make([]data.Event, 0, data.MaxEvents)
+	delivered := 0
+	allocs := testing.AllocsPerRun(5, func() {
+		tx.Reset()
+		rx.Reset()
+		delivered = 0
+		if tx.Send(0, m) != nil {
+			t.Fatal("Send")
+		}
+		for {
+			at, ok := tx.Deadline()
+			if !ok || tx.State() != data.SenderSending {
+				break
+			}
+			out = tx.Tick(at, out[:0])
+			for i := range out {
+				ev = rx.Burst(out[i].Due, &out[i].Burst, layer2.Hint{}, ev[:0])
+				for j := range ev {
+					if ev[j].Kind == data.EventDelivered && ev[j].Message.Proprietary != nil {
+						delivered++
+					}
+				}
+			}
+		}
+	})
+	if allocs != 0 {
+		t.Errorf("%v allocations", allocs)
+	}
+	if delivered != 1 {
+		t.Errorf("%d deliveries with the P_HEAD", delivered)
 	}
 }

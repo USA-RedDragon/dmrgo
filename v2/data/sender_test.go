@@ -88,6 +88,7 @@ type link struct {
 	drop func(try uint8, i int) bool
 	done []data.Output
 	got  [][]byte
+	msgs []data.Message
 	resp []string
 }
 
@@ -110,6 +111,13 @@ func (l *link) run(m *data.Message, end time.Duration) {
 			switch e.Kind {
 			case data.EventDelivered:
 				l.got = append(l.got, append([]byte(nil), e.Message.Payload...))
+				m := e.Message
+				m.Payload = l.got[len(l.got)-1]
+				if m.Proprietary != nil {
+					p := *m.Proprietary
+					m.Proprietary = &p
+				}
+				l.msgs = append(l.msgs, m)
 			case data.EventRespond:
 				respIdx++
 				if l.drop == nil || !l.drop(0, respIdx-1) {
@@ -422,7 +430,7 @@ func TestSenderErrors(t *testing.T) {
 	group := message(t, 10)
 	editConfirmed(t, &group.Header, func(c *pdu.ConfirmedDataHeader) { c.Group = true })
 	udt := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{})}
-	prop := message(t, 10)
+	prop := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{AppendedBlocks: 1}), Payload: payload(10)}
 	prop.Proprietary = &pdu.ProprietaryHeader{}
 	for _, c := range []struct {
 		name string
@@ -431,7 +439,7 @@ func TestSenderErrors(t *testing.T) {
 	}{
 		{"group", group, &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}},
 		{"UDT", udt, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
-		{"P_HEAD", prop, &dmrgo.ConfigError{Type: "data", Field: "Proprietary"}},
+		{"P_HEAD after a DD_HEAD", prop, &dmrgo.ConfigError{Type: "data", Field: "Proprietary"}},
 		{"too long", message(t, 200), packet.ErrNoRoom},
 		{"rate", &data.Message{Header: confirmedHeader(t, 0), Rate: enums.DataTypeCSBK}, packet.ErrRate},
 	} {
