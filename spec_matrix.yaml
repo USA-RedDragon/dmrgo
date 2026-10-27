@@ -74,6 +74,8 @@ ignore_files:
   - v2/rf/chan.go
   - v2/rf/coherent.go
   - v2/rf/cohext.go
+  - v2/rf/cohlate.go
+  - v2/rf/cohlate_tinygo.go
   - v2/rf/comb.go
   - v2/rf/disc.go
   - v2/rf/disc48.go
@@ -111,6 +113,7 @@ ignore_files:
   - v2/rf/softfec.go
   - v2/rf/softgrid.go
   - v2/rf/spectrum.go
+  - v2/rf/strictlc.go
   - v2/rf/track.go
   - v2/rf/twopass.go
   - v2/rf/union.go
