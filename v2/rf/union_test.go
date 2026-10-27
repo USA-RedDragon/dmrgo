@@ -129,7 +129,7 @@ func TestDiscTier3Superset(t *testing.T) {
 	if testing.Short() {
 		t.Skip("receives many streams with audio Tier2 and Tier3")
 	}
-	seeds := testmode.N(2, 4, 2)
+	seeds := testmode.N(2, 4, 1)
 	if s, err := strconv.Atoi(os.Getenv("DMRGO_UNION_SEEDS")); err == nil {
 		seeds = s
 	}
@@ -142,6 +142,9 @@ func TestDiscTier3Superset(t *testing.T) {
 		x     func() []complex64
 	}
 	cns := []float64{-1, 0, 1, 2, 3, 4, 5, 6, 8, 12, 30}
+	if testmode.Race {
+		cns = []float64{0, 5, 30}
+	}
 	cases := make([]tcase, 0, 3*len(cns)*seeds)
 	for _, cn := range cns {
 		for s := range uint64(seeds) {

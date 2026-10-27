@@ -10,6 +10,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -125,7 +126,7 @@ func TestTierOrder(t *testing.T) {
 	var cases []tierOrderCase
 	for _, sc := range scenarios {
 		for _, cn := range sc.cns {
-			for seed := range uint64(sc.seeds) {
+			for seed := range uint64(testmode.N(sc.seeds, sc.seeds, 1)) {
 				c := tierOrderCase{scenario: sc.name}
 				switch sc.name {
 				case "bs":

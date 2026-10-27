@@ -68,7 +68,11 @@ func TestReceiverFading(t *testing.T) {
 		msWant = append(msWant, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
 	}
 	seeds := []uint64{10, 11, 12, 13}
-	if !testmode.Long() {
+	switch {
+	case testmode.Long():
+	case testmode.Race:
+		seeds = seeds[2:3]
+	default:
 		seeds = []uint64{10, 12}
 	}
 	for _, c := range []struct {

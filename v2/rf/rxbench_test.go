@@ -16,6 +16,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -597,6 +598,9 @@ func discSteadyAllocs(a []int16, tier Tier) float64 {
 
 func TestRxBench(t *testing.T) {
 	t.Parallel()
+	if testmode.Race {
+		t.Skip("compares one goroutine's numbers with the table; the runs without -race check them")
+	}
 	full := os.Getenv("DMRRF_RXBENCH") == "full"
 	fast := os.Getenv("DMRRF_RXBENCH") == "fast"
 	var base benchData

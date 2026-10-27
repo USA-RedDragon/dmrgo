@@ -10,7 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
-func leadStride() int { return testmode.N(3, 1, 3) }
+func leadStride() int { return testmode.N(3, 1, 10) }
 
 type levelsReceiver struct {
 	hz   int

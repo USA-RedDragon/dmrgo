@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func TestFloorDelta(t *testing.T) {
@@ -75,6 +76,9 @@ func directDelta(f *floorSignal, x []complex64, slots, mod []rftx.BSSlot) float6
 
 func TestFloorNoiseless(t *testing.T) {
 	t.Parallel()
+	if testmode.Race {
+		t.Skip("one goroutine's genie run; the runs without -race check it")
+	}
 	slots, truth := benchStream(t, 2)
 	e := newFloorEval(1)
 	e.f = newFloorSignal(slots, 14, 1)

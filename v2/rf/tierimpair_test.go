@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func impairedFM(freq, env []float64, offsetHz, dev, fd, cn float64, seed uint64) []complex64 {
@@ -55,7 +57,7 @@ func TestTierImpaired(t *testing.T) {
 		{"dev+10", 0.1, 0, []float64{8, 12}},
 		{"fade50", 0, 50, []float64{18, 24, 30}},
 	}
-	const seeds = 8
+	seeds := testmode.N(8, 8, 2)
 	fm, env, truth := msStream(t, 3, 0.37)
 	tiers := []Tier{Tier0, Tier1, Tier2}
 	type key struct {

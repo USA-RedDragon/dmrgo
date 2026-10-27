@@ -633,6 +633,9 @@ func TestRxRobust(t *testing.T) {
 }
 
 func rxRobustRuns(stream string, cn float64, cond int) bool {
+	if testmode.Race {
+		return cn >= 40 && cond%5 == 0
+	}
 	return cn >= 40 || stream == "bs" || testmode.Long()
 }
 
