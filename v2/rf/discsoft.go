@@ -26,7 +26,8 @@ func (r *DiscReceiver) addExt(opt *options) {
 	}
 	x := softExtOf(opt, 2*r.tm.step)
 	if ph != nil {
-		x.ph, x.coh = ph, newCohStageOf(opt)
+		x.ph = ph
+		x.setCoh(newCohStageOf(opt))
 		x.coh.ph, x.coh.f, ph.coh = ph, &r.f, x.coh
 		x.coh.easySNR = discEasySNR
 		if ph.lazy {

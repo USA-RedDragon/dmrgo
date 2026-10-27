@@ -120,7 +120,8 @@ func (t *tracker) add(rec *slotRec, emit func(*received)) {
 	}
 	e := t.at(t.n)
 	t.n++
-	*e = trackEntry{rec: *rec}
+	*e = trackEntry{}
+	e.rec = *rec
 	e.out = received{data: rec.data, seconds: rec.seconds, distance: -1, bs: rec.bs, cach: rec.cach, hasCACH: rec.bs,
 		stream: rec.stream, slot: rec.index}
 	t.classify(e)

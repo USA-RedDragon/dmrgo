@@ -1451,7 +1451,8 @@ func (r *engine) finish(s *slotState) {
 		}
 	}
 	rec := &r.finRec
-	*rec = slotRec{index: s.index, bs: r.bs, src: sourceAt(r.src), stream: r.streams}
+	*rec = slotRec{}
+	rec.index, rec.bs, rec.src, rec.stream = s.index, r.bs, sourceAt(r.src), r.streams
 	rec.seconds = (r.symTime(s.index, cachSymbols) - float64(r.chz.delayCh)) / basebandRate
 	r.fill264(s, rec)
 	if s.anchor {

@@ -337,7 +337,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		if opt.CohExt {
 			r.yHist = make([]complex64, opt.cohRing())
 			r.tunes = new([iqTunes]iqTune)
-			x.coh = newCohStage(r, &opt)
+			x.setCoh(newCohStage(r, &opt))
 			if !opt.CohLocked {
 				r.d.signMiss = opt.signMiss()
 			}

@@ -145,7 +145,8 @@ func (r *DiscReceiver) setup(cfg DiscConfig, dec bool) {
 	case cfg.lowIQ:
 		opt = iqLowOptions()
 	}
-	*r = DiscReceiver{d48: disc48{on: dec}}
+	*r = DiscReceiver{}
+	r.d48.on = dec
 	r.f.half = cfg.Hz == discRate
 	r.f.slow = cfg.Hz == 2*symbolRate
 	sps := float32(discSPS) / 2

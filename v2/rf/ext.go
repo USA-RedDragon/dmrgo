@@ -62,6 +62,7 @@ type softExt struct {
 	lockN           int64
 	stages          uint8
 	coh             *cohStage
+	saver           cohSaver
 	ph              *discPhase
 	union           *discUnion
 	np              *npml
@@ -682,15 +683,11 @@ func lateLCSS(v enums.VoiceBurstType) enums.LCSS {
 	return enums.LCSSContinuationFragment
 }
 
-//go:noinline
-func (x *softExt) cohLate(c *leanCore, lb *Burst) bool {
-	saved := *x.coh
-	x.coh.fitOnly = false
-	ok := x.coh.detect(c, lb, &x.llr)
-	gen, stamp := x.coh.gen, x.coh.symStamp
-	*x.coh = saved
-	x.coh.gen, x.coh.symStamp, x.coh.symKey = gen+1, stamp+1, cohSymKey{}
-	return ok
+func (x *softExt) setCoh(s *cohStage) {
+	x.coh = s
+	if cohSaveHeap {
+		x.saver.save = new(cohStage)
+	}
 }
 
 func (x *softExt) place(c *leanCore, b *Burst, j int32) bool {
