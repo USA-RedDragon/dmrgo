@@ -43,11 +43,21 @@ type Config struct {
 	// NoParity turns the parity fields off. By default every packet carries
 	// a parity field and the chip drops packets with a wrong parity byte.
 	NoParity bool
+
+	clock clock
 }
 
 type deadliner interface {
 	SetReadDeadline(t time.Time) error
 }
+
+type clock interface {
+	Now() time.Time
+}
+
+type wallClock struct{}
+
+func (wallClock) Now() time.Time { return time.Now() }
 
 type timeouter interface {
 	Timeout() bool
@@ -63,6 +73,7 @@ type timeouter interface {
 type Codec struct {
 	port     Port
 	dl       deadliner
+	clock    clock
 	timeout  time.Duration
 	channel  int
 	parity   bool
@@ -112,9 +123,12 @@ func New(port Port, cfg *Config) (*Codec, error) {
 	if cfg.Channel < 0 || cfg.Channel > MaxChannel {
 		return nil, ErrChannel
 	}
-	c := &Codec{port: port, timeout: cfg.Timeout, channel: cfg.Channel, parity: true, tx: make([]byte, 0, MaxPacketLen)}
+	c := &Codec{port: port, clock: cfg.clock, timeout: cfg.Timeout, channel: cfg.Channel, parity: true, tx: make([]byte, 0, MaxPacketLen)}
 	if c.timeout <= 0 {
 		c.timeout = DefaultTimeout
+	}
+	if c.clock == nil {
+		c.clock = wallClock{}
 	}
 	if dl, ok := port.(deadliner); ok && dl.SetReadDeadline(time.Time{}) == nil {
 		c.dl = dl
@@ -181,7 +195,7 @@ func (c *Codec) reset() error {
 	if err := c.write(AppendReset(c.tx[:0], true)); err != nil {
 		return err
 	}
-	start := time.Now()
+	start := c.clock.Now()
 	for {
 		p, n, err := c.next(start, false, TypeControl)
 		if err != nil {
@@ -205,7 +219,7 @@ func (c *Codec) control(pkt []byte) (Packet, int, error) {
 	if err := c.write(pkt); err != nil {
 		return Packet{}, 0, err
 	}
-	start := time.Now()
+	start := c.clock.Now()
 	for {
 		p, n, err := c.next(start, c.parity, TypeControl)
 		if err != nil {
@@ -282,7 +296,7 @@ func (c *Codec) later(parity bool, want PacketType) int {
 
 func (c *Codec) fill(start time.Time) error {
 	for {
-		if time.Since(start) >= c.timeout {
+		if c.clock.Now().Sub(start) >= c.timeout {
 			return ErrTimeout
 		}
 		if c.dl != nil {
@@ -323,7 +337,7 @@ func (c *Codec) send(pkt []byte) (time.Time, error) {
 	if err := c.write(pkt); err != nil {
 		return time.Time{}, err
 	}
-	return time.Now(), nil
+	return c.clock.Now(), nil
 }
 
 // MaxProductLen and MaxVersionLen are the longest product name and version

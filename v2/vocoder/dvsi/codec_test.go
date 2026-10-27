@@ -234,13 +234,31 @@ func TestCodecTimeout(t *testing.T) {
 	checkSim(t, d)
 }
 
+type idleClockPort struct {
+	*dvsisim.Device
+	t time.Time
+}
+
+func (p *idleClockPort) Read(b []byte) (int, error) {
+	n, err := p.Device.Read(b)
+	if n == 0 {
+		p.t = p.t.Add(time.Millisecond)
+	}
+	return n, err
+}
+
+func (p *idleClockPort) now() time.Time { return p.t }
+
 func TestCodecLateReply(t *testing.T) {
 	t.Parallel()
 
 	pairs := dvsisim.Pairs(6)
 	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
 		d := dvsisim.New(pairs, opt)
-		c, err := dvsi.New(d, &dvsi.Config{Timeout: 20 * time.Millisecond})
+		p := &idleClockPort{Device: d}
+		cfg := dvsi.Config{Timeout: 20 * time.Millisecond}
+		dvsi.SetClock(&cfg, p.now)
+		c, err := dvsi.New(p, &cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
