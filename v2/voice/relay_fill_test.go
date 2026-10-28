@@ -15,7 +15,7 @@ func TestRegression_RelayFillOtherCodec(t *testing.T) {
 
 	sil := vocoder.AMBESilenceSlot()
 	for _, fid := range []enums.FID{enums.FIDStandardized, enums.FIDMotorola, 0xC2} {
-		tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue})
 		c := rcall()
 		lc := c.LC
 		lc.SetFID(fid)

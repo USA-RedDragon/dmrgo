@@ -68,7 +68,7 @@ func TestRelayWinsBackALateBurstAtTheNextLoss(t *testing.T) {
 		}
 	}
 	arrive[5] += 2 * time.Millisecond
-	got := relayTimes(t, &voice.TransmitterConfig{Queue: voice.MaxQueue}, arrive, lost, 20)
+	got := relayTimes(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue}, arrive, lost, 20)
 	for i := 1; i <= 20; i++ {
 		r, ok := got[i]
 		if i == 12 {
@@ -97,7 +97,7 @@ func TestRelayKeepsLead(t *testing.T) {
 	for i := 1; i <= 10; i++ {
 		arrive[i] = time.Duration(i) * slot
 	}
-	got := relayTimes(t, &voice.TransmitterConfig{Queue: voice.MaxQueue, Lead: lead}, arrive, nil, 10)
+	got := relayTimes(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue, Lead: lead}, arrive, nil, 10)
 	for i := 1; i <= 10; i++ {
 		r, ok := got[i]
 		if !ok {

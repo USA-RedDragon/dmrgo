@@ -176,7 +176,7 @@ func csbkHint(s enums.Slot) layer2.Hint {
 }
 
 func checkSlot(s enums.Slot) error {
-	if s != enums.SlotUnknown && s != enums.Slot1 && s != enums.Slot2 {
+	if s != enums.Slot1 && s != enums.Slot2 {
 		return errSlot
 	}
 	return nil

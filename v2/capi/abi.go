@@ -176,7 +176,7 @@ func hintAt(i int) layer2.Hint {
 func voiceABI(seed uint64) error {
 	h := newHarness(seed)
 	defer h.free()
-	gcfg := voice.TransmitterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Queue: 192}
+	gcfg := voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS, Queue: 192}
 	gtx, err := voice.NewTransmitter(&gcfg)
 	if err != nil {
 		return err

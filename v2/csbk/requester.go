@@ -21,7 +21,7 @@ type RequesterConfig struct {
 	// for a repeater outbound, layer2.SyncSourceMS for a radio.
 	Source layer2.SyncSource
 	// Slot is the TDMA slot of the machine, which it puts in the Hint of
-	// each burst it sends. SlotUnknown leaves it unknown.
+	// each burst it sends. It must be Slot1 or Slot2.
 	Slot enums.Slot
 	// AckWait is T_AckWait, the wait for the answer after each try. 0 means
 	// constants.TAckWait (360 ms), and DefaultMotorolaAckWait for the
@@ -166,7 +166,7 @@ type Requester struct {
 // NewRequester returns a Requester for cfg. A nil cfg means the zero
 // RequesterConfig. It returns a *dmrgo.ConfigError for a color code above
 // 15, an unknown Source, Retries above MaxRetries, a negative Lead or a
-// Slot other than SlotUnknown, Slot1 or Slot2. It allocates the
+// Slot other than Slot1 or Slot2, so also for a nil cfg. It allocates the
 // Requester, and its Burst unless cfg.Scratch is set.
 func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	var conf RequesterConfig

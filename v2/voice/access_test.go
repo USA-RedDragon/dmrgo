@@ -61,7 +61,7 @@ func TestTransmitter_ChannelAccess(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Access: tc.access, IdleSearch: tc.search})
+			tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Access: tc.access, IdleSearch: tc.search})
 			tx.Channel(0, tc.busy)
 			if err := tx.Start(time.Second, call, &voice.CallOptions{InCall: tc.inCall}); err != nil {
 				t.Fatal(err)
@@ -106,8 +106,8 @@ func TestTransmitter_ChannelAccess(t *testing.T) {
 func TestTransmitter_AccessStop(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
-	if _, err := voice.NewTransmitter(&voice.TransmitterConfig{Access: enums.AccessImpolite + 1}); err == nil {
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
+	if _, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Access: enums.AccessImpolite + 1}); err == nil {
 		t.Fatal("NewTransmitter took an unknown Access")
 	}
 	tx.Channel(0, true)
@@ -153,7 +153,7 @@ func TestTransmitter_ReverseChannel(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Interruptible: tc.interruptible, Queue: 3 * 12})
+			tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Interruptible: tc.interruptible, Queue: 3 * 12})
 			if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +187,7 @@ func TestTransmitter_ReverseChannel(t *testing.T) {
 func TestTransmitter_InterruptEnding(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Terminators: 3})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Terminators: 3})
 	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 		t.Fatal(err)
 	}

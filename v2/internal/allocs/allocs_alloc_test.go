@@ -203,7 +203,7 @@ func TestAllocsVoiceReceiver(t *testing.T) {
 }
 
 func TestAllocsVoiceTransmitter(t *testing.T) {
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20})
 	if err != nil {
 		t.Fatal(err)
 	}

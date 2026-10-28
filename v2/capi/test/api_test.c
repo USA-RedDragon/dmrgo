@@ -227,9 +227,17 @@ static void test_sized(void) {
 	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_ARG);
 	cfg.size = sizeof cfg;
 	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_CONFIG);
-	cfg.size = offsetof(dmrgo_voice_transmitter_config_t, headers);
+	cfg.headers = 0;
+	cfg.slot = DMRGO_ENUMS_SLOT1;
 	OK(dmrgo_voice_new_transmitter(&cfg, &vt));
 	OK(dmrgo_voice_transmitter_free(vt));
+	cfg.headers = 9;
+	cfg.size = offsetof(dmrgo_voice_transmitter_config_t, headers);
+	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_CONFIG && vt == NULL);
+	dmrgo_config_error_t sce = {0};
+	bool sok = false;
+	OK(dmrgo_config_error_last(&sce, &sok));
+	CHECK(sok && sce.field_len == 4 && memcmp(sce.field, "Slot", 4) == 0);
 	struct {
 		dmrgo_voice_transmitter_config_t c;
 		uint64_t newer[4];
@@ -239,6 +247,7 @@ static void test_sized(void) {
 	big.c.size = sizeof big;
 	big.c.color_code = 1;
 	big.c.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
+	big.c.slot = DMRGO_ENUMS_SLOT1;
 	OK(dmrgo_voice_new_transmitter(&big.c, &vt));
 	OK(dmrgo_voice_transmitter_free(vt));
 
@@ -569,6 +578,7 @@ static void test_tx(void) {
 	cfg.color_code = 1;
 	cfg.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	cfg.queue = 27;
+	cfg.slot = DMRGO_ENUMS_SLOT1;
 	dmrgo_voice_transmitter_t *vt = NULL;
 	OK(dmrgo_voice_new_transmitter(&cfg, &vt));
 	dmrgo_voice_call_t call;

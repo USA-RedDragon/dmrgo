@@ -31,15 +31,15 @@ type rig struct {
 func newRig(t testing.TB) *rig {
 	t.Helper()
 	scratch := layer2.NewBurst()
-	q, err := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 7, Source: layer2.SyncSourceMS, Scratch: scratch, HoldoffMax: 200 * ms})
+	q, err := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Scratch: scratch, HoldoffMax: 200 * ms})
 	if err != nil {
 		t.Fatal(err)
 	}
-	r, err := csbk.NewResponder(&csbk.ResponderConfig{Address: anytone, ColorCode: 7, Scratch: scratch})
+	r, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: anytone, ColorCode: 7, Scratch: scratch})
 	if err != nil {
 		t.Fatal(err)
 	}
-	w, err := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7, Scratch: scratch})
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7, Scratch: scratch})
 	if err != nil {
 		t.Fatal(err)
 	}

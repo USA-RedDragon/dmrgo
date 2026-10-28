@@ -15,7 +15,7 @@ import (
 // Receiver asks for that block again with a SACK, and the Sender resends
 // only that block.
 func ExampleSender() {
-	tx, err := data.NewSender(&data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1})
+	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -76,7 +76,7 @@ func ExampleSender() {
 // ExampleSender_window sends three IP messages in one sliding window. Only
 // the last header asks for a response, and one ACK delivers all three.
 func ExampleSender_window() {
-	tx, err := data.NewSender(&data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1, Window: 3})
+	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1, Window: 3})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -134,7 +134,7 @@ func ExampleSender_window() {
 // ExampleOutput_ICMP shows the ICMP error message that the IP layer gets
 // for a confirmed message that got no response in its tries.
 func ExampleOutput_ICMP() {
-	tx, err := data.NewSender(&data.SenderConfig{Retries: 2})
+	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Retries: 2})
 	if err != nil {
 		fmt.Println(err)
 		return

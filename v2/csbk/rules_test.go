@@ -36,8 +36,8 @@ func TestOACSU(t *testing.T) {
 		{csbk.OACSUDeny, csbk.ResultRefused},
 		{csbk.OACSUNotSupported, csbk.ResultNACK},
 	} {
-		q := mustRequester(t, &csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS})
-		r := mustResponder(t, &csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, OACSU: tt.answer})
+		q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+		r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, OACSU: tt.answer})
 		if err := q.RequestOACSU(0, 1002, 1001, layer3.ServiceOptions{PriorityLevel: 2}, nil); err != nil {
 			t.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func TestRequesterRetries(t *testing.T) {
 		{-1, 1},
 		{3, 4},
 	} {
-		q := mustRequester(t, &csbk.RequesterConfig{Retries: tt.retries})
+		q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, Retries: tt.retries})
 		if err := q.RequestOACSU(0, 2, 1, layer3.ServiceOptions{}, nil); err != nil {
 			t.Fatal(err)
 		}
@@ -135,7 +135,7 @@ func TestRequesterChannelAccess(t *testing.T) {
 	})
 	t.Run("holdoff", func(t *testing.T) {
 		t.Parallel()
-		q := mustRequester(t, &csbk.RequesterConfig{Seed: 7})
+		q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, Seed: 7})
 		q.Channel(0, true)
 		if err := q.RequestCallAlert(0, 2, 1, nil); err != nil {
 			t.Fatal(err)
@@ -199,18 +199,18 @@ func TestRequesterErrors(t *testing.T) {
 	if len(out) != 1 || out[0].Result != csbk.ResultCanceled || q.State() != csbk.RequesterIdle {
 		t.Errorf("cancel %+v", out)
 	}
-	for _, cfg := range []*csbk.RequesterConfig{{ColorCode: 16}, {Source: 9}, {Retries: csbk.MaxRetries + 1}} {
+	for _, cfg := range []*csbk.RequesterConfig{{Slot: enums.Slot1, ColorCode: 16}, {Slot: enums.Slot1, Source: 9}, {Slot: enums.Slot1, Retries: csbk.MaxRetries + 1}} {
 		if _, err := csbk.NewRequester(cfg); !errors.As(err, &ce) {
 			t.Errorf("%+v: %v", cfg, err)
 		}
 	}
-	for _, cfg := range []*csbk.ResponderConfig{nil, {}, {Address: 1 << 24}, {Address: 1, ColorCode: 16}, {Address: 1, Source: 9},
-		{Address: 1, Access: 3}, {Address: 1, OACSU: 3}} {
+	for _, cfg := range []*csbk.ResponderConfig{nil, {Slot: enums.Slot1}, {Slot: enums.Slot1, Address: 1 << 24}, {Slot: enums.Slot1, Address: 1, ColorCode: 16}, {Slot: enums.Slot1, Address: 1, Source: 9},
+		{Slot: enums.Slot1, Address: 1, Access: 3}, {Slot: enums.Slot1, Address: 1, OACSU: 3}} {
 		if _, err := csbk.NewResponder(cfg); !errors.As(err, &ce) {
 			t.Errorf("%+v: %v", cfg, err)
 		}
 	}
-	for _, cfg := range []*csbk.WakeupConfig{{ColorCode: 16}, {Attempts: -1}, {Attempts: csbk.MaxRetries + 1}} {
+	for _, cfg := range []*csbk.WakeupConfig{{Slot: enums.Slot1, ColorCode: 16}, {Slot: enums.Slot1, Attempts: -1}, {Slot: enums.Slot1, Attempts: csbk.MaxRetries + 1}} {
 		if _, err := csbk.NewWakeup(cfg); !errors.As(err, &ce) {
 			t.Errorf("%+v: %v", cfg, err)
 		}
@@ -268,7 +268,7 @@ func TestResponderFNS(t *testing.T) {
 		}
 		return b
 	}
-	r := mustResponder(t, &csbk.ResponderConfig{Address: 9})
+	r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 9})
 	for _, b := range []layer2.RawBurst{ahoy(9, true), ahoy(10, false)} {
 		if out := r.Burst(0, &b, layer2.Hint{}, nil); len(out) != 0 || r.State() != csbk.ResponderIdle {
 			t.Errorf("answered %v", kinds(out))
@@ -292,7 +292,7 @@ func TestResponderFNS(t *testing.T) {
 		t.Errorf("NACK_Rsp %+v", n)
 	}
 
-	quiet := mustResponder(t, &csbk.ResponderConfig{Address: 9, NoFNS: true})
+	quiet := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 9, NoFNS: true})
 	if out := quiet.Burst(0, &good, layer2.Hint{}, nil); len(out) != 1 || quiet.State() != csbk.ResponderIdle {
 		t.Errorf("NoFNS: %v, pending %t", kinds(out), quiet.State() != csbk.ResponderIdle)
 	}
@@ -301,14 +301,14 @@ func TestResponderFNS(t *testing.T) {
 func TestResponderDenied(t *testing.T) {
 	t.Parallel()
 
-	r := mustResponder(t, &csbk.ResponderConfig{Address: anytone, ColorCode: 7})
+	r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: anytone, ColorCode: 7})
 	r.Channel(0, true)
 	r.Burst(0, burstOf(t, injectedRadioCheck, layer2.SyncSourceBS), layer2.Hint{}, nil)
 	out := run(t, r, time.Hour)
 	if len(out) != 1 || out[0].Kind != csbk.OutputDone || out[0].Result != csbk.ResultDenied || out[0].Service != csbk.ServiceRadioCheck {
 		t.Errorf("outputs %+v", out)
 	}
-	off := mustResponder(t, &csbk.ResponderConfig{Address: anytone, NoRadioCheck: true, NoCallAlert: true})
+	off := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: anytone, NoRadioCheck: true, NoCallAlert: true})
 	for _, s := range []string{injectedRadioCheck, injectedCallAlert, anytoneRadioAnswer} {
 		if out := off.Burst(0, burstOf(t, s, layer2.SyncSourceBS), layer2.Hint{}, nil); len(out) != 0 {
 			t.Errorf("%s: %v", s, kinds(out))
@@ -370,7 +370,7 @@ func TestWakeupOutbound(t *testing.T) {
 		}
 		return &b
 	}
-	w, err := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7, Attempts: 3})
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7, Attempts: 3})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -18,7 +18,7 @@ func sendText(t *testing.T, text *sms.Text, confirmed bool) (data.Result, int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tx, err := data.NewSender(&data.SenderConfig{Source: layer2.SyncSourceMS})
+	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS})
 	if err != nil {
 		t.Fatal(err)
 	}

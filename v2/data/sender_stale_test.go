@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 )
@@ -26,7 +27,7 @@ func responseNS(t *testing.T, r packet.Response, ns uint8) []layer2.RawBurst {
 
 func TestSenderIgnoresStaleACK(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Preambles: -1})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +55,7 @@ func TestSenderIgnoresStaleACK(t *testing.T) {
 func TestSenderIgnoresStaleNACK(t *testing.T) {
 	t.Parallel()
 	for _, code := range []packet.Response{packet.ResponseNACKUndeliverable, packet.ResponseNACKMemoryFull, packet.ResponseNACKInvalidUser, packet.ResponseNACKPacketCRC} {
-		s := newSender(t, &data.SenderConfig{Preambles: -1})
+		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 		if err := s.Send(0, message(t, 10)); err != nil {
 			t.Fatal(err)
 		}

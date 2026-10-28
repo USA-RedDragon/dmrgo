@@ -14,7 +14,7 @@ func TestSenderZeroRateIsRate12(t *testing.T) {
 	t.Parallel()
 	zero := message(t, 30)
 	zero.Rate = 0
-	a, b := newSender(t, &data.SenderConfig{Preambles: -1}), newSender(t, &data.SenderConfig{Preambles: -1})
+	a, b := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1}), newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 	if err := a.Send(0, zero); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestSenderZeroRateIsRate12(t *testing.T) {
 
 func TestSenderNilMessage(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Preambles: -1})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 	if err := s.Send(0, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("Send(nil): %v", err)
 	}

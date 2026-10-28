@@ -27,7 +27,7 @@ func vburst(t *testing.T, pos int) layer2.RawBurst {
 func TestRegression_StopDuringTimeoutPadding(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Timeout: 8 * slot, Queue: 3 * 20})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Timeout: 8 * slot, Queue: 3 * 20})
 	_ = tx.Start(0, voice.Call{Target: 2, Source: 1}, nil)
 	for range 3 * 18 {
 		_ = tx.Frame(vocoder.AMBESilence())
@@ -57,7 +57,7 @@ func TestRegression_StopDuringTimeoutPadding(t *testing.T) {
 func TestRegression_ResetKeepsReason(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	c := rcall()
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c})
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallEnd, Call: c, Reason: voice.EndLost})
@@ -73,7 +73,7 @@ func TestRegression_ResetKeepsReason(t *testing.T) {
 func TestRegression_RelayPILate(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	c := rcall()
 	o := layer2.VoiceTransmitterOptions{LC: groupLC(t, 91, 3191868), ColorCode: 1, PIHeader: &pdu.PIHeader{AlgorithmID: 1}}
 	vt, err := layer2.NewVoiceTransmitter(&o)
@@ -104,7 +104,7 @@ func TestRegression_RelayPILate(t *testing.T) {
 func TestRegression_NextCallGap(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	c := rcall()
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c})
 	tx.Tick(0, nil)
@@ -135,7 +135,7 @@ func TestRegression_NextCallGap(t *testing.T) {
 func TestRegression_NextCallVoiceDropped(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Terminators: 3, Queue: 3 * 12})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Terminators: 3, Queue: 3 * 12})
 	c := rcall()
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c})
 	tx.Tick(0, nil)
@@ -158,7 +158,7 @@ func TestRegression_NextCallVoiceDropped(t *testing.T) {
 func TestRegression_RelayLostDoubleFill(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	c := rcall()
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c})
 	var out []voice.Output
@@ -188,7 +188,7 @@ func TestRegression_RelayLostDoubleFill(t *testing.T) {
 func TestRegression_StopIgnoresTimeout(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Timeout: 8 * slot, Queue: voice.MaxQueue})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Timeout: 8 * slot, Queue: voice.MaxQueue})
 	_ = tx.Start(0, voice.Call{Target: 2, Source: 1}, nil)
 	for range voice.MaxQueue {
 		_ = tx.Frame(vocoder.AMBESilence())
@@ -229,7 +229,7 @@ func TestRegression_RewriteEmbedded(t *testing.T) {
 
 	bursts := transmission(t, groupLC(t, 91, 3191868), 4, nil)
 	rx := newReceiver(t, nil)
-	tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()})
 	ev := make([]voice.Event, 0, voice.MaxEvents)
 	sent := make([]voice.Output, 0, 64)
 	for i := range bursts {
@@ -261,7 +261,7 @@ func TestRegression_RewriteEmbedded(t *testing.T) {
 func TestRegression_PendingPI(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	c := rcall()
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c})
 	tx.Tick(0, nil)
@@ -293,7 +293,7 @@ func TestRegression_PendingPI(t *testing.T) {
 func TestRegression_BadGPS(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	gps := pdu.FLCGPSInfo{Latitude: 500, Longitude: 900}
 	err := tx.Start(0, voice.Call{Target: 2, Source: 1}, &voice.CallOptions{GPS: &gps})
 	var ce *dmrgo.ConfigError
@@ -306,7 +306,7 @@ func TestRegression_DefaultQueueHoldsHeaders(t *testing.T) {
 	t.Parallel()
 
 	for h := range voice.MaxHeaders + 1 {
-		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Headers: h})
+		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Headers: h})
 		if err != nil {
 			t.Fatalf("Headers %d with the default Queue: %v", h, err)
 		}

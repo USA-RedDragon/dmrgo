@@ -12,7 +12,7 @@ import (
 
 func TestSenderResyncsAfterLostMessage(t *testing.T) {
 	t.Parallel()
-	tx := newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, Retries: 2})
+	tx := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, Retries: 2})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	out := make([]data.Output, 0, data.MaxOutputs)
 	ev := make([]data.Event, 0, data.MaxEvents)

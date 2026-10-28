@@ -54,7 +54,7 @@ func ExampleFieldRangeError() {
 // ExampleConfigError matches the error of a color code over 15 in a
 // constructor config.
 func ExampleConfigError() {
-	_, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 16})
+	_, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 16})
 	var configErr *dmrgo.ConfigError
 	if errors.As(err, &configErr) {
 		fmt.Println(configErr.Type, configErr.Field)

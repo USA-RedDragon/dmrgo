@@ -51,7 +51,7 @@ func TestSenderMatchesAnyTone(t *testing.T) {
 		t.Fatal("no message")
 	}
 	m := ev[i].Message
-	s := newSender(t, &data.SenderConfig{ColorCode: 7})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, ColorCode: 7})
 	if err := s.Send(0, &m); err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestSenderLoopback(t *testing.T) {
 		for _, sap := range []enums.SAP{enums.SAPIPBasedPacketData, enums.SAPShortData} {
 			l := &link{
 				t:    t,
-				tx:   newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
+				tx:   newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
 				rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 				drop: c.drop,
 			}
@@ -216,7 +216,7 @@ func TestSenderLoopback(t *testing.T) {
 func TestSenderSequence(t *testing.T) {
 	t.Parallel()
 	for _, resync := range []bool{false, true} {
-		s := newSender(t, &data.SenderConfig{Preambles: -1, Resync: resync})
+		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Resync: resync})
 		ns, sflag := make([]uint8, 0, 3), make([]bool, 0, 3)
 		for range 3 {
 			if err := s.Send(0, message(t, 10)); err != nil {
@@ -278,7 +278,7 @@ func TestSenderResponses(t *testing.T) {
 		{"NACK memory full", response(t, packet.ResponseNACKMemoryFull, nil), data.ResultRefused, 0, false},
 		{"NACK undeliverable", response(t, packet.ResponseNACKUndeliverable, nil), data.ResultRefused, 0, false},
 	} {
-		s := newSender(t, &data.SenderConfig{Preambles: -1})
+		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 		if err := s.Send(0, message(t, 60)); err != nil {
 			t.Fatal(err)
 		}
@@ -324,7 +324,7 @@ func TestSenderResponses(t *testing.T) {
 
 func TestSenderOtherResponse(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Preambles: -1})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
@@ -345,7 +345,7 @@ func TestSenderOtherResponse(t *testing.T) {
 
 func TestSenderUnconfirmed(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Preambles: 3, Source: layer2.SyncSourceMS, ColorCode: 1})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: 3, Source: layer2.SyncSourceMS, ColorCode: 1})
 	m := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		Group: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 9, LLIDSource: srcID}), Rate: enums.DataTypeRate34, Payload: payload(40)}
 	if err := s.Send(time.Second, m); err != nil {
@@ -390,18 +390,18 @@ func TestSenderAccess(t *testing.T) {
 		}
 		return -1, 0
 	}
-	if at, _ := first(&data.SenderConfig{Preambles: -1}, 300*time.Millisecond); at != 300*time.Millisecond {
+	if at, _ := first(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1}, 300*time.Millisecond); at != 300*time.Millisecond {
 		t.Errorf("idle during the search: first burst at %v", at)
 	}
-	if at, _ := first(&data.SenderConfig{Preambles: -1, Access: enums.AccessImpolite}, -1); at != 0 {
+	if at, _ := first(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Access: enums.AccessImpolite}, -1); at != 0 {
 		t.Errorf("impolite: first burst at %v", at)
 	}
-	a, _ := first(&data.SenderConfig{Preambles: -1, Seed: 1, Holdoff: time.Second}, 2*time.Second)
-	b, _ := first(&data.SenderConfig{Preambles: -1, Seed: 1, Holdoff: time.Second}, 2*time.Second)
+	a, _ := first(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Seed: 1, Holdoff: time.Second}, 2*time.Second)
+	b, _ := first(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Seed: 1, Holdoff: time.Second}, 2*time.Second)
 	if a != b || a < 2*time.Second {
 		t.Errorf("holdoff: first bursts at %v and %v", a, b)
 	}
-	if _, r := first(&data.SenderConfig{Preambles: -1, TxLimit: 3 * time.Second}, -1); r != data.ResultTimeLimit {
+	if _, r := first(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1, TxLimit: 3 * time.Second}, -1); r != data.ResultTimeLimit {
 		t.Errorf("busy channel: result %v", r)
 	}
 }
@@ -412,13 +412,13 @@ func TestSenderErrors(t *testing.T) {
 		cfg   data.SenderConfig
 		field string
 	}{
-		{data.SenderConfig{Preambles: -1, ColorCode: 16}, "ColorCode"},
-		{data.SenderConfig{Preambles: -1, Source: 7}, "Source"},
-		{data.SenderConfig{Preambles: -1, Access: 3}, "Access"},
-		{data.SenderConfig{Preambles: data.MaxPreambles + 1}, "Preambles"},
-		{data.SenderConfig{Preambles: -1, Retries: -1}, "Retries"},
-		{data.SenderConfig{Preambles: -1, MaxBlocks: 128}, "MaxBlocks"},
-		{data.SenderConfig{Preambles: -1, Peers: -2}, "Peers"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: -1, ColorCode: 16}, "ColorCode"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: 7}, "Source"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Access: 3}, "Access"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: data.MaxPreambles + 1}, "Preambles"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Retries: -1}, "Retries"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: -1, MaxBlocks: 128}, "MaxBlocks"},
+		{data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Peers: -2}, "Peers"},
 	} {
 		_, err := data.NewSender(&c.cfg)
 		var ce *dmrgo.ConfigError
@@ -426,7 +426,7 @@ func TestSenderErrors(t *testing.T) {
 			t.Errorf("%+v: %v, want a ConfigError for %s", c.cfg, err, c.field)
 		}
 	}
-	s := newSender(t, &data.SenderConfig{Preambles: -1, MaxBlocks: 2})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, MaxBlocks: 2})
 	group := message(t, 10)
 	editConfirmed(t, &group.Header, func(c *pdu.ConfirmedDataHeader) { c.Group = true })
 	udt := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{})}
@@ -493,7 +493,7 @@ func TestSenderOnePreambleAfterResponse(t *testing.T) {
 		gap  time.Duration
 		want int
 	}{{0, 1}, {data.DefaultHang + 100*time.Millisecond, data.DefaultPreambles}} {
-		tx := newSender(t, &data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1, Access: enums.AccessImpolite})
+		tx := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1, Access: enums.AccessImpolite})
 		rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 		var queue []layer2.RawBurst
 		var dues []time.Duration

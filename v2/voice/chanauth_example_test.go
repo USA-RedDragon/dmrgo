@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -16,7 +17,7 @@ import (
 // authentication and moves to the Header state when the repeater sends
 // back the header.
 func ExampleTransmitter_Burst() {
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), ChanAuth: constants.TMSChanAuth})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), ChanAuth: constants.TMSChanAuth})
 	if err != nil {
 		fmt.Println(err)
 		return

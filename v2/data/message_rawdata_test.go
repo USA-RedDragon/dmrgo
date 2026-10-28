@@ -24,7 +24,7 @@ func TestMessageSetRawDataSends(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		s := newSender(t, &data.SenderConfig{ColorCode: 1, Preambles: -1})
+		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, ColorCode: 1, Preambles: -1})
 		if err := s.Send(0, &m); err != nil {
 			t.Fatal(err)
 		}

@@ -99,7 +99,7 @@ var encryptedCall = voice.Call{Group: true, Target: 1, Source: 1, Options: layer
 
 func newVoiceTransmitter(t *testing.T) *voice.Transmitter {
 	t.Helper()
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1,
 		ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(),
 		Access: enums.AccessImpolite, Queue: voice.MaxQueue,
 	})

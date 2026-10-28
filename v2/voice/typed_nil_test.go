@@ -19,11 +19,11 @@ func TestTypedNilData(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			tx, err := voice.NewTransmitter(nil)
+			tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1})
 			if err != nil {
 				t.Fatal(err)
 			}
-			in, err := voice.NewInterrupter(nil)
+			in, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1})
 			if err != nil {
 				t.Fatal(err)
 			}

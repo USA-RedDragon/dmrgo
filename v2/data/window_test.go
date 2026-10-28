@@ -206,7 +206,7 @@ func TestSenderWindowLoopback(t *testing.T) {
 	} {
 		l := &winLink{
 			t:    t,
-			tx:   newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3, Window: 3}),
+			tx:   newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3, Window: 3}),
 			rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID, MaxFragment: 70}),
 			drop: c.drop,
 			lose: c.lose,
@@ -243,7 +243,7 @@ func TestSenderDefaultStopAndWait(t *testing.T) {
 	t.Parallel()
 	l := &winLink{
 		t:  t,
-		tx: newSender(t, &data.SenderConfig{Preambles: -1}),
+		tx: newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1}),
 		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 	}
 	msgs := windowMessages(t, 3, 20)
@@ -270,7 +270,7 @@ func TestSenderWindowOfEight(t *testing.T) {
 	t.Parallel()
 	l := &winLink{
 		t:  t,
-		tx: newSender(t, &data.SenderConfig{Preambles: -1, Window: data.MaxWindow}),
+		tx: newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: data.MaxWindow}),
 		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 	}
 	l.run(windowMessages(t, 3, 20), 5*time.Second)
@@ -299,7 +299,7 @@ func TestSenderWindowOfEight(t *testing.T) {
 
 func TestSenderWindowJoin(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Window: 4, Preambles: 2})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Window: 4, Preambles: 2})
 	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +360,7 @@ func TestSenderWindowJoin(t *testing.T) {
 	if strings.Join(heads, " ") != "0false 1true 2true" {
 		t.Errorf("headers %v", heads)
 	}
-	short2 := newSender(t, &data.SenderConfig{Preambles: -1, Window: 4})
+	short2 := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: 4})
 	if err := short2.Send(0, short); err != nil {
 		t.Fatal(err)
 	}
@@ -369,7 +369,7 @@ func TestSenderWindowJoin(t *testing.T) {
 	}
 	for _, w := range []int{-1, data.MaxWindow + 1} {
 		var ce *dmrgo.ConfigError
-		if _, err := data.NewSender(&data.SenderConfig{Preambles: -1, Window: w}); !errors.As(err, &ce) || ce.Field != "Window" {
+		if _, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: w}); !errors.As(err, &ce) || ce.Field != "Window" {
 			t.Errorf("Window %d: %v", w, err)
 		}
 	}
@@ -409,7 +409,7 @@ func TestSenderWindowResponses(t *testing.T) {
 		{"NACK out of sequence", windowResponse(t, packet.ResponseNACKOutOfSequence, 6, nil), "", "0/7S 1/7S 2/7SA"},
 		{"other status", windowResponse(t, packet.ResponseACK, 5, nil), "", ""},
 	} {
-		s := newSender(t, &data.SenderConfig{Preambles: -1, Window: 3, Resync: true})
+		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: 3, Resync: true})
 		for _, m := range windowMessages(t, 3, 60) {
 			if err := s.Send(0, m); err != nil {
 				t.Fatal(err)
@@ -469,7 +469,7 @@ func TestSenderWindowResponses(t *testing.T) {
 
 func TestSenderWindowTimeLimit(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Preambles: -1, Window: 3, TxLimit: 300 * time.Millisecond})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: 3, TxLimit: 300 * time.Millisecond})
 	s.Channel(0, true)
 	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
@@ -617,7 +617,7 @@ func TestSenderWindowLostFirstHeader(t *testing.T) {
 	} {
 		l := &winLink{
 			t:    t,
-			tx:   newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3, Window: c.window}),
+			tx:   newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3, Window: c.window}),
 			rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 			drop: c.drop,
 			lose: c.lose,
@@ -645,7 +645,7 @@ func TestSenderStopAndWaitSkipsNoSequenceCheck(t *testing.T) {
 	t.Parallel()
 	l := &winLink{
 		t:    t,
-		tx:   newSender(t, &data.SenderConfig{Preambles: -1, Retries: 1}),
+		tx:   newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Retries: 1}),
 		rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 		drop: func(seq, _ uint8, _ int) bool { return seq == 1 },
 	}

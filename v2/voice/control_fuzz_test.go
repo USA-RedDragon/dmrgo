@@ -36,7 +36,7 @@ func controlPool(t testing.TB) []layer2.RawBurst {
 	}
 	p = append(p, idle)
 	for _, cmd := range []enums.RCCommand{enums.RCCeaseTransmissionCommand, enums.RCCeaseTransmissionRequest} {
-		in, err := voice.NewInterrupter(&voice.InterrupterConfig{ColorCode: 1})
+		in, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1, ColorCode: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -60,13 +60,13 @@ type controlInput struct {
 func controlScript(t testing.TB, p []layer2.RawBurst, in *controlInput) {
 	t.Helper()
 	c0, c1 := in.c0, in.c1
-	cfg := voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Access: enums.Access(c0 % 3), IdleSearch: time.Duration(int8(c0)) * 10 * time.Millisecond,
+	cfg := voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Access: enums.Access(c0 % 3), IdleSearch: time.Duration(int8(c0)) * 10 * time.Millisecond,
 		Interruptible: c0&0x08 != 0, ChanAuth: time.Duration(c1&0x0F) * 60 * time.Millisecond, HoldoffMax: time.Duration(int8(c1)>>4) * 100 * time.Millisecond, Seed: uint64(c1)}
 	tx, err := voice.NewTransmitter(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	irq, err := voice.NewInterrupter(&voice.InterrupterConfig{ColorCode: 1, Retries: int(c0 >> 6), Repeats: int(c1>>6) + 1, Wait: time.Duration(int8(c1<<2)) * 20 * time.Millisecond})
+	irq, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1, ColorCode: 1, Retries: int(c0 >> 6), Repeats: int(c1>>6) + 1, Wait: time.Duration(int8(c1<<2)) * 20 * time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}

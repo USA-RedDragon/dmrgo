@@ -11,13 +11,13 @@ import (
 func TestNilBurst(t *testing.T) {
 	t.Parallel()
 
-	q := mustRequester(t, &csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS})
-	r := mustResponder(t, &csbk.ResponderConfig{Address: anytone, ColorCode: 1})
+	q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: anytone, ColorCode: 1})
 	p, err := csbk.NewPreambles(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	w, err := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7})
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
 	if err != nil {
 		t.Fatal(err)
 	}

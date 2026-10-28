@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -19,7 +20,7 @@ func TestNilBurst(t *testing.T) {
 			t.Errorf("Receiver %+v: %d events in Idle", h, len(ev))
 		}
 	}
-	tx, err := data.NewSender(&data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1})
+	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1})
 	if err != nil {
 		t.Fatal(err)
 	}

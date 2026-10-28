@@ -83,7 +83,7 @@ func TestResetAndLost(t *testing.T) {
 		t.Error("Reset left a request")
 	}
 
-	r := mustResponder(t, &csbk.ResponderConfig{Address: anytone})
+	r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: anytone})
 	r.Channel(0, true)
 	r.Burst(0, burstOf(t, injectedRadioCheck, layer2.SyncSourceBS), layer2.Hint{}, nil)
 	if out := r.Lost(ms, nil); len(out) != 0 {
@@ -109,7 +109,7 @@ func TestResetAndLost(t *testing.T) {
 		t.Error("Reset left a transfer")
 	}
 
-	w, err := csbk.NewWakeup(&csbk.WakeupConfig{SyncWait: -1})
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, SyncWait: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,11 +185,11 @@ func TestLead(t *testing.T) {
 	t.Parallel()
 
 	const lead = 20 * ms
-	q := mustRequester(t, &csbk.RequesterConfig{Lead: lead})
+	q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, Lead: lead})
 	if err := q.RequestRadioCheck(time.Second, 2, 1, &csbk.RequestOptions{Preambles: 1}); err != nil {
 		t.Fatal(err)
 	}
-	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Lead: lead})
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, Lead: lead})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,9 +233,15 @@ func TestLead(t *testing.T) {
 		t.Fatalf("Wakeup: retry %+v, want Due %v", out, at+lead)
 	}
 	for _, err := range []error{
-		func() error { _, err := csbk.NewRequester(&csbk.RequesterConfig{Lead: -1}); return err }(),
-		func() error { _, err := csbk.NewResponder(&csbk.ResponderConfig{Address: 1, Lead: -1}); return err }(),
-		func() error { _, err := csbk.NewWakeup(&csbk.WakeupConfig{Lead: -1}); return err }(),
+		func() error {
+			_, err := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, Lead: -1})
+			return err
+		}(),
+		func() error {
+			_, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 1, Lead: -1})
+			return err
+		}(),
+		func() error { _, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, Lead: -1}); return err }(),
 		func() error { _, err := csbk.NewTiming(&csbk.TimingConfig{ID: 1, Slot: 1, Lead: -1}); return err }(),
 	} {
 		var ce *dmrgo.ConfigError

@@ -29,7 +29,7 @@ func TestSenderSharedMethodSet(t *testing.T) {
 		name string
 		cfg  data.SenderConfig
 	}{
-		{"Lead", data.SenderConfig{Lead: -time.Millisecond}},
+		{"Lead", data.SenderConfig{Slot: enums.Slot1, Lead: -time.Millisecond}},
 		{"Slot", data.SenderConfig{Slot: enums.Slot(3)}},
 	} {
 		var ce *dmrgo.ConfigError

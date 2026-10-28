@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -17,7 +18,7 @@ const fuzzAlias = "dmrgo test alias"
 
 func goOutputs(t *testing.T, frames int) ([]string, [][33]byte) {
 	t.Helper()
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Queue: 192})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS, Queue: 192})
 	if err != nil {
 		t.Fatal(err)
 	}

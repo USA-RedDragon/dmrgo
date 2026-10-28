@@ -1236,7 +1236,7 @@ struct dmrgo_csbk_requester_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
-	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
 };
 
@@ -1269,7 +1269,7 @@ struct dmrgo_csbk_responder_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
-	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
 	/* Offset puts the answers on the offset channel timing of a BS, in which the inbound slot of a logical channel starts half a TDMA frame after its outbound slot: the answer starts 90 ms after the start of the request, and then on that grid. The zero value is the aligned channel timing of a BS, and a direct channel, where it starts 60 ms after. (ETSI TS 102 361-1 clause 5.1.1, Table 5.1) */
 	bool offset;
@@ -1305,7 +1305,7 @@ struct dmrgo_csbk_wakeup_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
-	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
 };
 
@@ -1537,7 +1537,7 @@ struct dmrgo_data_sender_config_t {
 	int64_t window;
 	/* Seed seeds the random holdoff. Two Senders with the same seed hold off for the same times, so give each radio its own seed. */
 	uint64_t seed;
-	/* Slot is the TDMA slot of the Sender, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
+	/* Slot is the TDMA slot of the Sender, which it puts in the Hint of each burst it sends. It must be DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the Sender keep to the Due times. */
 	dmrgo_duration_t lead;
@@ -5609,7 +5609,7 @@ struct dmrgo_voice_interrupter_config_t {
 	int64_t repeats;
 	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one thread can share one. NULL means the Interrupter makes its own. (ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_layer2_burst_t *scratch;
-	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. T_RCtimer counts from the Due times. */
 	dmrgo_duration_t lead;
@@ -5684,7 +5684,7 @@ struct dmrgo_voice_transmitter_config_t {
 	uint64_t seed;
 	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one thread can share one. NULL means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_layer2_burst_t *scratch;
-	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
 };
 
@@ -8332,13 +8332,13 @@ int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size
 int dmrgo_csbk_new_match(dmrgo_enums_fid_t fid, const dmrgo_pdu_csbk_opcode_t *opcodes, size_t opcodes_len, dmrgo_csbk_match_t *out);
 /* Go: csbk.NewPreambles. NewPreambles returns a Preambles for cfg. cfg may be NULL. */
 int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
-/* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, Retries above DMRGO_CSBK_MAX_RETRIES, a negative Lead or a Slot other than DMRGO_ENUMS_SLOT_UNKNOWN, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */
+/* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, Retries above DMRGO_CSBK_MAX_RETRIES, a negative Lead or a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, so also for a NULL cfg. cfg may be NULL. */
 int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
-/* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a NULL cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT_UNKNOWN, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */
+/* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a NULL cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */
 int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);
 /* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. It returns a DMRGO_ERR_CONFIG for a NULL cfg, an ID of 0 or above DMRGO_CSBK_MAX_TIMING_ID, a DynamicID above DMRGO_CSBK_MAX_DYNAMIC_ID, a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_timing(const dmrgo_csbk_timing_config_t *cfg, dmrgo_csbk_timing_t **out);
-/* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Attempts out of range, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT_UNKNOWN, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */
+/* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Attempts out of range, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, so also for a NULL cfg. cfg may be NULL. */
 int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wakeup_t **out);
 /* Go: csbk.OACSUAnswer.String. String returns the name of the answer. */
 int dmrgo_csbk_oacsu_answer_string(dmrgo_csbk_oacsu_answer_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8526,7 +8526,7 @@ int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t
 int dmrgo_data_message_set_raw_data(dmrgo_data_message_t *self, const dmrgo_pdu_raw_data_header_t *p);
 /* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, or a DMRGO_DATA_MAX_BLOCKS, Peers, MaxFragment or DMRGO_DATA_MAX_MESSAGE out of range. cfg may be NULL. */
 int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
-/* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, a Preambles, Retries, DMRGO_DATA_MAX_BLOCKS, Peers or Window out of range, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT_UNKNOWN, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. cfg may be NULL. */
+/* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, a Preambles, Retries, DMRGO_DATA_MAX_BLOCKS, Peers or Window out of range, a negative Lead, or a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, so also for a NULL cfg. cfg may be NULL. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
 /* Go: data.Output.ICMP. ICMP returns the ICMP error message that the DMRGO_DATA_OUTPUT_DONE o of a message of the IP bearer service reports to the IP layer: DMRGO_IP_ICMP_HOST_UNREACHABLE for a message that used all its tries on air (DMRGO_DATA_RESULT_RETRY_LIMIT), that could not finish before dmrgo_data_sender_config_t.tx_limit (DMRGO_DATA_RESULT_TIME_LIMIT), or that got a NACK for the full memory of the recipient. */
 int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
@@ -11758,13 +11758,13 @@ int dmrgo_voice_jitter_reset(dmrgo_voice_jitter_t *self);
 int dmrgo_voice_jitter_stats(dmrgo_voice_jitter_t *self, dmrgo_voice_jitter_stats_t *out);
 /* Go: voice.JitterResult.String. String returns the name of the result. */
 int dmrgo_voice_jitter_result_string(dmrgo_voice_jitter_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, a Slot that is not a dmrgo_enums_slot_t value, Retries above DMRGO_VOICE_MAX_RETRIES, Repeats out of range, or a negative Lead. cfg may be NULL. */
+/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, so also for a NULL cfg, Retries above DMRGO_VOICE_MAX_RETRIES, Repeats out of range, or a negative Lead. cfg may be NULL. */
 int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
 /* Go: voice.NewJitter. NewJitter returns a Jitter for cfg. It returns a DMRGO_ERR_CONFIG for a field out of range. cfg may be NULL. */
 int dmrgo_voice_new_jitter(const dmrgo_voice_jitter_config_t *cfg, dmrgo_voice_jitter_t **out);
 /* Go: voice.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG when the color code is above 15. cfg may be NULL. */
 int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
-/* Go: voice.NewTransmitter. NewTransmitter returns a Transmitter for cfg. It returns a DMRGO_ERR_CONFIG for a field out of range. cfg may be NULL. */
+/* Go: voice.NewTransmitter. NewTransmitter returns a Transmitter for cfg. It returns a DMRGO_ERR_CONFIG for a field out of range, and for a Slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, so also for a NULL cfg. cfg may be NULL. */
 int dmrgo_voice_new_transmitter(const dmrgo_voice_transmitter_config_t *cfg, dmrgo_voice_transmitter_t **out);
 /* Go: voice.Origin.String. String returns the name of the origin. */
 int dmrgo_voice_origin_string(dmrgo_voice_origin_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

@@ -32,7 +32,7 @@ type link struct {
 }
 
 func newLink(id, peer uint32, rate enums.DataType, window int, seed uint64, emitTx, emitRx func(time.Duration, *layer2.RawBurst)) (*link, error) {
-	tx, err := data.NewSender(&data.SenderConfig{Source: layer2.SyncSourceMS, Seed: seed, Window: window})
+	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, Seed: seed, Window: window})
 	if err != nil {
 		return nil, err
 	}

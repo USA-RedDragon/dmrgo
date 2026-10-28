@@ -84,6 +84,9 @@ func kinds(outs []csbk.Output) []csbk.OutputKind {
 
 func mustRequester(t *testing.T, cfg *csbk.RequesterConfig) *csbk.Requester {
 	t.Helper()
+	if cfg == nil {
+		cfg = &csbk.RequesterConfig{Slot: enums.Slot1}
+	}
 	q, err := csbk.NewRequester(cfg)
 	if err != nil {
 		t.Fatal(err)

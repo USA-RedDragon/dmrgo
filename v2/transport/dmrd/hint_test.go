@@ -15,7 +15,7 @@ import (
 func TestSetHintFromTransmitter(t *testing.T) {
 	t.Parallel()
 
-	tx, err := voice.NewTransmitter(nil)
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1})
 	if err != nil {
 		t.Fatal(err)
 	}

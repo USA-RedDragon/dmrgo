@@ -70,7 +70,7 @@ func TestEncodeRejectsPaddingBits(t *testing.T) {
 			return err
 		}},
 		{"voice.Transmitter.Frame", 49, "vocoder", "AMBEFrame", func(t *testing.T, p []byte) error {
-			tx := must(voice.NewTransmitter(&voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()}))
+			tx := must(voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()}))
 			if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3191868}, nil); err != nil {
 				t.Fatal(err)
 			}

@@ -16,7 +16,7 @@ func TestRegression_RelayUnderrunRepeatsLastSlot(t *testing.T) {
 	t.Parallel()
 
 	sil := vocoder.AMBESilenceSlot()
-	tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue})
 	c := rcall()
 	if err := tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c}); err != nil {
 		t.Fatal(err)
@@ -68,7 +68,7 @@ func TestRegression_RelayUnderrunThenLostRepeatsOnce(t *testing.T) {
 	t.Parallel()
 
 	sil := vocoder.AMBESilenceSlot()
-	tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue})
 	c := rcall()
 	if err := tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c}); err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestRegression_RelayUnderrunThenLostRepeatsOnce(t *testing.T) {
 func TestRegression_RelayFillsLeaveRoomForVoice(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue})
 	c := rcall()
 	if err := tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c}); err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestRegression_RelayPendingCallRepeatsLastSlot(t *testing.T) {
 
 	sil := vocoder.AMBESilenceSlot()
 	for _, fid := range []enums.FID{enums.FIDStandardized, 0xC2} {
-		tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue})
 		a := rcall()
 		lc, _ := pdu.NewVoiceLCBytes(true, 91, 3191869, layer3.ServiceOptions{})
 		lc.SetFID(fid)

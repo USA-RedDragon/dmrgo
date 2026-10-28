@@ -17,7 +17,7 @@ type WakeupConfig struct {
 	// BS_Dwn_Act bursts and of the outbound that ends the wakeup.
 	ColorCode enums.ColorCode
 	// Slot is the TDMA slot of the machine, which it puts in the Hint of
-	// each burst it sends. SlotUnknown leaves it unknown.
+	// each burst it sends. It must be Slot1 or Slot2.
 	Slot enums.Slot
 	// SyncWait is T_SyncWu, the wait for the outbound after each BS_Dwn_Act.
 	// 0 means DefaultSyncWait, and a negative value waits until the
@@ -89,9 +89,9 @@ type Wakeup struct {
 
 // NewWakeup returns a Wakeup for cfg. A nil cfg means the zero WakeupConfig.
 // It returns a *dmrgo.ConfigError for a color code above 15, Attempts out
-// of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or
-// Slot2. It allocates the Wakeup, and its Burst unless cfg.Scratch is
-// set.
+// of range, a negative Lead, or a Slot other than Slot1 or Slot2, so also
+// for a nil cfg. It allocates the Wakeup, and its Burst unless cfg.Scratch
+// is set.
 func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 	var conf WakeupConfig
 	if cfg != nil {

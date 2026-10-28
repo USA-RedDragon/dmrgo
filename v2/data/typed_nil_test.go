@@ -19,7 +19,7 @@ func TestTypedNilData(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			tx, err := data.NewSender(nil)
+			tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1})
 			if err != nil {
 				t.Fatal(err)
 			}

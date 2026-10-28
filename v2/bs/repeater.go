@@ -306,7 +306,7 @@ func New(cfg *Config) (*Repeater, error) {
 		if err != nil {
 			return nil, err
 		}
-		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: r.cc, Silence: cfg.Silence, Headers: cfg.Headers,
+		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: s.id, ColorCode: r.cc, Silence: cfg.Silence, Headers: cfg.Headers,
 			Terminators: cfg.Terminators, Timeout: cfg.Timeout, Queue: layer2.VoiceSlotsPerBurst * (headers + 2)})
 		if err != nil {
 			return nil, err

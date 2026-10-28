@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -38,7 +39,7 @@ func newFollower() *follower {
 	if err != nil {
 		panic(err)
 	}
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	if err != nil {
 		panic(err)
 	}

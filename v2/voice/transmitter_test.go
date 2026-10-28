@@ -16,6 +16,9 @@ import (
 
 func newTransmitter(t *testing.T, cfg *voice.TransmitterConfig) *voice.Transmitter {
 	t.Helper()
+	if cfg == nil {
+		cfg = &voice.TransmitterConfig{Slot: enums.Slot1}
+	}
 	tx, err := voice.NewTransmitter(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -109,7 +112,7 @@ func TestTransmitter_Golden(t *testing.T) {
 			}
 			opts = &voice.CallOptions{PIHeader: pi}
 		}
-		tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 7, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 12})
+		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 12})
 		if err := tx.Start(0, c, opts); err != nil {
 			t.Fatal(err)
 		}
@@ -135,7 +138,7 @@ func TestTransmitter_Golden(t *testing.T) {
 func TestTransmitter_Source(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Headers: 3, Terminators: 2, Queue: 3 * 12})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Headers: 3, Terminators: 2, Queue: 3 * 12})
 	call := voice.Call{Group: true, Target: 91, Source: 3191868}
 	if err := tx.Start(time.Second, call, nil); err != nil {
 		t.Fatal(err)
@@ -182,7 +185,7 @@ func TestTransmitter_Source(t *testing.T) {
 func TestTransmitter_RoundTrip(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 3, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 40})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 3, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 40})
 	gps := pdu.FLCGPSInfo{Longitude: -87.5, Latitude: 41.75}
 	opts := &voice.CallOptions{TalkerAlias: "KI5VMF JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
 	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3191868}, opts); err != nil {
@@ -227,7 +230,7 @@ func TestTransmitter_Timeout(t *testing.T) {
 
 	for k := range 6 {
 		timeout := time.Duration(8+k) * slot
-		tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Timeout: timeout, Queue: 3 * 20})
+		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Timeout: timeout, Queue: 3 * 20})
 		if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 			t.Fatal(err)
 		}
@@ -255,7 +258,7 @@ func TestTransmitter_Relay(t *testing.T) {
 
 	in := loadWeak(t)
 	rx := newReceiver(t, nil)
-	tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 7, Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 7, Silence: vocoder.AMBESilenceSlot()})
 	ev := make([]voice.Event, 0, voice.MaxEvents)
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	sent := make([]voice.Output, 0, 64)
@@ -293,7 +296,7 @@ func TestTransmitter_RelayLateEntry(t *testing.T) {
 
 	bursts := transmission(t, groupLC(t, 9, 3191868), 3, nil)
 	rx := newReceiver(t, nil)
-	tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()})
 	ev := make([]voice.Event, 0, voice.MaxEvents)
 	sent := make([]voice.Output, 0, 64)
 	for i, raw := range bursts[4:] {
@@ -329,7 +332,7 @@ func TestTransmitter_RelayLost(t *testing.T) {
 
 	bursts := transmission(t, groupLC(t, 9, 3191868), 2, nil)
 	rx := newReceiver(t, nil)
-	tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 8})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 8})
 	ev := make([]voice.Event, 0, voice.MaxEvents)
 	sent := make([]voice.Output, 0, 64)
 	relay := func(now time.Duration) {
@@ -366,7 +369,7 @@ func TestTransmitter_Errors(t *testing.T) {
 	t.Parallel()
 
 	for _, cfg := range []voice.TransmitterConfig{
-		{ColorCode: 16}, {Source: layer2.SyncSource(9)}, {Headers: 9}, {Terminators: 65}, {Headers: 3, Queue: 9}, {Queue: voice.MaxQueue + 1}, {Lead: -1},
+		{Slot: enums.Slot1, ColorCode: 16}, {Slot: enums.Slot1, Source: layer2.SyncSource(9)}, {Slot: enums.Slot1, Headers: 9}, {Slot: enums.Slot1, Terminators: 65}, {Slot: enums.Slot1, Headers: 3, Queue: 9}, {Slot: enums.Slot1, Queue: voice.MaxQueue + 1}, {Slot: enums.Slot1, Lead: -1},
 	} {
 		var ce *dmrgo.ConfigError
 		if _, err := voice.NewTransmitter(&cfg); !errors.As(err, &ce) {
@@ -407,7 +410,7 @@ func TestTransmitter_Errors(t *testing.T) {
 func TestTransmitter_Lead(t *testing.T) {
 	t.Parallel()
 
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Lead: 20 * time.Millisecond})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Lead: 20 * time.Millisecond})
 	if err := tx.Start(time.Second, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -419,7 +422,7 @@ func TestTransmitter_Lead(t *testing.T) {
 		t.Fatalf("%+v", out)
 	}
 
-	tx = newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Lead: 20 * time.Millisecond})
+	tx = newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Lead: 20 * time.Millisecond})
 	tx.Channel(0, true)
 	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 		t.Fatal(err)

@@ -207,7 +207,7 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	events := make([]voice.Event, 0, voice.MaxEvents)
 	var now time.Duration
 
-	vtx := tinyOK(voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20}))
+	vtx := tinyOK(voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20}))
 	outs := make([]voice.Output, 0, voice.MaxOutputs)
 	gps := pdu.FLCGPSInfo{Latitude: 41.75}
 	callOpts := &voice.CallOptions{TalkerAlias: "KI5VMF JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
@@ -277,10 +277,10 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 func tinyCSBKOps(t *testing.T) []tinyOp {
 	t.Helper()
 	scratch := layer2.NewBurst()
-	q := tinyOK(csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
-	r := tinyOK(csbk.NewResponder(&csbk.ResponderConfig{Address: 2, ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
+	q := tinyOK(csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
+	r := tinyOK(csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 2, ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
 	p := tinyOK(csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: scratch}))
-	w := tinyOK(csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 1, Scratch: scratch}))
+	w := tinyOK(csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 1, Scratch: scratch}))
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 	out2 := make([]csbk.Output, 0, csbk.MaxOutputs)
 	opts := &csbk.RequestOptions{Preambles: 2}

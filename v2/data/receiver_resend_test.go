@@ -17,7 +17,7 @@ func TestSenderDefinedDataWithoutAppendedBlocks(t *testing.T) {
 	t.Parallel()
 	l := &link{
 		t:  t,
-		tx: newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1}),
+		tx: newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1}),
 		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 	}
 	m := message(t, 40)
@@ -38,7 +38,7 @@ func TestReceiverRemovesPadsOfWholeResend(t *testing.T) {
 	for _, h := range []pdu.DataHeader{sapHeader(t, enums.SAPUDPIPHeaderCompression, 0, false), sapHeader(t, enums.SAPShortData, 0, false), dd} {
 		l := &link{
 			t:    t,
-			tx:   newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
+			tx:   newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
 			rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 			drop: func(try uint8, i int) bool { return try == 1 && i == 0 },
 		}
@@ -60,7 +60,7 @@ func TestReceiverSelectiveRetryOfResend(t *testing.T) {
 		sent := map[uint8]int{}
 		l := &link{
 			t:  t,
-			tx: newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1}),
+			tx: newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1}),
 			rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 			drop: func(try uint8, i int) bool {
 				if try > 0 {
@@ -95,7 +95,7 @@ func TestReceiverSelectiveRetryOfResend(t *testing.T) {
 
 func TestReceiverAnswersAfterLastBlockOfResend(t *testing.T) {
 	t.Parallel()
-	tx := newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1})
+	tx := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	m := message(t, 200)
 	m.Header = sapHeader(t, enums.SAPUDPIPHeaderCompression, 0, false)

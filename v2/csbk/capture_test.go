@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -37,7 +38,7 @@ const (
 func TestRequesterRadioCheckMatchesAnyTone(t *testing.T) {
 	t.Parallel()
 
-	q := mustRequester(t, &csbk.RequesterConfig{ColorCode: 7, Source: layer2.SyncSourceMS})
+	q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS})
 	if err := q.RequestRadioCheck(0, injector, anytone, &csbk.RequestOptions{Preambles: 5, RetryPreambles: 15}); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +77,7 @@ func TestRequesterTakesAnyToneAnswers(t *testing.T) {
 		{"radio check", false, injectedRadioCheck, anytoneRadioAnswer, csbk.ServiceRadioCheck},
 		{"call alert", true, injectedCallAlert, anytoneCallAlertAc, csbk.ServiceCallAlert},
 	} {
-		q := mustRequester(t, &csbk.RequesterConfig{ColorCode: 7})
+		q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7})
 		var err error
 		if tt.alert {
 			err = q.RequestCallAlert(0, anytone, injector, nil)
@@ -107,7 +108,7 @@ func TestRequesterTakesAnyToneAnswers(t *testing.T) {
 func TestResponderAnswersLikeAnyTone(t *testing.T) {
 	t.Parallel()
 
-	r := mustResponder(t, &csbk.ResponderConfig{Address: anytone, ColorCode: 7, Source: layer2.SyncSourceMS})
+	r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: anytone, ColorCode: 7, Source: layer2.SyncSourceMS})
 	for _, tt := range []struct {
 		request, answer string
 		svc             csbk.Service
@@ -167,7 +168,7 @@ func TestWakeupMatchesXPRGolden(t *testing.T) {
 	t.Parallel()
 
 	const golden = "06548e2409d808e846084ab09ced5d7f77fd7577988a04f87788be603ac028a6e5"
-	w, err := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7})
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
 	if err != nil {
 		t.Fatal(err)
 	}

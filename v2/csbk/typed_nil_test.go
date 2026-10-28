@@ -19,15 +19,15 @@ func TestTypedNilData(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			q, err := csbk.NewRequester(nil)
+			q, err := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1})
 			if err != nil {
 				t.Fatal(err)
 			}
-			s, err := csbk.NewResponder(&csbk.ResponderConfig{Address: 1})
+			s, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 1})
 			if err != nil {
 				t.Fatal(err)
 			}
-			w, err := csbk.NewWakeup(nil)
+			w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1})
 			if err != nil {
 				t.Fatal(err)
 			}

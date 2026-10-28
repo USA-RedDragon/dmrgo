@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -13,8 +14,8 @@ import (
 // Example sends an OACSU call request from a Requester to a
 // Responder and reads the answer back.
 func Example() {
-	q, _ := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS})
-	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 
 	if err := q.RequestOACSU(0, 1002, 1001, layer3.ServiceOptions{}, nil); err != nil {
@@ -39,7 +40,7 @@ func Example() {
 // ExampleRequester_RequestRadioCheck sends a radio check with 5 preambles
 // and no retries, and reports NoAnswer when no radio replies.
 func ExampleRequester_RequestRadioCheck() {
-	q, _ := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
 	if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
 		panic(err)
 	}
@@ -66,7 +67,7 @@ func ExampleRequester_RequestRadioCheck() {
 // ExamplePreambles follows the Pre_CSBKs of a call alert and
 // reports the end of the announced blocks, then the CSBK that they announce.
 func ExamplePreambles() {
-	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Source: layer2.SyncSourceMS})
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS})
 	_ = q.RequestCallAlert(0, 3191868, 3140598, &csbk.RequestOptions{Preambles: 2})
 	p, err := csbk.NewPreambles(nil)
 	if err != nil {
@@ -90,7 +91,7 @@ func ExamplePreambles() {
 // ExampleWakeup sends BS_Dwn_Act to wake a repeater and reports
 // NoAnswer when the repeater does not reply.
 func ExampleWakeup() {
-	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7})
+	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
 	_ = w.Wake(0, 314926, 3191868)
 	for {
 		at, ok := w.Deadline()
@@ -114,7 +115,7 @@ func ExampleWakeup() {
 // ExampleNewResponder_configError shows the error of a config field out of
 // range.
 func ExampleNewResponder_configError() {
-	_, err := csbk.NewResponder(&csbk.ResponderConfig{})
+	_, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1})
 	var ce *dmrgo.ConfigError
 	if errors.As(err, &ce) {
 		fmt.Println(ce.Field)

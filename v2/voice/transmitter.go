@@ -47,7 +47,7 @@ type TransmitterConfig struct {
 	// ColorCode is the color code of the slot types and EMBs.
 	ColorCode enums.ColorCode
 	// Slot is the TDMA slot of the machine, which it puts in the Hint of
-	// each burst it sends. SlotUnknown leaves it unknown.
+	// each burst it sends. It must be Slot1 or Slot2.
 	Slot enums.Slot
 	// Source selects the SYNC patterns: layer2.SyncSourceBS, the zero
 	// value, for a repeater outbound, layer2.SyncSourceMS for a radio.
@@ -338,7 +338,8 @@ type Transmitter struct {
 
 // NewTransmitter returns a Transmitter for cfg. A nil cfg means the zero
 // TransmitterConfig. It returns a *dmrgo.ConfigError for a field out of
-// range. It allocates the Transmitter and its queue, 72 bytes for each slot.
+// range, and for a Slot other than Slot1 or Slot2, so also for a nil cfg.
+// It allocates the Transmitter and its queue, 72 bytes for each slot.
 func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	var conf TransmitterConfig
 	if cfg != nil {
@@ -374,7 +375,7 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	switch _, _, ok := cfg.Source.SyncPatterns(); {
 	case cfg.ColorCode > 15:
 		return nil, errColorCode
-	case cfg.Slot > enums.Slot2:
+	case cfg.Slot != enums.Slot1 && cfg.Slot != enums.Slot2:
 		return nil, errSlot
 	case cfg.Access > enums.AccessImpolite:
 		return nil, errAccess

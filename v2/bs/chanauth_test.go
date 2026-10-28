@@ -287,7 +287,7 @@ func TestChanAuthWithTransmitter(t *testing.T) {
 	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1})
 	start := 1500 * time.Millisecond
 	d.until(start)
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), ChanAuth: constants.TMSChanAuth, Queue: 3 * 12})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), ChanAuth: constants.TMSChanAuth, Queue: 3 * 12})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,6 +15,9 @@ import (
 
 func newInterrupter(t *testing.T, cfg *voice.InterrupterConfig) *voice.Interrupter {
 	t.Helper()
+	if cfg == nil {
+		cfg = &voice.InterrupterConfig{Slot: enums.Slot1}
+	}
 	i, err := voice.NewInterrupter(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -27,8 +30,8 @@ func TestInterrupter_StopsTransmitter(t *testing.T) {
 	t.Parallel()
 
 	for _, cmd := range []enums.RCCommand{enums.RCCeaseTransmissionCommand, enums.RCCeaseTransmissionRequest} {
-		tx := newTransmitter(t, &voice.TransmitterConfig{ColorCode: 4, Source: layer2.SyncSourceDirectTS1, Silence: vocoder.AMBESilenceSlot(), Interruptible: true, Queue: 3 * 30})
-		in := newInterrupter(t, &voice.InterrupterConfig{ColorCode: 4})
+		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 4, Source: layer2.SyncSourceDirectTS1, Silence: vocoder.AMBESilenceSlot(), Interruptible: true, Queue: 3 * 30})
+		in := newInterrupter(t, &voice.InterrupterConfig{Slot: enums.Slot1, ColorCode: 4})
 		if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 1}, nil); err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +81,7 @@ func TestInterrupter_StopsTransmitter(t *testing.T) {
 func TestInterrupter_Retries(t *testing.T) {
 	t.Parallel()
 
-	in := newInterrupter(t, &voice.InterrupterConfig{Retries: 2, Repeats: 2})
+	in := newInterrupter(t, &voice.InterrupterConfig{Slot: enums.Slot1, Retries: 2, Repeats: 2})
 	if err := in.Interrupt(time.Second, enums.RCCeaseTransmissionRequest); err != nil {
 		t.Fatal(err)
 	}
@@ -121,8 +124,8 @@ func TestInterrupter_DefaultRetries(t *testing.T) {
 		end  time.Duration
 	}{
 		{nil, []time.Duration{0, 600 * ms}, 1200 * ms},
-		{&voice.InterrupterConfig{Retries: -1}, []time.Duration{0}, 600 * ms},
-		{&voice.InterrupterConfig{Retries: 2}, []time.Duration{0, 600 * ms, 1200 * ms}, 1800 * ms},
+		{&voice.InterrupterConfig{Slot: enums.Slot1, Retries: -1}, []time.Duration{0}, 600 * ms},
+		{&voice.InterrupterConfig{Slot: enums.Slot1, Retries: 2}, []time.Duration{0, 600 * ms, 1200 * ms}, 1800 * ms},
 	} {
 		in := newInterrupter(t, c.cfg)
 		if err := in.Interrupt(0, enums.RCCeaseTransmissionRequest); err != nil {
@@ -158,7 +161,7 @@ func TestInterrupter_DefaultRetries(t *testing.T) {
 func TestInterrupter_RCPI(t *testing.T) {
 	t.Parallel()
 
-	in := newInterrupter(t, &voice.InterrupterConfig{ColorCode: 3})
+	in := newInterrupter(t, &voice.InterrupterConfig{Slot: enums.Slot1, ColorCode: 3})
 	if err := in.Interrupt(0, enums.RCCeaseTransmissionRequest); err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +188,7 @@ func TestInterrupter_RCPI(t *testing.T) {
 func TestInterrupter_States(t *testing.T) {
 	t.Parallel()
 
-	for _, cfg := range []voice.InterrupterConfig{{ColorCode: 16}, {Retries: voice.MaxRetries + 1}, {Repeats: voice.MaxRepeats + 1}, {Repeats: -1}, {Lead: -1}} {
+	for _, cfg := range []voice.InterrupterConfig{{Slot: enums.Slot1, ColorCode: 16}, {Slot: enums.Slot1, Retries: voice.MaxRetries + 1}, {Slot: enums.Slot1, Repeats: voice.MaxRepeats + 1}, {Slot: enums.Slot1, Repeats: -1}, {Slot: enums.Slot1, Lead: -1}} {
 		if _, err := voice.NewInterrupter(&cfg); err == nil {
 			t.Errorf("%+v: no error", cfg)
 		}
@@ -216,7 +219,7 @@ func TestInterrupter_States(t *testing.T) {
 	if out := in.Cancel(800*time.Millisecond, nil); len(out) != 0 {
 		t.Fatalf("Cancel when idle: %+v", out)
 	}
-	wait := newInterrupter(t, &voice.InterrupterConfig{Wait: -1})
+	wait := newInterrupter(t, &voice.InterrupterConfig{Slot: enums.Slot1, Wait: -1})
 	_ = wait.Interrupt(0, enums.RCCeaseTransmissionCommand)
 	_ = wait.Tick(0, nil)
 	if _, ok := wait.Deadline(); ok || wait.State() != voice.InterrupterWaiting {
@@ -249,7 +252,7 @@ func TestInterrupter_States(t *testing.T) {
 
 func transmissionEnd(t *testing.T) layer2.RawBurst {
 	t.Helper()
-	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +265,7 @@ func TestInterrupter_Lead(t *testing.T) {
 	t.Parallel()
 
 	const lead = 20 * time.Millisecond
-	i, err := voice.NewInterrupter(&voice.InterrupterConfig{Lead: lead, Retries: -1})
+	i, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1, Lead: lead, Retries: -1})
 	if err != nil {
 		t.Fatal(err)
 	}

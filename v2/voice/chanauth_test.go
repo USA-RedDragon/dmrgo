@@ -64,7 +64,7 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 	other, _, _ := outbound(t, 3120006)
 	ms := time.Millisecond
 
-	tx := authTransmitter(t, voice.TransmitterConfig{})
+	tx := authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1})
 	tx.Burst(1030*ms, &idle, layer2.Hint{}, nil)
 	tx.Burst(1090*ms, &own, layer2.Hint{}, nil)
 	if tx.State() != voice.TransmitterHeader {
@@ -76,13 +76,13 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 		t.Fatalf("outputs %s, due %v", shape(out), out[0].Due)
 	}
 
-	tx = authTransmitter(t, voice.TransmitterConfig{})
+	tx = authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1})
 	out = tx.Burst(1090*ms, &other, layer2.Hint{}, nil)
 	if len(out) != 1 || out[0].Kind != voice.OutputEnded || out[0].Reason != voice.EndDenied || tx.State() != voice.TransmitterIdle || tx.Room() != voice.DefaultQueue {
 		t.Fatalf("other ChanAuth PDU: %+v", out)
 	}
 
-	tx = authTransmitter(t, voice.TransmitterConfig{HoldoffMax: 500 * ms, ChanAuth: 360 * ms, Seed: 4})
+	tx = authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1, HoldoffMax: 500 * ms, ChanAuth: 360 * ms, Seed: 4})
 	tx.Burst(1030*ms, &ownTerm, layer2.Hint{}, nil)
 	if out := tx.Tick(1360*ms, nil); len(out) != 0 || tx.State() != voice.TransmitterChanAuth {
 		t.Fatalf("expiry in hang time: %+v %v", out, tx.State())
@@ -98,7 +98,7 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 		t.Fatalf("expiry without hang time: %+v %v", out, tx.State())
 	}
 
-	tx = authTransmitter(t, voice.TransmitterConfig{HoldoffMax: -1})
+	tx = authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1, HoldoffMax: -1})
 	tx.Burst(1030*ms, &idle, layer2.Hint{}, nil)
 	tx.Tick(1180*ms, nil)
 	if d, _ := tx.Deadline(); d != 1180*ms || tx.State() != voice.TransmitterChanAuth {
@@ -115,7 +115,7 @@ func TestTransmitter_ChanAuthOutbound(t *testing.T) {
 	t.Parallel()
 
 	ms := time.Millisecond
-	tx := authTransmitter(t, voice.TransmitterConfig{HoldoffMax: -1})
+	tx := authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1, HoldoffMax: -1})
 	out := tx.Tick(1180*ms, nil)
 	if len(out) != 1 || out[0].Kind != voice.OutputEnded || out[0].Reason != voice.EndNoOutbound || tx.State() != voice.TransmitterIdle || tx.Room() != voice.DefaultQueue {
 		t.Fatalf("silent outbound: %+v %v", out, tx.State())
@@ -139,7 +139,7 @@ func TestTransmitter_ChanAuthOutbound(t *testing.T) {
 	}
 	junk := layer2.RawBurst{}
 	for name, b := range map[string]layer2.RawBurst{"voice": voiceBursts[0], "PI header": pi, "undecodable": junk} {
-		tx := authTransmitter(t, voice.TransmitterConfig{HoldoffMax: -1})
+		tx := authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1, HoldoffMax: -1})
 		tx.Burst(1030*ms, &b, layer2.Hint{}, nil)
 		if out := tx.Tick(1180*ms, nil); len(out) != 0 || tx.State() != voice.TransmitterChanAuth {
 			t.Fatalf("%s: %+v %v", name, out, tx.State())
@@ -158,10 +158,10 @@ func TestTransmitter_ChanAuthSkipped(t *testing.T) {
 		cfg  voice.TransmitterConfig
 		opts *voice.CallOptions
 	}{
-		{name: "impolite", cfg: voice.TransmitterConfig{ChanAuth: constants.TMSChanAuth, Access: enums.AccessImpolite}, opts: &voice.CallOptions{HangTime: true}},
-		{name: "not in hang time", cfg: voice.TransmitterConfig{ChanAuth: constants.TMSChanAuth}, opts: &voice.CallOptions{}},
-		{name: "no options", cfg: voice.TransmitterConfig{ChanAuth: constants.TMSChanAuth}},
-		{name: "off", opts: &voice.CallOptions{HangTime: true}},
+		{name: "impolite", cfg: voice.TransmitterConfig{Slot: enums.Slot1, ChanAuth: constants.TMSChanAuth, Access: enums.AccessImpolite}, opts: &voice.CallOptions{HangTime: true}},
+		{name: "not in hang time", cfg: voice.TransmitterConfig{Slot: enums.Slot1, ChanAuth: constants.TMSChanAuth}, opts: &voice.CallOptions{}},
+		{name: "no options", cfg: voice.TransmitterConfig{Slot: enums.Slot1, ChanAuth: constants.TMSChanAuth}},
+		{name: "off", cfg: voice.TransmitterConfig{Slot: enums.Slot1}, opts: &voice.CallOptions{HangTime: true}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestTransmitter_ChanAuthSkipped(t *testing.T) {
 			}
 		})
 	}
-	if _, err := voice.NewTransmitter(&voice.TransmitterConfig{ChanAuth: -1}); err == nil {
+	if _, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ChanAuth: -1}); err == nil {
 		t.Fatal("NewTransmitter took a negative ChanAuth")
 	}
 	if voice.TransmitterChanAuth.String() != "ChanAuth" {

@@ -56,7 +56,7 @@ func TestSenderResendAfterResponseSendsOnePreamble(t *testing.T) {
 		{"SACK, busy after the hang time", response(t, packet.ResponseSACK, &rd), time.Second, data.DefaultPreambles},
 		{"no response", nil, 0, data.DefaultPreambles},
 	} {
-		s := newSender(t, &data.SenderConfig{Retries: 2, Holdoff: -1})
+		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Retries: 2, Holdoff: -1})
 		if err := s.Send(0, message(t, 30)); err != nil {
 			t.Fatal(err)
 		}

@@ -33,7 +33,7 @@ func captureMessage(t *testing.T, c *dataCapture) (*privacy.Transmitter, *data.M
 
 func sendCapture(t *testing.T, m *data.Message) []layer2.RawBurst {
 	t.Helper()
-	s, err := data.NewSender(&data.SenderConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Preambles: -1})
+	s, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS, Preambles: -1})
 	if err != nil {
 		t.Fatal(err)
 	}

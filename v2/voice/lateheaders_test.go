@@ -11,7 +11,7 @@ import (
 
 func relayStart(t *testing.T, headers int, origin voice.Origin) (n int, due time.Duration) {
 	t.Helper()
-	tx := newTransmitter(t, &voice.TransmitterConfig{Headers: headers})
+	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Headers: headers})
 	c := rcall()
 	c.Origin = origin
 	if err := tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c}); err != nil {

@@ -287,9 +287,9 @@ func bsABI(seed uint64) error {
 func csbkABI(seed uint64) error {
 	h := newHarness(seed)
 	defer h.free()
-	qcfg := csbk.RequesterConfig{ColorCode: 7, Source: layer2.SyncSourceMS, HoldoffMax: 200 * time.Millisecond}
-	rcfg := csbk.ResponderConfig{Address: 3120002, ColorCode: 7}
-	wcfg := csbk.WakeupConfig{ColorCode: 7}
+	qcfg := csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, HoldoffMax: 200 * time.Millisecond}
+	rcfg := csbk.ResponderConfig{Slot: enums.Slot1, Address: 3120002, ColorCode: 7}
+	wcfg := csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7}
 	gq, err := csbk.NewRequester(&qcfg)
 	if err != nil {
 		return err

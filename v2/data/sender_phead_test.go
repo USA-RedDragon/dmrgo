@@ -22,7 +22,7 @@ func TestSenderProprietaryUnconfirmed(t *testing.T) {
 		SAP: enums.SAPProprietaryPacketData, LLIDDestination: dstID, LLIDSource: srcID})
 	prop := testProp
 	m := &data.Message{Header: u, Proprietary: &prop, Payload: payload(40)}
-	s := newSender(t, &data.SenderConfig{Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
 	if err := s.Send(0, m); err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestSenderProprietaryConfirmed(t *testing.T) {
 	} {
 		l := &link{
 			t:    t,
-			tx:   newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
+			tx:   newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
 			rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 			drop: c.drop,
 		}
@@ -121,7 +121,7 @@ func TestSenderProprietaryConfirmed(t *testing.T) {
 
 func TestSenderProprietaryLimits(t *testing.T) {
 	t.Parallel()
-	s := newSender(t, &data.SenderConfig{Preambles: -1})
+	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1})
 	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPProprietaryPacketData, LLIDDestination: dstID, LLIDSource: srcID})
 	prop := testProp

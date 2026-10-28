@@ -98,7 +98,7 @@ func (d *txDecoder) next() (txOp, bool) {
 func checkTxScript(t *testing.T, in *txInput, p []layer2.RawBurst, msgs []*data.Message) {
 	t.Helper()
 	c0, c1, c2 := in.c0, in.c1, in.c2
-	s, err := data.NewSender(&data.SenderConfig{
+	s, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1,
 		Window: int(c2 % 10),
 		Access: enums.Access(c0 & 3), Preambles: int(c0 >> 2 & 7), Retries: int(c1 & 7),
 		Resync: c0&0x20 != 0, Seed: uint64(c1), Holdoff: time.Duration(c1>>3) * 50 * time.Millisecond,

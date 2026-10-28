@@ -42,7 +42,7 @@ func TestReceiver_NilBurst(t *testing.T) {
 func TestTransmitter_NilBurst(t *testing.T) {
 	t.Parallel()
 
-	tx := authTransmitter(t, voice.TransmitterConfig{})
+	tx := authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1})
 	if out := tx.Burst(time.Second+time.Millisecond, nil, layer2.Hint{Slot: enums.Slot1}, nil); len(out) != 0 || tx.State() != voice.TransmitterChanAuth {
 		t.Fatalf("nil burst: %+v, state %v", out, tx.State())
 	}
@@ -55,7 +55,7 @@ func TestTransmitter_NilBurst(t *testing.T) {
 func TestInterrupter_NilBurst(t *testing.T) {
 	t.Parallel()
 
-	i, err := voice.NewInterrupter(nil)
+	i, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1})
 	if err != nil {
 		t.Fatal(err)
 	}

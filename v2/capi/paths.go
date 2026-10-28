@@ -237,6 +237,7 @@ func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, err
 	cfg.color_code = 1
 	cfg.source = C.DMRGO_LAYER2_SYNC_SOURCE_MS
 	cfg.queue = 192
+	cfg.slot = C.DMRGO_ENUMS_SLOT1
 	var tx *C.dmrgo_voice_transmitter_t
 	if err := check(dmrgo_voice_new_transmitter(cfg, &tx)); err != nil {
 		return nil, 0, err

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -20,7 +21,7 @@ func onAnswerGrid(t0, due time.Duration) bool {
 
 func requestAt(t *testing.T, t0 time.Duration) layer2.RawBurst {
 	t.Helper()
-	q := mustRequester(t, &csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS})
+	q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
 	if err := q.RequestOACSU(t0, 1002, 1001, layer3.ServiceOptions{}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +44,7 @@ func TestResponder_AnswerSlotGrid(t *testing.T) {
 		{60 * ms, t0 + 60*ms},
 		{70 * ms, t0 + 120*ms},
 	} {
-		r := mustResponder(t, &csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, Lead: tt.lead})
+		r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, Lead: tt.lead})
 		req := requestAt(t, t0)
 		r.Burst(t0, &req, layer2.Hint{}, nil)
 		at, ok := r.Deadline()
@@ -64,7 +65,7 @@ func TestResponder_AnswerSlotGrid(t *testing.T) {
 func TestResponder_PoliteAnswerSlotGrid(t *testing.T) {
 	t.Parallel()
 	t0 := time.Second
-	r := mustResponder(t, &csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
 	r.Channel(0, true)
 	req := requestAt(t, t0)
 	r.Burst(t0, &req, layer2.Hint{}, nil)
@@ -76,7 +77,7 @@ func TestResponder_PoliteAnswerSlotGrid(t *testing.T) {
 	}
 
 	for seed := range uint64(8) {
-		r := mustResponder(t, &csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, OACSU: csbk.OACSUNotSupported, Seed: seed})
+		r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, OACSU: csbk.OACSUNotSupported, Seed: seed})
 		r.Channel(0, true)
 		r.Burst(t0, &req, layer2.Hint{}, nil)
 		var due time.Duration
@@ -118,7 +119,7 @@ func TestResponder_OffsetAnswerSlotGrid(t *testing.T) {
 		{0, t0 + 75*ms, t0 + 90*ms},
 		{0, t0 + 100*ms, t0 + 150*ms},
 	} {
-		r := mustResponder(t, &csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, Lead: tt.lead, Offset: true})
+		r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, Lead: tt.lead, Offset: true})
 		if tt.idle != 0 {
 			r.Channel(0, true)
 		}

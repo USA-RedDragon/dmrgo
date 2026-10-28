@@ -114,7 +114,7 @@ func newPool(t testing.TB) *pool {
 		weak = append(weak, in.raw)
 	}
 	add(weak)
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Headers: 2})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Headers: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func parseScript(in *rxInput, p *pool) script {
 	}
 	s.cfg.Lost = configTime(flags>>2, in.lost)
 	s.cfg.Hang = configTime(flags>>4, in.hang)
-	s.txCfg = voice.TransmitterConfig{ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 6),
+	s.txCfg = voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 6),
 		Silence: vocoder.AMBESilenceSlot(), Timeout: 10 * time.Second, Queue: voice.MaxQueue}
 
 	r := byteReader{data: in.ops[:min(len(in.ops), maxScript)]}
@@ -623,7 +623,7 @@ func parseRoundTrip(in *rtInput) roundTrip {
 		Source:  in.source & 0xFFFFFF,
 		Options: layer3.DecodeServiceOptions([1]byte{so}),
 	}
-	rt.cfg = voice.TransmitterConfig{ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 5 & 3),
+	rt.cfg = voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 5 & 3),
 		Silence: vocoder.AMBESilenceSlot(), Headers: int(headers%voice.MaxHeaders) + 1, Terminators: int(terms%4) + 1,
 		Queue: voice.MaxQueue}
 	if flags&2 != 0 {
@@ -811,7 +811,7 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 	loose, first, started := false, true, false
 	header, anchored := false, false
 	var last time.Duration
-	relay := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Queue: voice.MaxQueue})
+	relay := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Queue: voice.MaxQueue})
 	outs := make([]voice.Output, 0, voice.MaxOutputs)
 	tick := func(until time.Duration) {
 		for at, ok := relay.Deadline(); ok && at <= until; at, ok = relay.Deadline() {

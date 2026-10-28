@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 // ETSI TS 102 361-1 clause 5.2.2.3 and ETSI TS 102 361-2 clause 5.1.2.2
 func TestPoliteBusyHoldsOff(t *testing.T) {
 	t.Parallel()
 	for seed := range uint64(20) {
-		q := mustRequester(t, &csbk.RequesterConfig{Seed: seed})
+		q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, Seed: seed})
 		q.Channel(0, true)
 		if err := q.RequestCallAlert(0, 2, 1, nil); err != nil {
 			t.Fatal(err)
@@ -43,7 +44,7 @@ func TestRequesterBusyDeadlineAdvances(t *testing.T) {
 		{name: "default", idle: 0, hold: 0},
 		{name: "no wait, time critical", idle: -1, hold: -1, timeCritical: true},
 	} {
-		q := mustRequester(t, &csbk.RequesterConfig{IdleSearch: c.idle, HoldoffMax: c.hold, Seed: 3})
+		q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, IdleSearch: c.idle, HoldoffMax: c.hold, Seed: 3})
 		q.Channel(0, true)
 		if err := q.RequestCallAlert(time.Second, 2, 1, &csbk.RequestOptions{TimeCritical: c.timeCritical}); err != nil {
 			t.Fatal(err)

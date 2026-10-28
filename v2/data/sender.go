@@ -106,7 +106,7 @@ type SenderConfig struct {
 	// off for the same times, so give each radio its own seed.
 	Seed uint64
 	// Slot is the TDMA slot of the Sender, which it puts in the Hint of
-	// each burst it sends. SlotUnknown leaves it unknown.
+	// each burst it sends. It must be Slot1 or Slot2.
 	Slot enums.Slot
 	// Lead makes Tick emit a burst this long before its Due time, so that
 	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
@@ -342,10 +342,10 @@ type Sender struct {
 // NewSender returns a Sender for cfg. A nil cfg means the zero
 // SenderConfig. It returns a *dmrgo.ConfigError for a color code above 15, an
 // unknown Source or Access, a Preambles, Retries, MaxBlocks, Peers or
-// Window out of range, a negative Lead, or a Slot other than SlotUnknown,
-// Slot1 or Slot2. It allocates the Sender, a packet.Builder for each
-// message of the window, its packet.Assembler, its table of links and its
-// Burst.
+// Window out of range, a negative Lead, or a Slot other than Slot1 or
+// Slot2, so also for a nil cfg. It allocates the Sender, a packet.Builder
+// for each message of the window, its packet.Assembler, its table of links
+// and its Burst.
 func NewSender(cfg *SenderConfig) (*Sender, error) {
 	var conf SenderConfig
 	if cfg != nil {
@@ -364,7 +364,7 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 	if cfg.Lead < 0 {
 		return nil, errLead
 	}
-	if cfg.Slot != enums.SlotUnknown && cfg.Slot != enums.Slot1 && cfg.Slot != enums.Slot2 {
+	if cfg.Slot != enums.Slot1 && cfg.Slot != enums.Slot2 {
 		return nil, errSlot
 	}
 	preambles := cfg.Preambles

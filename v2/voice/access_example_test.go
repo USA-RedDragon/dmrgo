@@ -14,7 +14,7 @@ import (
 // call waits while the channel is busy, starts when it becomes idle, and is
 // denied when the channel stays busy too long.
 func ExampleTransmitter_Channel() {
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessPoliteOwnCC})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessPoliteOwnCC})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -54,12 +54,12 @@ func ExampleTransmitter_Channel() {
 // ExampleInterrupter sends a Cease Transmission command on the
 // reverse channel and ends the call of a transmitter that obeys it.
 func ExampleInterrupter() {
-	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Source: layer2.SyncSourceDirectTS1})
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Source: layer2.SyncSourceDirectTS1})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	in, err := voice.NewInterrupter(nil)
+	in, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1})
 	if err != nil {
 		fmt.Println(err)
 		return

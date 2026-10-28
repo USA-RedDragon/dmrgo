@@ -78,7 +78,7 @@ type ResponderConfig struct {
 	// for a repeater outbound, layer2.SyncSourceMS for a radio.
 	Source layer2.SyncSource
 	// Slot is the TDMA slot of the machine, which it puts in the Hint of
-	// each burst it sends. SlotUnknown leaves it unknown.
+	// each burst it sends. It must be Slot1 or Slot2.
 	Slot enums.Slot
 	// Access is the channel access policy of the answers. The zero value
 	// is polite to own color code.
@@ -151,7 +151,7 @@ type Responder struct {
 // NewResponder returns a Responder for cfg. It returns a *dmrgo.ConfigError
 // for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an
 // unknown Source, Access or OACSU, a negative Lead, or a Slot other than
-// SlotUnknown, Slot1 or Slot2. It allocates the Responder, and its Burst
+// Slot1 or Slot2. It allocates the Responder, and its Burst
 // unless cfg.Scratch is set.
 func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 	switch {

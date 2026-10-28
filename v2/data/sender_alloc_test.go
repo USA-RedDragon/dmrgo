@@ -12,7 +12,7 @@ import (
 )
 
 func TestAllocsSenderLoopback(t *testing.T) {
-	tx := newSender(t, &data.SenderConfig{Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
+	tx := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	m := message(t, 60)
 	out := make([]data.Output, 0, data.MaxOutputs)
@@ -60,7 +60,7 @@ func TestAllocsSenderLoopback(t *testing.T) {
 }
 
 func TestAllocsSenderWindow(t *testing.T) {
-	tx := newSender(t, &data.SenderConfig{Preambles: -1, Window: 3})
+	tx := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: 3})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	msgs := windowMessages(t, 3, 60)
 	out := make([]data.Output, 0, data.MaxOutputs)
@@ -126,7 +126,7 @@ func TestAllocsSenderCorpus(t *testing.T) {
 }
 
 func TestAllocsSenderProprietary(t *testing.T) {
-	tx := newSender(t, &data.SenderConfig{Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
+	tx := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	prop := testProp
 	m := message(t, 60)
