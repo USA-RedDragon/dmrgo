@@ -84,6 +84,9 @@ func levelUnits(full bool) []txUnit {
 				u := k
 				u.level = l
 				lo, hi := u.offsetRange()
+				if lo > hi {
+					continue
+				}
 				for _, o := range []int{0, lo, hi} {
 					u.offset = o
 					out = append(out, u)

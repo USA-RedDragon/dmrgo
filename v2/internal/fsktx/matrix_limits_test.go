@@ -37,6 +37,10 @@ func TestTxMatrixLimitsAudio(t *testing.T) {
 					u.tier = Tier1
 				}
 				lo, hi := u.offsetRange()
+				if lo > hi {
+					audio = append(audio, audioCase{AudioConfig{Hz: hz, Tier: tier, Level: l}, l == 0})
+					continue
+				}
 				audio = append(audio,
 					audioCase{AudioConfig{Hz: hz, Tier: tier, Level: l, Offset: lo}, true},
 					audioCase{AudioConfig{Hz: hz, Tier: tier, Level: l, Offset: hi}, true},

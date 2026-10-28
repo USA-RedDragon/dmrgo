@@ -175,10 +175,18 @@ type AudioConfig struct {
 	// Level is the output for a run of symbol +3, 1944 Hz of deviation,
 	// from 1 to 16000; 0 means 15000. Offset is added to each sample, as an
 	// unsigned DAC needs. The worst run of symbols reaches up to 1.96 times
-	// Level from Offset, which must fit int16. A 12-bit DAC takes Level
-	// 1040 and Offset 2048 at any tier.
+	// Level from Offset, which must fit int16. The measured design of
+	// Tier1 and Tier2 counts its corrections in that bound too, up to 2.12
+	// times Level, so it takes Level up to about 15400 at Offset 0. A
+	// 12-bit DAC takes Level 1040 and Offset 2048 at any tier.
 	Level, Offset int
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
+	// With every field of the design of the pulse at its zero value, from
+	// Exact to Rates other than PreEmphasisHz and Droop, Tier1 and Tier2
+	// take the measured design of the tier at Hz from 24000: Exact with
+	// ExactPow 0.5 over a fitted pulse of eight symbols on each side,
+	// Shape 2 with zeros at 7 and 21 kHz, Corr 6 with CorrHiHz 12000 and
+	// Corr48k, ShapeSync 3 and Boost 0.009 over 48 pairs.
 	Tier Tier
 	// Exact makes the pulse of Tier1 and Tier2 a Nyquist pulse after a
 	// receive root-raised-cosine filter, with the gain of a run of one
@@ -251,7 +259,7 @@ type AudioConfig struct {
 	// the deviation test pattern, by Boost: each symbol adds Boost times
 	// the sum of the symbols 2m before it, m from 1 to BoostPairs (even,
 	// at most 48), with the sign of (-1)^m, over BoostPairs. The sum has
-	// no gain at 0 and 2400 Hz.
+	// no gain at 0 and 2400 Hz. A symbol 0 restarts the sum.
 	Boost      float64
 	BoostPairs int
 	// Rates is the per-rate design of Tier1 and Tier2: the entry whose Hz
@@ -380,6 +388,13 @@ type Audio struct {
 	de     [3]float64
 	dx, dy float64
 	dr     droop
+	peak   float64
+	slack  float64
+}
+
+func (a *Audio) bounds() (lo, hi float64) {
+	x := a.peak*a.scale + a.slack
+	return a.offset - x, a.offset + x
 }
 
 type droop struct {
@@ -447,6 +462,9 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		return a, nil
 	case TierDefault, Tier1, Tier2:
+		if cfg.Hz >= tierDesignHz && cfg.designZero() {
+			cfg.tierDesign()
+		}
 		var extra []float64
 		for _, r := range cfg.Rates {
 			if r.Hz == cfg.Hz {
@@ -471,15 +489,14 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			return nil, err
 		}
 		k.add(extra)
-		if x := k.peak * a.scale; a.offset+x > math.MaxInt16 || a.offset-x < math.MinInt16 {
-			return nil, errOffset
-		}
 		a.k = k
 		if cfg.Level >= cfg.CarrierMinLevel {
 			a.offset += cfg.CarrierHz * a.scale
 		}
+		a.peak = k.peak
 		if m := cfg.BoostPairs; cfg.Boost != 0 && m > 0 && m <= maxBoostPairs && m%2 == 0 {
 			a.bpairs, a.boost = m, cfg.Boost/float64(m)
+			a.peak *= 1 + math.Abs(cfg.Boost)
 		}
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
@@ -518,6 +535,14 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				taps = min((taps*cfg.Hz/48000)/2*2+1, len(a.cc)-1)
 				a.corr, a.corrC, a.corrK = t, cfg.Corr, skip+max(pu.span-corrSpan, 0)
 				a.cbp = corrBandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), fitHz, taps)
+				var cm, g float64
+				for _, v := range t {
+					cm = max(cm, math.Abs(float64(v)))
+				}
+				for _, v := range a.cbp {
+					g += math.Abs(v)
+				}
+				a.peak += cm / corrUnits * g
 			}
 		}
 		if z, p := cfg.PreEmphasisHz[0], cfg.PreEmphasisHz[1]; z > 0 || p > 0 {
@@ -531,6 +556,18 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
+		}
+		if a.shape > 0 {
+			a.slack = 0.5
+			for _, f := range a.fb[:2*a.shape] {
+				a.slack += 0.5 * math.Abs(f)
+			}
+			for _, f := range a.fbp[:2*a.shape] {
+				a.slack += 0.5 * math.Abs(f)
+			}
+		}
+		if lo, hi := a.bounds(); hi > math.MaxInt16 || lo < math.MinInt16 {
+			return nil, errOffset
 		}
 		if d := cfg.Droop; d != (DroopConfig{}) {
 			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1 && d.Floor >= 0) {
@@ -553,7 +590,8 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 // modulation, and appends the samples of the symbol period that it
 // completes to dst. A symbol other than these counts as 0. The output lags
 // the symbols by the half-length of the pulse: 8 symbol periods at 24 kHz
-// and 6 at 48 kHz for Tier0, 8 for Tier1 and 16 for Tier2. Twice that many
+// and 6 at 48 kHz for Tier0, 8 for Tier1 and Tier2 with the measured
+// design of the tier, else 8 for Tier1 and 16 for Tier2. Twice that many
 // symbols 0 after the last bring its tail to rest. It allocates only to
 // grow dst.
 func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
@@ -844,6 +882,11 @@ type IQConfig struct {
 	// means 1 ms.
 	RampSeconds float64
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
+	// With every field of the design of the pulse at its zero value, from
+	// Exact to Rotate other than Amplitude, Tier1 and Tier2 take the
+	// measured design of the tier: Exact, the pulse of ShapePred with a
+	// Gain of 1.0095 for Tier1 and 1.0058 for Tier2, ShapePred with
+	// PredKern 3, and Rotate.
 	Tier Tier
 	// Exact makes the pulse of Tier1 and Tier2 a Nyquist pulse after a
 	// receive root-raised-cosine filter, with the gain of a run of one
@@ -1000,6 +1043,9 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	case TierDefault, Tier1, Tier2:
 	default:
 		return nil, errTier
+	}
+	if cfg.designZero() {
+		cfg.tierDesign()
 	}
 	pu := pulseOf(cfg.Tier, cfg.Pulse)
 	if cfg.Exact {
@@ -1283,6 +1329,10 @@ func (a *Audio) boosted(s int8) float64 {
 	case -3, -1, 1, 3:
 	default:
 		s = 0
+	}
+	if s == 0 {
+		a.bst, a.bacc, a.bpos, a.bpar = [2 * maxBoostPairs]int8{}, [2]int{}, 0, 0
+		return 0
 	}
 	p := a.bpar
 	u := a.bacc[p]

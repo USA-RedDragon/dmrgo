@@ -157,11 +157,38 @@ func (u txUnit) lag() int {
 		return Table24k().Span()
 	case u.mcu || u.tier == Tier0:
 		return iqSpan
-	case u.tier == Tier2:
-		return 16
-	default:
-		return 8
 	}
+	switch m := u.designMod().(type) {
+	case audioMod:
+		return m.a.lag()
+	case *iqMod:
+		return m.q.k.n/2 + m.q.dn
+	}
+	return 8
+}
+
+func (u txUnit) designMod() txMod {
+	v := u
+	if v.audio() {
+		v.level, v.offset = tableUnits, 0
+	} else {
+		v.offHz, v.ramp = 0, max(1, v.rate/1000)
+	}
+	m, err := v.mod()
+	if err != nil {
+		return nil
+	}
+	return m
+}
+
+func (u txUnit) linear() bool {
+	switch m := u.designMod().(type) {
+	case audioMod:
+		return m.a.corr == nil && m.a.shape == 0 && m.a.bpairs == 0
+	case *iqMod:
+		return m.q.pred == nil
+	}
+	return true
 }
 
 func (u txUnit) amplitude() float64 {
@@ -193,19 +220,40 @@ func (u txUnit) peakHz() float64 {
 	case u.mcu || u.tier == Tier0:
 		return 3 * tapsIQPeak * 3 * DeviationHz / tableUnits
 	}
-	hz := u.rate
-	if !u.audio() {
-		hz = iqShaperHz
+	switch m := u.designMod().(type) {
+	case audioMod:
+		return m.a.peak
+	case *iqMod:
+		return m.q.k.peak + predBound(m.q.pred)
 	}
-	span := 8
-	if u.tier == Tier2 {
-		span = 16
+	return 0
+}
+
+func predBound(p *predictor) float64 {
+	if p == nil {
+		return 0
 	}
-	k, err := newPoly(pulse{span: span}, hz, u.tier != Tier2)
-	if err != nil {
-		panic(err)
+	var a [predK]float64
+	for t := range a {
+		if p.kc != nil {
+			for _, v := range p.kc[t] {
+				a[t] += math.Abs(v)
+			}
+		} else {
+			for _, v := range p.kern[t] {
+				a[t] += math.Abs(v)
+			}
+		}
 	}
-	return k.peak
+	var b float64
+	for ph := range predSPS {
+		var s float64
+		for t := ph; t < predK; t += predSPS {
+			s += a[t]
+		}
+		b = max(b, s)
+	}
+	return 2 * b * p.gain * iqShaperHz / (2 * math.Pi)
 }
 
 func (u txUnit) audioBounds() (lo, hi float64) {
@@ -217,8 +265,19 @@ func (u txUnit) audioBounds() (lo, hi float64) {
 		lo, hi := t.bounds(int32((u.level<<15 + tableUnits/2) / tableUnits))
 		return float64(lo + u.offset), float64(hi + u.offset)
 	}
+	if m, ok := u.mustDesign().(audioMod); ok {
+		return m.a.bounds()
+	}
 	x := u.peakHz() * float64(u.level) / (3 * DeviationHz)
 	return float64(u.offset) - x, float64(u.offset) + x
+}
+
+func (u txUnit) mustDesign() txMod {
+	m, err := u.mod()
+	if err != nil {
+		return nil
+	}
+	return m
 }
 
 type keying struct {
@@ -395,20 +454,26 @@ func (u txUnit) worst() (w []int8, ph, l, m int) {
 		}
 		l = len(tapsIQ)
 	default:
-		hz := u.rate
-		if !u.audio() {
-			hz = iqShaperHz
+		var k *poly
+		switch d := u.designMod().(type) {
+		case audioMod:
+			k = d.a.k
+		case *iqMod:
+			k = d.q.k
 		}
-		span := 8
-		if u.tier == Tier2 {
-			span = 16
-		}
-		k, err := newPoly(pulse{span: span}, hz, false)
-		if err != nil {
-			panic(err)
+		if k == nil {
+			return nil, 0, 1, 1
 		}
 		for p := range k.l {
-			taps = append(taps, k.taps64[p*k.n:p*k.n+k.n])
+			row := make([]float64, k.n)
+			for i := range row {
+				if k.taps64 != nil {
+					row[i] = k.taps64[p*k.n+i]
+				} else {
+					row[i] = float64(k.taps32[p*k.n+i])
+				}
+			}
+			taps = append(taps, row)
 		}
 		l, m = k.l, k.m
 	}
@@ -496,4 +561,14 @@ func checkExact(t *testing.T, name string, sc rawScore, miss int) {
 	if sc.bursts == 0 || sc.exact < sc.bursts-miss {
 		t.Errorf("%s: %d of %d bursts exact, %d of %d bits wrong", name, sc.exact, sc.bursts, sc.errs, sc.bits)
 	}
+}
+
+func (a *Audio) lag() int {
+	if a.k == nil {
+		return a.mcu.k.t.span
+	}
+	if a.cbp == nil {
+		return a.k.n / 2
+	}
+	return a.k.n/2 + int(math.Round(float64(len(a.cbp)/2)*a.step/float64(a.spp)))
 }
