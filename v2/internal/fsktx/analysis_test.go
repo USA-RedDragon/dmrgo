@@ -311,10 +311,10 @@ func (s spectrum) maskMargin() float64 {
 	return margin
 }
 
-func demod(x []complex128, rate float64) []float64 {
+func demod(x []complex128) []float64 {
 	f := make([]float64, len(x))
 	for i := 1; i < len(x); i++ {
-		f[i] = cmplx.Phase(x[i]*cmplx.Conj(x[i-1])) * rate / (2 * math.Pi)
+		f[i] = cmplx.Phase(x[i]*cmplx.Conj(x[i-1])) * rxRate / (2 * math.Pi)
 	}
 	return f
 }
@@ -375,7 +375,7 @@ func fit(z []float64, syms []int8) (fe, gain, off float64) {
 }
 
 func fsk(x []complex128, syms []int8) fskResult {
-	f := demod(x, rxRate)
+	f := demod(x)
 	sps := rxRate / SymbolRate
 	best, bestC := 0, math.Inf(-1)
 	for d := 0; d < 80*sps; d++ {
@@ -496,7 +496,7 @@ func receiveDisc(x []complex64) []RxBurst {
 
 // ETSI TS 102 361-1 clause 10.2.2.3
 func etsiDeviation(x []complex128) float64 {
-	f := demod(x, rxRate)
+	f := demod(x)
 	lp := butter2(4000, rxRate)
 	var hi, lo float64
 	for i, v := range f {

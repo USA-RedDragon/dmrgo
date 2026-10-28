@@ -35,7 +35,7 @@ func fidelityUnits(full bool) []txUnit {
 }
 
 func eyeError(x []complex128, syms []int8, f fskResult) float64 {
-	z := fskAt(demod(x, rxRate), f.Delay, 0, len(syms))
+	z := fskAt(demod(x), f.Delay, 0, len(syms))
 	gain := 1 + f.DevError/100
 	worst := 0.0
 	for k := 40; k < len(syms)-40; k++ {
