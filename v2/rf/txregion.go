@@ -12,19 +12,24 @@ type Region uint8
 // The regions.
 const (
 	// RegionWorld keeps the limits of every other region at once, the
-	// strictest of each.
+	// strictest of each. For ServiceLicenseFree it keeps those of
+	// RegionCEPT and RegionChina, the regions with a license-free DMR
+	// service.
 	RegionWorld Region = iota
 	// RegionUS keeps 47 CFR 90.210 Emission Mask D for land mobile and 47
 	// CFR 97.307 for amateur. It does not cover the 800 MHz bands of Mask
 	// H or the 90.691 EA mask.
 	RegionUS
-	// RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01
-	// for amateur.
+	// RegionCEPT keeps ETSI EN 300 113 for land mobile, ERC/REC 74-01 for
+	// amateur, and ETSI EN 303 405 and EN 300 390 for PMR446, the
+	// license-free service.
 	RegionCEPT
-	// RegionChina keeps the land mobile limits of the 2025 MIIT notice.
+	// RegionChina keeps the 2025 MIIT notice for land mobile and the 409
+	// MHz license-free walkie-talkie, and the Radio Frequency Allocation
+	// Regulations for amateur.
 	RegionChina
-	// RegionJapan keeps the land mobile limits of the Radio Equipment
-	// Regulations.
+	// RegionJapan keeps the Radio Equipment Regulations for land mobile and
+	// amateur. It has no license-free DMR service.
 	RegionJapan
 )
 
@@ -68,8 +73,8 @@ func (e *RegionError) Error() string {
 
 const (
 	regions        = int(RegionJapan) + 1
+	services       = int(ServiceLicenseFree)
 	licenseFreeDBm = 27
-	modeledDBm     = 60
 	maxPowerDBm    = 63
 )
 
@@ -77,15 +82,21 @@ var ceilingDBm = [regions][2]int8{
 	RegionWorld: {60, 62},
 	RegionUS:    {60, 62},
 	RegionCEPT:  {60, 62},
-	RegionChina: {44, 44},
+	RegionChina: {44, 43},
 	RegionJapan: {60, 60},
 }
 
-var spurGate10 [regions][2]bool
+var spurGate10 = [regions][services]bool{
+	RegionWorld: {true, true, true},
+	RegionUS:    {true, true},
+	RegionCEPT:  {true, true, true},
+	RegionChina: {true, true, true},
+	RegionJapan: {true, true},
+}
 
 type txErrs struct {
 	tier, rate, format, offset, power, bits, level, offsetCodes, onSamples, lowpass, preEmphSet *dmrgo.ConfigError
-	rateLimit, power60, powerCeil, service, noLF, amateur, spur, preEmph, levelLow, region, svc *RegionError
+	rateLimit, powerCeil, service, spur, preEmph, levelLow, region, svc                         *RegionError
 }
 
 var iqErrs = txErrs{
@@ -101,11 +112,8 @@ var iqErrs = txErrs{
 	lowpass:     &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.InputLowpassHz"},
 	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "TxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
-	power60:     &RegionError{Type: "rf", Field: "TxConfig.Power", Reason: "the limits above 60 dBm are not measured"},
 	powerCeil:   &RegionError{Type: "rf", Field: "TxConfig.Power", Reason: "above the highest legal power of the service in the region"},
 	service:     &RegionError{Type: "rf", Field: "TxConfig.Service", Reason: "the region has no license-free DMR service"},
-	noLF:        &RegionError{Type: "rf", Field: "TxConfig.Service", Reason: "the limits of the license-free service are not measured"},
-	amateur:     &RegionError{Type: "rf", Field: "TxConfig.Service", Reason: "the amateur limits of the region are not measured"},
 	spur:        &RegionError{Type: "rf", Field: "TxConfig.Region", Reason: "the signal is not measured 10 dB under the spurious domain limits"},
 	preEmph:     &RegionError{Type: "rf", Field: "TxConfig.PreEmphasis", Reason: "the limits with pre-emphasis are not measured"},
 	levelLow:    &RegionError{Type: "rf", Field: "TxConfig.Level", Reason: "under the level that the limits are measured at for Bits"},
@@ -126,11 +134,8 @@ var audioErrs = txErrs{
 	lowpass:     &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.InputLowpassHz"},
 	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "AudioTxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
-	power60:     &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "the limits above 60 dBm are not measured"},
 	powerCeil:   &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "above the highest legal power of the service in the region"},
 	service:     &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the region has no license-free DMR service"},
-	noLF:        &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the limits of the license-free service are not measured"},
-	amateur:     &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the amateur limits of the region are not measured"},
 	spur:        &RegionError{Type: "rf", Field: "AudioTxConfig.Region", Reason: "the signal is not measured 10 dB under the spurious domain limits"},
 	preEmph:     &RegionError{Type: "rf", Field: "AudioTxConfig.PreEmphasis", Reason: "with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power"},
 	levelLow:    &RegionError{Type: "rf", Field: "AudioTxConfig.Level", Reason: "under the level that the limits are measured at for Bits"},
@@ -176,27 +181,13 @@ func (r *txRegs) check(e *txErrs, g *txGate) (class int, err error) {
 	if p > top {
 		return 0, e.powerCeil
 	}
-	if r.service == ServiceLicenseFree {
-		return 0, e.noLF
-	}
-	if p > modeledDBm {
-		return 0, e.power60
-	}
-	if r.service != ServiceLandMobile && (r.region == RegionChina || r.region == RegionJapan) {
-		return 0, e.amateur
-	}
 	if !g.noSpur && !r.spurMeasured() {
 		return 0, e.spur
 	}
-	switch {
-	case p <= 30:
-		return fsktx.Limits1W, nil
-	case p <= 40:
-		return fsktx.Limits10W, nil
-	case p <= 50:
-		return fsktx.Limits100W, nil
+	if class = fsktx.PowerClass(p); class < 0 {
+		return 0, e.powerCeil
 	}
-	return fsktx.Limits1000W, nil
+	return class, nil
 }
 
 func (r *txRegs) spurMeasured() bool {
@@ -214,8 +205,11 @@ func (r *txRegs) spurMeasured() bool {
 }
 
 func (r *txRegs) regionsOf() [regions]int {
-	if r.region != RegionWorld {
+	switch {
+	case r.region != RegionWorld:
 		return [regions]int{int(r.region), -1, -1, -1, -1}
+	case r.service == ServiceLicenseFree:
+		return [regions]int{int(RegionCEPT), int(RegionChina), -1, -1, -1}
 	}
 	return [regions]int{1, 2, 3, 4, -1}
 }
@@ -226,7 +220,9 @@ func (r *txRegs) services() [2]int {
 		return [2]int{fsktx.LimitsLandMobile, -1}
 	case ServiceAmateur:
 		return [2]int{fsktx.LimitsAmateur, -1}
-	case ServiceUnknown, ServiceLicenseFree:
+	case ServiceLicenseFree:
+		return [2]int{fsktx.LimitsLicenseFree, -1}
+	case ServiceUnknown:
 	}
 	return [2]int{fsktx.LimitsLandMobile, fsktx.LimitsAmateur}
 }

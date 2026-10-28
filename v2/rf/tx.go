@@ -44,7 +44,9 @@ type TxConfig struct {
 	// of the license-free service must state it.
 	Service Service
 	// Power is the most power of the station, in dBm, from 1 to 63. 0
-	// means the highest legal power of the Service in the Region.
+	// means the highest legal power of the Service in the Region. The
+	// limits are kept at the next of the breakpoints 27, 30, 40, 44, 47,
+	// 50, 54, 57, 60 and 62 dBm at or above it.
 	Power int
 }
 

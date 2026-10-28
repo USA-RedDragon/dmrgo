@@ -43,9 +43,10 @@ func refusals() []refusal {
 		return &c
 	}
 	return []refusal{
-		{"zero I/Q", nil, &TxConfig{}, nil, "TxConfig.Power", true},
-		{"zero audio", nil, nil, &AudioTxConfig{}, "AudioTxConfig.Power", true},
-		{"US land mobile 40 dBm", nil, us(TxConfig{}), nil, "TxConfig.Region", true},
+		{"zero I/Q", nil, &TxConfig{}, nil, "TxConfig.Rate", true},
+		{"zero audio", nil, nil, &AudioTxConfig{}, "AudioTxConfig.Rate", true},
+		{"CEPT land mobile 60 dBm", nil, &TxConfig{Region: RegionCEPT, Service: ServiceLandMobile, Power: 60}, nil, "TxConfig.Rate", true},
+		{"PMR446 8-bit", nil, &TxConfig{Region: RegionCEPT, Service: ServiceLicenseFree, Format: IQFormatCS8}, nil, "TxConfig.Rate", true},
 		{"Tier3", nil, &TxConfig{Tier: Tier3}, nil, "TxConfig.Tier", false},
 		{"Tier 9", nil, &TxConfig{Tier: 9}, nil, "TxConfig.Tier", false},
 		{"Tier -1", nil, nil, &AudioTxConfig{Tier: -1}, "AudioTxConfig.Tier", false},
@@ -63,17 +64,12 @@ func refusals() []refusal {
 		{"service 9", nil, &TxConfig{Service: 9}, nil, "TxConfig.Service", true},
 		{"license-free US", nil, &TxConfig{Region: RegionUS, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
 		{"license-free Japan", nil, &TxConfig{Region: RegionJapan, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
-		{"license-free CEPT", openGate, &TxConfig{Region: RegionCEPT, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
-		{"license-free China", openGate, &TxConfig{Region: RegionChina, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
-		{"license-free World", openGate, &TxConfig{Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
 		{"license-free 28 dBm", openGate, &TxConfig{Region: RegionCEPT, Service: ServiceLicenseFree, Power: 28}, nil, "TxConfig.Power", true},
 		{"China land mobile 45 dBm", openGate, &TxConfig{Region: RegionChina, Service: ServiceLandMobile, Power: 45}, nil, "TxConfig.Power", true},
 		{"US land mobile 61 dBm", openGate, &TxConfig{Region: RegionUS, Service: ServiceLandMobile, Power: 61}, nil, "TxConfig.Power", true},
-		{"US amateur highest power", openGate, &TxConfig{Region: RegionUS, Service: ServiceAmateur}, nil, "TxConfig.Power", true},
-		{"CEPT amateur 61 dBm", openGate, &TxConfig{Region: RegionCEPT, Service: ServiceAmateur, Power: 61}, nil, "TxConfig.Power", true},
-		{"unknown service highest power", openGate, &TxConfig{Region: RegionUS}, nil, "TxConfig.Power", true},
-		{"China amateur", openGate, &TxConfig{Region: RegionChina, Service: ServiceAmateur, Power: 40}, nil, "TxConfig.Service", true},
-		{"Japan amateur", openGate, &TxConfig{Region: RegionJapan, Service: ServiceAmateur, Power: 40}, nil, "TxConfig.Service", true},
+		{"CEPT amateur 63 dBm", openGate, &TxConfig{Region: RegionCEPT, Service: ServiceAmateur, Power: 63}, nil, "TxConfig.Power", true},
+		{"China amateur 44 dBm", openGate, &TxConfig{Region: RegionChina, Service: ServiceAmateur, Power: 44}, nil, "TxConfig.Power", true},
+		{"Japan amateur 61 dBm", openGate, &TxConfig{Region: RegionJapan, Service: ServiceAmateur, Power: 61}, nil, "TxConfig.Power", true},
 		{"image under 62.5 kHz", openGate, us(TxConfig{Rate: 50000}), nil, "TxConfig.Rate", true},
 		{"Tier0 at 48 kHz", openGate, us(TxConfig{Tier: Tier0, Rate: 48000}), nil, "TxConfig.Rate", true},
 		{"CS8 at 10 W", openGate, us(TxConfig{Format: IQFormatCS8}), nil, "TxConfig.Rate", true},
@@ -172,7 +168,14 @@ func TestTxAccepts(t *testing.T) {
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 50},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 60, Tier: Tier2, Rate: 62500},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Format: IQFormatCS8},
-		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Format: IQFormatCU8, Rate: 250000},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Format: IQFormatCU8, Rate: 1400000},
+		{Region: RegionUS, Service: ServiceAmateur},
+		{Region: RegionUS},
+		{Region: RegionCEPT, Service: ServiceLicenseFree},
+		{Region: RegionChina, Service: ServiceLicenseFree},
+		{Service: ServiceLicenseFree},
+		{Region: RegionChina, Service: ServiceAmateur},
+		{Region: RegionJapan, Service: ServiceAmateur},
 		{Region: RegionUS, Service: ServiceAmateur, Power: 60, Format: IQFormatCF32, Rate: 96000},
 		{Region: RegionCEPT, Service: ServiceAmateur, Power: 50},
 		{Region: RegionJapan, Service: ServiceLandMobile, Power: 60},
@@ -191,8 +194,8 @@ func TestTxAccepts(t *testing.T) {
 				t.Errorf("Init %+v: %v, offset %v", c, err, in.OffsetHz())
 			}
 		}
-		if _, err := NewTransmitter(&c); err == nil {
-			t.Errorf("%+v: accepted without the spurious measurement", c)
+		if _, err := NewTransmitter(&c); err != nil {
+			t.Errorf("%+v: refused with the spurious domain gate: %v", c, err)
 		}
 		if tx.SampleBytes() != c.Format.bytes() || tx.DeviationHz() != 1944 {
 			t.Errorf("%+v: %d bytes, %v Hz", c, tx.SampleBytes(), tx.DeviationHz())
@@ -200,7 +203,8 @@ func TestTxAccepts(t *testing.T) {
 	}
 	for _, c := range []AudioTxConfig{
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40},
-		{Service: ServiceLandMobile, Power: 30},
+		{Service: ServiceLandMobile, Power: 30, InputLowpassHz: 8000},
+		{Service: ServiceLicenseFree, InputLowpassHz: 5000},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Bits: 13, Rate: 22500},
 		{Region: RegionUS, Service: ServiceAmateur, Power: 50, Rate: 96000, Tier: Tier2},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier0},
@@ -210,8 +214,8 @@ func TestTxAccepts(t *testing.T) {
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Bits: 12, Unsigned: true},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Bits: 12, Unsigned: true, Level: 966},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Tier: Tier2, Bits: 12, Rate: 24000},
-		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier2, Bits: 8, Rate: 48000, Unsigned: true},
-		{Region: RegionJapan, Service: ServiceLandMobile, Power: 50, Bits: 13, Rate: 32000},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Tier: Tier2, Bits: 8, Rate: 48000, Unsigned: true},
+		{Region: RegionJapan, Service: ServiceLandMobile, Power: 30, Bits: 13, Rate: 38400},
 	} {
 		tx, err := newAudioTransmitter(c, openGate)
 		if err != nil {
@@ -380,12 +384,14 @@ func TestTxBurstOrder(t *testing.T) {
 
 func TestTxLicenseFree(t *testing.T) {
 	t.Parallel()
-	c := usIQ(Tier0, 96000, IQFormatCS16)
+	c := TxConfig{Tier: Tier0, Rate: 96000, Region: RegionCEPT, Service: ServiceLicenseFree}
 	var tx Transmitter
-	if err := tx.init(c, openGate); err != nil {
+	if err := tx.init(c, nil); err != nil {
 		t.Fatal(err)
 	}
-	tx.core.lf = true
+	if !tx.core.lf {
+		t.Fatal("PMR446 setup without the license-free rules")
+	}
 	tx.on = func([]byte) {}
 	tx.chunk = tx.small[:int(tx.sps)*4]
 	b := []Burst{{BS: true, Stream: 1}}
@@ -485,5 +491,81 @@ func TestPreEmphasisInit(t *testing.T) {
 	c.PreEmphasis = nil
 	if err := tx.init(c, openGate); err != nil || tx.pe != nil {
 		t.Fatalf("Init without PreEmphasis: %v", err)
+	}
+}
+
+func TestTxPowerStricter(t *testing.T) {
+	t.Parallel()
+	if c := fsktx.PowerClass(1); c != 0 {
+		t.Errorf("PowerClass(1) = %d, want 0", c)
+	}
+	steps := 0
+	for p := 2; p <= maxPowerDBm; p++ {
+		lo, hi := fsktx.PowerClass(p-1), fsktx.PowerClass(p)
+		switch {
+		case hi == lo:
+		case lo >= 0 && hi == lo+1 || lo >= 0 && hi == -1:
+			steps++
+		default:
+			t.Errorf("PowerClass(%d) = %d after PowerClass(%d) = %d: not a step", p, hi, p-1, lo)
+		}
+	}
+	if steps != 10 {
+		t.Errorf("PowerClass has %d steps from 1 to %d dBm, want 10", steps, maxPowerDBm)
+	}
+	type key struct {
+		class int
+		err   error
+	}
+	for region := RegionWorld; region <= RegionJapan; region++ {
+		for _, svc := range []Service{ServiceUnknown, ServiceAmateur, ServiceLandMobile, ServiceLicenseFree} {
+			var keys [maxPowerDBm + 1]key
+			for p := 1; p <= maxPowerDBm; p++ {
+				r := txRegs{region: region, service: svc, power: p}
+				class, err := r.check(&iqErrs, &txGate{})
+				keys[p] = key{class, err}
+			}
+			memo := func(build func(int) error) func(int) bool {
+				var last bool
+				return func(p int) bool {
+					if p == 1 || keys[p] != keys[p-1] {
+						last = build(p) == nil
+					}
+					return last
+				}
+			}
+			for _, base := range []TxConfig{{Tier: Tier0, Rate: 96000}, {Rate: 192000}, {}, {Format: IQFormatCS8}} {
+				accepted := memo(func(p int) error {
+					c := base
+					c.Region, c.Service, c.Power = region, svc, p
+					_, err := newTransmitter(c, nil)
+					return err
+				})
+				prev := true
+				for p := 1; p <= maxPowerDBm; p++ {
+					a := accepted(p)
+					if a && !prev {
+						t.Errorf("%v %v %+v: accepted at %d dBm, refused under it", region, svc, base, p)
+					}
+					prev = a
+				}
+			}
+			for _, base := range []AudioTxConfig{{Tier: Tier0, Rate: 48000, Bits: 12}, {}, {Bits: 8, Rate: 96000}} {
+				accepted := memo(func(p int) error {
+					c := base
+					c.Region, c.Service, c.Power = region, svc, p
+					_, err := newAudioTransmitter(c, nil)
+					return err
+				})
+				prev := true
+				for p := 1; p <= maxPowerDBm; p++ {
+					a := accepted(p)
+					if a && !prev {
+						t.Errorf("%v %v %+v: accepted at %d dBm, refused under it", region, svc, base, p)
+					}
+					prev = a
+				}
+			}
+		}
 	}
 }

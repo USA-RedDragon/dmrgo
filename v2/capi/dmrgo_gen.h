@@ -4189,7 +4189,7 @@ struct dmrgo_rf_tx_config_t {
 	dmrgo_rf_region_t region;
 	/* Service is the radio service of the station. DMRGO_RF_SERVICE_UNKNOWN keeps the limits of the land mobile and amateur services at once. A station of the license-free service must state it. */
 	dmrgo_service_t service;
-	/* Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. */
+	/* Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. */
 	int64_t power;
 };
 
@@ -7612,11 +7612,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_IQ_FORMAT_DEFAULT ((dmrgo_rf_iq_format_t)0)
 /* Go: rf.MaxLookbackSlots. MaxLookbackSlots is the largest dmrgo_rf_rx_config_t.lookback_slots, 7.68 s of signal. */
 #define DMRGO_RF_MAX_LOOKBACK_SLOTS 256
-/* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01 for amateur. */
+/* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile, ERC/REC 74-01 for amateur, and ETSI EN 303 405 and EN 300 390 for PMR446, the license-free service. */
 #define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
-/* Go: rf.RegionChina. RegionChina keeps the land mobile limits of the 2025 MIIT notice. */
+/* Go: rf.RegionChina. RegionChina keeps the 2025 MIIT notice for land mobile and the 409 MHz license-free walkie-talkie, and the Radio Frequency Allocation Regulations for amateur. */
 #define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
-/* Go: rf.RegionJapan. RegionJapan keeps the land mobile limits of the Radio Equipment Regulations. */
+/* Go: rf.RegionJapan. RegionJapan keeps the Radio Equipment Regulations for land mobile and amateur. */
 #define DMRGO_RF_REGION_JAPAN ((dmrgo_rf_region_t)4)
 /* Go: rf.RegionUS. RegionUS keeps 47 CFR 90.210 Emission Mask D for land mobile and 47 CFR 97.307 for amateur. */
 #define DMRGO_RF_REGION_US ((dmrgo_rf_region_t)1)

@@ -4,7 +4,7 @@ import "testing"
 
 func TestAllocsTransmitter(t *testing.T) {
 	b := msBursts(t, "voice")
-	for _, c := range []TxConfig{usIQ(Tier0, 96000, IQFormatCS16), usIQ(Tier1, 2400000, IQFormatCF32), usIQ(Tier2, 250000, IQFormatCU8)} {
+	for _, c := range []TxConfig{usIQ(Tier0, 96000, IQFormatCS16), usIQ(Tier1, 2400000, IQFormatCF32), usIQ(Tier2, 2400000, IQFormatCU8)} {
 		c.OnSamples = func([]byte) {}
 		tx, err := newTransmitter(c, openGate)
 		if err != nil {
