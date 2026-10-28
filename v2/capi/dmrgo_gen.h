@@ -717,6 +717,8 @@ typedef struct dmrgo_voice_transmitter_t dmrgo_voice_transmitter_t;
 /* Go: voice.TransmitterConfig. TransmitterConfig configures NewTransmitter. */
 typedef struct dmrgo_voice_transmitter_config_t dmrgo_voice_transmitter_config_t;
 
+/* Go: dmrgo.Service. Service is the radio service of a transmitting station. */
+typedef uint8_t dmrgo_service_t;
 /* Go: bs.Activation. Activation selects what wakes up a hibernating Repeater (ETSI TS 102 361-1 clause 5.2.1.3). */
 typedef uint8_t dmrgo_bs_activation_t;
 /* Go: bs.ChannelAuth. ChannelAuth selects the channel authorization of a Repeater in DMRGO_BS_MODE_RF: how it picks one MS among those that start a transmission in hang time (ETSI TS 102 361-2 clause 5.1.1.6). */
@@ -903,8 +905,6 @@ typedef uint8_t dmrgo_tms_encoding_t;
 typedef uint8_t dmrgo_tms_type_t;
 /* Go: privacy.Algorithm. Algorithm is the algorithm ID octet of a PI header with FID 0x10. */
 typedef uint8_t dmrgo_privacy_algorithm_t;
-/* Go: privacy.Service. Service is the radio service of a transmitting station. */
-typedef uint8_t dmrgo_privacy_service_t;
 /* Go: sms.Format. Format is the format of a text message. */
 typedef uint8_t dmrgo_sms_format_t;
 /* Go: dmrd.Command. Command is the kind of a message, named by its tag. */
@@ -3951,7 +3951,7 @@ struct dmrgo_privacy_transmitter_config_t {
 	/* Key is the key of the calls. */
 	dmrgo_privacy_key_t *key;
 	/* Service is the radio service of the station. It must be stated, and it must not be DMRGO_PRIVACY_SERVICE_AMATEUR. */
-	dmrgo_privacy_service_t service;
+	dmrgo_service_t service;
 };
 
 struct dmrgo_voice_frame_quality_t {
@@ -5936,6 +5936,14 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_TRANSMITTER_LOST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 
+/* Go: dmrgo.ServiceAmateur. ServiceAmateur is the amateur or amateur-satellite service. */
+#define DMRGO_SERVICE_AMATEUR ((dmrgo_service_t)1)
+/* Go: dmrgo.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
+#define DMRGO_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
+/* Go: dmrgo.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
+#define DMRGO_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
+/* Go: dmrgo.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
+#define DMRGO_SERVICE_UNKNOWN ((dmrgo_service_t)0)
 /* Go: bs.ActivationAny. ActivationAny wakes up on any valid burst with the own color code, or on any network burst ("MS established timing"). */
 #define DMRGO_BS_ACTIVATION_ANY ((dmrgo_bs_activation_t)0)
 /* Go: bs.ActivationWakeup. ActivationWakeup wakes up only on a BS_Dwn_Act CSBK with the own color code, or on a network burst ("BS established timing", ETSI TS 102 361-2 clause 5.1.1.1). */
@@ -7393,13 +7401,13 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: privacy.MaxKeys. MaxKeys is the most keys that a Receiver holds. */
 #define DMRGO_PRIVACY_MAX_KEYS 16
 /* Go: privacy.ServiceAmateur. ServiceAmateur is the amateur or amateur-satellite service, which forbids messages encoded to obscure their meaning. */
-#define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_privacy_service_t)1)
+#define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_service_t)1)
 /* Go: privacy.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
-#define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_privacy_service_t)2)
+#define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
 /* Go: privacy.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
-#define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_privacy_service_t)3)
+#define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 /* Go: privacy.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
-#define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_privacy_service_t)0)
+#define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_service_t)0)
 /* Go: sms.FormatAnyTone. FormatAnyTone is the text to UDP port 5016 that AnyTone radios send in DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE. */
 #define DMRGO_SMS_FORMAT_ANYTONE ((dmrgo_sms_format_t)3)
 /* Go: sms.FormatDefinedData. FormatDefinedData is a short data packet (DD_HEAD) whose DD format gives the coding of the text. */
@@ -8285,6 +8293,8 @@ int dmrgo_config_error_last(dmrgo_config_error_t *out, bool *ok);
 int dmrgo_field_range_error_error(const dmrgo_field_range_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_field_range_error_last sets *ok when the last error of this thread holds a dmrgo_field_range_error_t and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
 int dmrgo_field_range_error_last(dmrgo_field_range_error_t *out, bool *ok);
+/* Go: dmrgo.Service.String. String returns the name of the service. */
+int dmrgo_service_string(dmrgo_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.Activation.String. String returns the name of the activation. */
 int dmrgo_bs_activation_string(dmrgo_bs_activation_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_bs_cach_new makes a zero dmrgo_bs_cach_t. */
@@ -10543,8 +10553,6 @@ int dmrgo_privacy_receiver_force_basic(dmrgo_privacy_receiver_t *self, bool on);
 int dmrgo_privacy_receiver_info(dmrgo_privacy_receiver_t *self, dmrgo_privacy_info_t *out);
 /* Go: privacy.Receiver.Reset. Reset forgets the current call. */
 int dmrgo_privacy_receiver_reset(dmrgo_privacy_receiver_t *self);
-/* Go: privacy.Service.String. String returns the name of the service. */
-int dmrgo_privacy_service_string(dmrgo_privacy_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_privacy_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_privacy_transmitter_free(dmrgo_privacy_transmitter_t *self);
 /* Go: privacy.Transmitter.Data. Data applies ARC4 privacy to payload in place, the user data of a data packet without the pad octets and the message CRC, with the message indicator mi, and returns the privacy header of the packet: a P_HEAD with FID 0x10 and the SAP sap of the user data that holds the algorithm, the key ID and mi, the layout that FromProprietaryHeader reads. It returns DMRGO_ERR_PRIVACY_DATA_ALGORITHM for a key other than ARC4, as no public capture with a key proves the data framing of the others, and a DMRGO_ERR_CONFIG for a sap over 15, and then leaves payload as it is. */

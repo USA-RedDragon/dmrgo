@@ -6714,7 +6714,7 @@ func out_privacy_TransmitterConfig(d *C.dmrgo_privacy_transmitter_config_t, s *g
 		panic(argPanic{})
 	}
 	d.key = nil
-	d.service = C.dmrgo_privacy_service_t(s.Service)
+	d.service = C.dmrgo_service_t(s.Service)
 }
 
 func fromC_privacy_TransmitterConfig(s *C.dmrgo_privacy_transmitter_config_t) g_privacy.TransmitterConfig {
@@ -8723,6 +8723,25 @@ func dmrgo_field_range_error_last(c_out *C.dmrgo_field_range_error_t, c_ok *C.bo
 	}
 	if ok && c_out != nil {
 		*c_out = *(*C.dmrgo_field_range_error_t)(unsafe.Pointer(&l.d))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_service_string
+func dmrgo_service_string(c_self C.dmrgo_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_dmrgo.Service(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }
@@ -35988,25 +36007,6 @@ func dmrgo_privacy_receiver_reset(c_self *C.dmrgo_privacy_receiver_t) (rc C.int)
 	oc := &outc{}
 	h := get_privacy_Receiver(c_self)
 	h.v.Reset()
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_privacy_service_string
-func dmrgo_privacy_service_string(c_self C.dmrgo_privacy_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := g_privacy.Service(c_self).String()
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

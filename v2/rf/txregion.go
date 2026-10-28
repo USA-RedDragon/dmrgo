@@ -266,21 +266,21 @@ func itoa(v int) string {
 	return string(b[i:])
 }
 
-// Service is the radio service of a transmitting station, with the values
-// of privacy.Service.
-type Service uint8
+// Service is the radio service of a transmitting station. It is
+// dmrgo.Service, the type that package privacy also takes.
+type Service = dmrgo.Service
 
 // The Service values.
 const (
 	// ServiceUnknown is a service that the caller did not state: the
 	// transmitter keeps the limits of the land mobile and amateur services
 	// at once.
-	ServiceUnknown Service = iota
+	ServiceUnknown = dmrgo.ServiceUnknown
 	// ServiceAmateur is the amateur or amateur-satellite service.
-	ServiceAmateur
+	ServiceAmateur = dmrgo.ServiceAmateur
 	// ServiceLandMobile is a licensed land mobile service, such as private,
 	// business or public safety PMR.
-	ServiceLandMobile
+	ServiceLandMobile = dmrgo.ServiceLandMobile
 	// ServiceLicenseFree is a licence-exempt service, such as PMR446.
-	ServiceLicenseFree
+	ServiceLicenseFree = dmrgo.ServiceLicenseFree
 )

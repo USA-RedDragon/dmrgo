@@ -459,7 +459,7 @@ func hasPtrMethod(n *types.Named) bool {
 }
 
 func (g *gen) info(t types.Type) *tinfo {
-	n, ok := t.(*types.Named)
+	n, ok := types.Unalias(t).(*types.Named)
 	if !ok || !g.inModule(n.Obj().Pkg()) {
 		return nil
 	}

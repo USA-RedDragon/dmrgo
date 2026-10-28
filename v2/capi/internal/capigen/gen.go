@@ -333,6 +333,10 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 		}
 		g.exports = append(g.exports, e)
 	case *types.TypeName:
+		if o.IsAlias() {
+			g.aliasObject(o, gn)
+			return nil
+		}
 		return g.typeObject(o, gn)
 	}
 	return nil
@@ -450,6 +454,16 @@ func (g *gen) funcName(p *types.Package, name string) string {
 		}
 	}
 	return c
+}
+
+func (g *gen) aliasObject(o *types.TypeName, gn string) {
+	e := Export{Go: gn, Kind: lockType}
+	if ti := g.info(o.Type()); ti != nil && ti.kind != kBad {
+		e.C = []string{ti.c}
+	} else {
+		e.Err = "type alias of a type without a C form"
+	}
+	g.exports = append(g.exports, e)
 }
 
 func (g *gen) typeObject(o *types.TypeName, gn string) error {

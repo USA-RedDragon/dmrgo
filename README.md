@@ -408,7 +408,7 @@ Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with 
 
 Package `rf` also transmits: `Transmitter` turns bursts into I/Q for a software radio, in every I/Q format of the receiver, and `AudioTransmitter` into the deviation signal that drives the modulator input of an FM radio. Both mirror the receivers, with the same config fields, the same `Init` for Tier 0 in memory of the caller and the same stream and append modes. A BS-sourced burst keeps the carrier up into the next slot, an MS burst ramps in its guard time, a one-slot gap in a `Stream` is a TDMA idle slot, and a larger gap or a new `Stream` keys down.
 
-`Region`, `Service` and `Power` (dBm, 0 for the highest legal power of the service in the region) state the limits that the signal must keep. The transmitter refuses with a `RegionError` every setup that no measurement shows to keep them with margin, so the zero config is refused until the measurements below exist. The library makes no compliance claim: it only keeps its signal from being the cause of a failure of the limits that it measured.
+`Region`, `Service` and `Power` (dBm, 0 for the highest legal power of the service in the region) state the limits that the signal must keep. `Service` is `dmrgo.Service`, the same type that package `privacy` takes. The transmitter refuses with a `RegionError` every setup that no measurement shows to keep them with margin, so the zero config is refused until the measurements below exist. The library makes no compliance claim: it only keeps its signal from being the cause of a failure of the limits that it measured.
 
 Not measured yet, and refused:
 - the 10 dB margin of the signal under the spurious domain limits, which every region has,

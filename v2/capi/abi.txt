@@ -1376,10 +1376,14 @@ sym #define DMRGO_PRIVACY_ALGORITHM_ARC4 ((dmrgo_privacy_algorithm_t)33)
 sym #define DMRGO_PRIVACY_ALGORITHM_BASIC ((dmrgo_privacy_algorithm_t)0)
 sym #define DMRGO_PRIVACY_ALGORITHM_DES ((dmrgo_privacy_algorithm_t)34)
 sym #define DMRGO_PRIVACY_MAX_KEYS 16
-sym #define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_privacy_service_t)1)
-sym #define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_privacy_service_t)2)
-sym #define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_privacy_service_t)3)
-sym #define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_privacy_service_t)0)
+sym #define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_service_t)1)
+sym #define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
+sym #define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
+sym #define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_service_t)0)
+sym #define DMRGO_SERVICE_AMATEUR ((dmrgo_service_t)1)
+sym #define DMRGO_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
+sym #define DMRGO_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
+sym #define DMRGO_SERVICE_UNKNOWN ((dmrgo_service_t)0)
 sym #define DMRGO_SMS_FORMAT_ANYTONE ((dmrgo_sms_format_t)3)
 sym #define DMRGO_SMS_FORMAT_DEFINED_DATA ((dmrgo_sms_format_t)4)
 sym #define DMRGO_SMS_FORMAT_HYTERA ((dmrgo_sms_format_t)5)
@@ -3070,12 +3074,12 @@ sym int dmrgo_privacy_receiver_force_basic(dmrgo_privacy_receiver_t *self, bool 
 sym int dmrgo_privacy_receiver_free(dmrgo_privacy_receiver_t *self);
 sym int dmrgo_privacy_receiver_info(dmrgo_privacy_receiver_t *self, dmrgo_privacy_info_t *out);
 sym int dmrgo_privacy_receiver_reset(dmrgo_privacy_receiver_t *self);
-sym int dmrgo_privacy_service_string(dmrgo_privacy_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_privacy_transmitter_data(dmrgo_privacy_transmitter_t *self, uint32_t mi, dmrgo_enums_sap_t sap, uint8_t *payload, size_t payload_len, dmrgo_pdu_proprietary_header_t *out);
 sym int dmrgo_privacy_transmitter_free(dmrgo_privacy_transmitter_t *self);
 sym int dmrgo_privacy_transmitter_output(dmrgo_privacy_transmitter_t *self, dmrgo_voice_output_t *o);
 sym int dmrgo_privacy_transmitter_pi_header(dmrgo_privacy_transmitter_t *self, uint32_t target, dmrgo_pdu_pi_header_t *h, bool *ok);
 sym int dmrgo_privacy_transmitter_start(dmrgo_privacy_transmitter_t *self, uint32_t mi);
+sym int dmrgo_service_string(dmrgo_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
 sym int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_shortdata_decode_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
@@ -3498,7 +3502,7 @@ sym typedef uint8_t dmrgo_pdu_service_type_t;
 sym typedef uint8_t dmrgo_pdu_slot_type_info_t;
 sym typedef uint8_t dmrgo_pdu_udt_opcode_t;
 sym typedef uint8_t dmrgo_privacy_algorithm_t;
-sym typedef uint8_t dmrgo_privacy_service_t;
+sym typedef uint8_t dmrgo_service_t;
 sym typedef uint8_t dmrgo_sms_format_t;
 sym typedef uint8_t dmrgo_tms_encoding_t;
 sym typedef uint8_t dmrgo_tms_type_t;
@@ -3759,7 +3763,7 @@ type struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t { dmrgo_layer3_se
 type struct dmrgo_pdu_vnap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; dmrgo_enums_color_code_t color_code; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
 type struct dmrgo_pdu_vote_now_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t vote_sys_code; bool reg; uint8_t backoff; uint16_t sys_ident_code; bool has_active_conn; bool active_conn; uint8_t confirmed_priority; uint8_t adjacent_priority; uint8_t reserved; uint16_t channel; };
 type struct dmrgo_privacy_info_t { bool encrypted; bool header; dmrgo_enums_fid_t mfid; dmrgo_privacy_algorithm_t algorithm; uint8_t key_id; uint32_t mi; bool decrypting; };
-type struct dmrgo_privacy_transmitter_config_t { size_t size; dmrgo_privacy_key_t *key; dmrgo_privacy_service_t service; };
+type struct dmrgo_privacy_transmitter_config_t { size_t size; dmrgo_privacy_key_t *key; dmrgo_service_t service; };
 type struct dmrgo_shortdata_hytera_text_t { uint16_t field; uint8_t *text; size_t text_len; };
 type struct dmrgo_sms_anytone_text_t { uint32_t prefix; uint8_t *text; size_t text_len; };
 type struct dmrgo_sms_header_t { dmrgo_pdu_data_header_t data; };

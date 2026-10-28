@@ -64,6 +64,7 @@ import (
 var api = [...]any{
 	(*dmrgo.ConfigError).Error,
 	(*dmrgo.FieldRangeError).Error,
+	dmrgo.Service.String,
 	(*bs.CACH).First,
 	(*bs.CACH).Next,
 	(*bs.CACH).Reset,
@@ -1220,7 +1221,6 @@ var api = [...]any{
 	privacy.NewBasicKeyNumber,
 	privacy.NewReceiver,
 	privacy.NewTransmitter,
-	privacy.Service.String,
 	(*rf.AudioReceiver).Active,
 	(*rf.AudioReceiver).AppendBursts,
 	(*rf.AudioReceiver).AppendFlush,

@@ -56,6 +56,7 @@ ignore_files:
   - v2/nmea/errors.go
   - v2/nmea/rmc.go
   - v2/errors.go
+  - v2/service.go
   - v2/internal/bits/bits.go
   - v2/internal/text/text.go
   - v2/internal/text/texttest/texttest.go

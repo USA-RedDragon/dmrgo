@@ -1,8 +1,6 @@
 package privacy
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -14,40 +12,25 @@ import (
 // whether the station may encrypt: the amateur service may not, under ITU
 // Radio Regulations Article 25.2A and national rules such as 47 CFR
 // 97.113(a)(4) in the United States. The rule holds in every region, so a
-// Service names no region. Receiving is allowed in every service.
-type Service uint8
+// Service names no region. Receiving is allowed in every service. It is
+// dmrgo.Service, the type that package rf also takes.
+type Service = dmrgo.Service
 
 // The Service values.
 const (
 	// ServiceUnknown is a service that the caller did not state.
 	// NewTransmitter refuses it.
-	ServiceUnknown Service = iota
+	ServiceUnknown = dmrgo.ServiceUnknown
 	// ServiceAmateur is the amateur or amateur-satellite service, which
 	// forbids messages encoded to obscure their meaning. NewTransmitter
 	// returns ErrAmateur for it.
-	ServiceAmateur
+	ServiceAmateur = dmrgo.ServiceAmateur
 	// ServiceLandMobile is a licensed land mobile service, such as private,
 	// business or public safety PMR.
-	ServiceLandMobile
+	ServiceLandMobile = dmrgo.ServiceLandMobile
 	// ServiceLicenseFree is a licence-exempt service, such as PMR446.
-	ServiceLicenseFree
+	ServiceLicenseFree = dmrgo.ServiceLicenseFree
 )
-
-// String returns the name of the service. It allocates only for a value
-// without a name.
-func (s Service) String() string {
-	switch s {
-	case ServiceUnknown:
-		return "Unknown"
-	case ServiceAmateur:
-		return "Amateur"
-	case ServiceLandMobile:
-		return "LandMobile"
-	case ServiceLicenseFree:
-		return "LicenseFree"
-	}
-	return fmt.Sprintf("Service(%d)", uint8(s))
-}
 
 // TransmitterConfig configures NewTransmitter.
 type TransmitterConfig struct {

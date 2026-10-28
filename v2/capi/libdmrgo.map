@@ -1492,12 +1492,12 @@ DMRGO_4 {
 		dmrgo_privacy_receiver_free;
 		dmrgo_privacy_receiver_info;
 		dmrgo_privacy_receiver_reset;
-		dmrgo_privacy_service_string;
 		dmrgo_privacy_transmitter_data;
 		dmrgo_privacy_transmitter_free;
 		dmrgo_privacy_transmitter_output;
 		dmrgo_privacy_transmitter_pi_header;
 		dmrgo_privacy_transmitter_start;
+		dmrgo_service_string;
 		dmrgo_shortdata_append_text;
 		dmrgo_shortdata_decode_hytera_text;
 		dmrgo_shortdata_decode_text;
