@@ -10,42 +10,31 @@ import (
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 type rxPath struct {
 	name string
-	tier rf.Tier
+	tier rxTier
 	disc bool
 	cn   float64
 }
 
 func rxPaths() []rxPath {
 	return []rxPath{
-		{"rx0", rf.Tier0, false, 6}, {"rx1", rf.Tier1, false, 6}, {"rx2", rf.Tier2, false, 2}, {"rx3", rf.Tier3, false, 2},
-		{"disc0", rf.Tier0, true, 6}, {"disc1", rf.Tier1, true, 6},
+		{"rx0", rxTier0, false, 6}, {"rx1", rxTier1, false, 6}, {"rx2", rxTier2, false, 2}, {"rx3", rxTier3, false, 2},
+		{"disc0", rxTier0, true, 6}, {"disc1", rxTier1, true, 6},
 	}
 }
 
-func (p rxPath) run(y []complex64) []rf.Burst {
+func (p rxPath) run(y []complex64) []RxBurst {
 	if !p.disc {
 		return receive(y, p.tier)
 	}
 	return discBursts(discAudio(y), discHz, p.tier)
 }
 
-func discBursts(a []int16, hz int, tier rf.Tier) []rf.Burst {
-	var out []rf.Burst
-	r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier, OnBursts: func(bs []rf.Burst) { out = append(out, bs...) }})
-	if err != nil {
-		panic(err)
-	}
-	for k := 0; k < len(a); k += 1024 {
-		check(r.Write(a[k:min(k+1024, len(a))]))
-	}
-	check(0, r.Flush())
-	return out
+func discBursts(a []int16, hz int, tier rxTier) []RxBurst {
+	return RxAudio(a, hz, int(tier), 1024)
 }
 
 func (u txUnit) s8Bytes(raw []int16) []byte {
@@ -67,17 +56,8 @@ func dither(b []byte) {
 	}
 }
 
-func nativeBursts(b []byte, rate int) []rf.Burst {
-	var got []rf.Burst
-	r, err := rf.NewReceiver(&rf.RxConfig{Rate: rate, Format: rf.IQFormatCS8, Tier: rf.Tier1, OnBursts: func(bs []rf.Burst) { got = append(got, bs...) }})
-	if err != nil {
-		panic(err)
-	}
-	for k := 0; k < len(b); k += 1 << 16 {
-		check(r.Write(b[k:min(k+1<<16, len(b))]))
-	}
-	check(0, r.Flush())
-	return got
+func nativeBursts(b []byte, rate int) []RxBurst {
+	return RxIQ(b, rate, RxCS8, int(rxTier1), 1<<16)
 }
 
 type refSig struct {
@@ -343,8 +323,8 @@ func TestTxMatrixReceive(t *testing.T) {
 					a[i] = int16(int(v) - u.offset)
 				}
 				ra := ref.audio(u.rate, d)
-				for _, tier := range []rf.Tier{rf.Tier0, rf.Tier1} {
-					notes = append(notes, checkDetect(t, fmt.Sprintf("disc %d", tier-rf.Tier0), func(k int, isRef bool) rawScore {
+				for _, tier := range []rxTier{rxTier0, rxTier1} {
+					notes = append(notes, checkDetect(t, fmt.Sprintf("disc %d", tier-rxTier0), func(k int, isRef bool) rawScore {
 						if isRef {
 							return ts.rawScore(discBursts(movedAudio(ra, timing(k, u.rate)), u.rate, tier), 0)
 						}
@@ -354,7 +334,7 @@ func TestTxMatrixReceive(t *testing.T) {
 			}
 			sh := ref.shift(d, rxRate)
 			for _, p := range rxPaths() {
-				if p.tier == rf.Tier3 && !full && u.rate != 44100 {
+				if p.tier == rxTier3 && !full && u.rate != 44100 {
 					continue
 				}
 				notes = append(notes, checkDetect(t, p.name+" at 30 dB", func(k int, isRef bool) rawScore {

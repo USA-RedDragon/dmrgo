@@ -12,8 +12,6 @@ import (
 	"runtime"
 	"sync"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 type sweepResult struct {
@@ -148,7 +146,7 @@ func newSweepRunner(ts *testStream, n int) *sweepRunner {
 				if j.disc {
 					*j.out = ts.score(receiveDisc(x), rxPad)
 				} else {
-					*j.out = ts.score(receive(x, rf.Tier3), rxPad)
+					*j.out = ts.score(receive(x, rxTier3), rxPad)
 				}
 				j.wg.Done()
 			}

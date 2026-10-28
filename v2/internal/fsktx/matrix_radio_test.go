@@ -5,8 +5,6 @@ package fsktx
 import (
 	"math"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 type radioPath struct {
@@ -76,7 +74,7 @@ func TestTxMatrixRadio(t *testing.T) {
 					if (p.limit > 0 || p.abs > 0) && f.FSKError > limit {
 						t.Errorf("FSK error %.2f percent, limit %.2f", f.FSKError, limit)
 					}
-					sc := ts.rawScore(receive(noisy(x, 0, len(x)+int(2*rxPad*rxRate), 30, 5), rf.Tier1), rxPad)
+					sc := ts.rawScore(receive(noisy(x, 0, len(x)+int(2*rxPad*rxRate), 30, 5), rxTier1), rxPad)
 					t.Logf("%d of %d bursts exact, %d of %d bits wrong", sc.exact, sc.bursts, sc.errs, sc.bits)
 					if p.limit > 0 || p.abs > 0 {
 						checkExact(t, u.String(), sc, 2)

@@ -12,7 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 type testStream struct {
@@ -116,7 +115,7 @@ type score struct {
 	voice, voiceOK, data, dataOK int
 }
 
-func (s *testStream) score(got []rf.Burst, pad float64) score {
+func (s *testStream) score(got []RxBurst, pad float64) score {
 	byIndex := s.align(got, pad)
 	var sc score
 	for i, k := range s.kind {
@@ -145,7 +144,7 @@ func (s *testStream) score(got []rf.Burst, pad float64) score {
 	return sc
 }
 
-func (s *testStream) align(got []rf.Burst, pad float64) map[int]rf.Burst {
+func (s *testStream) align(got []RxBurst, pad float64) map[int]RxBurst {
 	first := pad + float64(s.lead+12)/SymbolRate
 	res := make([]float64, 0, len(got))
 	for _, r := range got {
@@ -156,7 +155,7 @@ func (s *testStream) align(got []rf.Burst, pad float64) map[int]rf.Burst {
 	if len(res) > 0 {
 		first += res[len(res)/2]
 	}
-	byIndex := map[int]rf.Burst{}
+	byIndex := map[int]RxBurst{}
 	for _, r := range got {
 		i := int(math.Round((r.Seconds - first) / 0.030))
 		if i >= 0 && i < len(s.slots) && math.Abs(r.Seconds-first-float64(i)*0.030) < 0.002 {
@@ -171,7 +170,7 @@ type rawScore struct {
 	lastBad, stray            int
 }
 
-func (s *testStream) rawScore(got []rf.Burst, pad float64) rawScore {
+func (s *testStream) rawScore(got []RxBurst, pad float64) rawScore {
 	byIndex := s.align(got, pad)
 	sc := rawScore{lastBad: -1, stray: len(got) - len(byIndex)}
 	for i, slot := range s.slots {

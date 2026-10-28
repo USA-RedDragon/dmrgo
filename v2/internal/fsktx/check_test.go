@@ -7,12 +7,6 @@ import (
 	"math"
 )
 
-func check(_ int, err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func cf32(x []complex64) []byte {
 	b := make([]byte, 0, 8*len(x))
 	for _, v := range x {

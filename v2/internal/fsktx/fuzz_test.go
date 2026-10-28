@@ -10,7 +10,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 type fuzzOp struct {
@@ -338,7 +337,7 @@ func FuzzRoundTrip(f *testing.F) {
 		x := u.signal48(u.run(t, ts.syms, keyedOn()), radio{ideal: true})
 		d := fsk(x, ts.syms).Delay
 		sh := ref.shift(d, rxRate)
-		p := rxPath{"rx1", rf.Tier1, false, 6}
+		p := rxPath{"rx1", rxTier1, false, 6}
 		var notes []string
 		defer func() { skipRF(t, notes) }()
 		notes = append(notes, checkDetect(t, "rx1", func(k int, isRef bool) rawScore {

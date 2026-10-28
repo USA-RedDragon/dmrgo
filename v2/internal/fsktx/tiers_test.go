@@ -10,7 +10,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 func audioTiers() []AudioConfig {
@@ -121,18 +120,12 @@ func TestAudioRoundTrip(t *testing.T) {
 	for _, cfg := range audioTiers() {
 		a := audioOf(t, cfg, ts.syms)
 		if cfg.Hz == 24000 {
-			var got []rf.Burst
-			r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: cfg.Hz, OnBursts: func(bs []rf.Burst) { got = append(got, bs...) }})
-			if err != nil {
-				t.Fatal(err)
-			}
-			check(r.Write(a))
-			check(0, r.Flush())
+			got := RxAudio(a, cfg.Hz, int(rxTier1), len(a)+1)
 			checkAll(t, cfg, ts.score(got, 0), 1)
 		}
 		x := dacFM(a, cfg.Hz, radio{})
 		x48 := resample(x, dacRate, rxRate)
-		checkAll(t, cfg, ts.score(receive(noisy(x48, 0, len(x48)+int(2*rxPad*rxRate), 30, 1), rf.Tier1), rxPad), 0)
+		checkAll(t, cfg, ts.score(receive(noisy(x48, 0, len(x48)+int(2*rxPad*rxRate), 30, 1), rxTier1), rxPad), 0)
 	}
 }
 
@@ -153,15 +146,7 @@ func TestIQRoundTrip(t *testing.T) {
 		for i := range b {
 			b[i] = byte(int8(min(max(int(int8(b[i]))+rng.IntN(3)-1, math.MinInt8), math.MaxInt8)))
 		}
-		var got []rf.Burst
-		r, err := rf.NewReceiver(&rf.RxConfig{Rate: cfg.Rate, Format: rf.IQFormatCS8, Tier: rf.Tier1, OnBursts: func(bs []rf.Burst) { got = append(got, bs...) }})
-		if err != nil {
-			t.Fatal(err)
-		}
-		for k := 0; k < len(b); k += 1 << 16 {
-			check(r.Write(b[k:min(k+1<<16, len(b))]))
-		}
-		check(0, r.Flush())
+		got := RxIQ(b, cfg.Rate, RxCS8, int(rxTier1), 1<<16)
 		checkAll(t, cfg, ts.score(got, 0), 1)
 	}
 }

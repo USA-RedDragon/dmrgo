@@ -7,8 +7,6 @@ import (
 	"math/bits"
 	"math/cmplx"
 	"math/rand/v2"
-
-	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 const (
@@ -492,18 +490,8 @@ func discAudio(x []complex64) []int16 {
 	return out
 }
 
-func receiveDisc(x []complex64) []rf.Burst {
-	var out []rf.Burst
-	r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: discHz, Tier: rf.Tier0, OnBursts: func(bs []rf.Burst) { out = append(out, bs...) }})
-	if err != nil {
-		panic(err)
-	}
-	a := discAudio(x)
-	for k := 0; k < len(a); k += 1024 {
-		check(r.Write(a[k:min(k+1024, len(a))]))
-	}
-	check(0, r.Flush())
-	return out
+func receiveDisc(x []complex64) []RxBurst {
+	return RxAudio(discAudio(x), discHz, int(rxTier0), 1024)
 }
 
 // ETSI TS 102 361-1 clause 10.2.2.3
@@ -551,17 +539,8 @@ func probit(cns []float64, ok, n []int) float64 {
 	return (math.Sqrt2*math.Erfinv(0.8) - a) / b
 }
 
-func receive(x []complex64, t rf.Tier) []rf.Burst {
-	var out []rf.Burst
-	r, err := rf.NewReceiver(&rf.RxConfig{Rate: rxRate, Format: rf.IQFormatCF32, Tier: t, OnBursts: func(bs []rf.Burst) { out = append(out, bs...) }})
-	if err != nil {
-		panic(err)
-	}
-	for k := 0; k < len(x); k += 4096 {
-		check(r.Write(cf32(x[k:min(k+4096, len(x))])))
-	}
-	check(0, r.Flush())
-	return out
+func receive(x []complex64, t rxTier) []RxBurst {
+	return RxIQ(cf32(x), rxRate, RxCF32, int(t), 8*4096)
 }
 
 func crossing(cns, rec []float64) (float64, bool) {
