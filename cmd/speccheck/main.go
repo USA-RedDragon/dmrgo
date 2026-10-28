@@ -103,7 +103,7 @@ func main() {
 
 func run() int {
 	updateReadme := flag.Bool("update-readme", false, "Write the Markdown coverage report into docs/etsi.md between the ETSI COVERAGE markers")
-	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/etsi.md is not up to date")
+	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/etsi.md is not up to date or a relative link in README.md or docs/ is broken")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -150,6 +150,7 @@ func run() int {
 
 	if *checkReadme {
 		errCount += checkReadmeFresh(readmePath, md)
+		errCount += checkLinks(repoRoot)
 	}
 
 	printSummary(matrix.Documents, sectionResults, errCount)

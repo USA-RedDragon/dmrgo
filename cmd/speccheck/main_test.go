@@ -287,3 +287,29 @@ func TestGenerateMarkdown(t *testing.T) {
 		}
 	}
 }
+
+func TestBrokenLinks(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"README.md":                 "# Top\n\n## Get started\n\n## Get started\n\nSee [a](docs/a.md#the-sweep), [b](docs/a.md#gone), [c](#get-started-1), [d](missing.md), [e](https://x.org/y) and `[f](nope.md)`.\n\n```\n[g](nope.md)\n```\n",
+		"docs/a.md":                 "# A\n\n## The sweep\n\n![h](rx/x.svg) [i](../README.md#top) [j](../v2/x.go#L3)\n",
+		"docs/rx/x.svg":             "",
+		filepath.Join("v2", "x.go"): "",
+	}
+	read := func(p string) (string, error) {
+		b, ok := files[filepath.ToSlash(p)]
+		if !ok {
+			return "", os.ErrNotExist
+		}
+		return b, nil
+	}
+	got := brokenLinks("README.md", files["README.md"], read)
+	got = append(got, brokenLinks("docs/a.md", files["docs/a.md"], read)...)
+	want := []string{
+		"README.md:7: docs/a.md#gone: no heading #gone",
+		"README.md:7: missing.md: file does not exist",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("brokenLinks = %q, want %q", got, want)
+	}
+}

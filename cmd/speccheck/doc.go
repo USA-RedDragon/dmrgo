@@ -19,5 +19,7 @@
 //
 // -update-readme writes the Markdown report between the ETSI COVERAGE markers
 // of docs/etsi.md, and only when there are no errors. -check-readme fails when
-// that section is out of date.
+// that section is out of date, and when a relative link in README.md or a
+// Markdown file under docs/ names a file that does not exist or a heading that
+// the file does not have.
 package main
