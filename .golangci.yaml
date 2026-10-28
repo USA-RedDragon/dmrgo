@@ -136,9 +136,9 @@ linters:
         linters:
           - gosec
         text: ^G404
-      # rxdisc, txaudio and txiq keep the receiver or the modulator in
+      # rxaudio, txaudio and txiq keep the receiver or the modulator in
       # static memory, which is the point of the examples.
-      - path: v2/examples/(rxdisc|txaudio|txiq)/main\.go$
+      - path: v2/examples/(rxaudio|txaudio|txiq)/main\.go$
         linters:
           - gochecknoglobals
       # texttest fills test values from math/rand, for tests only.

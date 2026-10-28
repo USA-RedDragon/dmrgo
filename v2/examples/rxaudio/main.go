@@ -1,4 +1,4 @@
-// Command rxdisc runs the Tier 0 receiver, an rf.AudioReceiver, in static
+// Command rxaudio runs the Tier 0 receiver, an rf.AudioReceiver, in static
 // memory on a microcontroller, as a hotspot board feeds it the samples of
 // its radio chip's FM discriminator. It allocates nothing: it builds with
 // -gc=none, which fails the link of any program that allocates.

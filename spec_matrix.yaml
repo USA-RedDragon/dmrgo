@@ -202,7 +202,7 @@ ignore_files:
   - v2/examples/conformance/main.go
   - v2/examples/data/main.go
   - v2/examples/hotspot/main.go
-  - v2/examples/rxdisc/main.go
+  - v2/examples/rxaudio/main.go
   - v2/examples/scanner/main.go
   - v2/examples/transcoder/main.go
   - v2/examples/tinygo/main.go
