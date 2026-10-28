@@ -2,7 +2,7 @@ package enums
 
 import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
-// LCSS is the 2-bit LC Start/Stop of an EMB or CACH. It tells whether a
+// LCSS is the 2-bit LC Start/Stop of an EMB or CACH. It shows whether a
 // fragment starts, continues or ends LC or CSBK signalling (ETSI TS 102
 // 361-1 clause 9.3.3, Table 9.20).
 type LCSS uint8

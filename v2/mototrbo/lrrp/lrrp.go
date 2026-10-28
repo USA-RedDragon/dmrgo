@@ -8,15 +8,15 @@ type DocumentID uint8
 
 // The DocumentID values.
 const (
-	DocumentImmediateRequest  DocumentID = 0x05 // ask for one position
+	DocumentImmediateRequest  DocumentID = 0x05 // request one position
 	DocumentImmediateReport   DocumentID = 0x07 // the answer to a DocumentImmediateRequest
-	DocumentTriggeredRequest  DocumentID = 0x09 // ask for positions on a trigger, such as a period
+	DocumentTriggeredRequest  DocumentID = 0x09 // request positions on a trigger, such as a period
 	DocumentTriggeredAnswer   DocumentID = 0x0B // the answer to a DocumentTriggeredRequest
 	DocumentTriggeredReport   DocumentID = 0x0D // a position that a trigger sent
 	DocumentStopRequest       DocumentID = 0x0F // stop a DocumentTriggeredRequest
 	DocumentStopAnswer        DocumentID = 0x11 // the answer to a DocumentStopRequest
 	DocumentUnsolicitedReport DocumentID = 0x13 // a position sent without a request
-	DocumentProtocolRequest   DocumentID = 0x14 // ask for the protocol version
+	DocumentProtocolRequest   DocumentID = 0x14 // request the protocol version
 	DocumentProtocolReport    DocumentID = 0x15 // the answer to a DocumentProtocolRequest
 )
 
@@ -49,13 +49,13 @@ func (d DocumentID) String() string {
 }
 
 // ResultCode is the result code of an answer or report (tokens 0x37 and
-// 0x39). The named values are the codes that open implementations know.
+// 0x39). The named values are the codes that open implementations use.
 type ResultCode uint32
 
 // The ResultCode values.
 const (
 	ResultSuccess          ResultCode = 0x00  // the request succeeded
-	ResultInvalidCommand   ResultCode = 0x0A  // the radio does not understand the request
+	ResultInvalidCommand   ResultCode = 0x0A  // the radio cannot process the request
 	ResultNoGPS            ResultCode = 0x10  // the radio has no GPS fix
 	ResultDuplicateRequest ResultCode = 0x16  // the request ID is already in use
 	ResultGPSInitializing  ResultCode = 0x200 // the GPS receiver has no good fix yet
@@ -237,7 +237,7 @@ type OperationError struct {
 }
 
 // Report holds the tokens of a report or an answer. Each value field has a
-// Has field that tells whether the message carries it.
+// Has field that shows whether the message carries it.
 //
 //dmr:tokens
 type Report struct {
@@ -313,9 +313,9 @@ type Request struct {
 	// ShortRequestID is a request identifier of one octet.
 	ShortRequestID    uint8 `dmr:"u8,token:0x23"`
 	HasShortRequestID bool  `dmr:"-"`
-	// Periodic asks for reports on a period or a distance.
+	// Periodic requests reports on a period or a distance.
 	Periodic bool `dmr:"flag,token:0x34"`
-	// OneShot asks for a single report.
+	// OneShot requests a single report.
 	OneShot bool `dmr:"flag,token:0x33"`
 	// Interval is the period of a periodic trigger, in seconds.
 	Interval    uint32 `dmr:"uintvar,token:0x31"`
@@ -329,25 +329,25 @@ type Request struct {
 	// ProtocolVersion is the requested protocol version.
 	ProtocolVersion    uint32 `dmr:"uintvar,token:0x3F"`
 	HasProtocolVersion bool   `dmr:"-"`
-	// Accuracy asks for the accuracy of the position.
+	// Accuracy requests the accuracy of the position.
 	Accuracy bool `dmr:"flag,token:0x50"`
-	// AccuracyAndTime asks for the accuracy and the time of the position.
+	// AccuracyAndTime requests the accuracy and the time of the position.
 	AccuracyAndTime bool `dmr:"flag,token:0x51"`
 	// MaxInfoAge is the age, in seconds, of the oldest position that the
 	// report may carry: the require-max-info-age token.
 	MaxInfoAge    uint32 `dmr:"uintvar,token:0x42"`
 	HasMaxInfoAge bool   `dmr:"-"`
-	// Time asks for the time of the position.
+	// Time requests the time of the position.
 	Time bool `dmr:"flag,token:0x52"`
-	// Altitude asks for the altitude.
+	// Altitude requests the altitude.
 	Altitude bool `dmr:"flag,token:0x54"`
-	// Speed asks for the horizontal speed.
+	// Speed requests the horizontal speed.
 	Speed bool `dmr:"flag,token:0x62"`
-	// Direction asks for the heading.
+	// Direction requests the heading.
 	Direction bool `dmr:"flag,token:0x57"`
-	// VerticalSpeed asks for the vertical speed.
+	// VerticalSpeed requests the vertical speed.
 	VerticalSpeed bool `dmr:"flag,token:0x64"`
-	// LevelOfConfidence is the confidence that the request asks for.
+	// LevelOfConfidence is the confidence that the request specifies.
 	LevelOfConfidence    uint8 `dmr:"u8,token:0x61"`
 	HasLevelOfConfidence bool  `dmr:"-"`
 }

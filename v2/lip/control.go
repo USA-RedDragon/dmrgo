@@ -5,7 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// ReportType is the kind of location report that a request asks for (ETSI
+// ReportType is the kind of location report that a request specifies (ETSI
 // TS 100 392-18-1 clause 6.3.65).
 type ReportType uint8
 
@@ -77,7 +77,7 @@ func (a *ReportAck) Encode(dst []byte) ([]byte, int, error) {
 // maximum response time, follow from bit Elements. (ETSI TS 100 392-18-1
 // clause 6.2.16)
 type ImmediateRequest struct {
-	// ReportType is the kind of report that the request asks for.
+	// ReportType is the kind of report that the request specifies.
 	ReportType ReportType
 	// Elements is the bit offset of the first type 5 element.
 	// DecodeImmediateRequest sets it; Encode ignores it.
@@ -120,7 +120,7 @@ func (q *ImmediateRequest) Encode(dst []byte) ([]byte, int, error) {
 type EnableDisable struct {
 	// Response is true for the response PDU, false for the request.
 	Response bool
-	// AckRequested asks for an acknowledgement. Only the request codes
+	// AckRequested requests an acknowledgement. Only the request codes
 	// it.
 	AckRequested bool
 	// Flags holds the location reporting enable flags, flag 1 in the most

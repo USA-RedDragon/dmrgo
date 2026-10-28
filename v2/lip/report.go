@@ -37,7 +37,7 @@ func (t TimeType) String() string {
 // the position was found, or the time of the position. Only the fields of
 // Type are coded. (ETSI TS 100 392-18-1 clauses 6.3.78 to 6.3.80)
 type Time struct {
-	// Type tells which fields are coded.
+	// Type shows which fields are coded.
 	Type TimeType
 	// Elapsed is the time elapsed code for TimeElapsed: 0 under 5 s, 1
 	// under 5 min, 2 under 30 min, 3 not known.
@@ -139,7 +139,7 @@ func (s Shape) String() string {
 // 360/256 degrees clockwise from north. (ETSI TS 100 392-18-1 clauses
 // 6.3.35 to 6.3.47)
 type Location struct {
-	// Shape tells which fields are coded.
+	// Shape shows which fields are coded.
 	Shape Shape
 	// Longitude is in degrees, -180 to 180, east positive, in steps of
 	// 360/2^25 degrees. Every shape but ShapeNone codes it.
@@ -335,7 +335,7 @@ func (t VelocityType) String() string {
 // degrees) to 6 under 96, 7 not known. (ETSI TS 100 392-18-1 clauses 6.3.17
 // to 6.3.26, 6.3.89 and 6.3.91)
 type Velocity struct {
-	// Type tells which fields are coded.
+	// Type shows which fields are coded.
 	Type VelocityType
 	// Horizontal is the horizontal velocity code. Every type but
 	// VelocityNone codes it.
@@ -432,7 +432,7 @@ type LongReport struct {
 	Location Location
 	// Velocity is the velocity data.
 	Velocity Velocity
-	// AckRequested asks for a location report acknowledgement.
+	// AckRequested requests a location report acknowledgement.
 	AckRequested bool
 	// UserDefined is the type of additional data: true when
 	// AdditionalData is user defined data, false for the reason for

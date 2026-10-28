@@ -15,7 +15,7 @@ var (
 	// 00 0d 00 0a.
 	ErrSignature = errors.New("sms: AnyTone text without its prefix")
 	// ErrNotText is returned for a data packet that does not carry a text
-	// message in a format that the package knows.
+	// message in a format that the package decodes.
 	ErrNotText = errors.New("sms: packet is not a text message")
 	// ErrFormat is returned by AppendPacket for an unknown Format, for
 	// FormatDefinedData with DD format binary and for a FormatHytera or

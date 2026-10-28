@@ -77,8 +77,8 @@ type Text struct {
 	Source, Destination uint32
 	// Group reports a message to a talkgroup.
 	Group bool
-	// Confirmed reports a message that asks the data link layer for a
-	// response: a C_HEAD packet for the formats on IP, and a DD_HEAD with
+	// Confirmed reports a message that requests a response from the
+	// data link layer: a C_HEAD packet for the formats on IP, and a DD_HEAD with
 	// the Response Requested flag (A) for FormatDefinedData and
 	// FormatHytera (ETSI TS 102 361-3 clause 6.4, Table 6.5). Decode sets
 	// it from the header and AppendPacket builds that header.
@@ -96,7 +96,7 @@ type Text struct {
 	DD enums.DDFormat
 	// Sequence is the sequence number of a FormatTMS message.
 	Sequence uint8
-	// AckRequired reports that a FormatTMS message asks for an
+	// AckRequired reports that a FormatTMS message requests an
 	// acknowledgement.
 	AckRequired bool
 	// Body is the text in UTF-8, without the CR LF that MOTOTRBO radios put
@@ -255,7 +255,7 @@ type Header struct {
 // C_HEAD when t.Confirmed is set. Defined data sets the Response Requested
 // flag (A) when t.Confirmed is set. A TMS text starts with a CR LF. Only
 // FormatAnyTone and FormatHytera end the text with a NUL; the Format values
-// say why. BCD digits that would have the HyteraText layout get an octet
+// give the cause. BCD digits that would have the HyteraText layout get an octet
 // FF, the end of the digits, so that Decode reads them as
 // FormatDefinedData. It returns dst unchanged and ErrFormat for an unknown
 // format, for FormatDefinedData with DD format binary, which holds no text,

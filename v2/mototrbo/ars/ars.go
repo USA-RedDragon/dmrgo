@@ -9,7 +9,7 @@ type Type uint8
 const (
 	TypeDeviceRegistration   Type = 0x0 // a radio registers with the server
 	TypeDeviceDeregistration Type = 0x1 // a radio leaves
-	TypeQuery                Type = 0x4 // the server asks a radio to register
+	TypeQuery                Type = 0x4 // the server requests a radio to register
 	TypeUserRegistration     Type = 0x5 // a user logs on at a radio
 	TypeUserDeregistration   Type = 0x6 // a user logs off
 	TypeUserAck              Type = 0x7 // the answer to a user registration or deregistration
@@ -122,7 +122,7 @@ func (r FailureReason) String() string {
 type Header struct {
 	// Extension reports that a second header octet follows.
 	Extension bool `dmr:"bit:0"`
-	// AckRequired asks for an answer in a request. In an answer it marks a
+	// AckRequired requests an answer in a request. In an answer it marks a
 	// failure.
 	AckRequired bool `dmr:"bit:1"`
 	// Priority is the priority bit.
@@ -179,6 +179,6 @@ type Message struct {
 	// Response is the second header octet of an answer with
 	// Header.Extension set.
 	Response Response `dmr:"frame,if:Header.Extension&Header.Type==TypeAck|TypeUserAck"`
-	// Extra holds the octets after the fields that the package knows.
+	// Extra holds the octets after the fields that the package decodes.
 	Extra []byte `dmr:"rest"`
 }

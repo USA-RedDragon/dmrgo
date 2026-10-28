@@ -12,11 +12,11 @@ type Opcode uint16
 // protocol (LP).
 const (
 	RRSDeregistration     Opcode = 0x0001 // the radio goes offline
-	RRSOnlineCheck        Opcode = 0x0002 // the server asks if the radio is online
+	RRSOnlineCheck        Opcode = 0x0002 // the server checks whether the radio is online
 	RRSRegistration       Opcode = 0x0003 // the radio registers
 	RRSRegistrationAnswer Opcode = 0x0080 // the answer to a registration
 	RRSOnlineCheckAnswer  Opcode = 0x0082 // the answer to an online check
-	LPStandardRequest     Opcode = 0xA001 // ask for one position
+	LPStandardRequest     Opcode = 0xA001 // request one position
 	LPStandardAnswer      Opcode = 0xA002 // the answer to a standard request
 	LPEmergencyReport     Opcode = 0xB003 // a position sent in an emergency
 	LPConditionReport     Opcode = 0xD003 // a position on a condition, such as a period
@@ -139,7 +139,7 @@ type RRSCheckAnswer struct {
 //
 //dmr:frame 1
 type TMPFlags struct {
-	// NoAck reports that the sender wants no answer.
+	// NoAck reports that the sender requests no answer.
 	NoAck bool `dmr:"bit:0"`
 	// Option reports an option field, which the package does not decode.
 	Option bool `dmr:"bit:1"`

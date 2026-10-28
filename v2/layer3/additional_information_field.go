@@ -1,7 +1,7 @@
 package layer3
 
 // AdditionalInformationField is the 1-bit Additional Information Field: it
-// tells whether the additional information of a PDU is valid (ETSI TS 102
+// shows whether the additional information of a PDU is valid (ETSI TS 102
 // 361-2 clause 7.2.6, Table 7.15).
 type AdditionalInformationField uint8
 

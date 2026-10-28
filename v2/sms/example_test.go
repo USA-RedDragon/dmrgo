@@ -31,7 +31,7 @@ func Example() {
 	// 5 blocks, TMS from 3191868: Hello <nil>
 }
 
-// ExampleAppendAck answers a TMS text that asks for an acknowledgement.
+// ExampleAppendAck answers a TMS text that requests an acknowledgement.
 func ExampleAppendAck() {
 	in := sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Sequence: 3, AckRequired: true, Body: []byte("Hi")}
 	data, err := sms.AppendPacket(nil, &in, &header)

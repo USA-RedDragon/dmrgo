@@ -11,8 +11,8 @@ var (
 	// ErrLength is returned when the length of the message does not match
 	// the data.
 	ErrLength = errors.New("lrrp: length does not match the message")
-	// ErrToken is returned for a token that the package does not know, as
-	// its length cannot be known.
+	// ErrToken is returned for a token that the package does not decode,
+	// as its length is not known.
 	ErrToken = errors.New("lrrp: unknown token")
 	// ErrVarint is returned for a number that does not fit its field.
 	ErrVarint = errors.New("lrrp: number does not fit its field")

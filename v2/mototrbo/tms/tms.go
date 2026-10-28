@@ -54,7 +54,7 @@ func (e Encoding) String() string {
 type Header struct {
 	// Extension reports that more header octets follow the address.
 	Extension bool `dmr:"bit:0"`
-	// AckRequired asks the receiver to send an acknowledgement.
+	// AckRequired requests the receiver to send an acknowledgement.
 	AckRequired bool `dmr:"bit:1"`
 	// Reserved is the reserved bit. Radios set it in a text message.
 	Reserved bool `dmr:"bit:2"`

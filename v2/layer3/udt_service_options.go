@@ -12,7 +12,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/enums"
 //dmr:input_size 7
 type ShortDataServiceOptions struct {
 	IsPrivacy  bool `dmr:"bit:1"` // privacy, which ETSI TS 102 361-4 does not define
-	IsSuppData bool `dmr:"bit:2"` // a Supplementary Data Transfer Service is asked for the call
+	IsSuppData bool `dmr:"bit:2"` // a Supplementary Data Transfer Service is requested for the call
 }
 
 // PollingServiceOptions is the 7-bit Service_Options of a Tier III UDT

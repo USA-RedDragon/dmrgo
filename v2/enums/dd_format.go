@@ -29,7 +29,7 @@ const (
 	DDISO8859Part15 DDFormat = 0b010000 // 8-bit ISO/IEC 8859-15
 	DDISO8859Part16 DDFormat = 0b010001 // 8-bit ISO/IEC 8859-16
 	DDUTF8          DDFormat = 0b010010 // Unicode UTF-8
-	DDUTF16         DDFormat = 0b010011 // Unicode UTF-16, big-endian unless a byte order mark says otherwise
+	DDUTF16         DDFormat = 0b010011 // Unicode UTF-16, big-endian unless a byte order mark sets another order
 	DDUTF16BE       DDFormat = 0b010100 // Unicode UTF-16BE
 	DDUTF16LE       DDFormat = 0b010101 // Unicode UTF-16LE
 	DDUTF32         DDFormat = 0b010110 // Unicode UTF-32

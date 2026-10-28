@@ -76,7 +76,7 @@ func (k ServiceKind) String() string {
 	return "ServiceKind(" + text.Int(int64(k)) + ")"
 }
 
-// ServiceFunction is the 2-bit Service_Function of a C_ALOHA, which tells
+// ServiceFunction is the 2-bit Service_Function of a C_ALOHA, which shows
 // for which services an MS may make a random access (ETSI TS 102 361-4
 // clause 6.2.1.1.2, Table 6.1).
 type ServiceFunction uint8

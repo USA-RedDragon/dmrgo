@@ -8,6 +8,6 @@ package layer3
 //dmr:field ServiceOptions of a C_RAND
 type StatusServiceOptions struct {
 	Group      bool  `dmr:"bit:0"`    // the target address is a talkgroup
-	IsSuppData bool  `dmr:"bit:1"`    // supplementary_user data is asked for the call
+	IsSuppData bool  `dmr:"bit:1"`    // supplementary_user data is requested for the call
 	StatusHigh uint8 `dmr:"bits:2-6"` // the 5 most significant bits of the 7-bit status
 }

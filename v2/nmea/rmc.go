@@ -5,7 +5,7 @@
 package nmea
 
 // RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). An
-// empty field gives 0, and the Has fields tell an empty field from 0.
+// empty field gives 0, and the Has fields separate an empty field from 0.
 type RMC struct {
 	// Talker is the talker ID, such as "GP" for GPS or "GN" for more than
 	// one satellite system.

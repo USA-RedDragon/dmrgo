@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 )
 
-// ExampleNewText builds a text message that asks for an acknowledgement,
+// ExampleNewText builds a text message that requests an acknowledgement,
 // and the acknowledgement that the receiver sends back.
 func ExampleNewText() {
 	m, _ := tms.NewText(5, true)

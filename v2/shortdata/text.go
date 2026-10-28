@@ -7,23 +7,23 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 )
 
-// DecodeText appends the text in data, coded as format says, to dst as UTF-8 and
-// returns dst. The text ends at the first NUL character, so the pad octets
-// of the last block are dropped, and its trailing DEL characters, which a
-// block filled with 1 bits leaves, are dropped too. Binary data is appended unchanged, NUL
-// octets included. BCD holds the dialed digits 0 to 9, '*' and '#', two
-// to an octet with the first in the high nibble, and ends at the first
-// nibble 1111 (DigitNULL). 7-bit text is ISO/IEC 646 characters packed
-// without gaps, most significant bit first; the bits after the last whole
-// character and the trailing DEL characters, which pad bits of 1 give, are
-// dropped. Octets 0x80 to 0x9F of ISO/IEC 8859 are the C1 controls. UTF-16
-// and UTF-32 without a byte order mark are big-endian; a byte order mark
-// selects the order and is dropped. A reserved BCD digit, an octet that
-// the ISO/IEC 8859 part does not define, invalid UTF-8 and an invalid
-// UTF-16 or UTF-32 code unit give U+FFFD. It returns dst unchanged and
-// ErrFormat for a reserved format. It allocates only to grow dst. (ETSI TS
-// 102 361-1 clause 9.3.38, ETSI TS 102 361-4 clauses 7.2.9, B.3.3 and
-// B.3.4)
+// DecodeText appends the text in data, coded as format selects, to dst as
+// UTF-8 and returns dst. The text ends at the first NUL character, so the
+// pad octets of the last block are dropped, and its trailing DEL
+// characters, which a block filled with 1 bits leaves, are dropped too.
+// Binary data is appended unchanged, NUL octets included. BCD holds the
+// dialed digits 0 to 9, '*' and '#', two to an octet with the first in the
+// high nibble, and ends at the first nibble 1111 (DigitNULL). 7-bit text is
+// ISO/IEC 646 characters packed without gaps, most significant bit first;
+// the bits after the last whole character and the trailing DEL characters,
+// which pad bits of 1 give, are dropped. Octets 0x80 to 0x9F of ISO/IEC
+// 8859 are the C1 controls. UTF-16 and UTF-32 without a byte order mark are
+// big-endian; a byte order mark selects the order and is dropped. A
+// reserved BCD digit, an octet that the ISO/IEC 8859 part does not define,
+// invalid UTF-8 and an invalid UTF-16 or UTF-32 code unit give U+FFFD. It
+// returns dst unchanged and ErrFormat for a reserved format. It allocates
+// only to grow dst. (ETSI TS 102 361-1 clause 9.3.38, ETSI TS 102 361-4
+// clauses 7.2.9, B.3.3 and B.3.4)
 func DecodeText(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
 	from := len(dst)
 	switch format {
@@ -131,7 +131,7 @@ func septetText(dst, data []byte) []byte {
 	return dst
 }
 
-// AppendText appends the UTF-8 text to dst, coded as format says, and
+// AppendText appends the UTF-8 text to dst, coded as format selects, and
 // returns dst. Binary data is the text unchanged. BCD takes the characters
 // 0 to 9, '*' and '#', and fills the last octet with the nibble 1111 when
 // the number of digits is odd. 7-bit text takes the characters below

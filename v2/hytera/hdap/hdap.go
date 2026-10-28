@@ -46,7 +46,7 @@ func (s Service) String() string {
 //
 //dmr:frame 1
 type Header struct {
-	// Reliable asks for a reliable transfer.
+	// Reliable requests a reliable transfer.
 	Reliable bool `dmr:"bit:0"`
 	// Service is the service of the message.
 	Service Service `dmr:"bits:1-7,enum"`

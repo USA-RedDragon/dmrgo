@@ -1,6 +1,6 @@
 // Package lip decodes and encodes the PDUs of the Location Information
 // Protocol (LIP) of ETSI TS 100 392-18-1, which a DMR UDT carries in the
-// LIP format and the USBD polling service compresses. DecodeHeader tells
+// LIP format and the USBD polling service compresses. DecodeHeader gives
 // the kind of a PDU. The package reads and writes the LONG LOCATION REPORT,
 // the LOCATION REPORT ACKNOWLEDGEMENT, the IMMEDIATE LOCATION REPORT
 // REQUEST and the LOCATION REPORTING ENABLE/DISABLE request and response,

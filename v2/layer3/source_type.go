@@ -2,7 +2,7 @@ package layer3
 
 const unknownName = "Unknown"
 
-// SourceType is the 1-bit Source Type: it tells whether a BS or an MS sent
+// SourceType is the 1-bit Source Type: it shows whether a BS or an MS sent
 // the PDU (ETSI TS 102 361-2 clause 7.2.5, Table 7.14).
 type SourceType uint8
 

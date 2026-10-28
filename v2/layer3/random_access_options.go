@@ -12,7 +12,7 @@ package layer3
 type VoiceServiceOptions struct {
 	IsEmergency   bool  `dmr:"bit:0"`    // emergency service
 	IsPrivacy     bool  `dmr:"bit:1"`    // privacy, which ETSI TS 102 361-4 does not define
-	IsSuppData    bool  `dmr:"bit:2"`    // a Supplementary Data Transfer Service is asked for the call
+	IsSuppData    bool  `dmr:"bit:2"`    // a Supplementary Data Transfer Service is requested for the call
 	IsBroadcast   bool  `dmr:"bit:3"`    // broadcast service, for talkgroups only
 	Reserved      bool  `dmr:"bit:4"`    // reserved, 0
 	PriorityLevel uint8 `dmr:"bits:5-6"` // 0 is normal, 1 to 3 are priorities 1 to 3 (3 is highest)
@@ -26,7 +26,7 @@ type VoiceServiceOptions struct {
 type DataServiceOptions struct {
 	IsEmergency   bool  `dmr:"bit:0"`    // emergency service
 	IsPrivacy     bool  `dmr:"bit:1"`    // privacy, which ETSI TS 102 361-4 does not define
-	IsSuppData    bool  `dmr:"bit:2"`    // a Supplementary Data Transfer Service is asked for the call
+	IsSuppData    bool  `dmr:"bit:2"`    // a Supplementary Data Transfer Service is requested for the call
 	HiRate        bool  `dmr:"bit:3"`    // the payload channel uses dual slot data timing
 	MultiItem     bool  `dmr:"bit:4"`    // multi-item data, false for single item data
 	PriorityLevel uint8 `dmr:"bits:5-6"` // 0 is normal, 1 to 3 are priorities 1 to 3 (3 is highest)
@@ -41,6 +41,6 @@ type RegistrationServiceOptions struct {
 	Reserved  bool  `dmr:"bit:0"`    // reserved, 0
 	IsPrivacy bool  `dmr:"bit:1"`    // privacy, which ETSI TS 102 361-4 does not define
 	IPInform  bool  `dmr:"bit:2"`    // the MS advises an IP connection
-	PowerSave uint8 `dmr:"bits:3-5"` // PowerSave_RQ: 0 asks for no power save
+	PowerSave uint8 `dmr:"bits:3-5"` // PowerSave_RQ: 0 requests no power save
 	Register  bool  `dmr:"bit:6"`    // Reg_Dereg: true to register, false to de-register
 }
