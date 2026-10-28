@@ -21,6 +21,9 @@ type sweepJob struct {
 	Cost        bool            `json:"cost,omitempty"`
 	Disc        bool            `json:"disc,omitempty"`
 	Stream      string          `json:"stream,omitempty"`
+	Radio       string          `json:"radio,omitempty"`
+	PreEmphasis bool            `json:"pre_emphasis,omitempty"`
+	Public      bool            `json:"public,omitempty"`
 }
 
 type sweepCase struct {
@@ -99,7 +102,19 @@ type sweepInput struct {
 
 func (j *sweepJob) newRx(cfg RxConfig, o *options) sweepRx {
 	if j.Disc {
-		d, err := newAudioReceiver(AudioRxConfig{Rate: j.audioHz(), OnBursts: cfg.OnBursts}, o)
+		c := AudioRxConfig{Rate: j.audioHz(), OnBursts: cfg.OnBursts}
+		if j.PreEmphasis {
+			c.PreEmphasis = NewRxPreEmphasis()
+		}
+		if j.Public {
+			c.Tier = cfg.Tier
+			d, err := NewAudioReceiver(&c)
+			if err != nil {
+				panic(err)
+			}
+			return sweepRx{d: d}
+		}
+		d, err := newAudioReceiver(c, o)
 		if err != nil {
 			panic(err)
 		}
@@ -113,7 +128,7 @@ func (j *sweepJob) newRx(cfg RxConfig, o *options) sweepRx {
 
 func (s sweepRx) convert(j *sweepJob, x []complex64) sweepInput {
 	if s.d != nil {
-		return sweepInput{a: discAudio(x, j.audioHz())}
+		return sweepInput{a: radioAudio(x, j.audioHz(), j.Radio == "deemph")}
 	}
 	return sweepInput{x: j.input(x)}
 }

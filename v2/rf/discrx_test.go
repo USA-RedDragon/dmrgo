@@ -29,6 +29,10 @@ func audioIFTaps() []float64 {
 }
 
 func discAudio(x []complex64, hz int) []int16 {
+	return radioAudio(x, hz, false)
+}
+
+func radioAudio(x []complex64, hz int, deemph bool) []int16 {
 	h := audioIFTaps()
 	step := basebandRate / hz
 	aa := lowpassTaps(63, min(6250, 0.42*float64(hz))/basebandRate)
@@ -43,6 +47,9 @@ func discAudio(x []complex64, hz int) []int16 {
 		prev = y
 		disc = append(disc, math.Atan2(imag(d), real(d))*basebandRate/(2*math.Pi))
 	}
+	if deemph {
+		deemphasize(disc)
+	}
 	out := make([]int16, 0, len(disc)/step)
 	for i := 0; i+len(aa) <= len(disc); i += step {
 		var hz float64
@@ -52,6 +59,20 @@ func discAudio(x []complex64, hz int) []int16 {
 		out = append(out, int16(max(min(math.Round(hz*audioGain+audioOffset), math.MaxInt16), math.MinInt16)))
 	}
 	return out
+}
+
+func deemphasize(x []float64) {
+	if len(x) == 0 {
+		return
+	}
+	wz, wp := 2*math.Pi*3000.0, 2*math.Pi*300.0
+	c := wp / math.Tan(wp/(2*basebandRate))
+	b0, b1, a1 := (1+c/wz)/(1+c/wp), (1-c/wz)/(1+c/wp), (1-c/wp)/(1+c/wp)
+	x1, y1 := x[0], x[0]
+	for i, v := range x {
+		y := b0*v + b1*x1 - a1*y1
+		x[i], x1, y1 = y, v, y
+	}
 }
 
 func lowpassTaps(n int, fc float64) []float64 {
