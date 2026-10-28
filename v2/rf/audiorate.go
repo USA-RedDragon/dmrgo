@@ -5,9 +5,8 @@ package rf
 import "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 
 type audioRate struct {
-	rs    resample.Real
-	hist0 [audioUpTaps]int16
-	rsOn  bool
+	rs   resample.Real
+	rsOn bool
 }
 
 func (a *audioRate) resampling() bool { return a.rsOn }
@@ -40,13 +39,8 @@ func audioRateOK(rate int, t Tier) bool {
 	return true
 }
 
-func (r *AudioReceiver) setResample(rate, native int) {
-	r.rsOn = true
-	r.rs.Init(audioUpTable[:], audioUpTaps, audioUpPhases, true, float64(rate)/float64(native), r.hist0[:])
-}
-
 func (r *AudioReceiver) designResample(t Tier) {
-	if !r.rsOn || t <= Tier0 {
+	if !r.rs0.on() || t <= Tier0 {
 		return
 	}
 	step := float64(r.rate) / float64(audioNative(int(r.rate)))
@@ -57,7 +51,8 @@ func (r *AudioReceiver) designResample(t Tier) {
 	}
 	h := make([]float32, rows*d.taps)
 	resample.Design(h, d.taps, d.phases, audioUpCut*min(1, 1/step), audioUpBeta)
-	r.rs.Init(h, d.taps, d.phases, d.lerp, step, make([]int16, d.taps))
+	r.rsOn = r.rs.Init(h, d.taps, d.phases, d.lerp, step, make([]int16, d.taps))
+	r.rs0 = rate0{}
 }
 
 func (r *AudioReceiver) resampled(x []int16) {

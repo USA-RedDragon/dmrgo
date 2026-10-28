@@ -30,10 +30,10 @@ type AudioRxConfig struct {
 	// receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems
 	// sample, 12000 or 9600: at Rate when it is one of them, else at the
 	// lowest of them at or above Rate, or 48000 above 48000, through a
-	// resampler. Under TinyGo Rate must be one of the four. A lower rate
-	// costs less: the receiver halves 48 kHz and then 24 kHz with a
-	// half-band filter before its matched filter, which runs at 12 kHz or
-	// 9.6 kHz.
+	// resampler. Tier0, also under TinyGo, resamples in fixed point with
+	// a table in flash. A lower rate costs less: the receiver halves 48 kHz
+	// and then 24 kHz with a half-band filter before its matched filter,
+	// which runs at 12 kHz or 9.6 kHz.
 	Rate int
 	// Bits is the resolution of the converter, from 8 to 16. 0 means 16.
 	// Each sample holds one code of Bits bits in its low bits.
@@ -62,6 +62,7 @@ type AudioRxConfig struct {
 type AudioReceiver struct {
 	discRx
 	d48    disc48
+	rs0    rate0
 	bursts burstSink
 	audioRate
 	rate     int32
@@ -144,7 +145,7 @@ func (r *AudioReceiver) configure(cfg AudioRxConfig, opt *options) {
 	*r = AudioReceiver{}
 	r.bits, r.unsigned, r.set, r.rate = uint8(bits), cfg.Unsigned, true, int32(rate)
 	if rate != native {
-		r.setResample(rate, native)
+		r.rs0.init(rate, native)
 	}
 	r.sink = &r.bursts
 	r.setup(discSetup{Hz: hz, opt: opt}, dec)
@@ -276,11 +277,24 @@ func (r *AudioReceiver) feed(x []int16) {
 }
 
 func (r *AudioReceiver) native(x []int16) {
-	if r.resampling() {
+	switch {
+	case r.rs0.on():
+		r.resample0(x)
+	case r.resampling():
 		r.resampled(x)
-		return
+	default:
+		r.input(x)
 	}
-	r.input(x)
+}
+
+func (r *AudioReceiver) rsTaps() int {
+	switch {
+	case r.rs0.on():
+		return audioUpTaps
+	case r.resampling():
+		return r.resampleTaps()
+	}
+	return 0
 }
 
 // Active reports whether the stream is inside a transmission that the
@@ -301,8 +315,8 @@ func (r *AudioReceiver) Lag() int {
 	}
 
 	n := r.lagSamples(int(r.rate))
-	if r.resampling() {
-		n += r.resampleTaps()/2 + 1
+	if t := r.rsTaps(); t > 0 {
+		n += t/2 + 1
 	}
 	return n
 }
@@ -318,12 +332,12 @@ func (r *AudioReceiver) MaxOutput(n int) int {
 	if n <= 0 {
 		return r.flushBursts()
 	}
-	if r.resampling() {
+	if t := r.rsTaps(); t > 0 {
 		hz := int64(r.inputHz())
 		if r.f.dec {
 			hz *= 2
 		}
-		n = int(min(int64(n)*hz/int64(r.rate)+int64(r.resampleTaps()), 1<<40))
+		n = int(min(int64(n)*hz/int64(r.rate)+int64(t), 1<<40))
 	}
 	return r.maxBursts(n)
 }

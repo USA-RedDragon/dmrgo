@@ -32,12 +32,16 @@ type dspTables struct {
 	pulse     [2][2*rrcSpan*samplesPerSy + 2]float64
 	pulse32   [2][2*rrcSpan*samplesPerSy + 2]float32
 	cos, sin  [2][phaseStates]float32
-	audioUp   [(audioUpPhases + 1) * audioUpTaps]float32
+	audioUp   [(audioUpPhases + 1) * audioUpTaps]int16
 }
 
 func deriveDSP() *dspTables {
 	t := &dspTables{}
-	resample.Design(t.audioUp[:], audioUpTaps, audioUpPhases, audioUpCut, audioUpBeta)
+	var up [len(t.audioUp)]float32
+	resample.Design(up[:], audioUpTaps, audioUpPhases, audioUpCut, audioUpBeta)
+	for i, v := range up {
+		t.audioUp[i] = int16(math.Round(float64(v) * 32768))
+	}
 	for i := range t.ones8 {
 		t.ones8[i] = uint8(bits.OnesCount8(uint8(i)))
 	}

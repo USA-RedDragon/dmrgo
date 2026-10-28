@@ -78,6 +78,7 @@ ignore_files:
   - v2/layer2/packet/nocopy.go
   - v2/rf/acquire.go
   - v2/rf/audio.go
+  - v2/rf/audiorate0.go
   - v2/rf/audiorate.go
   - v2/rf/audiorate_tinygo.go
   - v2/rf/audiorates.go

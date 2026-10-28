@@ -42,7 +42,7 @@ func TestAudioRates(t *testing.T) {
 	a := discAudio(noisyBaseband(slots, 1400, 30, 4), 2*discRate)
 	rng := rand.New(rand.NewPCG(4, 4))
 	rates := make([]int, 0, 16)
-	rates = append(rates, 8000, 11025, 16000, 22050, 32000, 44100, 47999, 48001, 96000, 192000)
+	rates = append(rates, 8000, 9601, 11025, 12001, 16000, 22050, 24001, 32000, 44100, 47999, 48001, 96000, 192000)
 	for range 6 {
 		rates = append(rates, audioMinRate+rng.IntN(2*discRate-audioMinRate))
 	}
