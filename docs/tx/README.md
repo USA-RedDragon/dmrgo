@@ -82,7 +82,7 @@ Measured from TinyGo 0.43 `-opt z -gc=none` builds in QEMU (`mps2-an386`, Cortex
 
 ## Least sample rate
 
-Each cell gives the least sample rate in kHz for the power classes 1 W, 10 W, 100 W and 1000 W, in that order. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only.
+Each cell gives the least sample rate in kHz for the power classes 1 W, 10 W, 100 W and 1000 W, in that order. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only, and audio with pre-emphasis at 48 kHz only.
 
 ### Tier 0
 
@@ -106,6 +106,22 @@ Each cell gives the least sample rate in kHz for the power classes 1 W, 10 W, 10
 | Audio 16-bit, 3000 Hz low pass | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 |
 | I/Q 16-bit | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 | 96 / 96 / 96 / 96 |
 | I/Q 8-bit | - / - / - / - | - / - / - / - | - / - / - / - | 96 / - / - / - | - / - / - / - | 96 / 96 / 96 / 96 | - / - / - / - | 96 / 96 / 96 / 96 |
+| Audio 8-bit, pre-emphasis | - / - / - / - | - / - / - / - | - / - / - / - | 48 / - / - / - | - / - / - / - | 48 / 48 / - / - | - / - / - / - | - / - / - / - |
+| Audio 8-bit, pre-emphasis, 8000 Hz low pass | - / - / - / - | - / - / - / - | - / - / - / - | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 | - / - / - / - | - / - / - / - |
+| Audio 8-bit, pre-emphasis, 5000 Hz low pass | - / - / - / - | - / - / - / - | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 |
+| Audio 8-bit, pre-emphasis, 3000 Hz low pass | - / - / - / - | - / - / - / - | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 |
+| Audio 10-bit, pre-emphasis | - / - / - / - | - / - / - / - | - / - / - / - | 48 / - / - / - | - / - / - / - | 48 / 48 / - / - | - / - / - / - | 48 / 48 / 48 / 48 |
+| Audio 10-bit, pre-emphasis, 8000 Hz low pass | - / - / - / - | - / - / - / - | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 | - / - / - / - | 48 / 48 / 48 / 48 |
+| Audio 10-bit, pre-emphasis, 5000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 10-bit, pre-emphasis, 3000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 12-bit, pre-emphasis | - / - / - / - | 48 / - / - / - | 48 / - / - / - | 48 / - / - / - | - / - / - / - | 48 / 48 / - / - | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 12-bit, pre-emphasis, 8000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 12-bit, pre-emphasis, 5000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 12-bit, pre-emphasis, 3000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 16-bit, pre-emphasis | - / - / - / - | 48 / - / - / - | 48 / - / - / - | 48 / - / - / - | - / - / - / - | 48 / 48 / - / - | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 16-bit, pre-emphasis, 8000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 16-bit, pre-emphasis, 5000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
+| Audio 16-bit, pre-emphasis, 3000 Hz low pass | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 |
 
 ### Tier 1
 
@@ -159,25 +175,25 @@ Each cell is the margin of the signal to the limit, the worst over the measured 
 
 ### Tier 0 margins
 
-| Limit | Audio 8-bit | Audio 10-bit | Audio 12-bit | Audio 16-bit | I/Q 16-bit | I/Q 8-bit |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Deviation error, % under the 10% limit (TS 102 361-1 10.2.2.3) | +9.1 | +9.1 | +9.1 | +9.1 | +8.8 | +8.9 |
-| Adjacent channel power, dB (EN 300 113 7.4) | +3.5 | +5.5 | +5.7 | +5.7 | +5.0 | -0.8 |
-| Alternate channel power, dB (EN 300 113 7.4) | +22.9 | +28.9 | +29.7 | +29.8 | +29.9 | +0.4 |
-| Transient adjacent channel power, dB (EN 300 113 7.9) | - | - | - | - | +27.0 | +12.2 |
-| Transient alternate channel power, dB (China) | - | - | - | - | +22.2 | -1.2 |
-| Attack time t_p, ms over 0.1 ms (EN 300 113 7.9) | - | - | - | - | +0.3 | +0.3 |
-| Release time t_d, ms over 0.1 ms (EN 300 113 7.9) | - | - | - | - | +0.3 | +0.3 |
-| Transient power slope, dB (EN 300 113 7.9) | - | - | - | - | -0.0 | -0.0 |
-| Transient frequency error, kHz (EN 300 113 7.9) | - | - | - | - | +6.2 | +6.2 |
-| Spurious emissions, dB (EN 300 113 7.5) | +4.1 / -5.9 / -15.9 / -25.9 | +4.2 / -5.8 / -15.8 / -25.8 | +4.2 / -5.8 / -15.8 / -25.9 | +4.2 / -5.8 / -15.8 / -25.8 | - | - |
-| Emission Mask D, dB (47 CFR 90.210(d)) | +8.5 / +6.3 / -3.7 / -3.7 | +12.9 / +6.2 / -3.8 / -3.8 | +15.6 / +6.2 / -3.8 / -3.8 | +15.4 / +6.2 / -3.8 / -3.8 | +13.9 / +13.9 / +13.9 / +13.9 | +0.8 / +0.8 / -1.4 / -1.4 |
-| Amateur spurious emissions, dB (47 CFR 97.307(e)) | +14.2 / +4.2 / +0.2 / +0.2 | +14.2 / +4.2 / +0.2 / +0.2 | +14.2 / +4.2 / +0.2 / +0.2 | +14.2 / +4.2 / +0.2 / +0.2 | +49.4 / +39.4 / +35.4 / +35.4 | +8.9 / -1.1 / -5.1 / -5.1 |
-| Amateur spurious emissions, dB (ERC/REC 74-01) | +26.8 / +16.8 / +6.8 / -0.2 | +26.8 / +16.8 / +6.8 / -0.2 | +26.8 / +16.8 / +6.8 / -0.2 | +26.8 / +16.8 / +6.8 / -0.2 | - | - |
-| Alternate channel power, dB (China) | +13.0 | +25.4 | +35.6 | +39.7 | +35.3 | -9.6 |
-| Occupied bandwidth, kHz under 8.5 kHz (China) | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 |
-| Adjacent channel power, dB (Japan) | +13.9 | +18.5 | +19.3 | +19.3 | +22.2 | +8.4 |
-| Occupied bandwidth, kHz under 11.5 kHz (Japan) | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 |
+| Limit | Audio 8-bit | Audio 10-bit | Audio 12-bit | Audio 16-bit | I/Q 16-bit | I/Q 8-bit | Audio 8-bit, pre-emphasis | Audio 10-bit, pre-emphasis | Audio 12-bit, pre-emphasis | Audio 16-bit, pre-emphasis |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Deviation error, % under the 10% limit (TS 102 361-1 10.2.2.3) | +9.1 | +9.1 | +9.1 | +9.1 | +8.8 | +8.9 | +7.5 | +7.8 | +7.7 | +7.7 |
+| Adjacent channel power, dB (EN 300 113 7.4) | +3.5 | +5.5 | +5.7 | +5.7 | +5.0 | -0.8 | -13.1 | -1.8 | +3.8 | +4.7 |
+| Alternate channel power, dB (EN 300 113 7.4) | +22.9 | +28.9 | +29.7 | +29.8 | +29.9 | +0.4 | +3.4 | +14.8 | +24.3 | +27.0 |
+| Transient adjacent channel power, dB (EN 300 113 7.9) | - | - | - | - | +27.0 | +12.2 | - | - | - | - |
+| Transient alternate channel power, dB (China) | - | - | - | - | +22.2 | -1.2 | - | - | - | - |
+| Attack time t_p, ms over 0.1 ms (EN 300 113 7.9) | - | - | - | - | +0.3 | +0.3 | - | - | - | - |
+| Release time t_d, ms over 0.1 ms (EN 300 113 7.9) | - | - | - | - | +0.3 | +0.3 | - | - | - | - |
+| Transient power slope, dB (EN 300 113 7.9) | - | - | - | - | -0.0 | -0.0 | - | - | - | - |
+| Transient frequency error, kHz (EN 300 113 7.9) | - | - | - | - | +6.2 | +6.2 | - | - | - | - |
+| Spurious emissions, dB (EN 300 113 7.5) | +4.1 / -5.9 / -15.9 / -25.9 | +4.2 / -5.8 / -15.8 / -25.8 | +4.2 / -5.8 / -15.8 / -25.9 | +4.2 / -5.8 / -15.8 / -25.8 | - | - | -2.8 / -12.8 / -22.8 / -32.8 | -2.6 / -12.6 / -22.6 / -32.6 | -2.6 / -12.6 / -22.6 / -32.6 | -2.6 / -12.6 / -22.6 / -32.6 |
+| Emission Mask D, dB (47 CFR 90.210(d)) | +8.5 / +6.3 / -3.7 / -3.7 | +12.9 / +6.2 / -3.8 / -3.8 | +15.6 / +6.2 / -3.8 / -3.8 | +15.4 / +6.2 / -3.8 / -3.8 | +13.9 / +13.9 / +13.9 / +13.9 | +0.8 / +0.8 / -1.4 / -1.4 | -11.5 / -11.5 / -12.4 / -12.4 | +0.3 / +0.3 / -9.5 / -9.5 | +9.4 / +0.4 / -9.6 / -9.6 | +10.4 / +0.4 / -9.6 / -9.6 |
+| Amateur spurious emissions, dB (47 CFR 97.307(e)) | +14.2 / +4.2 / +0.2 / +0.2 | +14.2 / +4.2 / +0.2 / +0.2 | +14.2 / +4.2 / +0.2 / +0.2 | +14.2 / +4.2 / +0.2 / +0.2 | +49.4 / +39.4 / +35.4 / +35.4 | +8.9 / -1.1 / -5.1 / -5.1 | +6.6 / -3.4 / -7.4 / -7.4 | +7.8 / -2.2 / -6.2 / -6.2 | +7.8 / -2.2 / -6.1 / -6.1 | +7.8 / -2.2 / -6.1 / -6.1 |
+| Amateur spurious emissions, dB (ERC/REC 74-01) | +26.8 / +16.8 / +6.8 / -0.2 | +26.8 / +16.8 / +6.8 / -0.2 | +26.8 / +16.8 / +6.8 / -0.2 | +26.8 / +16.8 / +6.8 / -0.2 | - | - | +19.9 / +9.9 / -0.1 / -7.1 | +20.4 / +10.4 / +0.4 / -6.6 | +20.4 / +10.4 / +0.4 / -6.6 | +20.4 / +10.4 / +0.4 / -6.6 |
+| Alternate channel power, dB (China) | +13.0 | +25.4 | +35.6 | +39.7 | +35.3 | -9.6 | -6.6 | +4.8 | +15.0 | +19.2 |
+| Occupied bandwidth, kHz under 8.5 kHz (China) | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 | +0.8 |
+| Adjacent channel power, dB (Japan) | +13.9 | +18.5 | +19.3 | +19.3 | +22.2 | +8.4 | -4.5 | +7.2 | +16.0 | +18.0 |
+| Occupied bandwidth, kHz under 11.5 kHz (Japan) | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 | +3.8 |
 
 ### Tier 1 margins
 

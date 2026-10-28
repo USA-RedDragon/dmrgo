@@ -123,6 +123,9 @@ func txClassName(c limClass) string {
 	if c.iq {
 		return [...]string{"", "I/Q 16-bit", "I/Q 8-bit"}[c.format]
 	}
+	if c.pe {
+		return fmt.Sprintf("Audio %d-bit, pre-emphasis", c.bits)
+	}
 	return fmt.Sprintf("Audio %d-bit", c.bits)
 }
 
@@ -160,7 +163,7 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 	var b strings.Builder
 	b.WriteString(txDocBegin + "\n\n")
 	b.WriteString("## Least sample rate\n\n")
-	b.WriteString("Each cell gives the least sample rate in kHz for the power classes 1 W, 10 W, 100 W and 1000 W, in that order. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only.\n\n")
+	b.WriteString("Each cell gives the least sample rate in kHz for the power classes 1 W, 10 W, 100 W and 1000 W, in that order. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only, and audio with pre-emphasis at 48 kHz only.\n\n")
 	head := "| Input |"
 	sep := "| --- |"
 	for _, r := range txRegimes {
@@ -181,9 +184,12 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 					cells := make([]string, len(limPowerClasses))
 					for p := range limPowerClasses {
 						var hz int
-						if c.iq {
+						switch {
+						case c.iq:
 							hz = int(minRateIQ[tier-Tier0][c.class][r.region][r.service][p])
-						} else {
+						case c.pe:
+							hz = int(minRatePE[c.class][li][r.region][r.service][p]) * minRateUnit
+						default:
 							hz = int(minRateAudio[tier-Tier0][c.class][li][r.region][r.service][p]) * minRateUnit
 						}
 						cells[p] = "-"

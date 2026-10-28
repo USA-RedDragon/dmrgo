@@ -55,6 +55,11 @@ type Setup struct {
 	// next looser of the measured cutoffs 8000, 5000 and 3000 Hz, so 6000
 	// counts as 8000 and a cutoff above 8000 as none. Audio only.
 	InputLowpassHz int
+	// PreEmphasis states that the radio pre-emphasizes its modulator
+	// input with a zero at 300 Hz and a pole at 3 kHz, and that the
+	// modulator is MCUAudioPE. It is measured for Tier0
+	// audio at 48000 Hz only.
+	PreEmphasis bool
 }
 
 func lowpassClass(hz int) int {
@@ -85,6 +90,9 @@ func (s Setup) MinRate() int {
 		s.Service < 0 || s.Service >= len(minRateIQ[0][0][0]) || s.Power < 0 || s.Power >= len(minRateIQ[0][0][0][0]) {
 		return 0
 	}
+	if s.PreEmphasis && (s.IQ || t != Tier0) {
+		return 0
+	}
 	if s.IQ {
 		switch s.Bits {
 		case 16:
@@ -107,6 +115,9 @@ func (s Setup) MinRate() int {
 	default:
 		return 0
 	}
+	if s.PreEmphasis {
+		return int(minRatePE[c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service][s.Power]) * minRateUnit
+	}
 	return int(minRateAudio[ti][c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service][s.Power]) * minRateUnit
 }
 
@@ -115,7 +126,8 @@ func (s Setup) MinRate() int {
 // to the top of the measured grid, 96000 Hz for audio and 20 MHz for I/Q.
 // Tier0 makes audio at 24000 and 48000 Hz and I/Q at 96000 Hz only: I/Q at
 // 192000 Hz takes 7.4 MHz of a Cortex-M4, over the 4 MHz budget, and
-// 48000 Hz is under the least rate of I/Q.
+// 48000 Hz is under the least rate of I/Q. With PreEmphasis, Tier0 makes
+// audio at 48000 Hz only.
 func (s Setup) Allows(hz int) bool {
 	t := s.Tier
 	if t == TierDefault {
@@ -127,7 +139,7 @@ func (s Setup) Allows(hz int) bool {
 			return false
 		}
 	case t == Tier0:
-		if hz != 24000 && hz != 48000 {
+		if hz != 24000 && hz != 48000 || s.PreEmphasis && hz != 48000 {
 			return false
 		}
 	case s.IQ:

@@ -161,10 +161,36 @@ func (p limPoint) audioSignal(raw []int16) ([]complex128, float64) {
 	default:
 		f = holdFreq(d, hz, ra)
 	}
+	if p.u.pe {
+		f = preEmph(f, ra)
+	}
 	if p.lowpass > 0 {
 		f = analogLowpass(f, ra, float64(p.lowpass))
 	}
 	return fmOf(f, ra), ra
+}
+
+func preEmph(f []float64, rate float64) []float64 {
+	x := make([]complex128, len(f))
+	for i, v := range f {
+		x[i] = complex(v, 0)
+	}
+	xf := spectrumOf(x)
+	m := len(xf)
+	for i := range xf {
+		k := i
+		if k >= m/2 {
+			k -= m
+		}
+		fr := float64(k) * rate / float64(m)
+		xf[i] *= (1 + complex(0, fr/300)) / (1 + complex(0, fr/3000))
+	}
+	ifft(xf)
+	out := make([]float64, len(f))
+	for i := range out {
+		out[i] = real(xf[i])
+	}
+	return out
 }
 
 func analogLowpass(f []float64, rate, fc float64) []float64 {
@@ -374,11 +400,15 @@ type limClass struct {
 	format txFormat
 	bits   int
 	mcu    bool
+	pe     bool
 }
 
 func (c limClass) String() string {
 	if c.iq {
 		return fmt.Sprintf("IQ-T%d-%s", c.tier-Tier0, [...]string{"", "S16", "S8"}[c.format])
+	}
+	if c.pe {
+		return fmt.Sprintf("Audio-T%d-PE-%dbit", c.tier-Tier0, c.bits)
 	}
 	return fmt.Sprintf("Audio-T%d-%dbit", c.tier-Tier0, c.bits)
 }
@@ -386,7 +416,7 @@ func (c limClass) String() string {
 var audioBitClasses = []int{8, 10, 12, 16}
 
 func limClasses() []limClass {
-	out := make([]limClass, 0, 3*(len(audioBitClasses)+2))
+	out := make([]limClass, 0, 3*(len(audioBitClasses)+2)+len(audioBitClasses))
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		for i, b := range audioBitClasses {
 			out = append(out, limClass{tier: tier, class: i, bits: b, mcu: tier == Tier0})
@@ -394,6 +424,9 @@ func limClasses() []limClass {
 		for i, f := range []txFormat{fmtS16, fmtS8} {
 			out = append(out, limClass{tier: tier, iq: true, class: i, format: f, mcu: tier == Tier0 && f == fmtS16})
 		}
+	}
+	for i, b := range audioBitClasses {
+		out = append(out, limClass{tier: Tier0, class: i, bits: b, mcu: true, pe: true})
 	}
 	return out
 }
@@ -446,7 +479,7 @@ func iqOffsets(tier Tier, rate int) []int {
 }
 
 func (c limClass) points(rate, lowpass int) []limPoint {
-	u := txUnit{mcu: c.mcu, tier: c.tier, rate: rate}
+	u := txUnit{mcu: c.mcu, pe: c.pe, tier: c.tier, rate: rate}
 	if !c.iq {
 		u.format, u.level = fmtAudio, measuredLevel(Setup{Tier: c.tier, Bits: c.bits}, rate)
 		return []limPoint{{u: u, bits: c.bits, radio: radioPlain, lowpass: lowpass}, {u: u, bits: c.bits, radio: radioIdeal, lowpass: lowpass}}
@@ -492,6 +525,7 @@ type limCell = [limRegions][limServices][len(limPowerClasses)]int32
 type minRateTable struct {
 	audio [3][4][len(inputLowpassGrid)]limCell
 	iq    [3][2]limCell
+	pe    [4][len(inputLowpassGrid)]limCell
 }
 
 var limPowerClasses = [...]float64{1, 10, 100, 1000}
@@ -499,6 +533,9 @@ var limPowerClasses = [...]float64{1, 10, 100, 1000}
 func (tb *minRateTable) cell(c limClass, lp int) *limCell {
 	if c.iq {
 		return &tb.iq[c.tier-Tier0][c.class]
+	}
+	if c.pe {
+		return &tb.pe[c.class][lp]
 	}
 	return &tb.audio[c.tier-Tier0][c.class][lp]
 }
@@ -559,6 +596,19 @@ func renderMinRates(tb *minRateTable) ([]byte, error) {
 		b.WriteString("},\n")
 	}
 	b.WriteString("}\n\n")
+	fmt.Fprintf(&b, "var minRatePE = [4][%d]%suint16{\n", len(inputLowpassGrid), dims)
+	for c := range 4 {
+		b.WriteString("{\n")
+		for lp := range inputLowpassGrid {
+			b.WriteString("{\n")
+			if err := cell(&tb.pe[c][lp], minRateUnit); err != nil {
+				return nil, err
+			}
+			b.WriteString("},\n")
+		}
+		b.WriteString("},\n")
+	}
+	b.WriteString("}\n\n")
 	fmt.Fprintf(&b, "var minRateIQ = [3][2]%sint32{\n", dims)
 	for t := range 3 {
 		b.WriteString("{\n")
@@ -587,7 +637,10 @@ func TestMinRatesGenerated(t *testing.T) {
 	sem := make(chan struct{}, max(1, testParallel()))
 	for _, c := range limClasses() {
 		rates := iqGrid(c.tier)
-		if !c.iq {
+		switch {
+		case c.pe:
+			rates = []int{48000}
+		case !c.iq:
 			rates = audioGrid(c.tier)
 		}
 		for li, lp := range c.lowpasses() {
@@ -682,7 +735,7 @@ func (c limClass) setup(region, service, power, lowpass int) Setup {
 			bits = 8
 		}
 	}
-	return Setup{Tier: c.tier, IQ: c.iq, Bits: bits, Region: region, Service: service, Power: power, InputLowpassHz: lowpass}
+	return Setup{Tier: c.tier, IQ: c.iq, Bits: bits, Region: region, Service: service, Power: power, InputLowpassHz: lowpass, PreEmphasis: c.pe}
 }
 
 func checkAgainstTable(t *testing.T, c limClass, rate, lowpass int, g map[string]float64) {
@@ -717,6 +770,7 @@ func TestMinRatesSample(t *testing.T) {
 	}{
 		{classOf(Tier0, true, fmtS16, 0), 96000, 0},
 		{classOf(Tier0, false, fmtAudio, 16), 48000, 0},
+		{limClass{tier: Tier0, class: 3, bits: 16, mcu: true, pe: true}, 48000, 0},
 		{classOf(Tier1, false, fmtAudio, 16), 48000, 0},
 		{classOf(Tier1, false, fmtAudio, 12), 24000, 5000},
 		{classOf(Tier1, true, fmtS16, 0), 96000, 0},
@@ -796,6 +850,12 @@ func TestSetupAllows(t *testing.T) {
 		{Setup{Tier: Tier1, IQ: true, Bits: 16, Region: LimitsUS}, 192000, true},
 		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsAmateur}, 32000, false},
 		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsAmateur}, 48000, true},
+		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, PreEmphasis: true}, 48000, true},
+		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, PreEmphasis: true}, 24000, false},
+		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Power: Limits10W, PreEmphasis: true}, 48000, false},
+		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Power: Limits10W, PreEmphasis: true, InputLowpassHz: 8000}, 48000, true},
+		{Setup{Tier: Tier1, Bits: 16, Region: LimitsUS, PreEmphasis: true}, 48000, false},
+		{Setup{Tier: Tier0, IQ: true, Bits: 16, Region: LimitsUS, PreEmphasis: true}, 96000, false},
 		{Setup{IQ: true, Bits: 16}, 2400000, true},
 		{Setup{IQ: true, Bits: 16}, 20000001, false},
 		{Setup{IQ: true, Bits: 16}, 40000, false},
