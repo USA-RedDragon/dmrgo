@@ -18,7 +18,7 @@ Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a
 | I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 2.6 dB | 1.8 dB | 1.7 dB | 4.9 dB | 727 ms | 35.5 MiB |
 
 - Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.
-- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 2,008 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,024 B and up to 4.5 MHz. No tier allocates after it starts.
+- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 2,008 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,024 B and up to 4.6 MHz. No tier allocates after it starts.
 - Audio tiers take FM discriminator audio, as from a radio. They also take inverted audio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.
 - [The sweep](#the-sweep) gives the method and [The floors](#the-floors) the bounds.
 

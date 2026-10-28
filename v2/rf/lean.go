@@ -257,7 +257,7 @@ type leanCore struct {
 	mid96                              uint8
 	replaying, replayDry               bool
 	iqLow, linHunt                     bool
-	mmOK, midSearch                    bool
+	mmOK                               bool
 	chase                              uint8
 	forced                             bool
 	softFEC                            bool
@@ -324,7 +324,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
 	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
-	r.linHunt, r.midSearch = opt.HuntLinMid, !opt.NoMidSearch
+	r.linHunt = opt.HuntLinMid
 	r.chase = leanChase
 	if opt.LeanChase > 0 {
 		r.chase = min(opt.LeanChase, leanChase)
@@ -904,7 +904,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 			r.forceLock(src, data, back)
 		}
 	}
-	if r.midSearch && mid && !r.locked && r.ns > leanSyncEnd+2 {
+	if mid && !r.locked && r.ns > leanSyncEnd+2 {
 		r.searchMid()
 	}
 }

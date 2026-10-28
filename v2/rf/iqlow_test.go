@@ -74,6 +74,23 @@ func TestLowIQISI(t *testing.T) {
 	}
 }
 
+func TestLowIQTimingPhase(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 4)
+	x := noisyBaseband(slots, 0, 40, 1)
+	for shift := range basebandRate / symbolRate {
+		y := lowIQ(x[shift:], iq0LowHz)
+		r, err := NewReceiver(&RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCF32})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := r.AppendFlush(r.AppendBursts(nil, cf32(y)))
+		if exact, total := exactFrames(slots, got); exact != total || total == 0 {
+			t.Errorf("symbol timing %d/%d: %d of %d voice frames exact", shift, basebandRate/symbolRate, exact, total)
+		}
+	}
+}
+
 func TestLowIQConfig(t *testing.T) {
 	t.Parallel()
 	var r Receiver

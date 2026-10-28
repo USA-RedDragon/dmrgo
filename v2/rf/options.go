@@ -90,7 +90,6 @@ type options struct {
 	DriftSteps                           uint8
 	IQLow                                uint8
 	LeanChase                            uint8
-	NoMidSearch                          bool
 	IQHalf                               bool
 	CohRing                              uint8
 	UnionTwins                           uint8
@@ -130,7 +129,7 @@ func iqLowOptions() options {
 	o := disc0Options()
 	o.HuntLinMid, o.StrobeTab = true, true
 	o.IQDisc, o.IQHz, o.IQFront, o.IQLow, o.IQBuf = true, iq0LowHz, 4, 1, 32
-	o.LeanChase, o.NoMidSearch = 1, true
+	o.LeanChase = 1
 	return o
 }
 
