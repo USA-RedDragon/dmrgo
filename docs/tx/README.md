@@ -55,7 +55,7 @@ These setups get a `RegionError`:
 | `ServiceLicenseFree` (PMR446, the China 409 MHz walkie-talkie with -70 dBc in the alternate channel) | the limits of the license-free service are not measured |
 | `ServiceLicenseFree` in the US or Japan | the region has no license-free DMR service |
 | `ServiceAmateur` or `ServiceUnknown` in China or Japan | the amateur limits of the region are not measured |
-| `AudioTxConfig.PreEmphasis` | the limits with pre-emphasis are not measured |
+| `AudioTxConfig.PreEmphasis` outside Tier 0 at 48 kHz, or in a setup that the tables with pre-emphasis do not keep | with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power |
 | `AudioTxConfig.Level` under the measured level | under the level that the limits are measured at for Bits |
 
 The spurious domain margin is not measured yet, so today no setup is accepted. The tables below give what the other checks accept.
@@ -67,6 +67,10 @@ The spurious domain margin is not measured yet, so today no setup is accepted. T
 ### Level under 16 bits
 
 The limits are measured at a `Level` of about half of full scale: 15000 codes at 16 bits, and at 8, 10 and 12 bits 65, 260 and 1040 codes. A depth between these takes the next lower one, with the level doubled for each bit over it. Tier 1 and Tier 2 at 24 kHz and above reach 2.12 times `Level`, so 1040 codes do not fit 12 bits. There the limits are measured at the most level that fits the bits at `Offset` 0, about 966 codes at 12 bits and 58 at 8 bits. A `Level` under the measured level gets a `RegionError`.
+
+### Pre-emphasis
+
+`AudioTxConfig.PreEmphasis` takes a `PreEmphasis` for a radio that pre-emphasizes its modulator input from 300 Hz to 3 kHz. Set one up with `Init` in memory of the caller, or with `NewPreEmphasis`, one for each transmitter. Nil is a radio with no pre-emphasis. Only Tier 0 at 48 kHz takes it, and only where its limits are measured to keep their margin: at 12 and 16 bits with an input low pass of 8 kHz or lower, at 10 bits with one of 5 kHz or lower, and in the other setups that the Tier 0 table of least sample rates gives with pre-emphasis, such as China and Japan with no low pass. Elsewhere it gets a `RegionError`. A program that sets up no `PreEmphasis` links none of its code or tables.
 
 ## Tier 0 cost
 

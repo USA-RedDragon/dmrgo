@@ -30,7 +30,9 @@ func TestAllocsTransmitter(t *testing.T) {
 			t.Errorf("%+v: %v allocations per AppendSamples", c, n)
 		}
 	}
-	for _, c := range []AudioTxConfig{usAudio(Tier0, 48000, 12), usAudio(Tier1, 44100, 16), usAudio(Tier2, 48000, 16)} {
+	pe := usAudio(Tier0, 48000, 12)
+	pe.PreEmphasis, pe.InputLowpassHz = new(PreEmphasis).Init(), 8000
+	for _, c := range []AudioTxConfig{usAudio(Tier0, 48000, 12), pe, usAudio(Tier1, 44100, 16), usAudio(Tier2, 48000, 16)} {
 		c.OnSamples = func([]int16) {}
 		tx, err := newAudioTransmitter(c, openGate)
 		if err != nil {

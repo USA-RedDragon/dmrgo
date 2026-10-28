@@ -88,7 +88,10 @@ func refusals() []refusal {
 		{"audio level -1", nil, nil, &AudioTxConfig{Level: -1}, "AudioTxConfig.Level", false},
 		{"audio level 1100 at 12 bits", nil, nil, &AudioTxConfig{Bits: 12, Level: 1100}, "AudioTxConfig.Level", false},
 		{"audio input low pass -1", nil, nil, &AudioTxConfig{InputLowpassHz: -1}, "AudioTxConfig.InputLowpassHz", false},
-		{"audio pre-emphasis", openGate, nil, ua(AudioTxConfig{PreEmphasis: true}), "AudioTxConfig.PreEmphasis", true},
+		{"audio pre-emphasis", openGate, nil, ua(AudioTxConfig{PreEmphasis: NewPreEmphasis()}), "AudioTxConfig.PreEmphasis", true},
+		{"audio pre-emphasis not set up", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Rate: 48000, PreEmphasis: &PreEmphasis{}}), "AudioTxConfig.PreEmphasis", false},
+		{"audio pre-emphasis Tier0 at 24 kHz", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Rate: 24000, PreEmphasis: NewPreEmphasis()}), "AudioTxConfig.PreEmphasis", true},
+		{"audio pre-emphasis Tier0 at 10 W", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Rate: 48000, PreEmphasis: NewPreEmphasis()}), "AudioTxConfig.PreEmphasis", true},
 		{"audio level 1000 at 12 bits", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Bits: 12, Level: 1000}), "AudioTxConfig.Level", true},
 		{"audio level 60 at 8 bits", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Bits: 8, Level: 60}), "AudioTxConfig.Level", true},
 		{"audio at 100 W", openGate, nil, &AudioTxConfig{Region: RegionUS, Service: ServiceLandMobile, Power: 50}, "AudioTxConfig.Rate", true},
@@ -201,6 +204,8 @@ func TestTxAccepts(t *testing.T) {
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Bits: 13, Rate: 22500},
 		{Region: RegionUS, Service: ServiceAmateur, Power: 50, Rate: 96000, Tier: Tier2},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier0},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Tier: Tier0, Rate: 48000, PreEmphasis: NewPreEmphasis()},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier0, Rate: 48000, Bits: 12, Unsigned: true, PreEmphasis: NewPreEmphasis(), InputLowpassHz: 8000},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Tier: Tier0, Rate: 24000, Bits: 12, Unsigned: true, Offset: 3},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Bits: 12, Unsigned: true},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Bits: 12, Unsigned: true, Level: 966},
@@ -462,5 +467,23 @@ func TestTxInputLowpass(t *testing.T) {
 				t.Errorf("tier %v, %d bits: no low pass lowers the least rate %d", tier, bits, none)
 			}
 		}
+	}
+}
+
+func TestPreEmphasisInit(t *testing.T) {
+	t.Parallel()
+	var nilPE *PreEmphasis
+	if nilPE.Init() != nil || nilPE.set() || (&PreEmphasis{}).set() || !NewPreEmphasis().set() {
+		t.Error("PreEmphasis.Init or set")
+	}
+	var pe PreEmphasis
+	var tx AudioTransmitter
+	c := AudioTxConfig{Tier: Tier0, Rate: 48000, Region: RegionUS, Service: ServiceLandMobile, Power: 30, PreEmphasis: pe.Init()}
+	if err := tx.init(c, openGate); err != nil || tx.pe != &pe || tx.MaxOutput(0) == 0 {
+		t.Fatalf("Init with PreEmphasis: %v", err)
+	}
+	c.PreEmphasis = nil
+	if err := tx.init(c, openGate); err != nil || tx.pe != nil {
+		t.Fatalf("Init without PreEmphasis: %v", err)
 	}
 }

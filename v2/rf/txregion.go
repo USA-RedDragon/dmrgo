@@ -84,7 +84,7 @@ var ceilingDBm = [regions][2]int8{
 var spurGate10 [regions][2]bool
 
 type txErrs struct {
-	tier, rate, format, offset, power, bits, level, offsetCodes, onSamples, lowpass             *dmrgo.ConfigError
+	tier, rate, format, offset, power, bits, level, offsetCodes, onSamples, lowpass, preEmphSet *dmrgo.ConfigError
 	rateLimit, power60, powerCeil, service, noLF, amateur, spur, preEmph, levelLow, region, svc *RegionError
 }
 
@@ -99,6 +99,7 @@ var iqErrs = txErrs{
 	offsetCodes: &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.Offset"},
 	onSamples:   &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.OnSamples"},
 	lowpass:     &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.InputLowpassHz"},
+	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "TxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
 	power60:     &RegionError{Type: "rf", Field: "TxConfig.Power", Reason: "the limits above 60 dBm are not measured"},
 	powerCeil:   &RegionError{Type: "rf", Field: "TxConfig.Power", Reason: "above the highest legal power of the service in the region"},
@@ -123,6 +124,7 @@ var audioErrs = txErrs{
 	offsetCodes: &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.Offset"},
 	onSamples:   &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.OnSamples"},
 	lowpass:     &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.InputLowpassHz"},
+	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "AudioTxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
 	power60:     &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "the limits above 60 dBm are not measured"},
 	powerCeil:   &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "above the highest legal power of the service in the region"},
@@ -130,7 +132,7 @@ var audioErrs = txErrs{
 	noLF:        &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the limits of the license-free service are not measured"},
 	amateur:     &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the amateur limits of the region are not measured"},
 	spur:        &RegionError{Type: "rf", Field: "AudioTxConfig.Region", Reason: "the signal is not measured 10 dB under the spurious domain limits"},
-	preEmph:     &RegionError{Type: "rf", Field: "AudioTxConfig.PreEmphasis", Reason: "the limits with pre-emphasis are not measured"},
+	preEmph:     &RegionError{Type: "rf", Field: "AudioTxConfig.PreEmphasis", Reason: "with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power"},
 	levelLow:    &RegionError{Type: "rf", Field: "AudioTxConfig.Level", Reason: "under the level that the limits are measured at for Bits"},
 	region:      &RegionError{Type: "rf", Field: "AudioTxConfig.Region", Reason: "unknown region"},
 	svc:         &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "unknown service"},
@@ -229,13 +231,13 @@ func (r *txRegs) services() [2]int {
 	return [2]int{fsktx.LimitsLandMobile, fsktx.LimitsAmateur}
 }
 
-func (r *txRegs) minRate(t Tier, iq bool, bits, class, lowpass int) int {
+func (r *txRegs) minRate(t Tier, iq bool, bits, class, lowpass int, pe bool) int {
 	least := 0
 	for _, s := range r.services() {
 		if s < 0 {
 			continue
 		}
-		m := fsktx.Setup{Tier: fsktx.Tier(t), IQ: iq, Bits: bits, Region: int(r.region), Service: s, Power: class, InputLowpassHz: lowpass}.MinRate()
+		m := fsktx.Setup{Tier: fsktx.Tier(t), IQ: iq, Bits: bits, Region: int(r.region), Service: s, Power: class, InputLowpassHz: lowpass, PreEmphasis: pe}.MinRate()
 		if m == 0 {
 			return 0
 		}

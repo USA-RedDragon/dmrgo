@@ -40,10 +40,14 @@ type AudioTxConfig struct {
 	Level int
 	// Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned.
 	Offset int
-	// PreEmphasis states that the radio pre-emphasizes its modulator
-	// input from 300 Hz to 3 kHz, so that the transmitter inverts it. The
-	// limits with it are not measured yet, so it is refused.
-	PreEmphasis bool
+	// PreEmphasis, when not nil, states that the radio pre-emphasizes its
+	// modulator input from 300 Hz to 3 kHz, so that the transmitter
+	// inverts it with the modulator that it holds: a PreEmphasis of this
+	// transmitter alone, set up by Init or NewPreEmphasis. Nil is a radio
+	// with no pre-emphasis. Only Tier0 at Rate 48000 takes it, and only in
+	// the regions, services and powers where the limits keep their margin
+	// with it; elsewhere it is refused with a RegionError.
+	PreEmphasis *PreEmphasis
 	// InputLowpassHz states the cutoff in Hz of a low pass of at least two
 	// poles that the radio puts before its modulator input; 0 means none,
 	// a converter that drives the modulator with no filter. The limits are
@@ -76,8 +80,9 @@ type AudioTransmitter struct {
 	chunk  []int16
 	out    []int16
 	on     func([]int16)
-	level  int32
-	offset int32
+	pe     *PreEmphasis
+	level  int16
+	offset int16
 	bias   int32
 	dc     int32
 	rate   int32
@@ -98,6 +103,7 @@ type audioPlan struct {
 	txPlan
 	level, bits int
 	table       fsktx.AudioTable
+	pe          *PreEmphasis
 }
 
 // NewAudioTransmitter returns an AudioTransmitter of c. A nil c means the
@@ -194,6 +200,10 @@ func (c *AudioTxConfig) prepare() (audioPlan, int, error) {
 	switch {
 	case c.Tier == Tier0 && c.Rate == 24000:
 		p.table = fsktx.Table24k()
+	case c.PreEmphasis != nil && !c.PreEmphasis.set():
+		return audioPlan{}, 0, e.preEmphSet
+	case c.Tier == Tier0 && c.Rate == 48000 && c.PreEmphasis != nil:
+		p.pe = c.PreEmphasis
 	case c.Tier == Tier0 && c.Rate == 48000:
 		p.table = fsktx.Table48k()
 	case c.Tier == Tier0, c.Rate < minTxAudio:
@@ -228,13 +238,17 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level, measured int) error
 	if err != nil {
 		return err
 	}
-	if c.PreEmphasis {
+	if c.PreEmphasis != nil && (c.Tier != Tier0 || c.Rate != 48000) {
 		return e.preEmph
 	}
 	if measured == 0 || level < measured {
 		return e.levelLow
 	}
-	if least := r.minRate(c.Tier, false, c.Bits, class, c.InputLowpassHz); least == 0 || c.Rate < least || c.Rate > maxTxAudio {
+	least := r.minRate(c.Tier, false, c.Bits, class, c.InputLowpassHz, c.PreEmphasis != nil)
+	if c.PreEmphasis != nil && least == 0 {
+		return e.preEmph
+	}
+	if least == 0 || c.Rate < least || c.Rate > maxTxAudio {
 		return e.rateLimit
 	}
 	p.txPlan = txPlan{tier: c.Tier, rate: c.Rate, lag: 8, lf: c.Service == ServiceLicenseFree, sb: 2, class: class}
@@ -242,6 +256,9 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level, measured int) error
 	switch c.Tier {
 	case Tier0:
 		p.lag = p.table.Span()
+		if p.pe != nil {
+			p.lag = fsktx.PESpan
+		}
 	case Tier2:
 		p.lag = 16
 	case TierDefault, Tier1, Tier3:
@@ -251,14 +268,14 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level, measured int) error
 
 func (c *AudioTxConfig) fitTable(p *audioPlan, avail int) (int, error) {
 	if c.Level != 0 {
-		if p.table.Peak(c.Level) > avail {
+		if p.peak(c.Level) > avail {
 			return 0, audioErrs.level
 		}
 		return c.Level, nil
 	}
 	lo, hi := 0, maxTxLevel+1
 	for hi-lo > 1 {
-		if m := (lo + hi) / 2; p.table.Peak(m) <= avail {
+		if m := (lo + hi) / 2; p.peak(m) <= avail {
 			lo = m
 		} else {
 			hi = m
@@ -268,6 +285,13 @@ func (c *AudioTxConfig) fitTable(p *audioPlan, avail int) (int, error) {
 		return 0, audioErrs.offsetCodes
 	}
 	return lo, nil
+}
+
+func (p *audioPlan) peak(level int) int {
+	if p.pe != nil {
+		return p.pe.peak(level)
+	}
+	return p.table.Peak(level)
 }
 
 func (c *AudioTxConfig) fitHost(avail int) (int, error) {
@@ -303,7 +327,7 @@ func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {
 	h := t.host
 	*t = AudioTransmitter{}
 	t.core.reset(p.lag, p.lf)
-	t.level, t.offset, t.rate, t.tier, t.on, t.set = int32(p.level), int32(c.Offset), int32(p.rate), p.tier, c.OnSamples, true
+	t.level, t.offset, t.rate, t.tier, t.on, t.set = int16(p.level), int16(c.Offset), int32(p.rate), p.tier, c.OnSamples, true
 	if c.Unsigned {
 		t.bias = 1 << (p.bits - 1)
 	}
@@ -313,8 +337,14 @@ func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {
 		if p.bits < 16 {
 			in, t.bias = in+int(t.bias), 0
 		}
-		_ = t.mcu.Init(p.table, p.level, in)
-		t.sps = int32(t.mcu.Samples())
+		if p.pe != nil {
+			t.pe = p.pe
+			_ = t.pe.init(&t.pe.m, p.level, in)
+			t.sps = int32(t.pe.m.Samples())
+		} else {
+			_ = t.mcu.Init(p.table, p.level, in)
+			t.sps = int32(t.mcu.Samples())
+		}
 	} else {
 		t.host = h
 	}
@@ -433,7 +463,14 @@ func (t *AudioTransmitter) symbol(s int8) {
 	}
 	l := len(t.out)
 	if t.tier == Tier0 {
-		t.out = t.out[:l+t.mcu.Symbol(t.out[l:l+int(t.sps)], s)]
+		d := t.out[l : l+int(t.sps)]
+		var n int
+		if t.pe != nil {
+			n = t.pe.emit(d, s)
+		} else {
+			n = t.mcu.Symbol(d, s)
+		}
+		t.out = t.out[:l+n]
 	} else {
 		v := t.host.audio(s)
 		t.out = t.out[:l+copy(t.out[l:l+len(v)], v)]
@@ -494,7 +531,7 @@ func (t *AudioTransmitter) Offset() int {
 		return 0
 	}
 
-	return int(t.dc + t.offset)
+	return int(t.dc) + int(t.offset)
 }
 
 func growInt16(dst []int16, n int) []int16 {

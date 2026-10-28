@@ -127,6 +127,7 @@ ignore_files:
   - v2/rf/options.go
   - v2/rf/packed.go
   - v2/rf/polarity.go
+  - v2/rf/preemph.go
   - v2/rf/rawvoice.go
   - v2/rf/receiver.go
   - v2/rf/repair.go
