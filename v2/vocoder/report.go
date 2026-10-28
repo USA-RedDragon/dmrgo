@@ -71,7 +71,7 @@ func (o FrameOutput) String() string {
 	return "FrameOutput(" + text.Int(int64(o)) + ")"
 }
 
-// FrameReport tells what a Codec found in one vocoder frame and what it put
+// FrameReport gives what a Codec found in one vocoder frame and what it put
 // in the samples for it. The zero FrameReport is a good frame decoded to
 // speech, with unknown bit counts.
 type FrameReport struct {

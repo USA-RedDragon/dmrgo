@@ -339,9 +339,9 @@ func (c *Codec) Mode() Mode {
 
 // DecodeMode returns the mode of the frames of the current call: the
 // configured mode, or for ModeAuto the detected mode. It returns ModeAuto
-// while the frames since New or Reset do not decide the mode; 5 clean frames
-// decide it. Until then Decode uses the more likely mode, Mode2400 when no
-// frame favors either.
+// while the frames since New or Reset do not identify the mode; 5 clean
+// frames identify it. Until then Decode uses the more likely mode, Mode2400
+// when no frame favors either.
 func (c *Codec) DecodeMode() Mode {
 	if c == nil {
 		return 0

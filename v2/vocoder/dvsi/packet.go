@@ -197,7 +197,7 @@ func appendCMode(dst []byte, channel int, slot *[FrameBits / 8]byte, mode uint16
 	return finish(dst, start, parity)
 }
 
-// AppendChannel appends a channel packet that asks the chip to decode bits
+// AppendChannel appends a channel packet that requests the chip to decode bits
 // channel bits, packed MSB first in data, which must hold (bits+7)/8 bytes
 // (AMBE-3000R manual Table 106). The chip replies with a speech packet. It
 // returns ErrChannel for a channel outside 0 to MaxChannel and ErrBits for
@@ -217,7 +217,7 @@ func AppendChannel(dst []byte, channel int, data []byte, bits int, parity bool) 
 	return finish(dst, start, parity), nil
 }
 
-// AppendSpeech appends a speech packet that asks the chip to encode pcm,
+// AppendSpeech appends a speech packet that requests the chip to encode pcm,
 // 8 kHz 16-bit samples, each sent most significant byte first (AMBE-3000R
 // manual Table 98). The chip replies with a channel packet. It returns
 // ErrChannel for a channel outside 0 to MaxChannel and ErrSamples for other
