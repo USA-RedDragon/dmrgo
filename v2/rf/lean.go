@@ -645,6 +645,53 @@ func (win *syncWindow) sums(syms *[syncSymbols]int8, t, sps float32) (sv, svv, s
 	return sv, svv, sxv, sp
 }
 
+const leanEdgeMargin = 9
+
+func (win *syncWindow) peak(syms *[syncSymbols]int8, c *[7]float32, end, sps float32, wide bool) int {
+	ninf := float32(math.Inf(-1))
+	span := 2
+	if wide {
+		span = 3
+	}
+	best := 3
+	for k := range c {
+		d := float32(k-3) * sps / 4
+		if end+d > 0 || k < 3-span || k > 3+span {
+			c[k] = ninf
+			continue
+		}
+		c[k] = win.corr(syms, end+d, sps)
+		if c[k] > c[best] {
+			best = k
+		}
+	}
+	if wide || best != 3-span && best != 3+span {
+		return best
+	}
+	k := best - 1
+	if best > 3 {
+		k = best + 1
+	}
+	d := float32(k-3) * sps / 4
+	if end+d > 0 {
+		return best
+	}
+	sv, svv, sxv, sp := win.sums(syms, end+d, sps)
+	dc := sxv - c[best]
+	if dc <= 0 {
+		return best
+	}
+	const n = syncSymbols
+	sxy := sxv - sp*sv/n
+	spp := 9*n - sp*sp/n
+	res := svv - sv*sv/n - sxy*sxy/spp
+	if dc*dc*(n-2) <= leanEdgeMargin*2*9*n*res {
+		return best
+	}
+	c[k] = sxv
+	return k
+}
+
 func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool) (float32, bool) {
 	sps := 2 * r.tm.step
 	end := r.lastAt
@@ -664,22 +711,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	}
 	ninf := float32(math.Inf(-1))
 	var c [7]float32
-	span := 2
-	if wide {
-		span = 3
-	}
-	best := 3
-	for k := range c {
-		d := float32(k-3) * sps / 4
-		if end+d > 0 || k < 3-span || k > 3+span {
-			c[k] = ninf
-			continue
-		}
-		c[k] = win.corr(&syms, end+d, sps)
-		if c[k] > c[best] {
-			best = k
-		}
-	}
+	best := win.peak(&syms, &c, end, sps, wide)
 	if r.locked && best < len(c)-1 && c[best+1] == ninf {
 		r.again = true
 		return 0, false
