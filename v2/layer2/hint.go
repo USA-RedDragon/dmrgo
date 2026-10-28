@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// Hint is what a transport knows about a burst besides its 264 bits, such
+// Hint is the data of a transport about a burst besides its 264 bits, such
 // as the fields of a HomeBrew DMRD, IPSC or MMDVM frame. A machine that
 // takes a RawBurst with a Hint decodes the burst itself, and uses the Hint
 // where the burst alone is not enough. The zero Hint means nothing is
@@ -47,7 +47,7 @@ type Hint struct {
 	Stream uint32
 	// HasStream reports whether Stream is set.
 	HasStream bool
-	// End is the end-of-call flag of the transport and how far to trust it.
+	// End is the end-of-call flag of the transport and how reliable it is.
 	End EndHint
 	// SyncLost reports that the transport lost the signal before this
 	// burst, for example an MMDVM TAG_LOST or an IPSC "sync not detected"
@@ -55,7 +55,7 @@ type Hint struct {
 	SyncLost bool
 }
 
-// EndHint is what a transport says about the end of a call.
+// EndHint is the end-of-call data that a transport gives.
 type EndHint uint8
 
 // The EndHint values.

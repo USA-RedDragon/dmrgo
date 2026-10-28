@@ -112,7 +112,7 @@ type CallTimerParms struct {
 }
 
 // VoteNowParms is the C_BCAST payload with AnnouncementType Vote_Now,
-// which asks the MSs to assess a TSCC. A Channel of 0xFFF means that a
+// which requests the MSs to assess a TSCC. A Channel of 0xFFF means that a
 // VN_AP block with the frequencies follows (ETSI TS 102 361-4 clause
 // 7.2.19.3, Table 7.71).
 //
@@ -154,7 +154,7 @@ type LocalTimeParms struct {
 }
 
 // MassRegParms is the C_BCAST payload with AnnouncementType MassReg,
-// which asks the MSs that match Address and AlohaMask to register within
+// which requests the MSs that match Address and AlohaMask to register within
 // the registration window (ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76
 // and 7.77).
 //

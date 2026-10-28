@@ -35,7 +35,7 @@ const SLCOCapacityPlusRestChannel enums.SLCO = 0b1111
 // Capacity Plus site: 8 repeaters of 2 timeslots.
 const CapacityPlusMaxLSN = 16
 
-// CapacityPlusSegment tells where a CSBK block sits in a site status or
+// CapacityPlusSegment shows where a CSBK block sits in a site status or
 // neighbor report that spans several CSBKs.
 type CapacityPlusSegment uint8
 

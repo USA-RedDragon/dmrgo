@@ -31,7 +31,7 @@ const (
 	ResponseNACKOutOfSequence Response = 0b01_101
 	// ResponseNACKInvalidUser rejects a user the system disallows.
 	ResponseNACKInvalidUser Response = 0b01_110
-	// ResponseSACK asks for the selective retry of the blocks flagged in the
+	// ResponseSACK requests the selective retry of the blocks flagged in the
 	// response data blocks.
 	ResponseSACK Response = 0b10_000
 )
@@ -94,7 +94,7 @@ func (r Response) String() string {
 // is the least significant, and is 1 for a received block.
 // (ETSI TS 102 361-1 clause 8.2.2.3, Table 9.14, Figure 8.17)
 type ResponseData struct {
-	Retry [127]bool // Retry[i] is set to ask for the block with DBSN i again
+	Retry [127]bool // Retry[i] is set to request the block with DBSN i again
 }
 
 // RetryBlocks returns the DBSNs flagged for retry in ascending order. It

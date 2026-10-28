@@ -107,7 +107,7 @@ func colorCodeMismatch(got, want enums.ColorCode) error {
 // Error returns the message of e. It allocates the message.
 func (e colorCodeMismatchError) Error() string {
 	return ErrColorCodeMismatch.Error() + ": burst has " + text.Int(int64(e.gotWant>>4)) +
-		", want " + text.Int(int64(e.gotWant&0x0F))
+		", expected " + text.Int(int64(e.gotWant&0x0F))
 }
 
 func (e colorCodeMismatchError) Unwrap() error {

@@ -87,7 +87,7 @@ type PositionTracker struct {
 	clock     bool
 }
 
-// Reset forgets the call.
+// Reset clears the call.
 func (t *PositionTracker) Reset() {
 	if t == nil {
 		return
@@ -98,7 +98,7 @@ func (t *PositionTracker) Reset() {
 	}
 }
 
-// Forget forgets the superframe position and keeps the sequence number, so
+// Forget clears the superframe position and keeps the sequence number, so
 // that the next burst is placed only by its SYNC or EMB, as after a weak
 // burst.
 func (t *PositionTracker) Forget() {
@@ -116,7 +116,7 @@ func (t *PositionTracker) Forget() {
 // position, or to VoiceBurstUnknown when it cannot place it. A new stream
 // ID starts a new call. A voice LC header or PI header puts the next burst
 // at A, a terminator or an EndStrong hint ends the call, and a SyncLost or
-// EndWeak hint forgets the position, which a SyncLost hint with At keeps
+// EndWeak hint clears the position, which a SyncLost hint with At keeps
 // only to count the bursts lost. h.Kind KindUnknown takes a burst with
 // a data SYNC as data and any other as voice. Place returns the number of
 // bursts lost before raw and how it took raw. A duplicate or late burst
@@ -191,7 +191,7 @@ func (t *PositionTracker) end() {
 	*t = PositionTracker{stream: stream, hasStream: has}
 }
 
-// Header tells the tracker that a voice LC header or PI header with Hint h
+// Header records that a voice LC header or PI header with Hint h
 // came before the first voice burst of the call, so that the next burst is
 // burst A. It does nothing after the first voice burst, or for a nil t or
 // h.
@@ -221,7 +221,7 @@ func (t *PositionTracker) Header(h *Hint) {
 // number, as a receiver that counts 60 ms slots does; Place takes 1. It
 // sets h.VoiceBurst, and returns the bursts lost before b and how it took
 // b. A nil t, b or h is a no-op, and steps below 1 count as 1. Steps over
-// 65536, about 65 minutes of bursts, forget the superframe position first,
+// 65536, about 65 minutes of bursts, clear the superframe position first,
 // as Forget does.
 func (t *PositionTracker) PlaceDecoded(b *Burst, h *Hint, steps int) (lost int, p Placement) {
 	if t == nil {

@@ -24,7 +24,7 @@ type CapacityPlusActivity struct {
 	// radio bitmaps follow; the meaning of the other bits is unknown.
 	Options uint8
 	// Radio is the bitmap of the LSNs with a private voice or data call.
-	// The site status does not tell the two apart.
+	// The site status does not separate the two.
 	Radio uint16
 	// Radios holds the 16-bit target radio of each LSN in Radio, at index
 	// LSN-1.

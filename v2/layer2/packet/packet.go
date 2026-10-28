@@ -158,7 +158,7 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 }
 
 // Retry builds the later try of the confirmed packet p that a SACK with
-// response data rd asks for: a copy of the header of p with the Full Message
+// response data rd requests: a copy of the header of p with the Full Message
 // Flag clear and the block count set to the number of blocks it resends, then
 // block i of p for each DBSN i that rd flags, in DBSN order. A nil rd resends
 // every block, as after a NACK or a missing response. The header keeps N(S)

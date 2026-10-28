@@ -48,7 +48,7 @@
 // as a CSBK payload or a data block, has no FEC field. Decoding never fails
 // on an uncorrectable result: the fields are set from the received bits and
 // FEC.Uncorrectable is set. FEC.Err returns fec.ErrUncorrectable for a
-// caller that wants an error. Functions that decode a bare value, such as
+// caller that needs an error. Functions that decode a bare value, such as
 // DecodeEMBCodeword, return the fec.Result with it. SetX and the other
 // setters keep FEC, so a decoded PDU edited with them still reports the
 // result of its decode.
@@ -61,7 +61,7 @@
 // layout are read from RawPayload.
 //
 // Opcode 0x38 is BS_Dwn_Act in Tier II and TD_GRANT_MI in Tier III, and the
-// CSBK does not say which. Read it with CSBK.AsBSOutboundActivation or
+// CSBK does not identify which. Read it with CSBK.AsBSOutboundActivation or
 // CSBK.AsTalkgroupDataGrantMultiItem, and set it with
 // CSBK.SetBSOutboundActivation or CSBK.SetTalkgroupDataGrantMultiItem. When
 // the CSBK comes from a burst, CSBK.Hint0x38 gives the likely meaning, and

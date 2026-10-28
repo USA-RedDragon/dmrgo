@@ -41,7 +41,7 @@ func (opcode CSBKOpcode) motorolaString() string {
 
 // MotorolaRadioCheckPDU is the payload of a Motorola radio check CSBK
 // (FID 0x10, opcode 0x24). The request and the answer have the same
-// layout: octets 4 to 6 hold the radio that asked for the check, and
+// layout: octets 4 to 6 hold the radio that requested the check, and
 // octets 7 to 9 the radio that is checked, so the source and target swap
 // places from the request to the answer.
 //
@@ -50,7 +50,7 @@ type MotorolaRadioCheckPDU struct {
 	Reserved         uint8  `dmr:"bits:0-7"`   // octet 2, 0
 	Answer           bool   `dmr:"bit:8"`      // false in the request, true in the answer (octet 3 is 0x80)
 	Reserved2        uint8  `dmr:"bits:9-15"`  // reserved, 0
-	RequesterAddress uint32 `dmr:"bits:16-39"` // the radio that asks: source of the request, target of the answer
+	RequesterAddress uint32 `dmr:"bits:16-39"` // the radio that requests: source of the request, target of the answer
 	CheckedAddress   uint32 `dmr:"bits:40-63"` // the radio checked: target of the request, source of the answer
 }
 

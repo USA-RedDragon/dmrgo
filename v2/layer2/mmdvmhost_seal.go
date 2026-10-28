@@ -18,9 +18,10 @@ import (
 // the check bits of ETSI TS 102 361-1, for a burst sent on air or to any
 // other peer. The two write the same bits for a Voice LC Header,
 // Terminator with LC, PI Header, CSBK, MBC Header and Data Header. They
-// differ for an MBC Continuation, which pdu.Seal refuses, as ETSI puts its
-// CRC in the last block only, and for Unified Single Block Data, which
-// MMDVMHostSeal refuses. The package doc has the checks.
+// differ for an MBC Continuation, for which pdu.Seal returns an error, as
+// ETSI puts its CRC in the last block only, and for Unified Single Block
+// Data, for which MMDVMHostSeal returns an error. The package doc has the
+// checks.
 func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	if p == nil {
 		return dmrgo.ErrNilArgument

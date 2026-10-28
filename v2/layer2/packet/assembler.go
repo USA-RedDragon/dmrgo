@@ -181,7 +181,7 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 	return a.Add(b.Data)
 }
 
-// Lost tells the Assembler that one block burst of the packet in progress
+// Lost records that one block burst of the packet in progress
 // was not received, for example because its slot passed without a SYNC on
 // RF. The block counts as a block whose CRC failed, so the last block of
 // an attempt still completes the attempt: an unconfirmed packet returns its

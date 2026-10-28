@@ -173,7 +173,7 @@ type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 // NegativeAcknowledgementPDU is the negative acknowledgement response
 // (NACK_Rsp) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.4).
 type NegativeAcknowledgementPDU struct {
-	AdditionalInfo layer3.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"` // tells if SourceAddress is valid
+	AdditionalInfo layer3.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"` // shows if SourceAddress is valid
 	SourceType     layer3.SourceType                 `dmr:"bits:1-1,delegate,noptr"` // BS or MS sourced
 	ServiceType    CSBKOpcode                        `dmr:"bits:2-7"`                // opcode of the refused service
 	ReasonCode     byte                              `dmr:"bits:8-15"`               // reason code, 0x21 when the MS does not support the service
@@ -388,7 +388,7 @@ type ProtectPDU struct {
 type AhoyPDU struct {
 	ServiceOptsMirror uint8  `dmr:"bits:0-6"`   // Service_Options of the request that this answers
 	ServiceKindFlag   bool   `dmr:"bit:7"`      // flag whose meaning depends on ServiceKind
-	ALS               bool   `dmr:"bit:8"`      // true when the caller asked for ambient listening
+	ALS               bool   `dmr:"bit:8"`      // true when the caller requested ambient listening
 	Group             bool   `dmr:"bit:9"`      // true when TargetAddress is a talkgroup
 	UAB               uint8  `dmr:"bits:10-11"` // Appended_Blocks: the number of appended data blocks minus one
 	ServiceKind       uint8  `dmr:"bits:12-15"` // service that this PDU supports

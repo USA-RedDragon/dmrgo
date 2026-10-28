@@ -26,7 +26,7 @@ type DecodeOptions struct {
 	// carries another one. A voice burst A carries no color code and is not
 	// checked.
 	ColorCode *enums.ColorCode
-	// Kind is the burst kind, when the caller knows it from outside the
+	// Kind is the burst kind, when the caller gets it from outside the
 	// burst, such as from TDMA timing or a network header. A known kind
 	// overrides the classification by the SYNC field. KindUnknown, the
 	// zero value, classifies by the SYNC field.
@@ -39,7 +39,7 @@ type DecodeOptions struct {
 	VoiceBurst enums.VoiceBurstType
 	// DataType, when set, is the data type of a KindData burst. It replaces
 	// the data type of the decoded slot type and selects the payload decode.
-	// When nil, the slot type decides.
+	// When nil, the decoded slot type sets it.
 	DataType *enums.DataType
 }
 

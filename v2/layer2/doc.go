@@ -79,7 +79,7 @@
 // position after the previous burst. A voice LC header or PI
 // header puts the next burst at A, a terminator or an EndStrong Hint ends
 // the call, a SyncLost Hint, or an EndWeak Hint on a placed voice burst,
-// forgets the position, and a new stream ID starts a new call. A standalone
+// clears the position, and a new stream ID starts a new call. A standalone
 // RC burst changes nothing. voice.Receiver uses these rules. A bridge that
 // forwards each packet to a transport that needs the position, such as IPSC
 // to HomeBrew DMRD, calls PositionTracker.Place.
@@ -109,7 +109,7 @@
 // each PDU report that, and the decoded fields are still set, so a caller
 // can inspect or forward them. An error means that the input cannot be
 // decoded, such as ErrReservedDataType, or breaks a caller-given rule, such
-// as ErrColorCodeMismatch. A caller that wants an error for an
+// as ErrColorCodeMismatch. A caller that needs an error for an
 // uncorrectable burst uses b.FEC.Aggregate().Err(). The errors of this
 // package that report an uncorrectable result, such as
 // ErrEmbeddedLCUncorrectable, wrap fec.ErrUncorrectable.
@@ -138,8 +138,8 @@
 //   - MBC Continuation: MMDVMHost checks the last 16 bits of every block as
 //     an unmasked CRC-CCITT of its first 80 bits. ETSI TS 102 361-1 clause
 //     7.4.0 puts one CRC, over all continuation blocks, in the last block
-//     only (see pdu.MBCLastBlockCRCOK). The two agree only for an MBC with a
-//     single continuation block.
+//     only (see pdu.MBCLastBlockCRCOK). The two give the same bits only for
+//     an MBC with a single continuation block.
 //   - PI Header, Rate 1/2, Rate 3/4 and Rate 1 Data: MMDVMHost checks
 //     nothing and forwards the burst.
 //   - Idle, Unified Single Block Data and reserved data types: MMDVMHost

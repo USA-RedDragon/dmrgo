@@ -50,7 +50,7 @@ var (
 	// ErrNoFirstTry is returned by Assembler.Response for a packet that a
 	// later try started, because its first header was lost. The size of
 	// the packet is not known, so a SACK cannot name its blocks; answer
-	// with a NACK instead, which asks for the whole packet again.
+	// with a NACK instead, which requests the whole packet again.
 	ErrNoFirstTry = errors.New("packet: packet started from a later try")
 	// ErrNoRetryBlocks is returned by Builder.Retry when the response data
 	// flags no block of the packet.

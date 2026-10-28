@@ -271,7 +271,7 @@ func TestDecodeFromBytesWith_ErrorMessages(t *testing.T) {
 		is    []error
 	}{
 		{"reserved", reserved, nil, "layer2: reserved data type 13", []error{layer2.ErrReservedDataType}},
-		{"mismatch", data, &layer2.DecodeOptions{ColorCode: &want}, "layer2: color code mismatch: burst has 3, want 9",
+		{"mismatch", data, &layer2.DecodeOptions{ColorCode: &want}, "layer2: color code mismatch: burst has 3, expected 9",
 			[]error{layer2.ErrColorCodeMismatch}},
 		{"mismatch above 4 bits", data, &layer2.DecodeOptions{ColorCode: &big}, "layer2: color code mismatch",
 			[]error{layer2.ErrColorCodeMismatch}},

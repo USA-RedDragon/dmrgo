@@ -49,7 +49,7 @@ func ExampleBurst_DecodeFromBytesWith() {
 	err := b.DecodeFromBytesWith(voiceLCHeader(), &layer2.DecodeOptions{ColorCode: &cc})
 	fmt.Println(errors.Is(err, layer2.ErrColorCodeMismatch), err)
 	// Output:
-	// true layer2: color code mismatch: burst has 1, want 7
+	// true layer2: color code mismatch: burst has 1, expected 7
 }
 
 // ExampleRawBurst reads the SYNC, the slot type and the BPTC payload of

@@ -17,7 +17,7 @@ type VoiceReceiver struct {
 	lc  EmbeddedLCAssembler
 }
 
-// Reset forgets the call and any partial embedded LC.
+// Reset clears the call and any partial embedded LC.
 func (r *VoiceReceiver) Reset() {
 	if r == nil {
 		return
