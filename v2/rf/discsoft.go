@@ -39,7 +39,45 @@ func (r *discRx) addExt(opt *options) {
 	r.ext = x
 }
 
+func (r *discRx) attachFix(restore bool) {
+	e, _ := r.ext.(*softExt)
+	if !restore || e == nil {
+		return
+	}
+	a := newACStage(r.inputHz())
+	e.ac = a
+	rxs := []*discRx{r}
+	if e.union != nil {
+		rxs = append(rxs, e.union.twins...)
+	}
+	for _, d := range rxs {
+		on := d.onBurst
+		if on == nil {
+			on = r.sink.put
+		}
+		d.onBurst = func(b *Burst) {
+			a.stamp(b)
+			on(b)
+		}
+	}
+}
+
+func (r *discRx) fixLag() float64 {
+	if e, _ := r.ext.(*softExt); e != nil && e.ac != nil {
+		return e.ac.lag
+	}
+	return 0
+}
+
 func (r *discRx) write(x []int16) {
+	if e, _ := r.ext.(*softExt); e != nil && e.ac != nil {
+		e.ac.write(r, x)
+		return
+	}
+	r.writeCore(x)
+}
+
+func (r *discRx) writeCore(x []int16) {
 	e, _ := r.ext.(*softExt)
 	if e != nil && e.union != nil {
 		e.union.write(x)

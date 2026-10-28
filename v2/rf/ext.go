@@ -65,6 +65,7 @@ type softExt struct {
 	saver           cohSaver
 	ph              *discPhase
 	union           *discUnion
+	ac              *acStage
 	np              *npml
 	qcoh            [extQueue]bool
 	qcore           [extQueue]layer2.RawBurst

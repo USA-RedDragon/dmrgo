@@ -158,7 +158,7 @@ func (u *discUnion) onTwin(b *Burst) {
 func (u *discUnion) write(x []int16) {
 	u.inSec = float64(u.n+int64(len(x))) / u.hz
 	u.e.union = nil
-	u.r.write(x)
+	u.r.writeCore(x)
 	u.e.union = u
 	for _, w := range u.twins {
 		w.write(x)

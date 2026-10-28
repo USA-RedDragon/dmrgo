@@ -476,7 +476,7 @@ func (r *leanCore) lagSeconds() float64 {
 }
 
 func (r *discRx) lagSamples(rate int) int {
-	return int(math.Ceil(max(r.lagSeconds(), r.unionLag()) * float64(rate)))
+	return int(math.Ceil((max(r.lagSeconds(), r.unionLag()) + r.fixLag()) * float64(rate)))
 }
 
 func (r *discRx) offset() float64 {

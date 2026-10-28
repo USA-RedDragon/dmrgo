@@ -53,9 +53,12 @@ type AudioRxConfig struct {
 // AudioReceiver recovers DMR bursts from the output of an FM
 // discriminator, as the radio chips of hotspots and MMDVM modems give it:
 // real samples in any units, with any gain and DC offset, which the
-// receiver measures itself. It takes audio of either polarity. With Tier0
-// it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at
-// 9.6 kHz it needs up to 4.8 MHz and 2 KB with its stack, built with
+// receiver measures itself. It takes audio of either polarity. Above
+// Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes
+// audio that a high-pass filter cut below about 300 Hz, as the speaker
+// output of a scanner gives it. With Tier0 it keeps about 1.4 KB of state,
+// for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz
+// and 2 KB with its stack, built with
 // TinyGo -opt z. An AudioReceiver that Init sets up in memory of the
 // caller, such as a package variable, uses no heap in stream mode. An
 // AudioReceiver is not safe for concurrent use, and it must not be copied
@@ -112,6 +115,7 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 		if err := r.addSoft(&opt); err != nil {
 			return nil, err
 		}
+		r.attachFix(cfg.Tier != Tier0)
 	}
 	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.bursts.out = make([]Burst, 0, n)

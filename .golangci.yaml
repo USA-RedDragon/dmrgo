@@ -304,12 +304,12 @@ linters:
         linters:
           - revive
         text: "^unused-parameter: parameter 'now' seems to be unused"
-      # The discriminator phase stage and the audio Tier 3 union run only
-      # in builds without the tinygo tag.
+      # The discriminator phase stage, the audio Tier 3 union and the
+      # AC-coupled restore run only in builds without the tinygo tag.
       - path: v2/rf/(disccoh|discsoft_tinygo|ext)\.go$
         linters:
           - unused
-        text: ^(func \(\*discPhase\)\.\w+|func (lazyDT|newDiscPhase)|field (last|out|union)|type discUnion) is unused
+        text: ^(func \(\*discPhase\)\.\w+|func (lazyDT|newDiscPhase)|field (last|out|union|ac)|type (discUnion|acStage)) is unused
       # symQ is called from the Thumb-2 build of iqlowhalf_dsp.go only.
       - path: v2/rf/lean\.go$
         linters:

@@ -15,9 +15,17 @@ func (r *discRx) inverted() bool {
 	return r.f.polBits&polInv != 0
 }
 
+func (r *AudioReceiver) acOf() *acStage {
+	if e, _ := r.ext.(*softExt); e != nil {
+		return e.ac
+	}
+	return nil
+}
+
 func (r *AudioReceiver) plain() {
 	r.f.polBits = 0
 	if e, _ := r.ext.(*softExt); e != nil {
+		e.ac = nil
 		if e.union != nil {
 			for _, w := range e.union.twins {
 				w.f.polBits = 0
