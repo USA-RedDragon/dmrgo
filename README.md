@@ -404,6 +404,30 @@ Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with 
 
 <!-- rxbench:end -->
 
+## Transmitter
+
+Package `rf` also transmits: `Transmitter` turns bursts into I/Q for a software radio, in every I/Q format of the receiver, and `AudioTransmitter` into the deviation signal that drives the modulator input of an FM radio. Both mirror the receivers, with the same config fields, the same `Init` for Tier 0 in memory of the caller and the same stream and append modes. A BS-sourced burst keeps the carrier up into the next slot, an MS burst ramps in its guard time, a one-slot gap in a `Stream` is a TDMA idle slot, and a larger gap or a new `Stream` keys down.
+
+`Region`, `Service` and `Power` (dBm, 0 for the highest legal power of the service in the region) state the limits that the signal must keep. The transmitter refuses with a `RegionError` every setup that no measurement shows to keep them with margin, so the zero config is refused until the measurements below exist. The library makes no compliance claim: it only keeps its signal from being the cause of a failure of the limits that it measured.
+
+Not measured yet, and refused:
+- the 10 dB margin of the signal under the spurious domain limits, which every region has,
+- power above 60 dBm,
+- the license-free service (PMR446, the China 409 MHz walkie-talkie, with -70 dBc in the alternate channel); the US and Japan have no license-free DMR,
+- the amateur limits of China and Japan,
+- pre-emphasis and a low pass of the radio before its modulator input,
+- audio under 16 bits from Tier 1 and Tier 2 at 24 kHz and above, as the measured level of those bits does not fit in them with the Tier 1 and Tier 2 designs.
+
+RegionUS does not cover the 800 MHz bands of FCC Mask H or the 90.691 EA mask.
+
+| Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |
+|---|---|---|---|
+| I/Q at 96 kHz, CS16 | 4.8 MHz | 968 B | 34.1 KB |
+| Audio at 48 kHz, 12-bit | 3.7 MHz | 724 B | 29.2 KB |
+| Audio at 24 kHz, 12-bit | 7.7 MHz | 664 B | 28.6 KB |
+
+Measured from one TinyGo 0.43 `-opt z -gc=none` build in QEMU, BS-sourced bursts on every slot, with the limits gate open for the measurement.
+
 ## Tooling
 
 - `go generate ./...` from the repository root runs four generators. Do not edit the files they write.
