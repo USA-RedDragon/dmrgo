@@ -64,9 +64,7 @@ func run(w, msg io.Writer, path string, opt options) error {
 			return err
 		}
 	}
-	if err := d.flush(); err != nil {
-		return err
-	}
+	d.flush()
 	d.rep.emit(d.rep.summary(d.seconds()))
 	el := time.Since(start).Seconds()
 	if _, err := w.Write(d.rep.take()); err != nil {

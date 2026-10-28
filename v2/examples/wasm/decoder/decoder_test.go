@@ -45,49 +45,39 @@ func decodeAll(t *testing.T, opt options, data []byte, chunk int) ([]rf.Burst, s
 		out.Write(d.rep.take())
 		data = data[n:]
 	}
-	if err := d.flush(); err != nil {
-		t.Fatal(err)
-	}
+	d.flush()
 	out.Write(d.rep.take())
 	return got, out.String()
 }
 
 func nativeIQ(t *testing.T, data []byte, tier rf.Tier) []rf.Burst {
 	t.Helper()
-	rx, err := rf.New(&rf.Config{Rate: fixRate, Tier: tier})
+	rx, err := rf.NewReceiver(&rf.RxConfig{Rate: fixRate, Tier: tier, Format: rf.IQFormatCU8})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var got []rf.Burst
 	for len(data) > 0 {
 		n := min(1<<16, len(data))
-		bs, err := rx.Write(data[:n])
-		if err != nil {
-			t.Fatal(err)
-		}
-		got = append(got, bs...)
+		got = rx.AppendBursts(got, data[:n])
 		data = data[n:]
 	}
-	return append(got, rx.Flush()...)
+	return rx.AppendFlush(got)
 }
 
 func nativeDisc(t *testing.T, pcm []int16, hz int, tier rf.Tier) []rf.Burst {
 	t.Helper()
-	rx, err := rf.NewDisc(&rf.DiscConfig{Hz: hz, Tier: tier})
+	rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var got []rf.Burst
 	for len(pcm) > 0 {
 		n := min(1<<12, len(pcm))
-		bs, err := rx.Write(pcm[:n])
-		if err != nil {
-			t.Fatal(err)
-		}
-		got = append(got, bs...)
+		got = rx.AppendBursts(got, pcm[:n])
 		pcm = pcm[n:]
 	}
-	return append(got, rx.Flush()...)
+	return rx.AppendFlush(got)
 }
 
 func sameBursts(t *testing.T, got, want []rf.Burst) {

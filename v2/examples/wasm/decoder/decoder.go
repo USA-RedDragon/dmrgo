@@ -39,6 +39,7 @@ func (e encoding) size() int {
 
 const (
 	audioHz      = 24000
+	basebandRate = 48000
 	pcmChunk     = 1 << 12
 	basebandMax  = 1 << 14
 	wavHeaderMax = 1 << 16
@@ -60,10 +61,12 @@ type decoder struct {
 	channels int
 	rate     float64
 
-	disc *rf.DiscReceiver
+	disc *rf.AudioReceiver
 	iq   *rf.Receiver
 	raw  bool
 	rs   *resampler
+	out  []rf.Burst
+	cf32 []byte
 
 	pend  [8]byte
 	npend int
@@ -122,9 +125,9 @@ func (d *decoder) setup() error {
 		case 24000, 12000, 9600:
 			hz = int(d.rate)
 		}
-		rx, err := rf.NewDisc(&rf.DiscConfig{Hz: hz, Tier: tier, MaxWrite: pcmChunk})
+		rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier})
 		var ce *dmrgo.ConfigError
-		if errors.As(err, &ce) && ce.Field == "DiscConfig.Tier" {
+		if errors.As(err, &ce) && ce.Field == "AudioRxConfig.Tier" {
 			return fmt.Errorf("audio tier %d is not in this build; a TinyGo build has audio tier 0 only: %w", d.opt.audioTier, err)
 		}
 		if err != nil {
@@ -142,19 +145,24 @@ func (d *decoder) setup() error {
 	if d.opt.iqTier >= 0 {
 		tier = rf.Tier0 + rf.Tier(d.opt.iqTier)
 	}
-	d.raw = (d.enc == encU8 || d.enc == encS8) && d.rate >= rf.BasebandRate
-	cfg := rf.Config{Tier: tier, MaxWrite: 2 * basebandMax}
+	d.raw = (d.enc == encU8 || d.enc == encS8) && d.rate >= basebandRate
+	cfg := rf.RxConfig{Tier: tier, Rate: basebandRate, Format: rf.IQFormatCF32}
+	d.maxWrite = 2 * basebandMax
 	if d.raw {
-		cfg.Rate, cfg.Signed, cfg.MaxWrite = d.rate, d.enc == encS8, 1<<16
+		cfg.Rate, cfg.Format, d.maxWrite = int(d.rate), rf.IQFormatCU8, 1<<16
+		if d.enc == encS8 {
+			cfg.Format = rf.IQFormatCS8
+		}
 	}
-	rx, err := rf.New(&cfg)
+	rx, err := rf.NewReceiver(&cfg)
 	if err != nil {
 		return err
 	}
-	d.iq, d.maxWrite = rx, cfg.MaxWrite
+	d.iq = rx
 	if !d.raw {
-		d.rs = newResampler(d.rate, rf.BasebandRate, true)
+		d.rs = newResampler(d.rate, basebandRate, true)
 		d.bb = make([]complex64, 0, basebandMax)
+		d.cf32 = make([]byte, 0, 8*basebandMax)
 		d.wide = make([]complex64, 0, 64)
 	}
 	return nil
@@ -168,7 +176,8 @@ func (d *decoder) write(p []byte) error {
 		}
 	}
 	if d.raw {
-		return d.writeRaw(p)
+		d.writeRaw(p)
+		return nil
 	}
 	fr := d.frame()
 	if d.npend > 0 {
@@ -178,43 +187,34 @@ func (d *decoder) write(p []byte) error {
 		if d.npend < fr {
 			return nil
 		}
-		if err := d.sample(d.pend[:fr]); err != nil {
-			return err
-		}
+		d.sample(d.pend[:fr])
 		d.npend = 0
 	}
 	for len(p) >= fr {
-		if err := d.sample(p[:fr]); err != nil {
-			return err
-		}
+		d.sample(p[:fr])
 		p = p[fr:]
 	}
 	d.npend = copy(d.pend[:], p)
 	return nil
 }
 
-func (d *decoder) writeRaw(p []byte) error {
+func (d *decoder) writeRaw(p []byte) {
 	if d.npend > 0 && len(p) > 0 {
 		d.pend[1] = p[0]
-		if err := d.emit(d.iq.Write(d.pend[:2])); err != nil {
-			return err
-		}
+		d.emit(d.iq.AppendBursts(d.out[:0], d.pend[:2]))
 		d.samples++
 		d.npend = 0
 		p = p[1:]
 	}
 	for len(p) >= 2 {
 		n := min(len(p), d.maxWrite) &^ 1
-		if err := d.emit(d.iq.Write(p[:n])); err != nil {
-			return err
-		}
+		d.emit(d.iq.AppendBursts(d.out[:0], p[:n]))
 		d.samples += int64(n / 2)
 		p = p[n:]
 	}
 	if len(p) == 1 {
 		d.pend[0], d.npend = p[0], 1
 	}
-	return nil
 }
 
 func normalize(e encoding, b []byte) float32 {
@@ -232,77 +232,82 @@ func normalize(e encoding, b []byte) float32 {
 	return math.Float32frombits(binary.LittleEndian.Uint32(b))
 }
 
-func (d *decoder) sample(b []byte) error {
+func (d *decoder) sample(b []byte) {
 	d.samples++
 	sz := d.enc.size()
 	if d.audio() {
 		v := normalize(d.enc, b)
 		if d.rs == nil {
-			return d.pushPCM(v)
+			d.pushPCM(v)
+			return
 		}
 		d.wide = d.rs.push(complex(v, 0), d.wide[:0])
 		for _, y := range d.wide {
-			if err := d.pushPCM(real(y)); err != nil {
-				return err
-			}
+			d.pushPCM(real(y))
 		}
-		return nil
+		return
 	}
 	d.wide = d.rs.push(complex(normalize(d.enc, b), normalize(d.enc, b[sz:])), d.wide[:0])
 	for _, y := range d.wide {
 		d.bb = append(d.bb, y)
 		if len(d.bb) == cap(d.bb) {
-			if err := d.emit(d.iq.WriteBaseband(d.bb)); err != nil {
-				return err
-			}
+			d.emit(d.writeBaseband())
 			d.bb = d.bb[:0]
 		}
 	}
-	return nil
 }
 
-func (d *decoder) pushPCM(v float32) error {
+func (d *decoder) pushPCM(v float32) {
 	d.pcm = append(d.pcm, int16(math.Round(float64(max(-32767, min(32767, v*32767))))))
 	if len(d.pcm) < cap(d.pcm) {
-		return nil
+		return
 	}
-	err := d.emit(d.disc.Write(d.pcm))
+	d.emit(d.disc.AppendBursts(d.out[:0], d.pcm))
 	d.pcm = d.pcm[:0]
-	return err
 }
 
-func (d *decoder) emit(bs []rf.Burst, err error) error {
+func (d *decoder) writeBaseband() []rf.Burst {
+	b := d.cf32[:0]
+	for _, v := range d.bb {
+		b = binary.LittleEndian.AppendUint32(b, math.Float32bits(real(v)))
+		b = binary.LittleEndian.AppendUint32(b, math.Float32bits(imag(v)))
+	}
+	d.cf32 = b
+	return d.iq.AppendBursts(d.out[:0], b)
+}
+
+func (d *decoder) emit(bs []rf.Burst) {
+	if cap(bs) > cap(d.out) {
+		d.out = bs[:0]
+	}
 	for i := range bs {
 		if d.onBurst != nil {
 			d.onBurst(&bs[i])
 		}
 		d.rep.burst(&bs[i])
 	}
-	return err
 }
 
-func (d *decoder) flush() error {
+func (d *decoder) flush() {
 	if !d.ready {
-		return nil
+		return
 	}
-	var err error
 	switch {
 	case d.disc != nil:
 		if len(d.pcm) > 0 {
-			err = d.emit(d.disc.Write(d.pcm))
+			d.emit(d.disc.AppendBursts(d.out[:0], d.pcm))
 			d.pcm = d.pcm[:0]
 		}
-		_ = d.emit(d.disc.Flush(), nil)
-		d.rep.offset, d.rep.deviation = d.disc.OffsetHz(), d.disc.DeviationHz()
+		d.emit(d.disc.AppendFlush(d.out[:0]))
+		d.rep.offset, d.rep.deviation = float64(d.disc.Offset()), float64(d.disc.Level())
 	case d.iq != nil:
 		if len(d.bb) > 0 {
-			err = d.emit(d.iq.WriteBaseband(d.bb))
+			d.emit(d.writeBaseband())
 			d.bb = d.bb[:0]
 		}
-		_ = d.emit(d.iq.Flush(), nil)
+		d.emit(d.iq.AppendFlush(d.out[:0]))
 		d.rep.offset, d.rep.deviation = d.iq.OffsetHz(), d.iq.DeviationHz()
 	}
-	return err
 }
 
 func (d *decoder) seconds() float64 {

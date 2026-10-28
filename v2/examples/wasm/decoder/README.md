@@ -39,10 +39,10 @@ The page also decodes a URL without user input, for tests: `http://localhost:808
 
 | Input | Receiver | Default tier | Choices |
 |---|---|---|---|
-| Audio, any rate | `rf.DiscReceiver` at 24 kHz | 1 | 0 to 2 (TinyGo: 0) |
-| `.cu8`, `.cs8` at 48 kHz or more | `rf.Receiver.Write` | 2 | 0 to 3 |
-| `.cs16`, `.cf32`, or 8-bit below 48 kHz | `rf.Receiver.WriteBaseband` at 48 kHz | 2 | 0 to 3 |
-| RTL-SDR | `rf.Receiver.Write` at 1.024 Msps | 2 | 0 to 3 |
+| Audio, any rate | `rf.AudioReceiver` at 24 kHz | 1 | 0 to 2 (TinyGo: 0) |
+| `.cu8`, `.cs8` at 48 kHz or more | `rf.Receiver.AppendBursts` | 2 | 0 to 3 |
+| `.cs16`, `.cf32`, or 8-bit below 48 kHz | `rf.Receiver.AppendBursts` in cf32 at 48 kHz | 2 | 0 to 3 |
+| RTL-SDR | `rf.Receiver.AppendBursts` at 1.024 Msps | 2 | 0 to 3 |
 
 The decoder resamples audio to 24 kHz and 16-bit or float I/Q to 48 kHz itself, with a copy of the resampler of `cmd/dmrrf`. Tier 3 is for offline use: it is too slow for live input.
 
@@ -87,7 +87,7 @@ go test ./examples/wasm/decoder
 GOOS=js GOARCH=wasm go test -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./examples/wasm/decoder
 ```
 
-The tests decode the I/Q fixtures of `cmd/dmrrf/testdata` through the decoder and check that it returns the same bursts as `rf.Receiver` and `rf.DiscReceiver` called directly, for cu8, cs16, WAV and float audio. They also check that a write allocates nothing.
+The tests decode the I/Q fixtures of `cmd/dmrrf/testdata` through the decoder and check that it returns the same bursts as `rf.Receiver` and `rf.AudioReceiver` called directly, for cu8, cs16, WAV and float audio. They also check that a write allocates nothing.
 
 `node_run.js` runs `decoder.wasm` under Node and prints the events and the real-time factor:
 

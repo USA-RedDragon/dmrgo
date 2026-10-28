@@ -145,14 +145,11 @@ func fecString(r fec.Result) string {
 
 func lcOf(lc *pdu.FullLinkControl, from string) *lcInfo {
 	l := &lcInfo{FLCO: lc.FLCO.String(), FID: uint8(lc.FID), From: from, FEC: fecString(lc.FEC)}
-	switch {
-	case lc.GroupVoice != nil:
-		l.Call = "group"
-	case lc.UnitToUnit != nil:
-		l.Call = "private"
-	}
-	if dst, src, ok := lc.Addresses(); ok {
-		l.Source, l.Dest = src, dst
+	if group, dst, src, ok := lc.Call(); ok {
+		l.Call, l.Source, l.Dest = "private", src, dst
+		if group {
+			l.Call = "group"
+		}
 	}
 	if so, ok := lc.ServiceOptions(); ok && l.Call != "" {
 		l.Privacy, l.Emerg = so.IsPrivacy, so.IsEmergency
@@ -231,7 +228,7 @@ func (p *reporter) burst(r *rf.Burst) {
 		p.emit(e)
 		return
 	}
-	lc, lcDone, lcErr := ch.voice.Receive(b)
+	lc, lcDone, lcErr := ch.voice.Receive(b, nil)
 	if r.Voice != enums.VoiceBurstUnknown {
 		b.VoiceBurst = r.Voice
 	}
@@ -292,7 +289,7 @@ func (p *reporter) burst(r *rf.Burst) {
 }
 
 func (p *reporter) embedded(e *event, ch *chanState, lc *pdu.FullLinkControl) {
-	if g := lc.GPSInfo; g != nil {
+	if g, ok := lc.AsGPSInfo(); ok {
 		e.GPS = &gpsInfo{From: "embedded LC", Latitude: g.Latitude, Longitude: g.Longitude, Detail: g.PositionError.String()}
 	}
 	if alias, ok, err := ch.ta.Add(lc); ok && err == nil {
@@ -310,9 +307,9 @@ func (p *reporter) packet(e *event, ch *chanState, b *layer2.Burst) {
 		return
 	}
 	dst, src, _ := m.Header.Addresses()
-	e.Packet = fmt.Sprintf("%s %d to %d, %d octets, %s, CRC %s", m.Header.Format, src, dst, len(m.Data), m.DataType, map[bool]string{true: "bad", false: "ok"}[m.BadCRC])
-	if m.Header.ResponsePacketHeader != nil {
-		if r, err := packet.ResponseOf(m.Header.ResponsePacketHeader); err == nil {
+	e.Packet = fmt.Sprintf("%s %d to %d, %d octets, %s, CRC %s", m.Header.Format(), src, dst, len(m.Data), m.DataType, map[bool]string{true: "bad", false: "ok"}[m.BadCRC])
+	if h, ok := m.Header.AsResponse(); ok {
+		if r, err := packet.ResponseOf(&h); err == nil {
 			e.Packet += ", response " + r.String()
 		}
 		return

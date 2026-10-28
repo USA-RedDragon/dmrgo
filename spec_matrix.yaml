@@ -224,6 +224,12 @@ ignore_files:
   - v2/examples/trunking/main.go
   - v2/examples/txaudio/main.go
   - v2/examples/txiq/main.go
+  - v2/examples/wasm/decoder/decoder.go
+  - v2/examples/wasm/decoder/main_cli.go
+  - v2/examples/wasm/decoder/main_js.go
+  - v2/examples/wasm/decoder/report.go
+  - v2/examples/wasm/decoder/resample.go
+  - v2/examples/wasm/decoder/serve/main.go
   - v2/examples/wasm/inspector/capture.go
   - v2/examples/wasm/inspector/dmr.go
   - v2/examples/wasm/inspector/inspect.go

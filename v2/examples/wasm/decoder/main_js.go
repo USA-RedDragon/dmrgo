@@ -60,9 +60,9 @@ func (b *bridge) flush(js.Value, []js.Value) any {
 	if b.dec == nil {
 		return map[string]any{errKey: errNotOpen}
 	}
-	err := b.dec.flush()
+	b.dec.flush()
 	b.dec.rep.emit(b.dec.rep.summary(b.dec.seconds()))
-	return b.result(b.dec.rep.take(), err)
+	return b.result(b.dec.rep.take(), nil)
 }
 
 func (b *bridge) stats(js.Value, []js.Value) any {
