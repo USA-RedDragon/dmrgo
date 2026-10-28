@@ -151,8 +151,8 @@ func (m *MS) SetStatus(s Status) error {
 }
 
 // SetSupplementary sets the appended data a as the supplementary_user data
-// of the next request that asks for it: a SendStatus, or a Call or CallData
-// with IsSuppData. The MS uploads it when the TSCC asks for it with a
+// of the next request that takes it: a SendStatus, or a Call or CallData
+// with IsSuppData. The MS uploads it when the TSCC requests it with a
 // C_AHOY from SUPLI, and keeps a copy until then. A nil a clears it. It
 // returns ErrUDTLength for an a with Blocks or PadNibble out of range, and
 // ErrUDTFormat for a Format over 15. (ETSI TS 102 361-4 clause 6.4.13)
@@ -192,7 +192,7 @@ func (m *MS) SendStatus(now time.Duration, group bool, target uint32, s Status) 
 	return m.statusRequest(now, reqStatus, group, target, s)
 }
 
-// PollStatus asks the MS target for its status by random access. The
+// PollStatus requests the status of the MS target by random access. The
 // outputs follow from Burst and Tick: OutputStatus with the status of
 // target, or OutputRefused. It returns the errors of SendStatus. (ETSI TS
 // 102 361-4 clause 6.6.6.2)
@@ -242,7 +242,7 @@ func (m *MS) suplExtra(options uint8) uint8 {
 	return 0
 }
 
-// Interrupt asks the TSCC to stop the transmission on the voice call that
+// Interrupt requests the TSCC to stop the transmission on the voice call that
 // the MS follows on a payload channel. The MS leaves the payload channel, sends StatusInterrupt to
 // the talkgroup of the call, or to the other MS of an individual call, by
 // random access, and returns to the payload channel after the answer of
@@ -304,10 +304,10 @@ func (m *MS) resume(now time.Duration, out []Output) []Output {
 }
 
 // AdviseIP sends an IP connection advice: a registration by random access
-// with IP_Inform, and the address by UDT when the TSCC asks for it with a
+// with IP_Inform, and the address by UDT when the TSCC requests it with a
 // C_AHOY from IPI. ip holds an IPv4
 // address in its first 4 octets, or an IPv6 address when ipv6 is set.
-// remove asks the TSCC to remove the address and keeps the registration.
+// remove requests the TSCC to remove the address and keeps the registration.
 // The outputs follow from Burst and Tick: OutputAccepted when the TSCC
 // accepted the address, OutputRefused with Ack
 // enums.AckReasonIPConnectionFailed when it refused the address and kept the

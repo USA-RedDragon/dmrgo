@@ -50,7 +50,7 @@ type MSConfig struct {
 	// Seed seeds the random choice of the backoff frames. Two MSs with
 	// the same seed make the same choices; 0 is a valid seed.
 	Seed uint64
-	// NoRegistration keeps the MS from registering when the TSCC asks for
+	// NoRegistration keeps the MS from registering when the TSCC requests
 	// it with Reg.
 	NoRegistration bool
 	// RandomTimeout is TRand_TC, the longest time of a random access. 0
@@ -121,8 +121,8 @@ type MSConfig struct {
 	// Killed starts the MS killed, for an MS that a TSCC killed before.
 	Killed bool
 	// PowerSave is the PowerSave_RQ of the registrations of the MS, 0 to
-	// 7: the MS asks to be awake for one power save frame in 2^PowerSave.
-	// 0 asks for no power save. (ETSI TS 102 361-4 clause 6.4.7)
+	// 7: the MS requests to be awake for one power save frame in 2^PowerSave.
+	// 0 requests no power save. (ETSI TS 102 361-4 clause 6.4.7)
 	PowerSave uint8
 	// Awake is T_Awake, the time the MS stays awake after a PDU for it in
 	// power save. 0 means constants.TAwakeDefault.
@@ -303,7 +303,7 @@ func (m *MS) State() State {
 	return m.f.state
 }
 
-// Site returns what the MS knows about the TSCC.
+// Site returns the data that the MS holds about the TSCC.
 func (m *MS) Site() Site {
 	if m == nil {
 		return Site{}
@@ -352,7 +352,7 @@ func (m *MS) Off() bool {
 	return m.off
 }
 
-// Reset forgets the site, the registration, the denied list, the DGNA
+// Reset clears the site, the registration, the denied list, the DGNA
 // talkgroups and any request, as after NewMS. It keeps the config, the
 // poll responses, and a stun or kill.
 func (m *MS) Reset() {
@@ -370,12 +370,12 @@ func (m *MS) Reset() {
 	m.resetSvc()
 }
 
-// Call asks the TSCC for a voice call to the talkgroup or MS target, by
+// Call requests from the TSCC a voice call to the talkgroup or MS target, by
 // random access. The outputs follow from Burst and Tick: OutputGrant and
 // OutputTune for the grant, or OutputRefused. An emergency call uses the
 // emergency random access of ETSI TS 102 361-4 clause 6.2.1.1.9. It returns
 // ErrNotOnControl when the MS is not on a confirmed TSCC, ErrBusy while
-// another request runs, ErrNotRegistered when the TSCC asks for a
+// another request runs, ErrNotRegistered when the TSCC requests a
 // registration that the MS does not hold, and a *dmrgo.ConfigError for a
 // target or options out of range.
 func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.VoiceServiceOptions) error {
@@ -397,7 +397,7 @@ func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.Voic
 	return m.request(now, kind, target, field, opts.IsEmergency)
 }
 
-// CallData asks the TSCC for a packet data call to the talkgroup or MS
+// CallData requests from the TSCC a packet data call to the talkgroup or MS
 // target, as Call does. The consumer sends the data on the granted
 // channel with data.Sender.
 func (m *MS) CallData(now time.Duration, group bool, target uint32, opts layer3.DataServiceOptions) error {
@@ -487,7 +487,7 @@ func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
 // Cancel stops the running request. It appends OutputRefused with
 // ReasonCancelled when one ran, and allocates only when dst has no room
 // for MaxOutputs outputs. A call whose C_RAND the MS has sent is not
-// stopped at once: the MS asks the TSCC to cancel it with a Cancel Call
+// stopped at once: the MS requests the TSCC to cancel it with a Cancel Call
 // random access, and appends OutputRefused with ReasonCancelled when the
 // TSCC accepts. The call can still mature: then OutputTune follows as for
 // any grant. After a C_NACKD Call_Cancel_Refused the MS waits for the call
@@ -558,7 +558,7 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 	return m.f.leave(now, ReasonMaintenance, dst)
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, and the
+// Burst decodes the burst raw with the data in the Hint h, and the
 // CACH field before it, in transmit order, when cach is not nil, as
 // Follower.Burst does, runs the random access and the requests, and appends
 // the outputs to dst. now is the start of the burst. On the TSCC the MS
@@ -669,7 +669,7 @@ func (m *MS) replyDue(now time.Duration) time.Duration {
 	return now + frame
 }
 
-// Lost tells the MS that the receiver lost the signal, as Follower.Lost
+// Lost records that the receiver lost the signal, as Follower.Lost
 // does. It allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) Lost(now time.Duration, dst []Output) []Output {
 	if m == nil || m.f.ctl.b == nil {

@@ -18,20 +18,20 @@ type OutputKind uint8
 
 // The OutputKind values.
 const (
-	// OutputTune asks the consumer to tune the receiver, and the
+	// OutputTune requests the consumer to tune the receiver, and the
 	// transmitter of an MS, to Output.Tune.
 	OutputTune OutputKind = iota + 1
 	// OutputSite reports that the machine confirmed a TSCC, or that the
 	// system parameters of the TSCC changed. Site returns them.
 	OutputSite
 	// OutputLost reports that the machine lost the TSCC. Output.Reason
-	// tells why.
+	// gives the cause.
 	OutputLost
 	// OutputGrant reports a channel grant in Output.Grant, whether or not
 	// the machine follows it.
 	OutputGrant
 	// OutputCallEnd reports that the machine left the payload channel of
-	// Output.Grant. Output.Reason tells why.
+	// Output.Grant. Output.Reason gives the cause.
 	OutputCallEnd
 	// OutputBurst is a burst for the MS to transmit in Output.Slot at
 	// Output.Due.
@@ -40,7 +40,7 @@ const (
 	// the MS.
 	OutputRegistered
 	// OutputRefused reports that the TSCC refused a request of the MS, or
-	// that the request failed. Output.Reason tells why and Output.Ack holds
+	// that the request failed. Output.Reason gives the cause, and Output.Ack holds
 	// the reason of a C_NACKD.
 	OutputRefused
 	// OutputAhoy reports a C_AHOY for the MS, with the call in
@@ -146,7 +146,7 @@ func (k OutputKind) String() string {
 	return unknownName
 }
 
-// Reason tells why a machine lost a TSCC, left a payload channel or failed
+// Reason is why a machine lost a TSCC, left a payload channel or failed
 // a request.
 type Reason uint8
 
@@ -193,7 +193,7 @@ const (
 	// address of the called party in a UDT, which UDT returns.
 	ReasonDiverted
 	// ReasonInterrupt is a transmit interrupt: the MS left the payload
-	// channel to ask for it, or the TSCC stopped the transmission of the
+	// channel to request it, or the TSCC stopped the transmission of the
 	// call.
 	ReasonInterrupt
 	// ReasonCallTimer is the end of the longest call time of a TSCC.
@@ -336,7 +336,7 @@ type Output struct {
 	// Grant is the grant of OutputGrant and OutputCallEnd, and the call of
 	// OutputAhoy.
 	Grant Grant
-	// Reason tells why for OutputLost, OutputCallEnd and OutputRefused.
+	// Reason gives the cause for OutputLost, OutputCallEnd and OutputRefused.
 	Reason Reason
 	// Ack is the reason code of the TSCC for OutputRefused with ReasonNack
 	// and for OutputRegistered.

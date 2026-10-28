@@ -16,7 +16,7 @@ type Access struct {
 	Mask uint8
 	// Address is the MS address of the C_ALOHA, for Mask.
 	Address uint32
-	// Function tells for which services random access is invited.
+	// Function shows for which services random access is invited.
 	Function enums.ServiceFunction
 	// NRandWait is the code for the most TDMA frames that the TSCC may
 	// take to answer a random access.
@@ -64,9 +64,9 @@ type Neighbor struct {
 	AdjacentPriority uint8
 }
 
-// Site is what a Follower or an MS knows about the TSCC it is on, from
-// C_ALOHA, C_BCAST and the C_SYS_Parms of the CACH (ETSI TS 102 361-4
-// clauses 5.1, 6.3.2 and 7.1.1.1). The zero Site knows nothing.
+// Site holds the data that a Follower or an MS has about the TSCC it is on,
+// from C_ALOHA, C_BCAST and the C_SYS_Parms of the CACH (ETSI TS 102 361-4
+// clauses 5.1, 6.3.2 and 7.1.1.1). The zero Site holds no data.
 type Site struct {
 	// SysCode is the C_SYScode of the TSCC. Par is set only when a C_ALOHA
 	// or C_BCAST gave the whole 16 bits.

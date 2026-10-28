@@ -20,7 +20,7 @@ type FollowerConfig struct {
 	// SysCode, when set, is the system to follow: a TSCC with another
 	// MODEL, NET or SITE is skipped. Nil follows the first TSCC found.
 	SysCode *pdu.SysCode
-	// Hunt, when set, is the hunt list. The Follower copies it, asks for
+	// Hunt, when set, is the hunt list. The Follower copies it, requests
 	// each channel in turn with OutputTune until it finds a TSCC, and adds
 	// and withdraws channels on an Ann_WD_TSCC broadcast. With a nil or
 	// empty Hunt the consumer keeps the receiver on one TSCC, which is then
@@ -42,7 +42,7 @@ type FollowerConfig struct {
 	// for a receiver that cannot tune, such as the replay of a recording.
 	NoFollow bool
 	// NoSignal is T_Nosig, the time without a TSCC burst after which the
-	// Follower hunts again, and the time it listens on each hunt list
+	// Follower hunts again, and the time it stays on each hunt list
 	// channel. 0 means constants.TNoSignalDefault, and a negative value
 	// turns the timer off (ETSI TS 102 361-4 Table A.1).
 	NoSignal time.Duration
@@ -73,12 +73,12 @@ type FollowerConfig struct {
 
 // Follower follows a Tier III trunked site without transmitting, as a
 // scanner does: it hunts for a TSCC, reads its site parameters,
-// broadcasts and grants, follows the grants of the calls it wants to their
-// payload channels, and returns to the TSCC on P_CLEAR, after the hang time
-// or when the payload channel goes quiet (ETSI TS 102 361-4 clauses 6.3
-// and 6.6). Make it with NewFollower; the methods of a zero Follower do
-// nothing. A Follower is not safe for concurrent use and must not be
-// copied; go vet reports a copy.
+// broadcasts and grants, follows the grants of the calls that its config
+// selects to their payload channels, and returns to the TSCC on P_CLEAR,
+// after the hang time or when the payload channel goes quiet (ETSI TS 102
+// 361-4 clauses 6.3 and 6.6). Make it with NewFollower; the methods of a
+// zero Follower do nothing. A Follower is not safe for concurrent use and
+// must not be copied; go vet reports a copy.
 type Follower struct {
 	ctl       control
 	cach      layer2.CACH
@@ -185,7 +185,7 @@ func (f *Follower) State() State {
 	return f.state
 }
 
-// Site returns what the Follower knows about the TSCC.
+// Site returns the data that the Follower holds about the TSCC.
 func (f *Follower) Site() Site {
 	if f == nil {
 		return Site{}
@@ -234,7 +234,7 @@ func (f *Follower) Call() (g Grant, ok bool) {
 	return f.call, f.state == StatePayload
 }
 
-// Reset forgets the site and the call and starts hunting again, as after
+// Reset clears the site and the call and starts hunting again, as after
 // NewFollower. It keeps the config, the channel plan and the hunt list.
 func (f *Follower) Reset() {
 	if f == nil {
@@ -246,12 +246,12 @@ func (f *Follower) Reset() {
 	f.inHang, f.hasClear = false, false
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, and the
+// Burst decodes the burst raw with the data in the Hint h, and the
 // CACH field before it when cach is not nil, and appends the outputs to
 // dst. cach is in transmit order, as bs.Output.CACH and
 // TSCCOutput.CACH give it. The time now is on the monotonic clock of the
 // caller. On a payload channel only the bursts of the granted slot count,
-// so h.Slot should be set when the transport knows it. A nil raw is a
+// so h.Slot should be set when the transport has it. A nil raw is a
 // transport frame without a burst: with Hint.SyncLost it does what Lost
 // does, else it runs the timers. It allocates only when dst has no room
 // for MaxOutputs outputs.
@@ -316,7 +316,7 @@ func (f *Follower) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 	return f.control(now, &h, dst)
 }
 
-// Lost tells the Follower that the receiver lost the signal. On a payload
+// Lost records that the receiver lost the signal. On a payload
 // channel the call ends as on TV_Inactive. It appends the outputs to dst,
 // and allocates only when dst has no room for MaxOutputs outputs.
 func (f *Follower) Lost(now time.Duration, dst []Output) []Output {
@@ -332,9 +332,9 @@ func (f *Follower) Lost(now time.Duration, dst []Output) []Output {
 }
 
 // Tick runs the timers that are due at now and appends their outputs to
-// dst. After NewFollower and Reset the first Tick or Burst asks for the
-// first hunt list channel. A Tick before Deadline does nothing. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// dst. After NewFollower and Reset the first Tick or Burst appends an
+// OutputTune for the first hunt list channel. A Tick before Deadline does
+// nothing. It allocates only when dst has no room for MaxOutputs outputs.
 func (f *Follower) Tick(now time.Duration, dst []Output) []Output {
 	if f == nil || f.ctl.b == nil {
 		return dst

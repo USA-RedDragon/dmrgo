@@ -89,9 +89,9 @@ func (u *msUDT) deadline(at time.Duration, ok bool) (time.Duration, bool) {
 	return at, ok
 }
 
-// SendShortData asks the TSCC to deliver the appended data a as UDT short
+// SendShortData requests the TSCC to deliver the appended data a as UDT short
 // data to the talkgroup or MS target, or to a gateway, by random access
-// (ETSI TS 102 361-4 clause 6.6.4). The MS uploads a when the TSCC asks for
+// (ETSI TS 102 361-4 clause 6.6.4). The MS uploads a when the TSCC requests
 // it with a C_AHOY from SDMI. The outputs follow from Burst and Tick:
 // OutputDelivered when the TSCC acknowledges the delivery, or
 // OutputRefused. It returns the errors of Call, and ErrUDTLength for an a
@@ -124,7 +124,7 @@ func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appe
 	return nil
 }
 
-// PollShortData asks the TSCC to poll the MS target for UDT short data in
+// PollShortData requests the TSCC to poll the MS target for UDT short data in
 // the format f, in the given number of appended blocks, by random access
 // (ETSI TS 102 361-4 clause 6.6.5). The TSCC delivers the polled data in a
 // UDT, which the MS acknowledges: the outputs are OutputUDT with the data
@@ -152,11 +152,11 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 	return nil
 }
 
-// Divert asks the TSCC to divert the calls of the MS, or to stop diverting
+// Divert requests the TSCC to divert the calls of the MS, or to stop diverting
 // them, by random access (ETSI TS 102 361-4 clause 6.6.7.1). With opts.Set,
 // gateway is MSI, GPI, PSTNI, PABXI, LINEI, DISPATI or IPI of package
 // constants and a holds the diversion address: an address, BCD digits or
-// an IP address. The MS uploads a when the TSCC asks for it with a C_AHOY
+// an IP address. The MS uploads a when the TSCC requests it with a C_AHOY
 // from DIVERTI. Without opts.Set, gateway is TSI to clear the diversions of
 // the MS or DIVERTI to clear the diversions to it, and a may be nil. The
 // outputs are OutputDelivered with the C_ACKD, or OutputRefused. It returns
@@ -202,11 +202,11 @@ func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServ
 	return nil
 }
 
-// AssignGroups asks the TSCC to give the MS target the DGNA talkgroups of
+// AssignGroups requests the TSCC to give the MS target the DGNA talkgroups of
 // a, by random access to DGNAI (ETSI TS 102 361-4 clause 6.6.8.3). a is in
 // the address format, for the DGNA_Address mode, or in the mixed format,
 // for the DGNA_Alias mode. The MS uploads a in a C_DGNAHU when the TSCC
-// asks for it with a C_AHOY from DGNAI. The outputs are OutputDelivered or
+// requests it with a C_AHOY from DGNAI. The outputs are OutputDelivered or
 // OutputRefused. It returns the errors of Call, and ErrUDTFormat for
 // another format.
 func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
@@ -239,7 +239,7 @@ func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 	return nil
 }
 
-// CallDuplex asks the TSCC for a full-duplex voice call to the MS target,
+// CallDuplex requests from the TSCC a full-duplex voice call to the MS target,
 // by random access, as Call does (ETSI TS 102 361-4 clause 6.6.9.2). The MS
 // follows the PV_GRANT_DX whose Target is its own address.
 func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServiceOptions) error {
@@ -257,9 +257,9 @@ func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServi
 	return m.request(now, enums.ServiceKindDuplexVoice, target, field, opts.IsEmergency)
 }
 
-// CallDuplexData asks the TSCC for a full-duplex packet data call to the MS
-// target, by random access, as CallData does (ETSI TS 102 361-4 clause
-// 6.6.10.2).
+// CallDuplexData requests from the TSCC a full-duplex packet data call to
+// the MS target, by random access, as CallData does (ETSI TS 102 361-4
+// clause 6.6.10.2).
 func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataServiceOptions) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
@@ -275,7 +275,7 @@ func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataSe
 	return m.request(now, enums.ServiceKindDuplexPacketData, target, field, opts.IsEmergency)
 }
 
-// CallAmbient asks the TSCC for an individual voice call to the MS target
+// CallAmbient requests from the TSCC an individual voice call to the MS target
 // with the Ambient Listening Service, by random access, as Call does: the
 // called MS transmits without an action of its user (ETSI TS 102 361-4
 // clause 6.6.2.6.2).

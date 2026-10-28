@@ -37,7 +37,7 @@ type CapacityPlusConfig struct {
 	NoFollow bool
 	// NoSignal is the time without a valid Capacity Plus PDU on the rest
 	// channel after which the Follower hunts again, and the time it
-	// listens on each repeater while it hunts. 0 means
+	// stays on each repeater while it hunts. 0 means
 	// CapacityPlusNoSignalDefault, and a negative value turns the timer
 	// off.
 	NoSignal time.Duration
@@ -58,16 +58,16 @@ type CapacityPlusConfig struct {
 // CapacityPlusFollower follows a MOTOTRBO Capacity Plus or Linked Capacity
 // Plus site without transmitting. It finds the rest channel, where every
 // call starts, moves with it when a call takes it, and follows the calls
-// it wants: from the group or private voice grant in the Voice LC Header
-// on the rest channel, or by late entry from the channel activity of a
-// site status. Output.Tune and Grant name the repeater in Channel and the
-// timeslot of the LSN in Slot. A Grant from a site status has Opcode
-// pdu.CSBKCapacityPlusSiteStatus and LateEntry set; one from a Voice LC
-// Header has Opcode 0. No public spec describes the protocol; the decoding
-// follows recordings of real systems. Make it with NewCapacityPlusFollower;
-// the methods of a zero CapacityPlusFollower do nothing. A
-// CapacityPlusFollower is not safe for concurrent use and must not be
-// copied.
+// that its config selects: from the group or private voice grant in the
+// Voice LC Header on the rest channel, or by late entry from the channel
+// activity of a site status. Output.Tune and Grant name the repeater in
+// Channel and the timeslot of the LSN in Slot. A Grant from a site status
+// has Opcode pdu.CSBKCapacityPlusSiteStatus and LateEntry set; one from a
+// Voice LC Header has Opcode 0. No public spec describes the protocol; the
+// decoding follows recordings of real systems. Make it with
+// NewCapacityPlusFollower; the methods of a zero CapacityPlusFollower do
+// nothing. A CapacityPlusFollower is not safe for concurrent use and must
+// not be copied.
 type CapacityPlusFollower struct {
 	plan     ChannelPlan
 	talk     [MaxTalkgroups]uint32
@@ -170,7 +170,7 @@ func (f *CapacityPlusFollower) Call() (g Grant, ok bool) {
 	return f.call, f.state == StatePayload
 }
 
-// Reset forgets the site and the call and starts hunting again, as after
+// Reset clears the site and the call and starts hunting again, as after
 // NewCapacityPlusFollower.
 func (f *CapacityPlusFollower) Reset() {
 	if f == nil {
@@ -185,10 +185,10 @@ func (f *CapacityPlusFollower) Reset() {
 	f.call = Grant{}
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, and the
+// Burst decodes the burst raw with the data in the Hint h, and the
 // CACH field before it when cach is not nil, and appends the outputs to
 // dst. cach is in transmit order, as bs.Output.CACH gives it. h.Slot, or
-// the TDMA channel of the CACH, tells the timeslot of the burst. A nil raw
+// the TDMA channel of the CACH, gives the timeslot of the burst. A nil raw
 // is a transport frame without a burst: with Hint.SyncLost it does what
 // Lost does, else it runs the timers. It allocates only when dst has no
 // room for MaxOutputs outputs.
@@ -272,7 +272,7 @@ func (f *CapacityPlusFollower) burst(now time.Duration, raw *layer2.RawBurst, b 
 	return dst
 }
 
-// Lost tells the Follower that the receiver lost the signal. In a call it
+// Lost records that the receiver lost the signal. In a call it
 // returns to the rest channel as on Inactive. It appends the outputs to
 // dst, and allocates only when dst has no room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Lost(now time.Duration, dst []Output) []Output {
@@ -289,8 +289,8 @@ func (f *CapacityPlusFollower) Lost(now time.Duration, dst []Output) []Output {
 
 // Tick runs the timers that are due at now and appends their outputs to
 // dst. After NewCapacityPlusFollower and Reset, with a plan, the first
-// Tick or Burst asks for the first repeater. It allocates only when dst
-// has no room for MaxOutputs outputs.
+// Tick or Burst appends an OutputTune for the first repeater. It allocates
+// only when dst has no room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Tick(now time.Duration, dst []Output) []Output {
 	if f == nil || f.b == nil {
 		return dst

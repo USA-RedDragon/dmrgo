@@ -139,7 +139,7 @@ func ExampleMS_SetPollResponse() {
 }
 
 // ExampleMS_Divert diverts the voice calls of the MS to another MS: the MS
-// uploads the address when the TSCC asks for it.
+// uploads the address when the TSCC requests it.
 func ExampleMS_Divert() {
 	s := newExampleSite(trunk.MSConfig{})
 	var a trunk.Appended

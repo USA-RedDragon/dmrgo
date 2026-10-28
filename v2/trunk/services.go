@@ -8,20 +8,20 @@ type Status uint8
 
 // The Status values with a meaning in the standard.
 const (
-	// StatusTerminate asks the TSCC to stop the transmission of an MS and
+	// StatusTerminate requests the TSCC to stop the transmission of an MS and
 	// to end its call, such as an ALS call (ETSI TS 102 361-4 clause
 	// 6.4.14.3.4).
 	StatusTerminate Status = 123
 	// StatusCancelEmergency cancels an emergency alarm (ETSI TS 102 361-4
 	// clause 6.6.6.3.2).
 	StatusCancelEmergency Status = 124
-	// StatusInterrupt asks the TSCC to stop the transmission of an MS so
+	// StatusInterrupt requests the TSCC to stop the transmission of an MS so
 	// that the caller can talk (ETSI TS 102 361-4 clause 6.4.14.3.3).
 	StatusInterrupt Status = 125
 	// StatusEmergency is an emergency alarm (ETSI TS 102 361-4 clause
 	// 6.6.6.3.1).
 	StatusEmergency Status = 126
-	// StatusPoll asks the target for its status (ETSI TS 102 361-4 clause
+	// StatusPoll requests the status of the target (ETSI TS 102 361-4 clause
 	// 6.6.6.2).
 	StatusPoll Status = 127
 )

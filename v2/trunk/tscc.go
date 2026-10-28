@@ -49,7 +49,7 @@ type TSCCConfig struct {
 	Payload [MaxPayloadChannels]uint16
 	// PayloadLen is the number of entries of Payload in use, 1 or more.
 	PayloadLen int
-	// Reg asks MSs to register, and refuses the services of an MS that is
+	// Reg requests MSs to register, and refuses the services of an MS that is
 	// not registered.
 	Reg bool
 	// MaxRegistrations is the size of the registration table, at most
@@ -103,7 +103,7 @@ type TSCCConfig struct {
 	// transmission with the reverse channel and clears the call. 0 or a
 	// negative value means no limit. (ETSI TS 102 361-4 clause 6.4.14.3.2)
 	MaxCall time.Duration
-	// PowerSave gives the MSs that ask for it a power save frame, and
+	// PowerSave gives the MSs that request it a power save frame, and
 	// holds the C_AHOY to an MS that sleeps until its frame. (ETSI TS 102
 	// 361-4 clause 6.4.7)
 	PowerSave bool
@@ -168,7 +168,7 @@ const (
 	// ReasonTimeout when the called MS did not answer.
 	TSCCStatus
 	// TSCCStun reports the end of Stun or Kill for the MS Address: Stun
-	// tells the action and Ack holds the final answer of the MS. Reason is
+	// gives the action and Ack holds the final answer of the MS. Reason is
 	// ReasonTimeout when no answer came, and ReasonAuthentication when the
 	// authentication failed.
 	TSCCStun
@@ -248,7 +248,7 @@ type TSCCOutput struct {
 	// Grant is the call of TSCCCallStart, TSCCCallEnd and TSCCInterrupt,
 	// and the parties of TSCCStatus.
 	Grant Grant
-	// Reason tells why for TSCCCallEnd, TSCCStatus, TSCCStun and
+	// Reason gives the cause for TSCCCallEnd, TSCCStatus, TSCCStun and
 	// TSCCInterrupt.
 	Reason Reason
 	// Challenge is the 24-bit challenge of TSCCAuthChallenge.

@@ -289,12 +289,12 @@ func (t *TSCC) register(src uint32, out []TSCCOutput) ([]TSCCOutput, bool) {
 	return append(out, TSCCOutput{Kind: TSCCRegistered, Address: src}), true
 }
 
-// MassRegister sends a C_BCAST MassReg, which asks the MSs whose Mask least
+// MassRegister sends a C_BCAST MassReg, which requests the MSs whose Mask least
 // significant address bits match addr to register again within the
 // TReg_Window of window. A window of 0 cancels the mass registration, and
-// a Mask of 24 asks the MS addr alone. It returns a *dmrgo.ConfigError for a
-// window over 15, a mask over 24 or an addr over 24 bits. (ETSI TS 102
-// 361-4 clause 6.4.5)
+// a Mask of 24 addresses the MS addr alone. It returns a *dmrgo.ConfigError
+// for a window over 15, a mask over 24 or an addr over 24 bits. (ETSI TS
+// 102 361-4 clause 6.4.5)
 func (t *TSCC) MassRegister(window, mask uint8, addr uint32) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
@@ -315,7 +315,7 @@ func (t *TSCC) MassRegister(window, mask uint8, addr uint32) error {
 	return nil
 }
 
-// Stun asks the MS addr to stop, or with revive to give back, its user
+// Stun requests the MS addr to stop, or with revive to give back, its user
 // services, with a C_AHOY from STUNI. TSCCStun reports the answer. It
 // returns ErrBusy when a stun or kill for addr runs or too many run, and a
 // *dmrgo.ConfigError for an addr out of range. (ETSI TS 102 361-4 clause 6.4.9)
@@ -334,7 +334,7 @@ func (t *TSCC) Stun(now time.Duration, addr uint32, revive bool) error {
 	return t.stun(now, addr, act)
 }
 
-// Kill asks the MS addr to disable itself for good, with a C_AHOY from
+// Kill requests the MS addr to disable itself for good, with a C_AHOY from
 // KILLI, as Stun does. The MS authenticates the TSCC first: without
 // TSCCConfig.Auth the TSCC cannot answer, and TSCCStun reports
 // ReasonAuthentication. (ETSI TS 102 361-4 clause 6.4.10)
@@ -568,8 +568,8 @@ func (t *TSCC) statusStart(now time.Duration, caller, from, target uint32, st St
 }
 
 // SendStatus sends the status s from source, an MS or a gateway such as
-// DISPATI, to the talkgroup or MS target with a C_AHOY. StatusPoll asks an
-// MS for its status. TSCCStatus reports the answer of an MS. It returns
+// DISPATI, to the talkgroup or MS target with a C_AHOY. StatusPoll requests the
+// status of an MS. TSCCStatus reports the answer of an MS. It returns
 // ErrBusy when too many status calls run, and a *dmrgo.ConfigError for an
 // address out of range or a poll of a talkgroup. (ETSI TS 102 361-4 clause
 // 6.6.6)

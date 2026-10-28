@@ -27,9 +27,9 @@ func ExampleAppended() {
 	// 5551234# 55 51 23 4b ff
 }
 
-// ExampleMS_SendShortData sends UDT short data: the MS asks by random
-// access, uploads the data when the TSCC asks with a C_AHOY from SDMI, and
-// reports the final acknowledgement.
+// ExampleMS_SendShortData sends UDT short data: the MS sends the request by
+// random access, uploads the data when the TSCC requests it with a C_AHOY
+// from SDMI, and reports the final acknowledgement.
 func ExampleMS_SendShortData() {
 	code, _ := pdu.SysCode{Model: pdu.NetworkModelSmall, Net: 1, Site: 2}.Pack()
 	bs := func(c *pdu.CSBK) layer2.RawBurst {

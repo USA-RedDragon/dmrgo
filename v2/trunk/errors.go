@@ -23,7 +23,7 @@ var (
 	// confirmed TSCC.
 	ErrNotOnControl = errors.New("trunk: not on a TSCC")
 	// ErrNotRegistered is returned by MS.Call and MS.CallData when the
-	// TSCC asks for a registration that the MS does not hold.
+	// TSCC requests a registration that the MS does not hold.
 	ErrNotRegistered = errors.New("trunk: not registered")
 	// ErrStunned is returned for a user service of an MS that the TSCC
 	// stunned.
