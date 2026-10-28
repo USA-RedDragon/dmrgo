@@ -22,3 +22,17 @@ func ExampleParseRMC() {
 	// 2025-12-02 20:00:37 valid=true 34.21217 108.83333 0.0 kn 121 deg
 	// nmea: checksum is missing or does not match
 }
+
+// ExampleAppendRMC writes a position in the layout of an AnyTone radio.
+func ExampleAppendRMC() {
+	r := nmea.RMC{
+		Hour: 20, Minute: 0, Second: 37, HasTime: true, Valid: true,
+		Latitude: 34.212166, Longitude: 108.833333, HasPosition: true,
+		HasSpeed: true, Course: 121, HasCourse: true,
+		Day: 2, Month: 12, Year: 2025, HasDate: true, Mode: 'A',
+	}
+	s, err := nmea.AppendRMC(nil, &r)
+	fmt.Printf("%q %v\n", s, err)
+	// Output:
+	// "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n" <nil>
+}

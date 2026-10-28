@@ -7,5 +7,8 @@ import "testing"
 func TestFuzzSeeds(t *testing.T) {
 	t.Parallel()
 
-	rmcSeeds(func(data []byte) { fuzzParseRMC(t, data) })
+	rmcSeeds(func(data []byte) {
+		fuzzParseRMC(t, data)
+		fuzzAppendRMC(t, data)
+	})
 }

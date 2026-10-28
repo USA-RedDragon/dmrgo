@@ -1,6 +1,7 @@
-// Package nmea decodes the NMEA 0183 RMC sentence that some radios send as
-// a position report in a DMR data packet, such as the $GPRMC sentence of an
-// AnyTone radio in a UDP datagram. It does no I/O and does not allocate.
+// Package nmea decodes and encodes the NMEA 0183 RMC sentence that some
+// radios send as a position report in a DMR data packet, such as the $GPRMC
+// sentence of an AnyTone radio in a UDP datagram. It does no I/O and does
+// not allocate except to grow a slice of the caller.
 package nmea
 
 // RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). An

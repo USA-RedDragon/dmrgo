@@ -95,9 +95,17 @@ func checkReport(t *testing.T, n int, m *packet.Message, w [3]uint8) {
 	if err != nil {
 		t.Fatalf("report %d: %q: %v", n, payload, err)
 	}
+	checkAppend(t, n, &r, payload)
 	if r.Hour != w[0] || r.Minute != w[1] || r.Second != w[2] || r.Millisecond != 0 || !r.Valid ||
 		!near(r.Latitude, 34+12.73/60) || !near(r.Longitude, 108+50.0/60) || r.Speed != 0 || r.Course != 121 ||
 		r.Day != 2 || r.Month != 12 || r.Year != 2025 || r.MagneticVariation != 0 || r.Mode != 'A' || r.Talker != [2]byte{'G', 'P'} {
 		t.Errorf("report %d: %+v", n, r)
+	}
+}
+
+func checkAppend(t *testing.T, n int, r *nmea.RMC, payload []byte) {
+	t.Helper()
+	if out, err := nmea.AppendRMC([]byte("x"), r); err != nil || string(out) != "x"+string(payload) {
+		t.Errorf("report %d: AppendRMC = %q, %v, want %q", n, out, err, payload)
 	}
 }
