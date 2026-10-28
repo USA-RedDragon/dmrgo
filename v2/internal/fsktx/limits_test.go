@@ -266,14 +266,14 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 	}
 	out["maskd_ref_db"] = dbOf(ref / pc)
 	hi := min(56250, rate/2-200)
-	for _, pw := range []float64{1, 10, 100} {
+	for _, pw := range limPowers {
 		mg := math.Inf(1)
 		for i, f := range s.f {
 			if math.Abs(f) >= 5625 && math.Abs(f) <= hi {
-				mg = min(mg, dbOf(ref/pc)-dbOf(s.peak[i])-maskdAttn(f, pw))
+				mg = min(mg, dbOf(ref/pc)-dbOf(s.peak[i])-maskdAttn(f, wattsOf(pw)))
 			}
 		}
-		out[powKey("maskd_", pw, "w")] = mg
+		out[powKey("maskd_", pw, "")] = mg
 	}
 	var tot float64
 	for _, v := range s.bin {
@@ -311,6 +311,9 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 		if c.off+4250 <= rate/2 {
 			out[c.nm+"_bins_dbc"] = dbOf(max(band(c.off-4250, c.off+4250), band(-c.off-4250, -c.off+4250)) / tot)
 		}
+		if c.off+4375 <= rate/2 {
+			out[c.nm+"_pmr_dbc"] = dbOf(max(band(c.off-4375, c.off+4375), band(-c.off-4375, -c.off+4375)) / tot)
+		}
 	}
 	out["jp_acp_dbc"] = dbOf(max(band(10500, 14500), band(-14500, -10500)) / tot)
 	for _, c := range []struct {
@@ -336,8 +339,8 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 	return out
 }
 
-func powKey(pre string, pw float64, post string) string {
-	return pre + itoa(int(pw)) + post
+func powKey(pre string, dbm float64, post string) string {
+	return pre + itoa(int(dbm)) + "dbm" + post
 }
 
 func itoa(v int) string {
@@ -362,9 +365,9 @@ func itoa(v int) string {
 var farLimits = []struct {
 	nm string
 	lo float64
-}{{"fcc", 56250}, {"erc", 62500}, {"us97", 19000}}
+}{{"fcc", 56250}, {"erc", 62500}, {"us97", 19000}, {"sp", 28750}}
 
-// FCC 90.210(d)(3); ERC/REC 74-01 Annex 6; ETSI EN 300 113 clause 7.5; FCC 97.307(e)
+// FCC 90.210(d)(3); ERC/REC 74-01 Annex 6; ETSI EN 300 113 clause 7.5; FCC 97.307(e); Japan Radio Equipment Regulations Appendix 3
 func limFar(x []complex128, rate float64) map[string]float64 {
 	n := int(rate / 1000)
 	w := blackmanHarris(n)
@@ -574,12 +577,48 @@ type limMeasures struct {
 	hasDev              bool
 }
 
-func usReq(pw float64) float64 {
-	if pw > 25 {
+func wattsOf(dbm float64) float64 { return math.Pow(10, (dbm-30)/10) }
+
+// FCC 97.307(e)
+func reqUS97(dbm float64) float64 {
+	if dbm > 30+dbOf(25) {
 		return 60
 	}
-	return min(max(40, dbOf(pw/25e-6)), dbOf(pw/10e-6), 60)
+	return min(max(40, dbm-30-dbOf(25e-6)), dbm-30-dbOf(10e-6), 60)
 }
+
+// FCC 90.210(d)(3)
+func reqMaskD(dbm float64) float64 { return min(50+dbm-30, 70) }
+
+// ERC/REC 74-01 Annex 6 6.1.3; China Radio Frequency Allocation Regulations Annex 2 Table 2.3
+func reqERC(dbm float64) float64 { return min(43+dbm-30, 70) }
+
+// ETSI EN 300 113 clause 7.5.4; ETSI EN 303 405 clause 7.5; China 2025 notice Annex 1 Table 1-4 and Annex 3
+func reqSpur36(dbm float64) float64 { return dbm + 36 }
+
+// Japan Radio Equipment Regulations Appendix 3 item 19
+func reqJPLandMobile(dbm float64) float64 {
+	switch {
+	case dbm <= 30:
+		return dbm + 16
+	case dbm <= 30+dbOf(50):
+		return min(dbm+26, 60)
+	}
+	return max(60, min(dbm+13, 70))
+}
+
+// Japan Radio Equipment Regulations Appendix 3 items 2(1) and 10
+func reqJPAmateur(dbm float64) float64 {
+	switch {
+	case dbm <= 30:
+		return dbm + 13
+	case dbm <= 30+dbOf(50):
+		return 60
+	}
+	return max(60, min(dbm+13, 70))
+}
+
+const cnPeakDB = 11.4
 
 // ETSI EN 300 113 clauses 7.4, 7.5 and 7.9; FCC 90.210(d); FCC 97.307(e); ERC/REC 74-01 Annex 6; ETSI TS 102 361-1 clause 10.2.2.3
 func limMargins(m limMeasures) map[string]float64 {
@@ -595,11 +634,8 @@ func limMargins(m limMeasures) map[string]float64 {
 		return v, ok
 	}
 	for _, pw := range limPowers {
-		v, ok := get(s, powKey("maskd_", min(pw, 100), "w"))
-		if pw > 100 {
-			v, ok = get(s, "maskd_100w")
-		}
-		put(powKey("fcc_maskd_", pw, "w_db"), v, ok)
+		v, ok := get(s, powKey("maskd_", pw, ""))
+		put(powKey("fcc_maskd_", pw, "_db"), v, ok)
 	}
 	for _, nm := range []string{"acp", "alt"} {
 		for _, k := range []string{"nominal", "wide"} {
@@ -612,15 +648,21 @@ func limMargins(m limMeasures) map[string]float64 {
 	if v, ok := get(s, "alt_bins_dbc"); ok {
 		g["cn_alt_db"] = -70 - v
 	}
+	if v, ok := get(s, "acp_pmr_dbc"); ok {
+		g["pmr_acp_db"] = -60 - v
+	}
+	if v, ok := get(s, "alt_pmr_dbc"); ok {
+		g["pmr_alt_db"] = -70 - v
+	}
 	if v, ok := get(s, "jp_acp_dbc"); ok {
 		g["jp_acp_db"] = -55 - v
 	}
 	for _, pw := range limPowers {
 		if v, ok := get(s, "spur_us97_dbc"); ok {
-			g[powKey("am_us97e_", pw, "w_db")] = -v - usReq(pw)
+			g[powKey("am_us97e_", pw, "_db")] = -v - reqUS97(pw)
 		}
 		if v, ok := get(s, "spur_erc_dbc"); ok {
-			g[powKey("am_erc_", pw, "w_db")] = -v - min(43+dbOf(pw), 70)
+			g[powKey("am_erc_", pw, "_db")] = -v - reqERC(pw)
 		}
 	}
 	if v, ok := get(s, "obw_hz"); ok {
@@ -654,14 +696,20 @@ func limMargins(m limMeasures) map[string]float64 {
 	w := m.wide
 	for _, pw := range limPowers {
 		if v, ok := get(w, "far_fcc_dbc"); ok {
-			g[powKey("fcc_maskd_far_", pw, "w_db")] = s["maskd_ref_db"] - v - min(50+dbOf(pw), 70)
+			g[powKey("fcc_maskd_far_", pw, "_db")] = s["maskd_ref_db"] - v - reqMaskD(pw)
 		}
 		if v, ok := get(w, "far_erc_dbc"); ok {
-			low(g, powKey("am_erc_", pw, "w_db"), -v-min(43+dbOf(pw), 70))
-			g[powKey("en_spur_", pw, "w_db")] = -v - (dbOf(pw/1e-3) + 36)
+			low(g, powKey("am_erc_", pw, "_db"), -v-reqERC(pw))
 		}
 		if v, ok := get(w, "far_us97_dbc"); ok {
-			low(g, powKey("am_us97e_", pw, "w_db"), -v-usReq(pw))
+			low(g, powKey("am_us97e_", pw, "_db"), -v-reqUS97(pw))
+		}
+		if v, ok := get(w, "far_sp_dbc"); ok {
+			g[powKey("en_spur_", pw, "_db")] = -v - reqSpur36(pw)
+			g[powKey("cn_spur_", pw, "_db")] = -v - cnPeakDB - reqSpur36(pw)
+			g[powKey("am_cn_", pw, "_db")] = -v - reqERC(pw)
+			g[powKey("jp_spur_", pw, "_db")] = -v - reqJPLandMobile(pw)
+			g[powKey("jp_am_spur_", pw, "_db")] = -v - reqJPAmateur(pw)
 		}
 	}
 	if m.hasDev {
@@ -677,17 +725,22 @@ func low(g map[string]float64, k string, v float64) {
 	g[k] = v
 }
 
-var limPowers = []float64{1, 10, 100, 1000}
+var limPowers = []float64{27, 30, 40, 44, 47, 50, 54, 57, 60, 62}
 
 func limNeed(key string) float64 {
 	switch {
 	case hasSuffix(key, "_db") && hasPrefix(key, "en_slope_"):
 		return -0.01
+	case hasPrefix(key, "en_spur_"), hasPrefix(key, "cn_spur_"), hasPrefix(key, "jp_spur_"), hasPrefix(key, "jp_am_spur_"),
+		hasPrefix(key, "am_cn_"), hasPrefix(key, "am_erc_"), hasPrefix(key, "am_us97e_"), hasPrefix(key, "fcc_maskd_far_"):
+		return spurNeedDB
 	case hasSuffix(key, "_db"):
 		return 3
 	}
 	return 0
 }
+
+const spurNeedDB = 10
 
 func hasSuffix(s, x string) bool { return len(s) >= len(x) && s[len(s)-len(x):] == x }
 func hasPrefix(s, x string) bool { return len(s) >= len(x) && s[:len(x)] == x }

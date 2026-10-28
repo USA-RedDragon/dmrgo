@@ -397,6 +397,7 @@ var api = [...]any{
 	internal_fsktx.NewAudio,
 	internal_fsktx.NewIQ,
 	internal_fsktx.PeakPE,
+	internal_fsktx.PowerClass,
 	internal_fsktx.Setup.Allows,
 	internal_fsktx.Setup.MeasuredBits,
 	internal_fsktx.Setup.MinRate,

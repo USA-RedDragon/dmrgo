@@ -1,6 +1,6 @@
 package fsktx
 
-// The regions, services and power classes of MinRate.
+// The regions of MinRate.
 const (
 	LimitsWorld = iota
 	LimitsUS
@@ -13,15 +13,24 @@ const (
 const (
 	LimitsLandMobile = iota
 	LimitsAmateur
+	LimitsLicenseFree
 )
 
-// The power classes of MinRate: 1, 10, 100 and 1000 W.
-const (
-	Limits1W = iota
-	Limits10W
-	Limits100W
-	Limits1000W
-)
+func powerBreakpoints() [10]int8 { return [...]int8{27, 30, 40, 44, 47, 50, 54, 57, 60, 62} }
+
+// PowerClass returns the power class of MinRate for a station of at most
+// dbm, the index of the least breakpoint of 27, 30, 40, 44, 47, 50, 54, 57,
+// 60 and 62 dBm that is not under dbm, or -1 when dbm is over 62 dBm.
+// Every limit only gets stricter as power rises, so the limits at that
+// breakpoint hold at dbm.
+func PowerClass(dbm int) int {
+	for i, b := range powerBreakpoints() {
+		if dbm <= int(b) {
+			return i
+		}
+	}
+	return -1
+}
 
 const (
 	lowpass8k = 8000
@@ -46,7 +55,8 @@ type Setup struct {
 	// between the measured 8, 10, 12 and 16 takes the next lower one. For
 	// I/Q it is 16 for 16-bit and float samples and 8 for 8-bit samples.
 	Bits int
-	// Region, Service and Power are the Limits constants.
+	// Region and Service are the Limits constants, and Power a class of
+	// PowerClass.
 	Region, Service, Power int
 	// InputLowpassHz is the cutoff in Hz of a low pass of at least two
 	// poles that the radio puts before its modulator input, as the user
@@ -94,13 +104,17 @@ func (s Setup) MinRate() int {
 		return 0
 	}
 	if s.IQ {
+		var i uint8
 		switch s.Bits {
 		case 16:
-			return int(minRateIQ[ti][0][s.Region][s.Service][s.Power])
+			i = minRateIQ[ti][0][s.Region][s.Service][s.Power]
 		case 8:
-			return int(minRateIQ[ti][1][s.Region][s.Service][s.Power])
+			i = minRateIQ[ti][1][s.Region][s.Service][s.Power]
 		}
-		return 0
+		if i == 0 || int(i) > len(minRateIQRates) {
+			return 0
+		}
+		return int(minRateIQRates[i-1])
 	}
 	var c int
 	switch {

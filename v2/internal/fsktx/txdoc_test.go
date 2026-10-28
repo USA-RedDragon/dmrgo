@@ -80,7 +80,7 @@ func txLimitRows() []txLimitRow {
 		return txLimitRow{name: name, perPower: true, keys: func(pw float64) []string {
 			k := make([]string, 0, len(pre))
 			for _, p := range pre {
-				k = append(k, powKey(p, pw, "w_db"))
+				k = append(k, powKey(p, pw, "_db"))
 			}
 			return k
 		}}
@@ -95,14 +95,21 @@ func txLimitRows() []txLimitRow {
 		fixed("Release time t_d, ms over 0.1 ms (EN 300 113 7.9)", "en_td_unmod_ms"),
 		fixed("Transient power slope, dB (EN 300 113 7.9)", "en_slope_unmod_db"),
 		fixed("Transient frequency error, kHz (EN 300 113 7.9)", "en_df_unmod_khz"),
-		power("Spurious emissions, dB (EN 300 113 7.5)", "en_spur_"),
-		power("Emission Mask D, dB (47 CFR 90.210(d))", "fcc_maskd_", "fcc_maskd_far_"),
+		power("Spurious emissions, dB (EN 300 113 7.5, EN 303 405 7.5)", "en_spur_"),
+		power("Emission Mask D, dB (47 CFR 90.210(d))", "fcc_maskd_"),
+		power("Emission Mask D far out, dB (47 CFR 90.210(d)(3))", "fcc_maskd_far_"),
 		power("Amateur spurious emissions, dB (47 CFR 97.307(e))", "am_us97e_"),
 		power("Amateur spurious emissions, dB (ERC/REC 74-01)", "am_erc_"),
+		fixed("Adjacent channel power, dB (EN 303 405 7.4)", "pmr_acp_db"),
+		fixed("Alternate channel power, dB (EN 303 405 7.4)", "pmr_alt_db"),
 		fixed("Alternate channel power, dB (China)", "cn_alt_db"),
 		fixed("Occupied bandwidth, kHz under 8.5 kHz (China)", "obw_cn_kr_khz"),
+		power("Spurious emissions, dB (China, positive peak)", "cn_spur_"),
+		power("Amateur spurious emissions, dB (China)", "am_cn_"),
 		fixed("Adjacent channel power, dB (Japan)", "jp_acp_db"),
 		fixed("Occupied bandwidth, kHz under 11.5 kHz (Japan)", "obw_jp_khz"),
+		power("Spurious emissions, dB (Japan)", "jp_spur_"),
+		power("Amateur spurious emissions, dB (Japan)", "jp_am_spur_"),
 	}
 }
 
@@ -151,19 +158,24 @@ type txRegime struct {
 var txRegimes = []txRegime{
 	{"World, land mobile", limWorld, limLandMobile},
 	{"World, amateur", limWorld, limAmateur},
+	{"World, license-free", limWorld, limLicenseFree},
 	{"US, land mobile", limUS, limLandMobile},
 	{"US, amateur", limUS, limAmateur},
 	{"CEPT, land mobile", limCEPT, limLandMobile},
 	{"CEPT, amateur", limCEPT, limAmateur},
+	{"CEPT, PMR446", limCEPT, limLicenseFree},
 	{"China, land mobile", limChina, limLandMobile},
+	{"China, amateur", limChina, limAmateur},
+	{"China, 409 MHz license-free", limChina, limLicenseFree},
 	{"Japan, land mobile", limJapan, limLandMobile},
+	{"Japan, amateur", limJapan, limAmateur},
 }
 
 func renderTxDoc(margins map[string]map[string]float64) string {
 	var b strings.Builder
 	b.WriteString(txDocBegin + "\n\n")
 	b.WriteString("## Least sample rate\n\n")
-	b.WriteString("Each cell gives the least sample rate in kHz for the power classes 1 W, 10 W, 100 W and 1000 W, in that order. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only, and audio with pre-emphasis at 48 kHz only.\n\n")
+	b.WriteString("Each cell gives the least sample rate in kHz for the power breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A power takes the next breakpoint at or above it. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only, and audio with pre-emphasis at 48 kHz only.\n\n")
 	head := "| Input |"
 	sep := "| --- |"
 	for _, r := range txRegimes {
@@ -174,7 +186,7 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 		fmt.Fprintf(&b, "### Tier %d\n\n%s\n%s\n", tier-Tier0, head, sep)
 		for _, c := range txTierClasses(tier) {
 			lps := c.lowpasses()
-			for li, lp := range lps {
+			for _, lp := range lps {
 				name := txClassName(c)
 				if lp > 0 {
 					name += fmt.Sprintf(", %d Hz low pass", lp)
@@ -183,15 +195,7 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 				for _, r := range txRegimes {
 					cells := make([]string, len(limPowerClasses))
 					for p := range limPowerClasses {
-						var hz int
-						switch {
-						case c.iq:
-							hz = int(minRateIQ[tier-Tier0][c.class][r.region][r.service][p])
-						case c.pe:
-							hz = int(minRatePE[c.class][li][r.region][r.service][p]) * minRateUnit
-						default:
-							hz = int(minRateAudio[tier-Tier0][c.class][li][r.region][r.service][p]) * minRateUnit
-						}
+						hz := c.setup(r.region, r.service, p, lp).MinRate()
 						cells[p] = "-"
 						if hz > 0 {
 							cells[p] = khz(hz)
@@ -205,7 +209,7 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 		b.WriteString("\n")
 	}
 	b.WriteString("## Measured margins\n\n")
-	b.WriteString("Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power class, 1 W, 10 W, 100 W and 1000 W, in that order. A positive value is inside the limit. A setup is accepted only with at least 3 dB on each limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.\n\n")
+	b.WriteString("Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A positive value is inside the limit. A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, Emission Mask D far out and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.\n\n")
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		cs := txTierClasses(tier)
 		fmt.Fprintf(&b, "### Tier %d margins\n\n| Limit |", tier-Tier0)
@@ -254,7 +258,7 @@ func TestTxDocRowsCoverLimits(t *testing.T) {
 			for _, pw := range limPowers {
 				for _, k := range regimeKeys(r, s, pw) {
 					if !shown[k] {
-						t.Errorf("limit %s of %s %s %g W has no row in docs/tx/README.md", k, limRegionNames[r], limServiceNames[s], pw)
+						t.Errorf("limit %s of %s %s %g dBm has no row in docs/tx/README.md", k, limRegionNames[r], limServiceNames[s], pw)
 					}
 				}
 			}
