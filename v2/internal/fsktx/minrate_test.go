@@ -369,7 +369,7 @@ func audioGrid(tier Tier) []int {
 
 func iqGrid(tier Tier) []int {
 	if tier == Tier0 {
-		return []int{96000, 192000}
+		return []int{96000}
 	}
 	set := map[int]bool{}
 	for k := 0; k <= 33; k++ {
@@ -700,5 +700,55 @@ func TestMinRatesOffGrid(t *testing.T) {
 			}
 			checkAgainstTable(t, k.c, k.rate, g)
 		})
+	}
+}
+
+func TestSetupAllows(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		s    Setup
+		hz   int
+		want bool
+	}{
+		{Setup{Tier: Tier0, IQ: true, Bits: 16, Region: LimitsUS}, 192000, false},
+		{Setup{Tier: Tier0, IQ: true, Bits: 16, Region: LimitsUS}, 48000, false},
+		{Setup{Tier: Tier0, IQ: true, Bits: 16, Region: LimitsUS}, 96000, true},
+		{Setup{Tier: Tier1, IQ: true, Bits: 16, Region: LimitsUS}, 192000, true},
+		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsAmateur}, 32000, false},
+		{Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsAmateur}, 48000, true},
+		{Setup{IQ: true, Bits: 16}, 2400000, true},
+		{Setup{IQ: true, Bits: 16}, 20000001, false},
+		{Setup{IQ: true, Bits: 16}, 40000, false},
+		{Setup{IQ: true, Bits: 12}, 2400000, false},
+		{Setup{Bits: 16}, 48000, true},
+		{Setup{Bits: 16}, 22051, false},
+		{Setup{Bits: 16}, 96001, false},
+		{Setup{Bits: 16}, -48000, false},
+		{Setup{Bits: 7}, 48000, false},
+		{Setup{Tier: Tier2 + 1, Bits: 16}, 48000, false},
+		{Setup{Bits: 16, Region: limRegions}, 48000, false},
+		{Setup{Bits: 16, Power: -1}, 48000, false},
+	} {
+		if got := c.s.Allows(c.hz); got != c.want {
+			t.Errorf("%+v at %d Hz: Allows %v, want %v (MinRate %d)", c.s, c.hz, got, c.want, c.s.MinRate())
+		}
+	}
+}
+
+func TestTier0Budget(t *testing.T) {
+	t.Parallel()
+	for _, iq := range []bool{false, true} {
+		for r := range limRegions {
+			for s := range limServices {
+				for p := range limPowerClasses {
+					su := Setup{Tier: Tier0, IQ: iq, Bits: 16, Region: r, Service: s, Power: p}
+					for _, hz := range []int{12000, 24000, 48000, 96000, 192000, 384000} {
+						if ok := iq && hz == 96000 || !iq && (hz == 24000 || hz == 48000); su.Allows(hz) && !ok {
+							t.Errorf("%+v allows %d Hz, outside the Tier0 budget", su, hz)
+						}
+					}
+				}
+			}
+		}
 	}
 }

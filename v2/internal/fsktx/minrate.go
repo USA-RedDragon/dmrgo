@@ -23,45 +23,104 @@ const (
 	Limits1000W
 )
 
+const (
+	audioRateTop = 96000
+	iqRateTop    = 20000000
+)
+
+// A Setup is a transmit setup that MinRate and Allows check against the
+// waveform limits of a region, service and power class.
+type Setup struct {
+	// Tier is the modulator; TierDefault is Tier1.
+	Tier Tier
+	// IQ is true for I/Q and false for audio.
+	IQ bool
+	// Bits is the resolution of the audio converter, from 8 to 16. A depth
+	// between the measured 8, 10, 12 and 16 takes the next lower one. For
+	// I/Q it is 16 for 16-bit and float samples and 8 for 8-bit samples.
+	Bits int
+	// Region, Service and Power are the Limits constants.
+	Region, Service, Power int
+}
+
 // MinRate returns the least sample rate in Hz from which the modulator of
-// tier t keeps every waveform limit of region, service and power with
+// s keeps every waveform limit of its region, service and power with
 // margin, as TestMinRatesGenerated measures it on its rate grid, or 0 when
-// no rate of the grid does or an argument is out of range. For audio, bits
-// is the resolution of the converter, from 8 to 16, and a depth between
-// the measured 8, 10, 12 and 16 takes the next lower one. For I/Q, bits is
-// 16 for 16-bit and float samples and 8 for 8-bit samples. The rate of I/Q
-// is never under 62500 Hz, where the image of the main lobe stays out of
-// the alternate channel.
-func MinRate(t Tier, iq bool, bits, region, service, power int) int {
+// no rate of the grid does or a field is out of range. The rate of I/Q is
+// never under 62500 Hz, where the image of the main lobe stays out of the
+// alternate channel.
+func (s Setup) MinRate() int {
+	t := s.Tier
 	if t == TierDefault {
 		t = Tier1
 	}
 	ti := int(t - Tier0)
-	if ti < 0 || ti >= len(minRateAudio) || region < 0 || region >= len(minRateAudio[0][0]) ||
-		service < 0 || service >= len(minRateAudio[0][0][0]) || power < 0 || power >= len(minRateAudio[0][0][0][0]) {
+	if ti < 0 || ti >= len(minRateAudio) || s.Region < 0 || s.Region >= len(minRateIQ[0][0]) ||
+		s.Service < 0 || s.Service >= len(minRateIQ[0][0][0]) || s.Power < 0 || s.Power >= len(minRateIQ[0][0][0][0]) {
 		return 0
 	}
-	if iq {
-		switch bits {
+	if s.IQ {
+		switch s.Bits {
 		case 16:
-			return int(minRateIQ[ti][0][region][service][power])
+			return int(minRateIQ[ti][0][s.Region][s.Service][s.Power])
 		case 8:
-			return int(minRateIQ[ti][1][region][service][power])
+			return int(minRateIQ[ti][1][s.Region][s.Service][s.Power])
 		}
 		return 0
 	}
 	var c int
 	switch {
-	case bits == 16:
+	case s.Bits == 16:
 		c = 3
-	case bits >= 12 && bits < 16:
+	case s.Bits >= 12 && s.Bits < 16:
 		c = 2
-	case bits >= 10 && bits < 12:
+	case s.Bits >= 10 && s.Bits < 12:
 		c = 1
-	case bits >= 8 && bits < 10:
+	case s.Bits >= 8 && s.Bits < 10:
 		c = 0
 	default:
 		return 0
 	}
-	return int(minRateAudio[ti][c][region][service][power])
+	return int(minRateAudio[ti][c][s.Region][s.Service][s.Power])
+}
+
+// Allows reports whether the modulator of s may run at hz: a rate that
+// the modulator makes, within the CPU budget of its tier, from MinRate up
+// to the top of the measured grid, 96000 Hz for audio and 20 MHz for I/Q.
+// Tier0 makes audio at 24000 and 48000 Hz and I/Q at 96000 Hz only: I/Q at
+// 192000 Hz takes 7.4 MHz of a Cortex-M4, over the 4 MHz budget, and
+// 48000 Hz is under the least rate of I/Q.
+func (s Setup) Allows(hz int) bool {
+	t := s.Tier
+	if t == TierDefault {
+		t = Tier1
+	}
+	switch {
+	case t == Tier0 && s.IQ:
+		if hz != 96000 {
+			return false
+		}
+	case t == Tier0:
+		if hz != 24000 && hz != 48000 {
+			return false
+		}
+	case s.IQ:
+		if hz > iqRateTop {
+			return false
+		}
+	case hz < 8000 || hz > audioRateTop:
+		return false
+	default:
+		if l, _ := ratio(hz); l > polyMaxPhases {
+			return false
+		}
+	}
+	least := s.MinRate()
+	return least > 0 && hz >= least
+}
+
+// MinRate returns the MinRate of the Setup of tier t, iq, bits, region,
+// service and power.
+func MinRate(t Tier, iq bool, bits, region, service, power int) int {
+	return Setup{Tier: t, IQ: iq, Bits: bits, Region: region, Service: service, Power: power}.MinRate()
 }

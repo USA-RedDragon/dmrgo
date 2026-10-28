@@ -387,6 +387,8 @@ var api = [...]any{
 	internal_fsktx.MinRate,
 	internal_fsktx.NewAudio,
 	internal_fsktx.NewIQ,
+	internal_fsktx.Setup.Allows,
+	internal_fsktx.Setup.MinRate,
 	internal_fsktx.Table24k,
 	internal_fsktx.Table48k,
 	(*internal_pcg.Source).Duration,
