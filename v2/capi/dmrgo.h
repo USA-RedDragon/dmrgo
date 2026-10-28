@@ -61,6 +61,10 @@
  *   that was taken does not stop that use. The user value of a vtable or
  *   callback must stay valid until the handle made from it and every
  *   handle that took that handle or callback are freed.
+ * - A callback that gets an array, such as the bursts of
+ *   dmrgo_rf_rx_config_t.on_bursts or the samples of
+ *   dmrgo_rf_tx_config_t.on_samples, gets it in storage of the library
+ *   that is valid only during the call: copy what it keeps.
  * - libdmrgo runs the Go runtime, whose threads a child of fork() does not
  *   have, so a child process calls libdmrgo only after an exec.
  *
