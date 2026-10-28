@@ -126,7 +126,7 @@ linters:
       # The fixed-point modulators of Tier 0 narrow values whose range the
       # pulse tables and the phase accumulator bound; a check on each
       # conversion would cost cycles of the 4 MHz budget of a Cortex-M4F.
-      - path: v2/internal/fsktx/(mcu|mcuiq|host|peak)\.go$
+      - path: v2/internal/fsktx/(mcu|mcupe|mcuiq|host|peak)\.go$
         linters:
           - gosec
         text: ^G115

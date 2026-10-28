@@ -7,6 +7,7 @@ import "testing"
 func TestAllocsMatrix(t *testing.T) {
 	syms := []int8{3, -1, 1, -3, 0, 3, 3, -3, 7, -128, 127, 1}
 	units := append(nominal(txFull()), offsetUnits(false)...)
+	units = append(units, txUnit{mcu: true, pe: true, tier: Tier0, format: fmtAudio, rate: 48000, level: tableUnits})
 	for _, u := range units {
 		if u.rate > 2400000 {
 			continue
@@ -26,10 +27,12 @@ func TestAllocsMatrix(t *testing.T) {
 		}
 	}
 	var a MCUAudio
+	var pe MCUAudioPE
 	var q MCUIQ
 	if n := testing.AllocsPerRun(20, func() {
 		_ = a.Init(Table24k(), 1080, 2048)
 		_ = a.Init(Table48k(), 0, 0)
+		_ = pe.Init(15000, 0)
 		_ = q.Init(192000, -47999, 1<<15)
 		_ = q.Init(1, 0, 0)
 	}); n != 0 {

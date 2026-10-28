@@ -255,7 +255,11 @@ func renderTables() ([]byte, error) {
 		}
 	}
 	renderAudioCorr(&b)
-	if err := renderMCUCorr(&b); err != nil {
+	if err := renderMCUCorr(&b, mcuCorrFile, "mcuCorr"); err != nil {
+		return nil, err
+	}
+	renderPreEmph(&b)
+	if err := renderMCUCorr(&b, mcuCorrPEFile, "mcuCorrPE"); err != nil {
 		return nil, err
 	}
 	if err := renderCorrIQ(&b); err != nil {
@@ -331,14 +335,21 @@ func renderCorrIQ(b *bytes.Buffer) error {
 	return nil
 }
 
-const mcuCorrFile = "testdata/mcorr48k-c5r2.json"
+const (
+	mcuCorrFile   = "testdata/mcorr48k-c5r2.json"
+	mcuCorrPEFile = "testdata/mcorr48k-pe.json"
+)
 
-func renderMCUCorr(b *bytes.Buffer) error {
+func renderMCUCorr(b *bytes.Buffer, file, name string) error {
 	if !tier0Corr {
+		if name != "mcuCorr" {
+			fmt.Fprintf(b, "const (\n%sSkip = 0\n%sPeak = 0\n)\n\nvar %s [4][10]int16\n\n", name, name, name)
+			return nil
+		}
 		b.WriteString("const (\nmcuCorrSyms = 1\nmcuCorrSkip = 0\nmcuCorrBase = 4\nmcuCorrTop = 1\nmcuCorrPeak = 0\n)\n\nvar mcuCorr [4][10]int16\n\n")
 		return nil
 	}
-	raw, err := os.ReadFile(mcuCorrFile)
+	raw, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -359,15 +370,22 @@ func renderMCUCorr(b *bytes.Buffer) error {
 	top := rows / c.Base
 	skip := c.K - 8 + 6
 	if skip < 0 || len(c.Hz) != 10*rows || c.Base != 4 && c.Base != 5 {
-		return fmt.Errorf("%s: bad context", mcuCorrFile)
+		return fmt.Errorf("%s: bad context", file)
 	}
 	u := tableUnits * (1 << tapShift) / 1944.0
 	peak := 0
 	for _, v := range c.Hz {
 		peak = max(peak, int(math.Abs(float64(int16(math.Round(v*u))))))
 	}
-	fmt.Fprintf(b, "const (\nmcuCorrSyms = %d\nmcuCorrSkip = %d\nmcuCorrBase = %d\nmcuCorrTop = %d\nmcuCorrPeak = %d\n)\n\n", c.C, skip, c.Base, top, peak)
-	fmt.Fprintf(b, "var mcuCorr = [%d][10]int16{\n", rows)
+	if name == "mcuCorr" {
+		fmt.Fprintf(b, "const (\nmcuCorrSyms = %d\nmcuCorrSkip = %d\nmcuCorrBase = %d\nmcuCorrTop = %d\nmcuCorrPeak = %d\n)\n\n", c.C, skip, c.Base, top, peak)
+	} else {
+		if c.C != 5 || c.Base != 4 {
+			return fmt.Errorf("%s: the context must match mcuCorr", file)
+		}
+		fmt.Fprintf(b, "const (\n%sSkip = %d\n%sPeak = %d\n)\n\n", name, skip, name, peak)
+	}
+	fmt.Fprintf(b, "var %s = [%d][10]int16{\n", name, rows)
 	for i := range rows {
 		b.WriteString("{")
 		for p := range 10 {

@@ -39,6 +39,7 @@ const (
 
 type txUnit struct {
 	mcu           bool
+	pe            bool
 	tier          Tier
 	format        txFormat
 	rate          int
@@ -49,6 +50,8 @@ type txUnit struct {
 
 func (u txUnit) kind() string {
 	switch {
+	case u.format == fmtAudio && u.mcu && u.pe:
+		return "MCUAudio-PE"
 	case u.format == fmtAudio && u.mcu:
 		return "MCUAudio"
 	case u.format == fmtAudio:
@@ -91,6 +94,16 @@ func (m *mcuAudioMod) emit(dst []int16, s int8) []int16 {
 	return append(dst, m.buf[:m.m.Symbol(m.buf[:], s)]...)
 }
 
+type mcuAudioPEMod struct {
+	m   MCUAudioPE
+	buf [peSamples]int16
+}
+
+func (m *mcuAudioPEMod) key(bool) {}
+func (m *mcuAudioPEMod) emit(dst []int16, s int8) []int16 {
+	return append(dst, m.buf[:m.m.Symbol(m.buf[:], s)]...)
+}
+
 type iqMod struct {
 	q  *IQ
 	s8 bool
@@ -121,6 +134,9 @@ func (m *mcuIQMod) emit(dst []int16, s int8) []int16 {
 
 func (u txUnit) mod() (txMod, error) {
 	switch {
+	case u.audio() && u.mcu && u.pe:
+		m := &mcuAudioPEMod{}
+		return m, m.m.Init(u.level, u.offset)
 	case u.audio() && u.mcu:
 		m := &mcuAudioMod{}
 		t := Table24k()
@@ -151,6 +167,8 @@ func (u txUnit) mustMod(t testing.TB) txMod {
 
 func (u txUnit) lag() int {
 	switch {
+	case u.audio() && u.pe:
+		return peSpan
 	case u.audio() && (u.mcu || u.tier == Tier0) && u.rate == 48000:
 		return Table48k().Span()
 	case u.audio() && (u.mcu || u.tier == Tier0):
