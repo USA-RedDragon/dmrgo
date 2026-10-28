@@ -31,7 +31,7 @@ func tier0Pulses() []struct {
 		p     pulse
 		units float64
 	}{
-		{"taps24k", 24000, pulse{span: 8}, tableUnits},
+		{"taps24k", 24000, pulse{span: 8, win: winBlackman}, tableUnits},
 		{"taps48k", 48000, pulse{span: 6, win: winBlackman}, tableUnits},
 		{"tapsIQ", 48000, pulse{span: 8, win: winKaiser, beta: 3, ridge: 1e-5}, tableUnits},
 	}

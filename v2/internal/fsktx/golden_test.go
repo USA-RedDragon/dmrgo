@@ -47,7 +47,7 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			return h
-		}, 0xa4a76fa1},
+		}, 0xabf9b422},
 		{"audio 48k dac", func() uint32 {
 			var m MCUAudio
 			if err := m.Init(Table48k(), 1100, 2048); err != nil {
@@ -158,9 +158,9 @@ func TestGoldenLimits(t *testing.T) {
 		run  func() uint32
 		want uint32
 	}{
-		{"audio 24k 16000 high", audio(Table24k(), 16000, edgeOffset(t, Table24k(), 16000, 1)), 0xcf27e341},
+		{"audio 24k 16000 high", audio(Table24k(), 16000, edgeOffset(t, Table24k(), 16000, 1)), 0xff21e1d7},
 		{"audio 48k 16000 low", audio(Table48k(), 16000, edgeOffset(t, Table48k(), 16000, -1)), 0x6797c4e6},
-		{"audio 24k 1 high", audio(Table24k(), 1, edgeOffset(t, Table24k(), 1, 1)), 0xe5842967},
+		{"audio 24k 1 high", audio(Table24k(), 1, edgeOffset(t, Table24k(), 1, 1)), 0x8b2ec608},
 		{"audio 48k 1 low", audio(Table48k(), 1, edgeOffset(t, Table48k(), 1, -1)), 0x136d0e77},
 		{"iq 48k high step", iq(48000, 11999, 1, func(i int) bool { return i%9 < 5 }), 0x763bff13},
 		{"iq 192k low ramp", iq(192000, -47999, 1<<15, func(i int) bool { return i < 2000 }), 0xc3526f81},
