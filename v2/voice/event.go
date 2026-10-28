@@ -27,7 +27,7 @@ type Call struct {
 	// for an OriginExpected call until a header or embedded LC with the
 	// same addresses arrives.
 	LC pdu.LCBytes
-	// Origin is where the Receiver learned the call.
+	// Origin is the source from which the Receiver got the call.
 	Origin Origin
 	// Stream is Hint.Stream when the transport gives one, else 0.
 	Stream uint32
@@ -56,7 +56,7 @@ func (c *Call) sameParties(o *Call) bool {
 
 const idleName = "Idle"
 
-// Origin is where a Receiver learned the identity of a call.
+// Origin is the source from which a Receiver got the identity of a call.
 type Origin uint8
 
 // The Origin values.

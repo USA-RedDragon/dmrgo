@@ -92,7 +92,7 @@ type TransmitterConfig struct {
 	// the call at once. (ETSI TS 102 361-1 clause 5.2.2.2.5)
 	IdleSearch time.Duration
 	// Interruptible makes Interrupt end the call on a Cease Transmission
-	// Request. A Cease Transmission Command ends it whatever this says.
+	// Request. A Cease Transmission Command ends it whatever this field holds.
 	// (ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4)
 	Interruptible bool
 	// ChanAuth is T_MS_ChanAuth, the wait for the BS to repeat the ChanAuth
@@ -404,7 +404,7 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 }
 
 // Reset ends any transmission without an output, empties the queue and
-// forgets the channel state. It keeps the config.
+// clears the channel state. It keeps the config.
 func (t *Transmitter) Reset() {
 	if t == nil {
 		return
@@ -447,8 +447,8 @@ func (t *Transmitter) Dropped() int {
 // Start begins the call c, whose first burst is due at the time at. The
 // LC is c.LC when it matches the other fields of c, else it is built from
 // them. opts may be nil. A polite call on a busy channel waits in
-// TransmitterAccess, as TransmitterConfig.Access says, and a call in hang
-// time starts in TransmitterChanAuth, as CallOptions.HangTime says. Start
+// TransmitterAccess, as TransmitterConfig.Access sets, and a call in hang
+// time starts in TransmitterChanAuth, as CallOptions.HangTime sets. Start
 // returns ErrBusy while a transmission runs, and a *dmrgo.ConfigError when c
 // does not make an LC.
 func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
@@ -480,7 +480,7 @@ func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 }
 
 // Channel reports whether the logical channel is busy, from the activity
-// that the caller sees on it, such as the AT bit of the CACH, the carrier,
+// that the caller detects on it, such as the AT bit of the CACH, the carrier,
 // or a call with its own color code. A call in TransmitterAccess starts
 // when the channel becomes idle. Until the first report the channel counts
 // as idle. (ETSI TS 102 361-1 clause 5.2.1.2)
@@ -505,7 +505,7 @@ func (t *Transmitter) Channel(now time.Duration, busy bool) {
 // Transmission Request ends it when TransmitterConfig.Interruptible is
 // set. The queued voice is dropped, the last superframe is padded with
 // silence, and the terminators follow, so that the radio that sent the
-// command sees the Terminator with LC; OutputEnded has EndInterrupted. An
+// command receives the Terminator with LC; OutputEnded has EndInterrupted. An
 // RC PDU whose CRC fails, a reserved command, a relayed call and a call
 // that is not on air are ignored. (ETSI TS 102 361-2 clause 6.3)
 func (t *Transmitter) ReverseChannel(rc pdu.ReverseChannel) bool {

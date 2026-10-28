@@ -10,7 +10,7 @@ import (
 
 const pcgStream = 0x2545F4914F6CDD1D
 
-// Burst decodes the outbound burst raw with what the Hint h says about it,
+// Burst decodes the outbound burst raw with the data in the Hint h,
 // runs it through the Transmitter as Decoded does, and appends the outputs
 // to dst. A nil raw, a transport frame without a burst, only runs the
 // timers, as Lost does. It allocates only when dst has no room for

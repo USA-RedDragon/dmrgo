@@ -206,7 +206,7 @@ func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 	return r, nil
 }
 
-// Reset ends any call and session without events and forgets the expected
+// Reset ends any call and session without events and clears the expected
 // call. It keeps the config.
 func (r *Receiver) Reset() {
 	if r == nil {
@@ -254,10 +254,10 @@ func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
 	}
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Receiver as Decoded does, and appends the events to dst. A
 // burst that does not decode, or has another color code than
-// ReceiverConfig.ColorCode as that field says, is dropped, but its Hint
+// ReceiverConfig.ColorCode by the rules of that field, is dropped, but its Hint
 // still applies, so an
 // IPSC "sync not detected" burst with Hint.SyncLost still ends the call. A
 // nil raw is a transport frame without a burst: only h applies, and
@@ -312,7 +312,7 @@ func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, ds
 	return r.receive(now, b, nil, &h, dst)
 }
 
-// Lost tells the Receiver that the transport lost the signal, such as an
+// Lost records that the transport lost the signal, such as an
 // MMDVM TAG_LOST. A call ends with EndSyncLost. It appends the events to
 // dst, and allocates only when dst has no room for MaxEvents events.
 func (r *Receiver) Lost(now time.Duration, dst []Event) []Event {

@@ -171,7 +171,7 @@ func seqDelta(seq, ref, mask uint16) int {
 // Jitter of the DMR Network section of MMDVMHost. It puts the packets of a
 // stream back in the order of Hint.Seq and plays them a fixed delay after
 // they were sent, one per 60 ms burst period, so that a Receiver, and a
-// Transmitter or a bs.Repeater that relays the call, see the stream as the
+// Transmitter or a bs.Repeater that relays the call, get the stream as the
 // sender sent it. A Receiver drops a packet that comes after a later one
 // as late, and counts the bursts lost from Hint.Seq, so the Jitter goes in
 // front of it. Push takes a packet and Pop returns the next one at its
@@ -296,7 +296,7 @@ func NewJitter(cfg *JitterConfig) (*Jitter, error) {
 	return j, nil
 }
 
-// Reset drops every packet and forgets the streams and the counts. It keeps
+// Reset drops every packet and clears the streams and the counts. It keeps
 // the config.
 func (j *Jitter) Reset() {
 	if j == nil || j.cur == nil {
