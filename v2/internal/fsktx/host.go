@@ -595,9 +595,31 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 // symbols 0 after the last bring its tail to rest. It allocates only to
 // grow dst.
 func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
+	n, m := len(dst), a.MaxSamples()
+	for cap(dst)-n < m {
+		dst = append(dst[:cap(dst)], 0)[:n]
+	}
+	return dst[:n+a.Symbol(dst[n:n+m], s)]
+}
+
+// MaxSamples returns the most samples that Symbol writes for one symbol.
+func (a *Audio) MaxSamples() int {
 	if a.k == nil {
-		n := a.mcu.Symbol(a.tmp[:], s)
-		return append(dst, a.tmp[:n]...)
+		return maxSamples
+	}
+	return len(a.buf)
+}
+
+// Symbol is AppendSymbol into dst: it writes the samples of the symbol
+// period that it completes to dst and returns their number. With a dst
+// shorter than MaxSamples it writes nothing, does not take the symbol and
+// returns 0. It does not allocate.
+func (a *Audio) Symbol(dst []int16, s int8) int {
+	if len(dst) < a.MaxSamples() {
+		return 0
+	}
+	if a.k == nil {
+		return copy(dst, a.tmp[:a.mcu.Symbol(a.tmp[:], s)])
 	}
 	var n int
 	if a.bpairs > 0 {
@@ -636,12 +658,12 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 		}
 	}
 	if a.shape == 0 {
-		for _, v := range a.buf[:n] {
-			dst = append(dst, sat16(v*a.scale+a.offset))
+		for i, v := range a.buf[:n] {
+			dst[i] = sat16(v*a.scale + a.offset)
 		}
-		return dst
+		return n
 	}
-	for _, v := range a.buf[:n] {
+	for i, v := range a.buf[:n] {
 		if a.opt != nil && a.opt.anchor > 0 {
 			if a.oc == 0 {
 				a.err, a.wh, a.oc = [8]float64{}, [8]float64{}, a.opt.step
@@ -669,9 +691,9 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 		}
 		copy(a.err[1:], a.err[:7])
 		a.err[0] = e
-		dst = append(dst, c)
+		dst[i] = c
 	}
-	return dst
+	return n
 }
 
 func (a *Audio) addCorr(s int8, n int) {
@@ -1166,6 +1188,13 @@ func (q *IQ) appendPole(dst []byte, n int) []byte {
 func (q *IQ) AppendS16(dst []int16, s int8) []int16 {
 	n := q.symbol(s)
 	return append(dst, q.out[:n]...)
+}
+
+// Symbol is AppendS16 into storage of q: it returns the interleaved I/Q
+// of the symbol period that s completes, valid until the next call of a
+// method of q. It does not allocate.
+func (q *IQ) Symbol(s int8) []int16 {
+	return q.out[:q.symbol(s)]
 }
 
 func (q *IQ) symbol(s int8) int {
