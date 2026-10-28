@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dmrgo packet inspector</title>
+<style>
+:root {
+  --bg: #fbfbfa; --fg: #1d1d1b; --muted: #6b6b66; --line: #d9d8d3; --panel: #ffffff;
+  --sel: #dbe8ff; --hl: #ffd86b; --hl2: #ffeeb0; --err: #b3261e; --accent: #2457c5;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18181a; --fg: #e7e6e2; --muted: #9c9b96; --line: #3a3a3d; --panel: #222225;
+    --sel: #2a3a5c; --hl: #8a6a10; --hl2: #4f4420; --err: #ff8a80; --accent: #8fb0ff;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px 16px; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+h1 { font-size: 18px; margin: 0 0 8px; }
+#input { display: grid; gap: 8px; grid-template-columns: 1fr auto; }
+textarea { width: 100%; min-height: 90px; font: 12px/1.35 ui-monospace, monospace; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+#drop.over textarea { outline: 2px dashed var(--accent); }
+.controls { display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
+select, button, input[type=file] { font: inherit; }
+button { padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); cursor: pointer; }
+#status { color: var(--muted); margin: 6px 0; }
+#status.err, .err { color: var(--err); }
+#main { display: grid; grid-template-columns: minmax(220px, 34%) 1fr; gap: 12px; }
+@media (max-width: 760px) { #main, #input { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: auto; }
+#list { max-height: 78vh; }
+#list div { padding: 3px 8px; border-bottom: 1px solid var(--line); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+#list div.sel { background: var(--sel); }
+#list .proto { color: var(--muted); }
+#detail { padding: 8px; max-height: 78vh; }
+#detail .meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+ul.tree { list-style: none; margin: 0; padding-left: 14px; font: 12px/1.45 ui-monospace, monospace; }
+ul.tree > li > span { cursor: pointer; border-radius: 3px; padding: 0 2px; }
+ul.tree > li > span.sel { background: var(--sel); }
+ul.tree .t { cursor: pointer; display: inline-block; width: 1em; color: var(--muted); }
+ul.tree .v { color: var(--accent); }
+ul.tree .b { color: var(--muted); }
+ul.tree li.closed > ul { display: none; }
+.hex { font: 12px/1.5 ui-monospace, monospace; margin: 8px 0; overflow-x: auto; }
+.hex .name { color: var(--muted); }
+.hex .row { white-space: pre; }
+.hex .o { color: var(--muted); }
+.hex span.h { background: var(--hl); }
+.hex span.h2 { background: var(--hl2); }
+</style>
+</head>
+<body>
+<h1>dmrgo packet inspector</h1>
+<div id="input">
+  <div id="drop">
+    <textarea id="hex" spellcheck="false" placeholder="Paste hex packets, one per line, or drop a pcap, pcapng or raw dump file here"></textarea>
+  </div>
+  <div class="controls">
+    <input type="file" id="file">
+    <label>Input <select id="format">
+      <option value="auto">detect</option><option value="hex">hex text</option>
+      <option value="pcap">pcap or pcapng</option><option value="binary">binary dump</option>
+    </select></label>
+    <label>Protocol <select id="proto">
+      <option value="auto">detect</option><option value="ipsc">Motorola IPSC</option>
+      <option value="dmrd">DMRD family: MMDVM network protocol, HBRP, OpenBridge</option>
+      <option value="hytera">Hytera IPSC</option><option value="mmdvm">MMDVM modem serial</option>
+      <option value="hdap">Hytera HDAP</option><option value="burst">bare DMR burst</option>
+    </select></label>
+    <button id="go" disabled>Decode</button>
+  </div>
+</div>
+<div id="status">Loading the decoder...</div>
+<div id="main">
+  <div id="list" class="panel"></div>
+  <div id="detail" class="panel"></div>
+</div>
+<script src="wasm_exec.js"></script>
+<script src="inspector.js"></script>
+</body>
+</html>

@@ -209,6 +209,13 @@ ignore_files:
   - v2/examples/trunking/main.go
   - v2/examples/txaudio/main.go
   - v2/examples/txiq/main.go
+  - v2/examples/wasm/inspector/capture.go
+  - v2/examples/wasm/inspector/dmr.go
+  - v2/examples/wasm/inspector/inspect.go
+  - v2/examples/wasm/inspector/main.go
+  - v2/examples/wasm/inspector/main_js.go
+  - v2/examples/wasm/inspector/transports.go
+  - v2/examples/wasm/inspector/walk.go
   - v2/fec/fec.go
   - v2/vocoder/ambe_payload.go
   - v2/vocoder/report.go
