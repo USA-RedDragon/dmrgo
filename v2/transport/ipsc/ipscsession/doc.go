@@ -10,7 +10,7 @@
 // caller: packets to send with their address, and events. A slice with
 // room for the MaxOutputs of the machine never grows, and after the
 // constructor no method
-// allocates or panics. Deadline tells when a machine needs a Tick. An
+// allocates or panics. Deadline reports when a machine needs a Tick. An
 // OutputSend packet points into the machine and is valid until the next
 // call of the machine; an OutputData packet points into the packet that
 // the caller passed in.

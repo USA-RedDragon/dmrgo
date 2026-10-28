@@ -143,8 +143,8 @@ func (b *Bridge) AppendBinary(dst []byte) ([]byte, error) {
 
 // BridgeControl is a control packet of FreeDMR's enhanced OpenBridge, each
 // with a 20-octet HMAC-SHA1 signature: BCKA (keepalive, every 10 s), BCSQ
-// (the receiver asks the sender to stop a stream to a talkgroup), BCST (stun:
-// stop all traffic) and BCVE (the protocol version, every 60 s).
+// (the receiver requests the sender to stop a stream to a talkgroup), BCST
+// (stun: stop all traffic) and BCVE (the protocol version, every 60 s).
 type BridgeControl struct {
 	// Command is CommandBCKA, CommandBCSQ, CommandBCST or CommandBCVE.
 	Command Command

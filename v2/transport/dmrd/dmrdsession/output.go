@@ -47,8 +47,8 @@ const (
 	OutputSend OutputKind = iota + 1
 	// OutputUp reports that the login is complete. Traffic can flow.
 	OutputUp
-	// OutputDown reports that the session ended. Output.Reason tells why
-	// and Output.State gives the state in which it ended.
+	// OutputDown reports that the session ended. Output.Reason gives the
+	// cause, and Output.State gives the state in which it ended.
 	OutputDown
 	// OutputLogin reports the RPTL of the repeater in Output.ID at a
 	// Master. Call Master.Admit or Master.Refuse.
@@ -100,7 +100,7 @@ func (k OutputKind) String() string {
 	return unknownName
 }
 
-// Reason tells why a session ended.
+// Reason is why a session ended.
 type Reason uint8
 
 // The Reason values.
@@ -213,7 +213,7 @@ type Output struct {
 	// output but OutputSend, a Peer only in OutputUp, and a Bridge in
 	// none.
 	ID uint32
-	// Reason tells why for OutputDown.
+	// Reason gives the cause for OutputDown.
 	Reason Reason
 	// State is the state in which the session ended, for OutputDown.
 	State State

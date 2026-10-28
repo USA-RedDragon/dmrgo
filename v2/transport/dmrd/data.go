@@ -83,7 +83,7 @@ type Data struct {
 	Size uint8 `dmr:"-"`
 }
 
-// Hint returns what the packet tells about its burst, for the service
+// Hint returns the data that the packet gives about its burst, for the service
 // machines: the slot, the voice position or data type, the sequence number
 // (8 bits), the stream ID, and now, the time at which the packet arrived,
 // as At. Give now 0 when the time is not known. A FrameVoice packet with a
@@ -139,7 +139,7 @@ func (d *Data) SetCall(group bool, target, source uint32) error {
 	return nil
 }
 
-// SetHint sets Frame and Value from what h says the burst is, as a
+// SetHint sets Frame and Value from the burst kind in h, as a
 // machine Output gives it: KindVoice with a VoiceBurst of A to F, or
 // KindData with a DataType. Burst A becomes FrameVoiceSync, as MMDVMHost
 // sends it. It sets Slot when h.Slot is Slot1 or Slot2. It returns an

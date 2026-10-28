@@ -66,12 +66,12 @@ const (
 	CommandRPTCL                  // the repeater closes the connection
 	CommandMSTCL                  // the master closes the connection
 	CommandMSTNAK                 // refusal from the master
-	CommandRPTSBKN                // the master asks for a site beacon
+	CommandRPTSBKN                // the master requests a site beacon
 	CommandRPTG                   // home position of the repeater (DialectMMDVM)
 	CommandRPTRSSI                // RSSI report (DialectHBRP)
 	CommandRPTINTR                // request to interrupt the incoming call (DialectHBRP)
 	CommandDMRP                   // ping between MMDVMHost and DMRGateway
-	CommandDMRB                   // DMRGateway asks MMDVMHost for a beacon
+	CommandDMRB                   // DMRGateway requests a beacon from MMDVMHost
 	CommandDMRT                   // trunking command between MMDVMHost and DMRGateway
 	CommandDMRE                   // FreeDMR OpenBridge data, versions 4 and 5
 	CommandBCKA                   // FreeDMR OpenBridge keepalive

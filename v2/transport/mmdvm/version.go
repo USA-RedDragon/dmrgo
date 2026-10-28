@@ -70,7 +70,7 @@ type Debug struct {
 	// Text is the text, or the octets of a dump. A decode points it into
 	// the payload.
 	Text []byte
-	// N is the numbers; Count tells how many are used.
+	// N is the numbers; Count shows how many are used.
 	N [4]int16
 }
 

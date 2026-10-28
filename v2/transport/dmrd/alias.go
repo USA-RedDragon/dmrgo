@@ -3,7 +3,7 @@ package dmrd
 // TalkerAlias is a DMRA message of DialectMMDVM: one talker alias block that
 // a repeater heard, in the 19-octet form that DMRGateway builds toward a
 // master. DMRGateway ee79d38 sends only the first 15 octets of it, with the
-// first 3 octets of Data; Size tells which form came.
+// first 3 octets of Data; Size shows which form came.
 //
 //dmr:frame 15 19
 //dmr:magic 0-31="DMRA"
@@ -40,7 +40,7 @@ type LocalTalkerAlias struct {
 // Position is a DMRG message of DialectMMDVM: the GPS position that a radio
 // sent, in the 18-octet form that DMRGateway builds toward a master.
 // DMRGateway ee79d38 sends only the first 14 octets of it, with the first 3
-// octets of Data; Size tells which form came.
+// octets of Data; Size shows which form came.
 //
 //dmr:frame 14 18
 //dmr:magic 0-31="DMRG"

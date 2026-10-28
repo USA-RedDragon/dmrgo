@@ -15,7 +15,7 @@ type Control struct {
 	// Salt is the salt of the acknowledgement that answers RPTL, with
 	// HasSalt: the DialectHBRP MSTACK in both directions, and the
 	// DialectMMDVM RPTACK for an encoder, which then writes Salt in place
-	// of ID. A decoder cannot tell that RPTACK from another one, so it
+	// of ID. A decoder cannot separate that RPTACK from another one, so it
 	// leaves Salt zero there; use LoginSalt.
 	Salt uint32
 	// HasSalt reports whether Salt is set.

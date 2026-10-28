@@ -61,8 +61,8 @@ func (h *Heartbeat) AppendBinary(dst []byte) ([]byte, error) {
 // P2PHeaderLen is the length of a P2P command without its body, in octets.
 const P2PHeaderLen = 20
 
-// P2P is a "P2P" command of the P2P service: a repeater asks the master for
-// registration or for the DMR or RDAC service, the master accepts it and
+// P2P is a "P2P" command of the P2P service: a repeater requests from the
+// master registration or the DMR or RDAC service, the master accepts it and
 // redirects the repeater to the port of the service, and the repeater
 // acknowledges the redirect. The layout comes from the Hytera_Homebrew_Bridge
 // code and its captures with a real repeater.

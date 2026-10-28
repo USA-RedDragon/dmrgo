@@ -46,7 +46,7 @@ type MasterConfig struct {
 
 // Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run
 // it: it registers peers, answers their keepalives, sends the peer list
-// to every peer when one asks for it and when a peer leaves, times out or
+// to every peer when one requests it and when a peer leaves, times out or
 // is dropped, and passes the voice and data packets of registered peers
 // on. Make it with NewMaster; the zero Master takes no packet. A Master is
 // not safe for concurrent use and must not be copied.
@@ -178,7 +178,7 @@ func (m *Master) SignFor(id uint32, dst []byte) ([]byte, error) {
 	return m.l.sign(dst, nil), nil
 }
 
-// Reset forgets every peer without a packet and runs the Master again
+// Reset clears every peer without a packet and runs the Master again
 // after Close.
 func (m *Master) Reset() {
 	if m == nil {

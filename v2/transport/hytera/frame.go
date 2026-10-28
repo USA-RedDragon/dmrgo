@@ -129,10 +129,10 @@ func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
 }
 
 // Call returns the call of the frame: target is Destination and source is
-// Source. The FLCO of the burst decides group when it is a voice LC header
+// Source. The FLCO of the burst sets group when it is a voice LC header
 // or terminator with a correctable LC, so that the group calls that
 // BrandMeister sends with CallType 0x00 read as group. Otherwise CallType
-// decides: 0x01 is a group call, as Hytera repeaters send it, and any other
+// sets it: 0x01 is a group call, as Hytera repeaters send it, and any other
 // value is not. A nil f gives zero values.
 //
 // (OK-DMR Hytera_Homebrew_Bridge captures ea5gvk_1.pcapng and
@@ -180,7 +180,7 @@ func (f *Frame) HasBurst() bool {
 	return f != nil && f.SlotType != SlotTypeSync && f.SlotType != SlotTypeWakeup
 }
 
-// Hint returns what the frame tells about its burst, for the service
+// Hint returns the data that the frame gives about its burst, for the service
 // machines: the slot, the voice position or data type from SlotType, and
 // the sequence number (8 bits), and now, the time at which the frame
 // arrived, as At. Give now 0 when the time is not known. A data slot type
@@ -247,7 +247,7 @@ func dataTypeOf(s SlotType) (enums.DataType, bool) {
 	return 0, false
 }
 
-// SetHint sets SlotType from what h says the burst is, as a machine Output
+// SetHint sets SlotType from the burst kind in h, as a machine Output
 // gives it: KindVoice with a VoiceBurst of A to F, or KindData with a
 // DataType. It sets Slot when h.Slot is Slot1 or Slot2. It returns an
 // error, and changes nothing, for another kind, a position that is not A

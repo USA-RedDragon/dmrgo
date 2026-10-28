@@ -80,7 +80,7 @@ const (
 	// at a Master, the registration of a peer.
 	OutputUp
 	// OutputDown reports that the link with Output.ID is down.
-	// Output.Reason tells why.
+	// Output.Reason gives the cause.
 	OutputDown
 	// OutputPeers reports a new peer list at a Peer, which Peers and
 	// PeerAt return.
@@ -91,7 +91,7 @@ const (
 	OutputData
 	// OutputDropped reports a packet from Output.Addr that a Master
 	// dropped, with the sender ID in Output.ID when the packet has one.
-	// Output.Reason tells why.
+	// Output.Reason gives the cause.
 	OutputDropped
 )
 
@@ -114,7 +114,7 @@ func (k OutputKind) String() string {
 	return unknownName
 }
 
-// Reason tells why a link went down.
+// Reason is why a link went down.
 type Reason uint8
 
 // The Reason values.
@@ -219,11 +219,11 @@ type Output struct {
 	// ID is the peer or master ID of OutputUp, OutputDown and OutputData,
 	// and of OutputDropped when the packet has one.
 	ID uint32
-	// Reason tells why for OutputDown and OutputDropped.
+	// Reason gives the cause for OutputDown and OutputDropped.
 	Reason Reason
 }
 
-// PeerInfo is one peer that a Peer or Master knows.
+// PeerInfo is one peer that a Peer or Master holds.
 type PeerInfo struct {
 	// ID is the peer ID.
 	ID uint32

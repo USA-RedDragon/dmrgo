@@ -25,7 +25,7 @@ const (
 	OpCollision           Opcode = 0x86 // collision of two transmitters
 	OpRegisterRequest     Opcode = 0x90 // a peer registers with the master
 	OpRegisterReply       Opcode = 0x91 // the master accepts a registration
-	OpPeerListRequest     Opcode = 0x92 // a peer asks for the peer list
+	OpPeerListRequest     Opcode = 0x92 // a peer requests the peer list
 	OpPeerListReply       Opcode = 0x93 // the master sends the peer list
 	OpPeerRegisterRequest Opcode = 0x94 // a peer registers with another peer
 	OpPeerRegisterReply   Opcode = 0x95 // a peer accepts a registration
@@ -103,10 +103,10 @@ type Mode uint8
 // Operational reports bit 6, the peer is operational.
 func (m Mode) Operational() bool { return m&0x40 != 0 }
 
-// Digital reports that bits 5 and 4 say digital.
+// Digital reports that bits 5 and 4 hold digital.
 func (m Mode) Digital() bool { return m&0x30 == 0x20 }
 
-// Analog reports that bits 5 and 4 say analog.
+// Analog reports that bits 5 and 4 hold analog.
 func (m Mode) Analog() bool { return m&0x30 == 0x10 }
 
 // TS1 returns the 2-bit link state of slot 1, bits 3 and 2.
@@ -271,7 +271,7 @@ func (b BurstType) String() string {
 	return "BurstType(" + text.Int(int64(b)) + ")"
 }
 
-// VoiceLayout is the form of a voice packet, which tells some superframe
+// VoiceLayout is the form of a voice packet, which gives some superframe
 // positions.
 type VoiceLayout uint8
 

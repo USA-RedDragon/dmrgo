@@ -65,8 +65,8 @@ func (s SlotType) String() string {
 	return "SlotType(" + text.Int(int64(s)) + ")"
 }
 
-// Service is octet 20 of a P2P packet: the service that the repeater asks
-// for.
+// Service is octet 20 of a P2P packet: the service that the repeater
+// requests.
 type Service uint8
 
 // The Service values.

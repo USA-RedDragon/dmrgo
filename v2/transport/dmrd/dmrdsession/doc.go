@@ -9,7 +9,7 @@
 // clock that the caller picks, and the packets that the caller received,
 // and appends outputs to a slice of the caller: packets to send, and
 // events. A slice with capacity MaxOutputs never grows, and after the
-// constructor no method allocates or panics. Deadline tells when a
+// constructor no method allocates or panics. Deadline reports when a
 // machine needs a Tick. An OutputSend packet points into the machine and
 // is valid until the next call of the machine. The packet of OutputConfig,
 // OutputOptions, OutputData and OutputMessage is not a copy: it points
@@ -21,7 +21,7 @@
 // after the acknowledgement of the one before, sends the step again every
 // Retry, pings every Retry when logged in, and logs in again after Timeout
 // without a reply, after MSTNAK and after MSTCL. The Master answers each
-// step, asks the consumer with OutputLogin and OutputConfig before it
+// step, sends OutputLogin and OutputConfig to the consumer before it
 // answers the RPTL and the RPTC, takes the RPTO of a logged-in repeater
 // with an RPTACK, as DMRGateway waits for it before it sends traffic,
 // answers a packet from a repeater that is not logged in with MSTNAK, and

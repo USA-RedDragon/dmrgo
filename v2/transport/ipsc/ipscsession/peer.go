@@ -42,7 +42,7 @@ type PeerConfig struct {
 }
 
 // Peer is a peer of an IPSC system, as a MOTOTRBO repeater and DMRlink
-// run it: it registers with the master and sends it keepalives, asks for
+// run it: it registers with the master and sends it keepalives, requests
 // the peer list, registers with each other peer of the list and sends it
 // keepalives, answers the registrations and keepalives of the other
 // peers, and passes the voice and data packets of the master and the
@@ -140,7 +140,7 @@ func (p *Peer) Master() (id uint32, ok bool) {
 	return p.masterID, p.state == StateRunning
 }
 
-// Peers returns the number of other peers that the Peer knows from the
+// Peers returns the number of other peers that the Peer has from the
 // peer list.
 func (p *Peer) Peers() int {
 	if p == nil {
@@ -188,7 +188,7 @@ func (p *Peer) Sign(dst []byte) ([]byte, error) {
 	return p.l.sign(dst, nil), nil
 }
 
-// Reset forgets the master and the peers without a packet, so the next
+// Reset clears the master and the peers without a packet, so the next
 // Tick registers again.
 func (p *Peer) Reset() {
 	if p == nil {
@@ -308,8 +308,9 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 // master or of a peer takes its link down with ReasonClosed; after the
 // master's the Peer sends its registration request again at once. Any other packet of the master or of a peer of
 // the list gives OutputData. The Peer drops a packet without a good
-// trailer with Auth, and a packet of a sender it does not know. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// trailer with Auth, and a packet of a sender that is neither the master
+// nor a peer of the list. It allocates only when dst has no room for
+// MaxOutputs outputs.
 func (p *Peer) Packet(now time.Duration, from Addr, b []byte, dst []Output) []Output {
 	if p == nil {
 		return dst

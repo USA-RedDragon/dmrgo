@@ -43,7 +43,7 @@ func (c Control) N() uint8 { return uint8(c & 0x0F) }
 const DMRDataLen = 34
 
 // DMRData is a CommandDMRData1 or CommandDMRData2 frame, one burst of slot
-// 1 or 2, or a CommandDMRLost1 or CommandDMRLost2 frame, which tells that
+// 1 or 2, or a CommandDMRLost1 or CommandDMRLost2 frame, which shows that
 // the modem lost the signal of the slot. In simplex, CommandDMRData2 is the
 // DMO channel.
 type DMRData struct {
@@ -137,7 +137,7 @@ func (d *DMRData) AppendBinary(dst []byte) ([]byte, error) {
 	return dst, nil
 }
 
-// Hint returns what the frame tells about its burst, for the service
+// Hint returns the data that the frame gives about its burst, for the service
 // machines: the slot, and from Control the data type, voice burst A, or
 // voice bursts B to F from N 1 to 5. A frame without a sync bit and with N
 // 0, such as one that MMDVMHost sends, gives KindUnknown, which classifies
@@ -163,7 +163,7 @@ func (d *DMRData) Hint() layer2.Hint {
 	return h
 }
 
-// SetHint sets Control from what h says the burst is, as a machine Output
+// SetHint sets Control from the burst kind in h, as a machine Output
 // gives it: ControlDataSync with the data type for KindData, ControlVoiceSync
 // for voice burst A, and N 1 to 5 for voice bursts B to F. It sets Slot
 // when h.Slot is Slot1 or Slot2, and Lost from h.SyncLost. It returns an

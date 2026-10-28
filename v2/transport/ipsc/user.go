@@ -340,7 +340,7 @@ func appendPayload(dst []byte, d Payload) ([]byte, error) {
 	return append(dst, d.Trailer[:d.TrailerLen]...), nil
 }
 
-// Hint returns what the packet tells about its burst, for the service
+// Hint returns the data that the packet gives about its burst, for the service
 // machines: the slot from the call info, the RTP sequence number (16 bits),
 // the call control as the stream, burst A or E from the voice layout (a
 // layer2.PositionTracker places B, C, D and F), the data type of a
@@ -459,7 +459,7 @@ func rawBurstOf(d *Payload, src layer2.SyncSource) (layer2.RawBurst, error) {
 }
 
 // SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and
-// what h says it is, as a machine Output gives it, in the form an XPR 8400
+// the burst kind in h, as a machine Output gives it, in the form an XPR 8400
 // sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the
 // full LC of burst E stays as it is in u.Voice.LC), or KindData with a
 // DataType. It sets the slot bit of Info when h.Slot is Slot1 or Slot2,

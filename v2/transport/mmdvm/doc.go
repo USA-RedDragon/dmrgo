@@ -9,7 +9,7 @@
 // numbers), Version, StatusV1 and StatusV2, ConfigV1 and ConfigV2,
 // SetFreq, SetMode, Ack, Nak, DMRStart, DMRAbort, DMRShortLC and DMRAloha.
 // Protocol 1 is the MMDVM_HS firmware and protocol 2 the MMDVM firmware;
-// the version reply tells which. The frames of the other modes stay a
+// the version reply shows which. The frames of the other modes stay a
 // Frame.
 //
 // Decode functions never allocate and never panic. They return the static
