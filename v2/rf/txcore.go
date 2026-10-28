@@ -17,8 +17,8 @@ var ErrBurstService = errors.New("rf: BS-sourced burst in the license-free servi
 
 // ErrTxTimeout is the error of Write on a transmitter of the license-free
 // service for a burst that would carry one transmission past 179 s. The
-// transmitter keys down, and refuses the rest of the Stream; a new Stream
-// starts a new transmission.
+// transmitter keys down, and returns ErrTxTimeout for the rest of the
+// Stream; a new Stream starts a new transmission.
 var ErrTxTimeout = errors.New("rf: transmission past 179 s in the license-free service")
 
 const (

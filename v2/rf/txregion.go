@@ -48,13 +48,13 @@ func (r Region) String() string {
 
 // RegionError is the error of a transmitter setup that the Region,
 // Service and Power do not allow, or that no measurement shows to keep
-// their limits. Each refusal has one static RegionError, so a call that
+// their limits. Each such error has one static RegionError, so a call that
 // fails does not allocate. Match it with errors.As.
 type RegionError struct {
 	// Type is the package, "rf", and Field the config field that the
-	// limits refuse, such as "TxConfig.Rate".
+	// limits do not allow, such as "TxConfig.Rate".
 	Type, Field string
-	// Reason says why.
+	// Reason gives the cause.
 	Reason string
 }
 

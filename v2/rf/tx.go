@@ -16,13 +16,14 @@ import (
 type TxConfig struct {
 	// Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value
 	// TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and under
-	// TinyGo. Tier3 has no modulator of its own yet and is refused.
+	// TinyGo. Tier3 has no modulator of its own yet and gives a
+	// *dmrgo.ConfigError.
 	Tier Tier
 	// Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier1
 	// and Tier2 make any Rate from 48000 to 20000000, and Tier0 makes
 	// 96000. Under 62500 the image of the main lobe falls within two
 	// channels of the carrier, where no limit can count on a filter of the
-	// radio, so the limits refuse it.
+	// radio, so it gives a *RegionError.
 	Rate int
 	// Format is the layout of the I/Q samples. 0 means IQFormatCS16.
 	// IQFormatCF32 values lie on the grid of IQFormatCS16.
@@ -102,7 +103,7 @@ type txPlan struct {
 // mode, the chunk that it hands to OnSamples. It returns a *dmrgo.ConfigError when a field
 // of c is out of range or names a setup that the modulator cannot make,
 // and a *RegionError when the limits of the Region, Service and Power
-// refuse the setup.
+// do not allow the setup.
 func NewTransmitter(c *TxConfig) (*Transmitter, error) {
 	var cfg TxConfig
 	if c != nil {
@@ -242,8 +243,8 @@ func (t *Transmitter) setup(c *TxConfig, p *txPlan) {
 // Write turns the bursts x into samples in stream mode and hands them to
 // OnSamples. It returns len(x) and nil, dmrgo.ErrNilReceiver for a nil t,
 // ErrNotSetUp before Init or NewTransmitter, a *dmrgo.ConfigError for
-// OnSamples in append mode, and for a burst that it refuses the count of
-// bursts before it with ErrBurstOrder, ErrBurstService or ErrTxTimeout.
+// OnSamples in append mode, and for a burst that it does not accept the count
+// of bursts before it with ErrBurstOrder, ErrBurstService or ErrTxTimeout.
 func (t *Transmitter) Write(x []Burst) (int, error) {
 	if t == nil {
 		return 0, dmrgo.ErrNilReceiver
@@ -292,9 +293,9 @@ func (t *Transmitter) streamErr() error {
 
 // AppendSamples turns the bursts x into samples in append mode, appends
 // them to dst in Format and returns the extended slice. It stops at the
-// first burst that Write would refuse. It allocates only when dst has no
-// room for r.MaxOutput(len(x)) samples. In stream mode, or before Init or
-// NewTransmitter, it returns dst.
+// first burst for which Write would return an error. It allocates only
+// when dst has no room for r.MaxOutput(len(x)) samples. In stream mode, or
+// before Init or NewTransmitter, it returns dst.
 func (t *Transmitter) AppendSamples(dst []byte, x []Burst) []byte {
 	if t == nil || !t.set || t.on != nil {
 		return dst

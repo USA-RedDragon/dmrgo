@@ -10,7 +10,8 @@ import (
 type AudioTxConfig struct {
 	// Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value
 	// TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and
-	// under TinyGo. Tier3 has no modulator of its own yet and is refused.
+	// under TinyGo. Tier3 has no modulator of its own yet and gives a
+	// *dmrgo.ConfigError.
 	Tier Tier
 	// Rate is the sample rate of the converter, in Hz. 0 means 48000.
 	// Tier0 makes 24000 and 48000. Tier1 and Tier2 make any rate from
@@ -36,7 +37,8 @@ type AudioTxConfig struct {
 	// half of full scale, 1040 codes at 12 bits. Under 16 bits, Tier1 and
 	// Tier2 at 24000 Hz and above reach 2.12 times Level, so there they are
 	// measured at the most that fits Bits at Offset 0, 965 to 981 codes at
-	// 12 bits. A Level under the measured level is refused.
+	// 12 bits. A Level under the measured level gives a
+	// *RegionError.
 	Level int
 	// Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned.
 	Offset int
@@ -46,7 +48,7 @@ type AudioTxConfig struct {
 	// transmitter alone, set up by Init or NewPreEmphasis. Nil is a radio
 	// with no pre-emphasis. Only Tier0 at Rate 48000 takes it, and only in
 	// the regions, services and powers where the limits keep their margin
-	// with it; elsewhere it is refused with a RegionError.
+	// with it; elsewhere it gives a *RegionError.
 	PreEmphasis *PreEmphasis
 	// InputLowpassHz states the cutoff in Hz of a low pass of at least two
 	// poles that the radio puts before its modulator input; 0 means none,
@@ -54,7 +56,8 @@ type AudioTxConfig struct {
 	// measured with a two-pole Butterworth low pass at 8000, 5000 and
 	// 3000 Hz, and a stated cutoff takes the next looser of these, so 6000
 	// counts as 8000 and a cutoff above 8000 as none. A low pass lowers the
-	// least Rate that keeps the limits. A negative cutoff is refused.
+	// least Rate that keeps the limits. A negative cutoff gives a
+	// *dmrgo.ConfigError.
 	InputLowpassHz int
 	// Region is the regulatory region whose limits the signal keeps.
 	Region Region
@@ -403,8 +406,8 @@ func (t *AudioTransmitter) streamErr() error {
 
 // AppendSamples turns the bursts x into samples in append mode, appends
 // them to dst and returns the extended slice. It stops at the first burst
-// that Write would refuse. It allocates only when dst has no room for
-// r.MaxOutput(len(x)) samples. In stream mode, or before Init or
+// for which Write would return an error. It allocates only when dst has no
+// room for r.MaxOutput(len(x)) samples. In stream mode, or before Init or
 // NewAudioTransmitter, it returns dst.
 func (t *AudioTransmitter) AppendSamples(dst []int16, x []Burst) []int16 {
 	if t == nil || !t.set || t.on != nil {

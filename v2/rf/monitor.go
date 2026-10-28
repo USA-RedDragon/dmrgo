@@ -13,7 +13,7 @@ import (
 // layer2.Burst.
 var ErrNilBurst = errors.New("rf: nil Monitor or Burst")
 
-// Hint returns what the Receiver knows about b besides its bits, for a
+// Hint returns the data of the Receiver about b besides its bits, for a
 // machine that takes a layer2.RawBurst with a layer2.Hint. Slot is the TDMA
 // channel from the TACT of the CACH of b, when b is BS-sourced and its TACT
 // decodes, and Kind and VoiceBurst are set when the Receiver placed a voice
@@ -68,7 +68,7 @@ type monitorChannel struct {
 
 // MonitorBurst is what a Monitor finds in one Burst.
 type MonitorBurst struct {
-	// Hint is what the Monitor knows about the burst besides its bits:
+	// Hint is the data of the Monitor about the burst besides its bits:
 	// Slot is the TDMA channel from the CACHs of the stream, or
 	// enums.SlotUnknown for a burst without a CACH, and Kind and VoiceBurst
 	// come from the timing, as Burst.Hint gives them.
@@ -81,11 +81,11 @@ type MonitorBurst struct {
 	// header, a terminator with LC, or the embedded LC of a superframe.
 	LCDone bool
 	// End reports a terminator with LC: the call on the channel ended, and
-	// the Monitor forgets its LC after this burst.
+	// the Monitor clears its LC after this burst.
 	End bool
 }
 
-// Reset forgets the streams and the calls of every channel. Call it after
+// Reset clears the streams and the calls of every channel. Call it after
 // Flush of the receiver, when the next samples are of another recording.
 func (m *Monitor) Reset() {
 	if m == nil {
