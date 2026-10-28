@@ -1,4 +1,4 @@
-module github.com/USA-RedDragon/dmrgo/examples/tcp
+module github.com/USA-RedDragon/dmrgo/v2/examples/tcp
 
 go 1.27.3
 
@@ -14,4 +14,4 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 )
 
-replace github.com/USA-RedDragon/dmrgo/v2 => ../../v2
+replace github.com/USA-RedDragon/dmrgo/v2 => ../..
