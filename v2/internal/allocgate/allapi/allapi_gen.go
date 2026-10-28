@@ -383,6 +383,7 @@ var api = [...]any{
 	internal_fsktx.AudioTable.Hz,
 	internal_fsktx.AudioTable.Span,
 	internal_fsktx.Dibits,
+	internal_fsktx.MinRate,
 	internal_fsktx.NewAudio,
 	internal_fsktx.NewIQ,
 	internal_fsktx.Table24k,

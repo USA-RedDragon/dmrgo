@@ -30,6 +30,7 @@ ignore_files:
   - v2/internal/fsktx/host.go
   - v2/internal/fsktx/mcu.go
   - v2/internal/fsktx/mcuiq.go
+  - v2/internal/fsktx/minrate.go
   - v2/internal/fsktx/rrc.go
   - v2/internal/fsktx/shapeopt.go
   - v2/internal/fsktx/shapepred.go
