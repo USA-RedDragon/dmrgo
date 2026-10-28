@@ -1,6 +1,9 @@
 package fsktx
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func goldenSymbols(n int) []int8 {
 	out := make([]int8, n)
@@ -142,6 +145,28 @@ func TestGoldenLimits(t *testing.T) {
 	for _, c := range cases {
 		if got := c.run(); got != c.want {
 			t.Errorf("%s: digest %#x, want %#x", c.name, got, c.want)
+		}
+	}
+}
+
+func TestMCUIQUnaligned(t *testing.T) {
+	t.Parallel()
+	syms := goldenSymbols(600)
+	for _, rate := range []int{96000, 192000} {
+		var a, b MCUIQ
+		if err := a.Init(rate, -2000, 96); err != nil {
+			t.Fatal(err)
+		}
+		b = a
+		var x [2 * maxSamples << 3]int16
+		var y [2*maxSamples<<3 + 1]int16
+		for i, s := range syms {
+			a.Key(i > 4 && i < len(syms)-20)
+			b.Key(i > 4 && i < len(syms)-20)
+			n, m := a.Symbol(x[:], s), b.Symbol(y[1:], s)
+			if n != m || !slices.Equal(x[:n], y[1:1+n]) {
+				t.Fatalf("%d Hz, symbol %d: the output at an odd address differs", rate, i)
+			}
 		}
 	}
 }

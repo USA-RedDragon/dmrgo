@@ -122,12 +122,13 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255*13>>6
 	m.shape(c)
 	dst = dst[:n]
+	word := littleEndian && uintptr(unsafe.Pointer(unsafe.SliceData(dst)))&3 == 0
 	switch {
 	case m.on && m.env == m.ramp:
-		if tier0IQFine && tier0IQWide && cosFracWide%2 == 0 && m.upShift == 1 {
+		if word && tier0IQFine && tier0IQWide && cosFracWide%2 == 0 && m.upShift == 1 {
 			m.steady1(dst)
 		} else {
-			m.steady(dst)
+			m.steady(dst, word)
 		}
 	case !m.on && m.env == 0:
 		m.silent(dst)
@@ -246,7 +247,7 @@ const (
 )
 
 //go:nobounds
-func (m *MCUIQ) steady(dst []int16) {
+func (m *MCUIQ) steady(dst []int16, word bool) {
 	us := m.upShift & 3
 	phase, prev := m.phase, m.prev
 	j := 0
@@ -261,10 +262,19 @@ func (m *MCUIQ) steady(dst []int16) {
 			}
 		}
 		prev = w
+		if word {
+			for range 1 << us {
+				v += dw
+				phase += uint32(v)
+				putIQ((*[2]int16)(dst[j:j+2]), phase)
+				j += 2
+			}
+			continue
+		}
 		for range 1 << us {
 			v += dw
 			phase += uint32(v)
-			putIQ((*[2]int16)(dst[j:j+2]), phase)
+			dst[j], dst[j+1] = cosSin(phase)
 			j += 2
 		}
 	}
