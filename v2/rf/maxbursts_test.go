@@ -1,9 +1,6 @@
 package rf
 
-import (
-	"errors"
-	"testing"
-)
+import "testing"
 
 type rxBoundSignal struct {
 	bb48, bb24, bb96 []complex64
@@ -45,63 +42,72 @@ type rxBoundCase struct {
 	inner                    int
 }
 
-func (c rxBoundCase) config() (Config, bool) {
-	cfg := Config{Tier: c.tier, Signed: c.signed, MaxWrite: c.maxWrite, LookbackSlots: c.lookback}
-	hz := BasebandRate
+func (c rxBoundCase) config() (RxConfig, *options, bool) {
+	cfg := RxConfig{Tier: c.tier, Format: iqFormatOf(c.signed), LookbackSlots: c.lookback}
+	hz := basebandRate
+	var opt *options
 	if c.half {
 		if c.tier > Tier1 {
-			return cfg, false
+			return cfg, nil, false
 		}
-		hz = BasebandRate / 2
-		cfg.BasebandHz = hz
+		hz = discRate
 	}
 	switch c.inner {
 	case 1:
 		if c.tier < Tier3 || c.half {
-			return cfg, false
+			return cfg, nil, false
 		}
 		o := tierOptions(c.tier)
 		o.Comb = true
-		cfg.opt = &o
+		opt = &o
 	case 4:
 		if c.tier < Tier3 || c.half {
-			return cfg, false
+			return cfg, nil, false
 		}
 		o := tierOptions(c.tier)
 		o.Comb, o.TwoPass, o.Window, o.PhaseStates = false, false, 2, 0
-		cfg.opt = &o
+		opt = &o
 	case 5, 6:
-		return cfg, false
+		return cfg, nil, false
 	case 2, 3:
 		if c.half {
-			return cfg, false
+			return cfg, nil, false
 		}
 		o := iq0Options(4, 2*symbolRate)
-		cfg.Tier, cfg.opt = Tier0, &o
+		cfg.Tier, opt = Tier0, &o
 		if c.inner == 3 {
+			if c.mult > 1 && !c.baseband {
+				return cfg, nil, false
+			}
 			o.IQLow = 1
 			hz = iq0LowHz
-			cfg.BasebandHz = hz
 		}
 	}
-	cfg.Rate = float64(hz * c.mult)
+	cfg.Rate = hz * c.mult
+	if c.baseband {
+		cfg.Rate, cfg.Format = hz, IQFormatCF32
+	}
 	if cfg.Tier == Tier0 {
 		cfg.LookbackSlots = 0
 	}
-	return cfg, true
+	if c.half && cfg.Rate >= basebandRate {
+		o := tierOptions(cfg.Tier)
+		opt = halfOpt(&o)
+	}
+	return cfg, opt, true
 }
 
 func rxEngine(r *Receiver) string {
 	switch {
-	case r.cb != nil:
-		return "comb"
-	case r.iql != nil:
+	case r.mode == rxModeLow:
 		return "iqlow"
-	case r.iq0 != nil:
+	case r.host().cb != nil:
+		return "comb"
+	case r.host().iq0 != nil:
 		return "iq0"
-	case r.iqd != nil:
+	case r.host().iqd != nil:
 		return "iqdisc"
-	case r.lean != nil:
+	case r.host().lean != nil:
 		return "lean"
 	default:
 		return "engine"
@@ -110,18 +116,18 @@ func rxEngine(r *Receiver) string {
 
 func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 	t.Helper()
-	cfg, ok := c.config()
+	cfg, opt, ok := c.config()
 	if !ok {
 		return "", 0
 	}
-	r, err := New(&cfg)
+	r, err := newReceiver(cfg, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
 	seen := 0
 	ocfg := cfg
-	ocfg.OnBurst = func(*Burst) { seen++ }
-	ro, err := New(&ocfg)
+	ocfg.OnBursts = func(bs []Burst) { seen += len(bs) }
+	ro, err := newReceiver(ocfg, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,66 +141,43 @@ func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 	if cfg.Tier >= Tier3 {
 		x = x[:len(x)/3]
 	}
-	most := cfg.MaxWrite
-	if most == 0 {
-		most = 1 << 16
-	}
-	if c.baseband && most < 2 {
-		return "", 0
-	}
 	var in []byte
-	n := len(x)
-	if !c.baseband {
+	if c.baseband {
+		in = cf32(x)
+	} else {
 		in = s.iq(x, c.mult, c.signed)
-		n = len(in)
 	}
+	sb := r.SampleBytes()
 	total := 0
-	for off, i := 0, 0; off < n; i++ {
+	for off, i := 0, 0; off < len(in); i++ {
 		k := 4096
 		if len(c.cuts) > 0 {
 			v := int(c.cuts[i%len(c.cuts)])
 			k = 1 + v*v*v/16
 		}
-		k = min(k, n-off)
-		if i%5 == 0 {
-			var b []Burst
-			var err error
-			if long := most/2 + 1; c.baseband && off+long <= n {
-				b, err = r.WriteBaseband(x[off : off+long])
-			} else if long := most + 1; !c.baseband && off+long <= n {
-				b, err = r.Write(in[off : off+long])
-			} else {
-				err = ErrWriteTooLong
-			}
-			if b != nil || !errors.Is(err, ErrWriteTooLong) {
-				t.Fatalf("%+v: a call longer than MaxWrite gave %d bursts and %v", c, len(b), err)
-			}
+		k = min(k, len(in)-off)
+		got := r.AppendBursts(nil, in[off:off+k])
+		before := seen
+		if _, err := ro.Write(in[off : off+k]); err != nil {
+			t.Fatal(err)
 		}
-		var got []Burst
-		var bound int
-		if c.baseband {
-			k = min(k, max(most/2, 1))
-			got, bound = must(r.WriteBaseband(x[off:off+k])), r.MaxBursts(k)
-			must(ro.WriteBaseband(x[off : off+k]))
-		} else {
-			k = min(k, most)
-			got, bound = must(r.Write(in[off:off+k])), r.MaxBursts((k+1)/2)
-			must(ro.Write(in[off : off+k]))
-		}
-		if len(got) > bound {
-			t.Fatalf("%+v: a call of %d gave %d bursts, MaxBursts %d", c, k, len(got), bound)
+		if bound := r.MaxOutput(k/sb + 1); seen-before > bound || len(got) > bound {
+			t.Fatalf("%+v: a call of %d bytes gave %d and %d bursts, MaxOutput %d", c, k, len(got), seen-before, bound)
 		}
 		total += len(got)
 		off += k
 	}
-	if got, bound := r.Flush(), r.MaxBursts(0); len(got) > bound {
-		t.Fatalf("%+v: Flush gave %d bursts, MaxBursts(0) %d", c, len(got), bound)
-	} else {
-		total += len(got)
+	got := r.AppendFlush(nil)
+	before := seen
+	if err := ro.Flush(); err != nil {
+		t.Fatal(err)
 	}
-	ro.Flush()
+	if bound := r.MaxOutput(0); len(got) > bound || seen-before > bound {
+		t.Fatalf("%+v: Flush gave %d and %d bursts, MaxOutput(0) %d", c, len(got), seen-before, bound)
+	}
+	total += len(got)
 	if seen != total {
-		t.Errorf("%+v: %s returned %d bursts, OnBurst took %d", c, rxEngine(r), total, seen)
+		t.Errorf("%+v: %s appended %d bursts, OnBursts took %d", c, rxEngine(r), total, seen)
 	}
 	return rxEngine(r), total
 }

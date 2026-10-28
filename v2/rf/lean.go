@@ -190,7 +190,7 @@ type leanTuner interface {
 
 type leanCore struct {
 	onBurst                            func(*Burst)
-	out                                []Burst
+	sink                               *burstSink
 	audio                              *audioFront
 	iq                                 leanTuner
 	signMiss                           uint8
@@ -271,7 +271,6 @@ type leanRx struct {
 	fe       *frontEnd
 	wide     []complex64
 	inChunk  int
-	carry    byteCarry
 	dc       dcBlock
 	signed   bool
 	df       leanFront
@@ -297,17 +296,15 @@ func (f *leanFront) turn(w float32) {
 	f.prev *= turnBy(w, preTaps-preTaps/2)
 }
 
-func newLean(cfg Config, opt options) *leanRx {
+func newLean(cfg rxSetup, opt options) *leanRx {
 	r := &leanRx{signed: cfg.Signed}
 	r.dc.init(float64(cfg.BasebandHz))
 	r.init(cfg.OnBurst, opt, float32(discSPS)/2)
-	if cfg.OnBurst == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+16)
-	}
+	r.sink = cfg.sink
 	if cfg.Rate != float64(cfg.BasebandHz) {
-		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
+		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
-		r.inChunk = max(2*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
+		r.inChunk = max(r.fe.size*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
 	}
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
@@ -352,15 +349,7 @@ func (r *leanCore) resetChans() {
 	r.votes = [16]uint8{}
 }
 
-func (r *leanRx) write(iq []byte) []Burst {
-	r.out = r.out[:0]
-	pair, iq := r.carry.split(iq)
-	r.bytes(pair)
-	r.bytes(iq)
-	return r.out
-}
-
-func (r *leanRx) bytes(iq []byte) {
+func (r *leanRx) write(iq []byte) {
 	if r.fe == nil {
 		for i := 0; i+1 < len(iq); i += 2 {
 			r.sample(r.byteSample(iq[i], iq[i+1]))
@@ -368,7 +357,8 @@ func (r *leanRx) bytes(iq []byte) {
 		return
 	}
 	for len(iq) > 0 {
-		n := min(len(iq), r.inChunk) &^ 1
+		n := min(len(iq), r.inChunk)
+		n -= n % r.fe.size
 		if n == 0 {
 			break
 		}
@@ -390,23 +380,19 @@ func (r *leanRx) byteSample(i, q byte) complex64 {
 	return r.dc.remove(v)
 }
 
-func (r *leanRx) writeBaseband(x []complex64) []Burst {
-	r.out = r.out[:0]
+func (r *leanRx) writeBaseband(x []complex64) {
 	for _, v := range x {
 		r.sample(v)
 	}
-	return r.out
 }
 
-func (r *leanRx) flush() []Burst {
-	r.out = r.out[:0]
+func (r *leanRx) flush() {
 	for range slotSamplesN {
 		r.sample(0)
 	}
 	if r.locked {
 		r.unlock()
 	}
-	return r.out
 }
 
 func (r *leanRx) sample(v complex64) {
@@ -1931,9 +1917,8 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 func (r *leanCore) emit(b *Burst) {
 	if r.onBurst != nil {
 		r.onBurst(b)
-	} else if len(r.out) < cap(r.out) {
-		r.out = r.out[:len(r.out)+1]
-		r.out[len(r.out)-1] = *b
+	} else {
+		r.sink.put(b)
 	}
 }
 

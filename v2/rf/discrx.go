@@ -3,8 +3,6 @@ package rf
 import (
 	"math"
 	"unsafe"
-
-	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 const (
@@ -18,126 +16,21 @@ const (
 	audioMaxOff    = 1<<30 - 1<<16
 )
 
-// DiscConfig sets up a DiscReceiver.
-type DiscConfig struct {
-	// Hz is the sample rate of the discriminator samples of Write: 48000,
-	// as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600.
-	// 0 means 24000. A lower rate costs less: the receiver halves 48 kHz
-	// and then 24 kHz with a half-band filter before its matched filter,
-	// which runs at 12 kHz or 9.6 kHz. For a sound card at 44100 Hz, set
-	// it to 48000 Hz or resample to 48000 Hz first.
-	Hz int
-	// MaxWrite is the largest number of samples in one Write, for the
-	// burst buffer that NewDisc allocates, at most MaxWriteLimit. 0 means
-	// 1 << 12. When OnBurst is nil, a longer Write can return
-	// ErrWriteTooLong.
-	MaxWrite int
-	// OnBurst, when not nil, takes each burst as the receiver recovers it,
-	// in place of the slices that Write, AppendBursts and Flush return,
-	// which then return no bursts. The burst is valid only during the call;
-	// copy it to keep it.
+type discSetup struct {
+	Hz      int
 	OnBurst func(*Burst)
-	// Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is
-	// Tier1 for NewDisc, and Tier0 for Init, which does not allocate the
-	// stages of the higher tiers, and under TinyGo, which has neither.
-	// Tier2 detects the bursts again coherently, on the carrier phase that
-	// it rebuilds from the samples, at about 5 times the CPU time of Tier1.
-	// Tier3 runs Tier2 and, beside it, a receiver with more coherent CPU
-	// time and four passes over each data burst. It keeps every burst of
-	// Tier2 and adds the bursts that Tier2 misses, the data bursts that pass
-	// a CRC where those of Tier2 fail, and the embedded LCs that pass where
-	// those of Tier2 fail, at about twice the CPU time and memory of Tier2,
-	// and 3 s of delay.
-	Tier  Tier
-	opt   *options
-	lowIQ bool
+	Tier    Tier
+	opt     *options
+	lowIQ   bool
 }
 
-// DiscReceiver recovers DMR bursts from the output of an FM discriminator,
-// as the radio chips of hotspots and MMDVM modems give it: real samples in
-// any units, with any gain and DC offset, which the receiver measures
-// itself. With Tier0 it keeps about 1.4 KB of state, for microcontrollers;
-// on a Cortex-M4F it needs about 3.8 MHz and 1.9 KB with its stack, built
-// with TinyGo -opt z. A DiscReceiver that Init sets up in memory of the
-// caller, such as a package variable, uses no heap with OnBurst or
-// AppendBursts. Before Init or NewDisc its methods return no bursts. A
-// DiscReceiver is not safe for concurrent use.
-type DiscReceiver struct {
+type discRx struct {
 	leanCore
 	f   audioFront
 	d48 disc48
 }
 
-var (
-	errDiscHz       = &dmrgo.ConfigError{Type: "rf", Field: "DiscConfig.Hz"}
-	errDiscMaxWrite = &dmrgo.ConfigError{Type: "rf", Field: "DiscConfig.MaxWrite"}
-	errDiscTier     = &dmrgo.ConfigError{Type: "rf", Field: "DiscConfig.Tier"}
-)
-
-// NewDisc returns a DiscReceiver of cfg. A nil cfg means the zero
-// DiscConfig. It allocates the receiver, and the burst buffer of Write
-// when cfg.OnBurst is nil. It returns a *dmrgo.ConfigError when a field of cfg
-// is out of range.
-func NewDisc(c *DiscConfig) (*DiscReceiver, error) {
-	var cfg DiscConfig
-	if c != nil {
-		cfg = *c
-	}
-	if cfg.Tier == TierDefault {
-		cfg.Tier = discDefaultTier
-	}
-	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
-		return nil, errDiscTier
-	}
-	r := &DiscReceiver{}
-	soft := cfg.opt == nil
-	opt := discTierOptions(cfg.Tier)
-	if !soft {
-		opt = *cfg.opt
-	}
-	cfg.opt = &opt
-	if err := r.Init(cfg); err != nil {
-		return nil, err
-	}
-	if soft && opt.SoftExt {
-		if err := r.addSoft(&opt); err != nil {
-			return nil, err
-		}
-	}
-	if cfg.OnBurst == nil {
-		if cfg.MaxWrite == 0 {
-			cfg.MaxWrite = 1 << 12
-		}
-		r.out = make([]Burst, 0, max(r.maxBursts(cfg.MaxWrite), r.flushBursts()))
-	}
-	return r, nil
-}
-
-// Init sets up r for cfg, in place of any state it holds. It does not
-// allocate, so that r can live in memory of the caller.
-func (r *DiscReceiver) Init(cfg DiscConfig) error {
-	if r == nil {
-		return dmrgo.ErrNilReceiver
-	}
-
-	dec := cfg.Hz == 2*discRate
-	if cfg.Hz == 0 || dec {
-		cfg.Hz = discRate
-	}
-	if cfg.Hz != discRate && cfg.Hz != discRate/2 && cfg.Hz != 2*symbolRate {
-		return errDiscHz
-	}
-	if cfg.MaxWrite < 0 || cfg.MaxWrite > MaxWriteLimit {
-		return errDiscMaxWrite
-	}
-	if cfg.Tier != TierDefault && cfg.Tier != Tier0 && cfg.opt == nil {
-		return errDiscTier
-	}
-	r.setup(cfg, dec)
-	return nil
-}
-
-func (r *DiscReceiver) setup(cfg DiscConfig, dec bool) {
+func (r *discRx) setup(cfg discSetup, dec bool) {
 	opt := disc0Options()
 	switch {
 	case cfg.opt != nil:
@@ -145,7 +38,9 @@ func (r *DiscReceiver) setup(cfg DiscConfig, dec bool) {
 	case cfg.lowIQ:
 		opt = iqLowOptions()
 	}
-	*r = DiscReceiver{}
+	sink := r.sink
+	*r = discRx{}
+	r.sink = sink
 	r.d48.on = dec
 	r.f.half = cfg.Hz == discRate
 	r.f.slow = cfg.Hz == 2*symbolRate
@@ -177,7 +72,7 @@ func (r *DiscReceiver) setup(cfg DiscConfig, dec bool) {
 	}
 }
 
-func (r *DiscReceiver) hz() int {
+func (r *discRx) hz() int {
 	switch {
 	case r.f.half:
 		return discRate
@@ -187,112 +82,21 @@ func (r *DiscReceiver) hz() int {
 	return discRate / 2
 }
 
-func growBursts(dst []Burst, n int) []Burst {
-	for cap(dst)-len(dst) < n {
-		dst = append(dst[:cap(dst)], Burst{})[:len(dst)]
-	}
-	return dst
-}
-
-func (r *DiscReceiver) maxBursts(n int) int {
+func (r *discRx) maxBursts(n int) int {
 	return 4*r.inputSamples(n)*symbolRate/(slotSymbols*r.inputHz()) + 16
 }
 
-func (r *DiscReceiver) flushBursts() int {
+func (r *discRx) flushBursts() int {
 	return r.maxBursts(slotSymbols*discSPS) + r.unionBacklog()
 }
 
-// AppendBursts processes the discriminator samples x, appends the bursts
-// that are complete to dst and returns the extended slice. It allocates
-// only when dst has no room for len(x)/72+16 bursts, the most that x can
-// complete at the lowest input rate, 9600 Hz.
-func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
-	if r == nil {
-		return dst
-	}
-
-	if r.audio == nil {
-		return dst
-	}
-	dst = growBursts(dst, r.maxBursts(len(x)))
-	keep, n := r.out, len(dst)
-	r.out = dst[n:n]
-	r.input(x)
-	m := len(r.out)
-	r.out = keep[:0]
-	return dst[:n+m]
-}
-
-// Write processes the discriminator samples x and returns the bursts that
-// are complete, in the buffer that NewDisc allocates. It returns at most
-// len(x)/72+16 bursts, as AppendBursts does. The returned slice
-// is valid until the next call. Without OnBurst, it returns
-// ErrWriteTooLong and processes nothing when its buffer has no room for
-// the bursts that x can complete. The buffer of NewDisc takes a Write of up
-// to DiscConfig.MaxWrite samples; a DiscReceiver that Init set up has none,
-// so use AppendBursts.
-func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
-	if r == nil {
-		return nil, dmrgo.ErrNilReceiver
-	}
-
-	if r.audio == nil {
-		return nil, nil
-	}
-	if r.onBurst == nil && r.maxBursts(len(x)) > cap(r.out) {
-		return nil, ErrWriteTooLong
-	}
-	r.out = r.out[:0]
-	r.input(x)
-	return r.out, nil
-}
-
-// Flush finishes the stream at its end and returns the remaining bursts,
-// as Write does. It returns at most 26 bursts, as AppendFlush does, and
-// Tier3 also the bursts of its delay, up to 1050. A
-// DiscReceiver that Init set up without OnBurst has no buffer for them, so
-// there Flush changes nothing and returns nil; use AppendFlush.
-func (r *DiscReceiver) Flush() []Burst {
-	if r == nil {
-		return nil
-	}
-
-	if r.audio == nil || r.onBurst == nil && cap(r.out) == 0 {
-		return nil
-	}
-	r.out = r.out[:0]
-	r.flush()
-	return r.out
-}
-
-// AppendFlush finishes the stream at its end, appends the remaining bursts
-// to dst and returns the extended slice. It allocates only when dst has no
-// room for 26 bursts, the most that one slot of samples can complete, and
-// with Tier3 for the 1024 bursts that its delay can hold as well.
-func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
-	if r == nil {
-		return dst
-	}
-
-	if r.audio == nil {
-		return dst
-	}
-	dst = growBursts(dst, r.flushBursts())
-	keep, n := r.out, len(dst)
-	r.out = dst[n:n]
-	r.flush()
-	m := len(r.out)
-	r.out = keep[:0]
-	return dst[:n+m]
-}
-
-func (r *DiscReceiver) flush() {
+func (r *discRx) flush() {
 	if !r.unionFlush() {
 		r.flushSolo()
 	}
 }
 
-func (r *DiscReceiver) flushSolo() {
+func (r *discRx) flushSolo() {
 	var idle [16]int16
 	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
 	for i := range idle {
@@ -306,7 +110,7 @@ func (r *DiscReceiver) flushSolo() {
 	}
 }
 
-func (r *DiscReceiver) run(x []int16) {
+func (r *discRx) run(x []int16) {
 	if !r.front96 {
 		r.runAll(x)
 		return
@@ -323,7 +127,7 @@ func (r *DiscReceiver) run(x []int16) {
 }
 
 //go:noinline
-func (r *DiscReceiver) runAll(x []int16) {
+func (r *discRx) runAll(x []int16) {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	var dn int32
@@ -415,7 +219,7 @@ const (
 	st96Tab
 )
 
-func (r *DiscReceiver) state96() uint8 {
+func (r *discRx) state96() uint8 {
 	var st uint8
 	if r.mid96&mid96Tab != 0 {
 		st |= st96Tab
@@ -445,7 +249,7 @@ func (r *DiscReceiver) state96() uint8 {
 
 //go:noinline
 //go:section .text.run96
-func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
+func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	fed := 0
@@ -657,29 +461,29 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	return n, fed
 }
 
-// OffsetHz returns the DC offset of the last locked stream, in units of
-// the input samples. It is the carrier offset times the gain of the
-// discriminator, plus the offset of its converter.
-func (r *DiscReceiver) OffsetHz() float64 {
-	if r == nil {
-		return 0
-	}
+const coreLagSeconds = 0.01
 
+func (r *leanCore) lagSeconds() float64 {
+	if r.ext != nil {
+		return coreLagSeconds + extQueue*slotSeconds
+	}
+	return coreLagSeconds
+}
+
+func (r *discRx) lagSamples(rate int) int {
+	return int(math.Ceil(max(r.lagSeconds(), r.unionLag()) * float64(rate)))
+}
+
+func (r *discRx) offset() float64 {
 	return float64(float32(r.offsetHz) / r.f.gain)
 }
 
-// DeviationHz returns the outer deviation of the last locked stream, in
-// units of the input samples.
-func (r *DiscReceiver) DeviationHz() float64 {
-	if r == nil {
-		return 0
-	}
-
+func (r *discRx) deviation() float64 {
 	return float64(float32(r.devHz) / r.f.gain)
 }
 
 //go:noinline
-func (r *DiscReceiver) levels() {
+func (r *discRx) levels() {
 	f := &r.f
 	m := float32(f.sum) / frontBlock
 	sq := float32(uint32(f.sq>>32))*(1<<32) + float32(uint32(f.sq))

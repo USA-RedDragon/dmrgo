@@ -386,32 +386,37 @@ func rxRecvs() []rxRecv {
 }
 
 func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
-	cfg := Config{Tier: e.tier}
+	cfg := RxConfig{Tier: e.tier, Rate: basebandRate, Format: IQFormatCU8}
+	var opt *options
 	if e.half {
-		cfg.BasebandHz = BasebandRate / 2
+		opt = halfOpt(ptr(tierOptions(e.tier)))
 	}
 	switch {
 	case e.mode == benchAudio:
 		return receiveAudioAt(t, in.audio, benchAudioHz, e.tier)
 	case in.iq != nil:
 		cfg.Rate = rxByteRate
-		r := mustNew(cfg)
+		r, err := newReceiver(cfg, opt)
+		if err != nil {
+			t.Fatal(err)
+		}
 		var out []Burst
 		for k := 0; k < len(in.iq); k += 1 << 14 {
-			out = append(out, must(r.Write(in.iq[k:min(k+1<<14, len(in.iq))]))...)
+			out = append(out, must(r.writeIQ(in.iq[k:min(k+1<<14, len(in.iq))]))...)
 		}
-		return append(out, r.Flush()...)
+		return append(out, r.flushAll()...)
 	case e.half:
 		h := make([]complex64, len(in.x)/2)
 		for i := range h {
 			h[i] = (in.x[2*i] + in.x[2*i+1]) / 2
 		}
+		cfg.Rate = discRate
 		r := mustNew(cfg)
 		var out []Burst
 		for k := 0; k < len(h); k += 2048 {
-			out = append(out, must(r.WriteBaseband(h[k:min(k+2048, len(h))]))...)
+			out = append(out, must(r.writeBB(h[k:min(k+2048, len(h))]))...)
 		}
-		return append(out, r.Flush()...)
+		return append(out, r.flushAll()...)
 	}
 	return receiveBaseband(in.x, e.tier)
 }

@@ -21,14 +21,14 @@ func TestRawSearchOffset(t *testing.T) {
 				for i, raw := range []uint8{0, 2} {
 					o := discOptions()
 					o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, raw
-					r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { got[i] = append(got[i], *b) }})
+					r, err := newAudioReceiver(AudioRxConfig{Rate: benchAudioHz, Tier: Tier0, OnBursts: each(func(b *Burst) { got[i] = append(got[i], *b) })}, &o)
 					if err != nil {
 						t.Fatal(err)
 					}
 					for k := 0; k < len(in.audio); k += 1024 {
-						must(r.Write(in.audio[k:min(k+1024, len(in.audio))]))
+						must(r.writeAll(in.audio[k:min(k+1024, len(in.audio))]))
 					}
-					r.Flush()
+					r.flushAll()
 				}
 				if len(got[0]) == 0 || len(got[1]) == 0 {
 					t.Fatalf("bursts %d and %d", len(got[0]), len(got[1]))

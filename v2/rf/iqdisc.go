@@ -275,16 +275,14 @@ type iqRx struct {
 	fe        *frontEnd
 	wide      []complex64
 	inChunk   int
-	carry     byteCarry
 	dc        dcBlock
 	signed    bool
 	conv      iqDisc
-	d         DiscReceiver
+	d         *discRx
 	audio     []int16
 	afcN      int
 	afcAvg    complex64
 	afcPull   float32
-	out       []Burst
 	yHist     []complex64
 	yN        int64
 	tunes     *[iqTunes]iqTune
@@ -297,7 +295,7 @@ type iqRx struct {
 	center    float32
 }
 
-func newIQRx(cfg Config, opt options) *iqRx {
+func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r := &iqRx{signed: cfg.Signed}
 	r.dc.init(float64(cfg.BasebandHz))
 	hz := opt.IQHz
@@ -321,17 +319,9 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		n = 1024
 	}
 	r.audio = make([]int16, 0, n)
-	on := cfg.OnBurst
-	if on == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+16)
-		on = func(b *Burst) {
-			if n := len(r.out); n < cap(r.out) {
-				r.out = r.out[:n+1]
-				r.out[n] = *b
-			}
-		}
-	}
-	r.d.setup(DiscConfig{Hz: hz, OnBurst: on, opt: &opt}, false)
+	r.d = cfg.discOf()
+	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt}, false)
+	r.d.sink = cfg.sink
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
@@ -345,9 +335,9 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		r.d.ext = x
 	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
-		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
+		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
-		r.inChunk = max(2*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
+		r.inChunk = max(r.fe.size*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
 	}
 	return r
 }
@@ -498,16 +488,15 @@ func (r *iqRx) tuneWith(hz, dc, lim float32) {
 	}
 }
 
-func (r *iqRx) writeBaseband(x []complex64) []Burst {
+func (r *iqRx) writeBaseband(x []complex64) {
 	if r.conv.taps == nil {
-		return r.writeLean(x)
+		r.writeLean(x)
+		return
 	}
-	r.out = r.out[:0]
 	for _, v := range x {
 		r.sample(v)
 	}
 	r.drain()
-	return r.out
 }
 
 func (r *iqRx) drain() {
@@ -518,13 +507,9 @@ func (r *iqRx) drain() {
 	r.audio = r.audio[:0]
 }
 
-func (r *iqRx) write(iq []byte) []Burst {
-	r.out = r.out[:0]
-	pair, iq := r.carry.split(iq)
-	r.bytes(pair)
+func (r *iqRx) write(iq []byte) {
 	r.bytes(iq)
 	r.drain()
-	return r.out
 }
 
 func (r *iqRx) bytes(iq []byte) {
@@ -535,7 +520,8 @@ func (r *iqRx) bytes(iq []byte) {
 		return
 	}
 	for len(iq) > 0 {
-		n := min(len(iq), r.inChunk) &^ 1
+		n := min(len(iq), r.inChunk)
+		n -= n % r.fe.size
 		if n == 0 {
 			break
 		}
@@ -557,10 +543,8 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 	return r.dc.remove(v)
 }
 
-func (r *iqRx) flush() []Burst {
-	r.out = r.out[:0]
+func (r *iqRx) flush() {
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
 	r.d.flush()
-	return r.out
 }

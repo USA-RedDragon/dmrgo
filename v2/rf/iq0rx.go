@@ -7,9 +7,8 @@ const iq0Chunk = 32
 const iq0LowHz = 9600
 
 type iq0Rx struct {
-	d      DiscReceiver
+	d      *discRx
 	audio  []int16
-	out    []Burst
 	prev   complex64
 	acc    complex64
 	pow    float32
@@ -25,7 +24,6 @@ type iq0Rx struct {
 	poly   int
 	pl     *iq0Poly
 	dc     dcBlock
-	carry  byteCarry
 	signed bool
 }
 
@@ -35,14 +33,7 @@ type iq0Poly struct {
 	ptaps [iq0MaxPoly][iq0MaxDecim]float32
 }
 
-func newIQ0Receiver(cfg Config, opt options) *Receiver {
-	if opt.IQFront == 4 {
-		return &Receiver{iq0: newIQ0Rx(cfg, opt)}
-	}
-	return &Receiver{iqd: newIQ0(cfg, opt)}
-}
-
-func newIQ0Rx(cfg Config, opt options) *iq0Rx {
+func newIQ0Rx(cfg rxSetup, opt options) *iq0Rx {
 	hz := opt.IQHz
 	if hz == 0 {
 		hz = discRate / 2
@@ -71,52 +62,37 @@ func newIQ0Rx(cfg Config, opt options) *iq0Rx {
 		n = 32
 	}
 	r.audio = make([]int16, 0, n)
-	on := cfg.OnBurst
-	if on == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+16)
-		on = func(b *Burst) {
-			if n := len(r.out); n < cap(r.out) {
-				r.out = r.out[:n+1]
-				r.out[n] = *b
-			}
-		}
-	}
-	r.d.setup(DiscConfig{Hz: hz, OnBurst: on, opt: &opt}, false)
+	r.d = cfg.discOf()
+	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt}, false)
+	r.d.sink = cfg.sink
 	return r
 }
 
-func (r *iq0Rx) write(iq []byte) []Burst {
-	r.out = r.out[:0]
-	pair, iq := r.carry.split(iq)
+func (r *iq0Rx) write(s []byte) {
 	var buf [iq0Chunk]complex64
-	for _, s := range [2][]byte{pair, iq} {
-		for len(s) >= 2 {
-			n := min(len(s)/2, iq0Chunk)
-			for i := range n {
-				a, b := s[2*i], s[2*i+1]
-				var v complex64
-				if r.signed {
-					v = complex(float32(int32(a)<<24>>24)/127.5, float32(int32(b)<<24>>24)/127.5)
-				} else {
-					v = complex((float32(a)-127.5)/127.5, (float32(b)-127.5)/127.5)
-				}
-				buf[i] = r.dc.remove(v)
+	for len(s) >= 2 {
+		n := min(len(s)/2, iq0Chunk)
+		for i := range n {
+			a, b := s[2*i], s[2*i+1]
+			var v complex64
+			if r.signed {
+				v = complex(float32(int32(a)<<24>>24)/127.5, float32(int32(b)<<24>>24)/127.5)
+			} else {
+				v = complex((float32(a)-127.5)/127.5, (float32(b)-127.5)/127.5)
 			}
-			r.run(buf[:n])
-			s = s[2*n:]
+			buf[i] = r.dc.remove(v)
 		}
+		r.run(buf[:n])
+		s = s[2*n:]
 	}
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
-	return r.out
 }
 
-func (r *iq0Rx) writeBaseband(x []complex64) []Burst {
-	r.out = r.out[:0]
+func (r *iq0Rx) writeBaseband(x []complex64) {
 	r.run(x)
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
-	return r.out
 }
 
 func (r *iq0Rx) run(x []complex64) {
@@ -362,12 +338,10 @@ func (r *iq0Rx) tune(hz, dc float32) {
 	}
 }
 
-func (r *iq0Rx) flush() []Burst {
-	r.out = r.out[:0]
+func (r *iq0Rx) flush() {
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
 	r.d.flush()
-	return r.out
 }
 
 func iq0Freq(c, d, k, sub, half float32) int16 {

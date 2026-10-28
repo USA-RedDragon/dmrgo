@@ -66,7 +66,7 @@ func lazyDT(hz int) float64 {
 	return -0.9
 }
 
-func newDiscPhase(r *DiscReceiver, hz int, lazy bool, size int64) *discPhase {
+func newDiscPhase(r *discRx, hz int, lazy bool, size int64) *discPhase {
 	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, lazy: lazy}
 	for i := range p.clipAt {
 		p.clipAt[i] = -1

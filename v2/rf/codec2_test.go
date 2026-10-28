@@ -85,11 +85,11 @@ func TestReceiverCodec2Call(t *testing.T) {
 					for i := range h {
 						h[i] = (x[2*i] + x[2*i+1]) / 2
 					}
-					r := mustNew(Config{Tier: rn.tier, BasebandHz: BasebandRate / 2})
+					r := mustNew(RxConfig{Tier: rn.tier, Rate: discRate, Format: IQFormatCU8})
 					for k := 0; k < len(h); k += 2048 {
-						got = append(got, must(r.WriteBaseband(h[k:min(k+2048, len(h))]))...)
+						got = append(got, must(r.writeBB(h[k:min(k+2048, len(h))]))...)
 					}
-					got = append(got, r.Flush()...)
+					got = append(got, r.flushAll()...)
 				} else {
 					got = receiveBaseband(x, rn.tier)
 				}

@@ -494,7 +494,7 @@ func discAudio(x []complex64) []int16 {
 
 func receiveDisc(x []complex64) []rf.Burst {
 	var out []rf.Burst
-	r, err := rf.NewDisc(&rf.DiscConfig{Hz: discHz, Tier: rf.Tier0, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
+	r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: discHz, Tier: rf.Tier0, OnBursts: func(bs []rf.Burst) { out = append(out, bs...) }})
 	if err != nil {
 		panic(err)
 	}
@@ -502,7 +502,7 @@ func receiveDisc(x []complex64) []rf.Burst {
 	for k := 0; k < len(a); k += 1024 {
 		check(r.Write(a[k:min(k+1024, len(a))]))
 	}
-	r.Flush()
+	check(0, r.Flush())
 	return out
 }
 
@@ -553,14 +553,14 @@ func probit(cns []float64, ok, n []int) float64 {
 
 func receive(x []complex64, t rf.Tier) []rf.Burst {
 	var out []rf.Burst
-	r, err := rf.New(&rf.Config{Rate: rxRate, Tier: t, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
+	r, err := rf.NewReceiver(&rf.RxConfig{Rate: rxRate, Format: rf.IQFormatCF32, Tier: t, OnBursts: func(bs []rf.Burst) { out = append(out, bs...) }})
 	if err != nil {
 		panic(err)
 	}
 	for k := 0; k < len(x); k += 4096 {
-		check(r.WriteBaseband(x[k:min(k+4096, len(x))]))
+		check(r.Write(cf32(x[k:min(k+4096, len(x))])))
 	}
-	r.Flush()
+	check(0, r.Flush())
 	return out
 }
 

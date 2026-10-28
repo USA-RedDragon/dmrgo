@@ -1,23 +1,28 @@
-// Package rf recovers DMR bursts from the I/Q samples of a software radio:
-// 4FSK detection, SYNC search and slot timing, soft-decision decoding of each
-// FEC field, and the superframe position of voice bursts.
+// Package rf recovers DMR bursts from the I/Q samples of a software radio
+// and from the output of an FM discriminator: 4FSK detection, SYNC search
+// and slot timing, soft-decision decoding of each FEC field, and the
+// superframe position of voice bursts.
 //
-// New makes a Receiver from a Config. Write takes interleaved 8-bit I/Q at
-// Config.Rate, as rtl_sdr and hackrf_transfer write it, and WriteBaseband
-// takes complex baseband at BasebandRate. Both return the bursts that are
-// complete, or hand each one to Config.OnBurst. Flush ends the stream.
+// NewReceiver makes a Receiver from an RxConfig, for I/Q at RxConfig.Rate
+// in RxConfig.Format: CU8 as rtl_sdr writes it, CS8 as hackrf_transfer
+// writes it, CS16 or CF32. NewAudioReceiver makes an AudioReceiver from an
+// AudioRxConfig, for the samples of a discriminator. Init sets up either
+// one in Tier0 in memory of the caller, for a microcontroller.
 //
-//	rx, err := rf.New(&rf.Config{Rate: 2.048e6, Tier: rf.Tier2})
+// The callback of the config picks the mode. With OnBursts set, Write
+// takes samples and hands the bursts that they complete to OnBursts, and
+// Flush ends the stream. With OnBursts nil, AppendBursts appends the
+// bursts to a slice, and AppendFlush ends the stream.
+//
+//	rx, err := rf.NewReceiver(&rf.RxConfig{Tier: rf.Tier2, Rate: 2048000, Format: rf.IQFormatCU8})
 //	if err != nil {
 //		return err
 //	}
 //	var burst layer2.Burst
-//	bursts, err := rx.Write(iq)
-//	if err != nil {
-//		return err
-//	}
-//	for _, b := range bursts {
-//		data, _ := b.Decoded()
+//	bursts := rx.AppendBursts(nil, iq)
+//	bursts = rx.AppendFlush(bursts)
+//	for i := range bursts {
+//		data, _ := bursts[i].Decoded()
 //		err := burst.DecodeFromBytes(data)
 //		...
 //	}
@@ -27,9 +32,9 @@
 // decodes it, and keeps the LC of the call on each channel. Burst.Hint
 // gives the layer2.Hint of a burst for the voice and data machines.
 //
-// The Tier of the Config sets the detection and its cost, from Tier0, which
-// fits a microcontroller, to Tier3, for offline decoding. New allocates every
-// buffer of the Receiver, and Write, WriteBaseband and Flush allocate
+// The Tier of the config sets the detection and its cost, from Tier0, which
+// fits a microcontroller, to Tier3, for offline decoding. The constructors
+// allocate every buffer of the receiver, and Write and Flush allocate
 // nothing. The README gives the sensitivity, compute and RAM of each tier.
 // (ETSI TS 102 361-1 clauses 6 and 10)
 package rf

@@ -44,7 +44,7 @@ func (b *Burst) Hint() layer2.Hint {
 }
 
 // Monitor follows the TDMA channels of the bursts of one Receiver or
-// DiscReceiver, as a scanner does. It finds the TDMA channel of each
+// AudioReceiver, as a scanner does. It finds the TDMA channel of each
 // BS-sourced burst from the CACHs of its stream, decodes the burst, keeps
 // the superframe position and the embedded LC of each channel, and keeps
 // the LC of the call on each channel from its voice LC header, embedded LC

@@ -11,23 +11,27 @@ import (
 func TestConstructorsNilConfig(t *testing.T) {
 	t.Parallel()
 
-	if _, err := rf.New(nil); err != nil {
-		t.Errorf("New(nil): %v", err)
+	if _, err := rf.NewReceiver(nil); err != nil {
+		t.Errorf("NewReceiver(nil): %v", err)
 	}
-	if _, err := rf.NewDisc(nil); err != nil {
-		t.Errorf("NewDisc(nil): %v", err)
+	if _, err := rf.NewAudioReceiver(nil); err != nil {
+		t.Errorf("NewAudioReceiver(nil): %v", err)
 	}
 	var ce *dmrgo.ConfigError
-	if _, err := rf.NewLowIQ(nil); !errors.As(err, &ce) || ce.Field != "LowIQConfig.OnBurst" {
-		t.Errorf("NewLowIQ(nil): %v", err)
+	if _, err := rf.NewReceiver(&rf.RxConfig{Rate: 1000}); !errors.As(err, &ce) || ce.Field != "RxConfig.Rate" {
+		t.Errorf("NewReceiver at 1 kHz: %v", err)
 	}
-	if _, err := rf.NewLowIQ(&rf.LowIQConfig{Hz: 1000, OnBurst: func(*rf.Burst) {}}); !errors.As(err, &ce) || ce.Field != "LowIQConfig.Hz" {
-		t.Errorf("NewLowIQ at 1 kHz: %v", err)
+	if _, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Bits: 17}); !errors.As(err, &ce) || ce.Field != "AudioRxConfig.Bits" {
+		t.Errorf("NewAudioReceiver with 17 bits: %v", err)
 	}
-	r, err := rf.NewLowIQ(&rf.LowIQConfig{OnBurst: func(*rf.Burst) {}})
+	r, err := rf.NewReceiver(&rf.RxConfig{Tier: rf.Tier0, Rate: 9600, OnBursts: func([]rf.Burst) {}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.WriteIQ16(make([]uint32, 4096))
-	r.Flush()
+	if n, err := r.Write(make([]byte, 4096)); n != 4096 || err != nil {
+		t.Errorf("Write: %d, %v", n, err)
+	}
+	if err := r.Flush(); err != nil {
+		t.Errorf("Flush: %v", err)
+	}
 }

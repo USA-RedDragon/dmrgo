@@ -19,14 +19,14 @@ import (
 func unionReceive(t testing.TB, a []int16, tier Tier) ([]Burst, *discUnion) {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: tier, OnBursts: each(func(b *Burst) { out = append(out, *b) })})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for k := 0; k < len(a); k += 4096 {
-		must(r.Write(a[k:min(k+4096, len(a))]))
+		must(r.writeAll(a[k:min(k+4096, len(a))]))
 	}
-	r.Flush()
+	r.flushAll()
 	e, _ := r.ext.(*softExt)
 	if e == nil {
 		return out, nil
@@ -211,23 +211,23 @@ func TestDiscTier3WriteFlush(t *testing.T) {
 		a := discAudio(x, hz)
 		a = a[:len(a)*2/3]
 		var want []Burst
-		w, err := NewDisc(&DiscConfig{Hz: hz, Tier: Tier3, OnBurst: func(b *Burst) { want = append(want, *b) }})
+		w, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: Tier3, OnBursts: each(func(b *Burst) { want = append(want, *b) })})
 		if err != nil {
 			t.Fatal(err)
 		}
 		for k := 0; k < len(a); k += 4096 {
-			must(w.Write(a[k:min(k+4096, len(a))]))
+			must(w.writeAll(a[k:min(k+4096, len(a))]))
 		}
-		w.Flush()
-		r, err := NewDisc(&DiscConfig{Hz: hz, Tier: Tier3})
+		w.flushAll()
+		r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: Tier3})
 		if err != nil {
 			t.Fatal(err)
 		}
 		var got []Burst
 		for k := 0; k < len(a); k += 4096 {
-			got = append(got, must(r.Write(a[k:min(k+4096, len(a))]))...)
+			got = append(got, must(r.writeAll(a[k:min(k+4096, len(a))]))...)
 		}
-		got = append(got, r.Flush()...)
+		got = append(got, r.flushAll()...)
 		if len(got) != len(want) {
 			t.Fatalf("at %d Hz Write and Flush return %d bursts, OnBurst takes %d", hz, len(got), len(want))
 		}

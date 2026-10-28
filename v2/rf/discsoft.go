@@ -4,12 +4,12 @@ package rf
 
 const discDefaultTier = Tier1
 
-func (r *DiscReceiver) addSoft(opt *options) error {
+func (r *discRx) addSoft(opt *options) error {
 	r.addExt(opt)
 	return nil
 }
 
-func (r *DiscReceiver) addExt(opt *options) {
+func (r *discRx) addExt(opt *options) {
 	if opt.UnionTwins != 0 {
 		r.addUnion(opt)
 		return
@@ -19,9 +19,9 @@ func (r *DiscReceiver) addExt(opt *options) {
 	case opt.CohExt && opt.CohLazy:
 		ph = newDiscPhase(r, r.hz(), true, opt.cohRing())
 	case opt.CohExt:
-		hz, out, d48 := r.hz(), r.out, r.d48
-		_ = r.Init(DiscConfig{Hz: discRate, OnBurst: r.onBurst, opt: opt})
-		r.out, r.d48 = out, d48
+		hz, d48 := r.hz(), r.d48
+		r.setup(discSetup{Hz: discRate, OnBurst: r.onBurst, opt: opt}, false)
+		r.d48 = d48
 		ph = newDiscPhase(r, hz, false, opt.cohRing())
 	}
 	x := softExtOf(opt, 2*r.tm.step)
@@ -40,7 +40,7 @@ func (r *DiscReceiver) addExt(opt *options) {
 	r.ext = x
 }
 
-func (r *DiscReceiver) write(x []int16) {
+func (r *discRx) write(x []int16) {
 	e, _ := r.ext.(*softExt)
 	if e != nil && e.union != nil {
 		e.union.write(x)
@@ -57,7 +57,7 @@ func (r *DiscReceiver) write(x []int16) {
 	}
 }
 
-func (r *DiscReceiver) inputHz() int {
+func (r *discRx) inputHz() int {
 	if e, _ := r.ext.(*softExt); e != nil && e.ph != nil && !e.ph.lazy {
 		return e.ph.inputHz()
 	}

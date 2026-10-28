@@ -35,7 +35,6 @@ type options struct {
 	IQBuf                                int
 	CohSPS                               int
 	CohDataPasses                        int
-	CohRing                              int
 	CohWin                               int
 	DataPasses                           int
 	DataPrior                            float32
@@ -92,6 +91,8 @@ type options struct {
 	IQLow                                uint8
 	LeanChase                            uint8
 	NoMidSearch                          bool
+	IQHalf                               bool
+	CohRing                              uint8
 	UnionTwins                           uint8
 }
 

@@ -28,7 +28,7 @@ func (d *disc48) push(v int16) (int16, bool) {
 	return int16(max(min((acc+1<<14)>>15, 32767), -32768)), true
 }
 
-func (r *DiscReceiver) input(x []int16) {
+func (r *discRx) input(x []int16) {
 	d := &r.d48
 	if !d.on {
 		r.write(x)
@@ -51,7 +51,7 @@ func (r *DiscReceiver) input(x []int16) {
 	}
 }
 
-func (r *DiscReceiver) inputSamples(n int) int {
+func (r *discRx) inputSamples(n int) int {
 	if r.d48.on {
 		return (n + 1) / 2
 	}

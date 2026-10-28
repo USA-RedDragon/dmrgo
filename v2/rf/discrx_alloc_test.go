@@ -5,12 +5,12 @@ import "testing"
 func TestAllocsDiscReceiver(t *testing.T) {
 	slots, _ := benchStream(t, 3)
 	a := discAudio(noisyBaseband(slots, 1400, 20, 1), 9600)
-	var r DiscReceiver
+	var r AudioReceiver
 	dst := make([]Burst, 0, 16)
 	const chunk = 1 << 10
 	pos, bursts := 0, 0
 	if n := testing.AllocsPerRun(1, func() {
-		if err := r.Init(DiscConfig{Hz: 9600}); err != nil {
+		if err := r.Init(AudioRxConfig{Rate: 9600}); err != nil {
 			t.Fatal(err)
 		}
 	}); n != 0 {

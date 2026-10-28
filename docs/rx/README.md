@@ -9,7 +9,7 @@ How `go run -C cmd/rxbench . -update-readme` measures the receiver tables and gr
 - The audio tiers get the audio of an FM discriminator at 9.6 kHz. The sweep makes it from the same noisy signal with the IF filter of a 12.5 kHz radio, so their Eb/N0 is that of the signal at the antenna.
 - The I/Q tiers get the noisy samples at 48 kHz. Low-rate I/Q tier 0 gets them at 9.6 kHz, through the decimation filter of a radio chip: a 255-tap Kaiser-windowed sinc with its -6 dB point at 4.32 kHz.
 - Each point runs more streams until it has enough errors. The 90% point is a linear interpolation between C/N points.
-- CPU is the process time to receive one second of signal. RAM is what the receiver keeps with `OnBurst` set. For audio tier 0 that is the size of `rf.DiscReceiver`, and for low-rate I/Q tier 0 the size of `rf.LowIQReceiver`: their whole state, which `Init` can place in static memory. For the other tiers it is the heap after `New`.
+- CPU is the process time to receive one second of signal. RAM is what the receiver keeps in stream mode, with `OnBursts` set. For audio tier 0 that is the size of `rf.AudioReceiver`, and for low-rate I/Q tier 0 the size of the `rf.Receiver` of a TinyGo build: their whole state, which `Init` can place in static memory. For the other tiers it is the heap after `NewReceiver` or `NewAudioReceiver`.
 - The data is in `v2/rf/testdata/rxbench.json`. `TestRxBench` in `v2/rf` writes it with `DMRRF_RXBENCH=full`.
 
 ## The floors

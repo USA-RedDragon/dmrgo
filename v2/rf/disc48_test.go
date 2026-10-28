@@ -32,20 +32,20 @@ func TestDisc48MatchesHalved(t *testing.T) {
 	a24 := halve48(a48)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		var got, want []Burst
-		r48, err := NewDisc(&DiscConfig{Hz: 48000, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
+		r48, err := NewAudioReceiver(&AudioRxConfig{Rate: 48000, Tier: tier, OnBursts: each(func(b *Burst) { got = append(got, *b) })})
 		if err != nil {
 			t.Fatal(err)
 		}
-		r24, err := NewDisc(&DiscConfig{Hz: 24000, Tier: tier, OnBurst: func(b *Burst) { want = append(want, *b) }})
+		r24, err := NewAudioReceiver(&AudioRxConfig{Rate: 24000, Tier: tier, OnBursts: each(func(b *Burst) { want = append(want, *b) })})
 		if err != nil {
 			t.Fatal(err)
 		}
 		for k := 0; k < len(a48); k += 999 {
-			must(r48.Write(a48[k:min(k+999, len(a48))]))
+			must(r48.writeAll(a48[k:min(k+999, len(a48))]))
 		}
-		r48.Flush()
-		must(r24.Write(a24))
-		r24.Flush()
+		r48.flushAll()
+		must(r24.writeAll(a24))
+		r24.flushAll()
 		if len(got) == 0 || len(got) != len(want) {
 			t.Fatalf("tier %d: %d bursts at 48 kHz, %d at 24 kHz halved by hand", tier, len(got), len(want))
 		}
@@ -65,8 +65,8 @@ func TestDisc48InitAppend(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
 	a := discAudio(noisyBaseband(slots, 1400, 20, 1), 48000)
-	var r DiscReceiver
-	if err := r.Init(DiscConfig{Hz: 48000}); err != nil {
+	var r AudioReceiver
+	if err := r.Init(AudioRxConfig{Rate: 48000}); err != nil {
 		t.Fatal(err)
 	}
 	var got []Burst
@@ -74,8 +74,8 @@ func TestDisc48InitAppend(t *testing.T) {
 		got = r.AppendBursts(got, a[k:k+1])
 	}
 	got = r.AppendFlush(got)
-	var s DiscReceiver
-	if err := s.Init(DiscConfig{Hz: 24000}); err != nil {
+	var s AudioReceiver
+	if err := s.Init(AudioRxConfig{Rate: 24000}); err != nil {
 		t.Fatal(err)
 	}
 	want := s.AppendFlush(s.AppendBursts(nil, halve48(a)))

@@ -35,7 +35,7 @@ type combRx struct {
 	t2           *iqRx
 	ext          *softExt
 	on           func(*Burst)
-	out          []Burst
+	sink         *burstSink
 	pend         [2][]combBurst
 	now, perByte float64
 	mode         int
@@ -61,16 +61,13 @@ func combT2Options(o *options) options {
 	return t
 }
 
-func newComb(cfg Config, opt options) *combRx {
-	c := &combRx{last: math.Inf(-1), on: cfg.OnBurst, mode: opt.CombMode, perByte: 0.5 / cfg.Rate}
+func newComb(cfg rxSetup, opt options) *combRx {
+	c := &combRx{last: math.Inf(-1), on: cfg.OnBurst, sink: cfg.sink, mode: opt.CombMode, perByte: 1 / (cfg.Rate * float64(cfg.Format.bytes()))}
 	n := opt.passSlots() + 4*cfg.LookbackSlots + 512
 	for i := range c.pend {
 		c.pend[i] = make([]combBurst, 0, 2*n)
 	}
 	c.hold = float64(cfg.LookbackSlots+16) * slotSeconds
-	if c.on == nil {
-		c.out = make([]Burst, 0, 4*n+4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2))
-	}
 	c3 := cfg
 	c3.OnBurst = func(b *Burst) { c.add(0, b, &c.t3.side) }
 	c.t3 = newEngine(c3, opt)
@@ -83,7 +80,7 @@ func newComb(cfg Config, opt options) *combRx {
 		}
 		c.add(1, b, &s)
 	}
-	c2.LookbackSlots = 8
+	c2.LookbackSlots, c2.disc = 8, nil
 	c.t2 = newIQRx(c2, o2)
 	c.ext, _ = c.t2.d.ext.(*softExt)
 	return c
@@ -99,30 +96,24 @@ func (c *combRx) add(i int, b *Burst, s *combSide) {
 	}
 }
 
-func (c *combRx) write(iq []byte) []Burst {
-	c.out = c.out[:0]
+func (c *combRx) write(iq []byte) {
 	c.t3.write(iq)
 	c.t2.write(iq)
 	c.now += float64(len(iq)) * c.perByte
 	c.release(c.horizon())
-	return c.out
 }
 
-func (c *combRx) writeBaseband(x []complex64) []Burst {
-	c.out = c.out[:0]
+func (c *combRx) writeBaseband(x []complex64) {
 	c.t3.writeBaseband(x)
 	c.t2.writeBaseband(x)
 	c.now += float64(len(x)) / float64(c.t3.cfg.BasebandHz)
 	c.release(c.horizon())
-	return c.out
 }
 
-func (c *combRx) flush() []Burst {
-	c.out = c.out[:0]
+func (c *combRx) flush() {
 	c.t3.flush()
 	c.t2.flush()
 	c.release(math.Inf(1))
-	return c.out
 }
 
 func (c *combRx) horizon() float64 {
@@ -184,10 +175,7 @@ func (c *combRx) emit(b *Burst) {
 		c.on(b)
 		return
 	}
-	if n := len(c.out); n < cap(c.out) {
-		c.out = c.out[:n+1]
-		c.out[n] = *b
-	}
+	c.sink.put(b)
 }
 
 func isVoice(b *Burst) bool {

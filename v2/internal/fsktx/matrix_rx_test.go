@@ -37,14 +37,14 @@ func (p rxPath) run(y []complex64) []rf.Burst {
 
 func discBursts(a []int16, hz int, tier rf.Tier) []rf.Burst {
 	var out []rf.Burst
-	r, err := rf.NewDisc(&rf.DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
+	r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier, OnBursts: func(bs []rf.Burst) { out = append(out, bs...) }})
 	if err != nil {
 		panic(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
 		check(r.Write(a[k:min(k+1024, len(a))]))
 	}
-	r.Flush()
+	check(0, r.Flush())
 	return out
 }
 
@@ -69,14 +69,14 @@ func dither(b []byte) {
 
 func nativeBursts(b []byte, rate int) []rf.Burst {
 	var got []rf.Burst
-	r, err := rf.New(&rf.Config{Rate: float64(rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
+	r, err := rf.NewReceiver(&rf.RxConfig{Rate: rate, Format: rf.IQFormatCS8, Tier: rf.Tier1, OnBursts: func(bs []rf.Burst) { got = append(got, bs...) }})
 	if err != nil {
 		panic(err)
 	}
 	for k := 0; k < len(b); k += 1 << 16 {
 		check(r.Write(b[k:min(k+1<<16, len(b))]))
 	}
-	r.Flush()
+	check(0, r.Flush())
 	return got
 }
 

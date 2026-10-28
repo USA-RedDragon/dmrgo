@@ -1,6 +1,9 @@
 package rf
 
-import "math"
+import (
+	"encoding/binary"
+	"math"
+)
 
 const (
 	cicOrder       = 3
@@ -43,26 +46,9 @@ func (d *dcBlock) remove(v complex64) complex64 {
 	return v - d.dc
 }
 
-type byteCarry struct {
-	pair [2]byte
-	odd  byte
-	held bool
-}
-
-func (c *byteCarry) split(iq []byte) (pair, rest []byte) {
-	if c.held && len(iq) > 0 {
-		c.pair, c.held = [2]byte{c.odd, iq[0]}, false
-		pair, iq = c.pair[:], iq[1:]
-	}
-	if len(iq)&1 != 0 {
-		c.odd, c.held = iq[len(iq)-1], true
-		iq = iq[:len(iq)-1]
-	}
-	return pair, iq
-}
-
 type frontEnd struct {
-	signed bool
+	format IQFormat
+	size   int
 	dec    int
 	gain   float32
 	integ  [cicOrder][2]int64
@@ -77,11 +63,11 @@ type frontEnd struct {
 	dc     dcBlock
 }
 
-func newFrontEnd(rate float64, signed bool, out float64) *frontEnd {
+func newFrontEnd(rate float64, format IQFormat, out float64) *frontEnd {
 	dec := max(int(rate/(4*out)), 1)
 	mid := rate / float64(dec)
-	f := &frontEnd{signed: signed, dec: dec, step: mid / out}
-	f.gain = float32(1 / (255 * math.Pow(float64(dec), cicOrder)))
+	f := &frontEnd{format: format, size: format.bytes(), dec: dec, step: mid / out}
+	f.gain = float32(1 / (frontScale(format) * math.Pow(float64(dec), cicOrder)))
 	f.dc.init(mid)
 	if f.step == 1 {
 		return f
@@ -117,15 +103,49 @@ func bessel0(x float64) float64 {
 	return s
 }
 
+func frontScale(format IQFormat) float64 {
+	switch format {
+	case IQFormatCU8, IQFormatCS8:
+		return 255
+	case IQFormatCF32:
+		return cf32Scale
+	case IQFormatDefault, IQFormatCS16:
+	}
+	return 32768
+}
+
+const cf32Scale = 1 << 23
+
+func (f *frontEnd) sample(in []byte) (re, im int64) {
+	switch f.format {
+	case IQFormatCU8:
+		return 2*int64(in[0]) - 255, 2*int64(in[1]) - 255
+	case IQFormatCS8:
+		return 2 * signed8(in[0]), 2 * signed8(in[1])
+	case IQFormatCF32:
+		return cf32Fixed(in[0:4]), cf32Fixed(in[4:8])
+	case IQFormatDefault, IQFormatCS16:
+	}
+	return int64(int16(binary.LittleEndian.Uint16(in))), int64(int16(binary.LittleEndian.Uint16(in[2:])))
+}
+
+func cf32Fixed(b []byte) int64 {
+	v := math.Float32frombits(binary.LittleEndian.Uint32(b))
+	switch {
+	case v >= 2:
+		return 2 * cf32Scale
+	case v <= -2:
+		return -2 * cf32Scale
+	case v == v:
+		return int64(v * cf32Scale)
+	}
+	return 0
+}
+
 func (f *frontEnd) process(in []byte, out []complex64) int {
 	w := 0
-	for i := 0; i+1 < len(in); i += 2 {
-		var re, im int64
-		if f.signed {
-			re, im = 2*signed8(in[i]), 2*signed8(in[i+1])
-		} else {
-			re, im = 2*int64(in[i])-255, 2*int64(in[i+1])-255
-		}
+	for i := 0; i+f.size <= len(in); i += f.size {
+		re, im := f.sample(in[i:])
 		for s := range cicOrder {
 			f.integ[s][0] += re
 			f.integ[s][1] += im

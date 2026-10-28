@@ -6,6 +6,7 @@ import (
 	"math/bits"
 	"math/rand/v2"
 	"testing"
+	"unsafe"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 )
@@ -58,13 +59,15 @@ func TestLowIQISI(t *testing.T) {
 	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
 	for seed := uint64(1); seed <= 3; seed++ {
 		y := lowIQ(noisyBaseband(slots, 1400, 25, seed), iq0LowHz)
-		var r LowIQReceiver
+		var r Receiver
 		var got []Burst
-		if err := r.Init(LowIQConfig{OnBurst: func(b *Burst) { got = append(got, *b) }, opt: &o}); err != nil {
+		r.setLow(RxConfig{Rate: iq0LowHz, Format: IQFormatCF32, OnBursts: func(bs []Burst) { got = append(got, bs...) }}, &o)
+		if _, err := r.Write(cf32(y)); err != nil {
 			t.Fatal(err)
 		}
-		r.WriteBaseband(y)
-		r.Flush()
+		if err := r.Flush(); err != nil {
+			t.Fatal(err)
+		}
 		if exact, total := exactFrames(slots, got); exact != total || total == 0 {
 			t.Errorf("seed %d: %d of %d voice frames exact", seed, exact, total)
 		}
@@ -73,31 +76,41 @@ func TestLowIQISI(t *testing.T) {
 
 func TestLowIQConfig(t *testing.T) {
 	t.Parallel()
-	var r LowIQReceiver
-	on := func(*Burst) {}
+	var r Receiver
+	on := func([]Burst) {}
 	for _, c := range []struct {
-		cfg   LowIQConfig
+		cfg   RxConfig
 		field string
 	}{
-		{LowIQConfig{Hz: 48000, OnBurst: on}, "LowIQConfig.Hz"},
-		{LowIQConfig{Hz: 24000, OnBurst: on}, "LowIQConfig.Hz"},
-		{LowIQConfig{}, "LowIQConfig.OnBurst"},
+		{RxConfig{Rate: 48000, OnBursts: on}, "RxConfig.Rate"},
+		{RxConfig{Rate: 24000, OnBursts: on}, "RxConfig.Rate"},
+		{RxConfig{}, "RxConfig.Rate"},
+		{RxConfig{Rate: 9600, Tier: Tier1}, "RxConfig.Tier"},
+		{RxConfig{Rate: 9600, Tier: Tier(9)}, "RxConfig.Tier"},
+		{RxConfig{Rate: 9600, Format: IQFormat(9)}, "RxConfig.Format"},
+		{RxConfig{Rate: 9600, OffsetHz: 4800}, "RxConfig.OffsetHz"},
+		{RxConfig{Rate: 12000, LookbackSlots: 2}, "RxConfig.LookbackSlots"},
 	} {
 		err := r.Init(c.cfg)
 		if e := (*dmrgo.ConfigError)(nil); !errors.As(err, &e) || e.Field != c.field {
 			t.Errorf("%+v: got %v, want a ConfigError for %s", c.cfg, err, c.field)
 		}
+		if r.mode != rxModeNone {
+			t.Errorf("%+v: Init set up the receiver", c.cfg)
+		}
 	}
-	if err := r.Init(LowIQConfig{OnBurst: on}); err != nil {
-		t.Errorf("default Hz: %v", err)
+	for _, c := range []RxConfig{{Rate: 9600, OnBursts: on}, {Rate: 12000}, {Rate: 9600, Format: IQFormatCF32, OffsetHz: -4799}} {
+		if err := r.Init(c); err != nil {
+			t.Errorf("%+v: %v", c, err)
+		}
 	}
 }
 
 func TestLowIQWeakNoiseKeepsTune(t *testing.T) {
 	t.Parallel()
 	for _, sigma := range []float64{4, 12, 24} {
-		var r LowIQReceiver
-		if err := r.Init(LowIQConfig{OnBurst: func(*Burst) {}}); err != nil {
+		var r Receiver
+		if err := r.Init(RxConfig{Rate: iq0LowHz, OnBursts: func([]Burst) {}}); err != nil {
 			t.Fatal(err)
 		}
 		rng := rand.New(rand.NewPCG(1, uint64(sigma)))
@@ -107,10 +120,12 @@ func TestLowIQWeakNoiseKeepsTune(t *testing.T) {
 				re, im := int16(math.Round(rng.NormFloat64()*sigma)), int16(math.Round(rng.NormFloat64()*sigma))
 				x[i] = uint32(uint16(re)) | uint32(uint16(im))<<16
 			}
-			r.WriteIQ16(x)
+			if _, err := r.Write(unsafe.Slice((*byte)(unsafe.Pointer(&x[0])), 4*len(x))); err != nil {
+				t.Fatal(err)
+			}
 		}
-		if r.r.hz != 0 {
-			t.Errorf("noise of %v LSB tuned the AFC to %.0f Hz", sigma, r.r.hz)
+		if r.low.hz != 0 {
+			t.Errorf("noise of %v LSB tuned the AFC to %.0f Hz", sigma, r.low.hz)
 		}
 	}
 }

@@ -317,8 +317,8 @@
 //     hytera.ErrCode: returned by the transport/hytera decoders.
 //   - mmdvm.ErrShort, mmdvm.ErrLength, mmdvm.ErrCommand: returned by the
 //     transport/mmdvm decoders.
-//   - rf.ErrWriteTooLong: returned by a receiver without OnBurst for a call
-//     that is too long for its burst buffer. rf.ErrNilBurst: returned by
+//   - rf.ErrNotSetUp: returned by Write and Flush of a receiver that
+//     neither its constructor nor Init set up. rf.ErrNilBurst: returned by
 //     Monitor.Burst for a nil Monitor or Burst.
 //   - codec2.ErrUnavailable, codec2.ErrUnsupportedMode,
 //     codec2.ErrFrameLength, codec2.ErrClosed: returned by the Codec2

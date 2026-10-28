@@ -133,17 +133,17 @@ func runMMDVM(ctx context.Context, bin, path string, cc int) ([]cmpFrame, error)
 func oursFrames(t *testing.T, a []int16, hz int) []cmpFrame {
 	t.Helper()
 	var fr []cmpFrame
-	r, err := NewDisc(&DiscConfig{Hz: hz, OnBurst: func(b *Burst) {
+	r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, OnBursts: each(func(b *Burst) {
 		d, _ := b.Decoded()
 		fr = append(fr, cmpFrame{sec: b.Seconds, data: d})
-	}})
+	})})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
-		must(r.Write(a[k:min(k+1024, len(a))]))
+		must(r.writeAll(a[k:min(k+1024, len(a))]))
 	}
-	r.Flush()
+	r.flushAll()
 	return fr
 }
 

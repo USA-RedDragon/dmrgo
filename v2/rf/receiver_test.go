@@ -38,12 +38,12 @@ func basebandStream(slots []rftx.BSSlot, offsetHz float64) []complex64 {
 }
 
 func receiveBaseband(x []complex64, t Tier) []Burst {
-	r := mustNew(Config{Rate: basebandRate, Tier: t})
+	r := mustNew(RxConfig{Rate: basebandRate, Tier: t, Format: IQFormatCU8})
 	var out []Burst
 	for k := 0; k < len(x); k += 4096 {
-		out = append(out, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
+		out = append(out, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
 	}
-	return append(out, r.Flush()...)
+	return append(out, r.flushAll()...)
 }
 
 func exactFrames(slots []rftx.BSSlot, got []Burst) (exact, total int) {
@@ -114,18 +114,18 @@ func TestReceiverHalfRate(t *testing.T) {
 	for i := range h {
 		h[i] = (x[2*i] + x[2*i+1]) / 2
 	}
-	r := mustNew(Config{Tier: Tier0, BasebandHz: BasebandRate / 2})
+	r := mustNew(RxConfig{Tier: Tier0, Rate: discRate, Format: IQFormatCU8})
 	var got []Burst
 	for k := 0; k < len(h); k += 2048 {
-		got = append(got, must(r.WriteBaseband(h[k:min(k+2048, len(h))]))...)
+		got = append(got, must(r.writeBB(h[k:min(k+2048, len(h))]))...)
 	}
-	got = append(got, r.Flush()...)
+	got = append(got, r.flushAll()...)
 	half, _ := exactFrames(built.Slots, got)
-	t.Logf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, BasebandRate, half, BasebandRate/2)
+	t.Logf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, basebandRate, half, basebandRate/2)
 	if full < total*9/10 || half < full-total/20 {
-		t.Errorf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, BasebandRate, half, BasebandRate/2)
+		t.Errorf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, basebandRate, half, basebandRate/2)
 	}
-	if _, err := New(&Config{Tier: Tier2, BasebandHz: BasebandRate / 2}); err == nil {
+	if _, err := NewReceiver(&RxConfig{Tier: Tier2, Rate: discRate, Format: IQFormatCU8}); err == nil {
 		t.Error("Tier2 takes input at half rate")
 	}
 }
@@ -136,15 +136,15 @@ func TestReceiverLowRate(t *testing.T) {
 	x := noisyBaseband(slots, 1400, 25, 3)
 	for _, hz := range []int{iq0LowHz, discRate / 2} {
 		y := lowIQ(x, hz)
-		r := mustNew(Config{BasebandHz: hz})
-		if r.iql == nil {
+		r := mustNew(RxConfig{Tier: Tier0, Rate: hz, Format: IQFormatCU8})
+		if r.mode != rxModeLow {
 			t.Fatalf("%d Hz: not the low rate receiver", hz)
 		}
 		var got []Burst
 		for k := 0; k < len(y); k += 1000 {
-			got = append(got, must(r.WriteBaseband(y[k:min(k+1000, len(y))]))...)
+			got = append(got, must(r.writeBB(y[k:min(k+1000, len(y))]))...)
 		}
-		got = append(got, r.Flush()...)
+		got = append(got, r.flushAll()...)
 		if exact, total := exactFrames(slots, got); exact != total || total == 0 {
 			t.Errorf("%d Hz WriteBaseband: %d of %d voice frames exact", hz, exact, total)
 		}
@@ -160,23 +160,27 @@ func TestReceiverLowRate(t *testing.T) {
 					}
 				}
 			}
-			r = mustNew(Config{BasebandHz: hz, Signed: signed})
+			f := IQFormatCU8
+			if signed {
+				f = IQFormatCS8
+			}
+			r = mustNew(RxConfig{Tier: Tier0, Rate: hz, Format: f})
 			got = got[:0]
 			for k := 0; k < len(b); k += 1001 {
-				got = append(got, must(r.Write(b[k:min(k+1001, len(b))]))...)
+				got = append(got, must(r.writeIQ(b[k:min(k+1001, len(b))]))...)
 			}
-			got = append(got, r.Flush()...)
+			got = append(got, r.flushAll()...)
 			if exact, total := exactFrames(slots, got); exact != total || total == 0 {
 				t.Errorf("%d Hz Write, signed %v: %d of %d voice frames exact", hz, signed, exact, total)
 			}
 		}
 	}
-	for _, c := range []Config{
-		{Tier: Tier1, BasebandHz: iq0LowHz},
-		{BasebandHz: iq0LowHz, Rate: 2 * iq0LowHz},
-		{BasebandHz: 16000},
+	for _, c := range []RxConfig{
+		{Tier: Tier1, Rate: iq0LowHz},
+		{Tier: Tier0, Rate: 2 * iq0LowHz},
+		{Tier: Tier0, Rate: 16000},
 	} {
-		if _, err := New(&c); err == nil {
+		if _, err := NewReceiver(&c); err == nil {
 			t.Errorf("New took %+v", c)
 		}
 	}
@@ -194,13 +198,13 @@ func TestReceiverOnBurst(t *testing.T) {
 	for _, tier := range []Tier{Tier0, Tier2} {
 		want := receiveBaseband(x, tier)
 		var got []Burst
-		r := mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
+		r := mustNew(RxConfig{Rate: basebandRate, Tier: tier, OnBursts: each(func(b *Burst) { got = append(got, *b) }), Format: IQFormatCU8})
 		for k := 0; k < len(x); k += 4096 {
-			if out := must(r.WriteBaseband(x[k:min(k+4096, len(x))])); len(out) != 0 {
+			if out := must(r.writeBB(x[k:min(k+4096, len(x))])); len(out) != 0 {
 				t.Fatalf("tier %d: WriteBaseband returned %d bursts", tier, len(out))
 			}
 		}
-		if out := r.Flush(); len(out) != 0 {
+		if out := r.flushAll(); len(out) != 0 {
 			t.Fatalf("tier %d: Flush returned %d bursts", tier, len(out))
 		}
 		if len(got) != len(want) || len(want) == 0 {
@@ -224,15 +228,15 @@ func BenchmarkReceiver(b *testing.B) {
 	x := noisyBaseband(built.Slots, 1200, 6, 3)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		b.Run(strconv.Itoa(int(tier)), func(b *testing.B) {
-			r := mustNew(Config{Rate: basebandRate, Tier: tier})
+			r := mustNew(RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCU8})
 			b.ReportAllocs()
 			b.ResetTimer()
 			start := time.Now()
 			for b.Loop() {
 				for k := 0; k < len(x); k += 4096 {
-					must(r.WriteBaseband(x[k:min(k+4096, len(x))]))
+					must(r.writeBB(x[k:min(k+4096, len(x))]))
 				}
-				r.Flush()
+				r.flushAll()
 			}
 			b.ReportMetric(float64(time.Since(start).Nanoseconds())/float64(b.N)/(float64(len(x))/basebandRate), "ns/signal-s")
 		})
@@ -250,12 +254,12 @@ func TestReceiverWithoutWarmUp(t *testing.T) {
 	x := noisyBaseband(built.Slots, 1200, 20, 5)
 	o := tierOptions(Tier3)
 	o.WarmUp = false
-	r := mustNew(Config{Rate: basebandRate, opt: &o})
+	r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
 	var got []Burst
 	for k := 0; k < len(x); k += 4096 {
-		got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
+		got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
 	}
-	got = append(got, r.Flush()...)
+	got = append(got, r.flushAll()...)
 	exact, total := exactFrames(built.Slots, got)
 	if exact < total*9/10 {
 		t.Errorf("%d of %d frames exact", exact, total)
@@ -402,12 +406,12 @@ func TestReceiverTwoPass(t *testing.T) {
 	var one, two, total int
 	for seed := range testmode.N(6, 6, 2) {
 		x := d.inputAt200[seed]()
-		r := mustNew(Config{Rate: basebandRate, opt: &o})
+		r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
 		var got []Burst
 		for k := 0; k < len(x); k += 4096 {
-			got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
+			got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
 		}
-		one += scoreMS(d.truth, append(got, r.Flush()...))["ambe_c0c1"].Exact
+		one += scoreMS(d.truth, append(got, r.flushAll()...))["ambe_c0c1"].Exact
 		sc := scoreMS(d.truth, slices.Clone(d.tier3At200[seed]()))["ambe_c0c1"]
 		two += sc.Exact
 		total += sc.Truth

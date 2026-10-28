@@ -47,7 +47,7 @@ type sweepResult struct {
 	Cost  *sweepCost        `json:"cost,omitempty"`
 }
 
-func (j *sweepJob) config(t testing.TB) Config {
+func (j *sweepJob) config(t testing.TB) (RxConfig, *options) {
 	t.Helper()
 	tier := Tier0 + Tier(j.Tier)
 	o := discOptions()
@@ -66,7 +66,7 @@ func (j *sweepJob) config(t testing.TB) Config {
 	if j.Disc {
 		hz = basebandRate
 	}
-	return Config{Rate: basebandRate, Tier: tier, LookbackSlots: j.Lookback, BasebandHz: hz, opt: &o}
+	return RxConfig{Rate: hz, Format: IQFormatCF32, Tier: tier, LookbackSlots: j.Lookback}, &o
 }
 
 func (j *sweepJob) hz() int {
@@ -89,7 +89,7 @@ func (j *sweepJob) input(x []complex64) []complex64 {
 
 type sweepRx struct {
 	r *Receiver
-	d *DiscReceiver
+	d *AudioReceiver
 }
 
 type sweepInput struct {
@@ -97,18 +97,18 @@ type sweepInput struct {
 	a []int16
 }
 
-func (j *sweepJob) newRx(cfg Config) sweepRx {
+func (j *sweepJob) newRx(cfg RxConfig, o *options) sweepRx {
 	if j.Disc {
-		d, err := NewDisc(&DiscConfig{Hz: j.audioHz(), OnBurst: cfg.OnBurst, opt: cfg.opt})
+		d, err := newAudioReceiver(AudioRxConfig{Rate: j.audioHz(), OnBursts: cfg.OnBursts}, o)
 		if err != nil {
 			panic(err)
 		}
-		if cfg.opt.SoftExt {
-			d.addExt(cfg.opt)
+		if o.SoftExt {
+			d.addExt(o)
 		}
 		return sweepRx{d: d}
 	}
-	return sweepRx{r: mustNew(cfg)}
+	return sweepRx{r: mustNewOpt(cfg, *o)}
 }
 
 func (s sweepRx) convert(j *sweepJob, x []complex64) sweepInput {
@@ -124,18 +124,18 @@ func (s sweepRx) write(in sweepInput, lo, hi int) {
 	for k := lo; k < hi; k += 4096 {
 		e := min(k+4096, hi)
 		if s.d != nil {
-			must(s.d.Write(in.a[k:e]))
+			must(s.d.writeAll(in.a[k:e]))
 		} else {
-			must(s.r.WriteBaseband(in.x[k:e]))
+			must(s.r.writeBB(in.x[k:e]))
 		}
 	}
 }
 
 func (s sweepRx) flush() {
 	if s.d != nil {
-		s.d.Flush()
+		s.d.flushAll()
 	} else {
-		s.r.Flush()
+		s.r.flushAll()
 	}
 }
 
@@ -153,10 +153,10 @@ func (j *sweepJob) audioHz() int {
 	return j.Hz
 }
 
-func (j *sweepJob) receive(cfg Config, x []complex64) ([]Burst, float64, float64) {
+func (j *sweepJob) receive(cfg RxConfig, o *options, x []complex64) ([]Burst, float64, float64) {
 	var out []Burst
-	cfg.OnBurst = func(b *Burst) { out = append(out, *b) }
-	r := j.newRx(cfg)
+	cfg.OnBursts = func(bs []Burst) { out = append(out, bs...) }
+	r := j.newRx(cfg, o)
 	in := r.convert(j, x)
 	cpu := threadCPUSeconds(func() {
 		r.write(in, 0, in.len())
@@ -179,13 +179,13 @@ func TestSweepWorker(t *testing.T) {
 	if err := json.Unmarshal(b, &j); err != nil {
 		t.Fatal(err)
 	}
-	cfg := j.config(t)
-	if _, err := New(&cfg); err != nil {
+	cfg, o := j.config(t)
+	if _, err := newReceiver(cfg, o); err != nil {
 		t.Fatal(err)
 	}
 	var res sweepResult
 	if j.Cost {
-		res.Cost = sweepCosts(t, &j, cfg)
+		res.Cost = sweepCosts(t, &j, cfg, o)
 	}
 	slots, truth := benchStream(t, j.Superframes)
 	var fm, env []float64
@@ -207,7 +207,7 @@ func TestSweepWorker(t *testing.T) {
 			} else {
 				x = noisyBaseband(slots, j.Offset, c.CN, c.Seed)
 			}
-			got, cpu, sec := j.receive(cfg, x)
+			got, cpu, sec := j.receive(cfg, o, x)
 			sc := scoreBench(truth, got)
 			if fm != nil {
 				sc = scoreMS(truth, got)
@@ -225,13 +225,13 @@ func TestSweepWorker(t *testing.T) {
 	}
 }
 
-func sweepCosts(t testing.TB, j *sweepJob, cfg Config) *sweepCost {
+func sweepCosts(t testing.TB, j *sweepJob, cfg RxConfig, o *options) *sweepCost {
 	var c sweepCost
 	var a, b runtime.MemStats
 	count := 0
-	cfg.OnBurst = func(*Burst) { count++ }
+	cfg.OnBursts = func(bs []Burst) { count += len(bs) }
 	runtime.ReadMemStats(&a)
-	r := j.newRx(cfg)
+	r := j.newRx(cfg, o)
 	runtime.ReadMemStats(&b)
 	c.RAMBytes = int(b.TotalAlloc - a.TotalAlloc)
 	const seconds = 300
@@ -246,7 +246,7 @@ func sweepCosts(t testing.TB, j *sweepJob, cfg Config) *sweepCost {
 	c.FalsePerHour = float64(count) * 3600 * float64(j.rate()) / float64(n)
 	c.SearchNsPerSecond = cpu * 1e9 * float64(j.rate()) / float64(n)
 	slots, _ := benchStream(t, 6)
-	ar := j.newRx(cfg)
+	ar := j.newRx(cfg, o)
 	in := ar.convert(j, noisyBaseband(slots, j.Offset, 10, 1))
 	const chunk = 1 << 12
 	ar.write(in, 0, chunk)

@@ -4,8 +4,6 @@ import (
 	"math"
 	"math/bits"
 	"unsafe"
-
-	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 const (
@@ -33,120 +31,8 @@ var iqLowAtan = [16]uint32{
 	0x01FC12E4, 0x01E214E0, 0x01C816C2, 0x01AE188A, 0x01951A38, 0x017D1BCD, 0x01661D4A, 0x01501EB0,
 }
 
-// LowIQConfig configures a LowIQReceiver.
-type LowIQConfig struct {
-	// Hz is the rate of the complex baseband: 9600 or 12000. 0 means
-	// 9600.
-	Hz int
-	// OffsetHz is the frequency of the carrier relative to the center of
-	// the I/Q, in Hz, when the oscillator of the radio is known to be off,
-	// as Config.OffsetHz is. It must be under Hz/2 in size. 0 means a
-	// centered carrier.
-	OffsetHz float64
-	// OnBurst receives each burst; the receiver needs it. The burst is
-	// valid only during the call.
-	OnBurst func(*Burst)
-	opt     *options
-}
-
-// LowIQReceiver is the Tier 0 receiver for complex baseband at 9.6 or 12
-// kHz that is already filtered to the channel, as New makes it for a
-// BasebandHz of 9600 or 12000, in memory of the caller. It does not
-// allocate. Its methods do nothing before Init. On a Cortex-M4F at 9.6 kHz
-// it needs about 3.9 MHz and 2 KB with its stack, built with TinyGo -opt z.
-type LowIQReceiver struct {
-	r iqLowRx
-}
-
-var (
-	errLowIQHz      = &dmrgo.ConfigError{Type: "rf", Field: "LowIQConfig.Hz"}
-	errLowIQOnBurst = &dmrgo.ConfigError{Type: "rf", Field: "LowIQConfig.OnBurst"}
-	errLowIQOffset  = &dmrgo.ConfigError{Type: "rf", Field: "LowIQConfig.OffsetHz"}
-)
-
-// NewLowIQ returns a LowIQReceiver of cfg. A nil cfg means the zero
-// LowIQConfig. It returns the errors of Init. It allocates the receiver;
-// Init sets up one in memory of the caller instead.
-func NewLowIQ(cfg *LowIQConfig) (*LowIQReceiver, error) {
-	var c LowIQConfig
-	if cfg != nil {
-		c = *cfg
-	}
-	r := new(LowIQReceiver)
-	if err := r.Init(c); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-// Init sets up r for cfg, in place of any state it holds. It returns a
-// *dmrgo.ConfigError for an Hz other than 9600 or 12000, or a nil OnBurst. It
-// does not allocate, so that r can live in memory of the caller.
-func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
-	if r == nil {
-		return dmrgo.ErrNilReceiver
-	}
-
-	if cfg.Hz == 0 {
-		cfg.Hz = iq0LowHz
-	}
-	if cfg.Hz != iq0LowHz && cfg.Hz != discRate/2 {
-		return errLowIQHz
-	}
-	if cfg.OnBurst == nil {
-		return errLowIQOnBurst
-	}
-	if !(cfg.OffsetHz < float64(cfg.Hz)/2 && cfg.OffsetHz > -float64(cfg.Hz)/2) {
-		return errLowIQOffset
-	}
-	r.r.init(cfg.Hz, cfg.OnBurst, cfg.opt)
-	r.r.center(float32(cfg.OffsetHz))
-	return nil
-}
-
-// WriteBaseband processes the samples x and hands the bursts that they
-// complete to OnBurst. It takes 1 as 4096 of WriteIQ16 and clips each part
-// at ±8.
-func (r *LowIQReceiver) WriteBaseband(x []complex64) {
-	if r == nil {
-		return
-	}
-
-	if r.r.d.audio != nil {
-		r.r.writeBaseband(x)
-	}
-}
-
-// WriteIQ16 processes the samples x, as a radio chip delivers them, and
-// hands the bursts that they complete to OnBurst. Each word holds I in its
-// low 16 bits and Q in its high 16 bits, two's complement: in the memory
-// of a little-endian chip, the pairs of int16 I, Q. The scale does not
-// matter, but I and Q must be above -32768.
-func (r *LowIQReceiver) WriteIQ16(x []uint32) {
-	if r == nil {
-		return
-	}
-
-	if r.r.d.audio == nil {
-		return
-	}
-	r.r.d.out = r.r.d.out[:0]
-	r.r.run(x)
-}
-
-// Flush finishes the stream at its end.
-func (r *LowIQReceiver) Flush() {
-	if r == nil {
-		return
-	}
-
-	if r.r.d.audio != nil {
-		r.r.flush()
-	}
-}
-
 type iqLowRx struct {
-	d           DiscReceiver
+	d           discRx
 	q           uint32
 	ar, ai, pow int32
 	afcAvg      complex64
@@ -164,54 +50,51 @@ func (r *iqLowRx) center(hz float32) {
 
 func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) {
 	*r = iqLowRx{}
-	r.d.setup(DiscConfig{Hz: hz, OnBurst: on, opt: opt, lowIQ: true}, false)
+	r.d.setup(discSetup{Hz: hz, OnBurst: on, opt: opt, lowIQ: true}, false)
 	r.d.iqLow = hz == iq0LowHz
 }
 
-type iqLowNew struct {
-	iqLowRx
-	carry  byteCarry
-	signed bool
-}
-
-func newIQLowRx(cfg Config, opt options) *iqLowNew {
-	r := &iqLowNew{signed: cfg.Signed}
-	r.init(cfg.BasebandHz, cfg.OnBurst, &opt)
-	r.center(float32(cfg.OffsetHz))
-	if cfg.OnBurst == nil {
-		r.d.out = make([]Burst, 0, r.d.maxBursts(cfg.MaxWrite))
-	}
-	return r
-}
-
-func (r *iqLowNew) write(iq []byte) []Burst {
-	r.d.out = r.d.out[:0]
-	pair, iq := r.carry.split(iq)
-	var b [iqLowPack]uint32
-	for _, s := range [2][]byte{pair, iq} {
-		for len(s) >= 2 {
-			m := min(len(s)/2, len(b))
-			for i := range m {
-				b[i] = uint32(uint16(r.level(s[2*i]))) | uint32(r.level(s[2*i+1]))<<16
-			}
-			r.run(b[:m])
-			s = s[2*m:]
+func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {
+	size := f.bytes()
+	if f == IQFormatCS16 && littleEndian() && uintptr(unsafe.Pointer(unsafe.SliceData(iq)))%4 == 0 {
+		if n := len(iq) / 4; n > 0 {
+			r.run(unsafe.Slice((*uint32)(unsafe.Pointer(unsafe.SliceData(iq))), n))
 		}
+		return
 	}
-	return r.d.out
+	for len(iq) >= size {
+		m := min(len(iq)/size, len(words))
+		for i := range m {
+			words[i] = iqLowWord(iq[i*size:], f)
+		}
+		r.run(words[:m])
+		iq = iq[m*size:]
+	}
 }
 
-func (r *iqLowNew) level(v byte) int32 {
-	if r.signed {
-		return (2*int32(int8(v)) + 1) << 4
+func littleEndian() bool {
+	v := uint16(1)
+	return *(*byte)(unsafe.Pointer(&v)) == 1
+}
+
+func iqLowWord(s []byte, f IQFormat) uint32 {
+	switch f {
+	case IQFormatCU8:
+		return uint32(uint16((2*int32(s[0])-255)<<4)) | uint32((2*int32(s[1])-255)<<4)<<16
+	case IQFormatCS8:
+		return uint32(uint16((2*int32(int8(s[0]))+1)<<4)) | uint32((2*int32(int8(s[1]))+1)<<4)<<16
+	case IQFormatCF32:
+		re := math.Float32frombits(uint32(s[0]) | uint32(s[1])<<8 | uint32(s[2])<<16 | uint32(s[3])<<24)
+		im := math.Float32frombits(uint32(s[4]) | uint32(s[5])<<8 | uint32(s[6])<<16 | uint32(s[7])<<24)
+		return uint32(uint16(q15(re))) | uint32(q15(im))<<16
+	case IQFormatDefault, IQFormatCS16:
 	}
-	return (2*int32(v) - 255) << 4
+	return uint32(s[0]) | uint32(s[1])<<8 | uint32(s[2])<<16 | uint32(s[3])<<24
 }
 
 func (r *iqLowRx) block() int { return iqAFCBlock * r.d.hz() / basebandRate }
 
-func (r *iqLowRx) writeBaseband(x []complex64) []Burst {
-	r.d.out = r.d.out[:0]
+func (r *iqLowRx) writeBaseband(x []complex64) {
 	var b [iqLowPack]uint32
 	for len(x) > 0 {
 		m := min(len(x), len(b))
@@ -221,7 +104,6 @@ func (r *iqLowRx) writeBaseband(x []complex64) []Burst {
 		r.run(b[:m])
 		x = x[m:]
 	}
-	return r.d.out
 }
 
 func q15(v float32) int32 {
@@ -275,7 +157,7 @@ func (r *iqLowRx) feed(x []uint32) {
 	}
 }
 
-func iqLowOf(r *DiscReceiver) *iqLowRx { return (*iqLowRx)(unsafe.Pointer(r)) }
+func iqLowOf(r *discRx) *iqLowRx { return (*iqLowRx)(unsafe.Pointer(r)) }
 
 //go:noinline
 //go:section .text.halfRun
@@ -391,12 +273,10 @@ func (r *iqLowRx) tune(hz, dc float32) {
 	}
 }
 
-func (r *iqLowRx) flush() []Burst {
-	r.d.out = r.d.out[:0]
+func (r *iqLowRx) flush() {
 	if !r.d.iqLow || !r.d.front96 {
 		r.d.write(r.buf[:r.n])
 	}
 	r.n = 0
 	r.d.flush()
-	return r.d.out
 }

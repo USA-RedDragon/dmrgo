@@ -1,7 +1,9 @@
 package rf_test
 
 import (
+	"encoding/binary"
 	"fmt"
+	"math"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
@@ -17,18 +19,14 @@ func Example() {
 		return
 	}
 	fm, env := rftx.ModulateBS(built.Slots)
-	x := rftx.Baseband(fm, env, 800)
-	rx, err := rf.New(&rf.Config{Tier: rf.Tier0, MaxWrite: 2 * len(x)})
+	iq := cf32(rftx.Baseband(fm, env, 800))
+	rx, err := rf.NewReceiver(&rf.RxConfig{Tier: rf.Tier0, Rate: 48000, Format: rf.IQFormatCF32})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	bursts, err := rx.WriteBaseband(x)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	bursts = append(bursts, rx.Flush()...)
+	bursts := rx.AppendBursts(nil, iq)
+	bursts = rx.AppendFlush(bursts)
 	var voice [enums.VoiceBurstF + 1]int
 	for _, b := range bursts {
 		data, _ := b.Decoded()
@@ -56,32 +54,46 @@ func ExampleMonitor() {
 		return
 	}
 	fm, env := rftx.ModulateBS(built.Slots)
-	x := rftx.Baseband(fm, env, 800)
+	iq := cf32(rftx.Baseband(fm, env, 800))
 	var m rf.Monitor
 	lb := layer2.NewBurst()
 	voice := 0
-	rx, err := rf.New(&rf.Config{Tier: rf.Tier0, OnBurst: func(b *rf.Burst) {
-		r, err := m.Burst(lb, b)
-		if err != nil || r.Hint.Slot != enums.Slot2 {
-			return
+	onBursts := func(bs []rf.Burst) {
+		for i := range bs {
+			r, err := m.Burst(lb, &bs[i])
+			if err != nil || r.Hint.Slot != enums.Slot2 {
+				continue
+			}
+			if lb.Kind == layer2.KindVoice {
+				voice++
+			}
+			if r.End {
+				dst, src, _ := r.LC.Addresses()
+				fmt.Printf("call from %d to %d ended after %d voice bursts\n", src, dst, voice)
+			}
 		}
-		if lb.Kind == layer2.KindVoice {
-			voice++
-		}
-		if r.End {
-			dst, src, _ := r.LC.Addresses()
-			fmt.Printf("call from %d to %d ended after %d voice bursts\n", src, dst, voice)
-		}
-	}})
+	}
+	rx, err := rf.NewReceiver(&rf.RxConfig{Tier: rf.Tier0, Rate: 48000, Format: rf.IQFormatCF32, OnBursts: onBursts})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if _, err := rx.WriteBaseband(x); err != nil {
+	if _, err := rx.Write(iq); err != nil {
 		fmt.Println(err)
 		return
 	}
-	rx.Flush()
+	if err := rx.Flush(); err != nil {
+		fmt.Println(err)
+	}
 	// Output:
 	// call from 3191868 to 9 ended after 12 voice bursts
+}
+
+func cf32(x []complex64) []byte {
+	b := make([]byte, 8*len(x))
+	for i, v := range x {
+		binary.LittleEndian.PutUint32(b[8*i:], math.Float32bits(real(v)))
+		binary.LittleEndian.PutUint32(b[8*i+4:], math.Float32bits(imag(v)))
+	}
+	return b
 }

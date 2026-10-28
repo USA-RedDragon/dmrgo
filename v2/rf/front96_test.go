@@ -15,14 +15,11 @@ func TestFront96Same(t *testing.T) {
 			for i, on := range []bool{false, true} {
 				opt := discOptions()
 				opt.MidTiming, opt.Front96 = true, on
-				var r DiscReceiver
-				if err := r.Init(DiscConfig{Hz: 9600, OnBurst: func(b *Burst) { got[i] = append(got[i], *b) }, opt: &opt}); err != nil {
-					t.Fatal(err)
-				}
+				r := mustAudioOpt(AudioRxConfig{Rate: 9600, OnBursts: func(bs []Burst) { got[i] = append(got[i], bs...) }}, opt)
 				for k := 0; k < len(a); k += chunk {
-					must(r.Write(a[k:min(k+chunk, len(a))]))
+					must(r.writeAll(a[k:min(k+chunk, len(a))]))
 				}
-				r.Flush()
+				r.flushAll()
 			}
 			t.Logf("C/N %v, chunk %d: %d bursts", cn, chunk, len(got[0]))
 			if len(got[0]) == 0 && cn > 4 {

@@ -137,8 +137,7 @@ func (d *iqDisc) block(y complex64) float32 {
 	return atanLean(imag(p), real(p)) * l.radHz
 }
 
-func (r *iqRx) writeLean(x []complex64) []Burst {
-	r.out = r.out[:0]
+func (r *iqRx) writeLean(x []complex64) {
 	d := &r.conv
 	dec := d.decim
 	for len(x) > 0 {
@@ -156,7 +155,6 @@ func (r *iqRx) writeLean(x []complex64) []Burst {
 		r.leanFlush()
 	}
 	r.drain()
-	return r.out
 }
 
 func (r *iqRx) leanOut(f float32) {
@@ -274,7 +272,7 @@ func atanLean(y, x float32) float32 {
 	return r
 }
 
-func newIQ0(cfg Config, opt options) *iqRx {
+func newIQ0(cfg rxSetup, opt options) *iqRx {
 	r := &iqRx{signed: cfg.Signed}
 	r.dc.init(float64(cfg.BasebandHz))
 	hz := opt.IQHz
@@ -287,16 +285,8 @@ func newIQ0(cfg Config, opt options) *iqRx {
 		n = 1024
 	}
 	r.audio = make([]int16, 0, n)
-	on := cfg.OnBurst
-	if on == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+16)
-		on = func(b *Burst) {
-			if n := len(r.out); n < cap(r.out) {
-				r.out = r.out[:n+1]
-				r.out[n] = *b
-			}
-		}
-	}
-	r.d.setup(DiscConfig{Hz: hz, OnBurst: on, opt: &opt}, false)
+	r.d = cfg.discOf()
+	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt}, false)
+	r.d.sink = cfg.sink
 	return r
 }

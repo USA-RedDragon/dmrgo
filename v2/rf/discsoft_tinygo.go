@@ -4,16 +4,18 @@ package rf
 
 const discDefaultTier = Tier0
 
-func (r *DiscReceiver) addSoft(*options) error {
-	return errDiscTier
+func (r *discRx) addSoft(*options) error {
+	return errAudioTier
 }
 
-func (r *DiscReceiver) write(x []int16) { r.run(x) }
+func (r *discRx) write(x []int16) { r.run(x) }
 
-func (r *DiscReceiver) inputHz() int { return r.hz() }
+func (r *discRx) inputHz() int { return r.hz() }
 
-func (r *DiscReceiver) unionFlush() bool { return false }
+func (r *discRx) unionFlush() bool { return false }
 
-func (r *DiscReceiver) unionBacklog() int { return 0 }
+func (r *discRx) unionBacklog() int { return 0 }
+
+func (r *discRx) unionLag() float64 { return 0 }
 
 type discUnion struct{}

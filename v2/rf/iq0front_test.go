@@ -7,27 +7,18 @@ import (
 
 func iq0Receive(x []complex64, o options, chunk int) ([]Burst, float32) {
 	var out []Burst
-	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier0, OnBursts: each(func(b *Burst) { out = append(out, *b) }), Format: IQFormatCU8}, o)
 	for k := 0; k < len(x); k += chunk {
-		must(r.WriteBaseband(x[k:min(k+chunk, len(x))]))
+		must(r.writeBB(x[k:min(k+chunk, len(x))]))
 	}
 	var hz float32
-	if r.iq0 != nil {
-		hz = r.iq0.hz
+	if r.host().iq0 != nil {
+		hz = r.host().iq0.hz
 	} else {
-		hz = r.iqd.conv.hz
+		hz = r.host().iqd.conv.hz
 	}
-	r.Flush()
+	r.flushAll()
 	return out, hz
-}
-
-func iq0Options(front, hz int) options {
-	o := discOptions()
-	o.IQDisc, o.IQHz, o.IQFront, o.IQPoly, o.IQBuf = true, hz, front, 3, 64
-	if front == 5 {
-		o.IQFront, o.IQPoly = 4, 0
-	}
-	return o
 }
 
 func TestIQ0Loopback(t *testing.T) {

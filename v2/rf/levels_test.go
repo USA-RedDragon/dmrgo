@@ -30,15 +30,15 @@ func (lr levelsReceiver) receive(t testing.TB, x []complex64) []Burst {
 		return receiveBaseband(x, lr.tier)
 	}
 	var out []Burst
-	r, err := NewDisc(&DiscConfig{Hz: lr.hz, Tier: lr.tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewAudioReceiver(&AudioRxConfig{Rate: lr.hz, Tier: lr.tier, OnBursts: each(func(b *Burst) { out = append(out, *b) })})
 	if err != nil {
 		t.Fatal(err)
 	}
 	a := discAudio(x, lr.hz)
 	for k := 0; k < len(a); k += 1024 {
-		must(r.Write(a[k:min(k+1024, len(a))]))
+		must(r.writeAll(a[k:min(k+1024, len(a))]))
 	}
-	r.Flush()
+	r.flushAll()
 	return out
 }
 

@@ -141,7 +141,7 @@ The [udp](examples/udp) and [tcp](examples/tcp) examples are their own modules, 
   - `transport/mmdvm`: the serial protocol between MMDVMHost and an MMDVM or MMDVM_HS modem, for both roles: a stateless frame finder, the DMR data and lost frames with their `layer2.Hint`, version, status, configuration, frequency, mode, ACK and NAK, DMR start, abort, Short LC and ALOHA, and debug frames.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
-- A receiver for software radios (`rf`): it recovers bursts from 8-bit I/Q or complex baseband, with soft-decision decoding of each FEC field and the superframe position of voice bursts. A `Monitor` gives the TDMA channel of each burst and the call on each channel. Its tiers go from a discriminator for a microcontroller to coherent trellis detection for a PC. See [Receiver](#receiver).
+- A receiver for software radios (`rf`): it recovers bursts from I/Q in the formats of common software radios (CU8, CS8, CS16 and CF32) or from FM discriminator audio, with soft-decision decoding of each FEC field and the superframe position of voice bursts. A `Monitor` gives the TDMA channel of each burst and the call on each channel. Its tiers go from a discriminator for a microcontroller to coherent trellis detection for a PC. See [Receiver](#receiver).
 - Vocoders (`vocoder`):
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface and a Codec2 codec (`vocoder/codec2`). `Decode` returns a `FrameReport` for each frame: whether the frame was good, lost, erased or invalid, whether the samples are voice, a tone, a repeat or silence, and the bits that the FEC corrected. `DecodeLost` fills a frame that never arrived.
@@ -173,8 +173,8 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 6 |
 | A String, GoString or Error method | When the text is built, for a person to read. | 294 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
-| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 44 |
-| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 265 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 43 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 267 |
 | An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 9 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 5 |
@@ -291,7 +291,7 @@ Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a
 | Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 8.2 dB | 6.4 dB | 5.3 dB | 7.9 dB | 1.1 ms | 34 KiB |
 | Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 5.0 dB | 4.4 dB | 3.9 dB | 6.3 dB | 8.2 ms | 533 KiB |
 | Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 5.0 dB | 3.9 dB | 3.2 dB | 6.3 dB | 8.1 ms | 1.2 MiB |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.5 dB | 6.4 dB | 8.2 dB | 0.41 ms | 1,408 B |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.5 dB | 6.4 dB | 8.2 dB | 0.41 ms | 1,560 B |
 | I/Q tier 0 | I/Q, discriminator core | 9.4 dB | 5.5 dB | 5.4 dB | 7.7 dB | 2.2 ms | 18 KiB |
 | I/Q tier 1 | I/Q, soft decoding, noise prediction | 8.0 dB | 5.4 dB | 3.7 dB | 7.1 dB | 2.8 ms | 50 KiB |
 | I/Q tier 2 | I/Q, coherent detection | 4.9 dB | 4.4 dB | 3.2 dB | 5.5 dB | 11 ms | 491 KiB |

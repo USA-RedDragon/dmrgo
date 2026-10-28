@@ -13,15 +13,15 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 	a := discAudio(x, benchAudioHz)
 	elc := func(soft bool) float64 {
 		var out []Burst
-		r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
+		r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: Tier0, OnBursts: each(func(b *Burst) { out = append(out, *b) })})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if soft {
 			r.ext = newSoftExt(0, 2)
 		}
-		must(r.Write(a))
-		r.Flush()
+		must(r.writeAll(a))
+		r.flushAll()
 		s := scoreBench(truth, out)["elc"]
 		return float64(s.Exact) / float64(max(s.Truth, 1))
 	}
@@ -59,20 +59,20 @@ func TestSoftExtLookback(t *testing.T) {
 	a := discAudio(noisyBaseband(slots[start:], 1400, 20, 7), benchAudioHz)
 	first := func(lookback int) (start, b float64) {
 		start, b = -1, -1
-		r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(x *Burst) {
+		r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: Tier0, OnBursts: each(func(x *Burst) {
 			if start < 0 {
 				start = x.Seconds
 			}
 			if b < 0 && x.Voice == enums.VoiceBurstB {
 				b = x.Seconds
 			}
-		}})
+		})})
 		if err != nil {
 			t.Fatal(err)
 		}
 		r.ext = newSoftExt(lookback, 2)
-		must(r.Write(a))
-		r.Flush()
+		must(r.writeAll(a))
+		r.flushAll()
 		return start, b
 	}
 	plain, _ := first(0)

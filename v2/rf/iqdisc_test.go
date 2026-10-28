@@ -75,14 +75,14 @@ func TestIQDiscDataBias(t *testing.T) {
 		t.Run(strconv.Itoa(int(tier-Tier0)), func(t *testing.T) {
 			t.Parallel()
 			x := msBaseband(fmAll, envAll, 0, 30, 7)
-			r := mustNew(Config{Rate: basebandRate, Tier: tier})
+			r := mustNew(RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCU8})
 			var got []Burst
 			var worst float32
 			for k := 0; k < len(x); k += 960 {
-				got = append(got, must(r.WriteBaseband(x[k:min(k+960, len(x))]))...)
-				worst = max(worst, abs32(r.iqd.conv.hz))
+				got = append(got, must(r.writeBB(x[k:min(k+960, len(x))]))...)
+				worst = max(worst, abs32(r.host().iqd.conv.hz))
 			}
-			got = append(got, r.Flush()...)
+			got = append(got, r.flushAll()...)
 			if worst > iqAFCLockHz {
 				t.Errorf("oscillator %.0f Hz off the carrier", worst)
 			}
@@ -102,39 +102,6 @@ func TestIQDiscDataBias(t *testing.T) {
 			}
 		})
 	}
-}
-
-func voiceFrames(bs []Burst) []uint64 {
-	var out []uint64
-	for i := range bs {
-		var opts layer2.DecodeOptions
-		if bs[i].Voice != 0 {
-			opts.Kind, opts.VoiceBurst = layer2.KindVoice, bs[i].Voice
-		}
-		data, _ := bs[i].Decoded()
-		var b layer2.Burst
-		if err := b.DecodeFromBytesWith(data, &opts); err != nil || b.Kind != layer2.KindVoice {
-			continue
-		}
-		frames, _ := data.AMBEFrames()
-		for _, f := range frames {
-			out = append(out, rftx.AMBEValue(f))
-		}
-	}
-	return out
-}
-
-func c0c1InOrder(want, got []uint64) int {
-	n, next := 0, 0
-	for _, v := range got {
-		for k := next; k < len(want); k++ {
-			if want[k]>>25 == v>>25 {
-				n, next = n+1, k+1
-				break
-			}
-		}
-	}
-	return n
 }
 
 func TestIQDiscAdjacent(t *testing.T) {
@@ -211,14 +178,14 @@ func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, 
 		x[i] += complex(float32(100*math.Cos(ph)), float32(100*math.Sin(ph)))
 	}
 	var out []Burst
-	r := mustNew(Config{Rate: basebandRate, Tier: tier, opt: o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: tier, OnBursts: each(func(b *Burst) { out = append(out, *b) }), Format: IQFormatCU8}, *o)
 	for k := 0; k < len(x); k += 960 {
-		must(r.WriteBaseband(x[k:min(k+960, len(x))]))
-		if r.iqd != nil && r.iqd.d.locked {
-			off = max(off, abs32(r.iqd.conv.hz-float32(offsetHz)))
+		must(r.writeBB(x[k:min(k+960, len(x))]))
+		if r.host().iqd != nil && r.host().iqd.d.locked {
+			off = max(off, abs32(r.host().iqd.conv.hz-float32(offsetHz)))
 		}
 	}
-	r.Flush()
+	r.flushAll()
 	return c0c1InOrder(frames, voiceFrames(out)), len(frames), off
 }
 
@@ -226,11 +193,11 @@ func iqDiscReceive(x []complex64, hz int) []Burst {
 	o := discOptions()
 	o.IQDisc, o.IQHz = true, hz
 	var out []Burst
-	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier0, OnBursts: each(func(b *Burst) { out = append(out, *b) }), Format: IQFormatCU8}, o)
 	for k := 0; k < len(x); k += 4096 {
-		must(r.WriteBaseband(x[k:min(k+4096, len(x))]))
+		must(r.writeBB(x[k:min(k+4096, len(x))]))
 	}
-	r.Flush()
+	r.flushAll()
 	return out
 }
 
@@ -248,9 +215,9 @@ func TestIQDiscLoopback(t *testing.T) {
 	}
 	o := discOptions()
 	o.IQDisc = true
-	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(*Burst) {}})
-	must(r.WriteBaseband(x))
-	if got := float64(r.iqd.conv.hz); got < 1300 || got > 1500 {
+	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier0, OnBursts: each(func(*Burst) {}), Format: IQFormatCU8}, o)
+	must(r.writeBB(x))
+	if got := float64(r.host().iqd.conv.hz); got < 1300 || got > 1500 {
 		t.Errorf("oscillator at %.0f Hz, want about 1400", got)
 	}
 }
@@ -275,12 +242,12 @@ func TestReceiverOffsetHz(t *testing.T) {
 		x := noisyBaseband(slots, c.off, 15, 5)
 		for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 			for _, set := range []float64{0, c.set} {
-				r := mustNew(Config{Tier: tier, OffsetHz: set})
+				r := mustNew(RxConfig{Tier: tier, OffsetHz: set, Rate: basebandRate, Format: IQFormatCU8})
 				var got []Burst
 				for k := 0; k < len(x); k += 4096 {
-					got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
+					got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
 				}
-				got = append(got, r.Flush()...)
+				got = append(got, r.flushAll()...)
 				exact, total := exactFrames(slots, got)
 				switch {
 				case set != 0 && exact < total*9/10:
@@ -295,19 +262,19 @@ func TestReceiverOffsetHz(t *testing.T) {
 	}
 	y := lowIQ(noisyBaseband(slots, 1700, 25, 6), iq0LowHz)
 	for _, set := range []float64{0, 1500} {
-		var r LowIQReceiver
+		var r Receiver
 		var got []Burst
-		if err := r.Init(LowIQConfig{OffsetHz: set, OnBurst: func(b *Burst) { got = append(got, *b) }}); err != nil {
+		if err := r.Init(RxConfig{OffsetHz: set, Rate: iq0LowHz, Format: IQFormatCF32, OnBursts: func(bs []Burst) { got = append(got, bs...) }}); err != nil {
 			t.Fatal(err)
 		}
-		r.WriteBaseband(y)
-		r.Flush()
+		_, _ = r.Write(cf32(y))
+		_ = r.Flush()
 		if exact, total := exactFrames(slots, got); exact < total*9/10 {
 			t.Errorf("LowIQReceiver at 1700 Hz, OffsetHz %.0f: %d of %d voice frames exact", set, exact, total)
 		}
 	}
-	for _, c := range []Config{{OffsetHz: 24000}, {OffsetHz: math.NaN()}, {BasebandHz: iq0LowHz, OffsetHz: -4800}} {
-		if _, err := New(&c); err == nil {
+	for _, c := range []RxConfig{{OffsetHz: 24000}, {OffsetHz: math.NaN()}, {Tier: Tier0, Rate: iq0LowHz, OffsetHz: -4800}} {
+		if _, err := NewReceiver(&c); err == nil {
 			t.Errorf("New took %+v", c)
 		}
 	}
@@ -318,11 +285,11 @@ func TestIQAFCAvgNoise(t *testing.T) {
 	for _, m := range []int{2, 3, 5} {
 		o := tierOptions(Tier0)
 		o.IQAFCAvg = m
-		r := mustNew(Config{opt: &o})
+		r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
 		for seed := uint64(1); seed <= 20; seed++ {
-			must(r.WriteBaseband(noisyBaseband(nil, 0, 0, seed)))
+			must(r.writeBB(noisyBaseband(nil, 0, 0, seed)))
 		}
-		if hz := r.iqd.conv.hz; hz != 0 {
+		if hz := r.host().iqd.conv.hz; hz != 0 {
 			t.Errorf("IQAFCAvg %d: oscillator at %.0f Hz after noise alone", m, hz)
 		}
 	}
@@ -335,14 +302,14 @@ func TestIQAFCAvgChunks(t *testing.T) {
 		o := tierOptions(Tier0)
 		o.IQAFCAvg = m
 		run := func(seed uint64) []Burst {
-			r := mustNew(Config{opt: &o})
+			r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
 			var out []Burst
 			p := 0
 			for _, k := range fuzzChunks(len(x), 1<<14, seed) {
-				out = append(out, must(r.WriteBaseband(x[p:p+k]))...)
+				out = append(out, must(r.writeBB(x[p:p+k]))...)
 				p += k
 			}
-			return append(out, r.Flush()...)
+			return append(out, r.flushAll()...)
 		}
 		a, b := run(0), run(1)
 		if len(a) == 0 || len(a) != len(b) {

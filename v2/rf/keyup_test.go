@@ -10,7 +10,7 @@ func TestMSKeyUpStrobes(t *testing.T) {
 	fm, env, _ := directCalls(t, 6)
 	for seed := range uint64(4) {
 		a := discAudio(msBaseband(fm, env, 0, 60, 70+seed), benchAudioHz)
-		var r *DiscReceiver
+		var r *AudioReceiver
 		stream, n := -1, 0
 		var end float64
 		on := func(b *Burst) {
@@ -31,18 +31,18 @@ func TestMSKeyUpStrobes(t *testing.T) {
 			}
 		}
 		var err error
-		r, err = NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: on})
+		r, err = NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: Tier0, OnBursts: each(on)})
 		if err != nil {
 			t.Fatal(err)
 		}
 		for k := 0; k < len(a); k += 1024 {
-			must(r.Write(a[k:min(k+1024, len(a))]))
+			must(r.writeAll(a[k:min(k+1024, len(a))]))
 		}
-		r.Flush()
+		r.flushAll()
 	}
 }
 
-func strobeLag(r *DiscReceiver, k0, k1 int64) float64 {
+func strobeLag(r *AudioReceiver, k0, k1 int64) float64 {
 	lv := func(k int64) (float64, float64) {
 		v := float64((r.sym(k) - r.dcHz) / (r.devScale * deviationHz))
 		return v, max(-3, min(3, 2*math.Floor(v/2)+1))

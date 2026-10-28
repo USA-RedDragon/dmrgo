@@ -19,38 +19,40 @@ func TestAllocsReceiver(t *testing.T) {
 	fm, env := rftx.ModulateBS(built.Slots)
 	iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
 	const chunk = 1 << 14
+	x := cf32(basebandStream(built.Slots, 1500))
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
-		r := mustNew(Config{Rate: 2.048e6, Tier: tier, MaxWrite: chunk})
-		pos, bursts := 0, 0
-		n := testing.AllocsPerRun(len(iq)/chunk-2, func() {
-			bursts += len(must(r.Write(iq[pos : pos+chunk])))
-			pos += chunk
-		})
-		bursts += len(r.Flush())
-		if n != 0 || bursts == 0 {
-			t.Errorf("tier %d: %v allocations per Write, %d bursts", tier, n, bursts)
-		}
-		x := basebandStream(built.Slots, 1500)
-		r = mustNew(Config{Rate: basebandRate, Tier: tier})
-		pos, bursts = 0, 0
-		n = testing.AllocsPerRun(len(x)/chunk-2, func() {
-			bursts += len(must(r.WriteBaseband(x[pos : pos+chunk])))
-			pos += chunk
-		})
-		bursts += len(r.Flush())
-		if n != 0 || bursts == 0 {
-			t.Errorf("tier %d: %v allocations per WriteBaseband, %d bursts", tier, n, bursts)
-		}
-		bursts = 0
-		r = mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(*Burst) { bursts++ }})
-		pos = 0
-		n = testing.AllocsPerRun(len(x)/chunk-2, func() {
-			must(r.WriteBaseband(x[pos : pos+chunk]))
-			pos += chunk
-		})
-		r.Flush()
-		if n != 0 || bursts == 0 {
-			t.Errorf("tier %d: %v allocations per WriteBaseband with OnBurst, %d bursts", tier, n, bursts)
+		for _, c := range []struct {
+			name string
+			cfg  RxConfig
+			in   []byte
+		}{
+			{"CU8 at 2.048 MHz", RxConfig{Rate: 2048000, Tier: tier, Format: IQFormatCU8}, iq},
+			{"CF32 at 48 kHz", RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCF32}, x},
+		} {
+			r := mustNew(c.cfg)
+			var dst []Burst
+			pos, bursts := 0, 0
+			n := testing.AllocsPerRun(len(c.in)/chunk-2, func() {
+				dst = r.AppendBursts(dst[:0], c.in[pos:pos+chunk])
+				bursts += len(dst)
+				pos += chunk
+			})
+			bursts += len(r.AppendFlush(dst[:0]))
+			if n != 0 || bursts == 0 {
+				t.Errorf("tier %d, %s: %v allocations per AppendBursts, %d bursts", tier, c.name, n, bursts)
+			}
+			bursts = 0
+			c.cfg.OnBursts = func(bs []Burst) { bursts += len(bs) }
+			r = mustNew(c.cfg)
+			pos = 0
+			n = testing.AllocsPerRun(len(c.in)/chunk-2, func() {
+				_, _ = r.Write(c.in[pos : pos+chunk])
+				pos += chunk
+			})
+			_ = r.Flush()
+			if n != 0 || bursts == 0 {
+				t.Errorf("tier %d, %s: %v allocations per Write, %d bursts", tier, c.name, n, bursts)
+			}
 		}
 	}
 }

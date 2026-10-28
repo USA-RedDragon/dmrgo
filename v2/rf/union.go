@@ -40,8 +40,8 @@ type unionHead struct {
 }
 
 type discUnion struct {
-	r        *DiscReceiver
-	twins    []*DiscReceiver
+	r        *discRx
+	twins    []*discRx
 	e        *softExt
 	user     func(*Burst)
 	hz       float64
@@ -66,8 +66,8 @@ type discUnion struct {
 	elc      int
 }
 
-func (r *DiscReceiver) addUnion(opt *options) {
-	hz, out, user, d48 := r.hz(), r.out, r.onBurst, r.d48
+func (r *discRx) addUnion(opt *options) {
+	hz, user, d48 := r.hz(), r.onBurst, r.d48
 	u := &discUnion{r: r, user: user, hz: float64(hz), limit: math.Inf(-1)}
 	u.main = make([]Burst, 0, unionCap)
 	u.fill = make([]bool, 0, unionCap)
@@ -85,8 +85,8 @@ func (r *DiscReceiver) addUnion(opt *options) {
 	if opt.UnionTwins&0x80 != 0 {
 		t2.CohBudget = 0
 	}
-	_ = r.Init(DiscConfig{Hz: hz, OnBurst: u.onMain, opt: &t2})
-	r.out, r.d48 = out, d48
+	r.setup(discSetup{Hz: hz, OnBurst: u.onMain, opt: &t2}, false)
+	r.d48 = d48
 	r.addExt(&t2)
 	set := opt.UnionTwins &^ 0x80
 	if set == 0 {
@@ -108,8 +108,8 @@ func (r *DiscReceiver) addUnion(opt *options) {
 			o = discTierOptions(Tier2)
 		}
 		o.UnionTwins = 0
-		w := &DiscReceiver{}
-		_ = w.Init(DiscConfig{Hz: hz, OnBurst: u.onTwin, opt: &o})
+		w := &discRx{}
+		w.setup(discSetup{Hz: hz, OnBurst: u.onTwin, opt: &o}, false)
 		w.addExt(&o)
 		u.twins = append(u.twins, w)
 	}
@@ -168,7 +168,7 @@ func (u *discUnion) write(x []int16) {
 	u.release(u.inSec - unionHorizon)
 }
 
-func (r *DiscReceiver) unionBacklog() int {
+func (r *discRx) unionBacklog() int {
 	e, _ := r.ext.(*softExt)
 	if e == nil || e.union == nil {
 		return 0
@@ -176,7 +176,14 @@ func (r *DiscReceiver) unionBacklog() int {
 	return cap(e.union.main) + cap(e.union.extra)
 }
 
-func (r *DiscReceiver) unionFlush() bool {
+func (r *discRx) unionLag() float64 {
+	if e, _ := r.ext.(*softExt); e == nil || e.union == nil {
+		return 0
+	}
+	return unionHorizon + (extQueue+4)*slotSeconds
+}
+
+func (r *discRx) unionFlush() bool {
 	e, _ := r.ext.(*softExt)
 	if e == nil || e.union == nil {
 		return false
@@ -430,9 +437,5 @@ func (u *discUnion) emit(b *Burst) {
 		u.user(b)
 		return
 	}
-	r := u.r
-	if len(r.out) < cap(r.out) {
-		r.out = r.out[:len(r.out)+1]
-		r.out[len(r.out)-1] = *b
-	}
+	u.r.sink.put(b)
 }

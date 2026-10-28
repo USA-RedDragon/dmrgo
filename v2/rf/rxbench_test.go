@@ -288,14 +288,14 @@ func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 func receiveAudioAt(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(&DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: tier, OnBursts: each(func(b *Burst) { out = append(out, *b) })})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
-		must(r.Write(a[k:min(k+1024, len(a))]))
+		must(r.writeAll(a[k:min(k+1024, len(a))]))
 	}
-	r.Flush()
+	r.flushAll()
 	return out
 }
 
@@ -312,12 +312,12 @@ func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
 }
 
 func receiveLowIQ(y []complex64) []Burst {
-	r := mustNew(Config{BasebandHz: iq0LowHz})
+	r := mustNew(RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8})
 	var out []Burst
 	for k := 0; k < len(y); k += 1024 {
-		out = append(out, must(r.WriteBaseband(y[k:min(k+1024, len(y))]))...)
+		out = append(out, must(r.writeBB(y[k:min(k+1024, len(y))]))...)
 	}
-	return append(out, r.Flush()...)
+	return append(out, r.flushAll()...)
 }
 
 func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, cases []benchCase) []benchPoint {
@@ -458,43 +458,43 @@ func falsePerHour(e benchEntry) float64 {
 	switch e.mode {
 	case benchAudio:
 		hz := benchAudioHz
-		r, err := NewDisc(&DiscConfig{Hz: hz, Tier: t, OnBurst: func(*Burst) { n++ }})
+		r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: t, OnBursts: each(func(*Burst) { n++ })})
 		if err != nil {
 			panic(err)
 		}
 		for seed := uint64(1); total < seconds*hz; seed++ {
 			a := discAudio(noisyBaseband(nil, 0, 0, seed), hz)
-			must(r.Write(a))
+			must(r.writeAll(a))
 			total += len(a)
 		}
-		r.Flush()
+		r.flushAll()
 		return float64(n) * 3600 * float64(hz) / float64(total)
 	case benchIQLow:
-		r := mustNew(Config{BasebandHz: iq0LowHz})
+		r := mustNew(RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8})
 		for seed := uint64(1); total < seconds*iq0LowHz; seed++ {
 			y := lowIQ(noisyBaseband(nil, 0, 0, seed), iq0LowHz)
-			n += len(must(r.WriteBaseband(y)))
+			n += len(must(r.writeBB(y)))
 			total += len(y)
 		}
-		n += len(r.Flush())
+		n += len(r.flushAll())
 		return float64(n) * 3600 * iq0LowHz / float64(total)
 	}
-	r := mustNew(Config{Rate: basebandRate, Tier: t})
+	r := mustNew(RxConfig{Rate: basebandRate, Tier: t, Format: IQFormatCU8})
 	for seed := uint64(1); total < seconds*basebandRate; seed++ {
 		x := noisyBaseband(nil, 0, 0, seed)
-		n += len(must(r.WriteBaseband(x)))
+		n += len(must(r.writeBB(x)))
 		total += len(x)
 	}
-	n += len(r.Flush())
+	n += len(r.flushAll())
 	return float64(n) * 3600 * basebandRate / float64(total)
 }
 
 func receiverRAM(e benchEntry) int {
 	switch {
 	case e.mode == benchAudio && e.tier == Tier0:
-		return int(unsafe.Sizeof(DiscReceiver{}))
+		return int(unsafe.Sizeof(AudioReceiver{}))
 	case e.mode == benchIQLow:
-		return int(unsafe.Sizeof(LowIQReceiver{}))
+		return int(unsafe.Sizeof(Receiver{}))
 	}
 	ramMu.Lock()
 	defer ramMu.Unlock()
@@ -517,13 +517,13 @@ var ramMu sync.Mutex
 //go:noinline
 func newBenchReceiver(e benchEntry) any {
 	if e.mode == benchAudio {
-		d, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: e.tier, OnBurst: func(*Burst) {}})
+		d, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: e.tier, OnBursts: each(func(*Burst) {})})
 		if err != nil {
 			panic(err)
 		}
 		return d
 	}
-	return mustNew(Config{Rate: basebandRate, Tier: e.tier, OnBurst: func(*Burst) {}})
+	return mustNew(RxConfig{Rate: basebandRate, Tier: e.tier, OnBursts: each(func(*Burst) {}), Format: IQFormatCU8})
 }
 
 func liveBytesUnder(f any) int64 {
@@ -563,17 +563,17 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 	case benchIQLow:
 		x = lowIQ(x, iq0LowHz)
 	}
-	cfg := Config{Rate: basebandRate, Tier: e.tier}
+	cfg := RxConfig{Rate: basebandRate, Tier: e.tier, Format: IQFormatCU8}
 	if e.mode == benchIQLow {
-		cfg = Config{BasebandHz: iq0LowHz}
+		cfg = RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8}
 	}
 	r := mustNew(cfg)
-	must(r.WriteBaseband(x[:chunk]))
+	must(r.writeBB(x[:chunk]))
 	n := len(x)/chunk - 1
 	var a, b runtime.MemStats
 	runtime.ReadMemStats(&a)
 	for i := 1; i <= n; i++ {
-		must(r.WriteBaseband(x[i*chunk : (i+1)*chunk]))
+		must(r.writeBB(x[i*chunk : (i+1)*chunk]))
 	}
 	runtime.ReadMemStats(&b)
 	return float64(b.Mallocs-a.Mallocs) / float64(n)
@@ -581,16 +581,16 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 
 func discSteadyAllocs(a []int16, tier Tier) float64 {
 	const chunk = 1 << 11
-	r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(*Burst) {}})
+	r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: tier, OnBursts: each(func(*Burst) {})})
 	if err != nil {
 		panic(err)
 	}
-	must(r.Write(a[:chunk]))
+	must(r.writeAll(a[:chunk]))
 	n := len(a)/chunk - 1
 	var m0, m1 runtime.MemStats
 	runtime.ReadMemStats(&m0)
 	for i := 1; i <= n; i++ {
-		must(r.Write(a[i*chunk : (i+1)*chunk]))
+		must(r.writeAll(a[i*chunk : (i+1)*chunk]))
 	}
 	runtime.ReadMemStats(&m1)
 	return float64(m1.Mallocs-m0.Mallocs) / float64(n)

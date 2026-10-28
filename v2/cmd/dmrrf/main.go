@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/binary"
 	"errors"
 	"flag"
 	"fmt"
@@ -394,32 +395,33 @@ func (in input) complexSamples(b []byte, fn func(complex128)) {
 const basebandChunk = 1 << 14
 
 func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (offset, dev float64, err error) {
-	raw := (in.f.enc == encU8 || in.f.enc == encS8) && in.rate >= basebandRate
-	cfg := rf.Config{Tier: tier, OffsetHz: offsetHz}
+	raw := (in.f.enc == encU8 || in.f.enc == encS8) && in.rate >= basebandRate && in.rate == math.Trunc(in.rate)
+	cfg := rf.RxConfig{Tier: tier, OffsetHz: offsetHz, Rate: basebandRate, Format: rf.IQFormatCF32, OnBursts: emitAll(burst)}
 	if raw {
-		cfg.Rate, cfg.Signed = in.rate, in.f.enc == encS8
+		cfg.Rate, cfg.Format = int(in.rate), rf.IQFormatCU8
+		if in.f.enc == encS8 {
+			cfg.Format = rf.IQFormatCS8
+		}
 	}
-	rx, err := rf.New(&cfg)
+	rx, err := rf.NewReceiver(&cfg)
 	if err != nil {
 		return 0, 0, err
 	}
-	emit := func(bs []rf.Burst, err error) error {
-		for _, b := range bs {
-			burst(b)
-		}
-		return err
-	}
 	if raw {
-		err = in.each(func(b []byte) error { return emit(rx.Write(b)) })
+		err = in.each(func(b []byte) error {
+			_, err := rx.Write(b)
+			return err
+		})
 	} else {
 		rs := newResampler(in.rate, basebandRate, 0, true)
 		var wide []complex128
-		x := make([]complex64, 0, basebandChunk)
+		x := make([]byte, 0, 8*basebandChunk)
 		flush := func() error {
 			for i, v := range wide {
-				x = append(x, complex64(v))
-				if len(x) == basebandChunk || i == len(wide)-1 {
-					if err := emit(rx.WriteBaseband(x)); err != nil {
+				x = binary.LittleEndian.AppendUint32(x, math.Float32bits(float32(real(v))))
+				x = binary.LittleEndian.AppendUint32(x, math.Float32bits(float32(imag(v))))
+				if len(x) == cap(x) || i == len(wide)-1 {
+					if _, err := rx.Write(x); err != nil {
 						return err
 					}
 					x = x[:0]
@@ -436,8 +438,18 @@ func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (
 	if err != nil {
 		return 0, 0, err
 	}
-	_ = emit(rx.Flush(), nil)
+	if err := rx.Flush(); err != nil {
+		return 0, 0, err
+	}
 	return rx.OffsetHz(), rx.DeviationHz(), nil
+}
+
+func emitAll(burst func(rf.Burst)) func([]rf.Burst) {
+	return func(bs []rf.Burst) {
+		for _, b := range bs {
+			burst(b)
+		}
+	}
 }
 
 func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev float64, err error) {
@@ -446,15 +458,9 @@ func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev flo
 	case 48000, 24000, 12000, 9600:
 		hz = int(in.rate)
 	}
-	rx, err := rf.NewDisc(&rf.DiscConfig{Hz: hz, Tier: tier})
+	rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier, OnBursts: emitAll(burst)})
 	if err != nil {
 		return 0, 0, err
-	}
-	emit := func(bs []rf.Burst, err error) error {
-		for _, b := range bs {
-			burst(b)
-		}
-		return err
 	}
 	const chunk = 1 << 12
 	pcm := make([]int16, 0, chunk)
@@ -463,7 +469,7 @@ func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev flo
 		if len(pcm) < chunk {
 			return nil
 		}
-		err := emit(rx.Write(pcm))
+		_, err := rx.Write(pcm)
 		pcm = pcm[:0]
 		return err
 	}
@@ -490,12 +496,14 @@ func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev flo
 		return 0, 0, err
 	}
 	if len(pcm) > 0 {
-		if err := emit(rx.Write(pcm)); err != nil {
+		if _, err := rx.Write(pcm); err != nil {
 			return 0, 0, err
 		}
 	}
-	_ = emit(rx.Flush(), nil)
-	return rx.OffsetHz(), rx.DeviationHz(), nil
+	if err := rx.Flush(); err != nil {
+		return 0, 0, err
+	}
+	return float64(rx.Offset()), float64(rx.Level()), nil
 }
 
 func runRX(args []string, std stdio) (err error) {

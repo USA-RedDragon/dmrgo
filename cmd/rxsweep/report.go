@@ -310,7 +310,7 @@ func (k costKind) value(r *row) float64 {
 func (k costKind) title() string {
 	switch k {
 	case costRAM:
-		return "RAM, bytes (heap of New with OnBurst; on the M4F when measured)"
+		return "RAM, bytes (heap of NewReceiver with OnBursts; on the M4F when measured)"
 	case costM4:
 		return "Cortex-M4F MHz, worst of 10 dB, 6 dB and search"
 	case costCPU:

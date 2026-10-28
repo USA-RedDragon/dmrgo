@@ -122,12 +122,12 @@ func TestAudioRoundTrip(t *testing.T) {
 		a := audioOf(t, cfg, ts.syms)
 		if cfg.Hz == 24000 {
 			var got []rf.Burst
-			r, err := rf.NewDisc(&rf.DiscConfig{Hz: cfg.Hz, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
+			r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: cfg.Hz, OnBursts: func(bs []rf.Burst) { got = append(got, bs...) }})
 			if err != nil {
 				t.Fatal(err)
 			}
 			check(r.Write(a))
-			r.Flush()
+			check(0, r.Flush())
 			checkAll(t, cfg, ts.score(got, 0), 1)
 		}
 		x := dacFM(a, cfg.Hz, radio{})
@@ -154,14 +154,14 @@ func TestIQRoundTrip(t *testing.T) {
 			b[i] = byte(int8(min(max(int(int8(b[i]))+rng.IntN(3)-1, math.MinInt8), math.MaxInt8)))
 		}
 		var got []rf.Burst
-		r, err := rf.New(&rf.Config{Rate: float64(cfg.Rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
+		r, err := rf.NewReceiver(&rf.RxConfig{Rate: cfg.Rate, Format: rf.IQFormatCS8, Tier: rf.Tier1, OnBursts: func(bs []rf.Burst) { got = append(got, bs...) }})
 		if err != nil {
 			t.Fatal(err)
 		}
 		for k := 0; k < len(b); k += 1 << 16 {
 			check(r.Write(b[k:min(k+1<<16, len(b))]))
 		}
-		r.Flush()
+		check(0, r.Flush())
 		checkAll(t, cfg, ts.score(got, 0), 1)
 	}
 }

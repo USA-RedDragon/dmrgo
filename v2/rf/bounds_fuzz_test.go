@@ -1,11 +1,6 @@
 package rf
 
-import (
-	"errors"
-	"testing"
-)
-
-const discFlushBound = 26
+import "testing"
 
 func discBoundAudio(t testing.TB) map[int][]int16 {
 	t.Helper()
@@ -25,7 +20,14 @@ func runDiscBounds(t *testing.T, audio map[int][]int16, sel, tier byte, cuts []b
 	if sel&4 != 0 {
 		x = x[len(x)/3:]
 	}
-	r, err := NewDisc(&DiscConfig{Hz: hz, Tier: []Tier{Tier0, Tier1, Tier2}[int(tier)%3]})
+	cfg := AudioRxConfig{Rate: hz, Tier: []Tier{Tier0, Tier1, Tier2, Tier3}[int(tier)%4]}
+	r, err := NewAudioReceiver(&cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := 0
+	cfg.OnBursts = func(bs []Burst) { seen += len(bs) }
+	ro, err := NewAudioReceiver(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,34 +39,30 @@ func runDiscBounds(t *testing.T, audio map[int][]int16, sel, tier byte, cuts []b
 			n = 1 + int(cuts[i%len(cuts)])*int(cuts[i%len(cuts)])
 		}
 		n = min(n, len(x)-off)
-		w, err := []Burst(nil), error(nil)
-		if i%2 == 1 {
-			w, err = r.Write(x[off : off+n])
+		dst = r.AppendBursts(dst[:0], x[off:off+n])
+		before := seen
+		if _, err := ro.Write(x[off : off+n]); err != nil {
+			t.Fatal(err)
 		}
-		switch {
-		case i%2 == 0 || err != nil:
-			if err != nil && (!errors.Is(err, ErrWriteTooLong) || n <= 1<<12 || w != nil) {
-				t.Fatalf("%d Hz: a Write of %d samples: %v", hz, n, err)
-			}
-			dst = r.AppendBursts(dst[:0], x[off:off+n])
-		default:
-			dst = w
-		}
-		if len(dst) > n/72+16 {
-			t.Fatalf("%d Hz: %d samples gave %d bursts", hz, n, len(dst))
+		if m := r.MaxOutput(n); len(dst) > m || seen-before > m || m > n/72+16 {
+			t.Fatalf("%d Hz: %d samples gave %d and %d bursts, MaxOutput %d", hz, n, len(dst), seen-before, m)
 		}
 		total += len(dst)
 		off += n
 	}
-	if sel&8 != 0 {
-		dst = r.Flush()
-	} else {
-		dst = r.AppendFlush(dst[:0])
+	most := r.MaxOutput(0)
+	dst = r.AppendFlush(dst[:0])
+	before := seen
+	if err := ro.Flush(); err != nil {
+		t.Fatal(err)
 	}
-	if len(dst) > discFlushBound {
-		t.Fatalf("%d Hz: flush gave %d bursts", hz, len(dst))
+	if len(dst) > most || seen-before > most || most > 26+r.unionBacklog() {
+		t.Fatalf("%d Hz: flush gave %d and %d bursts, bound %d", hz, len(dst), seen-before, most)
 	}
-	return total + len(dst)
+	if total += len(dst); seen != total {
+		t.Fatalf("%d Hz: %d bursts appended, %d to OnBursts", hz, total, seen)
+	}
+	return total
 }
 
 func TestDiscReceiverBounds(t *testing.T) {

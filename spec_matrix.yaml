@@ -76,6 +76,7 @@ ignore_files:
   - v2/layer2/nocopy.go
   - v2/layer2/packet/nocopy.go
   - v2/rf/acquire.go
+  - v2/rf/audio.go
   - v2/rf/burst.go
   - v2/rf/chan.go
   - v2/rf/coherent.go
@@ -103,6 +104,7 @@ ignore_files:
   - v2/rf/iqdisc.go
   - v2/rf/iqdsp.go
   - v2/rf/iqdsp_dsp.go
+  - v2/rf/iqformat.go
   - v2/rf/iqlow.go
   - v2/rf/iqlowhalf_dsp.go
   - v2/rf/lagtab.go
@@ -116,6 +118,9 @@ ignore_files:
   - v2/rf/rawvoice.go
   - v2/rf/receiver.go
   - v2/rf/repair.go
+  - v2/rf/rx.go
+  - v2/rf/rxhost.go
+  - v2/rf/sink.go
   - v2/rf/softfec.go
   - v2/rf/softgrid.go
   - v2/rf/spectrum.go

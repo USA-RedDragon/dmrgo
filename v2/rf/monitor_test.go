@@ -19,12 +19,16 @@ func monitorBursts(t *testing.T, slot int) []Burst {
 	fm, env := rftx.ModulateBS(built.Slots)
 	x := rftx.Baseband(fm, env, 800)
 	var out []Burst
-	rx, err := New(&Config{Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	rx, err := NewReceiver(&RxConfig{Tier: Tier0, OnBursts: func(bs []Burst) { out = append(out, bs...) }, Rate: basebandRate, Format: IQFormatCF32})
 	if err != nil {
 		t.Fatal(err)
 	}
-	must(rx.WriteBaseband(x))
-	rx.Flush()
+	if _, err := rx.Write(cf32(x)); err != nil {
+		t.Fatal(err)
+	}
+	if err := rx.Flush(); err != nil {
+		t.Fatal(err)
+	}
 	return out
 }
 

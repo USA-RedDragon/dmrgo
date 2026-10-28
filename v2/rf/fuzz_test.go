@@ -73,25 +73,67 @@ func fuzzChunks(n, most int, seed uint64) []int {
 	return out
 }
 
-func fuzzConfig(tier, half, flags uint8, rate uint16, maxWrite uint32, lookback uint8) Config {
-	cfg := Config{Tier: Tier0 + Tier(tier%4), Signed: flags&1 != 0}
+func fuzzConfig(tier, half, flags uint8, rate uint16, lookback uint8) (RxConfig, *options) {
+	cfg := RxConfig{Tier: Tier0 + Tier(tier%4), Format: iqFormatOf(flags&1 != 0), Rate: basebandRate}
+	bb := basebandRate
 	if half%2 == 1 && cfg.Tier <= Tier1 {
-		cfg.BasebandHz = BasebandRate / 2
+		bb = discRate
 	}
-	bb := float64(BasebandRate)
-	if cfg.BasebandHz != 0 {
-		bb = float64(cfg.BasebandHz)
-	}
+	cfg.Rate = bb
 	if flags&2 != 0 {
-		cfg.Rate = bb * (1 + float64(rate%4000)/1000)
-	}
-	if flags&4 != 0 {
-		cfg.MaxWrite = 1 + int(maxWrite%(1<<17))
+		cfg.Rate = int(float64(bb) * (1 + float64(rate%4000)/1000))
 	}
 	if cfg.Tier != Tier0 {
 		cfg.LookbackSlots = int(lookback % 33)
 	}
-	return cfg
+	if bb == discRate && cfg.Rate >= basebandRate {
+		o := tierOptions(cfg.Tier)
+		if cfg.LookbackSlots > 0 {
+			o.ExtLookback = cfg.LookbackSlots
+		}
+		return cfg, halfOpt(&o)
+	}
+	return cfg, nil
+}
+
+func fuzzMost(flags uint8, n uint32, most int) int {
+	if flags&4 != 0 {
+		return 1 + int(n%uint32(2*most))
+	}
+	return most
+}
+
+func fuzzRun(t *testing.T, cfg RxConfig, opt *options, stream bool, in []byte, most int, seed uint64, sink *fuzzSink) uint64 {
+	if stream {
+		cfg.OnBursts = sink.add
+	}
+	r, err := newReceiver(cfg, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	chunks := fuzzChunks(len(in), most, seed)
+	dst := make([]Burst, 0, max(fuzzBursts, r.MaxOutput(most/r.SampleBytes()+1), r.MaxOutput(0)))
+	return mallocs(func() {
+		p := 0
+		for _, k := range chunks {
+			if stream {
+				if _, err := r.Write(in[p : p+k]); err != nil {
+					panic(err)
+				}
+			} else {
+				dst = r.AppendBursts(dst[:0], in[p:p+k])
+				sink.add(dst)
+			}
+			p += k
+		}
+		if stream {
+			if err := r.Flush(); err != nil {
+				panic(err)
+			}
+		} else {
+			sink.add(r.AppendFlush(dst[:0]))
+		}
+	})
 }
 
 func checkBursts(t *testing.T, bs []Burst, seconds float64) {
@@ -163,41 +205,13 @@ func FuzzReceiverWrite(f *testing.F) {
 	f.Add(uint8(3), uint8(0), uint8(4), uint16(0), uint32(0), uint8(0), uint64(1), fuzzSeedIQ(f, false)[:9001])
 	f.Fuzz(func(t *testing.T, tier, half, flags uint8, rate uint16, maxWrite uint32, lookback uint8, chunkSeed uint64, iq []byte) {
 		iq = iq[:min(len(iq), fuzzMaxBytes)]
-		cfg := fuzzConfig(tier, half, flags, rate, maxWrite, lookback)
-		sink := newFuzzSink()
-		if flags&8 != 0 {
-			cfg.OnBurst = sink.one
-		}
-		most := cfg.MaxWrite
-		if most == 0 {
-			most = 1 << 16
-		}
+		cfg, opt := fuzzConfig(tier, half, flags, rate, lookback)
+		stream := flags&8 != 0
+		most := fuzzMost(flags, maxWrite, 1<<16)
 		run := func(seed uint64, sink *fuzzSink) uint64 {
-			c := cfg
-			if c.OnBurst != nil {
-				c.OnBurst = sink.one
-			}
-			r, err := New(&c)
-			if err != nil {
-				t.Fatal(err)
-			}
-			chunks := fuzzChunks(len(iq), most, seed)
-			return mallocs(func() {
-				p := 0
-				for _, k := range chunks {
-					sink.add(must(r.Write(iq[p : p+k])))
-					p += k
-				}
-				sink.add(r.Flush())
-			})
+			return fuzzRun(t, cfg, opt, stream, iq, most, seed, sink)
 		}
-		hz := cfg.Rate
-		if hz == 0 {
-			hz = BasebandRate
-			if cfg.BasebandHz != 0 {
-				hz = float64(cfg.BasebandHz)
-			}
-		}
+		hz := float64(cfg.Rate)
 		var one, chunked *fuzzSink
 		if n := quiet(func() uint64 { one = newFuzzSink(); return run(0, one) }); n != 0 {
 			t.Fatalf("%d allocations after New", n)
@@ -247,35 +261,19 @@ func FuzzReceiverBaseband(f *testing.F) {
 	f.Add(uint8(3), uint8(0), uint8(8), uint8(12), false, uint64(3), seed[:40000])
 	f.Add(uint8(0), uint8(0), uint8(0), uint8(0), true, uint64(1), []byte{0, 0, 0xc0, 0x7f, 0, 0, 0x80, 0x7f})
 	f.Fuzz(func(t *testing.T, tier, half, flags, scale uint8, raw bool, chunkSeed uint64, b []byte) {
-		cfg := fuzzConfig(tier, half, flags&^2, 0, uint32(chunkSeed>>32)|1, flags>>4)
+		cfg, opt := fuzzConfig(tier, half, flags&^2, 0, flags>>4)
+		cfg.Format = IQFormatCF32
 		x := fuzzSamples(b[:min(len(b), 2*fuzzMaxBytes)], scale, raw)
-		most := 1 << 14
-		if cfg.MaxWrite != 0 && flags&8 == 0 {
-			most = min(most, cfg.MaxWrite/2)
+		in := cf32(x)
+		stream := flags&8 != 0
+		most := 8 << 14
+		if flags&4 != 0 {
+			most = 8 * (1 + int(uint32(chunkSeed>>32)%(1<<13)))
 		}
 		run := func(seed uint64, sink *fuzzSink) uint64 {
-			c := cfg
-			if flags&8 != 0 {
-				c.OnBurst = sink.one
-			}
-			r, err := New(&c)
-			if err != nil {
-				t.Fatal(err)
-			}
-			chunks := fuzzChunks(len(x), most, seed)
-			return mallocs(func() {
-				p := 0
-				for _, k := range chunks {
-					sink.add(must(r.WriteBaseband(x[p : p+k])))
-					p += k
-				}
-				sink.add(r.Flush())
-			})
+			return fuzzRun(t, cfg, opt, stream, in, most, seed, sink)
 		}
-		hz := float64(BasebandRate)
-		if cfg.BasebandHz != 0 {
-			hz = float64(cfg.BasebandHz)
-		}
+		hz := float64(cfg.Rate)
 		var one, chunked *fuzzSink
 		if n := quiet(func() uint64 { one = newFuzzSink(); return run(0, one) }); n != 0 {
 			t.Fatalf("%d allocations after New", n)
@@ -304,25 +302,20 @@ func FuzzDiscReceiver(f *testing.F) {
 	f.Add(uint8(2), uint8(2), uint8(2), uint16(4095), uint64(5), fuzzSeedAudio(f, 9600))
 	f.Add(uint8(3), uint8(0), uint8(7), uint16(1), uint64(1), []byte{0xff, 0x7f, 0, 0x80, 1})
 	f.Fuzz(func(t *testing.T, hzSel, tierSel, mode uint8, maxWrite uint16, chunkSeed uint64, b []byte) {
-		cfg := DiscConfig{Hz: [4]int{0, 24000, 12000, 9600}[hzSel%4], Tier: [3]Tier{TierDefault, Tier0, Tier1}[tierSel%3]}
-		if mode&4 != 0 {
-			cfg.MaxWrite = 1 + int(maxWrite%(1<<13))
-		}
+		cfg := AudioRxConfig{Rate: [4]int{0, 24000, 12000, 9600}[hzSel%4], Tier: [3]Tier{TierDefault, Tier0, Tier1}[tierSel%3]}
+		most := fuzzMost(mode, uint32(maxWrite), 1<<12)
 		init := mode&8 != 0 && cfg.Tier != Tier1
 		b = b[:min(len(b), fuzzMaxBytes)]
 		x := make([]int16, len(b)/2)
 		for i := range x {
 			x[i] = int16(binary.LittleEndian.Uint16(b[2*i:]))
 		}
-		most := cfg.MaxWrite
-		if most == 0 {
-			most = 1 << 12
-		}
-		var hold DiscReceiver
+		var hold AudioReceiver
 		run := func(seed uint64, sink *fuzzSink) uint64 {
 			c := cfg
-			if mode%3 == 0 {
-				c.OnBurst = sink.one
+			stream := mode%3 == 0
+			if stream {
+				c.OnBursts = sink.add
 			}
 			r := &hold
 			if init {
@@ -331,7 +324,7 @@ func FuzzDiscReceiver(f *testing.F) {
 				}
 			} else {
 				var err error
-				if r, err = NewDisc(&c); err != nil {
+				if r, err = NewAudioReceiver(&c); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -340,25 +333,28 @@ func FuzzDiscReceiver(f *testing.F) {
 			return mallocs(func() {
 				p := 0
 				for _, k := range chunks {
-					switch {
-					case mode%3 == 1 && !init:
-						sink.add(must(r.Write(x[p : p+k])))
-					default:
+					if stream {
+						if _, err := r.Write(x[p : p+k]); err != nil {
+							panic(err)
+						}
+					} else {
 						dst = r.AppendBursts(dst[:0], x[p:p+k])
 						sink.add(dst)
 					}
 					p += k
 				}
-				if mode%3 == 1 && !init {
-					sink.add(r.Flush())
+				if stream {
+					if err := r.Flush(); err != nil {
+						panic(err)
+					}
 				} else {
 					sink.add(r.AppendFlush(dst[:0]))
 				}
 			})
 		}
-		hz := cfg.Hz
+		hz := cfg.Rate
 		if hz == 0 {
-			hz = 24000
+			hz = 2 * discRate
 		}
 		var one, chunked *fuzzSink
 		if n := quiet(func() uint64 { one = newFuzzSink(); return run(0, one) }); n != 0 {

@@ -1,10 +1,8 @@
 package rf
 
 import (
-	"errors"
 	"math"
 
-	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -18,18 +16,17 @@ type Tier int
 // with soft decisions, and Tier0 to Tier2 each need under 20 ms of CPU per
 // second of signal on a PC.
 const (
-	// TierDefault is the zero value: Tier0 in a Config, and in a DiscConfig
-	// Tier1 for NewDisc, or Tier0 under TinyGo and for Init.
+	// TierDefault is the zero value: Tier1 for NewReceiver and
+	// NewAudioReceiver, and Tier0 for Init and under TinyGo.
 	TierDefault Tier = iota
 	// Tier0 slices the output of an FM discriminator and its matched
-	// filter. On I/Q at BasebandRate an FM discriminator at 12 kHz comes
-	// before it, and the receiver keeps about 19 KB. At a BasebandHz of 9600
-	// or 12000 it takes I/Q that a radio chip filtered to the channel and
-	// keeps about 1.6 KB; LowIQReceiver is that receiver in memory of the
-	// caller, for a microcontroller. On I/Q at BasebandRate Tier0 to Tier3
-	// find a carrier up to 6.25 kHz off, half the channel spacing, from the
-	// spectrum before they lock; a carrier further off is taken for the
-	// next channel.
+	// filter. On I/Q from 48 kHz an FM discriminator at 12 kHz comes before
+	// it, and the receiver keeps about 19 KB. On I/Q at 9.6 or 12 kHz that
+	// a radio chip filtered to the channel it keeps about 1.6 KB, and Init
+	// sets it up in memory of the caller, for a microcontroller. On I/Q
+	// from 48 kHz Tier0 to Tier3 find a carrier up to 6.25 kHz off, half
+	// the channel spacing, from the spectrum before they lock; a carrier
+	// further off is taken for the next channel.
 	Tier0
 	// Tier1 adds to Tier0 the soft decoders: a BPTC(196,96) block whose
 	// check fails by ordered statistics, C0 and C1 of each voice frame by
@@ -100,67 +97,6 @@ const (
 	maxTauSpan     = 5.0
 )
 
-// ErrWriteTooLong reports a call of Write or WriteBaseband, on a Receiver
-// or DiscReceiver without OnBurst, that is too long for the burst buffer
-// that MaxWrite sizes. The call processes none of its samples.
-var ErrWriteTooLong = errors.New("rf: write longer than MaxWrite")
-
-// MaxWriteLimit is the largest Config.MaxWrite and DiscConfig.MaxWrite, so
-// that the burst buffer that a constructor allocates stays bounded.
-const MaxWriteLimit = 1 << 24
-
-// BasebandRate is the sample rate of the complex baseband that
-// WriteBaseband takes by default, in Hz.
-const BasebandRate = basebandRate
-
-// Config sizes a Receiver. New allocates every buffer from it, and the
-// Receiver allocates nothing after that.
-type Config struct {
-	// Rate is the sample rate of the I/Q bytes of Write, in Hz, at least
-	// BasebandHz. 0 means BasebandHz. WriteBaseband does not use it.
-	Rate float64
-	// Signed selects signed 8-bit I/Q (HackRF) for Write instead of
-	// unsigned (rtl_sdr).
-	Signed bool
-	// Tier selects the detection. The zero value TierDefault is Tier0.
-	Tier Tier
-	// BasebandHz is the sample rate of the complex baseband that
-	// WriteBaseband takes and that the front end of Write makes: 0 or
-	// BasebandRate; BasebandRate/2 with Tier0 or Tier1, which selects their
-	// receiver with a complex front end in place of the FM discriminator,
-	// with about 2 KB of state for Tier0; or 9600 or 12000 with Tier0, for
-	// I/Q that a radio chip filtered to the channel, with about 1.6 KB of
-	// state. Bursts that OnBurst does not take add to the RAM. At 9600
-	// and 12000 Write takes 8-bit I/Q at BasebandHz, and Rate must be 0 or
-	// BasebandHz. 0 means BasebandRate.
-	BasebandHz int
-	// OffsetHz is the frequency of the carrier relative to the center of
-	// the I/Q, in Hz, when the oscillator of the radio is known to be off,
-	// as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that
-	// OffsetHz of a Receiver reported for that radio. The receiver tunes
-	// there before it searches 6.25 kHz around it for the carrier. It must
-	// be under BasebandHz/2 in size. 0 means a centered carrier.
-	OffsetHz float64
-	// MaxWrite is the largest number of bytes in one Write, and twice the
-	// largest number of samples in one WriteBaseband, at most
-	// MaxWriteLimit. 0 means 1 << 16. When OnBurst is nil, a longer call
-	// returns ErrWriteTooLong.
-	MaxWrite int
-	// LookbackSlots is the number of 30 ms slots before the first SYNC it
-	// locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8
-	// for Tier2, and 16 for Tier3. Tier0 keeps none, and loses
-	// the start of a stream that it enters late.
-	LookbackSlots int
-	// OnBurst, when not nil, takes each burst as the receiver recovers it,
-	// in place of the slice that Write, WriteBaseband and Flush return,
-	// which are then empty. The receiver then keeps no buffer of bursts.
-	// The burst is valid only during the call; copy it to keep it. A
-	// pointer and not a value, because TinyGo passes a struct value one
-	// element per stack slot.
-	OnBurst func(*Burst)
-	opt     *options
-}
-
 type anchorInfo struct {
 	pattern enums.SyncPattern
 	metric  float64
@@ -178,28 +114,12 @@ type slotState struct {
 	hasPrior bool
 }
 
-// Receiver recovers DMR bursts from a stream of I/Q samples. It locks to
-// the slot timing of the first SYNC it finds, follows the timing and the
-// carrier through the transmission, and returns every burst it recovers.
-// Make it with New; a zero Receiver returns no bursts.
-type Receiver struct {
-	e        *engine
-	lean     *leanRx
-	iqd      *iqRx
-	iq0      *iq0Rx
-	cb       *combRx
-	iql      *iqLowNew
-	slot     int
-	maxWrite int
-}
-
 type engine struct {
-	cfg                Config
+	cfg                rxSetup
 	opt                options
 	fe                 *frontEnd
 	wide               []complex64
 	inChunk            int
-	carry              byteCarry
 	chz                *channelizer
 	spec               *spectrum
 	search             *syncSearch
@@ -215,7 +135,7 @@ type engine struct {
 	runG, runLo, runHi symRef
 	runDir, runSteps   int
 	tk                 *tracker
-	out                []Burst
+	sink               *burstSink
 	pulse              phasePulse
 	corrX              []complex64
 
@@ -279,123 +199,16 @@ type engine struct {
 	passRecs                     []passRec
 }
 
-// New returns a Receiver sized by cfg. A nil cfg means the zero Config. It
-// allocates every buffer of the Receiver. It returns a *dmrgo.ConfigError when a
-// field of cfg is out of range.
-func New(c *Config) (*Receiver, error) {
-	var cfg Config
-	if c != nil {
-		cfg = *c
-	}
-	r, err := newReceiver(cfg)
-	if err != nil {
-		return nil, err
-	}
-	hz := cfg.BasebandHz
-	if hz == 0 {
-		hz = basebandRate
-	}
-	r.slot, r.maxWrite = hz*3/100, cfg.MaxWrite
-	if r.maxWrite == 0 {
-		r.maxWrite = 1 << 16
-	}
-	return r, nil
-}
-
-func newReceiver(cfg Config) (*Receiver, error) {
-	low, err := checkConfig(&cfg)
-	if err != nil {
-		return nil, err
-	}
-	opt := tierOptions(cfg.Tier)
-	switch {
-	case low:
-		opt = iqLowOptions()
-	case (cfg.Tier == Tier1 || cfg.Tier == Tier2) && cfg.LookbackSlots > 0:
-		opt.ExtLookback = cfg.LookbackSlots
-	}
-	if cfg.opt != nil {
-		opt = *cfg.opt
-	}
-	if !opt.tabled() || opt.IQFront > 0 && opt.CohExt {
-		return nil, &dmrgo.ConfigError{Type: "rf", Field: "Config.opt"}
-	}
-	if low && opt.IQLow > 0 {
-		return &Receiver{iql: newIQLowRx(cfg, opt)}, nil
-	}
-	if low {
-		return &Receiver{iq0: newIQ0Rx(cfg, opt)}, nil
-	}
-	if !opt.Coherent {
-		if opt.IQDisc && cfg.BasebandHz == basebandRate {
-			if opt.IQFront > 0 && !opt.SoftExt && cfg.Rate == float64(cfg.BasebandHz) {
-				return newIQ0Receiver(cfg, opt), nil
-			}
-			return &Receiver{iqd: newIQRx(cfg, opt)}, nil
-		}
-		return &Receiver{lean: newLean(cfg, opt)}, nil
-	}
-	if cfg.LookbackSlots == 0 {
-		cfg.LookbackSlots = 16
-	}
-	if opt.Comb {
-		c := newComb(cfg, opt)
-		return &Receiver{e: c.t3, cb: c}, nil
-	}
-	return &Receiver{e: newEngine(cfg, opt)}, nil
-}
-
-func checkConfig(cfg *Config) (low bool, err error) {
-	if cfg.Tier == TierDefault {
-		cfg.Tier = Tier0
-	}
-	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
-		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.Tier"}
-	}
-	low = cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2
-	if cfg.opt != nil {
-		low = low && cfg.opt.IQFront == 4 && cfg.opt.IQDisc
-	} else {
-		low = low && cfg.Tier == Tier0
-	}
-	switch {
-	case cfg.BasebandHz == 0:
-		cfg.BasebandHz = basebandRate
-	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate, low:
-	default:
-		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.BasebandHz"}
-	}
-	switch {
-	case cfg.Rate == 0:
-		cfg.Rate = float64(cfg.BasebandHz)
-	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9, low && cfg.opt == nil && cfg.Rate != float64(cfg.BasebandHz):
-		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.Rate"}
-	}
-	if !(math.Abs(cfg.OffsetHz) < float64(cfg.BasebandHz)/2) {
-		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.OffsetHz"}
-	}
-	if cfg.MaxWrite < 0 || cfg.MaxWrite > MaxWriteLimit {
-		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.MaxWrite"}
-	}
-	if cfg.LookbackSlots < 0 || cfg.Tier == Tier0 && cfg.LookbackSlots > 0 {
-		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.LookbackSlots"}
-	}
-	if cfg.MaxWrite == 0 {
-		cfg.MaxWrite = 1 << 16
-	}
-	return low, nil
-}
-
-func newEngine(cfg Config, opt options) *engine {
+func newEngine(cfg rxSetup, opt options) *engine {
 	r := &engine{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64, llrScale: opt.LLRScale}
 	if r.llrScale == 0 {
 		r.llrScale = 1
 	}
 	r.nsrc = r.opt.Sources
 	half := cfg.BasebandHz == discRate
-	r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
+	r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 	r.wide = make([]complex64, wideChunk)
-	r.inChunk = max(2*int(float64(wideChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
+	r.inChunk = max(r.fe.size*int(float64(wideChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
 	size := (cfg.LookbackSlots + opt.passSlots() + maxGapSlots + 4) * slotSamplesN
 	dec := 2
 	if r.opt.Coherent {
@@ -478,217 +291,18 @@ func newEngine(cfg Config, opt options) *engine {
 		r.tk.repair = r.repairEntry
 		r.tk.elc = r.rep.embeddedLC
 	}
-	if cfg.OnBurst == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+2*len(r.slots)+16)
-	}
+	r.sink = cfg.sink
 	if cfg.OffsetHz != 0 {
 		r.chz.tune(cfg.OffsetHz)
 	}
 	return r
 }
 
-// OffsetHz returns the carrier offset of the last stream that ended, in Hz.
-func (r *Receiver) OffsetHz() float64 {
-	if r == nil {
-		return 0
-	}
-
-	if r.iql != nil {
-		return float64(r.iql.hz) + r.iql.d.OffsetHz()/iqUnitsPerHz
-	}
-	if r.iq0 != nil {
-		return float64(r.iq0.hz) + r.iq0.d.OffsetHz()/iqUnitsPerHz
-	}
-	if r.iqd != nil {
-		return float64(r.iqd.conv.hz) + r.iqd.d.OffsetHz()/iqUnitsPerHz
-	}
-	if r.lean != nil {
-		return float64(r.lean.offsetHz)
-	}
-	if r.e == nil {
-		return 0
-	}
-	return r.e.offsetHz
-}
-
-// DeviationHz returns the outer deviation of the last locked stream, in Hz.
-func (r *Receiver) DeviationHz() float64 {
-	if r == nil {
-		return 0
-	}
-
-	if r.iql != nil {
-		return r.iql.d.DeviationHz() / iqUnitsPerHz
-	}
-	if r.iq0 != nil {
-		return r.iq0.d.DeviationHz() / iqUnitsPerHz
-	}
-	if r.iqd != nil {
-		return r.iqd.d.DeviationHz() / iqUnitsPerHz
-	}
-	if r.lean != nil {
-		return float64(r.lean.devHz)
-	}
-	if r.e == nil {
-		return 0
-	}
-	return r.e.devHz
-}
-
-// MaxBursts returns the most bursts that one call can return for a call
-// of samples I/Q samples. Write returns at most r.MaxBursts((len(iq)+1)/2)
-// bursts, WriteBaseband at most r.MaxBursts(len(x)) and Flush at most
-// r.MaxBursts(0), and all three return none when Config.OnBurst is set. It
-// does not allocate.
-func (r *Receiver) MaxBursts(samples int) int {
-	if r == nil {
-		return 0
-	}
-
-	c := cap(r.outBuf())
-	if r.cb != nil || c == 0 {
-		return c
-	}
-	held := 16
-	if r.e != nil {
-		held += 2 * len(r.e.slots)
-	}
-	return min(c, 4*(max(samples, 0)/r.slot+2)+held)
-}
-
-func (r *Receiver) outBuf() []Burst {
-	switch {
-	case r.cb != nil:
-		return r.cb.out
-	case r.iql != nil:
-		return r.iql.d.out
-	case r.iq0 != nil:
-		return r.iq0.out
-	case r.iqd != nil:
-		return r.iqd.out
-	case r.lean != nil:
-		return r.lean.out
-	case r.e != nil:
-		return r.e.out
-	}
-	return nil
-}
-
-// Write processes interleaved 8-bit I/Q at Config.Rate and returns the
-// bursts that are complete. It returns at most r.MaxBursts((len(iq)+1)/2)
-// bursts. The returned slice is valid until the next call. Without
-// OnBurst, it returns ErrWriteTooLong and processes nothing when iq is
-// longer than Config.MaxWrite.
-func (r *Receiver) Write(iq []byte) ([]Burst, error) {
-	if r == nil {
-		return nil, dmrgo.ErrNilReceiver
-	}
-
-	if len(iq) > r.maxWrite && cap(r.outBuf()) > 0 {
-		return nil, ErrWriteTooLong
-	}
-	return r.write(iq), nil
-}
-
-func (r *Receiver) write(iq []byte) []Burst {
-	if r.cb != nil {
-		return r.cb.write(iq)
-	}
-	if r.iql != nil {
-		return r.iql.write(iq)
-	}
-	if r.iq0 != nil {
-		return r.iq0.write(iq)
-	}
-	if r.iqd != nil {
-		return r.iqd.write(iq)
-	}
-	if r.lean != nil {
-		return r.lean.write(iq)
-	}
-	if r.e == nil {
-		return nil
-	}
-	return r.e.write(iq)
-}
-
-// WriteBaseband processes complex baseband samples at Config.BasebandHz, as
-// a radio front end delivers them, in place of Write. It returns at most
-// r.MaxBursts(len(x)) bursts. The returned slice is valid until the next
-// call. Without OnBurst, it returns ErrWriteTooLong and processes nothing
-// when x has more than Config.MaxWrite/2 samples.
-func (r *Receiver) WriteBaseband(x []complex64) ([]Burst, error) {
-	if r == nil {
-		return nil, dmrgo.ErrNilReceiver
-	}
-
-	if 2*len(x) > r.maxWrite && cap(r.outBuf()) > 0 {
-		return nil, ErrWriteTooLong
-	}
-	return r.writeBaseband(x), nil
-}
-
-func (r *Receiver) writeBaseband(x []complex64) []Burst {
-	if r.cb != nil {
-		return r.cb.writeBaseband(x)
-	}
-	if r.iql != nil {
-		return r.iql.writeBaseband(x)
-	}
-	if r.iq0 != nil {
-		return r.iq0.writeBaseband(x)
-	}
-	if r.iqd != nil {
-		return r.iqd.writeBaseband(x)
-	}
-	if r.lean != nil {
-		return r.lean.writeBaseband(x)
-	}
-	if r.e == nil {
-		return nil
-	}
-	return r.e.writeBaseband(x)
-}
-
-// Flush finishes the stream at its end and returns the remaining bursts.
-// It returns at most r.MaxBursts(0) bursts.
-func (r *Receiver) Flush() []Burst {
-	if r == nil {
-		return nil
-	}
-
-	if r.cb != nil {
-		return r.cb.flush()
-	}
-	if r.iql != nil {
-		return r.iql.flush()
-	}
-	if r.iq0 != nil {
-		return r.iq0.flush()
-	}
-	if r.iqd != nil {
-		return r.iqd.flush()
-	}
-	if r.lean != nil {
-		return r.lean.flush()
-	}
-	if r.e == nil {
-		return nil
-	}
-	return r.e.flush()
-}
-
-func (r *engine) write(iq []byte) []Burst {
-	r.out = r.out[:0]
-	pair, iq := r.carry.split(iq)
-	r.bytes(pair)
-	r.bytes(iq)
-	return r.out
-}
-
-func (r *engine) bytes(iq []byte) {
+func (r *engine) write(iq []byte) {
+	sb := r.fe.size
 	for len(iq) > 0 {
-		n := min(len(iq), r.inChunk) &^ 1
+		n := min(len(iq), r.inChunk)
+		n -= n % sb
 		if n == 0 {
 			break
 		}
@@ -698,14 +312,12 @@ func (r *engine) bytes(iq []byte) {
 	}
 }
 
-func (r *engine) writeBaseband(x []complex64) []Burst {
-	r.out = r.out[:0]
+func (r *engine) writeBaseband(x []complex64) {
 	for len(x) > 0 {
 		n := min(len(x), len(r.wide))
 		r.push(x[:n])
 		x = x[n:]
 	}
-	return r.out
 }
 
 func (r *engine) push(x []complex64) {
@@ -730,8 +342,7 @@ func (r *engine) tuneOK(hz float64) bool {
 	return r.opt.IQTuneMaxHz <= 0 || math.Abs(hz-r.cfg.OffsetHz) <= float64(r.opt.IQTuneMaxHz)
 }
 
-func (r *engine) flush() []Burst {
-	r.out = r.out[:0]
+func (r *engine) flush() {
 	for range slotSamplesN {
 		r.chz.push(0)
 	}
@@ -741,7 +352,6 @@ func (r *engine) flush() []Burst {
 		r.step(true)
 	}
 	r.tk.flush(r.emitFn)
-	return r.out
 }
 
 func (r *engine) emit(x *received) {
@@ -751,10 +361,8 @@ func (r *engine) emit(x *received) {
 		r.cfg.OnBurst(&r.cb)
 		return
 	}
-	if len(r.out) < cap(r.out) {
-		r.out = r.out[:len(r.out)+1]
-		x.put(&r.out[len(r.out)-1])
-	}
+	x.put(&r.cb)
+	r.sink.put(&r.cb)
 }
 
 func (r *engine) step(end bool) {
