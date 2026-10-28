@@ -43,9 +43,13 @@ type AudioTxConfig struct {
 	// input from 300 Hz to 3 kHz, so that the transmitter inverts it. The
 	// limits with it are not measured yet, so it is refused.
 	PreEmphasis bool
-	// InputLowpassHz states the cutoff of a low pass of the radio before
-	// its modulator input, in Hz; 0 means none, a converter that drives
-	// the modulator with no filter. It is not supported yet and must be 0.
+	// InputLowpassHz states the cutoff in Hz of a low pass of at least two
+	// poles that the radio puts before its modulator input; 0 means none,
+	// a converter that drives the modulator with no filter. The limits are
+	// measured with a two-pole Butterworth low pass at 8000, 5000 and
+	// 3000 Hz, and a stated cutoff takes the next looser of these, so 6000
+	// counts as 8000 and a cutoff above 8000 as none. A low pass lowers the
+	// least Rate that keeps the limits. A negative cutoff is refused.
 	InputLowpassHz int
 	// Region is the regulatory region whose limits the signal keeps.
 	Region Region
@@ -204,7 +208,7 @@ func (c *AudioTxConfig) prepare() (audioPlan, int, error) {
 	if c.Offset <= -half || c.Offset >= half {
 		return audioPlan{}, 0, e.offsetCodes
 	}
-	if c.InputLowpassHz != 0 {
+	if c.InputLowpassHz < 0 {
 		return audioPlan{}, 0, e.lowpass
 	}
 	if c.Level < 0 || c.Level > maxTxLevel {
@@ -229,7 +233,7 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level int) error {
 	if level < measuredLevel(c.Bits) {
 		return e.levelLow
 	}
-	if least := r.minRate(c.Tier, false, c.Bits, class); least == 0 || c.Rate < least || c.Rate > maxTxAudio {
+	if least := r.minRate(c.Tier, false, c.Bits, class, c.InputLowpassHz); least == 0 || c.Rate < least || c.Rate > maxTxAudio {
 		return e.rateLimit
 	}
 	p.txPlan = txPlan{tier: c.Tier, rate: c.Rate, lag: 8, lf: c.Service == ServiceLicenseFree, sb: 2, class: class}

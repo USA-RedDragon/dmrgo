@@ -229,13 +229,13 @@ func (r *txRegs) services() [2]int {
 	return [2]int{fsktx.LimitsLandMobile, fsktx.LimitsAmateur}
 }
 
-func (r *txRegs) minRate(t Tier, iq bool, bits, class int) int {
+func (r *txRegs) minRate(t Tier, iq bool, bits, class, lowpass int) int {
 	least := 0
 	for _, s := range r.services() {
 		if s < 0 {
 			continue
 		}
-		m := fsktx.MinRate(fsktx.Tier(t), iq, bits, int(r.region), s, class)
+		m := fsktx.Setup{Tier: fsktx.Tier(t), IQ: iq, Bits: bits, Region: int(r.region), Service: s, Power: class, InputLowpassHz: lowpass}.MinRate()
 		if m == 0 {
 			return 0
 		}

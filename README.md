@@ -415,8 +415,10 @@ Not measured yet, and refused:
 - power above 60 dBm,
 - the license-free service (PMR446, the China 409 MHz walkie-talkie, with -70 dBc in the alternate channel); the US and Japan have no license-free DMR,
 - the amateur limits of China and Japan,
-- pre-emphasis and a low pass of the radio before its modulator input,
+- pre-emphasis,
 - audio under 16 bits from Tier 1 and Tier 2 at 24 kHz and above, as the measured level of those bits does not fit in them with the Tier 1 and Tier 2 designs.
+
+`AudioTxConfig.InputLowpassHz` states a low pass of the radio before its modulator input. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these. A low pass lowers the least rate that keeps the limits.
 
 RegionUS does not cover the 800 MHz bands of FCC Mask H or the 90.691 EA mask.
 

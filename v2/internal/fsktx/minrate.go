@@ -144,9 +144,3 @@ func (s Setup) Allows(hz int) bool {
 	least := s.MinRate()
 	return least > 0 && hz >= least
 }
-
-// MinRate returns the MinRate of the Setup of tier t, iq, bits, region,
-// service and power, with no input low pass.
-func MinRate(t Tier, iq bool, bits, region, service, power int) int {
-	return Setup{Tier: t, IQ: iq, Bits: bits, Region: region, Service: service, Power: power}.MinRate()
-}

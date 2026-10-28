@@ -208,7 +208,7 @@ func (c *TxConfig) plan(g *txGate) (txPlan, error) {
 	if c.Format == IQFormatCU8 || c.Format == IQFormatCS8 {
 		bits = 8
 	}
-	if least := r.minRate(c.Tier, true, bits, class); image || least == 0 || c.Rate < least {
+	if least := r.minRate(c.Tier, true, bits, class, 0); image || least == 0 || c.Rate < least {
 		return txPlan{}, e.rateLimit
 	}
 	p := txPlan{tier: c.Tier, rate: c.Rate, lag: 8, lf: c.Service == ServiceLicenseFree, sb: c.Format.bytes(), class: class}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
 )
 
 var openGate = &txGate{noSpur: true}
@@ -86,7 +87,7 @@ func refusals() []refusal {
 		{"audio level 16001", nil, nil, &AudioTxConfig{Level: 16001}, "AudioTxConfig.Level", false},
 		{"audio level -1", nil, nil, &AudioTxConfig{Level: -1}, "AudioTxConfig.Level", false},
 		{"audio level 1100 at 12 bits", nil, nil, &AudioTxConfig{Bits: 12, Level: 1100}, "AudioTxConfig.Level", false},
-		{"audio input low pass", nil, nil, &AudioTxConfig{InputLowpassHz: 8000}, "AudioTxConfig.InputLowpassHz", false},
+		{"audio input low pass -1", nil, nil, &AudioTxConfig{InputLowpassHz: -1}, "AudioTxConfig.InputLowpassHz", false},
 		{"audio pre-emphasis", openGate, nil, ua(AudioTxConfig{PreEmphasis: true}), "AudioTxConfig.PreEmphasis", true},
 		{"audio level 1000 at 12 bits", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Bits: 12, Level: 1000}), "AudioTxConfig.Level", true},
 		{"audio level 60 at 8 bits", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Bits: 8, Level: 60}), "AudioTxConfig.Level", true},
@@ -413,4 +414,45 @@ func envelope(b []byte, sps int) []float64 {
 		out[k] = math.Sqrt(e/float64(sps)) / 32768
 	}
 	return out
+}
+
+func TestTxInputLowpass(t *testing.T) {
+	t.Parallel()
+	for _, tier := range []Tier{Tier1, Tier2} {
+		for _, bits := range []int{16} {
+			s := fsktx.Setup{Tier: fsktx.Tier(tier), Bits: bits, Region: fsktx.LimitsUS, Service: fsktx.LimitsLandMobile}
+			r := txRegs{region: RegionUS, service: ServiceLandMobile, power: 30}
+			class, err := r.check(&audioErrs, openGate)
+			if err != nil {
+				t.Fatal(err)
+			}
+			s.Power = class
+			none := s.MinRate()
+			lowered := false
+			for _, hz := range []int{8000, 6000, 5000, 3000, 1000} {
+				s.InputLowpassHz = hz
+				least := s.MinRate()
+				if least == 0 || none != 0 && least > none {
+					t.Errorf("tier %v, %d bits, %d Hz: least %d, none %d", tier, bits, hz, least, none)
+					continue
+				}
+				if least == none {
+					continue
+				}
+				lowered = true
+				c := usAudio(tier, least, bits)
+				c.InputLowpassHz = hz
+				if _, err := newAudioTransmitter(c, openGate); err != nil {
+					t.Errorf("tier %v, %d bits, %d Hz at %d: %v", tier, bits, hz, least, err)
+				}
+				c.InputLowpassHz = 0
+				if f, region := errField(func() error { _, err := newAudioTransmitter(c, openGate); return err }()); f != "AudioTxConfig.Rate" || !region {
+					t.Errorf("tier %v, %d bits, no low pass at %d: %s", tier, bits, least, f)
+				}
+			}
+			if !lowered {
+				t.Errorf("tier %v, %d bits: no low pass lowers the least rate %d", tier, bits, none)
+			}
+		}
+	}
 }
