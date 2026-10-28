@@ -486,6 +486,11 @@ func (g *gen) mapPtrResult(sm *sigmap, n string, e types.Type, r string) error {
 			sm.notes = append(sm.notes, " In C, *"+n+" is a new handle to a copy, which does not change with self; free it with "+ti.base+"_free.")
 			return nil
 		}
+		if sm.fn != nil && sm.fn.Signature().Recv() != nil && types.Identical(sm.fn.Signature().Recv().Type(), types.NewPointer(e)) {
+			lines(&sm.post, "*"+cn+" = nil", "if "+r+" == h.v {", "*"+cn+" = c_self", "} else if "+r+" != nil {", "*"+cn+" = "+g.newer(ti)+"("+r+")", "}")
+			sm.notes = append(sm.notes, " In C, *"+n+" is self when the result is the receiver.")
+			return nil
+		}
 		lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "*"+cn+" = "+g.newer(ti)+"("+r+")", "}")
 		return nil
 	}
