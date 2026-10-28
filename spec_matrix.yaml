@@ -51,6 +51,7 @@ ignore_files:
   - v2/internal/digest/equal.go
   - v2/internal/digest/sha1.go
   - v2/internal/digest/sha256.go
+  - v2/nmea/append.go
   - v2/nmea/errors.go
   - v2/nmea/rmc.go
   - v2/errors.go
@@ -272,6 +273,7 @@ ignore_files:
   - v2/hytera/hdap/services.go
   - v2/internal/appcapture/appcapture.go
   - v2/internal/wire/wire.go
+  - v2/location/append.go
   - v2/location/errors.go
   - v2/location/location.go
   - v2/mototrbo/ars/ars.go

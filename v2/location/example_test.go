@@ -68,3 +68,30 @@ func ExampleDecoder_Decode_hytera() {
 	// Output:
 	// HDAP from 80: 34.21217 108.83333 2025-12-02
 }
+
+var header location.Header
+
+// ExampleAppendPacket sends a position as an AnyTone radio does and reads
+// it back.
+func ExampleAppendPacket() {
+	f := location.Fix{
+		Format: location.FormatNMEA, Source: 3191868, Destination: 3140598, Valid: true,
+		Latitude: 34.212166, Longitude: 108.833333, Course: 121, HasCourse: true, HasSpeed: true,
+		Year: 2025, Month: 12, Day: 2, Hour: 20, Minute: 0, Second: 37, HasTime: true,
+	}
+	data, err := location.AppendPacket(nil, &f, &header)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	p, err := packet.NewPacket(header.Data, data, enums.DataTypeRate12)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	got, err := decoder.Decode(&p.Header, data)
+	fmt.Printf("%d blocks: %q\n%s from %d: %.5f %.5f %v\n", len(p.Blocks), data[9:], got.Format, got.Source, got.Latitude, got.Longitude, err)
+	// Output:
+	// 8 blocks: "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"
+	// NMEA from 3191868: 34.21217 108.83333 <nil>
+}

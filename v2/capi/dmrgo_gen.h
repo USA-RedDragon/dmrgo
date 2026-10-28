@@ -415,6 +415,8 @@ typedef struct dmrgo_lip_velocity_t dmrgo_lip_velocity_t;
 typedef struct dmrgo_location_decoder_t dmrgo_location_decoder_t;
 /* Go: location.Fix. Fix is a position that a radio reported. */
 typedef struct dmrgo_location_fix_t dmrgo_location_fix_t;
+/* Go: location.Header. Header holds the data header that AppendPacket builds. */
+typedef struct dmrgo_location_header_t dmrgo_location_header_t;
 /* Go: ars.Header. Header is the first header octet of a message. */
 typedef struct dmrgo_ars_header_t dmrgo_ars_header_t;
 /* Go: ars.Message. Message is a MOTOTRBO Automatic Registration Service message, the payload of a UDP datagram to port 4005. */
@@ -3567,6 +3569,11 @@ struct dmrgo_location_fix_t {
 	uint8_t request_id_length;
 };
 
+struct dmrgo_location_header_t {
+	/* Data is the data header, for dmrgo_packet_new_packet or a data sender. */
+	dmrgo_pdu_data_header_t data;
+};
+
 struct dmrgo_ars_header_t {
 	/* Extension reports that a second header octet follows. */
 	bool extension;
@@ -5800,6 +5807,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_LIP_SHAPE (-231)
 #define DMRGO_ERR_LIP_SHORT (-232)
 #define DMRGO_ERR_LIP_TIME_TYPE (-233)
+#define DMRGO_ERR_LOCATION_FORMAT (-238)
 #define DMRGO_ERR_LOCATION_NO_FIX (-158)
 #define DMRGO_ERR_LOCATION_NO_POSITION (-159)
 #define DMRGO_ERR_LRRP_LENGTH (-162)
@@ -10357,6 +10365,8 @@ int dmrgo_lip_shape_string(dmrgo_lip_shape_t self, char *out, size_t out_cap, si
 int dmrgo_lip_time_type_string(dmrgo_lip_time_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lip.VelocityType.String. String returns the name of the VelocityType. */
 int dmrgo_lip_velocity_type_string(dmrgo_lip_velocity_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: location.AppendPacket. AppendPacket appends the user data of the position f to dst, sets h to the data header to send it with, and returns dst. A valid f gives status A, the position and mode A; an f that is not valid gives status V, no position and mode N, which Decode returns with DMRGO_ERR_LOCATION_NO_POSITION. It returns dst unchanged and DMRGO_ERR_LOCATION_FORMAT for a Format other than DMRGO_LOCATION_FORMAT_NMEA, DMRGO_ERR_NIL_ARGUMENT for a NULL f or h, and DMRGO_ERR_NMEA_FIELD or the errors of the packages that build the message. f and h may be NULL. */
+int dmrgo_location_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_location_fix_t *f, dmrgo_location_header_t *h);
 /* dmrgo_location_decoder_new makes a zero dmrgo_location_decoder_t. */
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */
@@ -10491,6 +10501,8 @@ int dmrgo_tms_sequence_low_append_binary(const dmrgo_tms_sequence_low_t *self, u
 int dmrgo_tms_sequence_low_string(const dmrgo_tms_sequence_low_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.Type.String. String returns the name of t. */
 int dmrgo_tms_type_string(dmrgo_tms_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: nmea.AppendRMC. AppendRMC appends r to dst as an RMC sentence in the layout that AnyTone radios send, and returns dst: the time as hhmmss.sss, the latitude as ddmm.mmmm, the longitude as dddmm.mmmm, the speed and the course with two decimals, the date as ddmmyy, the magnetic variation with one decimal or empty when it rounds to 0, the mode indicator, then the checksum and CR LF, as in $GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60. It returns dst unchanged and DMRGO_ERR_NMEA_FIELD for a Talker with a byte that is not printable ASCII or is $, * or a comma, a Mode that is not an upper case letter, a field out of the range that ParseRMC accepts, a Speed of 10^13 knots or more, or a value that is not a number, and DMRGO_ERR_NIL_ARGUMENT for a NULL r. r may be NULL. */
+int dmrgo_nmea_append_rmc(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_nmea_rmc_t *r);
 /* Go: nmea.ParseRMC. ParseRMC decodes one RMC sentence from s, from the $ to the two hex digits of the checksum, with an optional CR LF or LF after them. It returns DMRGO_ERR_NMEA_SENTENCE, DMRGO_ERR_NMEA_CHECKSUM or DMRGO_ERR_NMEA_FIELD. */
 int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 /* Go: privacy.Algorithm.String. String returns the name of the algorithm. */

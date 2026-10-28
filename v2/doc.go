@@ -135,11 +135,12 @@
 //   - sms: text messages in every format that radios use.
 //   - shortdata: the text of the short data service, in the coding that its
 //     DD format names.
-//   - location: positions in every format that radios report.
+//   - location: positions in every format that radios report, and the
+//     NMEA position report of AnyTone radios to send.
 //   - lip: the ETSI Location Information Protocol that a UDT carries in
 //     the LIP format.
 //   - nmea: the NMEA 0183 RMC sentence that radios send as a position
-//     report in a data packet.
+//     report in a data packet, to read and to write.
 //   - mototrbo/ars, mototrbo/lrrp, mototrbo/tms: the MOTOTRBO registration,
 //     location and text message services.
 //   - hytera/hdap: the Hytera DMR Application Protocol (HDAP) with its
@@ -304,10 +305,12 @@
 //     that is not a location report, and with the Fix for a report
 //     without a position. Package location also returns the errors of the
 //     ip, lrrp, nmea and hdap packages.
+//   - location.ErrFormat: returned by location.AppendPacket for a Fix in a
+//     format that it does not send.
 //   - lip.ErrShort, lip.ErrPDUType, lip.ErrShape, lip.ErrTimeType,
 //     lip.ErrElement: returned by the LIP decoders and encoders.
 //   - nmea.ErrSentence, nmea.ErrChecksum, nmea.ErrField: returned by
-//     nmea.ParseRMC.
+//     nmea.ParseRMC, and nmea.ErrField by nmea.AppendRMC.
 //   - ars.ErrShort, ars.ErrLength, tms.ErrShort, tms.ErrLength,
 //     lrrp.ErrShort, lrrp.ErrLength, lrrp.ErrToken, lrrp.ErrVarint:
 //     returned by the MOTOTRBO decoders.

@@ -2879,6 +2879,40 @@ func in_lip_ReportAck(s *C.dmrgo_lip_report_ack_t) (d g_lip.ReportAck) {
 	return
 }
 
+func in_location_Fix(s *C.dmrgo_location_fix_t) (d g_location.Fix) {
+	d.Format = g_location.Format(s.format)
+	d.Source = uint32(s.source)
+	d.Destination = uint32(s.destination)
+	d.Valid = bool(s.valid)
+	d.Latitude = float64(s.latitude)
+	d.Longitude = float64(s.longitude)
+	d.Altitude = float64(s.altitude)
+	d.HasAltitude = bool(s.has_altitude)
+	d.Radius = float64(s.radius)
+	d.HasRadius = bool(s.has_radius)
+	d.Speed = float64(s.speed)
+	d.HasSpeed = bool(s.has_speed)
+	d.Course = float64(s.course)
+	d.HasCourse = bool(s.has_course)
+	d.Year = uint16(s.year)
+	d.Month = uint8(s.month)
+	d.Day = uint8(s.day)
+	d.Hour = uint8(s.hour)
+	d.Minute = uint8(s.minute)
+	d.Second = uint8(s.second)
+	d.HasTime = bool(s.has_time)
+	d.Result = uint32(s.result)
+	d.HasResult = bool(s.has_result)
+	d.RequestID = *(*[16]byte)(unsafe.Pointer(&s.request_id))
+	d.RequestIDLength = uint8(s.request_id_length)
+	return
+}
+
+func in_location_Header(s *C.dmrgo_location_header_t) (d g_location.Header) {
+	d.Data = in_layer2_pdu_DataHeader(&s.data)
+	return
+}
+
 func out_location_Fix(d *C.dmrgo_location_fix_t, s *g_location.Fix, oc *outc) {
 	_ = oc
 	d.format = C.dmrgo_location_format_t(s.Format)
@@ -3216,6 +3250,30 @@ func in_mototrbo_tms_Message(s *C.dmrgo_tms_message_t) (d g_mototrbo_tms.Message
 	d.SequenceLow = in_mototrbo_tms_SequenceLow(&s.sequence_low)
 	d.SequenceHigh = in_mototrbo_tms_SequenceHigh(&s.sequence_high)
 	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
+	return
+}
+
+func in_nmea_RMC(s *C.dmrgo_nmea_rmc_t) (d g_nmea.RMC) {
+	d.Talker = *(*[2]byte)(unsafe.Pointer(&s.talker))
+	d.Hour = uint8(s.hour)
+	d.Minute = uint8(s.minute)
+	d.Second = uint8(s.second)
+	d.Millisecond = uint16(s.millisecond)
+	d.HasTime = bool(s.has_time)
+	d.Valid = bool(s.valid)
+	d.Latitude = float64(s.latitude)
+	d.Longitude = float64(s.longitude)
+	d.HasPosition = bool(s.has_position)
+	d.Speed = float64(s.speed)
+	d.HasSpeed = bool(s.has_speed)
+	d.Course = float64(s.course)
+	d.HasCourse = bool(s.has_course)
+	d.Day = uint8(s.day)
+	d.Month = uint8(s.month)
+	d.Year = uint16(s.year)
+	d.HasDate = bool(s.has_date)
+	d.MagneticVariation = float64(s.magnetic_variation)
+	d.Mode = byte(s.mode)
 	return
 }
 
@@ -6411,37 +6469,17 @@ func fromC_lip_Velocity(s *C.dmrgo_lip_velocity_t) g_lip.Velocity {
 	return in_lip_Velocity(s)
 }
 
-func in_location_Fix(s *C.dmrgo_location_fix_t) (d g_location.Fix) {
-	d.Format = g_location.Format(s.format)
-	d.Source = uint32(s.source)
-	d.Destination = uint32(s.destination)
-	d.Valid = bool(s.valid)
-	d.Latitude = float64(s.latitude)
-	d.Longitude = float64(s.longitude)
-	d.Altitude = float64(s.altitude)
-	d.HasAltitude = bool(s.has_altitude)
-	d.Radius = float64(s.radius)
-	d.HasRadius = bool(s.has_radius)
-	d.Speed = float64(s.speed)
-	d.HasSpeed = bool(s.has_speed)
-	d.Course = float64(s.course)
-	d.HasCourse = bool(s.has_course)
-	d.Year = uint16(s.year)
-	d.Month = uint8(s.month)
-	d.Day = uint8(s.day)
-	d.Hour = uint8(s.hour)
-	d.Minute = uint8(s.minute)
-	d.Second = uint8(s.second)
-	d.HasTime = bool(s.has_time)
-	d.Result = uint32(s.result)
-	d.HasResult = bool(s.has_result)
-	d.RequestID = *(*[16]byte)(unsafe.Pointer(&s.request_id))
-	d.RequestIDLength = uint8(s.request_id_length)
-	return
-}
-
 func fromC_location_Fix(s *C.dmrgo_location_fix_t) g_location.Fix {
 	return in_location_Fix(s)
+}
+
+func out_location_Header(d *C.dmrgo_location_header_t, s *g_location.Header, oc *outc) {
+	_ = oc
+	out_layer2_pdu_DataHeader(&d.data, &s.Data, oc)
+}
+
+func fromC_location_Header(s *C.dmrgo_location_header_t) g_location.Header {
+	return in_location_Header(s)
 }
 
 func fromC_mototrbo_ars_Header(s *C.dmrgo_ars_header_t) g_mototrbo_ars.Header {
@@ -6648,30 +6686,6 @@ func fromC_mototrbo_tms_SequenceHigh(s *C.dmrgo_tms_sequence_high_t) g_mototrbo_
 
 func fromC_mototrbo_tms_SequenceLow(s *C.dmrgo_tms_sequence_low_t) g_mototrbo_tms.SequenceLow {
 	return in_mototrbo_tms_SequenceLow(s)
-}
-
-func in_nmea_RMC(s *C.dmrgo_nmea_rmc_t) (d g_nmea.RMC) {
-	d.Talker = *(*[2]byte)(unsafe.Pointer(&s.talker))
-	d.Hour = uint8(s.hour)
-	d.Minute = uint8(s.minute)
-	d.Second = uint8(s.second)
-	d.Millisecond = uint16(s.millisecond)
-	d.HasTime = bool(s.has_time)
-	d.Valid = bool(s.valid)
-	d.Latitude = float64(s.latitude)
-	d.Longitude = float64(s.longitude)
-	d.HasPosition = bool(s.has_position)
-	d.Speed = float64(s.speed)
-	d.HasSpeed = bool(s.has_speed)
-	d.Course = float64(s.course)
-	d.HasCourse = bool(s.has_course)
-	d.Day = uint8(s.day)
-	d.Month = uint8(s.month)
-	d.Year = uint16(s.year)
-	d.HasDate = bool(s.has_date)
-	d.MagneticVariation = float64(s.magnetic_variation)
-	d.Mode = byte(s.mode)
-	return
 }
 
 func fromC_nmea_RMC(s *C.dmrgo_nmea_rmc_t) g_nmea.RMC {
@@ -33660,6 +33674,52 @@ func dmrgo_lip_velocity_type_string(c_self C.dmrgo_lip_velocity_type_t, c_out *C
 	return C.DMRGO_OK
 }
 
+//export dmrgo_location_append_packet
+func dmrgo_location_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_f *C.dmrgo_location_fix_t, c_h *C.dmrgo_location_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_f g_location.Fix
+	var p_f *g_location.Fix
+	if c_f != nil {
+		a_f = in_location_Fix(&(*c_f))
+		p_f = &a_f
+	}
+	var a_h g_location.Header
+	var p_h *g_location.Header
+	if c_h != nil {
+		a_h = in_location_Header(&(*c_h))
+		p_h = &a_h
+	}
+	r0, r1 := g_location.AppendPacket(a_dst, p_f, p_h)
+	var ws_h C.dmrgo_location_header_t
+	if c_h != nil {
+		ws_h = *c_h
+		out_layer2_pdu_DataHeader(&ws_h.data, &a_h.Data, oc)
+	}
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_h != nil {
+		*c_h = ws_h
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_location_decoder_new
 func dmrgo_location_decoder_new(c_out **C.dmrgo_location_decoder_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35518,6 +35578,38 @@ func dmrgo_tms_type_string(c_self C.dmrgo_tms_type_t, c_out *C.char, c_out_cap C
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_nmea_append_rmc
+func dmrgo_nmea_append_rmc(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_r *C.dmrgo_nmea_rmc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_r g_nmea.RMC
+	var p_r *g_nmea.RMC
+	if c_r != nil {
+		a_r = in_nmea_RMC(&(*c_r))
+		p_r = &a_r
+	}
+	r0, r1 := g_nmea.AppendRMC(a_dst, p_r)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -52923,6 +53015,8 @@ func errCode1(e error) C.int {
 		return -232
 	case g_lip.ErrTimeType:
 		return -233
+	case g_location.ErrFormat:
+		return -238
 	case g_location.ErrNoFix:
 		return -158
 	case g_location.ErrNoPosition:
@@ -53257,6 +53351,8 @@ func codeErr(code C.int) error {
 		return g_lip.ErrShort
 	case -233:
 		return g_lip.ErrTimeType
+	case -238:
+		return g_location.ErrFormat
 	case -158:
 		return g_location.ErrNoFix
 	case -159:
@@ -53543,6 +53639,8 @@ func knownCode(code C.int) bool {
 	case -232:
 		return true
 	case -233:
+		return true
+	case -238:
 		return true
 	case -158:
 		return true

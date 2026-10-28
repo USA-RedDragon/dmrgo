@@ -136,6 +136,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "lip: PDU too short";
 	case -233:
 		return "lip: time type not defined";
+	case -238:
+		return "location: format cannot be sent";
 	case -158:
 		return "location: packet carries no position";
 	case -159:

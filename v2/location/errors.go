@@ -13,3 +13,7 @@ var ErrNoFix = errors.New("location: packet carries no position")
 // answer, and the other fields that the message has. Match it with
 // errors.Is.
 var ErrNoPosition = errors.New("location: report carries no position")
+
+// ErrFormat is returned by AppendPacket for a Fix whose Format it does not
+// send. Match it with errors.Is.
+var ErrFormat = errors.New("location: format cannot be sent")

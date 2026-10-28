@@ -2,6 +2,7 @@ package location_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"math"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/location"
+	"github.com/USA-RedDragon/dmrgo/v2/nmea"
 )
 
 func FuzzDecode(f *testing.F) {
@@ -43,5 +45,22 @@ func fuzzDecode(t *testing.T, sap uint8, data []byte) {
 	}
 	if f.Source != 1 || f.Destination != 2 || math.IsNaN(f.Latitude) || f.Latitude < -90 || f.Latitude > 90 || f.Longitude < -180 || f.Longitude > 180 {
 		t.Fatalf("Decode(%d, %x) = %+v", sap, data, f)
+	}
+	if f.Format != location.FormatNMEA {
+		return
+	}
+	var h location.Header
+	out, err := location.AppendPacket(nil, &f, &h)
+	if err != nil {
+		if !errors.Is(err, nmea.ErrField) || f.Speed < 1e12 {
+			t.Fatalf("AppendPacket(%+v): %v", f, err)
+		}
+		return
+	}
+	g, err := fuzzDecoder.Decode(&h.Data, out)
+	if err != nil || g.Valid != f.Valid || !near(g.Latitude, f.Latitude, 1e-6) || !near(g.Longitude, f.Longitude, 1e-6) ||
+		g.HasSpeed != f.HasSpeed || !near(g.Speed, f.Speed, 0.003+f.Speed*1e-12) || g.HasCourse != f.HasCourse || !near(g.Course, f.Course, 0.005) ||
+		g.HasTime != f.HasTime || g.Year != f.Year || g.Month != f.Month || g.Day != f.Day || g.Hour != f.Hour || g.Minute != f.Minute || g.Second != f.Second {
+		t.Fatalf("Decode(AppendPacket(%+v)) = %+v, %v", f, g, err)
 	}
 }

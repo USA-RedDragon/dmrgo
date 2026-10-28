@@ -862,6 +862,7 @@ DMRGO_4 {
 		dmrgo_lip_shape_string;
 		dmrgo_lip_time_type_string;
 		dmrgo_lip_velocity_type_string;
+		dmrgo_location_append_packet;
 		dmrgo_location_decoder_decode;
 		dmrgo_location_decoder_free;
 		dmrgo_location_decoder_new;
@@ -952,6 +953,7 @@ DMRGO_4 {
 		dmrgo_mmdvm_status_v2_append_binary;
 		dmrgo_mmdvm_status_v2_string;
 		dmrgo_mmdvm_version_append_binary;
+		dmrgo_nmea_append_rmc;
 		dmrgo_nmea_parse_rmc;
 		dmrgo_packet_append_bursts;
 		dmrgo_packet_assembler_add;

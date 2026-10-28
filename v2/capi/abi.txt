@@ -137,6 +137,7 @@ code DMRGO_ERR_PRIVACY_AMATEUR -234
 code DMRGO_ERR_PRIVACY_KEYS_FULL -235
 code DMRGO_ERR_PRIVACY_NOT_STARTED -236
 code DMRGO_ERR_PRIVACY_DATA_ALGORITHM -237
+code DMRGO_ERR_LOCATION_FORMAT -238
 prefix github.com/USA-RedDragon/dmrgo/v2 dmrgo_
 prefix github.com/USA-RedDragon/dmrgo/v2/bs dmrgo_bs_
 prefix github.com/USA-RedDragon/dmrgo/v2/constants dmrgo_constants_
@@ -860,6 +861,7 @@ sym #define DMRGO_ERR_LIP_PDU_TYPE (-230)
 sym #define DMRGO_ERR_LIP_SHAPE (-231)
 sym #define DMRGO_ERR_LIP_SHORT (-232)
 sym #define DMRGO_ERR_LIP_TIME_TYPE (-233)
+sym #define DMRGO_ERR_LOCATION_FORMAT (-238)
 sym #define DMRGO_ERR_LOCATION_NO_FIX (-158)
 sym #define DMRGO_ERR_LOCATION_NO_POSITION (-159)
 sym #define DMRGO_ERR_LRRP_LENGTH (-162)
@@ -2438,6 +2440,7 @@ sym int dmrgo_lip_report_type_string(dmrgo_lip_report_type_t self, char *out, si
 sym int dmrgo_lip_shape_string(dmrgo_lip_shape_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_lip_time_type_string(dmrgo_lip_time_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_lip_velocity_type_string(dmrgo_lip_velocity_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_location_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_location_fix_t *f, dmrgo_location_header_t *h);
 sym int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
 sym int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
 sym int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
@@ -2528,6 +2531,7 @@ sym int dmrgo_mmdvm_status_v1_string(const dmrgo_mmdvm_status_v1_t *self, char *
 sym int dmrgo_mmdvm_status_v2_append_binary(const dmrgo_mmdvm_status_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_mmdvm_status_v2_string(const dmrgo_mmdvm_status_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_mmdvm_version_append_binary(const dmrgo_mmdvm_version_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_nmea_append_rmc(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_nmea_rmc_t *r);
 sym int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 sym int dmrgo_packet_append_bursts(dmrgo_layer2_raw_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_packet_t *p, dmrgo_enums_color_code_t color_code, dmrgo_layer2_sync_source_t src);
 sym int dmrgo_packet_assembler_add(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, dmrgo_packet_message_t *message, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -3630,6 +3634,7 @@ type struct dmrgo_lip_report_ack_t { uint8_t reserved; int64_t elements; };
 type struct dmrgo_lip_time_t { dmrgo_lip_time_type_t type; uint8_t elapsed; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; };
 type struct dmrgo_lip_velocity_t { dmrgo_lip_velocity_type_t type; uint8_t horizontal; uint8_t horizontal_uncertainty; bool down; uint8_t vertical; uint8_t vertical_uncertainty; uint8_t direction; uint8_t direction_uncertainty; };
 type struct dmrgo_location_fix_t { dmrgo_location_format_t format; uint32_t source; uint32_t destination; bool valid; double latitude; double longitude; double altitude; bool has_altitude; double radius; bool has_radius; double speed; bool has_speed; double course; bool has_course; uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; bool has_time; uint32_t result; bool has_result; uint8_t request_id[16]; uint8_t request_id_length; };
+type struct dmrgo_location_header_t { dmrgo_pdu_data_header_t data; };
 type struct dmrgo_lrrp_circle2d_t { double latitude; double longitude; double radius; };
 type struct dmrgo_lrrp_circle3d_t { double latitude; double longitude; double radius; double altitude; double altitude_accuracy; };
 type struct dmrgo_lrrp_circle3d_whole_t { double latitude; double longitude; uint32_t radius; int32_t altitude; uint32_t altitude_accuracy; };

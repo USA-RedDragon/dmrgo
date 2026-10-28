@@ -29,3 +29,21 @@ func TestAllocs(t *testing.T) {
 		t.Errorf("%.1f allocations per run, want 0", n)
 	}
 }
+
+func TestAllocsAppendPacket(t *testing.T) {
+	ms := aprsMessages(t)
+	d := new(location.Decoder)
+	f, err := d.Decode(&ms[0].Header, ms[0].Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := new(location.Header)
+	buf := make([]byte, 0, 256)
+	var out []byte
+	n := testing.AllocsPerRun(50, func() {
+		out, err = location.AppendPacket(buf[:0], &f, h)
+	})
+	if n != 0 || err != nil || string(out) != string(ms[0].Data) {
+		t.Errorf("%.1f allocations per run, %q, %v, want 0 and %q", n, out, err, ms[0].Data)
+	}
+}
