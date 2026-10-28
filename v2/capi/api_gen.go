@@ -315,6 +315,17 @@ func out_csbk_Output(d *C.dmrgo_csbk_output_t, s *g_csbk.Output, oc *outc) {
 	*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(&d.csbk)) = s.CSBK
 }
 
+func in_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t) (d g_layer2_pdu.CSBK) {
+	d.LastBlock = bool(s.last_block)
+	d.ProtectFlag = bool(s.protect_flag)
+	d.Opcode = g_layer2_pdu.CSBKOpcode(s.opcode)
+	d.FID = g_enums.FID(s.fid)
+	d.FEC = in_fec_Result(&s.fec)
+	d.Hint0x38 = g_layer2_pdu.Opcode0x38Hint(s.hint0x38)
+	d.RawPayload = *(*[8]byte)(unsafe.Pointer(&s.raw_payload))
+	return
+}
+
 func in_csbk_Match(s *C.dmrgo_csbk_match_t) (d g_csbk.Match) {
 	d.FID = g_enums.FID(s.fid)
 	d.Opcodes = *(*[4]g_layer2_pdu.CSBKOpcode)(unsafe.Pointer(&s.opcodes))
@@ -784,17 +795,6 @@ func in_layer2_pdu_CGAPContinuation(s *C.dmrgo_pdu_cgap_continuation_t) (d g_lay
 	d.Cdeftype = uint8(s.cdeftype)
 	d.Reserved2 = uint8(s.reserved2)
 	d.CdefParms = *(*g_layer3.CdefParms)(unsafe.Pointer(&s.cdef_parms))
-	return
-}
-
-func in_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t) (d g_layer2_pdu.CSBK) {
-	d.LastBlock = bool(s.last_block)
-	d.ProtectFlag = bool(s.protect_flag)
-	d.Opcode = g_layer2_pdu.CSBKOpcode(s.opcode)
-	d.FID = g_enums.FID(s.fid)
-	d.FEC = in_fec_Result(&s.fec)
-	d.Hint0x38 = g_layer2_pdu.Opcode0x38Hint(s.hint0x38)
-	d.RawPayload = *(*[8]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
 
@@ -10346,12 +10346,15 @@ func dmrgo_csbk_requester_lost(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_d
 }
 
 //export dmrgo_csbk_requester_request
-func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_c *C.dmrgo_pdu_csbk_bytes_t, c_m *C.dmrgo_csbk_match_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
+func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_c *C.dmrgo_pdu_csbk_t, c_m *C.dmrgo_csbk_match_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
-	if c_c == nil {
-		return fail(C.DMRGO_ERR_ARG)
+	var a_c g_layer2_pdu.CSBK
+	var p_c *g_layer2_pdu.CSBK
+	if c_c != nil {
+		a_c = in_layer2_pdu_CSBK(&(*c_c))
+		p_c = &a_c
 	}
 	if c_m == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -10368,7 +10371,7 @@ func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrg
 		a_opts = in_csbk_RequestOptions(&z_opts)
 		p_opts = &a_opts
 	}
-	r0 := h.v.Request(time.Duration(c_now), *(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_c)), a_m, p_opts)
+	r0 := h.v.Request(time.Duration(c_now), p_c, a_m, p_opts)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

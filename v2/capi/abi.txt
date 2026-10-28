@@ -1682,7 +1682,7 @@ sym int dmrgo_csbk_requester_decoded_need(dmrgo_csbk_requester_t *self, dmrgo_du
 sym int dmrgo_csbk_requester_free(dmrgo_csbk_requester_t *self);
 sym int dmrgo_csbk_requester_lost(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_requester_lost_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-sym int dmrgo_csbk_requester_request(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_pdu_csbk_bytes_t *c, const dmrgo_csbk_match_t *m, const dmrgo_csbk_request_options_t *opts);
+sym int dmrgo_csbk_requester_request(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_pdu_csbk_t *c, const dmrgo_csbk_match_t *m, const dmrgo_csbk_request_options_t *opts);
 sym int dmrgo_csbk_requester_request_call_alert(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_csbk_request_options_t *opts);
 sym int dmrgo_csbk_requester_request_oacsu(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_layer3_service_options_t *so, const dmrgo_csbk_request_options_t *opts);
 sym int dmrgo_csbk_requester_request_radio_check(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_csbk_request_options_t *opts);

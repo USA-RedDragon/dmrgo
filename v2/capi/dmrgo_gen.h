@@ -1355,6 +1355,23 @@ struct dmrgo_csbk_request_options_t {
 	int64_t retry_preambles;
 };
 
+struct dmrgo_pdu_csbk_t {
+	/* LB bit, true for the last block */
+	bool last_block;
+	/* PF bit */
+	bool protect_flag;
+	/* CSBKO, selects the payload */
+	dmrgo_pdu_csbk_opcode_t opcode;
+	/* feature set ID, selects the payload with Opcode */
+	dmrgo_enums_fid_t fid;
+	/* result of the CRC check */
+	dmrgo_fec_result_t fec;
+	/* Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it DMRGO_PDU_OPCODE0X38_UNKNOWN. dmrgo_layer2_burst_t sets it from the SYNC of the burst, which a network relay can rewrite. Each SetX resets it, except the two 0x38 setters, which set it. */
+	dmrgo_pdu_opcode0x38_hint_t hint0x38;
+	/* RawPayload holds CSBK octets 2 to 9 (bits 16 to 79), the payload that Opcode and FID select. */
+	uint8_t raw_payload[8];
+};
+
 struct dmrgo_data_call_t {
 	/* Group reports whether Target is a talkgroup rather than a radio. */
 	bool group;
@@ -1922,23 +1939,6 @@ struct dmrgo_pdu_cgap_continuation_t {
 	uint8_t reserved2;
 	/* channel number and its TX and RX frequencies */
 	dmrgo_layer3_cdef_parms_t cdef_parms;
-};
-
-struct dmrgo_pdu_csbk_t {
-	/* LB bit, true for the last block */
-	bool last_block;
-	/* PF bit */
-	bool protect_flag;
-	/* CSBKO, selects the payload */
-	dmrgo_pdu_csbk_opcode_t opcode;
-	/* feature set ID, selects the payload with Opcode */
-	dmrgo_enums_fid_t fid;
-	/* result of the CRC check */
-	dmrgo_fec_result_t fec;
-	/* Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it DMRGO_PDU_OPCODE0X38_UNKNOWN. dmrgo_layer2_burst_t sets it from the SYNC of the burst, which a network relay can rewrite. Each SetX resets it, except the two 0x38 setters, which set it. */
-	dmrgo_pdu_opcode0x38_hint_t hint0x38;
-	/* RawPayload holds CSBK octets 2 to 9 (bits 16 to 79), the payload that Opcode and FID select. */
-	uint8_t raw_payload[8];
 };
 
 struct dmrgo_pdu_full_link_control_t {
@@ -8394,8 +8394,8 @@ int dmrgo_csbk_requester_decoded(dmrgo_csbk_requester_t *self, dmrgo_duration_t 
 int dmrgo_csbk_requester_lost_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Requester.Lost. Lost tells the Requester that the transport lost the signal: the channel counts as idle. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_requester_lost_need gives (DMRGO_CSBK_REQUESTER_LOST_MAX_ITEMS items). */
 int dmrgo_csbk_requester_lost(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: csbk.Requester.Request. Request starts a request with the CSBK c, which m answers. It returns DMRGO_ERR_CSBK_BUSY while a request runs, DMRGO_ERR_ZERO_VALUE on a zero Requester, DMRGO_ERR_CSBK_NO_ADDRESSES for a standard CSBK without both addresses, and a DMRGO_ERR_CONFIG for a Match without opcodes or a Pre_CSBK count out of range. opts may be NULL. */
-int dmrgo_csbk_requester_request(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_pdu_csbk_bytes_t *c, const dmrgo_csbk_match_t *m, const dmrgo_csbk_request_options_t *opts);
+/* Go: csbk.Requester.Request. Request starts a request with the CSBK c, which m answers. It returns DMRGO_ERR_CSBK_BUSY while a request runs, DMRGO_ERR_ZERO_VALUE on a zero Requester, DMRGO_ERR_NIL_ARGUMENT for a NULL c, the error of dmrgo_pdu_csbk_encode for a field out of range, DMRGO_ERR_CSBK_NO_ADDRESSES for a standard CSBK without both addresses, and a DMRGO_ERR_CONFIG for a Match without opcodes or a Pre_CSBK count out of range. c and opts may be NULL. */
+int dmrgo_csbk_requester_request(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_pdu_csbk_t *c, const dmrgo_csbk_match_t *m, const dmrgo_csbk_request_options_t *opts);
 /* Go: csbk.Requester.RequestCallAlert. RequestCallAlert starts a Motorola call alert of target by source (FID 0x10, opcode 0x1F), which makes target alert its user. opts may be NULL. */
 int dmrgo_csbk_requester_request_call_alert(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_csbk_request_options_t *opts);
 /* Go: csbk.Requester.RequestOACSU. RequestOACSU starts the presence check of an OACSU individual call from source to target: UU_V_Req with the service options so, answered by UU_Ans_Rsp. It returns DMRGO_ERR_CSBK_BUSY while a request runs, DMRGO_ERR_ZERO_VALUE on a zero Requester, and a DMRGO_ERR_CONFIG for an address above 24 bits, impolite access or a Pre_CSBK count out of range. opts may be NULL. */

@@ -183,11 +183,17 @@ func TestRequesterErrors(t *testing.T) {
 	if err := q.RequestCallAlert(0, 2, 1, &csbk.RequestOptions{Preambles: 256}); !errors.As(err, &ce) || ce.Field != "Preambles" {
 		t.Errorf("preambles: %v", err)
 	}
-	if err := q.Request(0, pdu.CSBKBytes{}, csbk.Match{}, nil); !errors.As(err, &ce) || ce.Field != "Match" {
+	if err := q.Request(0, &pdu.CSBK{}, csbk.Match{}, nil); !errors.As(err, &ce) || ce.Field != "Match" {
 		t.Errorf("match: %v", err)
 	}
-	if err := q.Request(0, pdu.CSBKBytes{byte(pdu.CSBKAloha)}, csbk.Match{N: 1}, nil); !errors.Is(err, csbk.ErrNoAddresses) {
+	if err := q.Request(0, &pdu.CSBK{Opcode: pdu.CSBKAloha}, csbk.Match{N: 1}, nil); !errors.Is(err, csbk.ErrNoAddresses) {
 		t.Errorf("C_ALOHA: %v", err)
+	}
+	if err := q.Request(0, nil, csbk.Match{N: 1}, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil CSBK: %v", err)
+	}
+	if err := q.Request(0, &pdu.CSBK{Opcode: 64}, csbk.Match{N: 1}, nil); err == nil {
+		t.Error("opcode above 6 bits")
 	}
 	if err := q.RequestRadioCheck(0, 2, 1, nil); err != nil {
 		t.Fatal(err)
@@ -224,10 +230,6 @@ func TestRequesterCustom(t *testing.T) {
 	if err := c.SetAhoy(pdu.AhoyPDU{TargetAddress: 2, SourceAddress: 1}); err != nil {
 		t.Fatal(err)
 	}
-	req, err := c.Encode()
-	if err != nil {
-		t.Fatal(err)
-	}
 	ack := pdu.CSBK{LastBlock: true}
 	if err := ack.SetMaintenance(pdu.MaintenancePDU{TargetAddress: 1, SourceAddress: 2}); err != nil {
 		t.Fatal(err)
@@ -237,8 +239,11 @@ func TestRequesterCustom(t *testing.T) {
 		t.Fatal(err)
 	}
 	q := mustRequester(t, nil)
-	if err := q.Request(0, pdu.CSBKBytes(req), mustMatch(t, enums.FIDStandardized, pdu.CSBKMaintenance), nil); err != nil {
+	if err := q.Request(0, &c, mustMatch(t, enums.FIDStandardized, pdu.CSBKMaintenance), nil); err != nil {
 		t.Fatal(err)
+	}
+	if c.LastBlock {
+		t.Error("Request changed c")
 	}
 	sent := run(t, q, 0)
 	if p := pdu.DecodeCSBK([12]byte(bptc(t, &sent[0]))); !p.LastBlock || p.FEC.Uncorrectable {

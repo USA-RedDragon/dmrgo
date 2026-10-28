@@ -318,20 +318,24 @@ func (q *Requester) RequestCallAlert(now time.Duration, target, source uint32, o
 	return nil
 }
 
-// Request starts a request with the CSBK c, which m answers. Request sets
-// the Last Block bit of c and writes its CRC. The target and source come
-// from c: from CSBKBytes.Addresses for the standard FID, from the payload
-// for the Motorola CSBKs, and from octets 4 to 6 and 7 to 9 for any other
-// FID. It returns ErrBusy while a request runs, dmrgo.ErrZeroValue on a
-// zero Requester, ErrNoAddresses for a
+// Request starts a request with the CSBK c, which m answers. Request sends
+// c with the Last Block bit set and its CRC; c itself is not changed. The
+// target and source come from c: from CSBKBytes.Addresses for the standard
+// FID, from the payload for the Motorola CSBKs, and from octets 4 to 6 and
+// 7 to 9 for any other FID. It returns ErrBusy while a request runs,
+// dmrgo.ErrZeroValue on a zero Requester, dmrgo.ErrNilArgument for a nil c,
+// the error of CSBK.Encode for a field out of range, ErrNoAddresses for a
 // standard CSBK without both addresses, and a *dmrgo.ConfigError for a Match
 // without opcodes or a Pre_CSBK count out of range.
-func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *RequestOptions) error {
+func (q *Requester) Request(now time.Duration, c *pdu.CSBK, m Match, opts *RequestOptions) error {
 	if q == nil {
 		return dmrgo.ErrNilReceiver
 	}
 	if q.d.b == nil {
 		return dmrgo.ErrZeroValue
+	}
+	if c == nil {
+		return dmrgo.ErrNilArgument
 	}
 	var o RequestOptions
 	if opts != nil {
@@ -340,9 +344,14 @@ func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *R
 	if m.N < 1 || m.N > len(m.Opcodes) {
 		return errMatch
 	}
-	c[0] |= 0x80
-	c.Reseal()
-	q.dec = pdu.DecodeCSBK(c)
+	q.build = *c
+	q.build.LastBlock = true
+	octets, err := q.build.Encode()
+	if err != nil {
+		return err
+	}
+	b := pdu.CSBKBytes(octets)
+	q.dec = pdu.DecodeCSBK(b)
 	target, source, ok := addresses(&q.dec)
 	if !ok {
 		return ErrNoAddresses
@@ -350,9 +359,9 @@ func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *R
 	if err := q.check(target, source, &o); err != nil {
 		return err
 	}
-	group, _ := c.Group()
+	group, _ := b.Group()
 	q.match = m
-	q.begin(now, c, target, source, group, ServiceCustom, &o)
+	q.begin(now, b, target, source, group, ServiceCustom, &o)
 	return nil
 }
 

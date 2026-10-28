@@ -9,6 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
@@ -148,7 +149,7 @@ func TestZeroMachines(t *testing.T) {
 		"RequestOACSU":      q.RequestOACSU(0, 2, 1, layer3.ServiceOptions{}, nil),
 		"RequestRadioCheck": q.RequestRadioCheck(0, 2, 1, nil),
 		"RequestCallAlert":  q.RequestCallAlert(0, 2, 1, nil),
-		"Request":           q.Request(0, octets(t, injectedRadioCheck), csbk.Match{N: 1}, nil),
+		"Request":           q.Request(0, &pdu.CSBK{}, csbk.Match{N: 1}, nil),
 	} {
 		if !errors.Is(err, dmrgo.ErrZeroValue) {
 			t.Errorf("zero Requester %s: %v", name, err)
