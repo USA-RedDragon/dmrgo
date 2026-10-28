@@ -62,3 +62,9 @@ func (r *discRx) inputHz() int {
 	}
 	return r.hz()
 }
+
+func (r *leanCore) hasExt() bool { return r.ext != nil }
+
+func (r *leanCore) isReplaying() bool { return r.replaying }
+
+func (r *leanCore) isReplayDry() bool { return r.replayDry }

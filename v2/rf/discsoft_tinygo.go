@@ -19,3 +19,9 @@ func (r *discRx) unionBacklog() int { return 0 }
 func (r *discRx) unionLag() float64 { return 0 }
 
 type discUnion struct{}
+
+func (r *leanCore) hasExt() bool { return false }
+
+func (r *leanCore) isReplaying() bool { return false }
+
+func (r *leanCore) isReplayDry() bool { return false }

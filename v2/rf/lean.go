@@ -436,7 +436,7 @@ func (r *leanCore) keepQ(q int32) {
 }
 
 func (r *leanCore) acqBuf() ([]int16, int32) {
-	if r.ext != nil {
+	if r.hasExt() {
 		if b := r.ext.kept(); b != nil {
 			return b, int32(2 * len(b))
 		}
@@ -865,7 +865,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 	switch {
 	case r.ns > leanSyncEnd+1 && sym:
 		r.searchSym(false)
-	case r.ns >= leanRing && r.ext != nil:
+	case r.ns >= leanRing && r.hasExt():
 		if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 			r.forceLock(src, data, back)
 		}
@@ -910,7 +910,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 		midSignAt[site0](r)
 		sym, mid = signsMatch[site0](r, r.signs, r.midSigns)
 	}
-	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.ext != nil || mid && r.ns > leanSyncEnd+2
+	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.hasExt() || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
 
@@ -926,7 +926,7 @@ func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 		r.again = false
 		return false, false, r.signsOne(r.signs)
 	}
-	if leanHuntFuse && r.hunt && r.ext == nil && r.midTiming && r.linHunt {
+	if leanHuntFuse && r.hunt && !r.hasExt() && r.midTiming && r.linHunt {
 		return r.lockHunt(at)
 	}
 	if !r.hunt || !r.huntMid(r.lastAt) {
@@ -974,7 +974,7 @@ func (r *leanCore) lockPush(x, at float32) (more bool) {
 
 func (r *leanCore) endSlot() {
 	first := r.next == 0
-	if r.ext != nil && first {
+	if r.hasExt() && first {
 		r.ext.firstSlot(r)
 	}
 	r.slot()
@@ -1013,7 +1013,7 @@ func (r *leanCore) huntMid(at float32) bool {
 	if r.locked {
 		an = leanHuntSamples
 	}
-	if r.ext != nil {
+	if r.hasExt() {
 		if b := r.ext.kept(); b != nil {
 			an = int64(2 * len(b))
 		}
@@ -1226,7 +1226,7 @@ func (r *leanCore) searchSym(strict bool) {
 		gate = leanExtRho
 	}
 	weak := rho2 < gate*gate
-	if weak && (strict || r.ext == nil || rho2 < leanExtRho*leanExtRho) {
+	if weak && (strict || !r.hasExt() || rho2 < leanExtRho*leanExtRho) {
 		return
 	}
 	voice, dp, _ := sourceAt(src).SyncPatterns()
@@ -1254,7 +1254,7 @@ func (r *leanCore) searchSym(strict bool) {
 		}
 	}
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
-		if strict || r.ext == nil || !r.ext.verify(r, p) {
+		if strict || !r.hasExt() || !r.ext.verify(r, p) {
 			return
 		}
 		r.fitLevels(r.ns-1, p, true, false)
@@ -1436,7 +1436,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	}
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
-	if r.ext != nil {
+	if r.hasExt() {
 		r.ext.locked(r, d)
 	}
 }
@@ -1546,7 +1546,7 @@ func (r *leanCore) slot() {
 		}
 		r.burst(j, base, anchor)
 	}
-	if !r.replaying {
+	if !r.isReplaying() {
 		switch {
 		case isAnchor:
 			r.suspect = false
@@ -1556,7 +1556,7 @@ func (r *leanCore) slot() {
 		r.dataAnch[j&1] = isAnchor && anchor == dp
 	}
 	r.setHunt()
-	if !r.replaying && r.ended(j, base) {
+	if !r.isReplaying() && r.ended(j, base) {
 		r.unlock()
 	}
 }
@@ -1570,7 +1570,7 @@ func (r *leanCore) holdNext(j int32, present bool) {
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
 	r.fitLevels(base+leanSyncEnd, anchor, false, true)
-	if abs32(r.dcHz) > leanRetuneHz && !r.replaying {
+	if abs32(r.dcHz) > leanRetuneHz && !r.isReplaying() {
 		r.retune(r.dcHz)
 	}
 	r.first += shift
@@ -1599,7 +1599,7 @@ func (r *leanCore) setHunt() {
 	}
 	if !r.hunt {
 		r.acqFrom = r.n
-		if r.ext == nil || r.ext.kept() == nil {
+		if !r.hasExt() || r.ext.kept() == nil {
 			r.acqHead, r.acqLow = 0, 0
 		}
 	}
@@ -1610,13 +1610,13 @@ func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
 	if r.syncErrors(end, p) > discAnchorBits || r.noCarrier(end, p) {
 		return false
 	}
-	return !r.replaying || !r.clipped(end)
+	return !r.isReplaying() || !r.clipped(end)
 }
 
 func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 	out := float32(leanClickOut) / 2 * r.devScale * deviationHz
 	top := r.ns
-	if r.replaying {
+	if r.isReplaying() {
 		top = min(r.first+int64(r.next)*slotSymbols+1, r.ns)
 	}
 	n := int32(0)
@@ -1631,7 +1631,7 @@ func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 		}
 	}
 	g, _, res := r.fitSync(end, p)
-	if r.replaying {
+	if r.isReplaying() {
 		return n >= leanNoCarrierClicks && (g <= 0 || sqrtf(res) > leanNoCarrierSpread*2*g*deviationHz && r.gapSpread(g, res))
 	}
 	if n >= leanNoCarrierClicks {
@@ -1735,10 +1735,10 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 
 //go:noinline
 func (r *leanCore) unlock() {
-	if r.ext != nil {
+	if r.hasExt() {
 		r.ext.end(r)
 	}
-	if !r.hunt || r.ext == nil || r.ext.kept() == nil {
+	if !r.hunt || !r.hasExt() || r.ext.kept() == nil {
 		r.acqFrom = r.n
 	}
 	r.locked, r.forced, r.hunt = false, false, false
@@ -1891,8 +1891,8 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	if r.clickSpan > 0 {
 		r.clickFloor(v)
 	}
-	if !r.classify(b, j) && (r.ext == nil || !r.ext.place(r, b, j)) {
-		if r.ext != nil && !r.replayDry {
+	if !r.classify(b, j) && (!r.hasExt() || !r.ext.place(r, b, j)) {
+		if r.hasExt() && !r.isReplayDry() {
 			r.ext.unplaced(r, b)
 		}
 		return
@@ -1901,8 +1901,8 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.clicks += leanClickGain * (float32(beyond)/slotSymbols - r.clicks)
 		r.clickFloor(v)
 	}
-	if r.ext != nil {
-		if !r.replayDry {
+	if r.hasExt() {
+		if !r.isReplayDry() {
 			r.ext.burst(r, b)
 		}
 		return
@@ -1961,7 +1961,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		switch n := (j - c.sf) / 2; {
 		case n >= 1 && n <= 5 && (j-c.sf)%2 == 0:
 			b.Voice = enums.VoiceBurstA + enums.VoiceBurstType(n)
-			if !r.replaying {
+			if !r.isReplaying() {
 				emb := embOf(&b.Data)
 				ok := r.embOK(&emb)
 				r.suspect = r.suspect || !ok

@@ -463,7 +463,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 const coreLagSeconds = 0.01
 
 func (r *leanCore) lagSeconds() float64 {
-	if r.ext != nil {
+	if r.hasExt() {
 		return coreLagSeconds + extQueue*slotSeconds
 	}
 	return coreLagSeconds
