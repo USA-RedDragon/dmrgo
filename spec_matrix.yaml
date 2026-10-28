@@ -133,6 +133,7 @@ ignore_files:
   - v2/rf/repair.go
   - v2/rf/rx.go
   - v2/rf/rxhost.go
+  - v2/rf/rxpreemph.go
   - v2/rf/sink.go
   - v2/rf/softfec.go
   - v2/rf/softgrid.go

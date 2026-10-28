@@ -30,6 +30,10 @@ func (d *disc48) push(v int16) (int16, bool) {
 func (r *AudioReceiver) input(x []int16) {
 	d := &r.d48
 	if !r.f.dec {
+		if r.pe != nil {
+			r.emitCopy(x)
+			return
+		}
 		r.write(x)
 		return
 	}
@@ -41,12 +45,12 @@ func (r *AudioReceiver) input(x []int16) {
 		}
 		d.buf[n] = y
 		if n++; n == disc48Out {
-			r.write(d.buf[:])
+			r.emit(d.buf[:])
 			n = 0
 		}
 	}
 	if n > 0 {
-		r.write(d.buf[:n])
+		r.emit(d.buf[:n])
 	}
 }
 

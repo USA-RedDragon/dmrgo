@@ -61,12 +61,12 @@ func (r *AudioReceiver) resample0(x []int16) {
 				n++
 			}
 			if n == disc48Out {
-				r.write(d.buf[:])
+				r.emit(d.buf[:])
 				n = 0
 			}
 		}
 	}
 	if n > 0 {
-		r.write(d.buf[:n])
+		r.emit(d.buf[:n])
 	}
 }

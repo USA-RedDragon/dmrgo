@@ -48,6 +48,15 @@ type AudioRxConfig struct {
 	// bursts of the slots before the lock, decoded again. When nil, the
 	// receiver is in append mode, for AppendBursts and AppendFlush.
 	OnBursts func([]Burst)
+	// PreEmphasis, when not nil, states that the radio de-emphasizes its
+	// discriminator output from 300 Hz to 3 kHz, as the speaker and
+	// accessory outputs of FM radios do, so that the receiver inverts it
+	// with the filter that it holds before it detects the bursts: a
+	// RxPreEmphasis of this receiver alone, set up by Init or
+	// NewRxPreEmphasis. Nil is a flat discriminator output, as the radio
+	// chips of hotspots and MMDVM modems give it. Every Tier and Rate takes
+	// it. A RxPreEmphasis that is not set up gives a *dmrgo.ConfigError.
+	PreEmphasis *RxPreEmphasis
 }
 
 // AudioReceiver recovers DMR bursts from the output of an FM
@@ -56,7 +65,9 @@ type AudioRxConfig struct {
 // receiver measures itself. It takes audio of either polarity. Above
 // Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes
 // audio that a high-pass filter cut below about 300 Hz, as the speaker
-// output of a scanner gives it. With Tier0 it keeps about 1.4 KB of state,
+// output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier
+// also takes the de-emphasized audio of the speaker or accessory output of
+// a radio. With Tier0 it keeps about 1.4 KB of state,
 // for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz
 // and 2 KB with its stack, built with
 // TinyGo -opt z. An AudioReceiver that Init sets up in memory of the
@@ -68,6 +79,7 @@ type AudioReceiver struct {
 	d48    disc48
 	rs0    rate0
 	bursts burstSink
+	pe     *RxPreEmphasis
 	audioRate
 	rate     int32
 	bits     uint8
@@ -80,6 +92,7 @@ var (
 	errAudioTier     = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.Tier"}
 	errAudioBits     = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.Bits"}
 	errAudioOnBursts = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.OnBursts"}
+	errAudioPreEmph  = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.PreEmphasis"}
 )
 
 // NewAudioReceiver returns an AudioReceiver of c. A nil c means the zero
@@ -130,6 +143,9 @@ func (c *AudioRxConfig) check(t Tier) error {
 	if c.Bits != 0 && (c.Bits < 8 || c.Bits > 16) {
 		return errAudioBits
 	}
+	if c.PreEmphasis != nil && !c.PreEmphasis.set() {
+		return errAudioPreEmph
+	}
 	return nil
 }
 
@@ -155,6 +171,9 @@ func (r *AudioReceiver) configure(cfg AudioRxConfig, opt *options) {
 	r.sink = &r.bursts
 	r.setup(discSetup{Hz: hz, opt: opt, pol: true}, dec)
 	r.bursts.on = cfg.OnBursts
+	if r.pe = cfg.PreEmphasis; r.pe != nil {
+		r.pe.start(&r.pe.f, hz)
+	}
 }
 
 // Init sets up r for c, in place of any state it holds, in Tier0. It does

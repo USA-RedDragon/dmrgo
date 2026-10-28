@@ -23,7 +23,7 @@ func TestRxConfigSize(t *testing.T) {
 				n, align = 8, 8
 			case reflect.Func:
 				n = 8
-			case reflect.Int:
+			case reflect.Int, reflect.Pointer:
 			default:
 				t.Fatalf("field %s of %s has kind %s", typ.Field(i).Name, typ, k)
 			}
