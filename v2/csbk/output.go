@@ -162,8 +162,8 @@ const (
 	OutputJoined
 	// OutputExpired is an announced transfer that did not come by Until.
 	OutputExpired
-	// OutputTiming tells the caller of a Timing to set the channel slot
-	// timing from the CT_CSBK in CSBK, which it passed at Due (ETSI TS 102
+	// OutputTiming reports that the caller of a Timing must set the channel
+	// slot timing from the CT_CSBK in CSBK, which it passed at Due (ETSI TS 102
 	// 361-2 clause 6.2.2.3).
 	OutputTiming
 )

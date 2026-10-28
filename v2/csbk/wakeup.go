@@ -164,8 +164,8 @@ func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
 	return nil
 }
 
-// OutboundSync tells the Wakeup that the BS outbound is on air, as the
-// caller sees it, and appends an OutputDone with ResultAnswered to dst
+// OutboundSync records that the BS outbound is on air, as the caller
+// detects it, and appends an OutputDone with ResultAnswered to dst
 // while a wakeup runs. It does not run the timers, so now only gives the
 // shape of the other methods. It allocates only when dst has no room for
 // MaxOutputs outputs.
@@ -194,7 +194,7 @@ func (w *Wakeup) Cancel(_ time.Duration, dst []Output) []Output {
 	return w.done(dst, ResultCanceled)
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Wakeup as Decoded does, and appends the outputs to dst. A
 // burst with another color code does not decode. A nil raw, a transport
 // frame without a burst, only runs the timers, as Lost does. It allocates
@@ -224,7 +224,7 @@ func (w *Wakeup) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 	return w.OutboundSync(now, dst)
 }
 
-// Lost tells the Wakeup that the transport lost the signal. It runs the
+// Lost records that the transport lost the signal. It runs the
 // timers as Tick does, and allocates only when dst has no room for
 // MaxOutputs outputs.
 func (w *Wakeup) Lost(now time.Duration, dst []Output) []Output {

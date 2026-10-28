@@ -178,7 +178,7 @@ func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 	return r, nil
 }
 
-// Reset drops the pending answer and forgets the channel state. It keeps
+// Reset drops the pending answer and clears the channel state. It keeps
 // the config.
 func (r *Responder) Reset() {
 	if r == nil {
@@ -213,7 +213,7 @@ func (r *Responder) Channel(now time.Duration, busy bool) {
 	r.s.channel(now, busy)
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Responder as Decoded does, and appends the outputs to dst. A
 // nil raw, a transport frame without a burst, is a nil b for Decoded. It
 // allocates only when dst has no room for MaxOutputs outputs.
@@ -336,7 +336,7 @@ func (r *Responder) encode() pdu.CSBKBytes {
 	return pdu.CSBKBytes(octets)
 }
 
-// Lost tells the Responder that the transport lost the signal: the channel
+// Lost records that the transport lost the signal: the channel
 // counts as idle. It runs the timers as Tick does, and allocates only when
 // dst has no room for MaxOutputs outputs.
 func (r *Responder) Lost(now time.Duration, dst []Output) []Output {

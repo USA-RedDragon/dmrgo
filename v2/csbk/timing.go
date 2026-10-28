@@ -79,12 +79,12 @@ type TimingState uint8
 
 // The TimingState values.
 const (
-	// TimingLeaderAndTimingUnknown knows neither the channel slot timing
-	// nor the leader: after Join, and when no leader was ever known.
+	// TimingLeaderAndTimingUnknown has neither the channel slot timing nor
+	// the leader: after Join, and when no leader was ever found.
 	// (ETSI TS 102 361-2 clause 6.2)
 	TimingLeaderAndTimingUnknown TimingState = iota
-	// TimingLeaderUnknown knew the timing, but SyncAge ran out, and knows
-	// no leader. (ETSI TS 102 361-2 clause 6.2)
+	// TimingLeaderUnknown had the timing, but SyncAge ran out, and has no
+	// leader. (ETSI TS 102 361-2 clause 6.2)
 	TimingLeaderUnknown
 	// TimingLeaderAndTimingKnown follows the leader and its slot timing.
 	// (ETSI TS 102 361-2 clause 6.2)
@@ -139,16 +139,17 @@ func (t *timer) due(now time.Duration) bool {
 }
 
 // Timing runs the TDMA direct mode wide area timing of one radio: it
-// learns the leader and the channel slot timing from the CT_CSBKs of other
+// gets the leader and the channel slot timing from the CT_CSBKs of other
 // radios, elects and appoints a leader, propagates the leader beacon,
 // answers requests and corrects radios with old timing, and beacons when
 // it is the leader. It sends each CT_CSBK after the random holdoff CT_RHOT,
 // polite to all, in the provisioned slot with the All Site color code.
-// OutputTiming tells the caller to take the channel slot timing from the
-// CT_CSBK that it passed. Make it with NewTiming and call Join when the
-// radio arrives on the channel; a zero Timing does nothing, and its Join
-// returns dmrgo.ErrZeroValue. A Timing is not safe for concurrent use and
-// must not be copied; go vet reports a copy. (ETSI TS 102 361-2 clause 6.2)
+// OutputTiming reports that the caller must take the channel slot timing
+// from the CT_CSBK that it passed. Make it with NewTiming and call Join
+// when the radio arrives on the channel; a zero Timing does nothing, and
+// its Join returns dmrgo.ErrZeroValue. A Timing is not safe for concurrent
+// use and must not be copied; go vet reports a copy. (ETSI TS 102 361-2
+// clause 6.2)
 type Timing struct {
 	src    layer2.SyncSource
 	slot   enums.Slot
@@ -219,9 +220,9 @@ func NewTiming(cfg *TimingConfig) (*Timing, error) {
 }
 
 // Join starts the Timing for a radio that arrives on the channel, which
-// knows no leader and no timing and waits NoLeader for the CT_CSBKs of
-// other radios before it asks for them. While it knows no leader, it asks
-// again NoLeader after each CT_CSBK_Req that it sends. It returns
+// has no leader and no timing, and waits NoLeader for the CT_CSBKs of
+// other radios before it requests them. While it has no leader, it
+// requests them again NoLeader after each CT_CSBK_Req that it sends. It returns
 // dmrgo.ErrZeroValue on a zero Timing. (ETSI TS 102 361-2 clauses 6.2.3.1
 // to 6.2.3.4)
 func (m *Timing) Join(now time.Duration) error {
@@ -238,7 +239,7 @@ func (m *Timing) Join(now time.Duration) error {
 	return nil
 }
 
-// Reset stops the Timing until the next Join and forgets the channel
+// Reset stops the Timing until the next Join and clears the channel
 // state. It keeps the config, the identifier and the state of the random
 // generator. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Reset() {
@@ -262,7 +263,7 @@ func (m *Timing) State() TimingState {
 }
 
 // Leader returns the dynamic identifier and the identifier of the wide
-// area timing leader. ok is false when the radio knows no leader.
+// area timing leader. ok is false when the radio has no leader.
 // (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Leader() (dynamicID uint8, id uint32, ok bool) {
 	if m == nil {
@@ -322,7 +323,7 @@ func (m *Timing) Terminator(now time.Duration, dst []Output) []Output {
 	return dst
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Timing as Decoded does, and appends the outputs to dst. A
 // nil raw, a transport frame without a burst, only runs the timers, as
 // Lost does. It allocates only when dst has no room for MaxOutputs
@@ -337,7 +338,7 @@ func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // Decoded takes the decoded burst b, which may be nil, from either slot,
 // and evaluates a CT_CSBK in it: it appends OutputTiming to dst when the
 // radio takes the slot timing of b, and starts, keeps or cancels the
-// CT_CSBK that the radio sends. The SYNC of b, or else h.Slot, tells the
+// CT_CSBK that the radio sends. The SYNC of b, or else h.Slot, gives the
 // slot of b; a burst of unknown slot counts as one in the provisioned
 // slot. The CT_CSBKs of the radio go in its provisioned slot on the slot
 // timing that it took, and none starts before the slot of the last burst
@@ -805,7 +806,7 @@ func (m *Timing) slotAt(t time.Duration) time.Duration {
 	return t
 }
 
-// Lost tells the Timing that the transport lost the signal. It runs the
+// Lost records that the transport lost the signal. It runs the
 // timers as Tick does, and allocates only when dst has no room for
 // MaxOutputs outputs. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Lost(now time.Duration, dst []Output) []Output {

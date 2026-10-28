@@ -202,7 +202,7 @@ func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	return q, nil
 }
 
-// Reset ends any request without an output and forgets the channel state.
+// Reset ends any request without an output and clears the channel state.
 // It keeps the config and the state of the random generator.
 func (q *Requester) Reset() {
 	if q == nil {
@@ -223,7 +223,7 @@ func (q *Requester) State() RequesterState {
 
 // RequestOACSU starts the presence check of an OACSU individual call from
 // source to target: UU_V_Req with the service options so, answered by
-// UU_Ans_Rsp. The request is time critical whatever opts says, and its
+// UU_Ans_Rsp. The request is time critical whatever opts sets, and its
 // access must be polite. The OutputDone has ResultAnswered when the call may
 // proceed, with impolite access. It returns ErrBusy while a request runs,
 // dmrgo.ErrZeroValue on a zero Requester,
@@ -413,7 +413,7 @@ func (q *Requester) sync() {
 }
 
 // Channel reports whether the logical channel is busy, from the activity
-// that the caller sees on it. A polite try waits for an idle channel. Until
+// that the caller detects on it. A polite try waits for an idle channel. Until
 // the first report the channel counts as idle.
 func (q *Requester) Channel(now time.Duration, busy bool) {
 	if q == nil {
@@ -440,7 +440,7 @@ func (q *Requester) Cancel(_ time.Duration, dst []Output) []Output {
 	return q.done(dst, ResultCanceled, nil)
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Requester as Decoded does, and appends the outputs to dst. A
 // nil raw, a transport frame without a burst, is a nil b for Decoded. It
 // allocates only when dst has no room for MaxOutputs outputs.
@@ -517,7 +517,7 @@ func (q *Requester) answer(c *pdu.CSBK) (Result, bool) {
 	return 0, false
 }
 
-// Lost tells the Requester that the transport lost the signal: the channel
+// Lost records that the transport lost the signal: the channel
 // counts as idle. It runs the timers as Tick does and appends the outputs
 // to dst. It allocates only when dst has no room for MaxOutputs outputs.
 func (q *Requester) Lost(now time.Duration, dst []Output) []Output {

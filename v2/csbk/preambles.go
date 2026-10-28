@@ -74,7 +74,7 @@ func NewPreambles(cfg *PreamblesConfig) (*Preambles, error) {
 	return &Preambles{d: newDecoder(cfg.Scratch)}, nil
 }
 
-// Reset forgets the announced transfer without an output.
+// Reset clears the announced transfer without an output.
 func (p *Preambles) Reset() {
 	if p == nil {
 		return
@@ -90,7 +90,7 @@ func (p *Preambles) State() PreamblesState {
 	return p.state
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Preambles as Decoded does, and appends the outputs to dst. A
 // nil raw, a transport frame without a burst, only runs the timers, as
 // Lost does. It allocates only when dst has no room for MaxOutputs outputs.
@@ -163,7 +163,7 @@ func (p *Preambles) appendAt(out []Output, k OutputKind) []Output {
 	return out
 }
 
-// Lost tells the Preambles that the transport lost the signal. It runs the
+// Lost records that the transport lost the signal. It runs the
 // timers as Tick does; the announced transfer can still come. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Preambles) Lost(now time.Duration, dst []Output) []Output {
