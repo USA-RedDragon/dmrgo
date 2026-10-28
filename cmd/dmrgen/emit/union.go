@@ -34,7 +34,7 @@ func emitUnion(f *File, pdu parse.PDUStruct, ev *errVars) error {
 // emitBuilder writes the value constructor of the variant v: a method of the
 // payload type, named after the union PDU, that returns the PDU that carries
 // the payload. A payload type of more than one variant gets none, as the
-// method name would not say which.
+// method name would not identify which.
 func emitBuilder(f *File, pdu parse.PDUStruct, v parse.Variant) {
 	if slices.ContainsFunc(pdu.Variants, func(w parse.Variant) bool { return w.Name != v.Name && w.Type == v.Type }) {
 		return

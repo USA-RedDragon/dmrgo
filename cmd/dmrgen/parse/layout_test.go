@@ -48,7 +48,7 @@ func TestParseRejectsBadLayouts(t *testing.T) {
 		{"min above max", "// dmr:frame 1\ntype T struct {\n A uint8 " + tag("bits:0-7,min:4,max:3") + "\n}", "min is above max"},
 		{"max on bool", "// dmr:frame 1\ntype T struct {\n A bool " + tag("bit:0,max:1") + "\n B uint8 " + tag("bits:1-7") + "\n}", "min and max require"},
 		{"min and max in a frame", "// dmr:frame 1\ntype T struct {\n A uint8 " + tag("bits:0-7,min:1,max:2") + "\n}", ""},
-		{"view without size", "// dmr:view V\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n}", "wants a type name and a size"},
+		{"view without size", "// dmr:view V\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n}", "needs a type name and a size"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

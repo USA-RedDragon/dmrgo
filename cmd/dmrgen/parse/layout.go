@@ -59,7 +59,7 @@ func parseLayoutDirective(pdu *PDUStruct, name, arg string) error {
 		}
 		parts := strings.Fields(arg)
 		if len(parts) != 2 || !token.IsIdentifier(parts[0]) {
-			return fmt.Errorf("dmr:view wants a type name and a size, got %q", arg)
+			return fmt.Errorf("dmr:view needs a type name and a size, got %q", arg)
 		}
 		n, err := strconv.Atoi(parts[1])
 		if err != nil || n <= 0 {
@@ -80,7 +80,7 @@ func parseMagic(arg string) (MagicDirective, error) {
 	var m MagicDirective
 	spec, val, ok := strings.Cut(arg, "=")
 	if !ok || spec == "" || val == "" {
-		return m, fmt.Errorf("want S-E=\"text\" or S-E=0xHEX, got %q", arg)
+		return m, fmt.Errorf("expected S-E=\"text\" or S-E=0xHEX, got %q", arg)
 	}
 	s, e, err := parseBitRange(spec)
 	if err != nil {

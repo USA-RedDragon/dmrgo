@@ -90,7 +90,7 @@ type StreamField struct {
 	If        *Cond
 	Token     uint8  // token ID in a dmr:tokens struct
 	HasToken  bool   // token: was given
-	Has       string // the bool field that tells whether the token is present
+	Has       string // the bool field that shows whether the token is present
 	Bound     BoundMode
 	Const     string // const:V: Decode checks the value and AppendBinary writes it
 }
@@ -164,13 +164,13 @@ func parseStreamStruct(name string, structType *ast.StructType, doc *ast.Comment
 			pdu.Stream.Tokens = true
 		case directiveDoc:
 			if arg == "" {
-				return pdu, fmt.Errorf("dmr:decodedoc wants a text")
+				return pdu, fmt.Errorf("dmr:decodedoc needs a text")
 			}
 			pdu.Stream.DecodeDoc = strings.TrimSpace(pdu.Stream.DecodeDoc + " " + arg)
 		case directiveBound:
 			parts := strings.Fields(arg)
 			if len(parts) == 0 || len(parts) > 2 || !strings.Contains(parts[0], ".") {
-				return pdu, fmt.Errorf("dmr:bound wants Field.Sub [total], got %q", arg)
+				return pdu, fmt.Errorf("dmr:bound needs Field.Sub [total], got %q", arg)
 			}
 			pdu.Stream.BoundPath = parts[0]
 			pdu.Stream.BoundMode = BoundAfter
@@ -319,14 +319,14 @@ func applyStreamModifier(sf *StreamField, mod string) error {
 		num, err1 := strconv.ParseUint(n, 10, 32)
 		exp, err2 := strconv.Atoi(e)
 		if !ok || err1 != nil || err2 != nil || num == 0 || exp < 0 || exp > 63 {
-			return fmt.Errorf("scale wants N/E, got %q", arg)
+			return fmt.Errorf("scale needs N/E, got %q", arg)
 		}
 		sf.ScaleNum, sf.ScaleExp = num, exp
 		sf.SKind = StreamFixed
 	case "prec":
 		p, err := strconv.Atoi(arg)
 		if err != nil || p < 1 || p > 4 {
-			return fmt.Errorf("prec wants 1 to 4 octets, got %q", arg)
+			return fmt.Errorf("prec needs 1 to 4 octets, got %q", arg)
 		}
 		sf.Prec = p
 	case "token":
@@ -343,7 +343,7 @@ func applyStreamModifier(sf *StreamField, mod string) error {
 		sf.If = c
 	case "const":
 		if !hasArg || arg == "" {
-			return errors.New("const wants a value")
+			return errors.New("const needs a value")
 		}
 		sf.Const = arg
 	default:

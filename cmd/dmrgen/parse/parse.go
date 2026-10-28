@@ -690,7 +690,7 @@ func parseUnionDirective(pdu *PDUStruct, name, arg string, baseTypes map[string]
 func parseVariant(arg string) (Variant, error) {
 	parts := strings.Fields(arg)
 	if len(parts) < 3 {
-		return Variant{}, fmt.Errorf("want Name Type VariantCond..., got %q", arg)
+		return Variant{}, fmt.Errorf("expected Name Type VariantCond..., got %q", arg)
 	}
 	v := Variant{Name: parts[0], Type: parts[1]}
 	if !token.IsExported(v.Name) || !token.IsIdentifier(v.Type) {
@@ -731,7 +731,7 @@ func parseVariantCond(s string) (VariantCond, error) {
 func parseGetter(arg string, baseTypes map[string]string) (Field, error) {
 	parts := strings.Fields(arg)
 	if len(parts) < 4 {
-		return Field{}, fmt.Errorf("want Name Type Tag Description, got %q", arg)
+		return Field{}, fmt.Errorf("expected Name Type Tag Description, got %q", arg)
 	}
 	f, err := parseTag(parts[0], parts[2], parts[1], baseTypes)
 	if err != nil {
@@ -777,7 +777,7 @@ func parseConst(arg string) (ConstDirective, error) {
 	var c ConstDirective
 	spec, val, ok := strings.Cut(arg, "=")
 	if !ok || spec == "" || val == "" {
-		return c, fmt.Errorf("want S-E[+S-E]=Value, got %q", arg)
+		return c, fmt.Errorf("expected S-E[+S-E]=Value, got %q", arg)
 	}
 	for _, seg := range strings.Split(spec, "+") {
 		s, e, err := parseBitRange(seg)

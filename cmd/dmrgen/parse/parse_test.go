@@ -429,7 +429,7 @@ type T struct {
 type T struct {
 	A uint8 ` + "`dmr:\"bits:4-7\"`" + `
 }`,
-			want: "want S-E[+S-E]=Value",
+			want: "expected S-E[+S-E]=Value",
 		},
 		{
 			name: "const value too wide",
@@ -812,7 +812,7 @@ type T struct {
 		{
 			name: "variant without condition",
 			src:  "// dmr:variant A Sub\n" + fields,
-			want: "want Name Type VariantCond",
+			want: "expected Name Type VariantCond",
 		},
 		{
 			name: "unexported variant name",
@@ -903,7 +903,7 @@ type T struct {
 		{
 			name: "getter without description",
 			src:  "// dmr:get K uint8 bits:8-11\n// dmr:variant A Sub Op=1\n" + fields,
-			want: "want Name Type Tag Description",
+			want: "expected Name Type Tag Description",
 		},
 		{
 			name: "signed getter type",
