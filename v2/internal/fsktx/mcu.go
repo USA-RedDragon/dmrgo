@@ -90,6 +90,9 @@ func Table48k() AudioTable {
 }
 
 func shape24k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
+	if tier0Fold {
+		return shape24kFold(dst, r)
+	}
 	for p := range taps24k {
 		t := &taps24k[p]
 		var y int32
@@ -98,6 +101,23 @@ func shape24k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 		}
 		dst[p] = y
 	}
+	return len(taps24k)
+}
+
+func shape24kFold(dst *[maxSamples]int32, r *[maxTaps]int8) int {
+	r0, r1, r2, r3, r4, r5, r6, r7 := int32(r[0]), int32(r[1]), int32(r[2]), int32(r[3]), int32(r[4]), int32(r[5]), int32(r[6]), int32(r[7])
+	r8, r9, r10, r11, r12, r13, r14, r15 := int32(r[8]), int32(r[9]), int32(r[10]), int32(r[11]), int32(r[12]), int32(r[13]), int32(r[14]), int32(r[15])
+	f := &taps24kFold
+	dst[0] = int32(f[0][0])*r0 + int32(f[0][1])*r1 + int32(f[0][2])*r2 + int32(f[0][3])*r3 + int32(f[0][4])*r4 + int32(f[0][5])*r5 + int32(f[0][6])*r6 + int32(f[0][7])*r7 +
+		int32(f[0][8])*r8 + int32(f[0][9])*r9 + int32(f[0][10])*r10 + int32(f[0][11])*r11 + int32(f[0][12])*r12 + int32(f[0][13])*r13 + int32(f[0][14])*r14 + int32(f[0][15])*r15
+	u0, u1, u2, u3, u4, u5, u6, u7 := r0+r15, r1+r14, r2+r13, r3+r12, r4+r11, r5+r10, r6+r9, r7+r8
+	w0, w1, w2, w3, w4, w5, w6, w7 := r0-r15, r1-r14, r2-r13, r3-r12, r4-r11, r5-r10, r6-r9, r7-r8
+	s1 := int32(f[1][0])*u0 + int32(f[1][1])*u1 + int32(f[1][2])*u2 + int32(f[1][3])*u3 + int32(f[1][4])*u4 + int32(f[1][5])*u5 + int32(f[1][6])*u6 + int32(f[1][7])*u7
+	d1 := int32(f[1][8])*w0 + int32(f[1][9])*w1 + int32(f[1][10])*w2 + int32(f[1][11])*w3 + int32(f[1][12])*w4 + int32(f[1][13])*w5 + int32(f[1][14])*w6 + int32(f[1][15])*w7
+	dst[1], dst[4] = (s1+d1)>>1, (s1-d1)>>1
+	s2 := int32(f[2][0])*u0 + int32(f[2][1])*u1 + int32(f[2][2])*u2 + int32(f[2][3])*u3 + int32(f[2][4])*u4 + int32(f[2][5])*u5 + int32(f[2][6])*u6 + int32(f[2][7])*u7
+	d2 := int32(f[2][8])*w0 + int32(f[2][9])*w1 + int32(f[2][10])*w2 + int32(f[2][11])*w3 + int32(f[2][12])*w4 + int32(f[2][13])*w5 + int32(f[2][14])*w6 + int32(f[2][15])*w7
+	dst[2], dst[3] = (s2+d2)>>1, (s2-d2)>>1
 	return len(taps24k)
 }
 
