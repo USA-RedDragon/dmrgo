@@ -61,6 +61,7 @@ type AudioRxConfig struct {
 // must not be copied after Init or NewAudioReceiver.
 type AudioReceiver struct {
 	discRx
+	d48    disc48
 	bursts burstSink
 	audioRate
 	rate     int32
@@ -319,7 +320,7 @@ func (r *AudioReceiver) MaxOutput(n int) int {
 	}
 	if r.resampling() {
 		hz := int64(r.inputHz())
-		if r.d48.on {
+		if r.f.dec {
 			hz *= 2
 		}
 		n = int(min(int64(n)*hz/int64(r.rate)+int64(r.resampleTaps()), 1<<40))

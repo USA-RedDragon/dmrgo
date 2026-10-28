@@ -26,8 +26,7 @@ type discSetup struct {
 
 type discRx struct {
 	leanCore
-	f   audioFront
-	d48 disc48
+	f audioFront
 }
 
 func (r *discRx) setup(cfg discSetup, dec bool) {
@@ -41,7 +40,7 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	sink := r.sink
 	*r = discRx{}
 	r.sink = sink
-	r.d48.on = dec
+	r.f.dec = dec
 	r.f.half = cfg.Hz == discRate
 	r.f.slow = cfg.Hz == 2*symbolRate
 	sps := float32(discSPS) / 2
@@ -515,22 +514,23 @@ func (r *leanCore) scaleAudio(g float32) {
 }
 
 type audioFront struct {
+	sq      int64
 	gain    float32
 	dc      float32
 	k       int32
 	off     int32
 	sum     int32
-	sq      int64
 	n       int
 	mean    float32
+	rrcHead int
+	hbHead  int
+	rrcHist [2 * audio12Taps]int8
+	hbHist  [halfTaps]int8
 	half    bool
 	slow    bool
-	rrcHist [2 * audio12Taps]int8
-	rrcHead int
-	hbHist  [halfTaps]int8
-	hbHead  int
 	odd     bool
 	up      bool
+	dec     bool
 }
 
 func (f *audioFront) refresh() {

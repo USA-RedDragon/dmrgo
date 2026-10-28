@@ -143,7 +143,7 @@ func TestLeanRepairKeepsExact(t *testing.T) {
 					cc := enums.ColorCode(rng.IntN(16))
 					raw, cach, sync, voice := exactBurst(t, rng, i%exactKinds, cc)
 					r := &leanCore{llrDev: level * discStepHz / llrStepHz, llrFloor: floor, anchor: sync}
-					r.llrK = int64(8*llrStepHz*llrStepHz*(1<<llrShift)/(2*v) + 0.5)
+					r.llrK = int32(8*llrStepHz*llrStepHz*(1<<llrShift)/(2*v) + 0.5)
 					for k := range slotSymbols {
 						var d byte
 						if k < cachSymbols {

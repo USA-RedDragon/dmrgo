@@ -67,7 +67,7 @@ type discUnion struct {
 }
 
 func (r *discRx) addUnion(opt *options) {
-	hz, user, d48 := r.hz(), r.onBurst, r.d48
+	hz, user, dec := r.hz(), r.onBurst, r.f.dec
 	u := &discUnion{r: r, user: user, hz: float64(hz), limit: math.Inf(-1)}
 	u.main = make([]Burst, 0, unionCap)
 	u.fill = make([]bool, 0, unionCap)
@@ -85,8 +85,7 @@ func (r *discRx) addUnion(opt *options) {
 	if opt.UnionTwins&0x80 != 0 {
 		t2.CohBudget = 0
 	}
-	r.setup(discSetup{Hz: hz, OnBurst: u.onMain, opt: &t2}, false)
-	r.d48 = d48
+	r.setup(discSetup{Hz: hz, OnBurst: u.onMain, opt: &t2}, dec)
 	r.addExt(&t2)
 	set := opt.UnionTwins &^ 0x80
 	if set == 0 {

@@ -3,20 +3,19 @@ package rf
 const disc48Out = 32
 
 type disc48 struct {
-	on   bool
 	odd  bool
-	head int
+	head uint8
 	hist [halfTaps]int16
 	buf  [disc48Out]int16
 }
 
 func (d *disc48) push(v int16) (int16, bool) {
-	h := d.head
+	h := int(d.head)
 	d.hist[h] = v
 	if h++; h == halfTaps {
 		h = 0
 	}
-	d.head = h
+	d.head = uint8(h)
 	if d.odd = !d.odd; d.odd {
 		return 0, false
 	}
@@ -28,9 +27,9 @@ func (d *disc48) push(v int16) (int16, bool) {
 	return int16(max(min((acc+1<<14)>>15, 32767), -32768)), true
 }
 
-func (r *discRx) input(x []int16) {
+func (r *AudioReceiver) input(x []int16) {
 	d := &r.d48
-	if !d.on {
+	if !r.f.dec {
 		r.write(x)
 		return
 	}
@@ -52,7 +51,7 @@ func (r *discRx) input(x []int16) {
 }
 
 func (r *discRx) inputSamples(n int) int {
-	if r.d48.on {
+	if r.f.dec {
 		return (n + 1) / 2
 	}
 	return n

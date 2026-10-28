@@ -67,17 +67,17 @@ const (
 type leanTiming struct {
 	step           float32
 	s1, s2         float32
-	cubic, six     bool
 	sa, sb, s0, s3 float32
 	t              float32
-	mid            bool
 	last           float32
 	half           float32
 	pow            float32
-	hold           bool
 	gain           float32
-	mm             bool
 	dc, dev        float32
+	cubic, six     bool
+	mid            bool
+	hold           bool
+	mm             bool
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -189,81 +189,81 @@ type leanTuner interface {
 }
 
 type leanCore struct {
-	onBurst                            func(*Burst)
-	sink                               *burstSink
-	audio                              *audioFront
-	iq                                 leanTuner
+	center   int64
+	mfStep   int64
+	n        int64
+	first    int64
+	lockNs   int64
+	base     int64
+	anchor   enums.SyncPattern
+	onBurst  func(*Burst)
+	iq       leanTuner
+	ext      leanExt
+	sink     *burstSink
+	audio    *audioFront
+	tm       leanTiming
+	ns       int64
+	ring     [leanRing]int8
+	head     uint8
+	locked   bool
+	acqHead  int32
+	acqFrom  int64
+	acqLow   int16
+	offsetHz int16
+	off      float32
+	acqNext  int64
+	slotEnd  int64
+	ringSum  int32
+	signs    uint32
+	cb       Burst
+
+	acqGain        float32
+	trackGain      float32
+	tuneHz         float32
+	lastAt         float32
+	next           int32
+	lastAnch       int32
+	lost           int32
+	dcHz           float32
+	devScale       float32
+	discVar        float32
+	amp            float32
+	noise          float32
+	eAcc           float32
+	eSyms          int32
+	ch             [2]leanChan
+	streams        int32
+	midSigns       uint32
+	ll             float32
+	lfloor         float32
+	floorC         float32
+	llrOff, llrDev int32
+	llrFloor       int32
+	llrK           int32
+	dev            float32
+	outlier        float32
+	clickSpan      float32
+	clicks         float32
+	fec            leanFEC
+	huntBuf        [leanHuntSamples / 2]int16
+	devHz          int16
+
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
 	suspect, hunt                      bool
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
 	mid96                              uint8
-	ext                                leanExt
 	replaying, replayDry               bool
 	iqLow, linHunt                     bool
-	center                             int64
-	mfStep                             int64
-	acqGain, trackGain                 float32
 	mmOK, midSearch                    bool
 	chase                              uint8
-	tm                                 leanTiming
-	n                                  int64
-	ns                                 int64
-	ring                               [leanRing]int8
-	head                               uint8
-	acqHead                            int32
-	acqFrom                            int64
-	acqLow                             int16
-	off                                float32
-	acqNext                            int64
-	slotEnd                            int64
-	ringSum                            int32
-	signs                              uint32
-	tuneHz                             float32
-	lastAt                             float32
-
-	locked   bool
-	forced   bool
-	softFEC  bool
-	src      uint8
-	sources  uint8
-	bs       bool
-	first    int64
-	lockNs   int64
-	next     int32
-	lastAnch int32
-	lost     int32
-	dcHz     float32
-	devScale float32
-	discVar  float32
-	amp      float32
-	noise    float32
-	eAcc     float32
-	eSyms    int32
-
-	ch             [2]leanChan
-	votes          [16]uint8
-	streams        int32
-	huntBuf        [leanHuntSamples / 2]int16
-	midSigns       uint32
-	base           int64
-	anchor         enums.SyncPattern
-	ll             float32
-	lfloor         float32
-	floorC         float32
-	llrOff, llrDev int32
-	llrK           int64
-	llrFloor       int32
-	dev            float32
-	outlier        float32
-	clickSpan      float32
-	clicks         float32
-
-	offsetHz int16
-	devHz    int16
-	cb       Burst
-	fec      leanFEC
+	forced                             bool
+	softFEC                            bool
+	src                                uint8
+	sources                            uint8
+	bs                                 bool
+	votes                              [16]uint8
 }
 
 type leanRx struct {
@@ -1806,7 +1806,7 @@ func (r *leanCore) symLLR(k int64) (int16, int16) {
 }
 
 func (r *leanCore) llrTerm(e int32) int32 {
-	return max(-int32(int64(e*e)*r.llrK>>llrShift), r.llrFloor)
+	return max(-int32(int64(e*e)*int64(r.llrK)>>llrShift), r.llrFloor)
 }
 
 func evenLLR[_ any](v int32) int16 {
@@ -1820,7 +1820,7 @@ func evenLLR[_ any](v int32) int16 {
 func (r *leanCore) setLLR() {
 	r.llrOff = int32(roundf((r.off - r.dcHz) / llrStepHz))
 	r.llrDev = int32(roundf(r.dev / llrStepHz))
-	r.llrK = int64(int32(-r.ll*8*llrStepHz*llrStepHz*(1<<llrShift) + 0.5))
+	r.llrK = int32(-r.ll*8*llrStepHz*llrStepHz*(1<<llrShift) + 0.5)
 	r.llrFloor = math.MinInt32 / 2
 	if r.lfloor >= -math.MaxFloat32 {
 		r.llrFloor = int32(roundf(r.lfloor * 8))
