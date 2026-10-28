@@ -178,7 +178,9 @@ type AudioConfig struct {
 	// Level from Offset, which must fit int16. The measured design of
 	// Tier1 and Tier2 counts its corrections in that bound too, up to 2.12
 	// times Level, so it takes Level up to about 15400 at Offset 0. A
-	// 12-bit DAC takes Level 1040 and Offset 2048 at any tier.
+	// 12-bit DAC takes Level 1040 and Offset 2048 at Tier0 and under 24000
+	// Hz, and the measured design at 24000 Hz and above takes up to about
+	// 965 at that Offset.
 	Level, Offset int
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
 	// With every field of the design of the pulse at its zero value, from

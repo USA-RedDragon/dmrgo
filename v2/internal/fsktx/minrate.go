@@ -144,3 +144,42 @@ func (s Setup) Allows(hz int) bool {
 	least := s.MinRate()
 	return least > 0 && hz >= least
 }
+
+// Tier0Level returns the Level of the audio of s that MinRate measures
+// Tier0 at, and the most that it measures Tier1 and Tier2 at, or 0 when s
+// is I/Q or Bits is out of range. At 16 bits it is 15000. Under 16 bits it
+// is about half of full scale of MeasuredBits, 65 codes at 8 bits, 260 at
+// 10 and 1040 at 12, times 2 for each bit of Bits over MeasuredBits. Under
+// 16 bits, Tier1 and Tier2 at 24000 Hz and above reach 2.12 times Level,
+// so that 1040 codes do not fit 12 bits: there MinRate measures at most
+// the largest Level whose Peak at Offset 0 fits MeasuredBits, times 2 for
+// each bit over it.
+func (s Setup) Tier0Level() int {
+	depth, level := measuredDepth(s)
+	return level << (s.Bits - depth)
+}
+
+// MeasuredBits returns the depth of the audio rows of MinRate that s
+// takes, 8, 10, 12 or 16, or 0 when s is I/Q or Bits is out of range.
+func (s Setup) MeasuredBits() int {
+	if depth, level := measuredDepth(s); level > 0 {
+		return depth
+	}
+	return 0
+}
+
+func measuredDepth(s Setup) (depth, level int) {
+	switch {
+	case s.IQ:
+		return s.Bits, 0
+	case s.Bits == 16:
+		return 16, tableUnits
+	case s.Bits >= 12 && s.Bits < 16:
+		return 12, 1040
+	case s.Bits >= 10 && s.Bits < 12:
+		return 10, 260
+	case s.Bits >= 8 && s.Bits < 10:
+		return 8, 65
+	}
+	return s.Bits, 0
+}

@@ -33,9 +33,10 @@ type AudioTxConfig struct {
 	// Level is the code of a run of symbol +3, 1944 Hz of deviation, less
 	// the center, from 1 to 16000. 0 means the most that fits in Bits with
 	// Offset over every run of symbols. The limits are measured at about
-	// half of full scale, so a Level under that, 1040 codes at 12 bits, is
-	// refused. Tier1 and Tier2 at 24000 Hz and above fit that level only
-	// at 16 bits.
+	// half of full scale, 1040 codes at 12 bits. Under 16 bits, Tier1 and
+	// Tier2 at 24000 Hz and above reach 2.12 times Level, so there they are
+	// measured at the most that fits Bits at Offset 0, 965 to 981 codes at
+	// 12 bits. A Level under the measured level is refused.
 	Level int
 	// Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned.
 	Offset int
@@ -126,7 +127,7 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 		level, err = cfg.fitHost(avail)
 	}
 	if err == nil {
-		err = cfg.plan(&p, g, level)
+		err = cfg.plan(&p, g, level, measuredLevel(cfg.Tier, cfg.Rate, cfg.Bits))
 	}
 	if err != nil {
 		return nil, err
@@ -172,7 +173,7 @@ func (t *AudioTransmitter) init(c AudioTxConfig, g *txGate) error {
 	}
 	level, err := c.fitTable(&p, avail)
 	if err == nil {
-		err = c.plan(&p, g, level)
+		err = c.plan(&p, g, level, fsktx.Setup{Tier: fsktx.Tier0, Bits: c.Bits}.Tier0Level())
 	}
 	if err != nil {
 		return err
@@ -217,7 +218,7 @@ func (c *AudioTxConfig) prepare() (audioPlan, int, error) {
 	return p, half - max(c.Offset, -c.Offset), nil
 }
 
-func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level int) error {
+func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level, measured int) error {
 	e := &audioErrs
 	if g == nil {
 		g = &txGate{}
@@ -230,7 +231,7 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level int) error {
 	if c.PreEmphasis {
 		return e.preEmph
 	}
-	if level < measuredLevel(c.Bits) {
+	if measured == 0 || level < measured {
 		return e.levelLow
 	}
 	if least := r.minRate(c.Tier, false, c.Bits, class, c.InputLowpassHz); least == 0 || c.Rate < least || c.Rate > maxTxAudio {
@@ -296,18 +297,6 @@ func (c *AudioTxConfig) fitHost(avail int) (int, error) {
 func (c *AudioTxConfig) hostFits(level, avail int) bool {
 	pk, err := audioPeak(c.Tier, c.Rate, level)
 	return err == nil && pk <= avail
-}
-
-func measuredLevel(bits int) int {
-	switch {
-	case bits >= 16:
-		return 15000
-	case bits >= 12:
-		return 1040 << (bits - 12)
-	case bits >= 10:
-		return 260 << (bits - 10)
-	}
-	return 65 << (bits - 8)
 }
 
 func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {

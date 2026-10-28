@@ -52,6 +52,34 @@ func audioPeak(t Tier, rate, level int) (int, error) {
 	return int(math.Ceil(a.Peak())), nil
 }
 
+func measuredLevel(t Tier, rate, bits int) int {
+	s := fsktx.Setup{Tier: fsktx.Tier(t), Bits: bits}
+	level, depth := s.Tier0Level(), s.MeasuredBits()
+	if t == Tier0 || depth == 0 || depth == 16 {
+		return level
+	}
+	half := 1<<(depth-1) - 1
+	peak := func(l int) int {
+		pk, err := audioPeak(t, rate, l)
+		if err != nil {
+			return half + 1
+		}
+		return pk
+	}
+	top := level >> (bits - depth)
+	l := top
+	if pk := peak(top); pk > half {
+		l = min(top-1, top*half/pk)
+		for l > 0 && peak(l) > half {
+			l--
+		}
+		for l > 0 && l < top-1 && peak(l+1) <= half {
+			l++
+		}
+	}
+	return l << (bits - depth)
+}
+
 func newChunk(n int) []byte { return make([]byte, n) }
 
 func newChunk16(n int) []int16 { return make([]int16, n) }

@@ -95,7 +95,10 @@ func refusals() []refusal {
 		{"audio at 192 kHz", openGate, nil, ua(AudioTxConfig{Rate: 192000}), "AudioTxConfig.Rate", true},
 		{"audio at 20 kHz, 10 W", openGate, nil, ua(AudioTxConfig{Rate: 20000}), "AudioTxConfig.Rate", true},
 		{"audio Tier0 at 10 W", openGate, nil, ua(AudioTxConfig{Tier: Tier0, Rate: 24000}), "AudioTxConfig.Rate", true},
-		{"audio Tier1 12-bit at 48 kHz", openGate, nil, ua(AudioTxConfig{Bits: 12, Unsigned: true}), "AudioTxConfig.Level", true},
+		{"audio Tier1 12-bit level 1040 at 48 kHz", openGate, nil, ua(AudioTxConfig{Bits: 12, Unsigned: true, Level: 1040}), "AudioTxConfig.Level", false},
+		{"audio Tier1 12-bit level 960 at 48 kHz", openGate, nil, ua(AudioTxConfig{Bits: 12, Unsigned: true, Level: 960}), "AudioTxConfig.Level", true},
+		{"audio Tier1 12-bit at 32 kHz", openGate, nil, ua(AudioTxConfig{Bits: 12, Unsigned: true, Rate: 32000}), "AudioTxConfig.Rate", true},
+		{"audio Tier2 8-bit at 24 kHz, 10 W", openGate, nil, ua(AudioTxConfig{Tier: Tier2, Bits: 8, Rate: 24000}), "AudioTxConfig.Rate", true},
 	}
 }
 
@@ -199,6 +202,11 @@ func TestTxAccepts(t *testing.T) {
 		{Region: RegionUS, Service: ServiceAmateur, Power: 50, Rate: 96000, Tier: Tier2},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier0},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Tier: Tier0, Rate: 24000, Bits: 12, Unsigned: true, Offset: 3},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Bits: 12, Unsigned: true},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Bits: 12, Unsigned: true, Level: 966},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Tier: Tier2, Bits: 12, Rate: 24000},
+		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier2, Bits: 8, Rate: 48000, Unsigned: true},
+		{Region: RegionJapan, Service: ServiceLandMobile, Power: 50, Bits: 13, Rate: 32000},
 	} {
 		tx, err := newAudioTransmitter(c, openGate)
 		if err != nil {
@@ -209,7 +217,7 @@ func TestTxAccepts(t *testing.T) {
 		if c.Bits == 0 {
 			bits = 16
 		}
-		if tx.Level() < measuredLevel(bits) {
+		if tx.Level() < measuredLevel(tx.tier, int(tx.rate), bits) {
 			t.Errorf("%+v: level %d", c, tx.Level())
 		}
 		want := c.Offset

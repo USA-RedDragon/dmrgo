@@ -2,6 +2,8 @@
 
 package rf
 
+import "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
+
 type txHost struct{}
 
 const txHostBuilt = false
@@ -19,6 +21,10 @@ func (*txHost) iqS16(int8) []int16 { return nil }
 func (*txHost) audio(int8) []int16 { return nil }
 
 func audioPeak(Tier, int, int) (int, error) { return 0, errTxHost }
+
+func measuredLevel(_ Tier, _, bits int) int {
+	return fsktx.Setup{Tier: fsktx.Tier0, Bits: bits}.Tier0Level()
+}
 
 func newChunk(int) []byte { return nil }
 

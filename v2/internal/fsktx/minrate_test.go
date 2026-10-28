@@ -51,11 +51,31 @@ func (p limPoint) String() string {
 	return p.u.String()
 }
 
-func levelForBits(b int) int {
-	if b >= 16 {
-		return tableUnits
+func measuredLevel(s Setup, hz int) int {
+	level, depth := s.Tier0Level(), s.MeasuredBits()
+	if s.Tier == Tier0 || depth == 0 || depth == 16 {
+		return level
 	}
-	return 1040 << (b - 8) >> 4
+	half := 1<<(depth-1) - 1
+	peak := func(l int) float64 {
+		a, err := NewAudio(AudioConfig{Hz: hz, Level: l, Tier: s.Tier})
+		if err != nil {
+			return math.Inf(1)
+		}
+		return math.Ceil(a.Peak())
+	}
+	top := level >> (s.Bits - depth)
+	l := top
+	if pk := peak(top); pk > float64(half) {
+		l = min(top-1, int(float64(top)*float64(half)/pk))
+		for l > 0 && peak(l) > float64(half) {
+			l--
+		}
+		for l > 0 && l < top-1 && peak(l+1) <= float64(half) {
+			l++
+		}
+	}
+	return l << (s.Bits - depth)
 }
 
 func audioRa(hz int) float64 { return float64(max(192000, min(8*hz, 384000))) }
@@ -428,7 +448,7 @@ func iqOffsets(tier Tier, rate int) []int {
 func (c limClass) points(rate, lowpass int) []limPoint {
 	u := txUnit{mcu: c.mcu, tier: c.tier, rate: rate}
 	if !c.iq {
-		u.format, u.level = fmtAudio, levelForBits(c.bits)
+		u.format, u.level = fmtAudio, measuredLevel(Setup{Tier: c.tier, Bits: c.bits}, rate)
 		return []limPoint{{u: u, bits: c.bits, radio: radioPlain, lowpass: lowpass}, {u: u, bits: c.bits, radio: radioIdeal, lowpass: lowpass}}
 	}
 	u.format, u.ramp = c.format, int(math.Round(1e-3*float64(rate)))
