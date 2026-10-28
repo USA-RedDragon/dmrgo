@@ -41,13 +41,13 @@
 // of a voice.Transmitter. Its Data method applies ARC4 privacy to the
 // payload of a data packet and gives its privacy header, the P_HEAD that
 // data.Sender sends after the first header; the tests prove it byte for
-// byte against the public capture. It refuses AES, DES and Basic Privacy
-// data with ErrDataAlgorithm. Neither recovers the MI of a call that it joins
+// byte against the public capture. It returns ErrDataAlgorithm for AES, DES and
+// Basic Privacy data. Neither recovers the MI of a call that it joins
 // after its PI header (late entry), and a Transmitter sends no late entry
 // information.
 //
-// NewTransmitter takes the radio service of the station and refuses the
-// amateur service with ErrAmateur, so that neither voice nor data is
+// NewTransmitter takes the radio service of the station and returns
+// ErrAmateur for the amateur service, so that neither voice nor data is
 // encrypted there: amateur rules forbid messages encoded to
 // obscure their meaning (ITU Radio Regulations Article 25.2A, and for
 // example 47 CFR 97.113(a)(4) in the United States). A Receiver reports and

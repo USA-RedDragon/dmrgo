@@ -3,7 +3,7 @@ package dmrgo
 import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // Service is the radio service of a transmitting station. Package privacy
-// takes it to decide whether the station may encrypt, and package rf to
+// uses it to check whether the station may encrypt, and package rf to
 // choose the regulatory limits that its signal keeps. A Service names no
 // region.
 type Service uint8

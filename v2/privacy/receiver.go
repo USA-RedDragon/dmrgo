@@ -12,7 +12,7 @@ import (
 // MaxKeys is the most keys that a Receiver holds.
 const MaxKeys = 16
 
-// Info is what a Receiver knows about the privacy of the current call. It
+// Info is the privacy data that a Receiver holds for the current call. It
 // needs no key.
 type Info struct {
 	// Encrypted reports that the call is encrypted: its LC sets the
@@ -123,7 +123,7 @@ func (r *Receiver) ForceBasic(on bool) {
 	r.force = on
 }
 
-// Reset forgets the current call. It keeps the keys and ForceBasic.
+// Reset clears the current call. It keeps the keys and ForceBasic.
 func (r *Receiver) Reset() {
 	if r == nil {
 		return
@@ -132,7 +132,7 @@ func (r *Receiver) Reset() {
 	r.stream.stop()
 }
 
-// Info returns what the Receiver knows about the current call.
+// Info returns the data that the Receiver holds for the current call.
 func (r *Receiver) Info() Info {
 	if r == nil {
 		return Info{}
@@ -158,7 +158,7 @@ func (r *Receiver) lookup(i *Info) *Key {
 // otherwise; in an ARC4 or AES call a frame received as
 // vocoder.AMBESilence stays as it is. Frames is not written for another event, or when it is nil. The
 // Info of an EventCallEnd is that of the call that ended; the Receiver
-// then forgets the call. A nil e changes nothing.
+// then clears the call. A nil e changes nothing.
 func (r *Receiver) Event(e *voice.Event, frames *[layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) Info {
 	if r == nil {
 		return Info{}

@@ -8,7 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// Service is the radio service of a transmitting station. It decides
+// Service is the radio service of a transmitting station. It sets
 // whether the station may encrypt: the amateur service may not, under ITU
 // Radio Regulations Article 25.2A and national rules such as 47 CFR
 // 97.113(a)(4) in the United States. The rule holds in every region, so a
@@ -19,7 +19,7 @@ type Service = dmrgo.Service
 // The Service values.
 const (
 	// ServiceUnknown is a service that the caller did not state.
-	// NewTransmitter refuses it.
+	// NewTransmitter returns a *dmrgo.ConfigError for it.
 	ServiceUnknown = dmrgo.ServiceUnknown
 	// ServiceAmateur is the amateur or amateur-satellite service, which
 	// forbids messages encoded to obscure their meaning. NewTransmitter
