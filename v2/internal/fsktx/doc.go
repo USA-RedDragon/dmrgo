@@ -11,9 +11,12 @@
 // TestTxSweep):
 //
 //   - Tier0, MCUAudio and MCUIQ, shape by a fixed-point multiply and
-//     accumulate over tables in read-only memory and fit a Cortex-M4F at 4
-//     MHz in about 120 to 140 bytes of state. MCUIQ turns a 32-bit phase into I/Q
-//     by a 32-bit cosine table of 2048 entries.
+//     accumulate over tables in read-only memory, in 120 to 132 bytes of
+//     state and at most 132 bytes of stack. Built by TinyGo 0.43 at -opt z
+//     for a Cortex-M4, the worst case is 2.9 MHz for MCUAudio at 48 kHz,
+//     6.4 MHz at 24 kHz, 3.9 MHz for MCUIQ at 96 kHz and 7.4 MHz at 192
+//     kHz, in 24 to 29 KB of flash. MCUIQ turns a 32-bit phase into I/Q by
+//     a 32-bit cosine table of 2048 entries.
 //   - Tier1, Audio and IQ, shape in float32 over eight symbols on each
 //     side of the pulse, at any output rate, and IQ turns the phase into
 //     I/Q by an interpolated cosine table.

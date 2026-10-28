@@ -1,6 +1,6 @@
 // Command txaudio runs the Tier 0 transmit modulator, an
 // fsktx.MCUAudio, in static memory on a microcontroller, as a hotspot
-// board drives the modulator input of its radio from a 12-bit DAC at 24
+// board drives the modulator input of its radio from a 12-bit DAC at 48
 // kHz. It allocates nothing: it builds with -gc=none, which fails the link
 // of any program that allocates.
 package main
@@ -11,7 +11,7 @@ var (
 	mod   fsktx.MCUAudio
 	burst [33]byte
 	syms  [132]int8
-	out   [5]int16
+	out   [10]int16
 	sum   int32
 )
 
@@ -22,7 +22,7 @@ func write(x []int16) {
 }
 
 func main() {
-	if err := mod.Init(fsktx.Table24k(), 1080, 2048); err != nil {
+	if err := mod.Init(fsktx.Table48k(), 1080, 2048); err != nil {
 		return
 	}
 	x := byte(1)
