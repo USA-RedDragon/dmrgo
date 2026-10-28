@@ -26,6 +26,7 @@ import (
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	internal_fsktx "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
 	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
+	internal_resample "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	internal_wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 	ip "github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -392,6 +393,14 @@ var api = [...]any{
 	(*internal_pcg.Source).Uint32,
 	internal_pcg.New,
 	internal_pcg.NewStream,
+	(*internal_resample.Complex).Init,
+	(*internal_resample.Complex).Push,
+	(*internal_resample.Filter).Init,
+	(*internal_resample.Filter).MaxOut,
+	(*internal_resample.Real).Init,
+	(*internal_resample.Real).Push,
+	internal_resample.Bessel0,
+	internal_resample.Design,
 	internal_text.Bool,
 	internal_text.Bytes,
 	internal_text.Digits,

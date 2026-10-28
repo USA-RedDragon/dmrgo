@@ -5,6 +5,7 @@ import (
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
 type dspTables struct {
@@ -217,7 +218,7 @@ func kaiserLowpass(n int, fc, beta float64) []float32 {
 			x = math.Sin(2*math.Pi*fc*m) / (math.Pi * m)
 		}
 		r := 2*float64(i)/float64(n-1) - 1
-		v[i] = x * bessel0(beta*math.Sqrt(max(0, 1-r*r))) / bessel0(beta)
+		v[i] = x * resample.Bessel0(beta*math.Sqrt(max(0, 1-r*r))) / resample.Bessel0(beta)
 		sum += v[i]
 	}
 	for i := range h {

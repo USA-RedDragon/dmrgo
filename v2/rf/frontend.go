@@ -3,12 +3,15 @@ package rf
 import (
 	"encoding/binary"
 	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
 const (
 	cicOrder       = 3
 	resamplePhases = 256
 	resampleTaps   = 72
+	resampleBeta   = 8.0
 	wideHz         = 17000.0
 	dcSeconds      = 1
 	dcStartSeconds = 0.01
@@ -54,53 +57,23 @@ type frontEnd struct {
 	integ  [cicOrder][2]int64
 	comb   [cicOrder][2]int64
 	phase  int
-	coef   []float32
-	hist   []complex64
-	head   int
-	t      float64
-	step   float64
-	n      int64
+	rs     *resample.Complex
 	dc     dcBlock
 }
 
 func newFrontEnd(rate float64, format IQFormat, out float64) *frontEnd {
 	dec := max(int(rate/(4*out)), 1)
 	mid := rate / float64(dec)
-	f := &frontEnd{format: format, size: format.bytes(), dec: dec, step: mid / out}
+	f := &frontEnd{format: format, size: format.bytes(), dec: dec}
 	f.gain = float32(1 / (frontScale(format) * math.Pow(float64(dec), cicOrder)))
 	f.dc.init(mid)
-	if f.step == 1 {
-		return f
-	}
-	f.hist = make([]complex64, 2*resampleTaps)
-	f.coef = make([]float32, resamplePhases*resampleTaps)
-	fc := out / 2 / mid
-	const beta = 8.0
-	for p := range resamplePhases {
-		for j := range resampleTaps {
-			u := float64(resampleTaps/2-1-j) + float64(p)/resamplePhases
-			v := 2 * fc
-			if u != 0 {
-				v = math.Sin(2*math.Pi*fc*u) / (math.Pi * u)
-			}
-			r := u / (resampleTaps / 2)
-			v *= bessel0(beta*math.Sqrt(max(0, 1-r*r))) / bessel0(beta)
-			f.coef[p*resampleTaps+j] = float32(v)
-		}
+	if step := mid / out; step != 1 {
+		h := make([]float32, resamplePhases*resampleTaps)
+		resample.Design(h, resampleTaps, resamplePhases, out/2/mid, resampleBeta)
+		f.rs = new(resample.Complex)
+		f.rs.Init(h, resampleTaps, resamplePhases, false, step, make([]complex64, 2*resampleTaps))
 	}
 	return f
-}
-
-func bessel0(x float64) float64 {
-	s, t := 1.0, 1.0
-	for k := 1; k < 50; k++ {
-		t *= (x / (2 * float64(k))) * (x / (2 * float64(k)))
-		s += t
-		if t < 1e-12*s {
-			break
-		}
-	}
-	return s
 }
 
 func frontScale(format IQFormat) float64 {
@@ -161,28 +134,12 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 		}
 		v := complex(float32(re)*f.gain, float32(im)*f.gain)
 		v = f.dc.remove(v)
-		if f.coef == nil {
+		if f.rs == nil {
 			out[w] = v
 			w++
-			f.n++
 			continue
 		}
-		f.hist[f.head] = v
-		f.hist[f.head+resampleTaps] = v
-		f.head = (f.head + 1) % resampleTaps
-		if f.n >= int64(math.Floor(f.t))+resampleTaps/2 {
-			frac := f.t - math.Floor(f.t)
-			h := f.coef[int(frac*resamplePhases)*resampleTaps:][:resampleTaps]
-			x := f.hist[f.head : f.head+resampleTaps]
-			var acc complex64
-			for k, c := range h {
-				acc += x[k] * complex(c, 0)
-			}
-			out[w] = acc
-			w++
-			f.t += f.step
-		}
-		f.n++
+		w += f.rs.Push(v, out[w:w+1])
 	}
 	return w
 }

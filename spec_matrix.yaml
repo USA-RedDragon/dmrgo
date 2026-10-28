@@ -64,6 +64,7 @@ ignore_files:
   - v2/internal/testmode/testmode.go
   - v2/internal/unpacked/unpacked.go
   - v2/internal/pcg/pcg.go
+  - v2/internal/resample/resample.go
   - v2/internal/allocgate/apigen/apigen.go
   - v2/internal/allocgate/apigen/gen/main.go
   - v2/internal/allocgate/testdata/cases/cases.go
