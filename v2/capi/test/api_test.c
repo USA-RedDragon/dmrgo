@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,12 @@
 #include "dmrgo.h"
 
 static int failures;
+
+#define RF_SLOTS 48
+#define RF_TX_BYTES 554560
+#define RF_TX_FNV UINT64_C(0xe137476937007a31)
+#define RF_AUDIO_SAMPLES 69300
+#define RF_AUDIO_FNV UINT64_C(0x76b95157255f6d87)
 
 #define CHECK(cond)                                                            \
 	do {                                                                   \
@@ -1225,6 +1232,412 @@ static void test_port_counts(void) {
 	printf("port counts: a read or write count stands with its error, and a count past p_len is DMRGO_ERR_BOUND\n");
 }
 
+#define RF_LEAD 40
+#define RF_TAPS 8
+#define RF_PI 3.14159265358979323846
+
+static int rf_bursts(dmrgo_rf_burst_t *b, int n) {
+	dmrgo_layer2_data_t data = {0};
+	data.tag = DMRGO_LAYER2_DATA_PDU_CSBK;
+	if (dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, &data.v.pdu_csbk) != DMRGO_OK)
+		return -1;
+	dmrgo_layer2_raw_burst_t raw;
+	if (dmrgo_layer2_build_burst(&data, 5, DMRGO_LAYER2_SYNC_SOURCE_BS, &raw) != DMRGO_OK)
+		return -1;
+	dmrgo_bs_cach_t *c = NULL;
+	if (dmrgo_bs_cach_new(&c) != DMRGO_OK)
+		return -1;
+	dmrgo_pdu_short_lc_t slc = {0};
+	for (int i = 0; i < n; i++) {
+		memset(&b[i], 0, sizeof b[i]);
+		if (dmrgo_bs_cach_next(c, i % 2 ? DMRGO_ENUMS_SLOT2 : DMRGO_ENUMS_SLOT1, true, &slc, b[i].cach) != DMRGO_OK)
+			return -1;
+		b[i].data = raw;
+		b[i].has_cach = b[i].bs = true;
+		b[i].stream = 1;
+		b[i].slot = i;
+	}
+	dmrgo_bs_cach_free(c);
+	return n;
+}
+
+static double rf_rrc(double t) {
+	const double a = 0.2;
+	if (fabs(t) < 1e-9)
+		return 1 - a + 4 * a / RF_PI;
+	if (fabs(fabs(t) - 1 / (4 * a)) < 1e-9)
+		return a / sqrt(2) * ((1 + 2 / RF_PI) * sin(RF_PI / (4 * a)) + (1 - 2 / RF_PI) * cos(RF_PI / (4 * a)));
+	return (sin(RF_PI * t * (1 - a)) + 4 * a * t * cos(RF_PI * t * (1 + a))) / (RF_PI * t * (1 - 16 * a * a * t * t));
+}
+
+static double *rf_freq(int sps, size_t *len) {
+	static dmrgo_rf_burst_t b[RF_SLOTS];
+	static int8_t sym[RF_SLOTS * 144];
+	if (rf_bursts(b, RF_SLOTS) < 0)
+		return NULL;
+	int ns = 0;
+	for (int i = 0; i < RF_SLOTS; i++) {
+		uint8_t bits[36];
+		memcpy(bits, b[i].cach, 3);
+		memcpy(bits + 3, b[i].data.v, 33);
+		for (int j = 0; j < 144; j++) {
+			int d = bits[j / 4] >> (6 - 2 * (j % 4)) & 3;
+			sym[ns++] = (int8_t)(d == 1 ? 3 : d == 0 ? 1 : d == 2 ? -1 : -3);
+		}
+	}
+	size_t n = (size_t)(ns + 2 * RF_LEAD) * (size_t)sps;
+	double *f = calloc(n, sizeof *f);
+	double h[2 * RF_TAPS * 10 + 1], sum = 0;
+	int span = RF_TAPS * sps;
+	for (int k = -span; k <= span; k++)
+		sum += h[k + span] = rf_rrc((double)k / sps);
+	for (int i = 0; f && i < ns; i++) {
+		long at = (long)(RF_LEAD + i) * sps;
+		for (int k = -span; k <= span; k++)
+			f[at + k] += sym[i] * 648.0 * h[k + span] * sps / sum;
+	}
+	*len = n;
+	return f;
+}
+
+static int16_t *rf_iq16(int sps, size_t *len) {
+	double *f = rf_freq(sps, len);
+	if (!f)
+		return NULL;
+	int16_t *x = malloc(2 * *len * sizeof *x);
+	double ph = 0;
+	for (size_t i = 0; x && i < *len; i++) {
+		ph += 2 * RF_PI * f[i] / (4800.0 * sps);
+		x[2 * i] = (int16_t)lrint(12000 * cos(ph));
+		x[2 * i + 1] = (int16_t)lrint(12000 * sin(ph));
+	}
+	free(f);
+	return x;
+}
+
+static void rf_csbk_check(const dmrgo_rf_burst_t *b, size_t n, int *csbks, int *slots) {
+	dmrgo_rf_monitor_t *m = NULL;
+	dmrgo_layer2_burst_t *lb = NULL;
+	OK(dmrgo_rf_monitor_new(&m));
+	OK(dmrgo_layer2_new_burst(&lb));
+	for (size_t i = 0; i < n; i++) {
+		dmrgo_rf_monitor_burst_t mb;
+		if (b[i].sync != DMRGO_ENUMS_SYNC_BS_SOURCED_DATA || dmrgo_rf_monitor_burst(m, lb, &b[i], &mb) != DMRGO_OK)
+			continue;
+		dmrgo_layer2_data_t got;
+		uint32_t target = 0, source = 0;
+		bool ok = false;
+		if (dmrgo_layer2_burst_get_data(lb, &got) == DMRGO_OK && got.tag == DMRGO_LAYER2_DATA_PDU_CSBK &&
+		    dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok) == DMRGO_OK && ok && target == 0x123456 && source == 3191868)
+			(*csbks)++;
+		if (mb.hint.slot == DMRGO_ENUMS_SLOT1 || mb.hint.slot == DMRGO_ENUMS_SLOT2)
+			(*slots)++;
+	}
+	OK(dmrgo_layer2_burst_free(lb));
+	OK(dmrgo_rf_monitor_free(m));
+}
+
+struct rf_sink {
+	dmrgo_rf_burst_t b[4 * RF_SLOTS];
+	size_t n;
+	int calls;
+};
+
+static int rf_on_bursts(void *user, const dmrgo_rf_burst_t *b, size_t n) {
+	struct rf_sink *s = user;
+	s->calls++;
+	for (size_t i = 0; i < n && s->n < sizeof s->b / sizeof s->b[0]; i++)
+		s->b[s->n++] = b[i];
+	return DMRGO_OK;
+}
+
+static void test_rf_receiver(void) {
+	size_t n = 0;
+	int16_t *iq = rf_iq16(2, &n);
+	CHECK(iq != NULL);
+	if (!iq)
+		return;
+	static struct rf_sink low;
+	low.n = 0;
+	dmrgo_rf_rx_config_t lc = {.size = sizeof lc, .tier = DMRGO_RF_TIER0, .rate = 9600, .on_bursts = {rf_on_bursts, &low}};
+	dmrgo_rf_receiver_t *r = NULL;
+	OK(dmrgo_rf_new_receiver(&lc, &r));
+	const uint8_t *in = (const uint8_t *)iq;
+	int64_t took = 0;
+	for (size_t off = 0; off < 4 * n; off += 1001) {
+		size_t k = 4 * n - off < 1001 ? 4 * n - off : 1001;
+		OK(dmrgo_rf_receiver_write(r, in + off, k, &took));
+		CHECK((size_t)took == k);
+	}
+	OK(dmrgo_rf_receiver_flush(r));
+	int csbks = 0, slots = 0;
+	rf_csbk_check(low.b, low.n, &csbks, &slots);
+	CHECK(csbks >= RF_SLOTS - 4 && slots >= RF_SLOTS - 4 && low.calls > 0);
+	size_t len = 0;
+	CHECK(dmrgo_rf_receiver_append_bursts(r, low.b, sizeof low.b / sizeof low.b[0], &len, NULL, in, 4) == DMRGO_OK && len == 0);
+	OK(dmrgo_rf_receiver_free(r));
+	int low_csbks = csbks;
+
+	dmrgo_rf_rx_config_t ac = {.size = sizeof ac, .tier = DMRGO_RF_TIER1, .rate = 48000, .format = DMRGO_RF_IQ_FORMAT_CS16};
+	free(iq);
+	iq = rf_iq16(10, &n);
+	CHECK(iq != NULL);
+	if (!iq)
+		return;
+	in = (const uint8_t *)iq;
+	OK(dmrgo_rf_new_receiver(&ac, &r));
+	int64_t most = 0, bytes = 0;
+	size_t items = 0, arena = 1, need = 0;
+	OK(dmrgo_rf_receiver_sample_bytes(r, &bytes));
+	OK(dmrgo_rf_receiver_max_output(r, 4000, &most));
+	OK(dmrgo_rf_receiver_append_bursts_need(r, in, 16000, &items, &arena));
+	CHECK(bytes == 4 && most > 0 && items >= (size_t)most && arena == 0);
+	dmrgo_rf_burst_t *b = malloc(4 * RF_SLOTS * sizeof *b);
+	len = 0;
+	CHECK(dmrgo_rf_receiver_append_bursts(r, b, 0, &len, &need, in, 16000) == DMRGO_ERR_SHORT && need == items && len == 0);
+	CHECK(dmrgo_rf_receiver_write(r, in, 4, &took) == DMRGO_ERR_CONFIG);
+	for (size_t off = 0; off < 4 * n; off += 16000) {
+		size_t k = 4 * n - off < 16000 ? 4 * n - off : 16000;
+		OK(dmrgo_rf_receiver_append_bursts(r, b, 4 * RF_SLOTS, &len, NULL, in + off, k));
+	}
+	OK(dmrgo_rf_receiver_append_flush(r, b, 4 * RF_SLOTS, &len, NULL));
+	double off = 1, dev = 0;
+	OK(dmrgo_rf_receiver_offset_hz(r, &off));
+	OK(dmrgo_rf_receiver_deviation_hz(r, &dev));
+	csbks = slots = 0;
+	rf_csbk_check(b, len, &csbks, &slots);
+	CHECK(csbks >= RF_SLOTS - 4 && fabs(off) < 300 && dev > 1500 && dev < 2400);
+	dmrgo_layer2_raw_burst_t raw;
+	uint8_t cach[3];
+	bool timed = true;
+	dmrgo_layer2_hint_t h;
+	OK(dmrgo_rf_burst_decoded(&b[len / 2], &raw, cach));
+	OK(dmrgo_rf_burst_timed(&b[len / 2], &timed));
+	OK(dmrgo_rf_burst_hint(&b[len / 2], &h));
+	CHECK(!timed && b[len / 2].has_cach && (h.slot == DMRGO_ENUMS_SLOT1 || h.slot == DMRGO_ENUMS_SLOT2));
+	dmrgo_rf_monitor_t *m = NULL;
+	dmrgo_layer2_burst_t *lb = NULL;
+	dmrgo_rf_monitor_burst_t mb;
+	OK(dmrgo_rf_monitor_new(&m));
+	OK(dmrgo_layer2_new_burst(&lb));
+	CHECK(dmrgo_rf_monitor_burst(m, lb, NULL, &mb) == DMRGO_ERR_RF_NIL_BURST);
+	OK(dmrgo_rf_monitor_reset(m));
+	OK(dmrgo_layer2_burst_free(lb));
+	OK(dmrgo_rf_monitor_free(m));
+	OK(dmrgo_rf_receiver_free(r));
+
+	dmrgo_rf_rx_config_t bad = {.size = sizeof bad, .tier = 9};
+	r = NULL;
+	CHECK(dmrgo_rf_new_receiver(&bad, &r) == DMRGO_ERR_CONFIG && r == NULL);
+	free(b);
+	free(iq);
+	printf("rf receiver: %d CSBKs at 9600 Hz through on_bursts, %d at 48 kHz by append, offset %.0f Hz, deviation %.0f Hz\n", low_csbks, csbks, off, dev);
+}
+
+static void test_rf_audio_receiver(void) {
+	size_t n = 0;
+	double *f = rf_freq(5, &n);
+	CHECK(f != NULL);
+	if (!f)
+		return;
+	int16_t *x = malloc(n * sizeof *x);
+	for (size_t i = 0; i < n; i++)
+		x[i] = (int16_t)lrint(f[i] * 6 + 300);
+	free(f);
+	static struct rf_sink s;
+	s.n = 0;
+	dmrgo_rf_audio_rx_config_t c = {.size = sizeof c, .rate = 24000, .on_bursts = {rf_on_bursts, &s}};
+	dmrgo_rf_audio_receiver_t *r = NULL;
+	OK(dmrgo_rf_new_audio_receiver(&c, &r));
+	int64_t took = 0, offset = 0, level = 0;
+	for (size_t at = 0; at < n; at += 777) {
+		size_t k = n - at < 777 ? n - at : 777;
+		OK(dmrgo_rf_audio_receiver_write(r, x + at, k, &took));
+	}
+	OK(dmrgo_rf_audio_receiver_flush(r));
+	OK(dmrgo_rf_audio_receiver_offset(r, &offset));
+	OK(dmrgo_rf_audio_receiver_level(r, &level));
+	int csbks = 0, slots = 0;
+	rf_csbk_check(s.b, s.n, &csbks, &slots);
+	CHECK(csbks >= RF_SLOTS - 4 && slots >= RF_SLOTS - 4);
+	CHECK(offset > 200 && offset < 400 && level > 1944 * 6 * 0.8 && level < 1944 * 6 * 1.2);
+	OK(dmrgo_rf_audio_receiver_free(r));
+
+	dmrgo_rf_audio_rx_config_t ac = {.size = sizeof ac, .rate = 24000};
+	OK(dmrgo_rf_new_audio_receiver(&ac, &r));
+	dmrgo_rf_burst_t *b = malloc(4 * RF_SLOTS * sizeof *b);
+	size_t len = 0;
+	for (size_t at = 0; at < n; at += 777) {
+		size_t k = n - at < 777 ? n - at : 777;
+		OK(dmrgo_rf_audio_receiver_append_bursts(r, b, 4 * RF_SLOTS, &len, NULL, x + at, k));
+	}
+	OK(dmrgo_rf_audio_receiver_append_flush(r, b, 4 * RF_SLOTS, &len, NULL));
+	CHECK(len == s.n);
+	int csbks2 = 0;
+	slots = 0;
+	rf_csbk_check(b, len, &csbks2, &slots);
+	CHECK(csbks2 == csbks);
+	OK(dmrgo_rf_audio_receiver_free(r));
+	free(b);
+	free(x);
+	printf("rf audio receiver: %d CSBKs at 24 kHz, DC %lld, level %lld\n", csbks, (long long)offset, (long long)level);
+}
+
+static uint64_t rf_fnv(const void *p, size_t n) {
+	const uint8_t *b = p;
+	uint64_t h = UINT64_C(0xcbf29ce484222325);
+	for (size_t i = 0; i < n; i++)
+		h = (h ^ b[i]) * UINT64_C(0x100000001b3);
+	return h;
+}
+
+struct rf_bytes {
+	uint8_t *p;
+	size_t n, cap;
+};
+
+static int rf_on_samples(void *user, const uint8_t *p, size_t n) {
+	struct rf_bytes *s = user;
+	if (s->n + n > s->cap)
+		return DMRGO_ERR_SHORT;
+	memcpy(s->p + s->n, p, n);
+	s->n += n;
+	return DMRGO_OK;
+}
+
+static int rf_on_audio(void *user, const int16_t *p, size_t n) {
+	return rf_on_samples(user, (const uint8_t *)p, 2 * n);
+}
+
+static bool rf_region_refused(int rc) {
+	if (rc != DMRGO_ERR_RF_REGION)
+		return false;
+	dmrgo_rf_region_error_t e;
+	bool ok = false;
+	OK(dmrgo_rf_region_error_last(&e, &ok));
+	CHECK(ok && e.reason_len > 0);
+	return true;
+}
+
+static void test_rf_transmitter(void) {
+	static dmrgo_rf_burst_t b[RF_SLOTS];
+	CHECK(rf_bursts(b, RF_SLOTS) == RF_SLOTS);
+	dmrgo_rf_tx_config_t c = {.size = sizeof c, .tier = DMRGO_RF_TIER0, .rate = 96000, .region = DMRGO_RF_REGION_US, .service = DMRGO_SERVICE_LAND_MOBILE, .power = 40};
+	dmrgo_rf_transmitter_t *t = NULL;
+	int rc = dmrgo_rf_new_transmitter(&c, &t);
+	if (rf_region_refused(rc)) {
+		CHECK(t == NULL);
+		printf("rf transmitter: the region limits refuse the setup, so the sample checks wait for them\n");
+		return;
+	}
+	OK(rc);
+	int64_t most = 0;
+	OK(dmrgo_rf_transmitter_max_output(t, RF_SLOTS, &most));
+	struct rf_bytes s = {malloc((size_t)most * 2), 0, (size_t)most * 2};
+	size_t len = 0, need = 0;
+	CHECK(dmrgo_rf_transmitter_append_samples(t, s.p, 0, &len, &need, b, RF_SLOTS) == DMRGO_ERR_SHORT && need > 0 && len == 0);
+	OK(dmrgo_rf_transmitter_append_samples(t, s.p, s.cap, &len, NULL, b, RF_SLOTS));
+	OK(dmrgo_rf_transmitter_append_flush(t, s.p, s.cap, &len, NULL));
+	CHECK(len == RF_TX_BYTES && rf_fnv(s.p, len) == RF_TX_FNV);
+	uint64_t append = rf_fnv(s.p, len);
+	OK(dmrgo_rf_transmitter_free(t));
+
+	c.on_samples = (dmrgo_rf_tx_config_on_samples_fn_t){rf_on_samples, &s};
+	s.n = 0;
+	OK(dmrgo_rf_new_transmitter(&c, &t));
+	int64_t took = 0;
+	for (int i = 0; i < RF_SLOTS; i += 5)
+		OK(dmrgo_rf_transmitter_write(t, b + i, RF_SLOTS - i < 5 ? (size_t)(RF_SLOTS - i) : 5, &took));
+	OK(dmrgo_rf_transmitter_flush(t));
+	CHECK(s.n == len && rf_fnv(s.p, s.n) == append);
+	OK(dmrgo_rf_transmitter_free(t));
+	s.n = 0;
+	OK(dmrgo_rf_new_transmitter(&c, &t));
+	dmrgo_rf_burst_t order[2] = {b[5], b[3]};
+	CHECK(dmrgo_rf_transmitter_write(t, order, 2, &took) == DMRGO_ERR_RF_BURST_ORDER && took == 1);
+	OK(dmrgo_rf_transmitter_free(t));
+
+	dmrgo_rf_rx_config_t rc2 = {.size = sizeof rc2, .tier = DMRGO_RF_TIER1, .rate = 96000};
+	dmrgo_rf_receiver_t *r = NULL;
+	OK(dmrgo_rf_new_receiver(&rc2, &r));
+	size_t items = 0, arena = 0, n = 0;
+	OK(dmrgo_rf_receiver_append_bursts_need(r, s.p, len, &items, &arena));
+	dmrgo_rf_burst_t *got = malloc(items * sizeof *got);
+	OK(dmrgo_rf_receiver_append_bursts(r, got, items, &n, NULL, s.p, len));
+	OK(dmrgo_rf_receiver_append_flush(r, got, items, &n, NULL));
+	int same = 0;
+	for (size_t i = 0; i < n; i++)
+		same += !memcmp(got[i].data.v, b[0].data.v, sizeof b[0].data.v);
+	CHECK(same >= RF_SLOTS - 1);
+	OK(dmrgo_rf_receiver_free(r));
+	free(got);
+	free(s.p);
+	printf("rf transmitter: %zu bytes, %d of %d bursts back through the receiver\n", len, same, RF_SLOTS);
+}
+
+static void test_rf_audio_transmitter(void) {
+	static dmrgo_rf_burst_t b[RF_SLOTS];
+	CHECK(rf_bursts(b, RF_SLOTS) == RF_SLOTS);
+	dmrgo_rf_audio_tx_config_t c = {.size = sizeof c, .tier = DMRGO_RF_TIER0, .rate = 48000, .region = DMRGO_RF_REGION_US, .service = DMRGO_SERVICE_LAND_MOBILE, .power = 40};
+	dmrgo_rf_audio_transmitter_t *t = NULL;
+	dmrgo_rf_pre_emphasis_t *pe = NULL, *same_pe = NULL;
+	OK(dmrgo_rf_new_pre_emphasis(&pe));
+	OK(dmrgo_rf_pre_emphasis_init(pe, &same_pe));
+	CHECK(same_pe == pe);
+	dmrgo_rf_audio_tx_config_t pc = c;
+	pc.pre_emphasis = pe;
+	pc.input_lowpass_hz = 8000;
+	pc.bits = 12;
+	int rc = dmrgo_rf_new_audio_transmitter(&pc, &t);
+	CHECK(rc == DMRGO_OK || rf_region_refused(rc));
+	if (rc == DMRGO_OK)
+		OK(dmrgo_rf_audio_transmitter_free(t));
+	t = NULL;
+	OK(dmrgo_rf_pre_emphasis_free(pe));
+	rc = dmrgo_rf_new_audio_transmitter(&c, &t);
+	if (rf_region_refused(rc)) {
+		CHECK(t == NULL);
+		printf("rf audio transmitter: the region limits refuse the setup, so the sample checks wait for them\n");
+		return;
+	}
+	OK(rc);
+	int64_t most = 0;
+	OK(dmrgo_rf_audio_transmitter_max_output(t, RF_SLOTS, &most));
+	int16_t *pcm = malloc((size_t)most * 2 * sizeof *pcm);
+	size_t len = 0;
+	OK(dmrgo_rf_audio_transmitter_append_samples(t, pcm, (size_t)most * 2, &len, NULL, b, RF_SLOTS));
+	OK(dmrgo_rf_audio_transmitter_append_flush(t, pcm, (size_t)most * 2, &len, NULL));
+	CHECK(len == RF_AUDIO_SAMPLES && rf_fnv(pcm, 2 * len) == RF_AUDIO_FNV);
+	OK(dmrgo_rf_audio_transmitter_free(t));
+
+	struct rf_bytes s = {malloc((size_t)most * 4), 0, (size_t)most * 4};
+	c.on_samples = (dmrgo_rf_audio_tx_config_on_samples_fn_t){rf_on_audio, &s};
+	OK(dmrgo_rf_new_audio_transmitter(&c, &t));
+	int64_t took = 0;
+	OK(dmrgo_rf_audio_transmitter_write(t, b, RF_SLOTS, &took));
+	OK(dmrgo_rf_audio_transmitter_flush(t));
+	CHECK(s.n == 2 * len && rf_fnv(s.p, s.n) == rf_fnv(pcm, 2 * len));
+	OK(dmrgo_rf_audio_transmitter_free(t));
+
+	dmrgo_rf_audio_rx_config_t rc2 = {.size = sizeof rc2, .rate = 48000};
+	dmrgo_rf_audio_receiver_t *r = NULL;
+	OK(dmrgo_rf_new_audio_receiver(&rc2, &r));
+	size_t items = 0, arena = 0, n = 0;
+	OK(dmrgo_rf_audio_receiver_append_bursts_need(r, pcm, len, &items, &arena));
+	dmrgo_rf_burst_t *got = malloc(items * sizeof *got);
+	OK(dmrgo_rf_audio_receiver_append_bursts(r, got, items, &n, NULL, pcm, len));
+	OK(dmrgo_rf_audio_receiver_append_flush(r, got, items, &n, NULL));
+	int back = 0;
+	for (size_t i = 0; i < n; i++)
+		back += !memcmp(got[i].data.v, b[0].data.v, sizeof b[0].data.v);
+	CHECK(back >= RF_SLOTS - 1);
+	OK(dmrgo_rf_audio_receiver_free(r));
+	free(got);
+	free(s.p);
+	free(pcm);
+	printf("rf audio transmitter: %zu samples, %d of %d bursts back through the receiver\n", len, back, RF_SLOTS);
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s parrot_kerchunk.bin\n", argv[0]);
@@ -1260,6 +1673,10 @@ int main(int argc, char **argv) {
 	test_failed_results();
 	test_dvsi();
 	test_port_counts();
+	test_rf_receiver();
+	test_rf_audio_receiver();
+	test_rf_transmitter();
+	test_rf_audio_transmitter();
 	if (failures) {
 		fprintf(stderr, "%d checks failed\n", failures);
 		return 1;

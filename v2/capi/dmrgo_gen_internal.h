@@ -9,6 +9,18 @@ static inline int dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t__call(
 	return f.fn(f.user, superframe, out, out_ok);
 }
 
+static inline int dmrgo_rf_audio_rx_config_on_bursts_fn_t__call(dmrgo_rf_audio_rx_config_on_bursts_fn_t f, const dmrgo_rf_burst_t *bursts, size_t bursts_len) {
+	return f.fn(f.user, bursts, bursts_len);
+}
+
+static inline int dmrgo_rf_audio_tx_config_on_samples_fn_t__call(dmrgo_rf_audio_tx_config_on_samples_fn_t f, const int16_t *values, size_t values_len) {
+	return f.fn(f.user, values, values_len);
+}
+
+static inline int dmrgo_rf_tx_config_on_samples_fn_t__call(dmrgo_rf_tx_config_on_samples_fn_t f, const uint8_t *data, size_t data_len) {
+	return f.fn(f.user, data, data_len);
+}
+
 static inline int dmrgo_trunk_authenticator_vtable_t__response(const dmrgo_trunk_authenticator_vtable_t *t, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok) {
 	if (!t->response)
 		return DMRGO_ERR_NO_METHOD;
@@ -86,6 +98,7 @@ typedef struct dmrgo__last_t {
 		char none;
 		dmrgo_config_error_t k0;
 		dmrgo_field_range_error_t k1;
+		dmrgo_rf_region_error_t k2;
 	} d;
 	unsigned char arena[512];
 } dmrgo__last_t;

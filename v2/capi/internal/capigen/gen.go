@@ -3,9 +3,9 @@
 // (the C declarations), dmrgo_gen_internal.h and dmrgo_gen.c (trampolines),
 // abi.txt (the lock of the C ABI) and api_gen_test.go (the list of the entry
 // points for the tests). Every exported type, field, func, method, const and
-// error var of the packages under v2, except internal/, cmd/, examples/,
-// rf/ and capi/, gets a C counterpart, and Exports reports any that could
-// not be mapped.
+// error var of the packages under v2, except internal/, cmd/, examples/ and
+// capi/, gets a C counterpart, and Exports reports any that could not be
+// mapped.
 package capigen
 
 import (

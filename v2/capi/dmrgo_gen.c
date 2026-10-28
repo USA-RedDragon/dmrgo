@@ -8,6 +8,12 @@ const char *dmrgo_strerror(int status);
 
 void *dmrgo__fnptr0(void) { return (void *)dmrgo__fn0; }
 
+void *dmrgo__fnptr1(void) { return (void *)dmrgo__fn1; }
+
+void *dmrgo__fnptr2(void) { return (void *)dmrgo__fn2; }
+
+void *dmrgo__fnptr3(void) { return (void *)dmrgo__fn3; }
+
 const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
 	case -100:
@@ -172,6 +178,18 @@ const char *dmrgo__gen_strerror(int status) {
 		return "privacy: no room for another key";
 	case -236:
 		return "privacy: transmitter not started";
+	case -240:
+		return "rf: burst slot does not increase within its stream";
+	case -241:
+		return "rf: BS-sourced burst in the license-free service";
+	case -242:
+		return "rf: nil Monitor or Burst";
+	case -243:
+		return "rf: not set up; make it with its constructor or Init";
+	case -244:
+		return "rf: transmission past 179 s in the license-free service";
+	case -239:
+		return "rf: region error";
 	case -171:
 		return "shortdata: character does not fit the DD format";
 	case -172:

@@ -173,7 +173,7 @@ func firstSentence(s string) string {
 }
 
 func (l *loader) packages() ([]*types.Package, error) {
-	skipDirs := []string{"capi", "cmd", "examples", "rf"}
+	skipDirs := []string{"capi", "cmd", "examples"}
 	var paths []string
 	err := filepath.WalkDir(l.root, func(p string, d os.DirEntry, err error) error {
 		if err != nil || !d.IsDir() {

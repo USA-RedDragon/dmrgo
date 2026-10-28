@@ -65,3 +65,7 @@ func TestAllocsAPIVoice(t *testing.T) {
 	}
 	allocs(t, func() (func() error, error) { return voicePath(b) }, 200)
 }
+
+func TestAllocsAPIRF(t *testing.T) {
+	allocs(t, func() (func() error, error) { return rfPath(rfIQ9600(t)) }, 20)
+}

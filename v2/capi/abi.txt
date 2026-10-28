@@ -138,6 +138,12 @@ code DMRGO_ERR_PRIVACY_KEYS_FULL -235
 code DMRGO_ERR_PRIVACY_NOT_STARTED -236
 code DMRGO_ERR_PRIVACY_DATA_ALGORITHM -237
 code DMRGO_ERR_LOCATION_FORMAT -238
+code DMRGO_ERR_RF_REGION -239
+code DMRGO_ERR_RF_BURST_ORDER -240
+code DMRGO_ERR_RF_BURST_SERVICE -241
+code DMRGO_ERR_RF_NIL_BURST -242
+code DMRGO_ERR_RF_NOT_SET_UP -243
+code DMRGO_ERR_RF_TX_TIMEOUT -244
 prefix github.com/USA-RedDragon/dmrgo/v2 dmrgo_
 prefix github.com/USA-RedDragon/dmrgo/v2/bs dmrgo_bs_
 prefix github.com/USA-RedDragon/dmrgo/v2/constants dmrgo_constants_
@@ -159,6 +165,7 @@ prefix github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp dmrgo_lrrp_
 prefix github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms dmrgo_tms_
 prefix github.com/USA-RedDragon/dmrgo/v2/nmea dmrgo_nmea_
 prefix github.com/USA-RedDragon/dmrgo/v2/privacy dmrgo_privacy_
+prefix github.com/USA-RedDragon/dmrgo/v2/rf dmrgo_rf_
 prefix github.com/USA-RedDragon/dmrgo/v2/shortdata dmrgo_shortdata_
 prefix github.com/USA-RedDragon/dmrgo/v2/sms dmrgo_sms_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/dmrd dmrgo_dmrd_
@@ -905,6 +912,12 @@ sym #define DMRGO_ERR_PRIVACY_AMATEUR (-234)
 sym #define DMRGO_ERR_PRIVACY_DATA_ALGORITHM (-237)
 sym #define DMRGO_ERR_PRIVACY_KEYS_FULL (-235)
 sym #define DMRGO_ERR_PRIVACY_NOT_STARTED (-236)
+sym #define DMRGO_ERR_RF_BURST_ORDER (-240)
+sym #define DMRGO_ERR_RF_BURST_SERVICE (-241)
+sym #define DMRGO_ERR_RF_NIL_BURST (-242)
+sym #define DMRGO_ERR_RF_NOT_SET_UP (-243)
+sym #define DMRGO_ERR_RF_REGION (-239)
+sym #define DMRGO_ERR_RF_TX_TIMEOUT (-244)
 sym #define DMRGO_ERR_SHORTDATA_CHARACTER (-171)
 sym #define DMRGO_ERR_SHORTDATA_FORMAT (-172)
 sym #define DMRGO_ERR_SHORTDATA_LENGTH (-173)
@@ -1380,6 +1393,25 @@ sym #define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_service_t)1)
 sym #define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
 sym #define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 sym #define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_service_t)0)
+sym #define DMRGO_RF_IQ_FORMAT_CF32 ((dmrgo_rf_iq_format_t)4)
+sym #define DMRGO_RF_IQ_FORMAT_CS16 ((dmrgo_rf_iq_format_t)3)
+sym #define DMRGO_RF_IQ_FORMAT_CS8 ((dmrgo_rf_iq_format_t)2)
+sym #define DMRGO_RF_IQ_FORMAT_CU8 ((dmrgo_rf_iq_format_t)1)
+sym #define DMRGO_RF_IQ_FORMAT_DEFAULT ((dmrgo_rf_iq_format_t)0)
+sym #define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
+sym #define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
+sym #define DMRGO_RF_REGION_JAPAN ((dmrgo_rf_region_t)4)
+sym #define DMRGO_RF_REGION_US ((dmrgo_rf_region_t)1)
+sym #define DMRGO_RF_REGION_WORLD ((dmrgo_rf_region_t)0)
+sym #define DMRGO_RF_SERVICE_AMATEUR ((dmrgo_service_t)1)
+sym #define DMRGO_RF_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
+sym #define DMRGO_RF_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
+sym #define DMRGO_RF_SERVICE_UNKNOWN ((dmrgo_service_t)0)
+sym #define DMRGO_RF_TIER0 ((dmrgo_rf_tier_t)1)
+sym #define DMRGO_RF_TIER1 ((dmrgo_rf_tier_t)2)
+sym #define DMRGO_RF_TIER2 ((dmrgo_rf_tier_t)3)
+sym #define DMRGO_RF_TIER3 ((dmrgo_rf_tier_t)4)
+sym #define DMRGO_RF_TIER_DEFAULT ((dmrgo_rf_tier_t)0)
 sym #define DMRGO_SERVICE_AMATEUR ((dmrgo_service_t)1)
 sym #define DMRGO_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
 sym #define DMRGO_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
@@ -3079,6 +3111,80 @@ sym int dmrgo_privacy_transmitter_free(dmrgo_privacy_transmitter_t *self);
 sym int dmrgo_privacy_transmitter_output(dmrgo_privacy_transmitter_t *self, dmrgo_voice_output_t *o);
 sym int dmrgo_privacy_transmitter_pi_header(dmrgo_privacy_transmitter_t *self, uint32_t target, dmrgo_pdu_pi_header_t *h, bool *ok);
 sym int dmrgo_privacy_transmitter_start(dmrgo_privacy_transmitter_t *self, uint32_t mi);
+sym int dmrgo_rf_audio_receiver_active(dmrgo_rf_audio_receiver_t *self, bool *out);
+sym int dmrgo_rf_audio_receiver_append_bursts(dmrgo_rf_audio_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const int16_t *x, size_t x_len);
+sym int dmrgo_rf_audio_receiver_append_bursts_need(dmrgo_rf_audio_receiver_t *self, const int16_t *x, size_t x_len, size_t *items, size_t *arena);
+sym int dmrgo_rf_audio_receiver_append_flush(dmrgo_rf_audio_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_rf_audio_receiver_append_flush_need(dmrgo_rf_audio_receiver_t *self, size_t *items, size_t *arena);
+sym int dmrgo_rf_audio_receiver_flush(dmrgo_rf_audio_receiver_t *self);
+sym int dmrgo_rf_audio_receiver_free(dmrgo_rf_audio_receiver_t *self);
+sym int dmrgo_rf_audio_receiver_init(dmrgo_rf_audio_receiver_t *self, const dmrgo_rf_audio_rx_config_t *c);
+sym int dmrgo_rf_audio_receiver_lag(dmrgo_rf_audio_receiver_t *self, int64_t *out);
+sym int dmrgo_rf_audio_receiver_level(dmrgo_rf_audio_receiver_t *self, int64_t *out);
+sym int dmrgo_rf_audio_receiver_max_output(dmrgo_rf_audio_receiver_t *self, int64_t n, int64_t *out);
+sym int dmrgo_rf_audio_receiver_offset(dmrgo_rf_audio_receiver_t *self, int64_t *out);
+sym int dmrgo_rf_audio_receiver_write(dmrgo_rf_audio_receiver_t *self, const int16_t *x, size_t x_len, int64_t *out);
+sym int dmrgo_rf_audio_transmitter_active(dmrgo_rf_audio_transmitter_t *self, bool *out);
+sym int dmrgo_rf_audio_transmitter_append_flush(dmrgo_rf_audio_transmitter_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_rf_audio_transmitter_append_flush_need(dmrgo_rf_audio_transmitter_t *self, size_t *items, size_t *arena);
+sym int dmrgo_rf_audio_transmitter_append_samples(dmrgo_rf_audio_transmitter_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_rf_burst_t *x, size_t x_len);
+sym int dmrgo_rf_audio_transmitter_append_samples_need(dmrgo_rf_audio_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, size_t *items, size_t *arena);
+sym int dmrgo_rf_audio_transmitter_flush(dmrgo_rf_audio_transmitter_t *self);
+sym int dmrgo_rf_audio_transmitter_free(dmrgo_rf_audio_transmitter_t *self);
+sym int dmrgo_rf_audio_transmitter_init(dmrgo_rf_audio_transmitter_t *self, const dmrgo_rf_audio_tx_config_t *c);
+sym int dmrgo_rf_audio_transmitter_lag(dmrgo_rf_audio_transmitter_t *self, int64_t *out);
+sym int dmrgo_rf_audio_transmitter_level(dmrgo_rf_audio_transmitter_t *self, int64_t *out);
+sym int dmrgo_rf_audio_transmitter_max_output(dmrgo_rf_audio_transmitter_t *self, int64_t n, int64_t *out);
+sym int dmrgo_rf_audio_transmitter_offset(dmrgo_rf_audio_transmitter_t *self, int64_t *out);
+sym int dmrgo_rf_audio_transmitter_write(dmrgo_rf_audio_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, int64_t *out);
+sym int dmrgo_rf_burst_decoded(const dmrgo_rf_burst_t *self, dmrgo_layer2_raw_burst_t *raw_burst, uint8_t data[3]);
+sym int dmrgo_rf_burst_hint(const dmrgo_rf_burst_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_rf_burst_timed(const dmrgo_rf_burst_t *self, bool *out);
+sym int dmrgo_rf_monitor_burst(dmrgo_rf_monitor_t *self, dmrgo_layer2_burst_t *dst, const dmrgo_rf_burst_t *b, dmrgo_rf_monitor_burst_t *out);
+sym int dmrgo_rf_monitor_free(dmrgo_rf_monitor_t *self);
+sym int dmrgo_rf_monitor_new(dmrgo_rf_monitor_t **out);
+sym int dmrgo_rf_monitor_reset(dmrgo_rf_monitor_t *self);
+sym int dmrgo_rf_new_audio_receiver(const dmrgo_rf_audio_rx_config_t *c, dmrgo_rf_audio_receiver_t **out);
+sym int dmrgo_rf_new_audio_transmitter(const dmrgo_rf_audio_tx_config_t *c, dmrgo_rf_audio_transmitter_t **out);
+sym int dmrgo_rf_new_pre_emphasis(dmrgo_rf_pre_emphasis_t **out);
+sym int dmrgo_rf_new_receiver(const dmrgo_rf_rx_config_t *c, dmrgo_rf_receiver_t **out);
+sym int dmrgo_rf_new_rx_pre_emphasis(dmrgo_rf_rx_pre_emphasis_t **out);
+sym int dmrgo_rf_new_transmitter(const dmrgo_rf_tx_config_t *c, dmrgo_rf_transmitter_t **out);
+sym int dmrgo_rf_pre_emphasis_free(dmrgo_rf_pre_emphasis_t *self);
+sym int dmrgo_rf_pre_emphasis_init(dmrgo_rf_pre_emphasis_t *self, dmrgo_rf_pre_emphasis_t **out);
+sym int dmrgo_rf_receiver_active(dmrgo_rf_receiver_t *self, bool *out);
+sym int dmrgo_rf_receiver_append_bursts(dmrgo_rf_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *x, size_t x_len);
+sym int dmrgo_rf_receiver_append_bursts_need(dmrgo_rf_receiver_t *self, const uint8_t *x, size_t x_len, size_t *items, size_t *arena);
+sym int dmrgo_rf_receiver_append_flush(dmrgo_rf_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_rf_receiver_append_flush_need(dmrgo_rf_receiver_t *self, size_t *items, size_t *arena);
+sym int dmrgo_rf_receiver_deviation_hz(dmrgo_rf_receiver_t *self, double *out);
+sym int dmrgo_rf_receiver_flush(dmrgo_rf_receiver_t *self);
+sym int dmrgo_rf_receiver_free(dmrgo_rf_receiver_t *self);
+sym int dmrgo_rf_receiver_init(dmrgo_rf_receiver_t *self, const dmrgo_rf_rx_config_t *c);
+sym int dmrgo_rf_receiver_lag(dmrgo_rf_receiver_t *self, int64_t *out);
+sym int dmrgo_rf_receiver_max_output(dmrgo_rf_receiver_t *self, int64_t n, int64_t *out);
+sym int dmrgo_rf_receiver_offset_hz(dmrgo_rf_receiver_t *self, double *out);
+sym int dmrgo_rf_receiver_sample_bytes(dmrgo_rf_receiver_t *self, int64_t *out);
+sym int dmrgo_rf_receiver_write(dmrgo_rf_receiver_t *self, const uint8_t *x, size_t x_len, int64_t *out);
+sym int dmrgo_rf_region_error_error(const dmrgo_rf_region_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_rf_region_error_last(dmrgo_rf_region_error_t *out, bool *ok);
+sym int dmrgo_rf_region_string(dmrgo_rf_region_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_rf_rx_pre_emphasis_free(dmrgo_rf_rx_pre_emphasis_t *self);
+sym int dmrgo_rf_rx_pre_emphasis_init(dmrgo_rf_rx_pre_emphasis_t *self, dmrgo_rf_rx_pre_emphasis_t **out);
+sym int dmrgo_rf_transmitter_active(dmrgo_rf_transmitter_t *self, bool *out);
+sym int dmrgo_rf_transmitter_append_flush(dmrgo_rf_transmitter_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_rf_transmitter_append_flush_need(dmrgo_rf_transmitter_t *self, size_t *items, size_t *arena);
+sym int dmrgo_rf_transmitter_append_samples(dmrgo_rf_transmitter_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_rf_burst_t *x, size_t x_len);
+sym int dmrgo_rf_transmitter_append_samples_need(dmrgo_rf_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, size_t *items, size_t *arena);
+sym int dmrgo_rf_transmitter_deviation_hz(dmrgo_rf_transmitter_t *self, double *out);
+sym int dmrgo_rf_transmitter_flush(dmrgo_rf_transmitter_t *self);
+sym int dmrgo_rf_transmitter_free(dmrgo_rf_transmitter_t *self);
+sym int dmrgo_rf_transmitter_init(dmrgo_rf_transmitter_t *self, const dmrgo_rf_tx_config_t *c);
+sym int dmrgo_rf_transmitter_lag(dmrgo_rf_transmitter_t *self, int64_t *out);
+sym int dmrgo_rf_transmitter_max_output(dmrgo_rf_transmitter_t *self, int64_t n, int64_t *out);
+sym int dmrgo_rf_transmitter_offset_hz(dmrgo_rf_transmitter_t *self, double *out);
+sym int dmrgo_rf_transmitter_sample_bytes(dmrgo_rf_transmitter_t *self, int64_t *out);
+sym int dmrgo_rf_transmitter_write(dmrgo_rf_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, int64_t *out);
 sym int dmrgo_service_string(dmrgo_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
 sym int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -3386,6 +3492,7 @@ sym int dmrgo_voice_transmitter_vocoder_slots(dmrgo_voice_transmitter_t *self, c
 sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_duration_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
+sym typedef int64_t dmrgo_rf_tier_t;
 sym typedef uint16_t dmrgo_hdap_opcode_t;
 sym typedef uint16_t dmrgo_hytera_slot_type_t;
 sym typedef uint16_t dmrgo_ip_icmp_message_t;
@@ -3502,6 +3609,8 @@ sym typedef uint8_t dmrgo_pdu_service_type_t;
 sym typedef uint8_t dmrgo_pdu_slot_type_info_t;
 sym typedef uint8_t dmrgo_pdu_udt_opcode_t;
 sym typedef uint8_t dmrgo_privacy_algorithm_t;
+sym typedef uint8_t dmrgo_rf_iq_format_t;
+sym typedef uint8_t dmrgo_rf_region_t;
 sym typedef uint8_t dmrgo_service_t;
 sym typedef uint8_t dmrgo_sms_format_t;
 sym typedef uint8_t dmrgo_tms_encoding_t;
@@ -3764,6 +3873,16 @@ type struct dmrgo_pdu_vnap_continuation_t { dmrgo_fec_result_t fec; bool last_bl
 type struct dmrgo_pdu_vote_now_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t vote_sys_code; bool reg; uint8_t backoff; uint16_t sys_ident_code; bool has_active_conn; bool active_conn; uint8_t confirmed_priority; uint8_t adjacent_priority; uint8_t reserved; uint16_t channel; };
 type struct dmrgo_privacy_info_t { bool encrypted; bool header; dmrgo_enums_fid_t mfid; dmrgo_privacy_algorithm_t algorithm; uint8_t key_id; uint32_t mi; bool decrypting; };
 type struct dmrgo_privacy_transmitter_config_t { size_t size; dmrgo_privacy_key_t *key; dmrgo_service_t service; };
+type struct dmrgo_rf_audio_rx_config_on_bursts_fn_t { int (*fn)(DMRGO_USER_T user, const dmrgo_rf_burst_t *bursts, size_t bursts_len); DMRGO_USER_T user; };
+type struct dmrgo_rf_audio_rx_config_t { size_t size; dmrgo_rf_tier_t tier; int64_t rate; int64_t bits; bool unsigned_; dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts; dmrgo_rf_rx_pre_emphasis_t *pre_emphasis; };
+type struct dmrgo_rf_audio_tx_config_on_samples_fn_t { int (*fn)(DMRGO_USER_T user, const int16_t *values, size_t values_len); DMRGO_USER_T user; };
+type struct dmrgo_rf_audio_tx_config_t { size_t size; dmrgo_rf_tier_t tier; int64_t rate; int64_t bits; bool unsigned_; dmrgo_rf_audio_tx_config_on_samples_fn_t on_samples; int64_t level; int64_t offset; dmrgo_rf_pre_emphasis_t *pre_emphasis; int64_t input_lowpass_hz; dmrgo_rf_region_t region; dmrgo_service_t service; int64_t power; };
+type struct dmrgo_rf_burst_t { dmrgo_layer2_raw_burst_t data; double seconds; int64_t distance; dmrgo_enums_sync_pattern_t sync; dmrgo_enums_voice_burst_type_t voice; uint8_t cach[3]; bool has_cach; bool bs; int64_t stream; int64_t slot; dmrgo_layer2_raw_burst_t fixed; uint8_t fixed_cach[3]; bool has_fixed; };
+type struct dmrgo_rf_monitor_burst_t { dmrgo_layer2_hint_t hint; dmrgo_pdu_lc_bytes_t lc; bool has_lc; bool lc_done; bool end; };
+type struct dmrgo_rf_region_error_t { char *type; size_t type_len; char *field; size_t field_len; char *reason; size_t reason_len; };
+type struct dmrgo_rf_rx_config_t { size_t size; dmrgo_rf_tier_t tier; int64_t rate; dmrgo_rf_iq_format_t format; double offset_hz; dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts; int64_t lookback_slots; };
+type struct dmrgo_rf_tx_config_on_samples_fn_t { int (*fn)(DMRGO_USER_T user, const uint8_t *data, size_t data_len); DMRGO_USER_T user; };
+type struct dmrgo_rf_tx_config_t { size_t size; dmrgo_rf_tier_t tier; int64_t rate; dmrgo_rf_iq_format_t format; double offset_hz; dmrgo_rf_tx_config_on_samples_fn_t on_samples; dmrgo_rf_region_t region; dmrgo_service_t service; int64_t power; };
 type struct dmrgo_shortdata_hytera_text_t { uint16_t field; uint8_t *text; size_t text_len; };
 type struct dmrgo_sms_anytone_text_t { uint32_t prefix; uint8_t *text; size_t text_len; };
 type struct dmrgo_sms_header_t { dmrgo_pdu_data_header_t data; };

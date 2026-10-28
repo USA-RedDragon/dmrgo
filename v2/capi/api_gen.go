@@ -9,6 +9,9 @@ package main
 #include "dmrgo_gen_internal.h"
 
 void *dmrgo__fnptr0(void);
+void *dmrgo__fnptr1(void);
+void *dmrgo__fnptr2(void);
+void *dmrgo__fnptr3(void);
 */
 import "C"
 
@@ -34,6 +37,7 @@ import (
 	g_mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	g_privacy "github.com/USA-RedDragon/dmrgo/v2/privacy"
+	g_rf "github.com/USA-RedDragon/dmrgo/v2/rf"
 	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	g_sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	g_transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
@@ -3364,6 +3368,236 @@ func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
 	d.Reason = g_voice.EndReason(s.reason)
 	d.Call = in_layer2_Call(&s.call)
 	return
+}
+
+func out_rf_Burst(d *C.dmrgo_rf_burst_t, s *g_rf.Burst, oc *outc) {
+	_ = oc
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.data)) = s.Data
+	d.seconds = C.double(s.Seconds)
+	d.distance = C.int64_t(s.Distance)
+	d.sync = C.dmrgo_enums_sync_pattern_t(s.Sync)
+	d.voice = C.dmrgo_enums_voice_burst_type_t(s.Voice)
+	*(*[3]byte)(unsafe.Pointer(&d.cach)) = s.CACH
+	d.has_cach = C.bool(s.HasCACH)
+	d.bs = C.bool(s.BS)
+	d.stream = C.int64_t(s.Stream)
+	d.slot = C.int64_t(s.Slot)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.fixed)) = s.Fixed
+	*(*[3]byte)(unsafe.Pointer(&d.fixed_cach)) = s.FixedCACH
+	d.has_fixed = C.bool(s.HasFixed)
+}
+
+func in_rf_Burst(s *C.dmrgo_rf_burst_t) (d g_rf.Burst) {
+	d.Data = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.data))
+	d.Seconds = float64(s.seconds)
+	d.Distance = int(s.distance)
+	d.Sync = g_enums.SyncPattern(s.sync)
+	d.Voice = g_enums.VoiceBurstType(s.voice)
+	d.CACH = *(*[3]byte)(unsafe.Pointer(&s.cach))
+	d.HasCACH = bool(s.has_cach)
+	d.BS = bool(s.bs)
+	d.Stream = int(s.stream)
+	d.Slot = int64(s.slot)
+	d.Fixed = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.fixed))
+	d.FixedCACH = *(*[3]byte)(unsafe.Pointer(&s.fixed_cach))
+	d.HasFixed = bool(s.has_fixed)
+	return
+}
+
+func fnout1(v func([]g_rf.Burst)) C.dmrgo_rf_audio_rx_config_on_bursts_fn_t {
+	if v == nil {
+		return C.dmrgo_rf_audio_rx_config_on_bursts_fn_t{}
+	}
+	return C.dmrgo_rf_audio_rx_config_on_bursts_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr1()), user: newUser(v)}
+}
+
+type cb1 struct {
+	f  C.dmrgo_rf_audio_rx_config_on_bursts_fn_t
+	s0 []C.dmrgo_rf_burst_t
+}
+
+func fnin1(p C.dmrgo_rf_audio_rx_config_on_bursts_fn_t) func([]g_rf.Burst) {
+	if p.fn == nil {
+		return nil
+	}
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr1() {
+		return hvalue[func([]g_rf.Burst)](uintptr(p.user))
+	}
+	c := &cb1{f: p}
+	return c.call
+}
+
+func (c *cb1) call(q0 []g_rf.Burst) {
+	oc := &outc{}
+	_ = oc
+	if cap(c.s0) < len(q0) {
+		c.s0 = make([]C.dmrgo_rf_burst_t, len(q0))
+	}
+	ss0 := c.s0[:len(q0)]
+	for i := range q0 {
+		out_rf_Burst(&ss0[i], &q0[i], oc)
+	}
+	var code C.int
+	for {
+		code = C.dmrgo_rf_audio_rx_config_on_bursts_fn_t__call(c.f, unsafe.SliceData(ss0), C.size_t(len(q0)))
+		break
+	}
+	if code != C.DMRGO_OK {
+		return
+	}
+	return
+}
+
+func in_rf_AudioRxConfig(s *C.dmrgo_rf_audio_rx_config_t) (d g_rf.AudioRxConfig) {
+	d.Tier = g_rf.Tier(s.tier)
+	d.Rate = int(s.rate)
+	d.Bits = int(s.bits)
+	d.Unsigned = bool(s.unsigned_)
+	d.OnBursts = fnin1(s.on_bursts)
+	d.PreEmphasis = nil
+	if s.pre_emphasis != nil {
+		d.PreEmphasis = get_rf_RxPreEmphasis(s.pre_emphasis).v
+	}
+	return
+}
+
+func fnout2(v func([]int16)) C.dmrgo_rf_audio_tx_config_on_samples_fn_t {
+	if v == nil {
+		return C.dmrgo_rf_audio_tx_config_on_samples_fn_t{}
+	}
+	return C.dmrgo_rf_audio_tx_config_on_samples_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr2()), user: newUser(v)}
+}
+
+type cb2 struct {
+	f C.dmrgo_rf_audio_tx_config_on_samples_fn_t
+}
+
+func fnin2(p C.dmrgo_rf_audio_tx_config_on_samples_fn_t) func([]int16) {
+	if p.fn == nil {
+		return nil
+	}
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr2() {
+		return hvalue[func([]int16)](uintptr(p.user))
+	}
+	c := &cb2{f: p}
+	return c.call
+}
+
+func (c *cb2) call(q0 []int16) {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_rf_audio_tx_config_on_samples_fn_t__call(c.f, (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)))
+		break
+	}
+	if code != C.DMRGO_OK {
+		return
+	}
+	return
+}
+
+func in_rf_AudioTxConfig(s *C.dmrgo_rf_audio_tx_config_t) (d g_rf.AudioTxConfig) {
+	d.Tier = g_rf.Tier(s.tier)
+	d.Rate = int(s.rate)
+	d.Bits = int(s.bits)
+	d.Unsigned = bool(s.unsigned_)
+	d.OnSamples = fnin2(s.on_samples)
+	d.Level = int(s.level)
+	d.Offset = int(s.offset)
+	d.PreEmphasis = nil
+	if s.pre_emphasis != nil {
+		d.PreEmphasis = get_rf_PreEmphasis(s.pre_emphasis).v
+	}
+	d.InputLowpassHz = int(s.input_lowpass_hz)
+	d.Region = g_rf.Region(s.region)
+	d.Service = g_rf.Service(s.service)
+	d.Power = int(s.power)
+	return
+}
+
+func out_rf_MonitorBurst(d *C.dmrgo_rf_monitor_burst_t, s *g_rf.MonitorBurst, oc *outc) {
+	_ = oc
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
+	*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&d.lc)) = s.LC
+	d.has_lc = C.bool(s.HasLC)
+	d.lc_done = C.bool(s.LCDone)
+	d.end = C.bool(s.End)
+}
+
+func in_rf_RxConfig(s *C.dmrgo_rf_rx_config_t) (d g_rf.RxConfig) {
+	d.Tier = g_rf.Tier(s.tier)
+	d.Rate = int(s.rate)
+	d.Format = g_rf.IQFormat(s.format)
+	d.OffsetHz = float64(s.offset_hz)
+	d.OnBursts = fnin1(s.on_bursts)
+	d.LookbackSlots = int(s.lookback_slots)
+	return
+}
+
+func fnout3(v func([]byte)) C.dmrgo_rf_tx_config_on_samples_fn_t {
+	if v == nil {
+		return C.dmrgo_rf_tx_config_on_samples_fn_t{}
+	}
+	return C.dmrgo_rf_tx_config_on_samples_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr3()), user: newUser(v)}
+}
+
+type cb3 struct {
+	f C.dmrgo_rf_tx_config_on_samples_fn_t
+}
+
+func fnin3(p C.dmrgo_rf_tx_config_on_samples_fn_t) func([]byte) {
+	if p.fn == nil {
+		return nil
+	}
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr3() {
+		return hvalue[func([]byte)](uintptr(p.user))
+	}
+	c := &cb3{f: p}
+	return c.call
+}
+
+func (c *cb3) call(q0 []byte) {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_rf_tx_config_on_samples_fn_t__call(c.f, (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)))
+		break
+	}
+	if code != C.DMRGO_OK {
+		return
+	}
+	return
+}
+
+func in_rf_TxConfig(s *C.dmrgo_rf_tx_config_t) (d g_rf.TxConfig) {
+	d.Tier = g_rf.Tier(s.tier)
+	d.Rate = int(s.rate)
+	d.Format = g_rf.IQFormat(s.format)
+	d.OffsetHz = float64(s.offset_hz)
+	d.OnSamples = fnin3(s.on_samples)
+	d.Region = g_rf.Region(s.region)
+	d.Service = g_rf.Service(s.service)
+	d.Power = int(s.power)
+	return
+}
+
+func in_rf_RegionError(s *C.dmrgo_rf_region_error_t) (d g_rf.RegionError) {
+	d.Type = cStr(s._type, s.type_len)
+	d.Field = cStr(s.field, s.field_len)
+	d.Reason = cStr(s.reason, s.reason_len)
+	return
+}
+
+func out_rf_RegionError(d *C.dmrgo_rf_region_error_t, s *g_rf.RegionError, oc *outc) {
+	_ = oc
+	d._type = arenaStr(oc, s.Type)
+	d.type_len = C.size_t(len(s.Type))
+	d.field = arenaStr(oc, s.Field)
+	d.field_len = C.size_t(len(s.Field))
+	d.reason = arenaStr(oc, s.Reason)
+	d.reason_len = C.size_t(len(s.Reason))
 }
 
 func out_shortdata_HyteraText(d *C.dmrgo_shortdata_hytera_text_t, s *g_shortdata.HyteraText, oc *outc) {
@@ -6721,6 +6955,101 @@ func fromC_privacy_TransmitterConfig(s *C.dmrgo_privacy_transmitter_config_t) g_
 	return in_privacy_TransmitterConfig(s)
 }
 
+func out_rf_AudioRxConfig(d *C.dmrgo_rf_audio_rx_config_t, s *g_rf.AudioRxConfig, oc *outc) {
+	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
+	d.tier = C.dmrgo_rf_tier_t(s.Tier)
+	d.rate = C.int64_t(s.Rate)
+	d.bits = C.int64_t(s.Bits)
+	d.unsigned_ = C.bool(s.Unsigned)
+	d.on_bursts = fnout1(s.OnBursts)
+	if s.PreEmphasis != nil {
+		panic(argPanic{})
+	}
+	d.pre_emphasis = nil
+}
+
+func fromC_rf_AudioRxConfig(s *C.dmrgo_rf_audio_rx_config_t) g_rf.AudioRxConfig {
+	return in_rf_AudioRxConfig(s)
+}
+
+func out_rf_AudioTxConfig(d *C.dmrgo_rf_audio_tx_config_t, s *g_rf.AudioTxConfig, oc *outc) {
+	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
+	d.tier = C.dmrgo_rf_tier_t(s.Tier)
+	d.rate = C.int64_t(s.Rate)
+	d.bits = C.int64_t(s.Bits)
+	d.unsigned_ = C.bool(s.Unsigned)
+	d.on_samples = fnout2(s.OnSamples)
+	d.level = C.int64_t(s.Level)
+	d.offset = C.int64_t(s.Offset)
+	if s.PreEmphasis != nil {
+		panic(argPanic{})
+	}
+	d.pre_emphasis = nil
+	d.input_lowpass_hz = C.int64_t(s.InputLowpassHz)
+	d.region = C.dmrgo_rf_region_t(s.Region)
+	d.service = C.dmrgo_service_t(s.Service)
+	d.power = C.int64_t(s.Power)
+}
+
+func fromC_rf_AudioTxConfig(s *C.dmrgo_rf_audio_tx_config_t) g_rf.AudioTxConfig {
+	return in_rf_AudioTxConfig(s)
+}
+
+func fromC_rf_Burst(s *C.dmrgo_rf_burst_t) g_rf.Burst {
+	return in_rf_Burst(s)
+}
+
+func in_rf_MonitorBurst(s *C.dmrgo_rf_monitor_burst_t) (d g_rf.MonitorBurst) {
+	d.Hint = in_layer2_Hint(&s.hint)
+	d.LC = *(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&s.lc))
+	d.HasLC = bool(s.has_lc)
+	d.LCDone = bool(s.lc_done)
+	d.End = bool(s.end)
+	return
+}
+
+func fromC_rf_MonitorBurst(s *C.dmrgo_rf_monitor_burst_t) g_rf.MonitorBurst {
+	return in_rf_MonitorBurst(s)
+}
+
+func fromC_rf_RegionError(s *C.dmrgo_rf_region_error_t) g_rf.RegionError {
+	return in_rf_RegionError(s)
+}
+
+func out_rf_RxConfig(d *C.dmrgo_rf_rx_config_t, s *g_rf.RxConfig, oc *outc) {
+	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
+	d.tier = C.dmrgo_rf_tier_t(s.Tier)
+	d.rate = C.int64_t(s.Rate)
+	d.format = C.dmrgo_rf_iq_format_t(s.Format)
+	d.offset_hz = C.double(s.OffsetHz)
+	d.on_bursts = fnout1(s.OnBursts)
+	d.lookback_slots = C.int64_t(s.LookbackSlots)
+}
+
+func fromC_rf_RxConfig(s *C.dmrgo_rf_rx_config_t) g_rf.RxConfig {
+	return in_rf_RxConfig(s)
+}
+
+func out_rf_TxConfig(d *C.dmrgo_rf_tx_config_t, s *g_rf.TxConfig, oc *outc) {
+	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
+	d.tier = C.dmrgo_rf_tier_t(s.Tier)
+	d.rate = C.int64_t(s.Rate)
+	d.format = C.dmrgo_rf_iq_format_t(s.Format)
+	d.offset_hz = C.double(s.OffsetHz)
+	d.on_samples = fnout3(s.OnSamples)
+	d.region = C.dmrgo_rf_region_t(s.Region)
+	d.service = C.dmrgo_service_t(s.Service)
+	d.power = C.int64_t(s.Power)
+}
+
+func fromC_rf_TxConfig(s *C.dmrgo_rf_tx_config_t) g_rf.TxConfig {
+	return in_rf_TxConfig(s)
+}
+
 func fromC_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) g_shortdata.HyteraText {
 	return in_shortdata_HyteraText(s)
 }
@@ -8351,6 +8680,92 @@ func get_privacy_Transmitter(p *C.dmrgo_privacy_transmitter_t) *h_privacy_Transm
 
 func new_privacy_Transmitter(v *g_privacy.Transmitter) *C.dmrgo_privacy_transmitter_t {
 	return (*C.dmrgo_privacy_transmitter_t)(newHandle(&h_privacy_Transmitter{v: v}))
+}
+
+type h_rf_AudioReceiver struct {
+	v   *g_rf.AudioReceiver
+	sc0 []g_rf.Burst
+}
+
+func get_rf_AudioReceiver(p *C.dmrgo_rf_audio_receiver_t) *h_rf_AudioReceiver {
+	return lookup[*h_rf_AudioReceiver](unsafe.Pointer(p))
+}
+
+func new_rf_AudioReceiver(v *g_rf.AudioReceiver) *C.dmrgo_rf_audio_receiver_t {
+	return (*C.dmrgo_rf_audio_receiver_t)(newHandle(&h_rf_AudioReceiver{v: v}))
+}
+
+type h_rf_AudioTransmitter struct {
+	v *g_rf.AudioTransmitter
+}
+
+func get_rf_AudioTransmitter(p *C.dmrgo_rf_audio_transmitter_t) *h_rf_AudioTransmitter {
+	return lookup[*h_rf_AudioTransmitter](unsafe.Pointer(p))
+}
+
+func new_rf_AudioTransmitter(v *g_rf.AudioTransmitter) *C.dmrgo_rf_audio_transmitter_t {
+	return (*C.dmrgo_rf_audio_transmitter_t)(newHandle(&h_rf_AudioTransmitter{v: v}))
+}
+
+type h_rf_Monitor struct {
+	v *g_rf.Monitor
+}
+
+func get_rf_Monitor(p *C.dmrgo_rf_monitor_t) *h_rf_Monitor {
+	return lookup[*h_rf_Monitor](unsafe.Pointer(p))
+}
+
+func new_rf_Monitor(v *g_rf.Monitor) *C.dmrgo_rf_monitor_t {
+	return (*C.dmrgo_rf_monitor_t)(newHandle(&h_rf_Monitor{v: v}))
+}
+
+type h_rf_PreEmphasis struct {
+	v *g_rf.PreEmphasis
+}
+
+func get_rf_PreEmphasis(p *C.dmrgo_rf_pre_emphasis_t) *h_rf_PreEmphasis {
+	return lookup[*h_rf_PreEmphasis](unsafe.Pointer(p))
+}
+
+func new_rf_PreEmphasis(v *g_rf.PreEmphasis) *C.dmrgo_rf_pre_emphasis_t {
+	return (*C.dmrgo_rf_pre_emphasis_t)(newHandle(&h_rf_PreEmphasis{v: v}))
+}
+
+type h_rf_Receiver struct {
+	v   *g_rf.Receiver
+	sc0 []g_rf.Burst
+}
+
+func get_rf_Receiver(p *C.dmrgo_rf_receiver_t) *h_rf_Receiver {
+	return lookup[*h_rf_Receiver](unsafe.Pointer(p))
+}
+
+func new_rf_Receiver(v *g_rf.Receiver) *C.dmrgo_rf_receiver_t {
+	return (*C.dmrgo_rf_receiver_t)(newHandle(&h_rf_Receiver{v: v}))
+}
+
+type h_rf_RxPreEmphasis struct {
+	v *g_rf.RxPreEmphasis
+}
+
+func get_rf_RxPreEmphasis(p *C.dmrgo_rf_rx_pre_emphasis_t) *h_rf_RxPreEmphasis {
+	return lookup[*h_rf_RxPreEmphasis](unsafe.Pointer(p))
+}
+
+func new_rf_RxPreEmphasis(v *g_rf.RxPreEmphasis) *C.dmrgo_rf_rx_pre_emphasis_t {
+	return (*C.dmrgo_rf_rx_pre_emphasis_t)(newHandle(&h_rf_RxPreEmphasis{v: v}))
+}
+
+type h_rf_Transmitter struct {
+	v *g_rf.Transmitter
+}
+
+func get_rf_Transmitter(p *C.dmrgo_rf_transmitter_t) *h_rf_Transmitter {
+	return lookup[*h_rf_Transmitter](unsafe.Pointer(p))
+}
+
+func new_rf_Transmitter(v *g_rf.Transmitter) *C.dmrgo_rf_transmitter_t {
+	return (*C.dmrgo_rf_transmitter_t)(newHandle(&h_rf_Transmitter{v: v}))
 }
 
 type h_transport_dmrd_dmrdauth_BridgeKey struct {
@@ -36112,6 +36527,1705 @@ func dmrgo_privacy_transmitter_start(c_self *C.dmrgo_privacy_transmitter_t, c_mi
 	return C.DMRGO_OK
 }
 
+//export dmrgo_rf_audio_receiver_free
+func dmrgo_rf_audio_receiver_free(c_self *C.dmrgo_rf_audio_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_AudioReceiver(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_active
+func dmrgo_rf_audio_receiver_active(c_self *C.dmrgo_rf_audio_receiver_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	r0 := h.v.Active()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_append_bursts_need
+func dmrgo_rf_audio_receiver_append_bursts_need(c_self *C.dmrgo_rf_audio_receiver_t, c_x *C.int16_t, c_x_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_AudioReceiver(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []int16
+	a_x = cSlice[int16](unsafe.Pointer(c_x), c_x_len)
+	_ = h
+	_ = a_x
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(len(a_x))))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_append_bursts
+func dmrgo_rf_audio_receiver_append_bursts(c_self *C.dmrgo_rf_audio_receiver_t, c_dst *C.dmrgo_rf_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_x *C.int16_t, c_x_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_AudioReceiver(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []int16
+	a_x = cSlice[int16](unsafe.Pointer(c_x), c_x_len)
+	need_items := max(0, int(h.v.MaxOutput(int(len(a_x)))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendBursts(a_dst, a_x)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_rf_burst_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_rf_Burst(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_append_flush_need
+func dmrgo_rf_audio_receiver_append_flush_need(c_self *C.dmrgo_rf_audio_receiver_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_AudioReceiver(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(0)))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_append_flush
+func dmrgo_rf_audio_receiver_append_flush(c_self *C.dmrgo_rf_audio_receiver_t, c_dst *C.dmrgo_rf_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_AudioReceiver(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(h.v.MaxOutput(int(0))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendFlush(a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_rf_burst_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_rf_Burst(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_flush
+func dmrgo_rf_audio_receiver_flush(c_self *C.dmrgo_rf_audio_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	r0 := h.v.Flush()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo__fn1
+func dmrgo__fn1(user C.uintptr_t, c_bursts *C.dmrgo_rf_burst_t, c_bursts_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_bursts), c_bursts_len, unsafe.Sizeof(*c_bursts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	fv := hvalue[func([]g_rf.Burst)](uintptr(user))
+	if c_bursts == nil && c_bursts_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_bursts []g_rf.Burst
+	a_bursts = nil
+	if c_bursts_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_bursts), c_bursts_len)
+		a_bursts = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_bursts[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	fv(a_bursts)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_init
+func dmrgo_rf_audio_receiver_init(c_self *C.dmrgo_rf_audio_receiver_t, c_c *C.dmrgo_rf_audio_rx_config_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	if c_c == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var z_c C.dmrgo_rf_audio_rx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_c g_rf.AudioRxConfig
+	a_c = in_rf_AudioRxConfig(&z_c)
+	r0 := h.v.Init(a_c)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_lag
+func dmrgo_rf_audio_receiver_lag(c_self *C.dmrgo_rf_audio_receiver_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	r0 := h.v.Lag()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_level
+func dmrgo_rf_audio_receiver_level(c_self *C.dmrgo_rf_audio_receiver_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	r0 := h.v.Level()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_max_output
+func dmrgo_rf_audio_receiver_max_output(c_self *C.dmrgo_rf_audio_receiver_t, c_n C.int64_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	r0 := h.v.MaxOutput(int(c_n))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_offset
+func dmrgo_rf_audio_receiver_offset(c_self *C.dmrgo_rf_audio_receiver_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioReceiver(c_self)
+	r0 := h.v.Offset()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_receiver_write
+func dmrgo_rf_audio_receiver_write(c_self *C.dmrgo_rf_audio_receiver_t, c_x *C.int16_t, c_x_len C.size_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_AudioReceiver(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []int16
+	a_x = cSlice[int16](unsafe.Pointer(c_x), c_x_len)
+	r0, r1 := h.v.Write(a_x)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_free
+func dmrgo_rf_audio_transmitter_free(c_self *C.dmrgo_rf_audio_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_AudioTransmitter(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_active
+func dmrgo_rf_audio_transmitter_active(c_self *C.dmrgo_rf_audio_transmitter_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	r0 := h.v.Active()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_append_flush_need
+func dmrgo_rf_audio_transmitter_append_flush_need(c_self *C.dmrgo_rf_audio_transmitter_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_AudioTransmitter(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(0)))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_append_flush
+func dmrgo_rf_audio_transmitter_append_flush(c_self *C.dmrgo_rf_audio_transmitter_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_AudioTransmitter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	need_items := max(0, int(h.v.MaxOutput(int(0))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendFlush(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_append_samples_need
+func dmrgo_rf_audio_transmitter_append_samples_need(c_self *C.dmrgo_rf_audio_transmitter_t, c_x *C.dmrgo_rf_burst_t, c_x_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_AudioTransmitter(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []g_rf.Burst
+	a_x = nil
+	if c_x_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_x), c_x_len)
+		a_x = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_x[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	_ = h
+	_ = a_x
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(len(a_x))))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_append_samples
+func dmrgo_rf_audio_transmitter_append_samples(c_self *C.dmrgo_rf_audio_transmitter_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_x *C.dmrgo_rf_burst_t, c_x_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_AudioTransmitter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []g_rf.Burst
+	a_x = nil
+	if c_x_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_x), c_x_len)
+		a_x = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_x[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	need_items := max(0, int(h.v.MaxOutput(int(len(a_x)))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendSamples(a_dst, a_x)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_flush
+func dmrgo_rf_audio_transmitter_flush(c_self *C.dmrgo_rf_audio_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	r0 := h.v.Flush()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo__fn2
+func dmrgo__fn2(user C.uintptr_t, c_values *C.int16_t, c_values_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_values), c_values_len, unsafe.Sizeof(*c_values)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	fv := hvalue[func([]int16)](uintptr(user))
+	if c_values == nil && c_values_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_values []int16
+	a_values = cSlice[int16](unsafe.Pointer(c_values), c_values_len)
+	fv(a_values)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_init
+func dmrgo_rf_audio_transmitter_init(c_self *C.dmrgo_rf_audio_transmitter_t, c_c *C.dmrgo_rf_audio_tx_config_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	if c_c == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var z_c C.dmrgo_rf_audio_tx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_c g_rf.AudioTxConfig
+	a_c = in_rf_AudioTxConfig(&z_c)
+	r0 := h.v.Init(a_c)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_lag
+func dmrgo_rf_audio_transmitter_lag(c_self *C.dmrgo_rf_audio_transmitter_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	r0 := h.v.Lag()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_level
+func dmrgo_rf_audio_transmitter_level(c_self *C.dmrgo_rf_audio_transmitter_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	r0 := h.v.Level()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_max_output
+func dmrgo_rf_audio_transmitter_max_output(c_self *C.dmrgo_rf_audio_transmitter_t, c_n C.int64_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	r0 := h.v.MaxOutput(int(c_n))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_offset
+func dmrgo_rf_audio_transmitter_offset(c_self *C.dmrgo_rf_audio_transmitter_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_AudioTransmitter(c_self)
+	r0 := h.v.Offset()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_audio_transmitter_write
+func dmrgo_rf_audio_transmitter_write(c_self *C.dmrgo_rf_audio_transmitter_t, c_x *C.dmrgo_rf_burst_t, c_x_len C.size_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_AudioTransmitter(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []g_rf.Burst
+	a_x = nil
+	if c_x_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_x), c_x_len)
+		a_x = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_x[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	r0, r1 := h.v.Write(a_x)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_burst_decoded
+func dmrgo_rf_burst_decoded(c_self *C.dmrgo_rf_burst_t, c_raw_burst *C.dmrgo_layer2_raw_burst_t, c_data *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_rf.Burst
+	x = in_rf_Burst(&(*c_self))
+	r0, r1 := x.Decoded()
+	_ = r0
+	_ = r1
+	if c_raw_burst != nil {
+		*(*g_layer2.RawBurst)(unsafe.Pointer(&(*c_raw_burst))) = r0
+	}
+	if c_data != nil {
+		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_data))))) = r1
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_burst_hint
+func dmrgo_rf_burst_hint(c_self *C.dmrgo_rf_burst_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_rf.Burst
+	x = in_rf_Burst(&(*c_self))
+	r0 := x.Hint()
+	_ = r0
+	if c_out != nil {
+		out_layer2_Hint(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_burst_timed
+func dmrgo_rf_burst_timed(c_self *C.dmrgo_rf_burst_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_rf.Burst
+	x = in_rf_Burst(&(*c_self))
+	r0 := x.Timed()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_monitor_new
+func dmrgo_rf_monitor_new(c_out **C.dmrgo_rf_monitor_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_rf_Monitor(new(g_rf.Monitor))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_monitor_free
+func dmrgo_rf_monitor_free(c_self *C.dmrgo_rf_monitor_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_Monitor(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_monitor_burst
+func dmrgo_rf_monitor_burst(c_self *C.dmrgo_rf_monitor_t, c_dst *C.dmrgo_layer2_burst_t, c_b *C.dmrgo_rf_burst_t, c_out *C.dmrgo_rf_monitor_burst_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Monitor(c_self)
+	var a_dst *g_layer2.Burst
+	if c_dst != nil {
+		a_dst = get_layer2_Burst(c_dst).v
+	}
+	var a_b g_rf.Burst
+	var p_b *g_rf.Burst
+	if c_b != nil {
+		a_b = in_rf_Burst(&(*c_b))
+		p_b = &a_b
+	}
+	r0, r1 := h.v.Burst(a_dst, p_b)
+	_ = r0
+	if c_out != nil {
+		out_rf_MonitorBurst(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_monitor_reset
+func dmrgo_rf_monitor_reset(c_self *C.dmrgo_rf_monitor_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Monitor(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_new_audio_receiver
+func dmrgo_rf_new_audio_receiver(c_c *C.dmrgo_rf_audio_rx_config_t, c_out **C.dmrgo_rf_audio_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_c g_rf.AudioRxConfig
+	var p_c *g_rf.AudioRxConfig
+	var z_c C.dmrgo_rf_audio_rx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_c != nil {
+		a_c = in_rf_AudioRxConfig(&z_c)
+		p_c = &a_c
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_rf.NewAudioReceiver(p_c)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_rf_AudioReceiver(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_new_audio_transmitter
+func dmrgo_rf_new_audio_transmitter(c_c *C.dmrgo_rf_audio_tx_config_t, c_out **C.dmrgo_rf_audio_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_c g_rf.AudioTxConfig
+	var p_c *g_rf.AudioTxConfig
+	var z_c C.dmrgo_rf_audio_tx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_c != nil {
+		a_c = in_rf_AudioTxConfig(&z_c)
+		p_c = &a_c
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_rf.NewAudioTransmitter(p_c)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_rf_AudioTransmitter(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_new_pre_emphasis
+func dmrgo_rf_new_pre_emphasis(c_out **C.dmrgo_rf_pre_emphasis_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_rf.NewPreEmphasis()
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_rf_PreEmphasis(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_new_receiver
+func dmrgo_rf_new_receiver(c_c *C.dmrgo_rf_rx_config_t, c_out **C.dmrgo_rf_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_c g_rf.RxConfig
+	var p_c *g_rf.RxConfig
+	var z_c C.dmrgo_rf_rx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_c != nil {
+		a_c = in_rf_RxConfig(&z_c)
+		p_c = &a_c
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_rf.NewReceiver(p_c)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_rf_Receiver(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_new_rx_pre_emphasis
+func dmrgo_rf_new_rx_pre_emphasis(c_out **C.dmrgo_rf_rx_pre_emphasis_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_rf.NewRxPreEmphasis()
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_rf_RxPreEmphasis(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo__fn3
+func dmrgo__fn3(user C.uintptr_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	fv := hvalue[func([]byte)](uintptr(user))
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = cSlice[byte](unsafe.Pointer(c_data), c_data_len)
+	fv(a_data)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_new_transmitter
+func dmrgo_rf_new_transmitter(c_c *C.dmrgo_rf_tx_config_t, c_out **C.dmrgo_rf_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_c g_rf.TxConfig
+	var p_c *g_rf.TxConfig
+	var z_c C.dmrgo_rf_tx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_c != nil {
+		a_c = in_rf_TxConfig(&z_c)
+		p_c = &a_c
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_rf.NewTransmitter(p_c)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_rf_Transmitter(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_pre_emphasis_free
+func dmrgo_rf_pre_emphasis_free(c_self *C.dmrgo_rf_pre_emphasis_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_PreEmphasis(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_pre_emphasis_init
+func dmrgo_rf_pre_emphasis_init(c_self *C.dmrgo_rf_pre_emphasis_t, c_out **C.dmrgo_rf_pre_emphasis_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_PreEmphasis(c_self)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := h.v.Init()
+	_ = r0
+	*c_out = nil
+	if r0 == h.v {
+		*c_out = c_self
+	} else if r0 != nil {
+		*c_out = new_rf_PreEmphasis(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_free
+func dmrgo_rf_receiver_free(c_self *C.dmrgo_rf_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_Receiver(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_active
+func dmrgo_rf_receiver_active(c_self *C.dmrgo_rf_receiver_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.Active()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_append_bursts_need
+func dmrgo_rf_receiver_append_bursts_need(c_self *C.dmrgo_rf_receiver_t, c_x *C.uint8_t, c_x_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_Receiver(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []byte
+	a_x = cSlice[byte](unsafe.Pointer(c_x), c_x_len)
+	_ = h
+	_ = a_x
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(((len(a_x) / int(h.v.SampleBytes())) + 1))))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_append_bursts
+func dmrgo_rf_receiver_append_bursts(c_self *C.dmrgo_rf_receiver_t, c_dst *C.dmrgo_rf_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_x *C.uint8_t, c_x_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_Receiver(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []byte
+	a_x = cSlice[byte](unsafe.Pointer(c_x), c_x_len)
+	need_items := max(0, int(h.v.MaxOutput(int(((len(a_x) / int(h.v.SampleBytes())) + 1)))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendBursts(a_dst, a_x)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_rf_burst_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_rf_Burst(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_append_flush_need
+func dmrgo_rf_receiver_append_flush_need(c_self *C.dmrgo_rf_receiver_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_Receiver(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(0)))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_append_flush
+func dmrgo_rf_receiver_append_flush(c_self *C.dmrgo_rf_receiver_t, c_dst *C.dmrgo_rf_burst_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_Receiver(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(h.v.MaxOutput(int(0))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendFlush(a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_rf_burst_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_rf_Burst(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_deviation_hz
+func dmrgo_rf_receiver_deviation_hz(c_self *C.dmrgo_rf_receiver_t, c_out *C.double) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.DeviationHz()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.double(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_flush
+func dmrgo_rf_receiver_flush(c_self *C.dmrgo_rf_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.Flush()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_init
+func dmrgo_rf_receiver_init(c_self *C.dmrgo_rf_receiver_t, c_c *C.dmrgo_rf_rx_config_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	if c_c == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var z_c C.dmrgo_rf_rx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_c g_rf.RxConfig
+	a_c = in_rf_RxConfig(&z_c)
+	r0 := h.v.Init(a_c)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_lag
+func dmrgo_rf_receiver_lag(c_self *C.dmrgo_rf_receiver_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.Lag()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_max_output
+func dmrgo_rf_receiver_max_output(c_self *C.dmrgo_rf_receiver_t, c_n C.int64_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.MaxOutput(int(c_n))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_offset_hz
+func dmrgo_rf_receiver_offset_hz(c_self *C.dmrgo_rf_receiver_t, c_out *C.double) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.OffsetHz()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.double(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_sample_bytes
+func dmrgo_rf_receiver_sample_bytes(c_self *C.dmrgo_rf_receiver_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Receiver(c_self)
+	r0 := h.v.SampleBytes()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_receiver_write
+func dmrgo_rf_receiver_write(c_self *C.dmrgo_rf_receiver_t, c_x *C.uint8_t, c_x_len C.size_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_Receiver(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []byte
+	a_x = cSlice[byte](unsafe.Pointer(c_x), c_x_len)
+	r0, r1 := h.v.Write(a_x)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_region_string
+func dmrgo_rf_region_string(c_self C.dmrgo_rf_region_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_rf.Region(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_region_error_error
+func dmrgo_rf_region_error_error(c_self *C.dmrgo_rf_region_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_rf.RegionError
+	x = in_rf_RegionError(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.Error()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_region_error_last
+func dmrgo_rf_region_error_last(c_out *C.dmrgo_rf_region_error_t, c_ok *C.bool) C.int {
+	l := C.dmrgo__last()
+	ok := l.kind == -239
+	if c_ok != nil {
+		*c_ok = C.bool(ok)
+	}
+	if ok && c_out != nil {
+		*c_out = *(*C.dmrgo_rf_region_error_t)(unsafe.Pointer(&l.d))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_rx_pre_emphasis_free
+func dmrgo_rf_rx_pre_emphasis_free(c_self *C.dmrgo_rf_rx_pre_emphasis_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_RxPreEmphasis(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_rx_pre_emphasis_init
+func dmrgo_rf_rx_pre_emphasis_init(c_self *C.dmrgo_rf_rx_pre_emphasis_t, c_out **C.dmrgo_rf_rx_pre_emphasis_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_RxPreEmphasis(c_self)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := h.v.Init()
+	_ = r0
+	*c_out = nil
+	if r0 == h.v {
+		*c_out = c_self
+	} else if r0 != nil {
+		*c_out = new_rf_RxPreEmphasis(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_free
+func dmrgo_rf_transmitter_free(c_self *C.dmrgo_rf_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_rf_Transmitter(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_active
+func dmrgo_rf_transmitter_active(c_self *C.dmrgo_rf_transmitter_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.Active()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_append_flush_need
+func dmrgo_rf_transmitter_append_flush_need(c_self *C.dmrgo_rf_transmitter_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_Transmitter(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(0)))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_append_flush
+func dmrgo_rf_transmitter_append_flush(c_self *C.dmrgo_rf_transmitter_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_Transmitter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	need_items := max(0, int(h.v.MaxOutput(int(0))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendFlush(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_append_samples_need
+func dmrgo_rf_transmitter_append_samples_need(c_self *C.dmrgo_rf_transmitter_t, c_x *C.dmrgo_rf_burst_t, c_x_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_rf_Transmitter(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []g_rf.Burst
+	a_x = nil
+	if c_x_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_x), c_x_len)
+		a_x = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_x[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	_ = h
+	_ = a_x
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutput(int(len(a_x))))))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_append_samples
+func dmrgo_rf_transmitter_append_samples(c_self *C.dmrgo_rf_transmitter_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_x *C.dmrgo_rf_burst_t, c_x_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_Transmitter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []g_rf.Burst
+	a_x = nil
+	if c_x_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_x), c_x_len)
+		a_x = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_x[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	need_items := max(0, int(h.v.MaxOutput(int(len(a_x)))))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AppendSamples(a_dst, a_x)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_deviation_hz
+func dmrgo_rf_transmitter_deviation_hz(c_self *C.dmrgo_rf_transmitter_t, c_out *C.double) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.DeviationHz()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.double(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_flush
+func dmrgo_rf_transmitter_flush(c_self *C.dmrgo_rf_transmitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.Flush()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_init
+func dmrgo_rf_transmitter_init(c_self *C.dmrgo_rf_transmitter_t, c_c *C.dmrgo_rf_tx_config_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	if c_c == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var z_c C.dmrgo_rf_tx_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_c g_rf.TxConfig
+	a_c = in_rf_TxConfig(&z_c)
+	r0 := h.v.Init(a_c)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_lag
+func dmrgo_rf_transmitter_lag(c_self *C.dmrgo_rf_transmitter_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.Lag()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_max_output
+func dmrgo_rf_transmitter_max_output(c_self *C.dmrgo_rf_transmitter_t, c_n C.int64_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.MaxOutput(int(c_n))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_offset_hz
+func dmrgo_rf_transmitter_offset_hz(c_self *C.dmrgo_rf_transmitter_t, c_out *C.double) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.OffsetHz()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.double(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_sample_bytes
+func dmrgo_rf_transmitter_sample_bytes(c_self *C.dmrgo_rf_transmitter_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_rf_Transmitter(c_self)
+	r0 := h.v.SampleBytes()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_rf_transmitter_write
+func dmrgo_rf_transmitter_write(c_self *C.dmrgo_rf_transmitter_t, c_x *C.dmrgo_rf_burst_t, c_x_len C.size_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_x), c_x_len, unsafe.Sizeof(*c_x)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_rf_Transmitter(c_self)
+	if c_x == nil && c_x_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_x []g_rf.Burst
+	a_x = nil
+	if c_x_len > 0 {
+		cs := cSlice[C.dmrgo_rf_burst_t](unsafe.Pointer(c_x), c_x_len)
+		a_x = make([]g_rf.Burst, len(cs))
+		for i := range cs {
+			a_x[i] = in_rf_Burst(&cs[i])
+		}
+	}
+	r0, r1 := h.v.Write(a_x)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_shortdata_append_text
 func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -53051,6 +55165,16 @@ func errCode1(e error) C.int {
 		return -235
 	case g_privacy.ErrNotStarted:
 		return -236
+	case g_rf.ErrBurstOrder:
+		return -240
+	case g_rf.ErrBurstService:
+		return -241
+	case g_rf.ErrNilBurst:
+		return -242
+	case g_rf.ErrNotSetUp:
+		return -243
+	case g_rf.ErrTxTimeout:
+		return -244
 	case g_shortdata.ErrCharacter:
 		return -171
 	case g_shortdata.ErrFormat:
@@ -53173,6 +55297,8 @@ func errCode1(e error) C.int {
 		return -100
 	case *g_dmrgo.FieldRangeError:
 		return -101
+	case *g_rf.RegionError:
+		return -239
 	}
 	return C.DMRGO_ERR_OTHER
 }
@@ -53221,6 +55347,14 @@ func setErr(err error) C.int {
 		if errors.As(err, &x) {
 			l.kind = -101
 			out_dmrgo_FieldRangeError((*C.dmrgo_field_range_error_t)(unsafe.Pointer(&l.d)), x, oc)
+			return code
+		}
+	}
+	{
+		var x *g_rf.RegionError
+		if errors.As(err, &x) {
+			l.kind = -239
+			out_rf_RegionError((*C.dmrgo_rf_region_error_t)(unsafe.Pointer(&l.d)), x, oc)
 			return code
 		}
 	}
@@ -53387,6 +55521,16 @@ func codeErr(code C.int) error {
 		return g_privacy.ErrKeysFull
 	case -236:
 		return g_privacy.ErrNotStarted
+	case -240:
+		return g_rf.ErrBurstOrder
+	case -241:
+		return g_rf.ErrBurstService
+	case -242:
+		return g_rf.ErrNilBurst
+	case -243:
+		return g_rf.ErrNotSetUp
+	case -244:
+		return g_rf.ErrTxTimeout
 	case -171:
 		return g_shortdata.ErrCharacter
 	case -172:
@@ -53675,6 +55819,18 @@ func knownCode(code C.int) bool {
 	case -235:
 		return true
 	case -236:
+		return true
+	case -240:
+		return true
+	case -241:
+		return true
+	case -242:
+		return true
+	case -243:
+		return true
+	case -244:
+		return true
+	case -239:
 		return true
 	case -171:
 		return true

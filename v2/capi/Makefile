@@ -41,7 +41,7 @@ $(BUILD)/check2/$(SONAME): $(SRC)
 	GOEXPERIMENT=cgocheck2 go build -buildmode=c-shared -ldflags='$(LDFLAGS)' -o $@ .
 
 $(BUILD)/%_test: test/%_test.c dmrgo.h dmrgo_gen.h $(BUILD)/libdmrgo.so
-	$(CC) -std=c11 -Wall -Wextra -Werror -pedantic -DDMRGO_TEST_VERSION='"$(VERSION)"' -o $@ $< -I. -L$(BUILD) -ldmrgo -Wl,-rpath,'$$ORIGIN'
+	$(CC) -std=c11 -Wall -Wextra -Werror -pedantic -DDMRGO_TEST_VERSION='"$(VERSION)"' -o $@ $< -I. -L$(BUILD) -ldmrgo -lm -Wl,-rpath,'$$ORIGIN'
 
 test: $(BUILD)/api_test $(BUILD)/stack/$(SONAME) $(BUILD)/check2/$(SONAME) $(BUILD)/static/api_test
 	echo '#include "dmrgo.h"' | $(CXX) -std=c++11 -Wall -Wextra -Werror -pedantic -fsyntax-only -I. -x c++ -

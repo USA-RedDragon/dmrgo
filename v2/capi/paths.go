@@ -5,6 +5,24 @@ package main
 #define DMRGO_NO_PROTOTYPES
 #define DMRGO_USER_T uintptr_t
 #include "dmrgo.h"
+
+static int rf_path_bursts;
+
+static int rf_path_on_bursts(uintptr_t user, const dmrgo_rf_burst_t *b, size_t n) {
+	(void)user;
+	(void)b;
+	rf_path_bursts += (int)n;
+	return DMRGO_OK;
+}
+
+static int rf_path_count(void) {
+	return rf_path_bursts;
+}
+
+static dmrgo_rf_audio_rx_config_on_bursts_fn_t rf_path_fn(void) {
+	dmrgo_rf_audio_rx_config_on_bursts_fn_t f = {rf_path_on_bursts, 0};
+	return f;
+}
 */
 import "C"
 
@@ -287,4 +305,27 @@ func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, err
 		}
 	}
 	return keys, shorts, nil
+}
+
+func rfPath(iq []byte) (func() error, error) {
+	cfg := sized(new(C.dmrgo_rf_rx_config_t))
+	cfg.tier, cfg.rate, cfg.on_bursts = C.DMRGO_RF_TIER0, 9600, C.rf_path_fn()
+	var r *C.dmrgo_rf_receiver_t
+	if err := check(dmrgo_rf_new_receiver(cfg, &r)); err != nil {
+		return nil, err
+	}
+	var took C.int64_t
+	return func() error {
+		before := C.rf_path_count()
+		for off := 0; off < len(iq); off += 1000 {
+			k := min(len(iq)-off, 1000)
+			if err := check(dmrgo_rf_receiver_write(r, (*C.uint8_t)(unsafe.Pointer(&iq[off])), C.size_t(k), &took)); err != nil {
+				return err
+			}
+		}
+		if C.rf_path_count() == before {
+			return errPath
+		}
+		return nil
+	}, nil
 }
