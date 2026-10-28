@@ -3,10 +3,18 @@
 package codec2
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
+	"flag"
+	"maps"
 	"math/rand/v2"
 	"os"
+	"runtime"
 	"slices"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/tetratelabs/wazero"
@@ -76,43 +84,108 @@ func corpus(frames int) []int16 {
 	return pcm
 }
 
+var update = flag.Bool("update", false, "rewrite testdata/engines.txt from the wazero interpreter")
+
+const enginesGolden = "testdata/engines.txt"
+
+func wazeroCompiles() bool {
+	return runtime.GOARCH == "amd64" || runtime.GOARCH == "arm64"
+}
+
+func engineDigests(t *testing.T, m *Module) map[string]string {
+	t.Helper()
+	pcm := corpus(300)
+	d := map[string]string{"corpus": digestPCM(pcm)}
+	for _, mode := range []Mode{Mode2400, Mode3200} {
+		c := newCodecOf(t, Config{Mode: mode, WASM: m})
+		s := c.Silence()
+		key := strconv.Itoa(int(mode)) + "/"
+		d[key+"silence"] = digestBytes(s[:])
+		frames := encodeAll(t, c, pcm)
+		h := sha256.New()
+		for _, f := range frames {
+			h.Write(f[:])
+		}
+		d[key+"encode"] = hex.EncodeToString(h.Sum(nil))
+		d[key+"decode"] = digestPCM(decodeAll(t, c, frames))
+		d[key+"auto"] = digestPCM(decodeAll(t, newCodecOf(t, Config{WASM: m}), frames))
+	}
+	return d
+}
+
+func digestBytes(b []byte) string {
+	h := sha256.Sum256(b)
+	return hex.EncodeToString(h[:])
+}
+
+func digestPCM(pcm []int16) string {
+	b := make([]byte, 0, 2*len(pcm))
+	for _, v := range pcm {
+		b = binary.LittleEndian.AppendUint16(b, uint16(v))
+	}
+	return digestBytes(b)
+}
+
+func readEngineGolden(t *testing.T) map[string]string {
+	t.Helper()
+	data, err := os.ReadFile(enginesGolden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{}
+	for line := range strings.Lines(string(data)) {
+		k, v, ok := strings.Cut(strings.TrimSpace(line), " ")
+		if !ok {
+			t.Fatalf("%s: bad line %q", enginesGolden, line)
+		}
+		want[k] = v
+	}
+	return want
+}
+
 func TestEnginesMatch(t *testing.T) {
 	t.Parallel()
-	engines := []struct {
-		name string
-		m    *Module
-	}{
-		{"embedded", nil},
-		{"wazero", wazeroModule(t)},
-	}
-	if embeddedAOT {
-		engines = append(engines, struct {
-			name string
-			m    *Module
-		}{"aot", aotModule()})
-	}
-	interp := interpretedModule(t)
-	pcm := corpus(300)
-	for _, mode := range []Mode{Mode2400, Mode3200} {
-		ref := newCodecOf(t, Config{Mode: mode, WASM: interp})
-		want := encodeAll(t, ref, pcm)
-		wantPCM := decodeAll(t, ref, want)
-		wantAuto := decodeAll(t, newCodecOf(t, Config{WASM: interp}), want)
-		for _, e := range engines {
-			c := newCodecOf(t, Config{Mode: mode, WASM: e.m})
-			if c.Silence() != ref.Silence() {
-				t.Errorf("%s, mode %d: Silence differs from the interpreter", e.name, mode)
-			}
-			if got := encodeAll(t, c, pcm); !slices.Equal(got, want) {
-				t.Errorf("%s, mode %d: encodes otherwise than the interpreter", e.name, mode)
-			}
-			if !slices.Equal(decodeAll(t, c, want), wantPCM) {
-				t.Errorf("%s, mode %d: decodes otherwise than the interpreter", e.name, mode)
-			}
-			if !slices.Equal(decodeAll(t, newCodecOf(t, Config{WASM: e.m}), want), wantAuto) {
-				t.Errorf("%s, mode %d: decodes in ModeAuto otherwise than the interpreter", e.name, mode)
-			}
+	if *update {
+		got := engineDigests(t, interpretedModule(t))
+		keys := slices.Sorted(maps.Keys(got))
+		var sb strings.Builder
+		for _, k := range keys {
+			sb.WriteString(k + " " + got[k] + "\n")
 		}
+		if err := os.WriteFile(enginesGolden, []byte(sb.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want := readEngineGolden(t)
+	type engine struct {
+		name string
+		m    func(*testing.T) *Module
+	}
+	engines := []engine{{"embedded", func(*testing.T) *Module { return nil }}}
+	if embeddedAOT {
+		engines = append(engines, engine{"aot", func(*testing.T) *Module { return aotModule() }})
+	}
+	env := os.Getenv("CODEC2_ENGINE")
+	if wazeroCompiles() || env == "wazero" {
+		engines = append(engines, engine{"wazero", wazeroModule})
+	}
+	if wazeroCompiles() || env == "interpreter" {
+		engines = append(engines, engine{"interpreter", interpretedModule})
+	}
+	for _, e := range engines {
+		t.Run(e.name, func(t *testing.T) {
+			t.Parallel()
+			got := engineDigests(t, e.m(t))
+			for _, k := range slices.Sorted(maps.Keys(want)) {
+				if got[k] != want[k] {
+					t.Errorf("%s: digest %s, want %s from the interpreter", k, got[k], want[k])
+				}
+			}
+			if len(got) != len(want) {
+				t.Errorf("%d digests, %s has %d", len(got), enginesGolden, len(want))
+			}
+		})
 	}
 }
 
