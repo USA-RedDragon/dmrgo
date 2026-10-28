@@ -24,18 +24,22 @@ const (
 
 const gridRowMask = 1<<15 - 1
 
-const (
-	h1511Pos = 0x358b271f4a6e9dc0
-	h139Pos  = 0x1369050d284c7ba0
-)
+var h139Fix = [16]int8{-1, 9, 10, 6, 11, 3, 7, 1, 12, -1, 4, -1, 8, 5, 2, 0}
 
-func nibblePos(positions uint64, syndrome int) int {
-	return int(positions>>(4*(syndrome&15))&0xF) - 1
-}
+var h1511Fix = [16]int8{-1, 11, 12, 8, 13, 5, 9, 3, 14, 0, 6, 1, 10, 7, 4, 2}
 
 func rowSyndrome15_11(row uint16) int {
-	return bits.OnesCount16(row&h1511Check0)&1 | bits.OnesCount16(row&h1511Check1)&1<<1 |
-		bits.OnesCount16(row&h1511Check2)&1<<2 | bits.OnesCount16(row&h1511Check3)&1<<3
+	a := uint32(row&h1511Check0) | uint32(row&h1511Check1)<<16
+	b := uint32(row&h1511Check2) | uint32(row&h1511Check3)<<16
+	a ^= a >> 8
+	b ^= b >> 8
+	a ^= a >> 4
+	b ^= b >> 4
+	a ^= a >> 2
+	b ^= b >> 2
+	a ^= a >> 1
+	b ^= b >> 1
+	return int(a&1 | a>>16&1<<1 | b&1<<2 | b>>16&1<<3)
 }
 
 func columnSyndromes(rows *[13]uint16) [4]uint16 {
@@ -155,14 +159,14 @@ func hammingCorrect(rows *[13]uint16) bool {
 		for bad := (s[0] | s[1] | s[2] | s[3]) & gridRowMask; bad != 0; bad &= bad - 1 {
 			c := bits.TrailingZeros16(bad)
 			syndrome := int(s[0]>>c&1 | s[1]>>c&1<<1 | s[2]>>c&1<<2 | s[3]>>c&1<<3)
-			if bitPos := nibblePos(h139Pos, syndrome); bitPos != -1 {
+			if bitPos := h139Fix[syndrome&15]; bitPos >= 0 {
 				rows[bitPos] ^= 1 << c
 				fixing = true
 			}
 		}
 
 		for r := range rows {
-			if bitPos := nibblePos(h1511Pos, rowSyndrome15_11(rows[r])); bitPos != -1 {
+			if bitPos := h1511Fix[rowSyndrome15_11(rows[r])&15]; bitPos >= 0 {
 				rows[r] ^= 1 << bitPos
 				fixing = true
 			}

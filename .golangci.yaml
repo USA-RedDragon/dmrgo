@@ -165,6 +165,11 @@ linters:
         linters:
           - gochecknoglobals
         text: ^(syncNib|lagrangeTab|iqLowRecip64|iqLowAtan64|iqLowAtan|iqLowTab) is a global variable
+      # The read-only fix positions of the Hamming codes of BPTC(196,96).
+      - path: v2/internal/fec/bptc/bptc_196_96\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(h139Fix|h1511Fix) is a global variable
       # libcodec2 keeps process-wide state that one mutex guards.
       - path: v2/vocoder/codec2/codec2_cgo\.go$
         linters:
