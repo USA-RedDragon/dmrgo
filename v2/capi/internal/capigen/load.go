@@ -19,20 +19,22 @@ import (
 const modulePath = "github.com/USA-RedDragon/dmrgo/v2"
 
 type loader struct {
-	ctx   build.Context
-	root  string
-	fset  *token.FileSet
-	std   types.Importer
-	pkgs  map[string]*types.Package
-	docs  map[types.Object]string
-	full  map[types.Object]string
-	plain map[types.Object]string
-	busy  map[string]bool
-	decl  map[*types.Func]*ast.FuncDecl
-	info  map[*types.Package]*types.Info
-	eff   map[effKey]*effect
-	vals  map[types.Object]ast.Expr
-	refs  map[string][][]string
+	ctx     build.Context
+	root    string
+	fset    *token.FileSet
+	std     types.Importer
+	pkgs    map[string]*types.Package
+	docs    map[types.Object]string
+	full    map[types.Object]string
+	plain   map[types.Object]string
+	busy    map[string]bool
+	decl    map[*types.Func]*ast.FuncDecl
+	info    map[*types.Package]*types.Info
+	eff     map[effKey]*effect
+	effBusy map[effKey]int
+	effLow  int
+	vals    map[types.Object]ast.Expr
+	refs    map[string][][]string
 }
 
 func newLoader(root string) *loader {
@@ -44,7 +46,7 @@ func newLoader(root string) *loader {
 	return &loader{
 		ctx: ctx, root: root, fset: fset, std: importer.ForCompiler(fset, "source", nil),
 		pkgs: map[string]*types.Package{}, docs: map[types.Object]string{}, full: map[types.Object]string{}, plain: map[types.Object]string{}, busy: map[string]bool{},
-		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{}, vals: map[types.Object]ast.Expr{}, refs: map[string][][]string{},
+		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{}, effBusy: map[effKey]int{}, vals: map[types.Object]ast.Expr{}, refs: map[string][][]string{},
 	}
 }
 

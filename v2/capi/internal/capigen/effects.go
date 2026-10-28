@@ -78,16 +78,22 @@ type analyzer struct {
 // the fields that it sets (eSet) or whose elements it writes in place
 // (eElem); for a slice or another pointer, eElem under "" when it writes
 // through it. A body that the analysis cannot read changes everything.
+// A recursive call starts from no effect and repeats until the effects
+// stop growing.
 func (l *loader) effects(fn *types.Func, param int) *effect {
 	fn = fn.Origin()
 	k := effKey{fn, param}
+	if d, ok := l.effBusy[k]; ok {
+		l.effLow = min(l.effLow, d)
+		return l.eff[k]
+	}
 	if e, ok := l.eff[k]; ok {
 		return e
 	}
 	all := &effect{all: true, ret: true}
-	l.eff[k] = all
 	fd := l.decl[fn]
 	if fd == nil {
+		l.eff[k] = all
 		return all
 	}
 	info := l.info[fn.Pkg()]
@@ -101,8 +107,57 @@ func (l *loader) effects(fn *types.Func, param int) *effect {
 	}
 	obj := info.Defs[id]
 	if obj == nil {
+		l.eff[k] = all
 		return all
 	}
+	depth := len(l.effBusy)
+	low := l.effLow
+	l.effBusy[k] = depth
+	l.eff[k] = &effect{}
+	var e *effect
+	for {
+		l.effLow = depth + 1
+		e = l.analyze(fd, info, obj)
+		if l.effLow > depth || e.covers(l.eff[k]) && l.eff[k].covers(e) {
+			break
+		}
+		e.merge(l.eff[k])
+		l.eff[k] = e
+	}
+	delete(l.effBusy, k)
+	if l.effLow < depth {
+		delete(l.eff, k)
+	} else {
+		l.eff[k] = e
+	}
+	l.effLow = min(low, l.effLow)
+	return e
+}
+
+func (e *effect) covers(o *effect) bool {
+	if e.all {
+		return true
+	}
+	if o.all || o.ret && !e.ret {
+		return false
+	}
+	for f, b := range o.f {
+		if e.f[f]&b != b {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *effect) merge(o *effect) {
+	e.all = e.all || o.all
+	e.ret = e.ret || o.ret
+	for f, b := range o.f {
+		e.mark(f, b)
+	}
+}
+
+func (l *loader) analyze(fd *ast.FuncDecl, info *types.Info, obj types.Object) *effect {
 	a := &analyzer{l: l, info: info, eff: &effect{}, root: obj, aliases: map[types.Object]apath{obj: {}}, parent: map[ast.Node]ast.Node{}, resVars: map[types.Object]bool{}}
 	if fd.Type.Results != nil {
 		for _, f := range fd.Type.Results.List {
@@ -145,7 +200,6 @@ func (l *loader) effects(fn *types.Func, param int) *effect {
 			break
 		}
 	}
-	l.eff[k] = a.eff
 	return a.eff
 }
 
@@ -267,6 +321,30 @@ func isRef(t types.Type) bool {
 				return true
 			}
 		}
+	}
+	return false
+}
+
+func isUnsafePointer(t types.Type) bool {
+	b, ok := t.Underlying().(*types.Basic)
+	return ok && b.Kind() == types.UnsafePointer
+}
+
+// unsafeView reports whether call is unsafe.Add, unsafe.Slice,
+// unsafe.SliceData, unsafe.String or unsafe.StringData, whose result
+// names the memory of its first argument.
+func unsafeView(call *ast.CallExpr) bool {
+	sel, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	pkg, ok := sel.X.(*ast.Ident)
+	if !ok || pkg.Name != "unsafe" {
+		return false
+	}
+	switch sel.Sel.Name {
+	case "Add", "Slice", "SliceData", "String", "StringData":
+		return true
 	}
 	return false
 }
@@ -616,7 +694,7 @@ func (a *analyzer) localRoot(e ast.Expr) (*types.Var, bool) {
 
 func (a *analyzer) alias(lhs, rhs ast.Expr, p apath) {
 	t := a.typeOf(rhs)
-	if t == nil || !isRef(t) {
+	if t == nil || !isRef(t) && !isUnsafePointer(t) {
 		return
 	}
 	v, direct := a.localRoot(lhs)
@@ -755,7 +833,7 @@ func (a *analyzer) context(top ast.Expr, id *ast.Ident, p apath) ast.Expr {
 
 func (a *analyzer) results(call *ast.CallExpr, p apath) ast.Expr {
 	t := a.typeOf(call)
-	if t == nil || !isRef(t) {
+	if t == nil || !isRef(t) && !isUnsafePointer(t) {
 		return nil
 	}
 	if tu, ok := t.(*types.Tuple); ok {
@@ -814,6 +892,9 @@ func (a *analyzer) callee(call *ast.CallExpr) (*types.Func, *types.Builtin) {
 }
 
 func (a *analyzer) argCall(call *ast.CallExpr, i int, p apath, id *ast.Ident) bool {
+	if unsafeView(call) {
+		return i == 0
+	}
 	if t := a.typeOf(call.Args[i]); t != nil && !isRef(t) {
 		return false
 	}
@@ -838,8 +919,18 @@ func (a *analyzer) argCall(call *ast.CallExpr, i int, p apath, id *ast.Ident) bo
 	}
 	if sel, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
 		if s := a.info.Selections[sel]; s != nil && types.IsInterface(s.Recv()) {
-			a.escape(p)
-			return true
+			impls := a.l.impls(s.Recv(), fn)
+			if impls == nil {
+				a.escape(p)
+				return true
+			}
+			ret := false
+			for _, m := range impls {
+				e := a.l.effects(m, i)
+				a.apply(e, p, m.Signature().Params().At(min(i, m.Signature().Params().Len()-1)).Type())
+				ret = ret || e.ret
+			}
+			return ret
 		}
 	}
 	params := fn.Signature().Params()
@@ -854,6 +945,44 @@ func (a *analyzer) argCall(call *ast.CallExpr, i int, p apath, id *ast.Ident) bo
 		return true
 	}
 	return i == 0
+}
+
+// impls returns the methods that a call of the method m of the
+// interface iface can run: those of the types of the package of m that
+// implement iface, when m is unexported, so that no type of another
+// package can implement it. It returns nil when it cannot list them.
+func (l *loader) impls(iface types.Type, m *types.Func) []*types.Func {
+	it, ok := iface.Underlying().(*types.Interface)
+	if !ok || m.Exported() || m.Pkg() == nil {
+		return nil
+	}
+	var out []*types.Func
+	sc := m.Pkg().Scope()
+	for _, name := range sc.Names() {
+		tn, ok := sc.Lookup(name).(*types.TypeName)
+		if !ok || tn.IsAlias() || types.IsInterface(tn.Type()) {
+			continue
+		}
+		if n, ok := tn.Type().(*types.Named); ok && n.TypeParams().Len() > 0 {
+			return nil
+		}
+		for _, t := range []types.Type{tn.Type(), types.NewPointer(tn.Type())} {
+			if !types.Implements(t, it) {
+				continue
+			}
+			o, _, _ := types.LookupFieldOrMethod(t, true, m.Pkg(), m.Name())
+			f, ok := o.(*types.Func)
+			if !ok || l.decl[f.Origin()] == nil {
+				return nil
+			}
+			out = append(out, f)
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func (a *analyzer) methodCall(x *ast.SelectorExpr, sel *types.Selection, p apath) ast.Expr {

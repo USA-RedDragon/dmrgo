@@ -3,6 +3,7 @@ package x
 import (
 	"errors"
 	"strings"
+	"unsafe"
 )
 
 type M struct {
@@ -175,4 +176,69 @@ func Wrapped(m *M) {
 	c := *m
 	h := wrap(c)
 	h.n = 1
+}
+
+func PeekUnsafe(x []int16) int16 {
+	return *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2))
+}
+
+func PokeUnsafe(x []int16) {
+	*(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2)) = 1
+}
+
+func ViewUnsafe(x []byte) {
+	Sign(unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(x))), len(x)))
+}
+
+func EvenRead(x []byte, n int) int {
+	if n == 0 {
+		return 0
+	}
+	return OddRead(x, n-1) + int(x[0])
+}
+
+func OddRead(x []byte, n int) int {
+	return EvenRead(x, n)
+}
+
+func EvenWrite(x []byte, n int) {
+	if n == 0 {
+		x[0] = 1
+		return
+	}
+	OddWrite(x, n-1)
+}
+
+func OddWrite(x []byte, n int) {
+	EvenWrite(x, n)
+}
+
+type sink interface {
+	put(x []byte)
+}
+
+type reader struct{ n int }
+
+func (r *reader) put(x []byte) { r.n += len(x) }
+
+type writer struct{}
+
+func (writer) put(x []byte) { x[0] = 0 }
+
+type rsink interface {
+	get(x []byte) int
+}
+
+func (r *reader) get(x []byte) int { return int(x[0]) + r.n }
+
+func ToRSink(s rsink, x []byte) int {
+	return s.get(x)
+}
+
+func ToSink(s sink, x []byte) {
+	s.put(x)
+}
+
+func ToStringer(s interface{ String(x []byte) }, x []byte) {
+	s.String(x)
 }

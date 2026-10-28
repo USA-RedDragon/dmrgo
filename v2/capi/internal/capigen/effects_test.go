@@ -88,6 +88,16 @@ func TestEffects(t *testing.T) {
 		{"Fill", 0, "map[:2]"},
 		{"Fill", 1, "map[:2]"},
 		{"Wrapped", 0, "map[Any:2 Ch:2 Data:2 E:2 Err:2 Map:2 P:2 S2:2 Sb:2 Sub:2]"},
+		{"PeekUnsafe", 0, "map[]"},
+		{"PokeUnsafe", 0, "map[:2]"},
+		{"ViewUnsafe", 0, "map[:2]"},
+		{"EvenRead", 0, "map[]"},
+		{"OddRead", 0, "map[]"},
+		{"OddWrite", 0, "map[:2]"},
+		{"EvenWrite", 0, "map[:2]"},
+		{"ToRSink", 1, "map[]"},
+		{"ToSink", 1, "map[:2]"},
+		{"ToStringer", 1, "map[:2]"},
 	} {
 		if got := str(l.effects(fn(c.name), c.param)); got != c.want {
 			t.Errorf("%s param %d: effects %s, want %s", c.name, c.param, got, c.want)
