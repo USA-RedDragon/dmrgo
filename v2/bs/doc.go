@@ -7,14 +7,14 @@
 // A Repeater is a state machine without I/O. Each method takes the time
 // now, on a monotonic clock that the caller picks, and appends outputs to a
 // slice of the caller. A slice with capacity MaxOutputs never grows, and
-// after New no method allocates. Deadline tells when the Repeater needs a
+// after New no method allocates. Deadline reports when the Repeater needs a
 // Tick.
 //
 // The Repeater checks the color code of RF bursts, gives each slot to one
 // source at a time, and refuses or queues the others. It regenerates every
 // burst that it repeats: voice through a voice.Receiver and a
 // voice.Transmitter in relay mode, with new AMBE+2 FEC where
-// voice.Transmitter.Relay says, EMB, embedded LC and the local color code,
+// voice.Transmitter.Relay sets it, EMB, embedded LC and the local color code,
 // and data, CSBK and header bursts from their corrected
 // payload. After a voice call it holds the slot for the call hang time and
 // sends Terminators with the call LC, and after confirmed data it sends

@@ -132,7 +132,7 @@ const (
 	OutputCallEnd
 	// OutputRejected is a source that the Repeater refused. Slot, From and
 	// Reason are set. Call is set for ReasonTimeout, for ReasonRejected
-	// when the Repeater knows the call, and for ReasonSlotBusy and
+	// when the Repeater has the call, and for ReasonSlotBusy and
 	// ReasonHangTime when the refused burst carries the full LC, as a Voice
 	// LC header does; else it is zero.
 	OutputRejected

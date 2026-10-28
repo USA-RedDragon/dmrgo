@@ -95,7 +95,7 @@ type Config struct {
 	// value means vocoder.AMBESilenceSlot. A call with a FID other than
 	// enums.FIDStandardized and enums.FIDMotorola, such as a Codec2 call,
 	// repeats its last vocoder slot instead, as voice.TransmitterConfig
-	// says.
+	// gives.
 	Silence [9]byte
 	// Lead makes Tick emit an outbound burst this long before its Due time
 	// in ModeRF, so that a transmit FIFO can be filled ahead. 0 means at
@@ -405,15 +405,15 @@ func (s *slot) busy() bool {
 }
 
 // Inbound takes a burst received on slot h.Slot from the source from, and
-// appends the outputs to dst. The burst is decoded with what h says about
-// it. RF bursts with another color code than Config.ColorCode are dropped.
-// A burst whose h.Slot is not Slot1 or Slot2, or a burst to a zero
-// Repeater, is dropped with no output; CheckSlot tells a bad slot. A nil
+// appends the outputs to dst. The burst is decoded with the data in h. RF
+// bursts with another color code than Config.ColorCode are dropped. A burst
+// whose h.Slot is not Slot1 or Slot2, or a burst to a zero
+// Repeater, is dropped with no output; CheckSlot reports a bad slot. A nil
 // raw is a transport frame without a burst: only h applies, and
 // Hint.SyncLost ends a call of from on the slot. A voice burst or frame
 // from a network source with Hint.HasSeq goes into the jitter buffer of the
 // slot, Config.Jitter, and a later Tick takes it in its place; another
-// burst is taken at once unless Config.Jitter says it waits, and then a
+// burst is taken at once unless Config.Jitter holds it, and then a
 // later Tick takes it. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) []Output {
@@ -457,7 +457,7 @@ func (r *Repeater) take(now time.Duration, raw *layer2.RawBurst, h *layer2.Hint,
 // results of b. The Repeater sends b as it encodes it again. The jitter
 // buffer, Config.Jitter, holds b as it encodes it again, and a b whose
 // payload FEC failed as a frame without a burst; a Tick then takes it as
-// Inbound takes a burst. A burst that Config.Jitter says waits is held in
+// Inbound takes a burst. A burst that Config.Jitter holds waits in
 // the same way. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, from Source, dst []Output) []Output {
@@ -611,10 +611,10 @@ func (r *Repeater) key(now time.Duration, dst []Output) []Output {
 	return dst
 }
 
-// Lost tells the Repeater that the transport lost the signal of slot s,
+// Lost records that the transport lost the signal of slot s,
 // such as an MMDVM TAG_LOST. A call of from on s ends. For a slot other
 // than Slot1 or Slot2, or a zero Repeater, it does nothing; CheckSlot
-// tells a bad slot. It allocates only when dst has no room for MaxOutputs
+// reports a bad slot. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Output) []Output {
 	if r == nil {
@@ -641,7 +641,7 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 	return r.flush(now, dst)
 }
 
-// Reject refuses the call on slot s, as for an access rule of the caller,
+// Reject rejects the call on slot s, as for an access rule of the caller,
 // typically on its OutputCallStart. The Repeater drops the rest of the call
 // and gives it no hang time. The next call of a method that takes dst
 // appends an OutputRejected with ReasonRejected, and OutputCallEnd follows
