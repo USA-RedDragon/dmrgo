@@ -204,6 +204,10 @@ type Output struct {
 	// end, EndLost for a relayed call that was lost, EndTimeout after
 	// T_TO.
 	Reason EndReason
+	// Call is the call of the burst, or of the transmission that ended,
+	// from the Call of Start or Relay. It is zero for an Interrupter, whose
+	// RC bursts carry no addresses.
+	Call layer2.Call
 }
 
 // TransmitterState is the state of a Transmitter.
@@ -745,7 +749,7 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	}
 	if t.state == TransmitterHeader && !t.headersDone() {
 		var o *Output
-		dst, o = appendOutput(dst, OutputBurst, t.due)
+		dst, o = t.emit(dst, OutputBurst)
 		t.header(o)
 		t.due += slotPeriod
 		return dst
@@ -758,10 +762,10 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	case TransmitterVoice, TransmitterEnding:
 		if t.state == TransmitterEnding && t.pos == 0 && (t.ownSlots() == 0 || t.timedOut) {
 			t.dropOwn()
-			dst, o = appendOutput(dst, OutputBurst, t.due)
+			dst, o = t.emit(dst, OutputBurst)
 			dst = t.terminator(o, dst)
 		} else {
-			dst, o = appendOutput(dst, OutputBurst, t.due)
+			dst, o = t.emit(dst, OutputBurst)
 			t.voice(o)
 		}
 	case TransmitterIdle, TransmitterHeader, TransmitterTimedOut, TransmitterAccess, TransmitterChanAuth:
@@ -890,7 +894,7 @@ func (t *Transmitter) terminator(o *Output, out []Output) []Output {
 
 func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 	var o *Output
-	out, o = appendOutput(out, OutputEnded, t.due)
+	out, o = t.emit(out, OutputEnded)
 	o.Reason = reason
 	t.state, t.reason, t.ended, t.timedOut, t.stopping = TransmitterIdle, 0, false, false, false
 	if !t.hasNext {
@@ -1119,6 +1123,12 @@ func (t *Transmitter) dataHint(dt enums.DataType) layer2.Hint {
 }
 
 //go:noinline
+func (t *Transmitter) emit(out []Output, k OutputKind) ([]Output, *Output) {
+	out, o := appendOutput(out, k, t.due)
+	o.Call = layer2.Call{Group: t.call.Group, Target: t.call.Target, Source: t.call.Source}
+	return out, o
+}
+
 func appendOutput(out []Output, k OutputKind, due time.Duration) ([]Output, *Output) {
 	if len(out) < cap(out) {
 		out = out[:len(out)+1]

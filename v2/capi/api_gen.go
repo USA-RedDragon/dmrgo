@@ -298,6 +298,13 @@ func in_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) (d g_csbk.WakeupConfi
 	return
 }
 
+func out_layer2_Call(d *C.dmrgo_layer2_call_t, s *g_layer2.Call, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.target = C.uint32_t(s.Target)
+	d.source = C.uint32_t(s.Source)
+}
+
 func out_csbk_Output(d *C.dmrgo_csbk_output_t, s *g_csbk.Output, oc *outc) {
 	_ = oc
 	d.kind = C.dmrgo_csbk_output_kind_t(s.Kind)
@@ -307,9 +314,7 @@ func out_csbk_Output(d *C.dmrgo_csbk_output_t, s *g_csbk.Output, oc *outc) {
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
 	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.due = C.dmrgo_duration_t(s.Due)
-	d.target = C.uint32_t(s.Target)
-	d.source = C.uint32_t(s.Source)
-	d.group = C.bool(s.Group)
+	out_layer2_Call(&d.call, &s.Call, oc)
 	d.data = C.bool(s.Data)
 	d.until = C.dmrgo_duration_t(s.Until)
 	*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(&d.csbk)) = s.CSBK
@@ -491,6 +496,13 @@ func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfi
 	return
 }
 
+func in_layer2_Call(s *C.dmrgo_layer2_call_t) (d g_layer2.Call) {
+	d.Group = bool(s.group)
+	d.Target = uint32(s.target)
+	d.Source = uint32(s.source)
+	return
+}
+
 func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
 	d.Kind = g_data.OutputKind(s.kind)
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
@@ -501,7 +513,7 @@ func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
 	d.Result = g_data.Result(s.result)
 	d.Response = g_layer2_packet.Response(s.response)
 	d.HasResponse = bool(s.has_response)
-	d.Group = bool(s.group)
+	d.Call = in_layer2_Call(&s.call)
 	return
 }
 
@@ -567,7 +579,7 @@ func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
 	d.result = C.dmrgo_data_result_t(s.Result)
 	d.response = C.dmrgo_packet_response_t(s.Response)
 	d.has_response = C.bool(s.HasResponse)
-	d.group = C.bool(s.Group)
+	out_layer2_Call(&d.call, &s.Call, oc)
 }
 
 func in_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) (d g_fec.BurstFECStats) {
@@ -3292,6 +3304,7 @@ func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
 	d.Hint = in_layer2_Hint(&s.hint)
 	d.Fill = bool(s.fill)
 	d.Reason = g_voice.EndReason(s.reason)
+	d.Call = in_layer2_Call(&s.call)
 	return
 }
 
@@ -4827,6 +4840,7 @@ func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
 	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.fill = C.bool(s.Fill)
 	d.reason = C.dmrgo_voice_end_reason_t(s.Reason)
+	out_layer2_Call(&d.call, &s.Call, oc)
 }
 
 func in_voice_JitterPacket(s *C.dmrgo_voice_jitter_packet_t) (d g_voice.JitterPacket) {
@@ -5027,9 +5041,7 @@ func in_csbk_Output(s *C.dmrgo_csbk_output_t) (d g_csbk.Output) {
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
 	d.Hint = in_layer2_Hint(&s.hint)
 	d.Due = time.Duration(s.due)
-	d.Target = uint32(s.target)
-	d.Source = uint32(s.source)
-	d.Group = bool(s.group)
+	d.Call = in_layer2_Call(&s.call)
 	d.Data = bool(s.data)
 	d.Until = time.Duration(s.until)
 	d.CSBK = *(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(&s.csbk))
@@ -5554,6 +5566,10 @@ func fromC_ip_UDPHeader(s *C.dmrgo_ip_udp_header_t) g_ip.UDPHeader {
 
 func fromC_layer2_CACH(s *C.dmrgo_layer2_cach_t) g_layer2.CACH {
 	return in_layer2_CACH(s)
+}
+
+func fromC_layer2_Call(s *C.dmrgo_layer2_call_t) g_layer2.Call {
+	return in_layer2_Call(s)
 }
 
 func fromC_layer2_Data(s *C.dmrgo_layer2_data_t) g_layer2.Data {
@@ -37114,6 +37130,44 @@ func dmrgo_dmrd_data_set_call(c_self *C.dmrgo_dmrd_data_t, c_group C.bool, c_tar
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_data_set_call_hint
+func dmrgo_dmrd_data_set_call_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_hint_t, c_c *C.dmrgo_layer2_call_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Data
+	x = in_transport_dmrd_Data(&(*c_self))
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_c == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_c g_layer2.Call
+	a_c = in_layer2_Call(&(*c_c))
+	r0 := x.SetCallHint(a_h, a_c)
+	var ws_self C.dmrgo_dmrd_data_t
+	ws_self = *c_self
+	ws_self.source = C.uint32_t(x.Source)
+	ws_self.destination = C.uint32_t(x.Destination)
+	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
+	ws_self.group = C.bool(x.Group)
+	ws_self.frame = C.dmrgo_dmrd_frame_type_t(x.Frame)
+	ws_self.value = C.uint8_t(x.Value)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_data_set_hint
 func dmrgo_dmrd_data_set_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -41076,6 +41130,43 @@ func dmrgo_hytera_frame_set_call(c_self *C.dmrgo_hytera_frame_t, c_group C.bool,
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
 	var ws_self C.dmrgo_hytera_frame_t
 	ws_self = *c_self
+	ws_self.call_type = C.uint8_t(x.CallType)
+	ws_self.destination = C.uint32_t(x.Destination)
+	ws_self.source = C.uint32_t(x.Source)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_frame_set_call_hint
+func dmrgo_hytera_frame_set_call_hint(c_self *C.dmrgo_hytera_frame_t, c_h *C.dmrgo_layer2_hint_t, c_c *C.dmrgo_layer2_call_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_c == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_c g_layer2.Call
+	a_c = in_layer2_Call(&(*c_c))
+	r0 := x.SetCallHint(a_h, a_c)
+	var ws_self C.dmrgo_hytera_frame_t
+	ws_self = *c_self
+	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
+	ws_self.slot_type = C.dmrgo_hytera_slot_type_t(x.SlotType)
 	ws_self.call_type = C.uint8_t(x.CallType)
 	ws_self.destination = C.uint32_t(x.Destination)
 	ws_self.source = C.uint32_t(x.Source)

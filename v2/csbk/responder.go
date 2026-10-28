@@ -251,7 +251,7 @@ func (r *Responder) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputRequest)
-	o.Service, o.Target, o.Source, o.CSBK = svc, target, source, octets
+	o.Service, o.Call, o.CSBK = svc, layer2.Call{Target: target, Source: source}, octets
 	if !r.answerReady {
 		return dst
 	}
@@ -362,7 +362,7 @@ func (r *Responder) Tick(now time.Duration, dst []Output) []Output {
 	if ev == sendDenied {
 		var o *Output
 		dst, o = appendOutput(dst, OutputDone)
-		o.Service, o.Result, o.Target, o.Source = r.service, ResultDenied, r.reqTarget, r.reqSource
+		o.Service, o.Result, o.Call = r.service, ResultDenied, layer2.Call{Target: r.reqTarget, Source: r.reqSource}
 	}
 	return dst
 }

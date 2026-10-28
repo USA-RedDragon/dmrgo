@@ -208,8 +208,9 @@ type Output struct {
 	Response packet.Response
 	// HasResponse reports whether Response is set.
 	HasResponse bool
-	// Group reports whether the message that ended went to a talkgroup.
-	Group bool
+	// Call is the call of the message that the burst belongs to or that
+	// ended, from the addresses and group flag of its data header.
+	Call layer2.Call
 }
 
 // SenderState is the state of a Sender.
@@ -870,7 +871,7 @@ func (s *Sender) finish(k int, result Result, dst []Output) []Output {
 	if e.cHead {
 		o.Seq = e.ns
 	}
-	o.Group = groupOf(&e.pkt.Header)
+	o.Call = layer2.Call(callOf(&e.pkt.Header))
 	for i := k + 1; i < s.n; i++ {
 		s.ord[i-1] = s.ord[i]
 	}
@@ -1029,6 +1030,7 @@ func (s *Sender) send(dst []Output) []Output {
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst, s.due)
 	o.Burst, o.Try = raw, uint8(min(e.tries, MaxRetries)&0xFF)
+	o.Call = layer2.Call(callOf(&e.pkt.Header))
 	o.Hint = layer2.Hint{Slot: s.slot, Kind: layer2.KindData, DataType: raw.SlotType().DataType, HasDataType: true}
 	if e.cHead {
 		o.Seq = e.ns
@@ -1061,7 +1063,7 @@ func (s *Sender) send(dst []Output) []Output {
 // talkgroup, which goes as a link layer broadcast (RFC 1122 clause
 // 3.2.2), and for a nil o. (ETSI TS 102 361-3 clauses 5.2 and 5.4.2.1)
 func (o *Output) ICMP() (m ip.ICMPMessage, ok bool) {
-	if o == nil || o.Kind != OutputDone || o.Group {
+	if o == nil || o.Kind != OutputDone || o.Call.Group {
 		return 0, false
 	}
 	switch o.Result {

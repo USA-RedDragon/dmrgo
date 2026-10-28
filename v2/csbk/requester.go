@@ -583,7 +583,7 @@ func (q *Requester) done(out []Output, r Result, answer *pdu.CSBKBytes) []Output
 	q.s.stop()
 	var o *Output
 	out, o = appendOutput(out, OutputDone)
-	o.Service, o.Result, o.Target, o.Source = q.service, r, q.target, q.source
+	o.Service, o.Result, o.Call = q.service, r, layer2.Call{Group: q.group, Target: q.target, Source: q.source}
 	if answer != nil {
 		o.CSBK = *answer
 	}

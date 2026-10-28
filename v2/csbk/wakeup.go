@@ -259,6 +259,7 @@ func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
 	dst, o = appendOutput(dst, OutputBurst)
 	o.Burst, o.Due = b, w.due
 	o.Hint = csbkHint(w.slot)
+	o.Call = layer2.Call{Target: w.bs, Source: w.source}
 	w.sent++
 	w.state, w.waitUntil = WakeupWaiting, w.due+w.syncWait
 	return dst
@@ -284,6 +285,6 @@ func (w *Wakeup) done(out []Output, r Result) []Output {
 	w.state = WakeupIdle
 	var o *Output
 	out, o = appendOutput(out, OutputDone)
-	o.Service, o.Result, o.Target, o.Source = ServiceWakeup, r, w.bs, w.source
+	o.Service, o.Result, o.Call = ServiceWakeup, r, layer2.Call{Target: w.bs, Source: w.source}
 	return out
 }

@@ -206,9 +206,12 @@
 // A machine whose Tick sends bursts at their Due time has a Lead in its
 // config: Tick emits a burst that long before its Due time, so that a
 // transmit FIFO can be filled ahead, and Deadline is Due minus Lead. The
-// Hint of each burst that a machine sends carries its slot. A zero machine
-// does nothing: its methods that start work return ErrZeroValue. Make it
-// with its constructor.
+// Hint of each burst that a machine sends carries its slot, and the Call of
+// the Output carries the addresses and group flag of the call, as a
+// gateway puts them in a packet: dmrd.Data.SetCallHint and
+// hytera.Frame.SetCallHint take both. A zero machine does nothing: its
+// methods that start work return ErrZeroValue. Make it with its
+// constructor.
 //
 // # Errors
 //

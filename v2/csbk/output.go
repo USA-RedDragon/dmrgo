@@ -211,12 +211,12 @@ type Output struct {
 	// the slot of its logical channel a TDMA frame after the start of the
 	// request, or a whole number of TDMA frames after that.
 	Due time.Duration
-	// Target and Source are the 24-bit addresses of the request, for
-	// OutputDone and OutputRequest, and of the Pre_CSBKs, for
-	// OutputAnnounced, OutputJoined and OutputExpired.
-	Target, Source uint32
-	// Group reports a talkgroup Target of the Pre_CSBKs.
-	Group bool
+	// Call is the call: of the burst, for OutputBurst; of the request, for
+	// OutputDone and OutputRequest; and of the Pre_CSBKs, for
+	// OutputAnnounced, OutputJoined and OutputExpired. Group reports a
+	// talkgroup Target of a request or Pre_CSBK. It is zero for the CT_CSBKs
+	// of a Timing, which carry no addresses.
+	Call layer2.Call
 	// Data reports that data follows the Pre_CSBKs, for OutputAnnounced and
 	// OutputExpired, and that a data header followed them, for
 	// OutputJoined. It is false for a CSBK.

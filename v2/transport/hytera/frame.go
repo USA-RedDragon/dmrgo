@@ -270,6 +270,24 @@ func (f *Frame) SetHint(h layer2.Hint) error {
 	return nil
 }
 
+// SetCallHint sets the call as SetCall does and the slot type as SetHint
+// does, from the Call and Hint of a machine Output. It returns the error of
+// either, and then changes nothing.
+func (f *Frame) SetCallHint(h layer2.Hint, c layer2.Call) error {
+	if f == nil {
+		return dmrgo.ErrNilReceiver
+	}
+	callType, target, source := f.CallType, f.Destination, f.Source
+	if err := f.SetCall(c.Group, c.Target, c.Source); err != nil {
+		return err
+	}
+	if err := f.SetHint(h); err != nil {
+		f.CallType, f.Destination, f.Source = callType, target, source
+		return err
+	}
+	return nil
+}
+
 func slotTypeOf(h *layer2.Hint) (SlotType, error) {
 	switch h.Kind {
 	case layer2.KindVoice:

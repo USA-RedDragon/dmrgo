@@ -25,7 +25,7 @@ func Example() {
 	request := out[0].Burst
 
 	out = r.Burst(out[0].Due, &request, layer2.Hint{}, out[:0])
-	fmt.Println(out[0].Kind, out[0].Service, "from", out[0].Source)
+	fmt.Println(out[0].Kind, out[0].Service, "from", out[0].Call.Source)
 	at, _ := r.Deadline()
 	out = r.Tick(at, out[:0])
 	answer, due := out[0].Burst, out[0].Due
@@ -80,7 +80,7 @@ func ExamplePreambles() {
 		sent := q.Tick(at, nil)
 		out = p.Burst(at, &sent[0].Burst, layer2.Hint{}, out[:0])
 		for i := range out {
-			fmt.Println(out[i].Kind, "to", out[i].Target, "until", out[i].Until)
+			fmt.Println(out[i].Kind, "to", out[i].Call.Target, "until", out[i].Until)
 		}
 	}
 	// Output:

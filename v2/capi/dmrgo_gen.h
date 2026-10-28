@@ -148,6 +148,8 @@ typedef struct dmrgo_ip_udp_header_t dmrgo_ip_udp_header_t;
 typedef struct dmrgo_layer2_burst_t dmrgo_layer2_burst_t;
 /* Go: layer2.CACH. CACH is a decoded Common Announcement Channel field (ETSI TS 102 361-1 clause 6.3). */
 typedef struct dmrgo_layer2_cach_t dmrgo_layer2_cach_t;
+/* Go: layer2.Call. Call is the parties of the call that a burst belongs to, as a machine Output gives them to a transport: the source and destination of a DMRD, IPSC or Hytera packet and its group or unit to unit flag. */
+typedef struct dmrgo_layer2_call_t dmrgo_layer2_call_t;
 /* Go: layer2.Data. Data is the PDU that a data or control burst carries. */
 typedef struct dmrgo_layer2_data_t dmrgo_layer2_data_t;
 /* Go: layer2.DecodeOptions. DecodeOptions are receive-side settings for DecodeFromBytesWith. */
@@ -1309,6 +1311,15 @@ struct dmrgo_csbk_wakeup_config_t {
 	dmrgo_enums_slot_t slot;
 };
 
+struct dmrgo_layer2_call_t {
+	/* Group reports whether Target is a talkgroup rather than a radio. */
+	bool group;
+	/* Target is the 24-bit talkgroup or radio address. */
+	uint32_t target;
+	/* Source is the 24-bit address of the radio that sends. */
+	uint32_t source;
+};
+
 struct dmrgo_pdu_csbk_bytes_t {
 	uint8_t v[12];
 };
@@ -1328,12 +1339,8 @@ struct dmrgo_csbk_output_t {
 	dmrgo_layer2_hint_t hint;
 	/* Due is the start of the burst to send, the time at which it goes on air, 60 ms after the one before it. The answer of a Responder goes in the slot of its logical channel a TDMA frame after the start of the request, or a whole number of TDMA frames after that. */
 	dmrgo_duration_t due;
-	/* Target and Source are the 24-bit addresses of the request, for DMRGO_CSBK_OUTPUT_DONE and DMRGO_CSBK_OUTPUT_REQUEST, and of the Pre_CSBKs, for DMRGO_CSBK_OUTPUT_ANNOUNCED, DMRGO_CSBK_OUTPUT_JOINED and DMRGO_CSBK_OUTPUT_EXPIRED. */
-	uint32_t target;
-	/* Target and Source are the 24-bit addresses of the request, for DMRGO_CSBK_OUTPUT_DONE and DMRGO_CSBK_OUTPUT_REQUEST, and of the Pre_CSBKs, for DMRGO_CSBK_OUTPUT_ANNOUNCED, DMRGO_CSBK_OUTPUT_JOINED and DMRGO_CSBK_OUTPUT_EXPIRED. */
-	uint32_t source;
-	/* Group reports a talkgroup Target of the Pre_CSBKs. */
-	bool group;
+	/* Call is the call: of the burst, for DMRGO_CSBK_OUTPUT_BURST; of the request, for DMRGO_CSBK_OUTPUT_DONE and DMRGO_CSBK_OUTPUT_REQUEST; and of the Pre_CSBKs, for DMRGO_CSBK_OUTPUT_ANNOUNCED, DMRGO_CSBK_OUTPUT_JOINED and DMRGO_CSBK_OUTPUT_EXPIRED. Group reports a talkgroup Target of a request or Pre_CSBK. It is zero for the CT_CSBKs of a Timing, which carry no addresses. */
+	dmrgo_layer2_call_t call;
 	/* Data reports that data follows the Pre_CSBKs, for DMRGO_CSBK_OUTPUT_ANNOUNCED and DMRGO_CSBK_OUTPUT_EXPIRED, and that a data header followed them, for DMRGO_CSBK_OUTPUT_JOINED. It is false for a CSBK. */
 	bool data;
 	/* Until is the end of the transfer that the Pre_CSBKs announce, for DMRGO_CSBK_OUTPUT_ANNOUNCED and DMRGO_CSBK_OUTPUT_EXPIRED. */
@@ -1579,8 +1586,8 @@ struct dmrgo_data_output_t {
 	dmrgo_packet_response_t response;
 	/* HasResponse reports whether Response is set. */
 	bool has_response;
-	/* Group reports whether the message that ended went to a talkgroup. */
-	bool group;
+	/* Call is the call of the message that the burst belongs to or that ended, from the addresses and group flag of its data header. */
+	dmrgo_layer2_call_t call;
 };
 
 struct dmrgo_fec_burst_fec_stats_t {
@@ -4001,6 +4008,8 @@ struct dmrgo_voice_output_t {
 	bool fill;
 	/* Reason is why the transmission ended: DMRGO_VOICE_END_TERMINATOR after a normal end, DMRGO_VOICE_END_LOST for a relayed call that was lost, DMRGO_VOICE_END_TIMEOUT after T_TO. */
 	dmrgo_voice_end_reason_t reason;
+	/* Call is the call of the burst, or of the transmission that ended, from the Call of Start or Relay. It is zero for an Interrupter, whose RC bursts carry no addresses. */
+	dmrgo_layer2_call_t call;
 };
 
 struct dmrgo_shortdata_hytera_text_t {
@@ -10600,6 +10609,8 @@ int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *t
 int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 /* Go: dmrd.Data.SetCall. SetCall sets Group, Destination and Source from the call. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
+/* Go: dmrd.Data.SetCallHint. SetCallHint sets the call as SetCall does and the burst kind as SetHint does, from the Call and Hint of a machine Output. */
+int dmrgo_dmrd_data_set_call_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_call_t *c);
 /* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: DMRGO_LAYER2_KIND_VOICE with a VoiceBurst of A to F, or DMRGO_LAYER2_KIND_DATA with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: dmrd.Data.String. String returns the fields of s as text, for printing. */
@@ -10894,6 +10905,8 @@ int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 /* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x01 for a group call and 0x00 for a private call, as a Hytera repeater sends them, and Destination and Source. It returns a DMRGO_ERR_FIELD_RANGE when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self, and then changes nothing. */
 int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
+/* Go: hytera.Frame.SetCallHint. SetCallHint sets the call as SetCall does and the slot type as SetHint does, from the Call and Hint of a machine Output. */
+int dmrgo_hytera_frame_set_call_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_call_t *c);
 /* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: DMRGO_LAYER2_KIND_VOICE with a VoiceBurst of A to F, or DMRGO_LAYER2_KIND_DATA with a DataType. The kind, position and data type errors wrap DMRGO_ERR_LAYER2_KIND, DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. It returns DMRGO_ERR_ARG for a NULL self. */

@@ -40,10 +40,10 @@ func TestSetHintFromTransmitter(t *testing.T) {
 			if o.Kind != voice.OutputBurst {
 				continue
 			}
-			d := dmrd.Data{Source: 3120001, Destination: 91, Burst: o.Burst}
+			d := dmrd.Data{Burst: o.Burst}
 			h := o.Hint
 			h.Slot = enums.Slot2
-			if err := d.SetHint(h); err != nil {
+			if err := d.SetCallHint(h, o.Call); err != nil {
 				t.Fatalf("%+v: %v", o.Hint, err)
 			}
 			p, err := d.AppendBinary(nil)
@@ -53,6 +53,9 @@ func TestSetHintFromTransmitter(t *testing.T) {
 			back, err := dmrd.DecodeData(p)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if g, tg, src := back.Call(); !g || tg != 91 || src != 3120001 {
+				t.Fatalf("call %v %d %d of %+v", g, tg, src, o.Call)
 			}
 			got := back.Hint(0)
 			if got.Slot != enums.Slot2 || got.Kind != o.Hint.Kind || got.VoiceBurst != o.Hint.VoiceBurst ||
@@ -64,6 +67,30 @@ func TestSetHintFromTransmitter(t *testing.T) {
 	}
 	if kinds[layer2.KindVoice] != 12 || kinds[layer2.KindData] < 2 {
 		t.Fatalf("bursts %v", kinds)
+	}
+}
+
+func TestSetCallHintChangesNothingOnError(t *testing.T) {
+	t.Parallel()
+
+	want := dmrd.Data{Destination: 9, Source: 7, Frame: dmrd.FrameVoice, Value: 3}
+	voiceA := layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}
+	for _, tc := range []struct {
+		h layer2.Hint
+		c layer2.Call
+	}{
+		{voiceA, layer2.Call{Group: true, Target: 1 << 24, Source: 1}},
+		{voiceA, layer2.Call{Group: true, Target: 1, Source: 1 << 24}},
+		{layer2.Hint{Kind: layer2.KindData}, layer2.Call{Group: true, Target: 91, Source: 1}},
+	} {
+		d := want
+		if err := d.SetCallHint(tc.h, tc.c); err == nil || d != want {
+			t.Errorf("%+v %+v: %v, %+v", tc.h, tc.c, err, d)
+		}
+	}
+	var d *dmrd.Data
+	if err := d.SetCallHint(voiceA, layer2.Call{}); err == nil {
+		t.Error("nil Data: no error")
 	}
 }
 

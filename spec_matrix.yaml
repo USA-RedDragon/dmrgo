@@ -245,6 +245,7 @@ ignore_files:
   - v2/enums/access.go
   - v2/enums/slot.go
   - v2/layer2/hint.go
+  - v2/layer2/call.go
   - v2/layer2/pdu/csbk_motorola.go
   - v2/layer2/pdu/capacity_plus.go
   - v2/layer2/pdu/capacity_plus_status.go

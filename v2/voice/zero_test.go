@@ -50,9 +50,15 @@ func TestOutputSlot(t *testing.T) {
 	}
 	tx.Channel(0, false)
 	tx.Stop(0)
-	n := 0
+	n, ended := 0, 0
 	for now := time.Duration(0); now < 2*time.Second; now += 60 * time.Millisecond {
 		for _, o := range tx.Tick(now, nil) {
+			if o.Call != (layer2.Call{Group: true, Target: 9, Source: 1}) {
+				t.Fatalf("%v output with call %+v", o.Kind, o.Call)
+			}
+			if o.Kind == voice.OutputEnded {
+				ended++
+			}
 			if o.Kind == voice.OutputBurst {
 				n++
 				if o.Hint.Slot != enums.Slot2 {
@@ -61,8 +67,8 @@ func TestOutputSlot(t *testing.T) {
 			}
 		}
 	}
-	if n == 0 {
-		t.Fatal("no bursts")
+	if n == 0 || ended != 1 {
+		t.Fatalf("%d bursts, %d ended", n, ended)
 	}
 	in, err := voice.NewInterrupter(&voice.InterrupterConfig{Slot: enums.Slot1})
 	if err != nil {
@@ -71,7 +77,7 @@ func TestOutputSlot(t *testing.T) {
 	if err := in.Interrupt(0, enums.RCCeaseTransmissionRequest); err != nil {
 		t.Fatal(err)
 	}
-	if out := in.Tick(0, nil); len(out) != 1 || out[0].Hint.Slot != enums.Slot1 {
+	if out := in.Tick(0, nil); len(out) != 1 || out[0].Hint.Slot != enums.Slot1 || out[0].Call != (layer2.Call{}) {
 		t.Errorf("RC burst %+v", out)
 	}
 	if _, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: 3}); err == nil {

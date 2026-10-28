@@ -1794,6 +1794,7 @@ sym int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *ds
 sym int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
 sym int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 sym int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
+sym int dmrgo_dmrd_data_set_call_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_call_t *c);
 sym int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
 sym int dmrgo_dmrd_data_string(const dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_decode_bridge(const uint8_t *p, size_t p_len, dmrgo_dmrd_bridge_t *out);
@@ -2091,6 +2092,7 @@ sym int dmrgo_hytera_frame_call(const dmrgo_hytera_frame_t *self, bool *group, u
 sym int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 sym int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 sym int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
+sym int dmrgo_hytera_frame_set_call_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_call_t *c);
 sym int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
 sym int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_hytera_p2p_append_binary(const dmrgo_hytera_p2p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -3522,7 +3524,7 @@ type struct dmrgo_bs_source_t { bool rf; uint32_t peer; };
 type struct dmrgo_codec2_config_t { size_t size; dmrgo_codec2_mode_t mode; dmrgo_enums_fid_t fid; dmrgo_codec2_module_t *wasm; };
 type struct dmrgo_config_error_t { char *type; size_t type_len; char *field; size_t field_len; };
 type struct dmrgo_csbk_match_t { dmrgo_enums_fid_t fid; dmrgo_pdu_csbk_opcode_t opcodes[4]; int64_t n; };
-type struct dmrgo_csbk_output_t { dmrgo_csbk_output_kind_t kind; dmrgo_csbk_service_t service; dmrgo_csbk_result_t result; dmrgo_csbk_reason_t reason; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; uint32_t target; uint32_t source; bool group; bool data; dmrgo_duration_t until; dmrgo_pdu_csbk_bytes_t csbk; };
+type struct dmrgo_csbk_output_t { dmrgo_csbk_output_kind_t kind; dmrgo_csbk_service_t service; dmrgo_csbk_result_t result; dmrgo_csbk_reason_t reason; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; dmrgo_layer2_call_t call; bool data; dmrgo_duration_t until; dmrgo_pdu_csbk_bytes_t csbk; };
 type struct dmrgo_csbk_preambles_config_t { size_t size; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_request_options_t { size_t size; dmrgo_enums_access_t access; bool time_critical; int64_t preambles; int64_t retry_preambles; };
 type struct dmrgo_csbk_requester_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_duration_t ack_wait; int64_t retries; dmrgo_duration_t idle_search; dmrgo_duration_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; dmrgo_duration_t lead; dmrgo_enums_slot_t slot; };
@@ -3532,7 +3534,7 @@ type struct dmrgo_csbk_wakeup_config_t { size_t size; dmrgo_enums_color_code_t c
 type struct dmrgo_data_call_t { bool group; uint32_t target; uint32_t source; };
 type struct dmrgo_data_event_t { dmrgo_data_event_kind_t kind; dmrgo_data_call_t call; dmrgo_data_message_t message; dmrgo_packet_response_t response; bool has_retry; dmrgo_packet_response_data_t retry; dmrgo_layer2_raw_burst_t burst; dmrgo_duration_t due; dmrgo_data_end_reason_t reason; dmrgo_data_stats_t stats; };
 type struct dmrgo_data_message_t { dmrgo_pdu_data_header_t header; bool has_proprietary; dmrgo_pdu_proprietary_header_t proprietary; dmrgo_enums_data_type_t rate; uint8_t *payload; size_t payload_len; bool bad_crc; bool fragmented; uint16_t fragments; };
-type struct dmrgo_data_output_t { dmrgo_data_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; uint8_t try_; uint8_t seq; dmrgo_data_result_t result; dmrgo_packet_response_t response; bool has_response; bool group; };
+type struct dmrgo_data_output_t { dmrgo_data_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; uint8_t try_; uint8_t seq; dmrgo_data_result_t result; dmrgo_packet_response_t response; bool has_response; dmrgo_layer2_call_t call; };
 type struct dmrgo_data_receiver_config_t { size_t size; bool has_color_code; dmrgo_enums_color_code_t color_code; uint32_t address; bool respond; dmrgo_layer2_sync_source_t source; dmrgo_duration_t response_delay; int64_t max_blocks; int64_t max_fragment; int64_t max_message; int64_t peers; dmrgo_duration_t lost; dmrgo_duration_t hang; bool accept_bad_crc; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_data_sender_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; int64_t preambles; dmrgo_duration_t idle_search; dmrgo_duration_t holdoff; dmrgo_duration_t response_wait; dmrgo_duration_t tx_limit; int64_t retries; int64_t max_blocks; int64_t peers; bool resync; int64_t window; uint64_t seed; dmrgo_enums_slot_t slot; dmrgo_duration_t lead; };
 type struct dmrgo_data_stats_t { uint16_t packets; uint16_t delivered; uint16_t blocks; uint16_t lost; uint16_t header_crc; uint16_t bad_crc; uint16_t duplicates; uint16_t out_of_sequence; uint16_t dropped; dmrgo_duration_t duration; };
@@ -3602,6 +3604,7 @@ type struct dmrgo_ipscsession_output_t { dmrgo_ipscsession_output_kind_t kind; u
 type struct dmrgo_ipscsession_peer_config_t { size_t size; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; dmrgo_ipscsession_addr_t master; bool auth; uint8_t key[20]; dmrgo_duration_t alive; int64_t max_missed; int64_t max_peers; uint8_t register_version[4]; uint8_t alive_version[4]; };
 type struct dmrgo_ipscsession_peer_info_t { uint32_t id; dmrgo_ipscsession_addr_t addr; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; bool up; };
 type struct dmrgo_layer2_cach_t { dmrgo_pdu_tact_t tact; uint8_t payload[3]; };
+type struct dmrgo_layer2_call_t { bool group; uint32_t target; uint32_t source; };
 type struct dmrgo_layer2_data_t { uint32_t tag; union { dmrgo_pdu_bcap_continuation_t pdu_bcap_continuation; dmrgo_pdu_cgap_continuation_t pdu_cgap_continuation; dmrgo_pdu_csbk_t pdu_csbk; dmrgo_pdu_data_header_t pdu_data_header; dmrgo_pdu_full_link_control_t pdu_full_link_control; dmrgo_pdu_mbc_continuation_t pdu_mbc_continuation; dmrgo_pdu_mbc_header_t pdu_mbc_header; dmrgo_pdu_mvap_continuation_t pdu_mvap_continuation; dmrgo_pdu_pi_header_t pdu_pi_header; dmrgo_pdu_pr_fill_t pdu_pr_fill; dmrgo_pdu_rate12_data_t pdu_rate12_data; dmrgo_pdu_rate1_data_t pdu_rate1_data; dmrgo_pdu_rate34_data_t pdu_rate34_data; dmrgo_pdu_unified_single_block_data_t pdu_unified_single_block_data; dmrgo_pdu_vnap_continuation_t pdu_vnap_continuation; } v; };
 type struct dmrgo_layer2_decode_options_t { size_t size; int64_t sync_threshold; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_layer2_kind_t kind; dmrgo_enums_voice_burst_type_t voice_burst; bool has_data_type; dmrgo_enums_data_type_t data_type; };
 type struct dmrgo_layer2_hint_t { dmrgo_enums_slot_t slot; dmrgo_layer2_kind_t kind; dmrgo_enums_voice_burst_type_t voice_burst; dmrgo_enums_data_type_t data_type; bool has_data_type; uint16_t seq; bool has_seq; uint8_t seq_bits; dmrgo_duration_t at; uint32_t stream; bool has_stream; dmrgo_layer2_end_hint_t end; bool sync_lost; };
@@ -3799,7 +3802,7 @@ type struct dmrgo_voice_interrupter_config_t { size_t size; dmrgo_enums_color_co
 type struct dmrgo_voice_jitter_config_t { size_t size; dmrgo_duration_t delay; dmrgo_duration_t lead; };
 type struct dmrgo_voice_jitter_packet_t { dmrgo_layer2_raw_burst_t burst; bool has_burst; dmrgo_layer2_hint_t hint; uint32_t source; dmrgo_duration_t due; };
 type struct dmrgo_voice_jitter_stats_t { uint32_t late; uint32_t duplicates; uint32_t overflows; uint32_t resyncs; };
-type struct dmrgo_voice_output_t { dmrgo_voice_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_duration_t due; dmrgo_layer2_hint_t hint; bool fill; dmrgo_voice_end_reason_t reason; };
+type struct dmrgo_voice_output_t { dmrgo_voice_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_duration_t due; dmrgo_layer2_hint_t hint; bool fill; dmrgo_voice_end_reason_t reason; dmrgo_layer2_call_t call; };
 type struct dmrgo_voice_receiver_config_t { size_t size; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_duration_t lost; dmrgo_duration_t hang; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_voice_stats_t { uint32_t bursts; uint32_t lost; uint32_t duplicates; uint32_t late; uint32_t bits_checked; uint32_t bit_errors; dmrgo_duration_t duration; };
 type struct dmrgo_voice_transmitter_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; uint8_t silence[9]; int64_t headers; int64_t terminators; dmrgo_duration_t timeout; int64_t queue; dmrgo_duration_t lead; dmrgo_enums_access_t access; dmrgo_duration_t idle_search; bool interruptible; dmrgo_duration_t chan_auth; dmrgo_duration_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; dmrgo_enums_slot_t slot; };

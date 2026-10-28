@@ -29,7 +29,7 @@ func TestOutputICMPGroup(t *testing.T) {
 			t.Fatal(err)
 		}
 		out := s.Tick(300*time.Millisecond, nil)
-		if len(out) != 1 || out[0].Result != data.ResultTimeLimit || out[0].Group != group {
+		if len(out) != 1 || out[0].Result != data.ResultTimeLimit || out[0].Call.Group != group {
 			t.Fatalf("group %v: outputs %+v", group, out)
 		}
 		icmp, ok := out[0].ICMP()

@@ -153,6 +153,7 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 	out, o = appendOutput(out, OutputBurst)
 	o.Burst, o.Due = b, s.due
 	o.Hint = csbkHint(s.slot)
+	o.Call = layer2.Call{Group: s.group, Target: s.target, Source: s.source}
 	s.sent++
 	if s.sent > s.preambles {
 		s.state = sendIdle

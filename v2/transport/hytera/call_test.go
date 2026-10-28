@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 )
 
@@ -90,5 +92,32 @@ func TestFrameSetCall(t *testing.T) {
 	}
 	if err := nf.SetCall(true, 1, 1); err == nil {
 		t.Error("nil Frame SetCall: no error")
+	}
+}
+
+func TestFrameSetCallHint(t *testing.T) {
+	t.Parallel()
+
+	var fr hytera.Frame
+	h := layer2.Hint{Slot: enums.Slot2, Kind: layer2.KindData, DataType: enums.DataTypeVoiceLCHeader, HasDataType: true}
+	if err := fr.SetCallHint(h, layer2.Call{Group: true, Target: 262, Source: 2628347}); err != nil ||
+		fr.CallType != 0x01 || fr.Destination != 262 || fr.Source != 2628347 || fr.SlotType != hytera.SlotTypeVoiceLCHeader || fr.Slot != enums.Slot2 {
+		t.Fatalf("%v %+v", err, fr)
+	}
+	want := fr
+	for _, tc := range []struct {
+		h layer2.Hint
+		c layer2.Call
+	}{
+		{h, layer2.Call{Target: 1 << 24, Source: 1}},
+		{layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeIdle, HasDataType: true}, layer2.Call{Target: 9, Source: 1}},
+	} {
+		if err := fr.SetCallHint(tc.h, tc.c); err == nil || fr != want {
+			t.Errorf("%+v %+v: %v %+v", tc.h, tc.c, err, fr)
+		}
+	}
+	var nf *hytera.Frame
+	if err := nf.SetCallHint(h, layer2.Call{}); err == nil {
+		t.Error("nil Frame SetCallHint: no error")
 	}
 }

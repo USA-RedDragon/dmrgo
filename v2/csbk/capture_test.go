@@ -60,7 +60,7 @@ func TestRequesterRadioCheckMatchesAnyTone(t *testing.T) {
 	}
 	end := outs[len(outs)-1]
 	if end.Kind != csbk.OutputDone || end.Result != csbk.ResultNoAnswer || end.Service != csbk.ServiceRadioCheck ||
-		end.Target != injector || end.Source != anytone {
+		end.Call.Target != injector || end.Call.Source != anytone {
 		t.Errorf("end %+v", end)
 	}
 }
@@ -117,7 +117,7 @@ func TestResponderAnswersLikeAnyTone(t *testing.T) {
 		{injectedCallAlert, anytoneCallAlertAc, csbk.ServiceCallAlert},
 	} {
 		out := r.Burst(0, burstOf(t, tt.request, layer2.SyncSourceBS), layer2.Hint{}, nil)
-		if len(out) != 1 || out[0].Kind != csbk.OutputRequest || out[0].Service != tt.svc || out[0].Target != anytone || out[0].Source != injector {
+		if len(out) != 1 || out[0].Kind != csbk.OutputRequest || out[0].Service != tt.svc || out[0].Call.Target != anytone || out[0].Call.Source != injector {
 			t.Fatalf("request %s gave %+v", tt.request, out)
 		}
 		out = run(t, r, time.Second)
@@ -140,10 +140,10 @@ func TestPreamblesJoinXPROutbound(t *testing.T) {
 	if !slices.Equal(kinds(all), []csbk.OutputKind{csbk.OutputAnnounced, csbk.OutputJoined}) {
 		t.Fatalf("outputs %v", kinds(all))
 	}
-	if a := all[0]; a.Target != anytone || a.Source != injector || a.Data || a.Until != 684*ms {
+	if a := all[0]; a.Call.Target != anytone || a.Call.Source != injector || a.Data || a.Until != 684*ms {
 		t.Errorf("announced %+v", a)
 	}
-	if j := all[1]; j.Data || hex.EncodeToString(j.CSBK[:]) != injectedRadioCheck || j.Target != anytone {
+	if j := all[1]; j.Data || hex.EncodeToString(j.CSBK[:]) != injectedRadioCheck || j.Call.Target != anytone {
 		t.Errorf("joined %+v", j)
 	}
 }
@@ -159,7 +159,7 @@ func TestPreamblesJoinAnyToneInbound(t *testing.T) {
 	if !slices.Equal(kinds(all), []csbk.OutputKind{csbk.OutputAnnounced, csbk.OutputJoined}) {
 		t.Fatalf("outputs %v", kinds(all))
 	}
-	if all[0].Until != 5*csbk.BurstInterval || all[0].Target != injector || all[0].Source != anytone {
+	if all[0].Until != 5*csbk.BurstInterval || all[0].Call.Target != injector || all[0].Call.Source != anytone {
 		t.Errorf("announced %+v", all[0])
 	}
 }
@@ -182,7 +182,7 @@ func TestWakeupMatchesXPRGolden(t *testing.T) {
 	if got := hex.EncodeToString(outs[0].Burst[:]); got != golden {
 		t.Errorf("wakeup %s, the repeater accepted %s", got, golden)
 	}
-	if outs[1].Due != csbk.DefaultSyncWait || outs[2].Result != csbk.ResultNoAnswer || outs[2].Target != xpr {
+	if outs[1].Due != csbk.DefaultSyncWait || outs[2].Result != csbk.ResultNoAnswer || outs[2].Call.Target != xpr {
 		t.Errorf("retry at %v, end %+v", outs[1].Due, outs[2])
 	}
 }

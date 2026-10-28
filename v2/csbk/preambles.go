@@ -159,7 +159,7 @@ func (p *Preambles) join(out []Output, data bool, c *pdu.CSBKBytes) []Output {
 func (p *Preambles) appendAt(out []Output, k OutputKind) []Output {
 	var o *Output
 	out, o = appendOutput(out, k)
-	o.Target, o.Source, o.Group, o.Data, o.Until = p.target, p.source, p.group, p.data, p.until
+	o.Call, o.Data, o.Until = layer2.Call{Group: p.group, Target: p.target, Source: p.source}, p.data, p.until
 	return out
 }
 

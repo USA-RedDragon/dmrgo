@@ -92,7 +92,7 @@ func (t *Transmitter) grant(at time.Duration) {
 func (t *Transmitter) authTick(dst []Output) []Output {
 	if !t.authWaiting {
 		var o *Output
-		dst, o = appendOutput(dst, OutputBurst, t.due)
+		dst, o = t.emit(dst, OutputBurst)
 		o.Burst, o.Hint = t.vt.Header(), t.dataHint(enums.DataTypeVoiceLCHeader)
 		t.authWaiting, t.busySeen, t.waitUntil = true, false, t.due+t.chanAuth
 		return dst

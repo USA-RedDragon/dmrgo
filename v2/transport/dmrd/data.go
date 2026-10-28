@@ -179,3 +179,21 @@ func (d *Data) SetHint(h layer2.Hint) error {
 	}
 	return nil
 }
+
+// SetCallHint sets the call as SetCall does and the burst kind as SetHint
+// does, from the Call and Hint of a machine Output. It returns the error of
+// either, and then changes nothing.
+func (d *Data) SetCallHint(h layer2.Hint, c layer2.Call) error {
+	if d == nil {
+		return dmrgo.ErrNilReceiver
+	}
+	group, target, source := d.Group, d.Destination, d.Source
+	if err := d.SetCall(c.Group, c.Target, c.Source); err != nil {
+		return err
+	}
+	if err := d.SetHint(h); err != nil {
+		d.Group, d.Destination, d.Source = group, target, source
+		return err
+	}
+	return nil
+}

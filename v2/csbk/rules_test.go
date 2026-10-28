@@ -49,7 +49,7 @@ func TestOACSU(t *testing.T) {
 		if tt.answer == csbk.OACSUNotSupported {
 			wantSvc = csbk.ServiceUnsupported
 		}
-		if reqs[0].Service != wantSvc || reqs[0].Source != 1001 || reqs[0].Target != 1002 {
+		if reqs[0].Service != wantSvc || reqs[0].Call.Source != 1001 || reqs[0].Call.Target != 1002 {
 			t.Errorf("%v: request %+v", tt.answer, reqs[0])
 		}
 		done := loop(run(t, r, time.Second), q)
@@ -246,6 +246,9 @@ func TestRequesterCustom(t *testing.T) {
 		t.Error("Request changed c")
 	}
 	sent := run(t, q, 0)
+	if sent[0].Kind != csbk.OutputBurst || sent[0].Call != (layer2.Call{Target: 2, Source: 1}) {
+		t.Errorf("request burst %+v", sent[0])
+	}
 	if p := pdu.DecodeCSBK([12]byte(bptc(t, &sent[0]))); !p.LastBlock || p.FEC.Uncorrectable {
 		t.Errorf("request %+v", p)
 	}
@@ -295,6 +298,9 @@ func TestResponderFNS(t *testing.T) {
 	n, ok := nc.AsNegativeAcknowledgement()
 	if !ok || n.ServiceType != pdu.CSBKAhoy || n.TargetAddress != 5 || n.SourceAddress != 9 {
 		t.Errorf("NACK_Rsp %+v", n)
+	}
+	if out[0].Kind != csbk.OutputBurst || out[0].Call != (layer2.Call{Target: 5, Source: 9}) {
+		t.Errorf("NACK_Rsp burst %+v", out[0])
 	}
 
 	quiet := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 9, NoFNS: true})
@@ -357,7 +363,7 @@ func TestPreamblesData(t *testing.T) {
 	if !slices.Equal(kinds(out), []csbk.OutputKind{csbk.OutputAnnounced, csbk.OutputExpired, csbk.OutputAnnounced, csbk.OutputExpired}) {
 		t.Fatalf("outputs %v", kinds(out))
 	}
-	if out[1].Target != 2 || out[2].Target != 3 || out[3].Until != 360*ms {
+	if out[1].Call.Target != 2 || out[2].Call.Target != 3 || out[3].Until != 360*ms {
 		t.Errorf("outputs %+v", out)
 	}
 	if p.State() != csbk.PreamblesIdle {
