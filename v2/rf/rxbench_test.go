@@ -492,7 +492,7 @@ func falsePerHour(e benchEntry) float64 {
 func receiverRAM(e benchEntry) int {
 	switch {
 	case e.mode == benchAudio && e.tier == Tier0:
-		return int(unsafe.Sizeof(AudioReceiver{}))
+		return int(unsafe.Sizeof(AudioReceiver{}) - unsafe.Sizeof(audioRate{}))
 	case e.mode == benchIQLow:
 		return int(unsafe.Sizeof(Receiver{}))
 	}

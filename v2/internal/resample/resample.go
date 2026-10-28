@@ -71,6 +71,9 @@ func (f *Filter) Init(h []float32, taps, phases int, lerp bool, step float64) bo
 	return true
 }
 
+// Taps returns the taps of each phase of f.
+func (f *Filter) Taps() int { return f.taps }
+
 // MaxOut returns the most outputs that one input can give.
 func (f *Filter) MaxOut() int {
 	if f.step <= 0 {

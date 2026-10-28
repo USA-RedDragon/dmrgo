@@ -25,11 +25,15 @@ type AudioRxConfig struct {
 	// LCs that pass where those of Tier2 fail, at about twice the CPU time
 	// and memory of Tier2, and 3 s of delay.
 	Tier Tier
-	// Rate is the sample rate of the discriminator samples, in Hz: 48000,
-	// as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600.
-	// 0 means 48000. A lower rate costs less: the receiver halves 48 kHz
-	// and then 24 kHz with a half-band filter before its matched filter,
-	// which runs at 12 kHz or 9.6 kHz.
+	// Rate is the sample rate of the discriminator samples, in Hz, from
+	// 8000 to 1000000, and for Tier0 to 48000. 0 means 48000. The
+	// receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems
+	// sample, 12000 or 9600: at Rate when it is one of them, else at the
+	// lowest of them at or above Rate, or 48000 above 48000, through a
+	// resampler. Under TinyGo Rate must be one of the four. A lower rate
+	// costs less: the receiver halves 48 kHz and then 24 kHz with a
+	// half-band filter before its matched filter, which runs at 12 kHz or
+	// 9.6 kHz.
 	Rate int
 	// Bits is the resolution of the converter, from 8 to 16. 0 means 16.
 	// Each sample holds one code of Bits bits in its low bits.
@@ -57,7 +61,9 @@ type AudioRxConfig struct {
 // must not be copied after Init or NewAudioReceiver.
 type AudioReceiver struct {
 	discRx
-	bursts   burstSink
+	bursts burstSink
+	audioRate
+	rate     int32
 	bits     uint8
 	unsigned bool
 	set      bool
@@ -89,7 +95,7 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
 		return nil, errAudioTier
 	}
-	if err := cfg.check(); err != nil {
+	if err := cfg.check(cfg.Tier); err != nil {
 		return nil, err
 	}
 	opt := discTierOptions(cfg.Tier)
@@ -98,6 +104,7 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	}
 	r := &AudioReceiver{}
 	r.configure(cfg, &opt)
+	r.designResample(cfg.Tier)
 	if o == nil && opt.SoftExt {
 		if err := r.addSoft(&opt); err != nil {
 			return nil, err
@@ -109,10 +116,8 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	return r, nil
 }
 
-func (c *AudioRxConfig) check() error {
-	switch c.Rate {
-	case 0, 2 * discRate, discRate, discRate / 2, 2 * symbolRate:
-	default:
+func (c *AudioRxConfig) check(t Tier) error {
+	if c.Rate != 0 && !audioRateOK(c.Rate, t) {
 		return errAudioRate
 	}
 	if c.Bits != 0 && (c.Bits < 8 || c.Bits > 16) {
@@ -122,11 +127,12 @@ func (c *AudioRxConfig) check() error {
 }
 
 func (r *AudioReceiver) configure(cfg AudioRxConfig, opt *options) {
-	hz := cfg.Rate
-	if hz == 0 {
-		hz = 2 * discRate
+	rate := cfg.Rate
+	if rate == 0 {
+		rate = 2 * discRate
 	}
-	dec := hz == 2*discRate
+	native := audioNative(rate)
+	hz, dec := native, native == 2*discRate
 	if dec {
 		hz = discRate
 	}
@@ -135,7 +141,10 @@ func (r *AudioReceiver) configure(cfg AudioRxConfig, opt *options) {
 		bits = 16
 	}
 	*r = AudioReceiver{}
-	r.bits, r.unsigned, r.set = uint8(bits), cfg.Unsigned, true
+	r.bits, r.unsigned, r.set, r.rate = uint8(bits), cfg.Unsigned, true, int32(rate)
+	if rate != native {
+		r.setResample(rate, native)
+	}
 	r.sink = &r.bursts
 	r.setup(discSetup{Hz: hz, opt: opt}, dec)
 	r.bursts.on = cfg.OnBursts
@@ -153,7 +162,7 @@ func (r *AudioReceiver) Init(c AudioRxConfig) error {
 	if c.Tier != TierDefault && c.Tier != Tier0 {
 		return errAudioTier
 	}
-	if err := c.check(); err != nil {
+	if err := c.check(Tier0); err != nil {
 		return err
 	}
 	r.configure(c, nil)
@@ -241,7 +250,7 @@ func (r *AudioReceiver) AppendFlush(dst []Burst) []Burst {
 
 func (r *AudioReceiver) feed(x []int16) {
 	if r.bits == 16 && !r.unsigned {
-		r.input(x)
+		r.native(x)
 		return
 	}
 	var buf [32]int16
@@ -260,9 +269,17 @@ func (r *AudioReceiver) feed(x []int16) {
 			}
 			buf[i] = int16(min(max(c-bias, lo), hi) << shift)
 		}
-		r.input(buf[:m])
+		r.native(buf[:m])
 		x = x[m:]
 	}
+}
+
+func (r *AudioReceiver) native(x []int16) {
+	if r.resampling() {
+		r.resampled(x)
+		return
+	}
+	r.input(x)
 }
 
 // Active reports whether the stream is inside a transmission that the
@@ -282,11 +299,11 @@ func (r *AudioReceiver) Lag() int {
 		return 0
 	}
 
-	hz := r.inputHz()
-	if r.d48.on {
-		hz *= 2
+	n := r.lagSamples(int(r.rate))
+	if r.resampling() {
+		n += r.resampleTaps()/2 + 1
 	}
-	return r.lagSamples(hz)
+	return n
 }
 
 // MaxOutput returns the most bursts that AppendBursts can append for n
@@ -299,6 +316,13 @@ func (r *AudioReceiver) MaxOutput(n int) int {
 
 	if n <= 0 {
 		return r.flushBursts()
+	}
+	if r.resampling() {
+		hz := int64(r.inputHz())
+		if r.d48.on {
+			hz *= 2
+		}
+		n = int(min(int64(n)*hz/int64(r.rate)+int64(r.resampleTaps()), 1<<40))
 	}
 	return r.maxBursts(n)
 }

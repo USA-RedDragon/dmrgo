@@ -397,6 +397,7 @@ var api = [...]any{
 	(*internal_resample.Complex).Push,
 	(*internal_resample.Filter).Init,
 	(*internal_resample.Filter).MaxOut,
+	(*internal_resample.Filter).Taps,
 	(*internal_resample.Real).Init,
 	(*internal_resample.Real).Push,
 	internal_resample.Bessel0,

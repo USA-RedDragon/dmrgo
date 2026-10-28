@@ -453,14 +453,13 @@ func emitAll(burst func(rf.Burst)) func([]rf.Burst) {
 }
 
 func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev float64, err error) {
-	hz := 24000
-	switch in.rate {
-	case 48000, 24000, 12000, 9600:
-		hz = int(in.rate)
-	}
+	hz := int(in.rate)
 	rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier, OnBursts: emitAll(burst)})
-	if err != nil {
-		return 0, 0, err
+	if float64(hz) != in.rate || err != nil {
+		hz = 24000
+		if rx, err = rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: hz, Tier: tier, OnBursts: emitAll(burst)}); err != nil {
+			return 0, 0, err
+		}
 	}
 	const chunk = 1 << 12
 	pcm := make([]int16, 0, chunk)

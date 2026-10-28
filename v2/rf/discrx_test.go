@@ -106,13 +106,13 @@ func TestDiscReceiverLoopback(t *testing.T) {
 
 func TestNewDiscConfig(t *testing.T) {
 	t.Parallel()
-	_, err := NewAudioReceiver(&AudioRxConfig{Rate: 44100})
+	_, err := NewAudioReceiver(&AudioRxConfig{Rate: 7999})
 	var ce *dmrgo.ConfigError
 	if !errors.As(err, &ce) || err.Error() != "rf: AudioRxConfig.Rate is out of range" {
-		t.Errorf("NewAudioReceiver at 44.1 kHz: %v", err)
+		t.Errorf("NewAudioReceiver at 7999 Hz: %v", err)
 	}
-	if _, err := NewAudioReceiver(&AudioRxConfig{Rate: 16000}); err == nil {
-		t.Error("NewAudioReceiver took 16 kHz")
+	if _, err := NewAudioReceiver(&AudioRxConfig{Rate: -48000}); err == nil {
+		t.Error("NewAudioReceiver took -48 kHz")
 	}
 	for _, bits := range []int{-1, 7, 17} {
 		if _, err := NewAudioReceiver(&AudioRxConfig{Rate: discRate, Bits: bits}); !errors.As(err, &ce) || ce.Field != "AudioRxConfig.Bits" {

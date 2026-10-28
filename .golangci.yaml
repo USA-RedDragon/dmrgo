@@ -233,6 +233,12 @@ linters:
           - gocyclo
         text: \(\*leanCore\)\.fixBPTC
       # testing.AllocsPerRun counts the allocations of every goroutine.
+      # The table of the Tier 0 audio resampler, which the TinyGo build
+      # does not use.
+      - path: v2/rf/tables_gen\.go$
+        linters:
+          - unused
+        text: ^var audioUpTable is unused
       - path: v2/rf/monitor_test\.go$
         linters:
           - paralleltest

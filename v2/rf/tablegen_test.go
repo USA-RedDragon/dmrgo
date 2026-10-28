@@ -76,6 +76,7 @@ func derivedTables() ([]genTable, error) {
 		{"pulseQ32", d.pulse32},
 		{"phaseCos", d.cos},
 		{"phaseSin", d.sin},
+		{"audioUpTable", d.audioUp},
 		{"softSmallCodes", [softAMBECode]softSmallCode(f.small[:softAMBECode])},
 		{"softAMBESmallCodes", [softSmallCount - softAMBECode]softSmallCode(f.small[softAMBECode:])},
 		{"softAMBEC2Pos", f.c2},
