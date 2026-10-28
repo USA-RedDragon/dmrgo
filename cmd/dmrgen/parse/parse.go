@@ -135,6 +135,9 @@ type Field struct {
 	// Swap16 marks a packed field whose octet pairs are swapped (swap16).
 	Swap16 bool
 
+	// Invert marks a bool field that is true when its bit is 0 (invert).
+	Invert bool
+
 	// NulZero marks a dec field that reads as 0 when all its octets are
 	// NUL (nulzero).
 	NulZero bool
@@ -987,6 +990,8 @@ func applyFlag(f *Field, mod string) error {
 		f.Encoding = EncodingHex
 	case "swap16":
 		f.Swap16 = true
+	case "invert":
+		f.Invert = true
 	case "nulzero":
 		f.NulZero = true
 	case "text":
@@ -1106,6 +1111,8 @@ func validateModifiers(f *Field) error {
 		return errors.New("stride requires delegate")
 	case f.Union && f.Kind != FieldRaw:
 		return errors.New("union requires raw")
+	case f.Invert && f.Kind != FieldBool:
+		return errors.New("invert requires a bool field")
 	case f.Union && f.NoEncode:
 		return errors.New("union and no_encode cannot be combined")
 	case f.StringMethod != "" && (f.Union || f.Stride > 0):

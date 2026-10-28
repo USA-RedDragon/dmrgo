@@ -870,8 +870,12 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	switch field.Kind {
 	case parse.FieldBool:
+		op := "!="
+		if field.Invert {
+			op = "=="
+		}
 		g.Add(target).Op("=").Id("data").Index(Lit(field.BitStart / 8)).Op("&").
-			Add(hexByte(0x80 >> (field.BitStart % 8))).Op("!=").Lit(0)
+			Add(hexByte(0x80 >> (field.BitStart % 8))).Op(op).Lit(0)
 
 	case parse.FieldUint, parse.FieldEnum:
 		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
@@ -1102,7 +1106,11 @@ func (e encoder) field(g *Group, field parse.Field) {
 	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
 	case parse.FieldBool:
 		k := field.BitStart / 8
-		g.If(source.Clone()).Block(
+		cond := source.Clone()
+		if field.Invert {
+			cond = Op("!").Add(source.Clone())
+		}
+		g.If(cond).Block(
 			Id("data").Index(Lit(k)).Op("|=").Add(hexByte(0x80 >> (field.BitStart % 8))),
 		)
 

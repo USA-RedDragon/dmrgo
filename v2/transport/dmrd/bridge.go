@@ -69,7 +69,7 @@ func DecodeBridge(p []byte) (Bridge, error) {
 				return Bridge{}, ErrSignature
 			}
 			b := Bridge{Version: m.Version, Time: m.Time, SourceServer: m.SourceServer, Hops: m.Hops}
-			b.Data = Data{Seq: m.Seq, Source: m.Source, Destination: m.Destination, Repeater: m.Repeater, Slot: m.Slot, Private: m.Private,
+			b.Data = Data{Seq: m.Seq, Source: m.Source, Destination: m.Destination, Repeater: m.Repeater, Slot: m.Slot, Group: m.Group,
 				Frame: m.Frame, Value: m.Value, Stream: m.Stream, Burst: m.Burst, BER: m.BER, RSSI: m.RSSI, Size: 55}
 			copy(b.Signature[:], m.Hash[:])
 			return b, nil
@@ -82,7 +82,7 @@ func DecodeBridge(p []byte) (Bridge, error) {
 				return Bridge{}, ErrSignature
 			}
 			b := Bridge{Version: m.Version, Time: m.Time, SourceServer: m.SourceServer, SourceRepeater: m.SourceRepeater, Hops: m.Hops}
-			b.Data = Data{Seq: m.Seq, Source: m.Source, Destination: m.Destination, Repeater: m.Repeater, Slot: m.Slot, Private: m.Private,
+			b.Data = Data{Seq: m.Seq, Source: m.Source, Destination: m.Destination, Repeater: m.Repeater, Slot: m.Slot, Group: m.Group,
 				Frame: m.Frame, Value: m.Value, Stream: m.Stream, Burst: m.Burst, BER: m.BER, RSSI: m.RSSI, Size: 55}
 			copy(b.Signature[:], m.Hash[:])
 			return b, nil
@@ -123,7 +123,7 @@ func (b *Bridge) AppendBinary(dst []byte) ([]byte, error) {
 		if d.Size != 0 && d.Size != 55 {
 			return dst, errBridgeData
 		}
-		m := dmreV4{Seq: d.Seq, Source: d.Source, Destination: d.Destination, Repeater: d.Repeater, Slot: d.Slot, Private: d.Private,
+		m := dmreV4{Seq: d.Seq, Source: d.Source, Destination: d.Destination, Repeater: d.Repeater, Slot: d.Slot, Group: d.Group,
 			Frame: d.Frame, Value: d.Value, Stream: d.Stream, Burst: d.Burst, BER: d.BER, RSSI: d.RSSI,
 			Version: b.Version, Time: b.Time, SourceServer: b.SourceServer, Hops: b.Hops}
 		copy(m.Hash[:], b.Signature[:])
@@ -132,7 +132,7 @@ func (b *Bridge) AppendBinary(dst []byte) ([]byte, error) {
 		if d.Size != 0 && d.Size != 55 {
 			return dst, errBridgeData
 		}
-		m := dmreV5{Seq: d.Seq, Source: d.Source, Destination: d.Destination, Repeater: d.Repeater, Slot: d.Slot, Private: d.Private,
+		m := dmreV5{Seq: d.Seq, Source: d.Source, Destination: d.Destination, Repeater: d.Repeater, Slot: d.Slot, Group: d.Group,
 			Frame: d.Frame, Value: d.Value, Stream: d.Stream, Burst: d.Burst, BER: d.BER, RSSI: d.RSSI,
 			Version: b.Version, Time: b.Time, SourceServer: b.SourceServer, SourceRepeater: b.SourceRepeater, Hops: b.Hops}
 		copy(m.Hash[:], b.Signature[:])

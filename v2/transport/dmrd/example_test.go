@@ -17,12 +17,12 @@ func ExampleDecodeData() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(d.Source, d.Destination, d.Repeater, d.Slot, d.Private, d.Frame, d.Size)
+	fmt.Println(d.Source, d.Destination, d.Repeater, d.Slot, d.Group, d.Frame, d.Size)
 	h := d.Hint(0)
 	fmt.Println(h.Kind, h.DataType)
 	// Output:
 	// DMRD
-	// 3191868 91 3149999 TS2 false Data Sync 55
+	// 3191868 91 3149999 TS2 true Data Sync 55
 	// Data Voice LC Header
 }
 

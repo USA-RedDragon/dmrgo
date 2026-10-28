@@ -3374,7 +3374,7 @@ func in_transport_dmrd_Data(s *C.dmrgo_dmrd_data_t) (d g_transport_dmrd.Data) {
 	d.Destination = uint32(s.destination)
 	d.Repeater = uint32(s.repeater)
 	d.Slot = g_enums.Slot(s.slot)
-	d.Private = bool(s.private_)
+	d.Group = bool(s.group)
 	d.Frame = g_transport_dmrd.FrameType(s.frame)
 	d.Value = uint8(s.value)
 	d.Stream = uint32(s.stream)
@@ -3414,7 +3414,7 @@ func out_transport_dmrd_Data(d *C.dmrgo_dmrd_data_t, s *g_transport_dmrd.Data, o
 	d.destination = C.uint32_t(s.Destination)
 	d.repeater = C.uint32_t(s.Repeater)
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
-	d.private_ = C.bool(s.Private)
+	d.group = C.bool(s.Group)
 	d.frame = C.dmrgo_dmrd_frame_type_t(s.Frame)
 	d.value = C.uint8_t(s.Value)
 	d.stream = C.uint32_t(s.Stream)
@@ -37103,7 +37103,7 @@ func dmrgo_dmrd_data_set_call(c_self *C.dmrgo_dmrd_data_t, c_group C.bool, c_tar
 	ws_self = *c_self
 	ws_self.source = C.uint32_t(x.Source)
 	ws_self.destination = C.uint32_t(x.Destination)
-	ws_self.private_ = C.bool(x.Private)
+	ws_self.group = C.bool(x.Group)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

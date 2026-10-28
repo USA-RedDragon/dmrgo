@@ -120,6 +120,22 @@ type T struct {
 	}
 }
 
+func TestInvertedBoolIsTrueOnZero(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `type T struct {
+	A bool  `+"`dmr:\"bit:0\"`"+`
+	B bool  `+"`dmr:\"bit:1,invert\"`"+`
+	C uint8 `+"`dmr:\"bits:2-7\"`"+`
+}`)
+	assertContains(t, out,
+		"result.A = data[0]&0x80 != 0",
+		"result.B = data[0]&0x40 == 0",
+		"if s.A {",
+		"if !s.B {",
+	)
+}
+
 func TestSignedFieldIsSignExtended(t *testing.T) {
 	t.Parallel()
 

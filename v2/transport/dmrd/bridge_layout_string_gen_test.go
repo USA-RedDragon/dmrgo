@@ -9,7 +9,7 @@ import (
 )
 
 func (s *dmreV4) fmtString() string {
-	return fmt.Sprintf("dmreV4{ Seq: %d, Source: %d, Destination: %d, Repeater: %d, Slot: %v, Private: %t, Frame: %v, Value: %d, Stream: %d, Burst: %v, BER: %d, RSSI: %d, Version: %d, Time: %d, SourceServer: %d, Hops: %d, Hash: %v }", s.Seq, s.Source, s.Destination, s.Repeater, s.Slot, s.Private, s.Frame, s.Value, s.Stream, s.Burst, s.BER, s.RSSI, s.Version, s.Time, s.SourceServer, s.Hops, s.Hash)
+	return fmt.Sprintf("dmreV4{ Seq: %d, Source: %d, Destination: %d, Repeater: %d, Slot: %v, Group: %t, Frame: %v, Value: %d, Stream: %d, Burst: %v, BER: %d, RSSI: %d, Version: %d, Time: %d, SourceServer: %d, Hops: %d, Hash: %v }", s.Seq, s.Source, s.Destination, s.Repeater, s.Slot, s.Group, s.Frame, s.Value, s.Stream, s.Burst, s.BER, s.RSSI, s.Version, s.Time, s.SourceServer, s.Hops, s.Hash)
 }
 
 func TestDmreV4StringMatchesFmt(t *testing.T) {
@@ -18,7 +18,7 @@ func TestDmreV4StringMatchesFmt(t *testing.T) {
 }
 
 func (s *dmreV5) fmtString() string {
-	return fmt.Sprintf("dmreV5{ Seq: %d, Source: %d, Destination: %d, Repeater: %d, Slot: %v, Private: %t, Frame: %v, Value: %d, Stream: %d, Burst: %v, BER: %d, RSSI: %d, Version: %d, Time: %d, SourceServer: %d, SourceRepeater: %d, Hops: %d, Hash: %v }", s.Seq, s.Source, s.Destination, s.Repeater, s.Slot, s.Private, s.Frame, s.Value, s.Stream, s.Burst, s.BER, s.RSSI, s.Version, s.Time, s.SourceServer, s.SourceRepeater, s.Hops, s.Hash)
+	return fmt.Sprintf("dmreV5{ Seq: %d, Source: %d, Destination: %d, Repeater: %d, Slot: %v, Group: %t, Frame: %v, Value: %d, Stream: %d, Burst: %v, BER: %d, RSSI: %d, Version: %d, Time: %d, SourceServer: %d, SourceRepeater: %d, Hops: %d, Hash: %v }", s.Seq, s.Source, s.Destination, s.Repeater, s.Slot, s.Group, s.Frame, s.Value, s.Stream, s.Burst, s.BER, s.RSSI, s.Version, s.Time, s.SourceServer, s.SourceRepeater, s.Hops, s.Hash)
 }
 
 func TestDmreV5StringMatchesFmt(t *testing.T) {

@@ -34,7 +34,7 @@ func DecodeData(data []byte) (Data, error) {
 	var _vSlot uint64
 	_vSlot = uint64(data[15]) >> 7
 	result.Slot = enums.Slot(_vSlot + 1)
-	result.Private = data[15]&0x40 != 0
+	result.Group = data[15]&0x40 == 0
 	result.Frame = FrameType(uint64(data[15]) >> 4 & 0x3)
 	result.Value = uint8(uint64(data[15]) & 0xF)
 	result.Stream = uint32(uint64(data[16])<<24 | uint64(data[17])<<16 | uint64(data[18])<<8 | uint64(data[19]))
@@ -103,7 +103,7 @@ func (s *Data) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	_vSlot := uint64(s.Slot) - 1
 	data[15] = data[15]&^0x80 | byte(_vSlot<<7)&0x80
-	if s.Private {
+	if !s.Group {
 		data[15] |= 0x40
 	}
 	if uint64(s.Frame)>>2 != 0 {
@@ -137,7 +137,7 @@ func (s *Data) String() string {
 		return "<nil>"
 	}
 
-	return "Data{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Private: " + text.Bool(s.Private) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", UUID: " + text.Bytes(s.UUID[:]) + " }"
+	return "Data{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Group: " + text.Bool(s.Group) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", UUID: " + text.Bytes(s.UUID[:]) + " }"
 }
 
 var (

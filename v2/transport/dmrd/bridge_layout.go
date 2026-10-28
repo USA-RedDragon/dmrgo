@@ -13,7 +13,7 @@ type dmreV4 struct {
 	Destination  uint32          `dmr:"bits:64-87"`
 	Repeater     uint32          `dmr:"bits:88-119"`
 	Slot         enums.Slot      `dmr:"bits:120,enum,bias:1"`
-	Private      bool            `dmr:"bit:121"`
+	Group        bool            `dmr:"bit:121,invert"`
 	Frame        FrameType       `dmr:"bits:122-123,enum"`
 	Value        uint8           `dmr:"bits:124-127"`
 	Stream       uint32          `dmr:"bits:128-159"`
@@ -35,7 +35,7 @@ type dmreV5 struct {
 	Destination    uint32          `dmr:"bits:64-87"`
 	Repeater       uint32          `dmr:"bits:88-119"`
 	Slot           enums.Slot      `dmr:"bits:120,enum,bias:1"`
-	Private        bool            `dmr:"bit:121"`
+	Group          bool            `dmr:"bit:121,invert"`
 	Frame          FrameType       `dmr:"bits:122-123,enum"`
 	Value          uint8           `dmr:"bits:124-127"`
 	Stream         uint32          `dmr:"bits:128-159"`

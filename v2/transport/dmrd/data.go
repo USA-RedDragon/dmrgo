@@ -56,8 +56,9 @@ type Data struct {
 	Repeater uint32 `dmr:"bits:88-119"`
 	// Slot is the TDMA channel, Slot1 or Slot2.
 	Slot enums.Slot `dmr:"bits:120,enum,bias:1"`
-	// Private reports a unit to unit call; false is a group call.
-	Private bool `dmr:"bit:121"`
+	// Group reports a group call; false, as in the zero Data, is a unit to
+	// unit call. On the wire the bit is set for a unit to unit call.
+	Group bool `dmr:"bit:121,invert"`
 	// Frame is the frame type.
 	Frame FrameType `dmr:"bits:122-123,enum"`
 	// Value is the data type of a FrameDataSync packet, or the voice
@@ -113,19 +114,18 @@ func (d *Data) Hint(now time.Duration) layer2.Hint {
 	return h
 }
 
-// Call returns the call of the packet: group is the reverse of Private,
-// target is Destination and source is Source.
+// Call returns the call of the packet: group is Group, target is
+// Destination and source is Source.
 func (d *Data) Call() (group bool, target, source uint32) {
 	if d == nil {
 		return false, 0, 0
 	}
-	return !d.Private, d.Destination, d.Source
+	return d.Group, d.Destination, d.Source
 }
 
-// SetCall sets Private, Destination and Source from the call: group is
-// the reverse of Private. It returns a *dmrgo.FieldRangeError, and changes
-// nothing, when target or source does not fit in 24 bits, and
-// dmrgo.ErrNilReceiver for a nil d.
+// SetCall sets Group, Destination and Source from the call. It returns a
+// *dmrgo.FieldRangeError, and changes nothing, when target or source does
+// not fit in 24 bits, and dmrgo.ErrNilReceiver for a nil d.
 func (d *Data) SetCall(group bool, target, source uint32) error {
 	switch {
 	case d == nil:
@@ -135,7 +135,7 @@ func (d *Data) SetCall(group bool, target, source uint32) error {
 	case source>>24 != 0:
 		return errDataSourceRange
 	}
-	d.Private, d.Destination, d.Source = !group, target, source
+	d.Group, d.Destination, d.Source = group, target, source
 	return nil
 }
 

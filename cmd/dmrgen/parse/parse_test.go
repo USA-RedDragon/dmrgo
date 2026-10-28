@@ -728,6 +728,13 @@ func TestParseRejectsBadUnion(t *testing.T) {
 			want: "union requires raw",
 		},
 		{
+			name: "invert not bool",
+			src: `type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7,invert\"`" + `
+}`,
+			want: "invert requires a bool field",
+		},
+		{
 			name: "union with no_encode",
 			src: `// dmr:variant A Sub Op=1
 type T struct {

@@ -109,7 +109,11 @@ func emitGetter(f *File, pdu parse.PDUStruct, union *parse.Field, g parse.Field)
 			b.If(Op("!").Parens(cond)).Block(Return(zero))
 		}
 		if g.Kind == parse.FieldBool {
-			b.Return(buf().Index(Lit(rel.BitStart / 8)).Op("&").Add(hexByte(0x80 >> (rel.BitStart % 8))).Op("!=").Lit(0))
+			op := "!="
+			if g.Invert {
+				op = "=="
+			}
+			b.Return(buf().Index(Lit(rel.BitStart / 8)).Op("&").Add(hexByte(0x80 >> (rel.BitStart % 8))).Op(op).Lit(0))
 			return
 		}
 		ranges := rel.Ranges()

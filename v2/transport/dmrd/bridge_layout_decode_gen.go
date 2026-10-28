@@ -26,7 +26,7 @@ func decodeDmreV4(data []byte) (dmreV4, error) {
 	var _vSlot uint64
 	_vSlot = uint64(data[15]) >> 7
 	result.Slot = enums.Slot(_vSlot + 1)
-	result.Private = data[15]&0x40 != 0
+	result.Group = data[15]&0x40 == 0
 	result.Frame = FrameType(uint64(data[15]) >> 4 & 0x3)
 	result.Value = uint8(uint64(data[15]) & 0xF)
 	result.Stream = uint32(uint64(data[16])<<24 | uint64(data[17])<<16 | uint64(data[18])<<8 | uint64(data[19]))
@@ -79,7 +79,7 @@ func (s *dmreV4) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	_vSlot := uint64(s.Slot) - 1
 	data[15] = data[15]&^0x80 | byte(_vSlot<<7)&0x80
-	if s.Private {
+	if !s.Group {
 		data[15] |= 0x40
 	}
 	if uint64(s.Frame)>>2 != 0 {
@@ -121,7 +121,7 @@ func (s *dmreV4) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *dmreV4) String() string {
-	return "dmreV4{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Private: " + text.Bool(s.Private) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", Version: " + text.Int(int64(s.Version)) + ", Time: " + text.Uint(uint64(s.Time)) + ", SourceServer: " + text.Int(int64(s.SourceServer)) + ", Hops: " + text.Int(int64(s.Hops)) + ", Hash: " + text.Bytes(s.Hash[:]) + " }"
+	return "dmreV4{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Group: " + text.Bool(s.Group) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", Version: " + text.Int(int64(s.Version)) + ", Time: " + text.Uint(uint64(s.Time)) + ", SourceServer: " + text.Int(int64(s.SourceServer)) + ", Hops: " + text.Int(int64(s.Hops)) + ", Hash: " + text.Bytes(s.Hash[:]) + " }"
 }
 
 func decodeDmreV5(data []byte) (dmreV5, error) {
@@ -142,7 +142,7 @@ func decodeDmreV5(data []byte) (dmreV5, error) {
 	var _vSlot uint64
 	_vSlot = uint64(data[15]) >> 7
 	result.Slot = enums.Slot(_vSlot + 1)
-	result.Private = data[15]&0x40 != 0
+	result.Group = data[15]&0x40 == 0
 	result.Frame = FrameType(uint64(data[15]) >> 4 & 0x3)
 	result.Value = uint8(uint64(data[15]) & 0xF)
 	result.Stream = uint32(uint64(data[16])<<24 | uint64(data[17])<<16 | uint64(data[18])<<8 | uint64(data[19]))
@@ -196,7 +196,7 @@ func (s *dmreV5) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	_vSlot := uint64(s.Slot) - 1
 	data[15] = data[15]&^0x80 | byte(_vSlot<<7)&0x80
-	if s.Private {
+	if !s.Group {
 		data[15] |= 0x40
 	}
 	if uint64(s.Frame)>>2 != 0 {
@@ -243,7 +243,7 @@ func (s *dmreV5) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *dmreV5) String() string {
-	return "dmreV5{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Private: " + text.Bool(s.Private) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", Version: " + text.Int(int64(s.Version)) + ", Time: " + text.Uint(uint64(s.Time)) + ", SourceServer: " + text.Int(int64(s.SourceServer)) + ", SourceRepeater: " + text.Int(int64(s.SourceRepeater)) + ", Hops: " + text.Int(int64(s.Hops)) + ", Hash: " + text.Bytes(s.Hash[:]) + " }"
+	return "dmreV5{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Group: " + text.Bool(s.Group) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", Version: " + text.Int(int64(s.Version)) + ", Time: " + text.Uint(uint64(s.Time)) + ", SourceServer: " + text.Int(int64(s.SourceServer)) + ", SourceRepeater: " + text.Int(int64(s.SourceRepeater)) + ", Hops: " + text.Int(int64(s.Hops)) + ", Hash: " + text.Bytes(s.Hash[:]) + " }"
 }
 
 func decodeBcTag(data []byte) (bcTag, error) {

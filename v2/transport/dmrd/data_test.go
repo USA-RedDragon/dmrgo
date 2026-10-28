@@ -48,7 +48,7 @@ func TestDecodeDataVectors(t *testing.T) {
 			t.Fatalf("%s: %v", v.hex[:40], err)
 		}
 		if d.Seq != v.seq || d.Source != v.src || d.Destination != v.dst || d.Repeater != v.rpt || d.Slot != v.slot ||
-			d.Private != v.private || d.Frame != v.frame || d.Value != v.value || d.Stream != v.stream || d.Size != 53 {
+			d.Group == v.private || d.Frame != v.frame || d.Value != v.value || d.Stream != v.stream || d.Size != 53 {
 			t.Errorf("%s: got %v", v.hex[:40], d.String())
 		}
 		if !bytes.Equal(d.Burst[:], p[20:53]) {
@@ -192,11 +192,11 @@ func TestDataEncodeRange(t *testing.T) {
 func TestDataCall(t *testing.T) {
 	t.Parallel()
 
-	d := dmrd.Data{Private: true, Destination: 3120001, Source: 3191868}
+	d := dmrd.Data{Destination: 3120001, Source: 3191868}
 	if g, tg, src := d.Call(); g || tg != 3120001 || src != 3191868 {
 		t.Fatalf("Call: %v %d %d", g, tg, src)
 	}
-	if err := d.SetCall(true, 91, 7); err != nil || d.Private || d.Destination != 91 || d.Source != 7 {
+	if err := d.SetCall(true, 91, 7); err != nil || !d.Group || d.Destination != 91 || d.Source != 7 {
 		t.Fatalf("SetCall: %v %+v", err, d)
 	}
 	want := d

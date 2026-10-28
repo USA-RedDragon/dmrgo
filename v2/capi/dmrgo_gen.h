@@ -4067,8 +4067,8 @@ struct dmrgo_dmrd_data_t {
 	uint32_t repeater;
 	/* Slot is the TDMA channel, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. */
 	dmrgo_enums_slot_t slot;
-	/* Private reports a unit to unit call; false is a group call. */
-	bool private_;
+	/* Group reports a group call; false, as in the zero Data, is a unit to unit call. On the wire the bit is set for a unit to unit call. */
+	bool group;
 	/* Frame is the frame type. */
 	dmrgo_dmrd_frame_type_t frame;
 	/* Value is the data type of a DMRGO_DMRD_FRAME_DATA_SYNC packet, or the voice position N (0 to 5 for A to F) of a voice packet, as sent. */
@@ -10594,11 +10594,11 @@ int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *sa
 int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 55. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_DMRD_LENGTH when Size is not one of the lengths. */
 int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.Data.Call. Call returns the call of the packet: group is the reverse of Private, target is Destination and source is Source. */
+/* Go: dmrd.Data.Call. Call returns the call of the packet: group is Group, target is Destination and source is Source. */
 int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: dmrd.Data.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot, the voice position or data type, the sequence number (8 bits), the stream ID, and now, the time at which the packet arrived, as At. */
 int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
-/* Go: dmrd.Data.SetCall. SetCall sets Private, Destination and Source from the call: group is the reverse of Private. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
+/* Go: dmrd.Data.SetCall. SetCall sets Group, Destination and Source from the call. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: DMRGO_LAYER2_KIND_VOICE with a VoiceBurst of A to F, or DMRGO_LAYER2_KIND_DATA with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
