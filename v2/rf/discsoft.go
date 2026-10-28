@@ -2,6 +2,8 @@
 
 package rf
 
+import "math"
+
 const discDefaultTier = Tier1
 
 func (r *discRx) addSoft(opt *options) error {
@@ -21,6 +23,7 @@ func (r *discRx) addExt(opt *options) {
 	case opt.CohExt:
 		hz := r.hz()
 		r.setup(discSetup{Hz: discRate, OnBurst: r.onBurst, opt: opt, pol: r.f.polBits&polOn != 0}, r.f.dec)
+		r.lagTicks -= int32(math.Round(float64(discRate-hz) * 256 / float64(hz)))
 		ph = newDiscPhase(r, hz, false, opt.cohRing())
 	}
 	x := softExtOf(opt, 2*r.tm.step)

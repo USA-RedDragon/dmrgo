@@ -24,6 +24,12 @@ func halve48(x []int16) []int16 {
 	return out
 }
 
+func sameHalved(a, b Burst) bool {
+	d := b.Seconds - a.Seconds - halfLag/float64(basebandRate)
+	a.Seconds, b.Seconds = 0, 0
+	return a == b && math.Abs(d) < 1e-9
+}
+
 func TestDisc48MatchesHalved(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
@@ -50,7 +56,7 @@ func TestDisc48MatchesHalved(t *testing.T) {
 			t.Fatalf("tier %d: %d bursts at 48 kHz, %d at 24 kHz halved by hand", tier, len(got), len(want))
 		}
 		for i := range got {
-			if got[i] != want[i] {
+			if !sameHalved(got[i], want[i]) {
 				t.Fatalf("tier %d: burst %d differs", tier, i)
 			}
 		}
@@ -83,7 +89,7 @@ func TestDisc48InitAppend(t *testing.T) {
 		t.Fatalf("%d bursts at 48 kHz, %d at 24 kHz", len(got), len(want))
 	}
 	for i := range got {
-		if got[i] != want[i] {
+		if !sameHalved(got[i], want[i]) {
 			t.Fatalf("burst %d differs", i)
 		}
 	}

@@ -143,6 +143,17 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	}
 }
 
+func (d *iqDisc) lagTicks() int32 {
+	if d.taps == nil {
+		return 0
+	}
+	per, hb := 1, 0
+	if d.halfOn {
+		per, hb = 2, len(d.half.hist)/2/2-1
+	}
+	return int32(per*(len(d.taps)/2-(d.step-1))+hb)<<8 + int32(d.decim-1)<<7
+}
+
 func (d *iqDisc) tune(hz float32) {
 	if d.taps == nil {
 		d.tuneLean(hz)
@@ -326,6 +337,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.d = cfg.discOf()
 	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt}, false)
 	r.d.sink = cfg.sink
+	r.d.lagTicks += r.conv.lagTicks()
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {

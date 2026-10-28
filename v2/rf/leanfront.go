@@ -44,6 +44,14 @@ func (f *leanFront) center() int64 {
 	return c
 }
 
+func (f *leanFront) lagTicks() int32 {
+	c := -int64(2*(preTaps/2)+2*(rrcTaps/2-1))<<8 - 128
+	if !f.half {
+		c += int64(1-halfTaps/2) << 8
+	}
+	return int32(f.center()<<8 - c)
+}
+
 func (f *leanFront) tune(hz float64) {
 	p := -2 * math.Pi * hz / discRate
 	f.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))

@@ -9,6 +9,7 @@ const (
 	discInputRMSHz = 2000
 	discMeanGain   = 0.1
 	audio96Span    = discSpan
+	halfLag        = halfTaps/2 - 1
 	audio12Taps    = discSpan*discSPS + 1
 	audio96Taps    = 4*audio96Span + 1
 	discLevelUp    = 1.41
@@ -72,6 +73,10 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	}
 	if r.f.half {
 		r.center -= halfTaps - 1
+		r.lagTicks = (2*halfLag - (halfTaps - 1)) << 8
+	}
+	if dec {
+		r.lagTicks += halfLag << 8
 	}
 }
 

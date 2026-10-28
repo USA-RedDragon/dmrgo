@@ -224,6 +224,7 @@ type leanCore struct {
 	next           int32
 	lastAnch       int32
 	lost           int32
+	lagTicks       int32
 	dcHz           float32
 	devScale       float32
 	discVar        float32
@@ -308,6 +309,7 @@ func newLean(cfg rxSetup, opt options) *leanRx {
 	}
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
+	r.lagTicks = r.df.lagTicks()
 	if cfg.OffsetHz != 0 {
 		r.retune(float32(cfg.OffsetHz))
 	}
@@ -1887,7 +1889,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
 	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
-		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256)))
+		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256))) - int64(r.lagTicks)
 	b.Seconds = tickSeconds(ticks)
 	if r.iqLow && iqLowISI > 0 {
 		r.cancelISI(base)

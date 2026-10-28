@@ -10,7 +10,8 @@ import (
 type Burst struct {
 	// Data is the 264 burst bits as detected, in transmit order.
 	Data layer2.RawBurst
-	// Seconds is the time of the first burst bit from the first sample.
+	// Seconds is the time of the first burst bit from the first sample,
+	// within 2 µs on a clean signal at every tier, input and rate.
 	Seconds float64
 	// Distance is the Hamming distance of the SYNC field from Sync, or -1
 	// for a burst placed by timing without a SYNC (voice bursts B to F).
