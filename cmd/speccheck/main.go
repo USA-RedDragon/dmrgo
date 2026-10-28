@@ -102,8 +102,8 @@ func main() {
 }
 
 func run() int {
-	updateReadme := flag.Bool("update-readme", false, "Inject Markdown coverage report into README.md between ETSI COVERAGE markers")
-	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in README.md is not up to date")
+	updateReadme := flag.Bool("update-readme", false, "Write the Markdown coverage report into docs/etsi.md between the ETSI COVERAGE markers")
+	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/etsi.md is not up to date")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -146,7 +146,7 @@ func run() int {
 	}
 
 	md := generateMarkdown(matrix.Documents, sectionResults)
-	readmePath := filepath.Join(repoRoot, "README.md")
+	readmePath := filepath.Join(repoRoot, "docs", "etsi.md")
 
 	if *checkReadme {
 		errCount += checkReadmeFresh(readmePath, md)
@@ -156,11 +156,11 @@ func run() int {
 
 	if *updateReadme {
 		if errCount > 0 {
-			fmt.Fprintf(os.Stderr, "error: not updating README.md because of %d error(s)\n", errCount)
+			fmt.Fprintf(os.Stderr, "error: not updating docs/etsi.md because of %d error(s)\n", errCount)
 			return 1
 		}
 		if err := writeReadme(readmePath, md); err != nil {
-			fmt.Fprintf(os.Stderr, "error: cannot update README.md: %v\n", err)
+			fmt.Fprintf(os.Stderr, "error: cannot update docs/etsi.md: %v\n", err)
 			return 1
 		}
 		fmt.Fprintf(os.Stderr, "Updated ETSI coverage section in %s\n", readmePath)
@@ -599,7 +599,7 @@ func checkReadmeFresh(readmePath, md string) int {
 		return 1
 	}
 	if want != string(data) {
-		fmt.Fprintln(os.Stderr, "ERROR: README.md coverage section is out of date; run `go run -C cmd/speccheck . -update-readme` and commit the result")
+		fmt.Fprintln(os.Stderr, "ERROR: docs/etsi.md coverage section is out of date; run `go run -C cmd/speccheck . -update-readme` and commit the result")
 		return 1
 	}
 	return 0

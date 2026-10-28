@@ -1,0 +1,75 @@
+# Features
+
+- Bursts (`layer2`):
+  - Decode and encode voice, data and standalone Reverse Channel bursts, including data bursts that carry an EMB in place of the SYNC.
+  - Read and write single fields of a 33-byte burst in place with `RawBurst`.
+  - Build data bursts from a PDU or a 12-byte payload, and voice superframes with `VoiceTransmitter`.
+  - Receive calls with `VoiceReceiver`, the embedded LC assembler and the CACH Short LC assembler, and place the voice bursts of a network stream with `PositionTracker`.
+  - Check and reseal bursts the way MMDVMHost does.
+- PDUs (`layer2/pdu`), generated from struct tags by `dmrgen`:
+  - CSBK and MBC, with the Tier II and Tier III payloads, and the Motorola radio check and call alert.
+  - Full LC and Short LC, with their payloads.
+  - A CSBK, MBC header, Full LC, Short LC or data header keeps its payload as bits, and its opcode or format selects their layout. `AsX` reads the payload X, and `SetX` writes it and sets the opcode.
+  - Data headers, data blocks at rate 1/2, 3/4 and 1, USBD and the compressed UDP/IPv4 header.
+  - Slot type, EMB, TACT, PI header, Reverse Channel and PR FILL.
+  - Byte-level editors for LC, CSBK and data header octets, and `Seal` to recompute parity or CRC.
+- Packet data (`layer2/packet`): segmentation and reassembly of confirmed and unconfirmed packets, with response packets and selective retry:
+  - `Builder.Retry` builds the later try of the blocks that a SACK names.
+  - The `Assembler` counts a block burst lost on air with `Lost`, reads the Full Message Flag, takes later tries of confirmed and short data packets, and with `AcceptBadCRC` delivers a packet whose CRC failed, as the "skip CRC" setting of some radios does.
+  - `Message.UDPIPv4` returns the compressed UDP/IPv4 header of a packet and the application data after it.
+- Applications in data packets:
+  - `ip`: the IPv4 and UDP headers of a data packet and the compressed UDP/IPv4 header, with their checksums.
+  - `sms`: text messages in every format that radios use: MOTOTRBO TMS, the ETSI IP text, the DMR Standard text of AnyTone radios, ETSI defined data and the AnyTone H-SMS text.
+  - `shortdata`: the text of an ETSI defined data packet in the coding that its DD format names, and the AnyTone H-SMS text.
+  - `location`: positions in every format that radios report: the NMEA RMC sentence of AnyTone radios and the LRRP reports of MOTOTRBO and Hytera radios. `AppendPacket` sends a position as an AnyTone radio does: an RMC sentence to UDP port 10110 behind a compressed UDP/IPv4 header, in an unconfirmed packet.
+  - `lip`: the ETSI Location Information Protocol that a UDT carries in the LIP format: the long location report, the report acknowledgement, the immediate location report request, the location reporting enable/disable PDUs and the type 5 elements of every PDU. `trunk.DecodeLIPShortReport` reads the short location report.
+  - `nmea`: `ParseRMC` decodes the NMEA 0183 RMC sentence that radios such as AnyTone send in a UDP datagram, and checks its checksum. `AppendRMC` writes the sentence in the layout of an AnyTone radio, with its checksum.
+  - `mototrbo/ars`, `mototrbo/lrrp`, `mototrbo/tms`: the MOTOTRBO registration (UDP port 4005), location (port 4001) and text message (port 4007) services.
+  - `hytera/hdap`: the Hytera DMR Application Protocol (HDAP): the frame with its checksum, and the radio registration, location and text message services.
+- Voice calls (`voice`), without I/O or goroutines:
+  - `Receiver` turns the bursts of one logical channel into call events: call start with where the call came from, voice bursts with their superframe position, lost count and frame quality, embedded GPS and talker alias, and call end with a reason. It handles late entry, duplicate and lost bursts, transport hints (`layer2.Hint`) and the call hang time.
+  - `Transmitter` sends a call one burst per 60 ms slot: from AMBE+2 frames with the headers, embedded talker alias and GPS, padding, terminators and the transmit timeout, or as a relay of the events of a `Receiver`, with the local color code and SYNC. A call follows the polite or impolite channel access and the transmit admit criteria, waits for the BS to authorize it in hang time, and ends on a Tier 2 RC cease command.
+  - `Interrupter` sends a Tier 2 RC cease command in standalone RC bursts and waits T_RCtimer for the Terminator with LC of the call, with retries.
+- Voice and data privacy (`privacy`), opt in: nothing else in the library imports it.
+  - `Receiver` reads the events of a `voice.Receiver`, reports whether a call is encrypted with its algorithm, key ID and message indicator from the PI header, also without a key, and with the key returns the AMBE+2 frames in the clear. `ForceBasic` applies a Basic Privacy key to calls that do not mark it. `Data` does the same for a packet of a `data.Receiver` from its privacy P_HEAD, and removes ARC4 privacy.
+  - `Transmitter` gives the PI header of a call and encrypts the voice bursts of a `voice.Transmitter`. `Data` encrypts the payload of a data packet with ARC4 and gives the privacy P_HEAD that `data.Sender` sends, byte for byte as in a public capture; for AES, DES and Basic Privacy data it returns an error. It needs the radio service of the station and returns `ErrAmateur` for the amateur service, whose rules forbid encryption.
+  - ARC4 (40-bit, algorithm 0x21), AES-128 (0x24) and AES-256 (0x25) with the PI header, and Basic Privacy with a 16-bit key or a key number of 1 to 255. The DMR Association does not publish its scheme: the framing follows public descriptions and is proven against public captures with published keys. No late entry.
+- CSBK services (`csbk`), without I/O or goroutines:
+  - `Requester` sends a CSBK request, after Pre_CSBKs when set, with polite or impolite channel access, the random holdoff, T_AckWait and N_CSBKRetry, and reports the answer, a NACK_Rsp, or why none came. It supports the OACSU presence check (UU_V_Req) and the Motorola radio check and call alert.
+  - `Responder` answers the CSBKs that address a radio: UU_Ans_Rsp, the Motorola radio check answer and call alert acknowledgement, and the Feature Not Supported NACK_Rsp.
+  - `Preambles` joins Pre_CSBKs with the CSBK or data that they announce, and `Wakeup` sends BS_Dwn_Act until the BS outbound starts.
+  - `Timing` runs the TDMA direct mode wide area timing with CT_CSBKs: it follows, elects and appoints the timing leader, propagates its beacon, answers requests, corrects radios with old timing, and beacons as the leader.
+- Base station (`bs`), without I/O or goroutines:
+  - `Repeater` is a two-slot repeater or hotspot, or the slot arbiter of a network server. It gives each slot to one source and queues or rejects the others, holds the call hang time, regenerates every repeated burst with new FEC and the local color code, and in RF mode sends one burst per 30 ms with the CACH, the AT bit, the Activity Update, Idle bursts, Terminators in the call hang time and TD_LC in the data hang time. It wakes up on BS_Dwn_Act or any burst and hibernates after T_MSInactiv. With channel authorization it repeats the ChanAuth PDU of one MS that starts in hang time, single site or multi-site. Its outbound stream for a voice call matches a Motorola XPR 8400 bit for bit.
+  - `CACH` makes the CACH and Short LC fragments alone.
+- Tier III trunking (`trunk`), without I/O or goroutines:
+  - Channel plans, hunt lists and site tables, from the configuration and from CG_AP, Chan_Freq, Ann_WD_TSCC and Adjacent_Site.
+  - `Follower` hunts for a TSCC and follows its voice and data grants to the payload channels, as a scanner does, and returns on P_CLEAR, after the hang time or when the channel goes quiet. It reads UDT deliveries, and with `AcceptRAS` the CSBKs of Capacity Max sites whose CRC is a keyed MAC.
+  - `MS` registers and de-registers, makes voice and packet data calls by random access with backoff, also as emergency, answers C_AHOY and P_AHOY radio checks, follows C_MOVE, P_PROTECT and P_CLEAR, keeps a denied registration list, leaves a weak TSCC, and ends its calls with P_MAINT.
+  - `MS` also sends UDT short data, polls an MS for UDT short data, sets and clears call diversion, assigns DGNA talkgroups, makes full-duplex voice and data calls and Ambient Listening Service calls, answers UDT and USBD polls, and follows the DGNA talkgroups that it receives.
+  - `Appended` reads and writes the ten appended data formats of a UDT: binary, addresses, BCD digits, ISO 7 bit and ISO 8 bit text, NMEA, IP, UTF-16BE text, mixed and LIP.
+  - `TSCC` runs a single site: C_ALOHA and C_SYS_Parms, AT reservation, registration, talkgroup and individual (OACSU) voice calls with grants, late entry grants, relay on the payload channels and P_CLEAR.
+  - `TSCC` also carries UDT short data between MSs and from a gateway, polls MSs for UDT short data and with USBD Poll Requests, keeps the call diversions of MSs and answers calls to a diverted MS with the diverted address, relays DGNA talkgroups, and sets up full-duplex and Ambient Listening Service calls.
+- Data calls (`data`), without I/O or goroutines:
+  - `Receiver` turns the bursts of one logical channel into data events: call start at the preamble or header, each complete packet with its CRCs checked, the responses heard, the ACK, NACK or SACK bursts to send, and call end with a reason. It takes confirmed, unconfirmed, short data and UDT packets at rate 1/2, 3/4 and 1, counts a block lost on air from the transport sequence number or the slot time, drops a repeated packet, keeps a confirmed packet for its retry, and joins a confirmed message from its fragments (FSN).
+  - `Sender` sends a message one burst per 60 ms slot, with preamble CSBKs, polite or impolite channel access and a seeded random holdoff. For confirmed data it waits for the response, resends the blocks of a SACK or the whole packet after a NACK or no response, and keeps N(S) per link. A message with a P_HEAD sends it after each header that has the Full Message Flag set. With `Window` it sends up to 8 IP packets in one sliding window that one response confirms, and the `Receiver` answers such a window. `Output.ICMP` gives the ICMP error message of a message that failed, which `ip.AppendICMPPacket` builds.
+- Network protocols, without I/O, with codecs generated by `dmrgen`:
+  - `transport/dmrd`: the DMRD packet and the login, keepalive and other control messages of the MMDVM network protocol of MMDVMHost and DMRGateway, of the 2015 HomeBrew Repeater Protocol and of the link between MMDVMHost and DMRGateway; the RPTC configuration, talker alias and GPS messages; the DMR+ startup options; and OpenBridge, with the DMRE and control packets of FreeDMR.
+  - `transport/dmrd/dmrdauth`: the login token (SHA-256) and the OpenBridge signatures (HMAC-SHA1 and keyed BLAKE2b), without allocation. `transport/dmrd` does not link this code.
+  - `transport/dmrd/dmrdsession`: session machines without IO for the repeater and master sides of the MMDVM network protocol and of HBRP (login with the salted token, options, keepalive, timeout, retry with backoff, close), and the signatures and BCKA keepalive of OpenBridge.
+  - `transport/ipsc`: the peer control and the voice and data packets of Motorola IP Site Connect, with the RTP header. A data packet gives its burst as a `layer2.RawBurst` and a `layer2.Hint`.
+  - `transport/ipsc/ipscauth`: the HMAC-SHA1 trailer of authenticated IPSC and the key text of a MOTOTRBO or DMRlink configuration, without allocation. `transport/ipsc` does not link this code.
+  - `transport/ipsc/ipscsession`: IPSC peer and master machines without IO: registration, peer list, peer to peer registration, keepalives, peer expiry and the authentication trailer.
+  - `transport/hytera`: the 72-octet DMR frame, the heartbeat and keepalive, and the registration, start and redirect commands of Hytera IP Multi-Site Connect. A frame gives its burst as a `layer2.RawBurst` and a `layer2.Hint`.
+  - `transport/mmdvm`: the serial protocol between MMDVMHost and an MMDVM or MMDVM_HS modem, for both roles: a stateless frame finder, the DMR data and lost frames with their `layer2.Hint`, version, status, configuration, frequency, mode, ACK and NAK, DMR start, abort, Short LC and ALOHA, and debug frames.
+- FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
+- Burst finding in a demodulated bit stream (`layer2/framer`).
+- A receiver for software radios (`rf`): it recovers bursts from I/Q in the formats of common software radios (CU8, CS8, CS16 and CF32) or from FM discriminator audio, with soft-decision decoding of each FEC field and the superframe position of voice bursts. A `Monitor` gives the TDMA channel of each burst and the call on each channel. Its tiers go from a discriminator for a microcontroller to coherent trellis detection for a PC. See [Receiver](rx/README.md).
+- A transmitter for software radios and FM radios (`rf`): it turns bursts into I/Q in the same formats, or into the deviation signal that drives the modulator input of an FM radio, and accepts only setups measured to keep the limits of the stated region, service and power. See [Transmitter](tx/README.md).
+- Vocoders (`vocoder`):
+  - The AMBE+2 frame FEC. AMBE+2 itself is not included.
+  - A `Codec` interface and a Codec2 codec (`vocoder/codec2`). `Decode` returns a `FrameReport` for each frame: whether the frame was good, lost, erased or invalid, whether the samples are voice, a tone, a repeat or silence, and the bits that the FEC corrected. `DecodeLost` fills a frame that never arrived.
+  - AMBE+2 on a DVSI AMBE-3000R or AMBE-3003 chip (`vocoder/dvsi`), such as a ThumbDV, a DVstick or an AMBEserver. See [DVSI](vocoders.md#dvsi).
+- A C API (`v2/capi`): libdmrgo, a shared library with the C form of the whole library (`dmrgo.h` and `dmrgo_gen.h`). It is a module of its own, so its cgo stays out of `v2`. `make -C v2/capi` builds it, and `make -C v2/capi static` builds `libdmrgo.a`, a static archive whose only global symbols are the C API. The C ABI has its own number, `DMRGO_ABI_VERSION`, which is independent of the Go module version and changes only when a C declaration breaks programs built against the older header; the soname `libdmrgo.so.N` follows it. Config, options and vtable structs start with `size_t size`, so they can get members at the end without a new ABI version. The library has no version of its own: `dmrgo_version` gives the v2 tag that it was built from, and the capi module is never tagged.
+- No cgo in the `v2` module outside `vocoder/codec2`.
+- No allocation on the hot path: see [Allocation](allocation.md).

@@ -7,8 +7,8 @@
 // tinygo build -print-allocs reports for allapi, a program that references
 // the whole API. The rules are patterns, such as an exported New function or
 // a function that takes a slice dst and allocates only to grow it, which
-// the gate proves from the source, and the README lists them with what
-// they allow.
+// the gate proves from the source, and docs/allocation.md lists them with
+// what they allow.
 //
 // The gate does not follow a call through the dictionary of a generic
 // function, or a callback that package-level data holds and the standard

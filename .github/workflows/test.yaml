@@ -144,7 +144,7 @@ jobs:
       - name: Race tests
         run: go test -C v2 -timeout 60m ./... -race
 
-      - name: Check the allocation table of the README against the gate
+      - name: Check the allocation table of docs/allocation.md against the gate
         run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
 
   codec2-backends:

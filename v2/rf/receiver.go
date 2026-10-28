@@ -11,8 +11,8 @@ import (
 // Tier selects how a Receiver detects symbols, by compute budget.
 type Tier int
 
-// The tiers, from the least compute to the most. The README gives the
-// sensitivity, compute and RAM of each. Every tier decodes each FEC field
+// The tiers, from the least compute to the most. docs/rx/README.md gives
+// the sensitivity, compute and RAM of each. Every tier decodes each FEC field
 // with soft decisions, and Tier0 to Tier2 each need under 20 ms of CPU per
 // second of signal on a PC.
 const (

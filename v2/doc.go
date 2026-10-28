@@ -54,7 +54,7 @@
 // slice or string allocates it, and its doc says so. Each has a form that
 // writes into storage of the caller, such as the Append forms. A
 // layer2.Burst keeps its decoded Data until the next decode into it, so it
-// must not be copied after its first decode. The README lists
+// must not be copied after its first decode. docs/allocation.md lists
 // every place where the library can allocate, and the tests in
 // internal/allocgate and internal/allocs check it.
 //
@@ -355,6 +355,6 @@
 //
 // # More
 //
-// The README lists the example programs and the ETSI coverage of each
-// clause: https://github.com/USA-RedDragon/dmrgo.
+// docs/examples.md lists the example programs and docs/etsi.md the ETSI
+// coverage of each clause: https://github.com/USA-RedDragon/dmrgo.
 package dmrgo

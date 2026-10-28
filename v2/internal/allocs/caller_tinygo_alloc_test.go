@@ -75,7 +75,7 @@ func tinyCallerOps(t *testing.T) (stored, local []tinyOp) {
 	return stored, local
 }
 
-// TestTinyGoCallerStorage holds the rule of the README and the root doc:
+// TestTinyGoCallerStorage holds the rule of docs/allocation.md and the root doc:
 // on TinyGo a value whose address the caller passes allocates when it is
 // a local of the caller, and does not when it is in storage that outlives
 // the call.

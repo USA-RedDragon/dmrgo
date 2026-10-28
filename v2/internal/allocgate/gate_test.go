@@ -707,7 +707,7 @@ func (gt *gate) checkDeadRules(t *testing.T, rules []*rule, roots []root) []stri
 		t.Logf("%s rule: %d functions", ru.name, ru.used)
 	}
 	if !gt.full {
-		t.Log("not the configuration of the README table, so a rule that covers nothing is not reported")
+		t.Log("not the configuration of the table of docs/allocation.md, so a rule that covers nothing is not reported")
 	}
 	return bad
 }

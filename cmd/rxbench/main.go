@@ -1,9 +1,9 @@
-// Command rxbench writes the receiver sensitivity block of the README and
-// its graphs from the sweep data of the receiver in v2/rf. With
+// Command rxbench writes the receiver sensitivity block of docs/rx/README.md
+// and its graphs from the sweep data of the receiver in v2/rf. With
 // -update-readme it first runs the long sweep (DMRRF_RXBENCH=full go test
 // -run TestRxBench in v2/rf), then rewrites the block between the rxbench
 // markers and the SVG files. With -check-readme it renders the committed
-// data and fails when the README block or a graph differs.
+// data and fails when the block or a graph differs.
 package main
 
 import (
@@ -37,8 +37,8 @@ const (
 )
 
 func main() {
-	update := flag.Bool("update-readme", false, "run the long sweep, then rewrite the README block and the graphs")
-	check := flag.Bool("check-readme", false, "fail when the README block or a graph differs from the committed data")
+	update := flag.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs")
+	check := flag.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data")
 	noSweep := flag.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep")
 	flag.Parse()
 	if *update == *check {
@@ -76,14 +76,14 @@ func run(ctx context.Context, root string, update, sweep bool) error {
 	}
 	block := renderBlock(d)
 	graphs := renderGraphs(d)
-	readmePath := filepath.Join(root, "README.md")
+	readmePath := filepath.Join(root, "docs/rx/README.md")
 	readme, err := os.ReadFile(readmePath)
 	if err != nil {
 		return err
 	}
 	i, j := bytes.Index(readme, []byte(beginMarker)), bytes.Index(readme, []byte(endMarker))
 	if i < 0 || j < i {
-		return errors.New("README.md has no rxbench markers")
+		return errors.New("docs/rx/README.md has no rxbench markers")
 	}
 	next := append(append(append([]byte{}, readme[:i+len(beginMarker)]...), block...), readme[j:]...)
 	stale := !bytes.Equal(next, readme)
@@ -341,7 +341,7 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("\n")
 	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.\n")
-	b.WriteString("- [docs/rx](docs/rx/README.md) tells how the sweep measures and what the floors are.\n\n")
+	b.WriteString("- [The sweep](#the-sweep) gives the method and [The floors](#the-floors) the bounds.\n\n")
 	renderSensitivity(&b, d)
 	var rec []tier
 	var cols []int
@@ -377,7 +377,7 @@ func renderBlock(d data) []byte {
 	for _, m := range modes() {
 		b.WriteString("#### " + m[1] + "\n\n")
 		for _, g := range graphs() {
-			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + m[0] + "/" + g.key + ".svg)\n")
+			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](" + m[0] + "/" + g.key + ".svg)\n")
 		}
 		b.WriteString("\n")
 	}
@@ -387,7 +387,7 @@ func renderBlock(d data) []byte {
 
 func renderSensitivity(b *strings.Builder, d data) {
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery. [docs/rx](docs/rx/README.md) defines the floors.\n\n")
+	b.WriteString("Eb/N0 in dB for 90% recovery. [The floors](#the-floors) defines each floor.\n\n")
 	b.WriteString("| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |\n")
 	b.WriteString("|---------|------------|-----------|-----------|------------|\n")
 	for _, p := range payloadNames() {

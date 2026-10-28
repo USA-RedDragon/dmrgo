@@ -36,7 +36,7 @@ func checkReadme(t *testing.T, rules []*rule, cuts []*cut) {
 	if mode == "" {
 		return
 	}
-	path := filepath.Join(moduleRoot, "..", "README.md")
+	path := filepath.Join(moduleRoot, "..", "docs", "allocation.md")
 	readme, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func checkReadme(t *testing.T, rules []*rule, cuts []*cut) {
 	switch mode {
 	case "check":
 		if got != want {
-			t.Errorf("the allocation table of the README differs from the rules of the gate; run DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate in v2. Want:\n%s", want)
+			t.Errorf("the allocation table of docs/allocation.md differs from the rules of the gate; run DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate in v2. Want:\n%s", want)
 		}
 	case "write":
 		out := append(append(append([]byte{}, readme[:i]...), want...), readme[j+len(readmeEnd):]...)

@@ -18,6 +18,6 @@
 //	go run -C cmd/speccheck . -check-readme
 //
 // -update-readme writes the Markdown report between the ETSI COVERAGE markers
-// of README.md, and only when there are no errors. -check-readme fails when
+// of docs/etsi.md, and only when there are no errors. -check-readme fails when
 // that section is out of date.
 package main

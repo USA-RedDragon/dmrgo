@@ -36,7 +36,8 @@
 // The Tier of the config sets the detection and its cost, from Tier0, which
 // fits a microcontroller, to Tier3, for offline decoding. The constructors
 // allocate every buffer of the receiver, and Write and Flush allocate
-// nothing. The README gives the sensitivity, compute and RAM of each tier.
+// nothing. docs/rx/README.md gives the sensitivity, compute and RAM of each
+// tier, and docs/tx/README.md the limits and cost of the transmitter.
 //
 // The transmit side mirrors it. NewTransmitter makes a Transmitter from a
 // TxConfig and NewAudioTransmitter an AudioTransmitter from an

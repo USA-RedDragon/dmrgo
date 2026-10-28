@@ -45,7 +45,7 @@ jobs:
 
       - run: go generate ./...
 
-      - name: Spec check and update README
+      - name: Spec check and update docs/etsi.md
         run: env CGO_ENABLED=0 go run -C cmd/speccheck . -update-readme
 
       - uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
@@ -54,4 +54,4 @@ jobs:
           commit_user_name: "github-actions[bot]"
           commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
           commit_author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-          file_pattern: README.md
+          file_pattern: docs/etsi.md
