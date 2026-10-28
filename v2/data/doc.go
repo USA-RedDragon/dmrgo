@@ -7,7 +7,7 @@
 // The Receiver is a state machine without I/O. Each method takes the time
 // now, on a monotonic clock that the caller picks, and appends events to a
 // slice of the caller. A slice with capacity MaxEvents never grows, and
-// after NewReceiver no method allocates. Deadline tells when the Receiver
+// after NewReceiver no method allocates. Deadline reports when the Receiver
 // needs a Tick.
 //
 // The Receiver starts a data call at a preamble CSBK or a header, and ends
@@ -27,7 +27,7 @@
 // P_HEAD after it) gets no N(S) check: each valid packet is delivered and
 // gets an ACK, so a packet sent again after a lost response is delivered
 // again (ETSI TS 102 361-3 clauses 5.4.1.3 and 5.4.2.2). A sliding window
-// is the one exception, as told below. For any other SAP,
+// is the one exception, as given below. For any other SAP,
 // a packet with N(S) equal to VI is a duplicate that gets an ACK and is not
 // delivered, a packet with N(S) equal to VI + 1 is the next one, any other
 // N(S) gets a NACK out of sequence with status VI, and the first packet of
@@ -37,10 +37,10 @@
 // each delivered at once, and EventReassembled follows the last one with
 // the whole message (ETSI TS 102 361-1 clause 9.3.25).
 //
-// By default a Sender uses stop and wait: each packet asks for a response.
+// By default a Sender uses stop and wait: each packet requests a response.
 // With SenderConfig.Window, a Sender uses sliding window flow control for
 // the IP bearer service: it sends up to 8 C_HEAD packets one after the
-// other, and only the last one asks for a response (ETSI TS 102 361-3
+// other, and only the last one requests a response (ETSI TS 102 361-3
 // clause 5.4.4). A window is opt-in because a common radio, the AnyTone
 // D890UV firmware, acknowledges a whole window but keeps only its last
 // packet. A Receiver keeps the result of each packet of a window and
@@ -59,7 +59,7 @@
 // them again. So each packet is delivered once, with no buffer for later
 // packets. For each link, a Receiver also keeps the N(S) of the last ACK it
 // sent in a window and the N(S) values that ACK covered. When a window is in
-// use, that is when a packet does not ask for a response or the ACKed
+// use, that is when a packet does not request a response or the ACKed
 // window held more than one packet, the first packet of a window must have
 // one of those N(S) values (a copy sent after a lost ACK) or the next one.
 // Any other N(S) is a jump: the packets between count as lost, so they get

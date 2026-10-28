@@ -12,7 +12,7 @@ import (
 
 // ExampleSender sends a confirmed message to a Receiver. The air between
 // them loses the third burst after the preambles of the first try, so the
-// Receiver asks for that block again with a SACK, and the Sender resends
+// Receiver requests that block again with a SACK, and the Sender resends
 // only that block.
 func ExampleSender() {
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1})
@@ -74,7 +74,7 @@ func ExampleSender() {
 }
 
 // ExampleSender_window sends three IP messages in one sliding window. Only
-// the last header asks for a response, and one ACK delivers all three.
+// the last header requests a response, and one ACK delivers all three.
 func ExampleSender_window() {
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1, Window: 3})
 	if err != nil {

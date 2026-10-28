@@ -20,7 +20,7 @@ const MaxOutputs = MaxWindow + 1
 // Defaults and limits of SenderConfig.
 const (
 	// MaxWindow is the most C_HEAD packets of one sliding window: 7 that do
-	// not ask for a response and the 8th that does (ETSI TS 102 361-3
+	// not request a response and the 8th that does (ETSI TS 102 361-3
 	// clause 5.4.4).
 	MaxWindow = 8
 	// DefaultIdleSearch is the time that a polite Sender waits for an idle
@@ -95,7 +95,7 @@ type SenderConfig struct {
 	// Window of them to one link, and the Sender sends them one after the
 	// other with the Response Requested flag set only on the last, then
 	// takes one response for all of them. 0 or 1, the default, means stop
-	// and wait: each message asks for its own response. At most MaxWindow.
+	// and wait: each message requests its own response. At most MaxWindow.
 	// Each message of the window takes its own packet.Builder. Use a
 	// window only with receivers known to keep every packet of it: the
 	// AnyTone D890UV firmware (also in the BTECH DA-7X2) sends an ACK for
@@ -198,7 +198,7 @@ type Output struct {
 	Try uint8
 	// Seq is the N(S) of the C_HEAD message that the burst belongs to or
 	// that ended. Messages to one link take N(S) 0, 1, 2 and so on modulo 8
-	// in the order of Send, so with SenderConfig.Window above 1 Seq tells
+	// in the order of Send, so with SenderConfig.Window above 1 Seq shows
 	// which message an OutputDone ends. It is 0 for other messages.
 	Seq uint8
 	// Result is how the message ended.
@@ -272,7 +272,7 @@ func (e *slot) sendsProp() bool {
 // Sender sends data messages on one logical channel: the preamble CSBKs,
 // the header and the blocks of each try, one burst per Tick, 60 ms apart,
 // after the channel access of SenderConfig.Access. For a confirmed message
-// it waits for the response and resends: the blocks that a SACK asks for,
+// it waits for the response and resends: the blocks that a SACK requests,
 // the whole packet after a NACK for a bad CRC or no response, and the whole
 // packet again as a first try after a NACK for N(S) out of sequence, which
 // some radios send for a lost block. When the Status of a NACK for N(S) out
@@ -285,7 +285,7 @@ func (e *slot) sendsProp() bool {
 // and gives only the S flag, which clause 9.3.23 keeps for registration
 // messages, to resynchronize; without one of the two a link stays stopped,
 // so here the Sender departs from clause 9.3.24 and the retry takes the
-// N(S) that the receiver asks for (Table 8.3). So a late copy of such a
+// N(S) that the receiver requests (Table 8.3). So a late copy of such a
 // NACK, after the renumbered message got its ACK, does not renumber again.
 // It sends one message at a time, or with SenderConfig.Window a sliding
 // window of C_HEAD messages of the IP bearer service to one link. Make it
@@ -418,7 +418,7 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 	return s, nil
 }
 
-// Reset ends every message without outputs and forgets the sequence
+// Reset ends every message without outputs and clears the sequence
 // numbers of every link and the channel state. It keeps the config and the
 // state of the random holdoff.
 func (s *Sender) Reset() {
@@ -670,7 +670,7 @@ func (s *Sender) load() {
 	}
 }
 
-// Channel tells the Sender whether the channel is busy at now, for example
+// Channel records whether the channel is busy at now, for example
 // from the AT bit of the CACH, the carrier, or a repeater. A polite Sender
 // that waits for the channel starts its try when it becomes idle. An
 // impolite Sender ignores it.
@@ -885,7 +885,7 @@ func (s *Sender) finish(k int, result Result, dst []Output) []Output {
 	return dst
 }
 
-// Lost tells the Sender that the transport lost the signal: the channel
+// Lost records that the transport lost the signal: the channel
 // counts as idle. It runs the timers as Tick does and appends the outputs
 // to dst. It allocates only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Lost(now time.Duration, dst []Output) []Output {

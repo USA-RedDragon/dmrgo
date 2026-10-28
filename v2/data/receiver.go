@@ -296,7 +296,7 @@ func defaultDuration(d, def time.Duration) time.Duration {
 	return d
 }
 
-// Reset ends any data call without events and forgets the packet in
+// Reset ends any data call without events and clears the packet in
 // progress and the sequence numbers of every link. It keeps the config.
 func (r *Receiver) Reset() {
 	if r == nil {
@@ -321,7 +321,7 @@ func (r *Receiver) State() State {
 	return r.state
 }
 
-// Burst decodes the burst raw with what the Hint h says about it, runs it
+// Burst decodes the burst raw with the data in the Hint h, runs it
 // through the Receiver as Decoded does, and appends the events to dst. A
 // burst that does not decode, or has another color code than
 // ReceiverConfig.ColorCode, is dropped, but its Hint still applies. A nil
@@ -367,7 +367,7 @@ func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, ds
 	return r.receive(now, b, &h, dst)
 }
 
-// Lost tells the Receiver that the transport lost the signal, such as an
+// Lost records that the transport lost the signal, such as an
 // MMDVM TAG_LOST. The blocks still due count as lost, which can complete a
 // packet, and the call ends with EndSyncLost. It appends the events to
 // dst, and allocates only when dst has no room for MaxEvents events.
