@@ -22,7 +22,7 @@ const (
 	// Tier0 slices the output of an FM discriminator and its matched
 	// filter. On I/Q from 48 kHz an FM discriminator at 12 kHz comes before
 	// it, and the receiver keeps about 19 KB. On I/Q at 9.6 or 12 kHz that
-	// a radio chip filtered to the channel it keeps about 1.6 KB, and Init
+	// a radio chip filtered to the channel it keeps about 1.4 KB, and Init
 	// sets it up in memory of the caller, for a microcontroller. On I/Q
 	// from 48 kHz Tier0 to Tier3 find a carrier up to 6.25 kHz off, half
 	// the channel spacing, from the spectrum before they lock; a carrier

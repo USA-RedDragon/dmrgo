@@ -298,18 +298,18 @@ Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a
 | Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU per second of signal | RAM |
 |------|-------|-------|---------------|------|---------------|--------------------------|-----|
 | Best possible (4FSK floor) | - | -1.0 dB | -3.0 dB | -4.1 dB | 0.3 dB | - | - |
-| Audio tier 0 | FM audio, 9.6 kHz, core | 9.6 dB | 6.4 dB | 6.3 dB | 8.2 dB | 0.33 ms | 1,464 B |
+| Audio tier 0 | FM audio, 9.6 kHz, core | 9.6 dB | 6.4 dB | 6.3 dB | 8.2 dB | 0.33 ms | 1,440 B |
 | Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 8.2 dB | 6.4 dB | 5.3 dB | 7.9 dB | 1.1 ms | 34 KiB |
 | Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 5.0 dB | 4.4 dB | 3.9 dB | 6.3 dB | 8.2 ms | 533 KiB |
 | Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 5.0 dB | 3.9 dB | 3.2 dB | 6.3 dB | 8.1 ms | 1.2 MiB |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.5 dB | 6.4 dB | 8.2 dB | 0.41 ms | 1,560 B |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.5 dB | 6.4 dB | 8.2 dB | 0.41 ms | 1,424 B |
 | I/Q tier 0 | I/Q, discriminator core | 9.4 dB | 5.5 dB | 5.4 dB | 7.7 dB | 2.2 ms | 18 KiB |
 | I/Q tier 1 | I/Q, soft decoding, noise prediction | 8.0 dB | 5.4 dB | 3.7 dB | 7.1 dB | 2.8 ms | 50 KiB |
 | I/Q tier 2 | I/Q, coherent detection | 4.9 dB | 4.4 dB | 3.2 dB | 5.5 dB | 11 ms | 491 KiB |
 | I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 2.6 dB | 1.8 dB | 1.7 dB | 4.9 dB | 727 ms | 35.5 MiB |
 
 - Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.
-- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 1,936 B of RAM with its stack at 3.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,032 B at 3.9 MHz. No tier allocates after it starts.
+- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 2,008 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,024 B and up to 4.5 MHz. No tier allocates after it starts.
 - Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.
 - [docs/rx](docs/rx/README.md) tells how the sweep measures and what the floors are.
 

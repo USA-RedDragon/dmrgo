@@ -16,7 +16,7 @@ type RxConfig struct {
 	// from 24000, which runs their receiver with a complex front end in
 	// place of the FM discriminator, with about 2 KB of state for Tier0.
 	// Tier0 also takes 9600 and 12000, for I/Q that a radio chip filtered
-	// to the channel, with about 1.6 KB of state; Init sets up only these.
+	// to the channel, with about 1.4 KB of state; Init sets up only these.
 	Rate int
 	// Format is the layout of the I/Q samples. 0 means IQFormatCS16.
 	Format IQFormat
@@ -167,7 +167,7 @@ func (r *Receiver) setLow(c RxConfig, opt *options) {
 // Init sets up r for c, in place of any state it holds, in Tier0 at a
 // Rate of 9600 or 12000. It does not allocate, so that r can live in
 // memory of the caller. On a Cortex-M4F at 9.6 kHz the receiver needs
-// about 3.9 MHz and 2 KB with its stack, built with TinyGo -opt z. Init
+// up to 4.5 MHz and 2 KB with its stack, built with TinyGo -opt z. Init
 // returns dmrgo.ErrNilReceiver for a nil r, and a *dmrgo.ConfigError, with
 // r unchanged, when a field of c is out of range.
 func (r *Receiver) Init(c RxConfig) error {

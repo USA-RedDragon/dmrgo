@@ -1993,7 +1993,7 @@
     }
    ],
    "ns_per_second": 331306.5332756384,
-   "ram_bytes": 1464,
+   "ram_bytes": 1440,
    "allocs": 0
   },
   {
@@ -9973,7 +9973,7 @@
     }
    ],
    "ns_per_second": 410541.2496461139,
-   "ram_bytes": 1560,
+   "ram_bytes": 1424,
    "allocs": 0
   },
   {

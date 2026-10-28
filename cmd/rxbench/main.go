@@ -222,8 +222,8 @@ func payloadNames() [][2]string {
 }
 
 const (
-	mcuAudio = "1,936 B of RAM with its stack at 3.8 MHz, built with TinyGo -opt z,"
-	mcuIQLow = "2,032 B at 3.9 MHz"
+	mcuAudio = "2,008 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z,"
+	mcuIQLow = "2,024 B and up to 4.5 MHz"
 )
 
 const (

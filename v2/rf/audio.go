@@ -54,11 +54,11 @@ type AudioRxConfig struct {
 // discriminator, as the radio chips of hotspots and MMDVM modems give it:
 // real samples in any units, with any gain and DC offset, which the
 // receiver measures itself. With Tier0 it keeps about 1.4 KB of state, for
-// microcontrollers; on a Cortex-M4F it needs about 3.8 MHz and 1.9 KB with
-// its stack, built with TinyGo -opt z. An AudioReceiver that Init sets up
-// in memory of the caller, such as a package variable, uses no heap in
-// stream mode. An AudioReceiver is not safe for concurrent use, and it
-// must not be copied after Init or NewAudioReceiver.
+// microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz and
+// 2 KB with its stack, built with TinyGo -opt z. An AudioReceiver that
+// Init sets up in memory of the caller, such as a package variable, uses
+// no heap in stream mode. An AudioReceiver is not safe for concurrent
+// use, and it must not be copied after Init or NewAudioReceiver.
 type AudioReceiver struct {
 	discRx
 	d48    disc48
