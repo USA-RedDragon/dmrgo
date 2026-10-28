@@ -146,7 +146,7 @@ func grown(old, line string, ct *cTypes) bool {
 	return ok && offset >= oldSize
 }
 
-// cTypes holds what the lock lines tell about C types, to lay out structs
+// cTypes holds what the lock lines give about C types, to lay out structs
 // as the LP64 C ABI does.
 type cTypes struct {
 	scalars map[string]string

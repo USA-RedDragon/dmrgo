@@ -183,7 +183,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "confirmed: %d bursts, missing %v, %s asks for %v\n",
+	fmt.Fprintf(w, "confirmed: %d bursts, missing %v, %s requests %v\n",
 		len(bursts), rx.Missing(), sackCode, retry)
 	if !slices.Equal(retry, []int{1}) {
 		return fmt.Errorf("retry %v, want [1]", retry)

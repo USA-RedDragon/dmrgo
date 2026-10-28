@@ -3,7 +3,7 @@
 // is the user data of one DMR data packet, after the message CRC. The
 // radio is a BTECH DA-7X2 with AnyTone D890UV firmware, ID 3191868, sending
 // to 3140598 through an XPR 8400 repeater, captured on 2026-10-16 unless a
-// value says otherwise.
+// value states otherwise.
 package appcapture
 
 // TMS is the AnyTone M-SMS text "MOTO TEST" as relayed over IPSC: an IPv4

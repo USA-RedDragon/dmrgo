@@ -77,7 +77,7 @@ type analyzer struct {
 // parameter param (-1 for the receiver): for a struct or a pointer to one,
 // the fields that it sets (eSet) or whose elements it writes in place
 // (eElem); for a slice or another pointer, eElem under "" when it writes
-// through it. A body that the analysis cannot see changes everything.
+// through it. A body that the analysis cannot read changes everything.
 func (l *loader) effects(fn *types.Func, param int) *effect {
 	fn = fn.Origin()
 	k := effKey{fn, param}

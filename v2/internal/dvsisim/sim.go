@@ -3,7 +3,7 @@
 // packets written to it with its own parser, checks them against the
 // manuals, and answers with stored frame and audio pairs. It reports the
 // decoder status in a CMODE field of each speech packet of a channel after a
-// PKT_SPCHFMT field for that channel asks for it, and repeats frames while
+// PKT_SPCHFMT field for that channel requests it, and repeats frames while
 // LOST_FRAME is set. Like the chip, it keeps DCMODE_IN until a CMODE or
 // PKT_DCMODE field or a reset changes it. Faults can be injected: garbage
 // bytes before a reply, lost replies, short reads and datagram reads.

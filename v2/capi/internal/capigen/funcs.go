@@ -881,7 +881,7 @@ func (g *gen) methodEffects(param int) *effect {
 }
 
 // cVisible keeps the part of e that the C form of a value of type t can
-// see: the exported fields of a struct that are not handles.
+// reach: the exported fields of a struct that are not handles.
 // elemOnly keeps the writes of e that a value receiver of type t makes
 // visible to its caller: the elements of its slice and pointer fields.
 func elemOnly(e *effect, t types.Type) *effect {

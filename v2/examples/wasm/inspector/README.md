@@ -7,7 +7,7 @@ Paste hex packets (one packet on each line), or drop a pcap file, a pcapng file 
 ## Protocols
 
 - Motorola IP Site Connect (`transport/ipsc`): peer control, peer list, voice and data packets, and the packets that the library keeps raw.
-- The DMRD family (`transport/dmrd`): the MMDVM network protocol, the HomeBrew Repeater Protocol, the MMDVMHost to DMRGateway local link, OpenBridge version 1 and the FreeDMR enhanced OpenBridge packets. The DMRD packet is the same in each dialect. The login, keepalive and configuration messages tell the dialect.
+- The DMRD family (`transport/dmrd`): the MMDVM network protocol, the HomeBrew Repeater Protocol, the MMDVMHost to DMRGateway local link, OpenBridge version 1 and the FreeDMR enhanced OpenBridge packets. The DMRD packet is the same in each dialect. The login, keepalive and configuration messages identify the dialect.
 - Hytera IP Multi-Site Connect (`transport/hytera`): DMR frames, heartbeats, keepalives and P2P commands.
 - Hytera HDAP (`hytera`): RRS, LP and TMP messages, on UDP ports 3002 to 3009 of a capture or inside a DMR data packet.
 - MMDVM modem serial frames (`transport/mmdvm`): the DMR frames and the typed messages. A binary dump is cut into frames.

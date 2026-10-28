@@ -7,7 +7,7 @@
 // caller keeps the decoded fields. A function that returns a bare value
 // returns the Result with it; a PDU struct reports it in its FEC field. An
 // error from such a decoder means that the input cannot be decoded at all,
-// such as a reserved data type. A caller that wants an error for an
+// such as a reserved data type. A caller that needs an error for an
 // uncorrectable result calls Result.Err, which returns ErrUncorrectable.
 //
 // Functions that reassemble or check a message over several bursts, such

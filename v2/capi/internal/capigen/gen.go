@@ -38,7 +38,7 @@ type Export struct {
 	Kind string
 	// C holds the C names that map it. It is empty when Err is set.
 	C []string
-	// Err says why the export has no C counterpart.
+	// Err gives the cause that the export has no C counterpart.
 	Err string
 }
 
@@ -715,7 +715,7 @@ func (g *gen) handleField(ti *tinfo, f *types.Var, fe *Export) error {
 	return g.addFunc(fe, ti.base+"_set_"+n, doc, ti, rHandle, f.Name(), set, &lead{assign: true})
 }
 
-// zeroReady reports whether the Go doc of the type name says that its zero
+// zeroReady reports whether the Go doc of the type name states that its zero
 // value is ready to use, which is when the C API makes it with a _new
 // function.
 func zeroReady(doc, name string) bool {

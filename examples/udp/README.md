@@ -13,9 +13,9 @@ The example is its own Go module, so its zstd dependency (github.com/klauspost/c
 ## The parts
 
 - [link.go](link.go) is the UDP over DMR glue. `ip.AppendCompressed` puts a compressed UDP/IPv4 header (SAP UDP/IP header compression, ETSI TS 102 361-3 clause 7.2.3) on the datagram, and `data.Sender` sends it as a C_HEAD packet. On receive, `data.Receiver` gives the packet and `ip.Decode` gives the datagram back. The radio ID (LLID) carries the address, because a compressed header has no IPv4 addresses. `ip.RadioAddress` maps an LLID to an IPv4 address when a box needs one.
-- [air.go](air.go) is the channel. Each bit of a burst flips with the given bit error rate (BER) at the radio that hears it. Two bursts that overlap in time are both lost. Each radio tells its `data.Sender` when it hears the channel busy, so the Senders use polite channel access.
+- [air.go](air.go) is the channel. Each bit of a burst flips with the given bit error rate (BER) at the radio that hears it. Two bursts that overlap in time are both lost. Each radio calls `Channel` on its `data.Sender` when it hears the channel busy, so the Senders use polite channel access.
 - [app.go](app.go) is the form protocol. Each form gets a 16-bit form ID, and the far station sends an ACK datagram for each form it gets. The sender sends the form again when the ACK does not come. The receiver delivers each form ID one time. The application needs both:
-  - A DMR ACK covers one radio hop, not the far application. A failover from another IP bearer to DMR also needs to know what arrived.
+  - A DMR ACK covers one radio hop, not the far application. A failover from another IP bearer to DMR also needs a record of what arrived.
   - The IP bearer service delivers a packet again after its response is lost (ETSI TS 102 361-3 clause 5.4.1.3).
 - [form.go](form.go) and [codec.go](codec.go) are the template, the test forms and the encodings.
 
@@ -85,7 +85,7 @@ Time from a form to its acknowledgement, 30 forms each, one at a time:
 The columns:
 
 - bursts/form: all bursts on the channel in both directions, the ACK datagrams included.
-- DMR tries/form: DMR transmissions of each form datagram. A try after the first one resends only the blocks that the last SACK asked for.
+- DMR tries/form: DMR transmissions of each form datagram. A try after the first one resends only the blocks that the last SACK requested.
 - app resends: forms that the application sent again.
 - copies dropped: forms that arrived again and that the receiver did not deliver again.
 
@@ -94,7 +94,7 @@ The columns:
 - Sending only the fields cuts a form from 380 to 117 octets. zstd without a dictionary gains little on a body this small (108 octets). zstd with a dictionary of earlier forms halves it again, to 57 octets.
 - With a clean channel, a form takes 1.1 to 1.4 s with `fields+zstd+dict` and 2.0 to 3.4 s as a full screen. The 5 preamble CSBKs, the response wait and the ACK datagram take a large part of that time.
 - Rate 1 has no FEC. It fails above a BER of about 0.005 to 0.01. Rate 1/2 stays flat up to a BER of 0.02. For a small form, rate 1/2 costs few bursts more than rate 1 (24 against 19 per form), so rate 1/2 is a good default for a mobile unit.
-- A zstd frame with a dictionary carries the dictionary ID. A receiver with another dictionary refuses the frame and does not decode it into wrong data (`TestDictionaryMismatch`). Give each new dictionary a new ID, and change the template version with it.
+- A zstd frame with a dictionary carries the dictionary ID. A receiver with another dictionary returns an error for the frame and does not decode it into wrong data (`TestDictionaryMismatch`). Give each new dictionary a new ID, and change the template version with it.
 - The compressed UDP/IP header is 9 octets because port 3270 needs an extended header for each port. Ports 5016 and 5017 need none (5 octets), but radios read those ports as text messages and location data.
 
 ## Limits of the simulation

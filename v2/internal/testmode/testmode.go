@@ -1,4 +1,4 @@
-// Package testmode tells the tests of the module how much work to do.
+// Package testmode sets how much work the tests of the module do.
 //
 // By default a test runs a sample that still checks its claim. With
 // DMRGO_LONG=1 it runs its full sample; the weekly long test job of CI
@@ -12,7 +12,7 @@ import "os"
 // Race reports whether the race detector is on.
 const Race = race
 
-// Long reports whether DMRGO_LONG asks for the full runs.
+// Long reports whether DMRGO_LONG selects the full runs.
 func Long() bool { return os.Getenv("DMRGO_LONG") == "1" }
 
 // N returns long under Long, short under the race detector, and def

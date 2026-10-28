@@ -51,7 +51,7 @@
 //	}
 //
 // Errors are static values, so a call that fails does not allocate either. A call that returns a fresh
-// slice or string allocates it, and its doc says so. Each has a form that
+// slice or string allocates it, and its doc states this. Each has a form that
 // writes into storage of the caller, such as the Append forms. A
 // layer2.Burst keeps its decoded Data until the next decode into it, so it
 // must not be copied after its first decode. docs/allocation.md lists
@@ -65,7 +65,7 @@
 // Optional values follow one rule. A field of a config or options struct
 // that can be left unset is a pointer, where nil means unset, such as
 // layer2.DecodeOptions.ColorCode, or a value whose zero means the default
-// that its doc gives. Where a doc says so, a negative duration turns a
+// that its doc gives. Where a doc states it, a negative duration turns a
 // timer off. A value of a result that can be missing has a HasX bool beside
 // it, such as layer2.Hint.HasDataType and location.Fix.HasAltitude.
 //
@@ -75,7 +75,7 @@
 // a password or a payload. It keeps a pointer, func or interface of a config
 // as it is, such as a Scratch burst, a trunk.Authenticator or a dvsi.Port.
 // A decoder that returns a slice field, such as ip.Decode, returns a view of
-// its input, and its doc says so.
+// its input, and its doc states this.
 //
 // Every field of bits that the library takes or returns is packed in bytes
 // in transmit order: the first bit on air is the most significant bit of
@@ -179,7 +179,7 @@
 //     for the packets of a data.Receiver.
 //
 // The C API of the library, libdmrgo, is in v2/capi, a module of its own.
-// It has an ABI number of its own; the README says how it is versioned.
+// It has an ABI number of its own; the README gives its version rules.
 //
 // # State machines
 //
@@ -187,14 +187,14 @@
 // method set. Each method takes the time now, on a monotonic clock that the
 // caller picks, and appends its outputs to the slice dst of the caller:
 //
-//   - Burst(now, raw, h, dst) decodes the RawBurst raw with what the
-//     layer2.Hint h says about it. A nil raw is a transport frame without a
+//   - Burst(now, raw, h, dst) decodes the RawBurst raw with the data in
+//     the layer2.Hint h. A nil raw is a transport frame without a
 //     burst: only h applies.
 //   - Decoded(now, b, h, dst) takes a burst that the caller decoded once,
 //     so that one burst can feed several machines.
 //   - Lost(now, dst) reports the loss of the signal. A machine that only
 //     sends runs Tick.
-//   - Tick(now, dst) runs what is due at now, and Deadline tells when the
+//   - Tick(now, dst) runs what is due at now, and Deadline reports when the
 //     next Tick is due. A Tick before Deadline does nothing.
 //   - State reports the state, and Reset ends the work without an output.
 //
@@ -328,7 +328,7 @@
 //     transmitter that neither its constructor nor Init set up.
 //     rf.ErrNilBurst: returned by Monitor.Burst for a nil Monitor or Burst.
 //     rf.ErrBurstOrder, rf.ErrBurstService, rf.ErrTxTimeout: returned by
-//     Write of a transmitter for a burst that it refuses.
+//     Write of a transmitter for a burst that it does not accept.
 //   - codec2.ErrUnavailable, codec2.ErrUnsupportedMode,
 //     codec2.ErrFrameLength, codec2.ErrClosed: returned by the Codec2
 //     Codec; codec2.ErrNotWASM: returned by codec2.NewModule in a build

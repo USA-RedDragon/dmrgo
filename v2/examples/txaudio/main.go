@@ -2,9 +2,10 @@
 // rf.AudioTransmitter that Init sets up in static memory, as a hotspot
 // board drives the modulator input of its radio from a 12-bit DAC at 48
 // kHz and keys the radio by Active. It allocates nothing: it builds with
-// -gc=none, which fails the link of any program that allocates. The
-// transmitter refuses a setup that no measurement shows to keep the limits
-// of its region, and then the command says so and stops.
+// -gc=none, which fails the link of any program that allocates. Init
+// returns an error for a setup that no measurement shows to keep the
+// limits of its region, and then the command prints "setup refused" and
+// stops.
 package main
 
 import "github.com/USA-RedDragon/dmrgo/v2/rf"

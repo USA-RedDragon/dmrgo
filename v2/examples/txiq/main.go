@@ -2,9 +2,9 @@
 // Init sets up in static memory, as a microcontroller feeds the I/Q DAC of
 // a software radio at 96 kHz: a few MS bursts on one TDMA channel, with
 // their power ramps. It allocates nothing: it builds with -gc=none, which
-// fails the link of any program that allocates. The transmitter refuses a
-// setup that no measurement shows to keep the limits of its region, and
-// then the command says so and stops.
+// fails the link of any program that allocates. Init returns an
+// error for a setup that no measurement shows to keep the limits of its
+// region, and then the command prints "setup refused" and stops.
 package main
 
 import "github.com/USA-RedDragon/dmrgo/v2/rf"
