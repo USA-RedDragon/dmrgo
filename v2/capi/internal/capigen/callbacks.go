@@ -251,14 +251,28 @@ func (b *cbuild) param(i int, t types.Type, variadic bool) error {
 		return nil
 	}
 	if sl, ok := t.(*types.Slice); ok {
-		if !g.alias(sl.Elem()) {
-			return fmt.Errorf("callback slice of %s", sl.Elem())
-		}
 		ge, err := g.cgoElem(sl.Elem())
 		if err != nil {
 			return err
 		}
-		b.cargs = append(b.cargs, "(*"+ge+")(unsafe.Pointer(unsafe.SliceData("+q+")))", "C.size_t(len("+q+"))")
+		if g.alias(sl.Elem()) {
+			b.cargs = append(b.cargs, "(*"+ge+")(unsafe.Pointer(unsafe.SliceData("+q+")))", "C.size_t(len("+q+"))")
+			return nil
+		}
+		if _, isH := g.handleC(sl.Elem()); isH || g.needsArena(sl.Elem()) {
+			return fmt.Errorf("callback slice of %s", sl.Elem())
+		}
+		if _, isP := sl.Elem().(*types.Pointer); isP {
+			return fmt.Errorf("callback slice of %s", sl.Elem())
+		}
+		s := fmt.Sprintf("%ss%d", b.fp, i)
+		b.fields = append(b.fields, s+" []"+ge)
+		lines(&b.pre, "if cap(c."+s+") < len("+q+") {", "c."+s+" = make([]"+ge+", len("+q+"))", "}", "s"+s+" := c."+s+"[:len("+q+")]", "for i := range "+q+" {")
+		if err := g.outElem(&b.pre, sl.Elem(), "s"+s+"[i]", q+"[i]"); err != nil {
+			return err
+		}
+		lines(&b.pre, "}")
+		b.cargs = append(b.cargs, "unsafe.SliceData(s"+s+")", "C.size_t(len("+q+"))")
 		return nil
 	}
 	e := t
