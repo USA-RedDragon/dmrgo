@@ -53,12 +53,13 @@ type AudioRxConfig struct {
 // AudioReceiver recovers DMR bursts from the output of an FM
 // discriminator, as the radio chips of hotspots and MMDVM modems give it:
 // real samples in any units, with any gain and DC offset, which the
-// receiver measures itself. With Tier0 it keeps about 1.4 KB of state, for
-// microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz and
-// 2 KB with its stack, built with TinyGo -opt z. An AudioReceiver that
-// Init sets up in memory of the caller, such as a package variable, uses
-// no heap in stream mode. An AudioReceiver is not safe for concurrent
-// use, and it must not be copied after Init or NewAudioReceiver.
+// receiver measures itself. It takes audio of either polarity. With Tier0
+// it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at
+// 9.6 kHz it needs up to 4.8 MHz and 2 KB with its stack, built with
+// TinyGo -opt z. An AudioReceiver that Init sets up in memory of the
+// caller, such as a package variable, uses no heap in stream mode. An
+// AudioReceiver is not safe for concurrent use, and it must not be copied
+// after Init or NewAudioReceiver.
 type AudioReceiver struct {
 	discRx
 	d48    disc48
@@ -148,7 +149,7 @@ func (r *AudioReceiver) configure(cfg AudioRxConfig, opt *options) {
 		r.rs0.init(rate, native)
 	}
 	r.sink = &r.bursts
-	r.setup(discSetup{Hz: hz, opt: opt}, dec)
+	r.setup(discSetup{Hz: hz, opt: opt, pol: true}, dec)
 	r.bursts.on = cfg.OnBursts
 }
 

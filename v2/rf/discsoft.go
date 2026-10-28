@@ -20,7 +20,7 @@ func (r *discRx) addExt(opt *options) {
 		ph = newDiscPhase(r, r.hz(), true, opt.cohRing())
 	case opt.CohExt:
 		hz := r.hz()
-		r.setup(discSetup{Hz: discRate, OnBurst: r.onBurst, opt: opt}, r.f.dec)
+		r.setup(discSetup{Hz: discRate, OnBurst: r.onBurst, opt: opt, pol: r.f.polBits&polOn != 0}, r.f.dec)
 		ph = newDiscPhase(r, hz, false, opt.cohRing())
 	}
 	x := softExtOf(opt, 2*r.tm.step)

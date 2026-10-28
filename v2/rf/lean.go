@@ -1947,6 +1947,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 }
 
 func (r *leanCore) emit(b *Burst) {
+	if a := r.audio; a != nil {
+		a.observe(b)
+	}
 	if r.onBurst != nil {
 		r.onBurst(b)
 	} else {

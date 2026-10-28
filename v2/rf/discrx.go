@@ -22,6 +22,7 @@ type discSetup struct {
 	Tier    Tier
 	opt     *options
 	lowIQ   bool
+	pol     bool
 }
 
 type discRx struct {
@@ -61,6 +62,9 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 		r.mid96 |= mid96Tab
 	}
 	r.f.gain, r.f.up = 1, opt.LevelUp
+	if cfg.pol {
+		r.f.polBits = polOn
+	}
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
 	if r.f.slow {
@@ -112,12 +116,14 @@ func (r *discRx) flushSolo() {
 func (r *discRx) run(x []int16) {
 	if !r.front96 {
 		r.runAll(x)
+		r.polarity()
 		return
 	}
 	for {
 		i, _ := r.run96(x, 0, nil)
 		x = x[i:]
 		if !r.slotDue {
+			r.polarity()
 			return
 		}
 		r.slotDue = false
@@ -531,10 +537,17 @@ type audioFront struct {
 	odd     bool
 	up      bool
 	dec     bool
+	polSum  int8
+	polBits uint8
+	pol     discPol
 }
 
 func (f *audioFront) refresh() {
-	f.k = int32(max(min(f.gain/rrcStepHz*65536+0.5, audioMaxK), 0))
+	if k := f.gain / rrcStepHz * 65536; k < 0 {
+		f.k = -int32(min(0.5-k, audioMaxK))
+	} else {
+		f.k = int32(max(min(k+0.5, audioMaxK), 0))
+	}
 	f.off = int32(max(min(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
 }
 
