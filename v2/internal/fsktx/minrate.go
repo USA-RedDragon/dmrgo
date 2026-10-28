@@ -24,8 +24,15 @@ const (
 )
 
 const (
+	lowpass8k = 8000
+	lowpass5k = 5000
+	lowpass3k = 3000
+)
+
+const (
 	audioRateTop = 96000
 	iqRateTop    = 20000000
+	minRateUnit  = 500
 )
 
 // A Setup is a transmit setup that MinRate and Allows check against the
@@ -41,6 +48,25 @@ type Setup struct {
 	Bits int
 	// Region, Service and Power are the Limits constants.
 	Region, Service, Power int
+	// InputLowpassHz is the cutoff in Hz of a low pass of at least two
+	// poles that the radio puts before its modulator input, as the user
+	// states it. 0 means none: the DAC drives the modulator with no filter.
+	// The check takes the radio as a two-pole Butterworth low pass at the
+	// next looser of the measured cutoffs 8000, 5000 and 3000 Hz, so 6000
+	// counts as 8000 and a cutoff above 8000 as none. Audio only.
+	InputLowpassHz int
+}
+
+func lowpassClass(hz int) int {
+	switch {
+	case hz <= 0 || hz > lowpass8k:
+		return 0
+	case hz > lowpass5k:
+		return 1
+	case hz > lowpass3k:
+		return 2
+	}
+	return 3
 }
 
 // MinRate returns the least sample rate in Hz from which the modulator of
@@ -81,7 +107,7 @@ func (s Setup) MinRate() int {
 	default:
 		return 0
 	}
-	return int(minRateAudio[ti][c][s.Region][s.Service][s.Power])
+	return int(minRateAudio[ti][c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service][s.Power]) * minRateUnit
 }
 
 // Allows reports whether the modulator of s may run at hz: a rate that
@@ -120,7 +146,7 @@ func (s Setup) Allows(hz int) bool {
 }
 
 // MinRate returns the MinRate of the Setup of tier t, iq, bits, region,
-// service and power.
+// service and power, with no input low pass.
 func MinRate(t Tier, iq bool, bits, region, service, power int) int {
 	return Setup{Tier: t, IQ: iq, Bits: bits, Region: region, Service: service, Power: power}.MinRate()
 }
