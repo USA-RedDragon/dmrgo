@@ -1,43 +1,47 @@
-// Command txaudio runs the Tier 0 transmit modulator, an
-// fsktx.MCUAudio, in static memory on a microcontroller, as a hotspot
+// Command txaudio runs the Tier 0 audio transmitter, an
+// rf.AudioTransmitter that Init sets up in static memory, as a hotspot
 // board drives the modulator input of its radio from a 12-bit DAC at 48
-// kHz. It allocates nothing: it builds with -gc=none, which fails the link
-// of any program that allocates.
+// kHz and keys the radio by Active. It allocates nothing: it builds with
+// -gc=none, which fails the link of any program that allocates. The
+// transmitter refuses a setup that no measurement shows to keep the limits
+// of its region, and then the command says so and stops.
 package main
 
-import "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
+import "github.com/USA-RedDragon/dmrgo/v2/rf"
 
 var (
-	mod   fsktx.MCUAudio
-	burst [33]byte
-	syms  [132]int8
-	out   [10]int16
-	sum   int32
+	tx  rf.AudioTransmitter
+	one [1]rf.Burst
+	sum int32
+	ptt bool
 )
 
-func write(x []int16) {
+func toDAC(x []int16) {
 	for _, v := range x {
 		sum += int32(v)
 	}
 }
 
 func main() {
-	if err := mod.Init(fsktx.Table48k(), 1080, 2048); err != nil {
+	err := tx.Init(rf.AudioTxConfig{Rate: 48000, Bits: 12, Unsigned: true, OnSamples: toDAC,
+		Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30})
+	if err != nil {
+		println("setup refused")
 		return
 	}
 	x := byte(1)
-	for i := range burst {
+	for i := range one[0].Data {
 		x = x*37 + 11
-		burst[i] = x
+		one[0].Data[i] = x
 	}
-	for range 100 {
-		s := fsktx.Dibits(syms[:], burst[:])
-		for _, v := range s {
-			write(out[:mod.Symbol(out[:], v)])
+	one[0].Stream = 1
+	for i := range 100 {
+		one[0].Slot = int64(2 * i)
+		if _, err := tx.Write(one[:]); err != nil {
+			return
 		}
+		ptt = tx.Active()
 	}
-	for range 4 {
-		write(out[:mod.Symbol(out[:], 0)])
-	}
-	println("sum", sum)
+	_ = tx.Flush()
+	println("sum", sum, ptt)
 }

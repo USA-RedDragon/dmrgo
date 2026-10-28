@@ -1,47 +1,46 @@
-// Command txiq runs the Tier 0 I/Q transmit modulator, an fsktx.MCUIQ, in
-// static memory on a microcontroller, as a board feeds the I/Q DAC of a
-// software radio at 96 kHz: one TDMA burst with its power ramps. It
-// allocates nothing: it builds with -gc=none, which fails the link of any
-// program that allocates.
+// Command txiq runs the Tier 0 I/Q transmitter, an rf.Transmitter that
+// Init sets up in static memory, as a microcontroller feeds the I/Q DAC of
+// a software radio at 96 kHz: a few MS bursts on one TDMA channel, with
+// their power ramps. It allocates nothing: it builds with -gc=none, which
+// fails the link of any program that allocates. The transmitter refuses a
+// setup that no measurement shows to keep the limits of its region, and
+// then the command says so and stops.
 package main
 
-import "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
+import "github.com/USA-RedDragon/dmrgo/v2/rf"
 
 var (
-	mod   fsktx.MCUIQ
-	burst [33]byte
-	syms  [132]int8
-	out   [40]int16
+	tx    rf.Transmitter
+	one   [1]rf.Burst
 	sum   int32
+	keyed bool
 )
 
-func write(x []int16) {
-	for _, v := range x {
+func toDAC(b []byte) {
+	for _, v := range b {
 		sum += int32(v)
 	}
 }
 
 func main() {
-	if err := mod.Init(96000, 0, 96); err != nil {
+	err := tx.Init(rf.TxConfig{Rate: 96000, OnSamples: toDAC, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30})
+	if err != nil {
+		println("setup refused")
 		return
 	}
 	x := byte(1)
-	for i := range burst {
+	for i := range one[0].Data {
 		x = x*37 + 11
-		burst[i] = x
+		one[0].Data[i] = x
 	}
-	for range 100 {
-		mod.Key(true)
-		for range 6 {
-			write(out[:mod.Symbol(out[:], 0)])
+	one[0].Stream = 1
+	for i := range 100 {
+		one[0].Slot = int64(2 * i)
+		if _, err := tx.Write(one[:]); err != nil {
+			return
 		}
-		for _, v := range fsktx.Dibits(syms[:], burst[:]) {
-			write(out[:mod.Symbol(out[:], v)])
-		}
-		mod.Key(false)
-		for range 150 {
-			write(out[:mod.Symbol(out[:], 0)])
-		}
+		keyed = tx.Active()
 	}
-	println("sum", sum)
+	_ = tx.Flush()
+	println("sum", sum, keyed)
 }
