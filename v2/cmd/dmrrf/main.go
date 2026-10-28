@@ -521,7 +521,7 @@ func runRX(args []string, std stdio) (err error) {
 		return errors.New("-pcm needs -ambe")
 	}
 	if *tier < 0 || *tier > 3 {
-		return fmt.Errorf("-tier %d, want 0 to 3", *tier)
+		return fmt.Errorf("-tier %d, expected 0 to 3", *tier)
 	}
 	w := std.out
 	if *pcmPath == "-" {

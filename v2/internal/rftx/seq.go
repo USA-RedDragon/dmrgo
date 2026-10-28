@@ -31,7 +31,7 @@ type SeqConfig struct {
 	Superframes int
 	// AMBESilence sends AMBE+2 silence instead of the test pattern.
 	AMBESilence bool
-	// LateEntry leaves out the voice LC and PI headers, so a receiver learns
+	// LateEntry leaves out the voice LC and PI headers, so a receiver gets
 	// the call only from the embedded LC.
 	LateEntry bool
 	// Preambles is the number of preamble CSBKs of the preamble and sms
@@ -274,7 +274,7 @@ const (
 
 func motorolaCSBKBursts(alert bool, cfg SeqConfig) ([]layer2.RawBurst, error) {
 	if cfg.Preambles < 0 || cfg.Preambles > 0xFF {
-		return nil, fmt.Errorf("%d preambles, want 0 to 255", cfg.Preambles)
+		return nil, fmt.Errorf("%d preambles, expected 0 to 255", cfg.Preambles)
 	}
 	var out []layer2.RawBurst
 	for i := range cfg.Preambles {
@@ -453,7 +453,7 @@ func payload(name string, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 		return responseBursts(name == seqSR, cfg)
 	case seqPreamble:
 		if cfg.Preambles < 0 || cfg.Preambles > 200 {
-			return nil, nil, fmt.Errorf("%d preambles, want 0 to 200", cfg.Preambles)
+			return nil, nil, fmt.Errorf("%d preambles, expected 0 to 200", cfg.Preambles)
 		}
 		b, err := preambleBursts(cfg)
 		return b, nil, err

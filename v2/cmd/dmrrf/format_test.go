@@ -122,7 +122,7 @@ func TestFormatInference(t *testing.T) {
 	}{
 		{[]string{"rx", "-i", filepath.Join(dir, "x.iq"), "-rate", "1e6"}, "give -format"},
 		{[]string{"rx", "-i", "-", "-rate", "1e6"}, "give -format"},
-		{[]string{"rx", "-i", wav, "-format", "cs12"}, "want cu8"},
+		{[]string{"rx", "-i", wav, "-format", "cs12"}, "expected cu8"},
 		{[]string{"rx", "-i", wav, "-offset-hz", "100"}, "I/Q only"},
 		{[]string{"tx", "-o", filepath.Join(dir, "x.cs8")}, "-rate is required"},
 		{[]string{"tx", "-o", filepath.Join(dir, "x.cs8"), "-rate", "1e6", "-ppm", "2"}, "-ppm needs -freq"},

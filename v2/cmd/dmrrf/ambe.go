@@ -75,7 +75,7 @@ func openAMBE(spec string, software func() (vocoder.Codec, error)) (*ambeBackend
 		}
 		return newDVSI(conn, "AMBEserver "+addr)
 	}
-	return nil, fmt.Errorf("-ambe %q: want software, serial:<device>[@<baud>] or ambeserver:<host>[:<port>]", spec)
+	return nil, fmt.Errorf("-ambe %q: expected software, serial:<device>[@<baud>] or ambeserver:<host>[:<port>]", spec)
 }
 
 func newDVSI(port io.ReadWriteCloser, where string) (*ambeBackend, error) {

@@ -70,7 +70,7 @@ func formatByName(name string) (sampleFormat, error) {
 	case nameWAV:
 		return sampleFormat{name: name, enc: encS16, channels: 1, wav: true}, nil
 	}
-	return sampleFormat{}, fmt.Errorf("-format %q, want %s", name, formatList)
+	return sampleFormat{}, fmt.Errorf("-format %q, expected %s", name, formatList)
 }
 
 func formatOfExtension(path string) string {
@@ -96,7 +96,7 @@ func formatFor(name, path string) (sampleFormat, error) {
 	if n := formatOfExtension(path); n != "" {
 		return formatByName(n)
 	}
-	return sampleFormat{}, fmt.Errorf("cannot tell the sample format of %q from its name; give -format", path)
+	return sampleFormat{}, fmt.Errorf("cannot get the sample format of %q from its name; give -format", path)
 }
 
 func normalize(e encoding, b []byte) float64 {
@@ -206,10 +206,10 @@ func readWAVHeader(r *bufio.Reader) (sampleFormat, float64, io.Reader, error) {
 			case tag == 3 && bits == 32:
 				f.enc = encF32
 			default:
-				return sampleFormat{}, 0, nil, fmt.Errorf("WAV format %d with %d bits, want 8-bit or 16-bit PCM or 32-bit float", tag, bits)
+				return sampleFormat{}, 0, nil, fmt.Errorf("WAV format %d with %d bits, expected 8-bit or 16-bit PCM or 32-bit float", tag, bits)
 			}
 			if f.channels != 1 && f.channels != 2 {
-				return sampleFormat{}, 0, nil, fmt.Errorf("WAV with %d channels, want 1 (audio) or 2 (I/Q)", f.channels)
+				return sampleFormat{}, 0, nil, fmt.Errorf("WAV with %d channels, expected 1 (audio) or 2 (I/Q)", f.channels)
 			}
 			haveFmt = true
 		case "data":

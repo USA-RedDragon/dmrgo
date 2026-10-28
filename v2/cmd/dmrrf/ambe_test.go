@@ -108,7 +108,7 @@ func TestAMBESpecErrors(t *testing.T) {
 	}
 	for _, tt := range []struct{ args, want string }{
 		{"-ambe software:x", "takes no argument"},
-		{"-ambe dvsi", "want software"},
+		{"-ambe dvsi", "expected software"},
 		{"-ambe serial:", "no device"},
 		{"-ambe serial:/dev/null@fast", "baud"},
 		{"-ambe serial:/dev/null@1234", badBaud},

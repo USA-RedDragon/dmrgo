@@ -24,7 +24,7 @@ func baudFlag(baud int) (uint32, error) {
 	case 921600:
 		return syscall.B921600, nil
 	default:
-		return 0, fmt.Errorf("baud %d, want 57600, 115200, 230400, 460800 or 921600", baud)
+		return 0, fmt.Errorf("baud %d, expected 57600, 115200, 230400, 460800 or 921600", baud)
 	}
 }
 

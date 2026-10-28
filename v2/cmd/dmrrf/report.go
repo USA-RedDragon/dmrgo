@@ -69,7 +69,7 @@ type chanState struct {
 // number in its stream, or its slot time when the burst has no stream,
 // which alternates every 30 ms, aligned with the TC bits of the CACHs of
 // the stream by majority. The Hamming(7,4,3) code of the TACT corrects every error
-// pattern to some codeword, so a single TC bit cannot be trusted.
+// pattern to some codeword, so a single TC bit is not reliable.
 type Reporter struct {
 	w      io.Writer
 	chans  map[int]*chanState
