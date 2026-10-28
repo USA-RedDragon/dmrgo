@@ -1159,7 +1159,7 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 	if res.Uncorrectable {
 		return pdu.LCBytes{}, false
 	}
-	return pdu.LCBytes(lc), true
+	return lc, true
 }
 
 func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {

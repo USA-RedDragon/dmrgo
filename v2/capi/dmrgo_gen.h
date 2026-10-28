@@ -8977,7 +8977,7 @@ int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t 
 /* Go: layer2.DecodeEmbeddedFullLinkControl. DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded signalling fields f of bursts B to E, as DecodeEmbeddedLC(f) does. */
 int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_pdu_full_link_control_t *out);
 /* Go: layer2.DecodeEmbeddedLC. DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling fields f of bursts B to E, as dmrgo_layer2_raw_burst_embedded_data returns them. */
-int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], uint8_t data[9], dmrgo_fec_result_t *fec);
+int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res);
 /* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as dmrgo_layer2_raw_burst_embedded_data returns it. */
 int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
 /* dmrgo_layer2_embedded_lc_assembler_new makes a zero dmrgo_layer2_embedded_lc_assembler_t. */
@@ -8985,13 +8985,13 @@ int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t 
 /* dmrgo_layer2_embedded_lc_assembler_free frees the handle. self may be NULL. */
 int dmrgo_layer2_embedded_lc_assembler_free(dmrgo_layer2_embedded_lc_assembler_t *self);
 /* Go: layer2.EmbeddedLCAssembler.Add. Add adds the embedded signalling field frag of a burst whose EMB carries lcss. When a Last fragment follows a First and two Continuation fragments, Add returns the LC with done set, and DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE when its FEC result is uncorrectable. Add returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when a fragment out of that order discards a partial LC. */
-int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, uint8_t lc[9], dmrgo_fec_result_t *res, bool *done);
+int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res, bool *done);
 /* Go: layer2.EmbeddedLCAssembler.Reset. Reset discards any partial LC. */
 int dmrgo_layer2_embedded_lc_assembler_reset(dmrgo_layer2_embedded_lc_assembler_t *self);
 /* Go: layer2.EncodeEmbeddedFullLinkControl. EncodeEmbeddedFullLinkControl returns the four embedded signalling fields, in burst order B to E, that carry lc. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL lc. lc may be NULL. */
 int dmrgo_layer2_encode_embedded_full_link_control(const dmrgo_pdu_full_link_control_t *lc, uint8_t out[4][4]);
 /* Go: layer2.EncodeEmbeddedLC. EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in burst order B to E, that carry the 9-octet LC lc, in the form dmrgo_layer2_raw_burst_set_embedded_data takes. */
-int dmrgo_layer2_encode_embedded_lc(const uint8_t lc[9], uint8_t out[4][4]);
+int dmrgo_layer2_encode_embedded_lc(const dmrgo_pdu_lc_bytes_t *lc, uint8_t out[4][4]);
 /* Go: layer2.EncodeEmbeddedRC. EncodeEmbeddedRC encodes a Reverse Channel PDU into the 32 transmit bits of the embedded signalling data field, packed as DecodeEmbeddedRC takes them. It returns an error when the RC command does not fit in 4 bits, and DMRGO_ERR_NIL_ARGUMENT for a NULL rc. rc may be NULL. */
 int dmrgo_layer2_encode_embedded_rc(const dmrgo_pdu_reverse_channel_t *rc, uint8_t out[4]);
 /* Go: layer2.EncodeShortLCToCACH. EncodeShortLCToCACH encodes a Short LC PDU into the 4 CACH fields that carry it, in transmit order. slc may be NULL. */

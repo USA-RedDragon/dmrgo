@@ -1109,7 +1109,7 @@ func (t *Transmitter) collect(e *Event) {
 	if res.Uncorrectable {
 		return
 	}
-	if _, voiceLC := callOf(pdu.LCBytes(lc), OriginEmbedded); !voiceLC || pdu.LCBytes(lc) == t.call.LC {
+	if _, voiceLC := callOf(lc, OriginEmbedded); !voiceLC || lc == t.call.LC {
 		t.carry, t.hasCarry = t.frags, true
 	}
 }

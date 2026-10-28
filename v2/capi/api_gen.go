@@ -17482,7 +17482,7 @@ func dmrgo_layer2_decode_embedded_full_link_control(c_f *C.uint8_t, c_out *C.dmr
 }
 
 //export dmrgo_layer2_decode_embedded_lc
-func dmrgo_layer2_decode_embedded_lc(c_f *C.uint8_t, c_data *C.uint8_t, c_fec *C.dmrgo_fec_result_t) (rc C.int) {
+func dmrgo_layer2_decode_embedded_lc(c_f *C.uint8_t, c_lc *C.dmrgo_pdu_lc_bytes_t, c_res *C.dmrgo_fec_result_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_f == nil {
@@ -17491,11 +17491,11 @@ func dmrgo_layer2_decode_embedded_lc(c_f *C.uint8_t, c_data *C.uint8_t, c_fec *C
 	r0, r1 := g_layer2.DecodeEmbeddedLC(*(*[4][4]byte)(unsafe.Pointer(c_f)))
 	_ = r0
 	_ = r1
-	if c_data != nil {
-		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_data))))) = r0
+	if c_lc != nil {
+		*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&(*c_lc))) = r0
 	}
-	if c_fec != nil {
-		out_fec_Result(&(*c_fec), &r1, oc)
+	if c_res != nil {
+		out_fec_Result(&(*c_res), &r1, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -17543,7 +17543,7 @@ func dmrgo_layer2_embedded_lc_assembler_free(c_self *C.dmrgo_layer2_embedded_lc_
 }
 
 //export dmrgo_layer2_embedded_lc_assembler_add
-func dmrgo_layer2_embedded_lc_assembler_add(c_self *C.dmrgo_layer2_embedded_lc_assembler_t, c_frag *C.uint8_t, c_lcss C.dmrgo_enums_lcss_t, c_lc *C.uint8_t, c_res *C.dmrgo_fec_result_t, c_done *C.bool) (rc C.int) {
+func dmrgo_layer2_embedded_lc_assembler_add(c_self *C.dmrgo_layer2_embedded_lc_assembler_t, c_frag *C.uint8_t, c_lcss C.dmrgo_enums_lcss_t, c_lc *C.dmrgo_pdu_lc_bytes_t, c_res *C.dmrgo_fec_result_t, c_done *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_layer2_EmbeddedLCAssembler(c_self)
@@ -17555,7 +17555,7 @@ func dmrgo_layer2_embedded_lc_assembler_add(c_self *C.dmrgo_layer2_embedded_lc_a
 	_ = r1
 	_ = r2
 	if c_lc != nil {
-		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_lc))))) = r0
+		*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&(*c_lc))) = r0
 	}
 	if c_res != nil {
 		out_fec_Result(&(*c_res), &r1, oc)
@@ -17609,13 +17609,13 @@ func dmrgo_layer2_encode_embedded_full_link_control(c_lc *C.dmrgo_pdu_full_link_
 }
 
 //export dmrgo_layer2_encode_embedded_lc
-func dmrgo_layer2_encode_embedded_lc(c_lc *C.uint8_t, c_out *C.uint8_t) (rc C.int) {
+func dmrgo_layer2_encode_embedded_lc(c_lc *C.dmrgo_pdu_lc_bytes_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_lc == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_layer2.EncodeEmbeddedLC(*(*[9]byte)(unsafe.Pointer(c_lc)))
+	r0 := g_layer2.EncodeEmbeddedLC(*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_lc)))
 	_ = r0
 	if c_out != nil {
 		*(*[4][4]byte)(unsafe.Pointer(&(*(*[4][4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0

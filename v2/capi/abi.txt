@@ -2276,14 +2276,14 @@ sym int dmrgo_layer2_data_string(const dmrgo_layer2_data_t *self, char *out, siz
 sym int dmrgo_layer2_decode_cach(const uint8_t bits[3], dmrgo_layer2_cach_t *out);
 sym int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t *out);
 sym int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_pdu_full_link_control_t *out);
-sym int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], uint8_t data[9], dmrgo_fec_result_t *fec);
+sym int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res);
 sym int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
-sym int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, uint8_t lc[9], dmrgo_fec_result_t *res, bool *done);
+sym int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res, bool *done);
 sym int dmrgo_layer2_embedded_lc_assembler_free(dmrgo_layer2_embedded_lc_assembler_t *self);
 sym int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t **out);
 sym int dmrgo_layer2_embedded_lc_assembler_reset(dmrgo_layer2_embedded_lc_assembler_t *self);
 sym int dmrgo_layer2_encode_embedded_full_link_control(const dmrgo_pdu_full_link_control_t *lc, uint8_t out[4][4]);
-sym int dmrgo_layer2_encode_embedded_lc(const uint8_t lc[9], uint8_t out[4][4]);
+sym int dmrgo_layer2_encode_embedded_lc(const dmrgo_pdu_lc_bytes_t *lc, uint8_t out[4][4]);
 sym int dmrgo_layer2_encode_embedded_rc(const dmrgo_pdu_reverse_channel_t *rc, uint8_t out[4]);
 sym int dmrgo_layer2_encode_short_lc_to_cach(const dmrgo_pdu_short_lc_t *slc, const dmrgo_pdu_tact_t *tact, uint8_t out[4][3]);
 sym int dmrgo_layer2_end_hint_string(dmrgo_layer2_end_hint_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

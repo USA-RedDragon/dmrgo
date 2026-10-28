@@ -17,7 +17,7 @@ const voiceLCHeaderMask = 0x96
 // EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in
 // burst order B to E, that carry the 9-octet LC lc, in the form
 // RawBurst.SetEmbeddedData takes.
-func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
+func EncodeEmbeddedLC(lc pdu.LCBytes) [4][4]byte {
 	return fragmentOctets(encodeEmbeddedLC(lc))
 }
 
@@ -25,7 +25,7 @@ func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
 // fields f of bursts B to E, as RawBurst.EmbeddedData returns them. The FEC
 // result sets Uncorrectable when no nearest BPTC codeword, or more than one,
 // has a 5-bit checksum that matches its LC.
-func DecodeEmbeddedLC(f [4][4]byte) ([9]byte, fec.Result) {
+func DecodeEmbeddedLC(f [4][4]byte) (lc pdu.LCBytes, res fec.Result) {
 	return decodeEmbeddedLC(fragmentWords(f))
 }
 
@@ -57,14 +57,14 @@ func (a *EmbeddedLCAssembler) Reset() {
 // ErrEmbeddedLCUncorrectable when its FEC result is uncorrectable. Add
 // returns ErrEmbeddedLCSequence when a fragment out of that order discards a
 // partial LC.
-func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc [9]byte, res fec.Result, done bool, err error) {
+func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc pdu.LCBytes, res fec.Result, done bool, err error) {
 	if a == nil {
-		return [9]byte{}, fec.Result{}, false, dmrgo.ErrNilReceiver
+		return pdu.LCBytes{}, fec.Result{}, false, dmrgo.ErrNilReceiver
 	}
 	return a.add(fragmentWord(frag), lcss)
 }
 
-func (a *EmbeddedLCAssembler) add(frag uint32, lcss enums.LCSS) ([9]byte, fec.Result, bool, error) {
+func (a *EmbeddedLCAssembler) add(frag uint32, lcss enums.LCSS) (pdu.LCBytes, fec.Result, bool, error) {
 	var want int
 	switch lcss {
 	case enums.LCSSFirstFragment:
