@@ -166,8 +166,10 @@ func (u txUnit) lag() int {
 
 func (u txUnit) amplitude() float64 {
 	switch {
-	case u.format == fmtS8:
+	case u.format == fmtS8 && (u.mcu || u.tier == Tier0):
 		return float64((iqAmplitude + 1<<7) >> 8)
+	case u.format == fmtS8:
+		return math.Floor((math.Floor(0.9*math.MaxInt16+0.5) + 1<<7) / 256)
 	case u.mcu || u.tier == Tier0:
 		return iqAmplitude
 	default:
@@ -185,9 +187,9 @@ func (u txUnit) phaseStep() float64 {
 func (u txUnit) peakHz() float64 {
 	switch {
 	case u.audio() && (u.mcu || u.tier == Tier0) && u.rate == 48000:
-		return 3 * taps48kPeak * 3 * DeviationHz / tableUnits
+		return 3 * taps48kPeak * 3 * DeviationHz / (tableUnits << tapShift)
 	case u.audio() && (u.mcu || u.tier == Tier0):
-		return 3 * taps24kPeak * 3 * DeviationHz / tableUnits
+		return 3 * taps24kPeak * 3 * DeviationHz / (tableUnits << tapShift)
 	case u.mcu || u.tier == Tier0:
 		return 3 * tapsIQPeak * 3 * DeviationHz / tableUnits
 	}
@@ -212,8 +214,8 @@ func (u txUnit) audioBounds() (lo, hi float64) {
 		if u.rate == 48000 {
 			t = Table48k()
 		}
-		scale := int32((u.level<<15 + tableUnits/2) / tableUnits)
-		return float64((-3*t.peak*scale+1<<14)>>15 + int32(u.offset)), float64((3*t.peak*scale+1<<14)>>15 + int32(u.offset))
+		lo, hi := t.bounds(int32((u.level<<15 + tableUnits/2) / tableUnits))
+		return float64(lo + u.offset), float64(hi + u.offset)
 	}
 	x := u.peakHz() * float64(u.level) / (3 * DeviationHz)
 	return float64(u.offset) - x, float64(u.offset) + x

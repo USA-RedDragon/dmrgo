@@ -12,8 +12,8 @@
 //
 //   - Tier0, MCUAudio and MCUIQ, shape by a fixed-point multiply and
 //     accumulate over tables in read-only memory and fit a Cortex-M4F at 4
-//     MHz in about 100 to 120 bytes of state. MCUIQ turns a 32-bit phase into I/Q
-//     by a cosine table of 4096 entries.
+//     MHz in about 120 to 140 bytes of state. MCUIQ turns a 32-bit phase into I/Q
+//     by a 32-bit cosine table of 2048 entries.
 //   - Tier1, Audio and IQ, shape in float32 over eight symbols on each
 //     side of the pulse, at any output rate, and IQ turns the phase into
 //     I/Q by an interpolated cosine table.

@@ -18,14 +18,6 @@ const ramTableLimit = 1024
 
 const mcuCorrSym = "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx.mcuCorr"
 
-var tableKnobs = map[string][][2]string{
-	"internal/fsktx/mcu.go": {
-		{"\ttier0Exact = false\n", "\ttier0Exact = true\n"},
-		{"\ttier0Corr = false\n", "\ttier0Corr = true\n"},
-		{"\ttier0Corr24 = false\n", "\ttier0Corr24 = true\n"},
-	},
-}
-
 var heaplessExamples = []string{"txaudio", "txiq"}
 
 func TestTinyGoTablesInFlash(t *testing.T) {
@@ -38,29 +30,7 @@ func TestTinyGoTablesInFlash(t *testing.T) {
 	if err != nil {
 		t.Fatal("DMRGO_TINYGO_ALLOCS is set but there is no tinygo command")
 	}
-	gotool, err := exec.LookPath("go")
-	if err != nil {
-		t.Fatal(err)
-	}
 	dir := copyModule(t)
-	for f, edits := range tableKnobs {
-		p := filepath.Join(dir, f)
-		b, err := os.ReadFile(p)
-		if err != nil {
-			t.Fatal(err)
-		}
-		s := string(b)
-		for _, e := range edits {
-			if strings.Count(s, e[0]) != 1 {
-				t.Fatalf("%s: %q does not occur once", f, e[0])
-			}
-			s = strings.Replace(s, e[0], e[1], 1)
-		}
-		if err := os.WriteFile(p, []byte(s), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	run(t, dir, gotool, "test", "-count=1", "-run", "^TestTablesGenerated$", "./internal/fsktx", "-update")
 	stub := filepath.Join(dir, "examples", "ramstub")
 	if err := os.MkdirAll(stub, 0o755); err != nil {
 		t.Fatal(err)
@@ -82,7 +52,7 @@ func TestTinyGoTablesInFlash(t *testing.T) {
 			}
 		}
 		if ex == "txaudio" && syms.flash[mcuCorrSym] < ramTableLimit && syms.ram[mcuCorrSym] == 0 {
-			t.Errorf("%s: the knobs no longer link %s", ex, mcuCorrSym)
+			t.Errorf("%s: %s is not in flash", ex, mcuCorrSym)
 		}
 	}
 }

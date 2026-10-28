@@ -1,6 +1,6 @@
 // Command txiq runs the Tier 0 I/Q transmit modulator, an fsktx.MCUIQ, in
 // static memory on a microcontroller, as a board feeds the I/Q DAC of a
-// software radio at 48 kHz: one TDMA burst with its power ramps. It
+// software radio at 96 kHz: one TDMA burst with its power ramps. It
 // allocates nothing: it builds with -gc=none, which fails the link of any
 // program that allocates.
 package main
@@ -11,7 +11,7 @@ var (
 	mod   fsktx.MCUIQ
 	burst [33]byte
 	syms  [132]int8
-	out   [20]int16
+	out   [40]int16
 	sum   int32
 )
 
@@ -22,7 +22,7 @@ func write(x []int16) {
 }
 
 func main() {
-	if err := mod.Init(48000, 0, 48); err != nil {
+	if err := mod.Init(96000, 0, 96); err != nil {
 		return
 	}
 	x := byte(1)

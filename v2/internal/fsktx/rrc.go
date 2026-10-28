@@ -78,6 +78,7 @@ type pulse struct {
 	edge     float64
 	flat     bool
 	flatGain float64
+	ridge    float64
 }
 
 func (p pulse) core(t float64) float64 {
@@ -286,6 +287,10 @@ func (p *pulse) nyquist() {
 		}
 		rows = append(rows, e)
 	}
+	ridge := p.ridge
+	if ridge == 0 {
+		ridge = nyquistRidge
+	}
 	g := make([][]float64, n)
 	for i := range g {
 		g[i] = make([]float64, n+1)
@@ -294,7 +299,7 @@ func (p *pulse) nyquist() {
 				g[i][j] += r[i] * r[j]
 			}
 		}
-		g[i][i] += nyquistRidge
+		g[i][i] += ridge
 		if i == nyquistStep*p.span {
 			clear(g[i])
 			g[i][i] = 1

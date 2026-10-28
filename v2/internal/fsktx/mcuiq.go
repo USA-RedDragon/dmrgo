@@ -3,13 +3,13 @@ package fsktx
 import "unsafe"
 
 const (
-	tier0IQCorr = false
-	tier0IQWide = false
+	tier0IQCorr = true
+	tier0IQWide = true
 )
 
 const (
-	cosTableBits = 12
-	iqAmplitude  = 29491
+	cosTableBits = 11
+	iqAmplitude  = 32600
 )
 
 const (
@@ -20,14 +20,14 @@ const (
 )
 
 // MCUIQ is the Tier0 I/Q modulator, for a software radio driven by a
-// microcontroller: the shaping of MCUAudio at 24 kHz over a pulse of four
-// symbols on each side, a 32-bit phase accumulator and a cosine table of
-// 4096 entries, into interleaved 16-bit I/Q at 0.9 of full scale at 2, 4
-// or 8 times 24 kHz, with the phase step interpolated linearly between
-// the samples at 24 kHz. Key ramps the power up and down over a raised
-// cosine for TDMA bursts. It keeps about 90 bytes of state, allocates
-// nothing and fits a microcontroller: Init sets it up in memory of the
-// caller. An MCUIQ is not safe for concurrent use.
+// microcontroller: a fixed-point shaper at 48 kHz over a pulse of eight
+// symbols on each side, a 32-bit phase accumulator and a 32-bit cosine
+// table of 2048 entries, into interleaved 16-bit I/Q at 0.995 of full
+// scale at 1, 2 or 4 times 48 kHz, with the phase step interpolated
+// linearly between the samples at 48 kHz. Key ramps the power up and down
+// over a raised cosine for TDMA bursts. It keeps about 120 bytes of state,
+// allocates nothing and fits a microcontroller: Init sets it up in memory
+// of the caller. An MCUIQ is not safe for concurrent use.
 type MCUIQ struct {
 	buf          [iqPhases]int32
 	hist         [iqWords]uint32
@@ -87,8 +87,8 @@ func (m *MCUIQ) Key(on bool) { m.on = on }
 // writes the I/Q of the symbol period that it completes to dst,
 // interleaved. It returns the number of values it wrote. With a dst
 // shorter than 2*Samples, or before Init, it writes nothing, does not take
-// the symbol and returns 0. The output lags the symbols by four symbol
-// periods and one sample of the shaper, at 24 kHz.
+// the symbol and returns 0. The output lags the symbols by eight symbol
+// periods and one sample of the shaper, at 48 kHz.
 //
 //go:nobounds
 func (m *MCUIQ) Symbol(dst []int16, s int8) int {
@@ -209,10 +209,10 @@ const (
 
 func cosSin(phase uint32) (int16, int16) {
 	i := phase >> cosShift
-	c, ns := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+	c, ns := cosTable[i], cosTable[i+cosQuarter]
 	if tier0IQFine && tier0IQWide {
 		m := cosFrac32(phase)
-		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		sn, c := cosTable[i], cosTable[i+cosQuarter]
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
 		return int16(co >> 16), int16(si >> 16)
@@ -232,7 +232,7 @@ func putIQ(d *[2]int16, phase uint32) {
 	if tier0IQFine && tier0IQWide {
 		i := phase >> cosShift
 		m := cosFrac32(phase)
-		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		sn, c := cosTable[i], cosTable[i+cosQuarter]
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
 		*(*uint32)(unsafe.Pointer(d)) = uint32(si)&0xffff0000 | uint32(co)>>16
@@ -295,11 +295,11 @@ func (m *MCUIQ) steady1(dst []int16) {
 		prev = w
 		phase += uint32(v)
 		i, f := phase>>cosShift, int32(uint64(phase<<cosTableBits)*uint64(fr)>>32)-int32(fr>>1)
-		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		sn, c := cosTable[i], cosTable[i+cosQuarter]
 		lo := uint32(sn+int32(int64(c)*int64(f)>>32))&0xffff0000 | uint32(c-int32(int64(sn)*int64(f)>>32))>>16
 		phase += uint32(v + dw)
 		i, f = phase>>cosShift, int32(uint64(phase<<cosTableBits)*uint64(fr)>>32)-int32(fr>>1)
-		sn, c = int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		sn, c = cosTable[i], cosTable[i+cosQuarter]
 		hi := uint32(sn+int32(int64(c)*int64(f)>>32))&0xffff0000 | uint32(c-int32(int64(sn)*int64(f)>>32))>>16
 		*(*[2]uint32)(unsafe.Pointer(&dst[4*p])) = [2]uint32{lo, hi}
 		p++
@@ -363,9 +363,9 @@ func (m *MCUIQ) ramping(dst []int16) {
 					q--
 				}
 			}
-			rc := int32(cosTable[q&cosMask])
+			rc := cosTable[q&cosMask]
 			if tier0IQFine && tier0IQWide {
-				rc = int32(cosTable[q&cosMask+cosQuarter]) >> 16
+				rc = cosTable[q&cosMask+cosQuarter] >> 16
 			}
 			a := int32(uint32(iqAmplitude-rc) * 32768 / (2 * iqAmplitude))
 			d := dst[j : j+2 : j+2]

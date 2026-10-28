@@ -151,7 +151,7 @@ func TestIQRoundTrip(t *testing.T) {
 		b := toS8(iqOf(t, cfg, ts.syms, ts.lead-6), cfg.Rate)
 		rng := rand.New(rand.NewPCG(1, 2))
 		for i := range b {
-			b[i] = byte(int8(b[i]) + int8(rng.IntN(3)-1))
+			b[i] = byte(int8(min(max(int(int8(b[i]))+rng.IntN(3)-1, math.MinInt8), math.MaxInt8)))
 		}
 		var got []rf.Burst
 		r, err := rf.New(&rf.Config{Rate: float64(cfg.Rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})

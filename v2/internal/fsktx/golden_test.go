@@ -1,6 +1,7 @@
 package fsktx
 
 import (
+	"math"
 	"slices"
 	"testing"
 )
@@ -46,7 +47,7 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			return h
-		}, 0xf21adadc},
+		}, 0xa4a76fa1},
 		{"audio 48k dac", func() uint32 {
 			var m MCUAudio
 			if err := m.Init(Table48k(), 1100, 2048); err != nil {
@@ -59,8 +60,8 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			return h
-		}, 0x9681552d},
-		{"iq 24k at 96k", func() uint32 {
+		}, 0x8486b516},
+		{"iq 96k", func() uint32 {
 			var m MCUIQ
 			if err := m.Init(96000, -2000, 96); err != nil {
 				t.Fatal(err)
@@ -73,13 +74,31 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			return h
-		}, 0x010328d9},
+		}, 0x34311e16},
 	}
 	for _, c := range cases {
 		if got := c.run(); got != c.want {
 			t.Errorf("%s: digest %#x, want %#x", c.name, got, c.want)
 		}
 	}
+}
+
+func edgeOffset(t *testing.T, tab AudioTable, level, dir int) int {
+	t.Helper()
+	var m MCUAudio
+	ok, bad := 0, dir*(math.MaxInt16+1)
+	for bad-ok > 1 || ok-bad > 1 {
+		mid := (ok + bad) / 2
+		if m.Init(tab, level, mid) == nil {
+			ok = mid
+		} else {
+			bad = mid
+		}
+	}
+	if m.Init(tab, level, ok) != nil || m.Init(tab, level, ok+dir) == nil {
+		t.Fatalf("level %d: no edge offset at %d", level, ok)
+	}
+	return ok
 }
 
 func TestGoldenLimits(t *testing.T) {
@@ -101,12 +120,17 @@ func TestGoldenLimits(t *testing.T) {
 			}
 			var buf [maxSamples]int16
 			h := uint32(2166136261)
+			prev := int32(offset)
 			for i, s := range syms {
 				if i%13 == 5 {
 					m.Symbol(buf[:m.Samples()-1], s)
 				}
 				for _, v := range buf[:m.Symbol(buf[:], s)] {
 					h = fnv(h, v)
+					if d := int32(v) - prev; d > 40000 || d < -40000 {
+						t.Fatalf("level %d offset %d: the output jumps from %d to %d", level, offset, prev, v)
+					}
+					prev = int32(v)
 				}
 			}
 			return h
@@ -134,13 +158,13 @@ func TestGoldenLimits(t *testing.T) {
 		run  func() uint32
 		want uint32
 	}{
-		{"audio 24k 16000 high", audio(Table24k(), 16000, 2603), 0x6d32f347},
-		{"audio 48k 16000 low", audio(Table48k(), 16000, -2482), 0xb07d0f48},
-		{"audio 24k 1 high", audio(Table24k(), 1, 32765), 0xd48c999d},
-		{"audio 48k 1 low", audio(Table48k(), 1, -32766), 0x2296d741},
-		{"iq 48k high step", iq(48000, 11999, 1, func(i int) bool { return i%9 < 5 }), 0xbe1382f7},
-		{"iq 192k low ramp", iq(192000, -47999, 1<<15, func(i int) bool { return i < 2000 }), 0x8f64b885},
-		{"iq 96k every symbol", iq(96000, 23999, 7, func(i int) bool { return i&1 == 0 }), 0x20a76fe2},
+		{"audio 24k 16000 high", audio(Table24k(), 16000, edgeOffset(t, Table24k(), 16000, 1)), 0xcf27e341},
+		{"audio 48k 16000 low", audio(Table48k(), 16000, edgeOffset(t, Table48k(), 16000, -1)), 0x6797c4e6},
+		{"audio 24k 1 high", audio(Table24k(), 1, edgeOffset(t, Table24k(), 1, 1)), 0xe5842967},
+		{"audio 48k 1 low", audio(Table48k(), 1, edgeOffset(t, Table48k(), 1, -1)), 0x136d0e77},
+		{"iq 48k high step", iq(48000, 11999, 1, func(i int) bool { return i%9 < 5 }), 0x763bff13},
+		{"iq 192k low ramp", iq(192000, -47999, 1<<15, func(i int) bool { return i < 2000 }), 0xc3526f81},
+		{"iq 96k every symbol", iq(96000, 23999, 7, func(i int) bool { return i&1 == 0 }), 0x4da77038},
 	}
 	for _, c := range cases {
 		if got := c.run(); got != c.want {

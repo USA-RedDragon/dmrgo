@@ -8,35 +8,35 @@ import (
 const tableUnits = 15000
 
 const (
-	tier0Exact = false
+	tier0Exact = true
 )
 
 const (
-	tier0IQFine = false
+	tier0IQFine = true
 )
 
 const (
-	tapShift = 0
+	tapShift = 2
 )
 
 const (
-	tier0Corr = false
+	tier0Corr = true
 )
 
 const (
-	tier0Corr24 = false
+	tier0Corr24 = true
 )
 
 const (
-	tier0Shape2 = false
+	tier0Shape2 = true
 )
 
 const (
-	tier0Fold = false
+	tier0Fold = true
 )
 
 const (
-	tier0Shape = false
+	tier0Shape = true
 )
 
 const (
@@ -54,6 +54,19 @@ type AudioTable struct {
 	hz    int
 	span  int
 	peak  int32
+}
+
+func (t AudioTable) bounds(scale int32) (lo, hi int) {
+	peak := 3 * int64(t.peak)
+	if tier0Corr && (t.hz == 48000 || tier0Corr24 && t.hz == 24000) {
+		peak += mcuCorrPeak
+	}
+	hi = int((peak*int64(scale) + 1<<(14+tapShift)) >> (15 + tapShift))
+	lo = int((-peak*int64(scale) + 1<<(14+tapShift)) >> (15 + tapShift))
+	if tier0Shape {
+		lo, hi = lo-1, hi+1
+	}
+	return lo, hi
 }
 
 // Hz returns the sample rate of t.
@@ -168,7 +181,7 @@ func (k *shaperMAC) symbol(s int8) int {
 // MCUAudio is the Tier0 modulator of the deviation signal that drives the
 // modulator input of an FM radio, as MMDVM modems drive it: the
 // root-raised-cosine pulse, by a fixed-point multiply and accumulate per
-// sample over the taps of an AudioTable in read-only memory. It keeps 96
+// sample over the taps of an AudioTable in read-only memory. It keeps 132
 // bytes of state, allocates nothing and fits a microcontroller: Init sets it
 // up in memory of the caller, such as a package variable. An MCUAudio is not
 // safe for concurrent use. (ETSI TS 102 361-1 clause 10.2.2.2)
@@ -199,8 +212,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 		return errLevel
 	}
 	scale := int32((level<<15 + tableUnits/2) / tableUnits)
-	hi := int((3*int64(t.peak)*int64(scale) + 1<<(14+tapShift)) >> (15 + tapShift))
-	lo := int((-3*int64(t.peak)*int64(scale) + 1<<(14+tapShift)) >> (15 + tapShift))
+	lo, hi := t.bounds(scale)
 	if offset > math.MaxInt16-hi || offset < math.MinInt16-lo {
 		return errOffset
 	}
