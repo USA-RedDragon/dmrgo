@@ -126,10 +126,25 @@ linters:
       # The fixed-point modulators of Tier 0 narrow values whose range the
       # pulse tables and the phase accumulator bound; a check on each
       # conversion would cost cycles of the 4 MHz budget of a Cortex-M4F.
-      - path: v2/internal/fsktx/(mcu|mcuiq|host)\.go$
+      - path: v2/internal/fsktx/(mcu|mcuiq|host|peak)\.go$
         linters:
           - gosec
         text: ^G115
+      # The transmitters narrow sample rates, levels and lags that their
+      # configs bound before they narrow them, and codes of the converter.
+      - path: v2/rf/(tx|txaudio|txcore)\.go$
+        linters:
+          - gosec
+        text: ^G115
+      # The read-only limit tables of the transmitters and their static
+      # errors, one per refused field, so that a refusal does not allocate.
+      - path: v2/rf/txregion\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(ceilingDBm|spurGate10|iqErrs|audioErrs) is a global variable
+      - path: v2/rf/txregion\.go$
+        linters:
+          - goconst
       # rftx simulates channel noise, which needs reproducible seeds, not
       # secure randomness.
       - path: v2/internal/rftx/channel\.go$

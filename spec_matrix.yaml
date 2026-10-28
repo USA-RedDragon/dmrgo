@@ -31,6 +31,7 @@ ignore_files:
   - v2/internal/fsktx/mcu.go
   - v2/internal/fsktx/mcuiq.go
   - v2/internal/fsktx/minrate.go
+  - v2/internal/fsktx/peak.go
   - v2/internal/fsktx/rrc.go
   - v2/internal/fsktx/shapeopt.go
   - v2/internal/fsktx/shapepred.go
@@ -134,6 +135,14 @@ ignore_files:
   - v2/rf/strictlc.go
   - v2/rf/track.go
   - v2/rf/twopass.go
+  - v2/rf/tx.go
+  - v2/rf/txaudio.go
+  - v2/rf/txcore.go
+  - v2/rf/txendian_be.go
+  - v2/rf/txendian_le.go
+  - v2/rf/txhost.go
+  - v2/rf/txhost_tinygo.go
+  - v2/rf/txregion.go
   - v2/rf/union.go
   - v2/transport/dmrd/alias.go
   - v2/transport/dmrd/alias_lc.go

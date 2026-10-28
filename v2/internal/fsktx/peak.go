@@ -7,12 +7,13 @@ func (t AudioTable) Peak(level int) int {
 	return max(-lo, hi)
 }
 
-// PeakPerLevel returns the most that the output of a Tier1 or Tier2 Audio
-// reaches from its Offset over every run of symbols, in codes per code of
-// Level, and 0 for Tier0.
-func (a *Audio) PeakPerLevel() float64 {
+// Peak returns the most that the output of a Tier1 or Tier2 Audio of
+// Offset 0 reaches from 0 over every run of symbols, in codes, and 0 for
+// Tier0.
+func (a *Audio) Peak() float64 {
 	if a == nil || a.k == nil {
 		return 0
 	}
-	return a.k.peak / (3 * DeviationHz)
+	lo, hi := a.bounds()
+	return max(-lo, hi)
 }

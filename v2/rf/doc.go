@@ -1,7 +1,8 @@
 // Package rf recovers DMR bursts from the I/Q samples of a software radio
 // and from the output of an FM discriminator: 4FSK detection, SYNC search
 // and slot timing, soft-decision decoding of each FEC field, and the
-// superframe position of voice bursts.
+// superframe position of voice bursts. It also turns bursts back into I/Q
+// samples and into the deviation signal of an FM radio.
 //
 // NewReceiver makes a Receiver from an RxConfig, for I/Q at RxConfig.Rate
 // in RxConfig.Format: CU8 as rtl_sdr writes it, CS8 as hackrf_transfer
@@ -36,5 +37,25 @@
 // fits a microcontroller, to Tier3, for offline decoding. The constructors
 // allocate every buffer of the receiver, and Write and Flush allocate
 // nothing. The README gives the sensitivity, compute and RAM of each tier.
+//
+// The transmit side mirrors it. NewTransmitter makes a Transmitter from a
+// TxConfig and NewAudioTransmitter an AudioTransmitter from an
+// AudioTxConfig, with the same Tier, Rate, Format, Bits and Unsigned
+// fields, Init for Tier0 in memory of the caller, and the same modes:
+// OnSamples set for Write and Flush, nil for AppendSamples and
+// AppendFlush. A transmitter takes bursts and gives samples. Its Region,
+// Service and Power state the regulatory limits that the signal must keep,
+// and a setup that no measurement shows to keep them with margin gets a
+// *RegionError: the library makes no claim that a station complies, only
+// that a setup it accepts does not make its signal the cause of a failure
+// of the limits it measured.
+//
+//	tx, err := rf.NewTransmitter(&rf.TxConfig{Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 40})
+//	if err != nil {
+//		return err
+//	}
+//	iq := tx.AppendSamples(nil, bursts)
+//	iq = tx.AppendFlush(iq)
+//
 // (ETSI TS 102 361-1 clauses 6 and 10)
 package rf

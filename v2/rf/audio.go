@@ -7,9 +7,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
-// ErrNotSetUp is the error of Write and Flush on a receiver that neither
+// ErrNotSetUp is the error of Write and Flush on a receiver or transmitter that neither
 // its constructor nor Init set up.
-var ErrNotSetUp = errors.New("rf: receiver not set up; make it with its constructor or Init")
+var ErrNotSetUp = errors.New("rf: not set up; make it with its constructor or Init")
 
 // AudioRxConfig sets up an AudioReceiver.
 type AudioRxConfig struct {

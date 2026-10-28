@@ -1,0 +1,57 @@
+//go:build !tinygo
+
+package rf
+
+import (
+	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
+)
+
+const txHostBuilt = true
+
+type txHost struct {
+	iq  *fsktx.IQ
+	au  *fsktx.Audio
+	s16 []int16
+}
+
+func (h *txHost) newIQ(t Tier, rate int, offsetHz float64) error {
+	q, err := fsktx.NewIQ(fsktx.IQConfig{Rate: rate, OffsetHz: offsetHz, RampSeconds: txRampSec, Tier: fsktx.Tier(t)})
+	if err != nil {
+		return err
+	}
+	*h = txHost{iq: q}
+	return nil
+}
+
+func (h *txHost) newAudio(t Tier, rate, level, offset int) error {
+	a, err := fsktx.NewAudio(fsktx.AudioConfig{Hz: rate, Level: level, Offset: offset, Tier: fsktx.Tier(t)})
+	if err != nil {
+		return err
+	}
+	*h = txHost{au: a, s16: make([]int16, a.MaxSamples())}
+	return nil
+}
+
+func (h *txHost) key(on bool) {
+	if h.iq != nil {
+		h.iq.Key(on)
+	}
+}
+
+func (h *txHost) iqS16(s int8) []int16 { return h.iq.Symbol(s) }
+
+func (h *txHost) audio(s int8) []int16 { return h.s16[:h.au.Symbol(h.s16, s)] }
+
+func audioPeak(t Tier, rate, level int) (int, error) {
+	a, err := fsktx.NewAudio(fsktx.AudioConfig{Hz: rate, Level: level, Tier: fsktx.Tier(t)})
+	if err != nil {
+		return 0, err
+	}
+	return int(math.Ceil(a.Peak())), nil
+}
+
+func newChunk(n int) []byte { return make([]byte, n) }
+
+func newChunk16(n int) []int16 { return make([]int16, n) }
