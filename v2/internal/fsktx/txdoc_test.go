@@ -307,6 +307,7 @@ func TestTxDoc(t *testing.T) {
 			}
 		}
 	}
+	doc = txSheetDoc(t, doc, margins)
 	i, j := bytes.Index(doc, []byte(txDocBegin)), bytes.Index(doc, []byte(txDocEnd))
 	if i < 0 || j < i {
 		t.Fatalf("%s has no %s ... %s block", txDocFile, txDocBegin, txDocEnd)

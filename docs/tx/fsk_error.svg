@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="796" viewBox="0 0 700 796">
+<style>text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.35}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}</style>
+<text x="16" y="24">FSK error per tier and output</text>
+<line class="gr" x1="300.0" y1="656.0" x2="300.0" y2="40.0"/>
+<text x="300.0" y="674.0" text-anchor="middle">0</text>
+<line class="gr" x1="362.7" y1="656.0" x2="362.7" y2="40.0"/>
+<text x="362.7" y="674.0" text-anchor="middle">0.25</text>
+<line class="gr" x1="425.3" y1="656.0" x2="425.3" y2="40.0"/>
+<text x="425.3" y="674.0" text-anchor="middle">0.5</text>
+<line class="gr" x1="488.0" y1="656.0" x2="488.0" y2="40.0"/>
+<text x="488.0" y="674.0" text-anchor="middle">0.75</text>
+<line class="gr" x1="550.7" y1="656.0" x2="550.7" y2="40.0"/>
+<text x="550.7" y="674.0" text-anchor="middle">1</text>
+<line class="gr" x1="613.3" y1="656.0" x2="613.3" y2="40.0"/>
+<text x="613.3" y="674.0" text-anchor="middle">1.25</text>
+<line class="gr" x1="676.0" y1="656.0" x2="676.0" y2="40.0"/>
+<text x="676.0" y="674.0" text-anchor="middle">1.5</text>
+<rect class="ax" x="300.0" y="40.0" width="376.0" height="616.0"/>
+<text x="488.0" y="694.0" text-anchor="middle">FSK error (% of the deviation of symbol +3)</text>
+<text x="292.0" y="58.0" text-anchor="end">Tier 0, Audio 8-bit</text>
+<rect class="f2" x="300.0" y="44.0" width="41.4" height="8"/>
+<rect class="f3" x="300.0" y="54.0" width="33.3" height="8"/>
+<text x="292.0" y="86.0" text-anchor="end">Tier 0, Audio 10-bit</text>
+<rect class="f2" x="300.0" y="72.0" width="36.6" height="8"/>
+<rect class="f3" x="300.0" y="82.0" width="28.3" height="8"/>
+<text x="292.0" y="114.0" text-anchor="end">Tier 0, Audio 12-bit</text>
+<rect class="f2" x="300.0" y="100.0" width="36.3" height="8"/>
+<rect class="f3" x="300.0" y="110.0" width="27.8" height="8"/>
+<text x="292.0" y="142.0" text-anchor="end">Tier 0, Audio 16-bit</text>
+<rect class="f2" x="300.0" y="128.0" width="36.3" height="8"/>
+<rect class="f3" x="300.0" y="138.0" width="27.8" height="8"/>
+<text x="292.0" y="170.0" text-anchor="end">Tier 0, I/Q 16-bit</text>
+<rect class="f2" x="300.0" y="156.0" width="28.8" height="8"/>
+<text x="292.0" y="198.0" text-anchor="end">Tier 0, I/Q 8-bit</text>
+<rect class="f2" x="300.0" y="184.0" width="30.6" height="8"/>
+<text x="292.0" y="226.0" text-anchor="end">Tier 1, Audio 8-bit</text>
+<rect class="f2" x="300.0" y="212.0" width="114.8" height="8"/>
+<rect class="f3" x="300.0" y="222.0" width="109.3" height="8"/>
+<text x="292.0" y="254.0" text-anchor="end">Tier 1, Audio 10-bit</text>
+<rect class="f2" x="300.0" y="240.0" width="52.6" height="8"/>
+<rect class="f3" x="300.0" y="250.0" width="39.9" height="8"/>
+<text x="292.0" y="282.0" text-anchor="end">Tier 1, Audio 12-bit</text>
+<rect class="f2" x="300.0" y="268.0" width="44.6" height="8"/>
+<rect class="f3" x="300.0" y="278.0" width="30.1" height="8"/>
+<text x="292.0" y="310.0" text-anchor="end">Tier 1, Audio 16-bit</text>
+<rect class="f2" x="300.0" y="296.0" width="44.1" height="8"/>
+<rect class="f3" x="300.0" y="306.0" width="29.3" height="8"/>
+<text x="292.0" y="338.0" text-anchor="end">Tier 1, I/Q 16-bit</text>
+<rect class="f2" x="300.0" y="324.0" width="27.1" height="8"/>
+<text x="292.0" y="366.0" text-anchor="end">Tier 1, I/Q 8-bit</text>
+<rect class="f2" x="300.0" y="352.0" width="27.1" height="8"/>
+<text x="292.0" y="394.0" text-anchor="end">Tier 2, Audio 8-bit</text>
+<rect class="f2" x="300.0" y="380.0" width="114.8" height="8"/>
+<rect class="f3" x="300.0" y="390.0" width="109.3" height="8"/>
+<text x="292.0" y="422.0" text-anchor="end">Tier 2, Audio 10-bit</text>
+<rect class="f2" x="300.0" y="408.0" width="52.6" height="8"/>
+<rect class="f3" x="300.0" y="418.0" width="39.9" height="8"/>
+<text x="292.0" y="450.0" text-anchor="end">Tier 2, Audio 12-bit</text>
+<rect class="f2" x="300.0" y="436.0" width="44.6" height="8"/>
+<rect class="f3" x="300.0" y="446.0" width="30.1" height="8"/>
+<text x="292.0" y="478.0" text-anchor="end">Tier 2, Audio 16-bit</text>
+<rect class="f2" x="300.0" y="464.0" width="44.1" height="8"/>
+<rect class="f3" x="300.0" y="474.0" width="29.3" height="8"/>
+<text x="292.0" y="506.0" text-anchor="end">Tier 2, I/Q 16-bit</text>
+<rect class="f2" x="300.0" y="492.0" width="27.1" height="8"/>
+<text x="292.0" y="534.0" text-anchor="end">Tier 2, I/Q 8-bit</text>
+<rect class="f2" x="300.0" y="520.0" width="27.1" height="8"/>
+<text x="292.0" y="562.0" text-anchor="end">Tier 0, Audio 8-bit, pre-emphasis</text>
+<rect class="f2" x="300.0" y="548.0" width="274.5" height="8"/>
+<rect class="f3" x="300.0" y="558.0" width="281.0" height="8"/>
+<text x="292.0" y="590.0" text-anchor="end">Tier 0, Audio 10-bit, pre-emphasis</text>
+<rect class="f2" x="300.0" y="576.0" width="264.0" height="8"/>
+<rect class="f3" x="300.0" y="586.0" width="270.5" height="8"/>
+<text x="292.0" y="618.0" text-anchor="end">Tier 0, Audio 12-bit, pre-emphasis</text>
+<rect class="f2" x="300.0" y="604.0" width="263.7" height="8"/>
+<rect class="f3" x="300.0" y="614.0" width="270.5" height="8"/>
+<text x="292.0" y="646.0" text-anchor="end">Tier 0, Audio 16-bit, pre-emphasis</text>
+<rect class="f2" x="300.0" y="632.0" width="263.2" height="8"/>
+<rect class="f3" x="300.0" y="642.0" width="270.0" height="8"/>
+<rect class="f2" x="300.0" y="706.0" width="24" height="8"/>
+<text x="330.0" y="714.0">Hold converter, or I/Q</text>
+<rect class="f3" x="300.0" y="728.0" width="24" height="8"/>
+<text x="330.0" y="736.0">Ideal converter</text>
+</svg>
