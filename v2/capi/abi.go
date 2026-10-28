@@ -210,8 +210,8 @@ func voiceABI(seed uint64) error {
 	if rc := C.dmrgo_voice_transmitter_frames(ctx, (*C.dmrgo_vocoder_ambe_frame_t)(unsafe.Pointer(&frames[0])), C.size_t(len(frames))); rc != C.DMRGO_OK {
 		return fmt.Errorf("frames %d", rc)
 	}
-	gtx.Stop()
-	C.dmrgo_voice_transmitter_stop(ctx)
+	gtx.Stop(0)
+	C.dmrgo_voice_transmitter_stop(ctx, 0)
 	var bursts []layer2.RawBurst
 	gout := make([]voice.Output, 0, voice.MaxOutputs)
 	for now := time.Duration(0); now < 20*time.Second; now += 10 * time.Millisecond {

@@ -52569,11 +52569,11 @@ func dmrgo_voice_transmitter_state(c_self *C.dmrgo_voice_transmitter_t, c_out *C
 }
 
 //export dmrgo_voice_transmitter_stop
-func dmrgo_voice_transmitter_stop(c_self *C.dmrgo_voice_transmitter_t) (rc C.int) {
+func dmrgo_voice_transmitter_stop(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
-	h.v.Stop()
+	h.v.Stop(time.Duration(c_now))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

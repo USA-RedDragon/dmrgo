@@ -31,7 +31,7 @@ func TestSetHintFromTransmitter(t *testing.T) {
 				t.Fatal(err)
 			}
 			if fed++; fed == 36 {
-				tx.Stop()
+				tx.Stop(now)
 			}
 		}
 		out = tx.Tick(now, out[:0])

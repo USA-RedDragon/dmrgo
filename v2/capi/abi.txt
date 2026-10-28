@@ -1,4 +1,4 @@
-abi 3
+abi 4
 code DMRGO_ERR_CONFIG -100
 code DMRGO_ERR_FIELD_RANGE -101
 code DMRGO_ERR_NIL_ARGUMENT -102
@@ -3368,7 +3368,7 @@ sym int dmrgo_voice_transmitter_room(dmrgo_voice_transmitter_t *self, int64_t *o
 sym int dmrgo_voice_transmitter_start(dmrgo_voice_transmitter_t *self, dmrgo_duration_t at, const dmrgo_voice_call_t *c, const dmrgo_voice_call_options_t *opts);
 sym int dmrgo_voice_transmitter_state(dmrgo_voice_transmitter_t *self, dmrgo_voice_transmitter_state_t *out);
 sym int dmrgo_voice_transmitter_state_string(dmrgo_voice_transmitter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
+sym int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now);
 sym int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_voice_transmitter_vocoder_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);

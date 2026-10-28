@@ -70,7 +70,7 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 	if tx.State() != voice.TransmitterHeader {
 		t.Fatalf("own ChanAuth PDU: %v", tx.State())
 	}
-	tx.Stop()
+	tx.Stop(1090 * ms)
 	out := drain(t, tx, 20)
 	if shape(out) != "hABCDEFt." || out[0].Due != 1090*ms {
 		t.Fatalf("outputs %s, due %v", shape(out), out[0].Due)
@@ -104,7 +104,7 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 	if d, _ := tx.Deadline(); d != 1180*ms || tx.State() != voice.TransmitterChanAuth {
 		t.Fatalf("no holdoff: %v", d)
 	}
-	tx.Stop()
+	tx.Stop(1180 * ms)
 	if tx.State() != voice.TransmitterIdle || tx.Room() != voice.DefaultQueue {
 		t.Fatal("Stop in ChanAuth")
 	}

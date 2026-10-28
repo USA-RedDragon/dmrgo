@@ -41,7 +41,7 @@ func TestRegression_StopDuringTimeoutPadding(t *testing.T) {
 		}
 		buf = tx.Tick(at, buf[:0])
 		if !stopped && tx.State() == voice.TransmitterEnding && tx.Frame(vocoder.AMBESilence()) != nil {
-			tx.Stop()
+			tx.Stop(at)
 			stopped = true
 		}
 	}
@@ -63,7 +63,7 @@ func TestRegression_ResetKeepsReason(t *testing.T) {
 	_ = tx.Relay(0, &voice.Event{Kind: voice.EventCallEnd, Call: c, Reason: voice.EndLost})
 	tx.Reset()
 	_ = tx.Start(0, voice.Call{Target: 2, Source: 1}, nil)
-	tx.Stop()
+	tx.Stop(0)
 	out := drain(t, tx, 20)
 	if r := out[len(out)-1].Reason; r != voice.EndTerminator {
 		t.Errorf("source call after Reset ends %v", r)
@@ -193,7 +193,7 @@ func TestRegression_StopIgnoresTimeout(t *testing.T) {
 	for range voice.MaxQueue {
 		_ = tx.Frame(vocoder.AMBESilence())
 	}
-	tx.Stop()
+	tx.Stop(0)
 	out := drain(t, tx, 200)
 	last := out[len(out)-1]
 	if last.Due > 8*slot+7*slot {

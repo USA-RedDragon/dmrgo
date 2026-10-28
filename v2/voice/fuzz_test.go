@@ -130,7 +130,7 @@ func newPool(t testing.TB) *pool {
 			_ = tx.Frame(vocoder.AMBEFrame{byte(i), 0x55, byte(tx.Room()), 0, 0, 0, 0x80})
 		}
 		if i == 40 {
-			tx.Stop()
+			tx.Stop(0)
 		}
 		at, ok := tx.Deadline()
 		if !ok {
@@ -684,7 +684,7 @@ func transmit(t *testing.T, tx *voice.Transmitter, rt *roundTrip) []sent {
 			next++
 		}
 		if next == len(rt.frames) {
-			tx.Stop()
+			tx.Stop(0)
 		}
 		at, ok := tx.Deadline()
 		if !ok {

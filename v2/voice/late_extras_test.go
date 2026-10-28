@@ -24,7 +24,7 @@ func TestRegression_LateEntryExtrasAfterCallStart(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		tx.Stop()
+		tx.Stop(0)
 		var voiceBursts []layer2.RawBurst
 		for _, o := range drain(t, tx, 200) {
 			if o.Kind == voice.OutputBurst && o.Hint.Kind == layer2.KindVoice {

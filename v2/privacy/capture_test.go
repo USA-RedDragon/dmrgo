@@ -125,7 +125,7 @@ func transmit(t *testing.T, call voice.Call, frames []vocoder.AMBEFrame, pi *pdu
 			next++
 		}
 		if next == len(frames) && !stopped {
-			tx.Stop()
+			tx.Stop(now)
 			stopped = true
 		}
 		outs := tx.Tick(now, out[:0])

@@ -109,7 +109,7 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in *controlInput) {
 				_ = tx.ReverseChannel(b.ReverseChannel)
 			}
 		case 5:
-			tx.Stop()
+			tx.Stop(now)
 		case 6:
 			_ = irq.Interrupt(now, enums.RCCommand(arg&0x0F))
 		case 7:

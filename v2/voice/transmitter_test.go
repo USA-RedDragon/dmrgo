@@ -119,7 +119,7 @@ func TestTransmitter_Golden(t *testing.T) {
 		if err := tx.Frames(framesOf(t, golden)...); err != nil {
 			t.Fatal(err)
 		}
-		tx.Stop()
+		tx.Stop(0)
 		got := outBursts(drain(t, tx, 100))
 		if name == "voice-late" {
 			got = got[1:]
@@ -155,7 +155,7 @@ func TestTransmitter_Source(t *testing.T) {
 		}
 	}
 	got := drain(t, tx, 6)
-	tx.Stop()
+	tx.Stop(0)
 	got = append(got, drain(t, tx, 100)...)
 	var pos []byte
 	fills := 0
@@ -198,7 +198,7 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	tx.Stop()
+	tx.Stop(0)
 	out := drain(t, tx, 200)
 	var in []input
 	for i, o := range out {
@@ -245,9 +245,9 @@ func TestTransmitter_Timeout(t *testing.T) {
 		if err := tx.Frame(vocoder.AMBESilence()); !errors.Is(err, voice.ErrTimedOut) {
 			t.Fatalf("frame after T_TO: %v", err)
 		}
-		tx.Stop()
+		tx.Stop(time.Hour)
 		end := drain(t, tx, 10)
-		if len(end) != 1 || end[0].Kind != voice.OutputEnded || end[0].Reason != voice.EndTimeout || tx.State() != voice.TransmitterIdle {
+		if len(end) != 1 || end[0].Kind != voice.OutputEnded || end[0].Reason != voice.EndTimeout || end[0].Due != time.Hour || tx.State() != voice.TransmitterIdle {
 			t.Fatalf("after Stop: %+v", end)
 		}
 	}

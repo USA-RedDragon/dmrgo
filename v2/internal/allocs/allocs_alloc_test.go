@@ -232,7 +232,7 @@ func TestAllocsVoiceTransmitter(t *testing.T) {
 			}
 			_ = tx.Frame(vocoder.AMBESilence())
 		}
-		tx.Stop()
+		tx.Stop(now)
 		drain()
 	})
 	rx, err := voice.NewReceiver(nil)

@@ -19,7 +19,7 @@ func TestTransmitter_ZeroSilenceIsAMBESilence(t *testing.T) {
 	if err := tx.Frame(voiced); err != nil {
 		t.Fatal(err)
 	}
-	tx.Stop()
+	tx.Stop(0)
 	frames := framesOf(t, outBursts(drain(t, tx, 100)))
 	if len(frames) != 18 {
 		t.Fatalf("%d frames, want 18", len(frames))

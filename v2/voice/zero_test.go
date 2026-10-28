@@ -49,7 +49,7 @@ func TestOutputSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 	tx.Channel(0, false)
-	tx.Stop()
+	tx.Stop(0)
 	n := 0
 	for now := time.Duration(0); now < 2*time.Second; now += 60 * time.Millisecond {
 		for _, o := range tx.Tick(now, nil) {

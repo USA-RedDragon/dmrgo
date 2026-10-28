@@ -259,7 +259,7 @@ func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, err
 		}
 		fs[i].v[0] = C.uint8_t(i)
 	}
-	if err := check(dmrgo_voice_transmitter_frames(tx, &fs[0], C.size_t(frames)), dmrgo_voice_transmitter_stop(tx)); err != nil {
+	if err := check(dmrgo_voice_transmitter_frames(tx, &fs[0], C.size_t(frames)), dmrgo_voice_transmitter_stop(tx, 0)); err != nil {
 		return nil, 0, err
 	}
 	out := new([8]C.dmrgo_voice_output_t)

@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#define DMRGO_ABI_VERSION 3
+#define DMRGO_ABI_VERSION 4
 
 /* DMRGO_USER_T is the type of the user value of a callback or vtable. The library builds with uintptr_t, which has the same size and passing. */
 #ifndef DMRGO_USER_T
@@ -11834,8 +11834,8 @@ int dmrgo_voice_transmitter_room(dmrgo_voice_transmitter_t *self, int64_t *out);
 int dmrgo_voice_transmitter_start(dmrgo_voice_transmitter_t *self, dmrgo_duration_t at, const dmrgo_voice_call_t *c, const dmrgo_voice_call_options_t *opts);
 /* Go: voice.Transmitter.State. State returns the state of the Transmitter. */
 int dmrgo_voice_transmitter_state(dmrgo_voice_transmitter_t *self, dmrgo_voice_transmitter_state_t *out);
-/* Go: voice.Transmitter.Stop. Stop ends the call: the queued voice is sent, the last superframe is padded with silence to burst F, and the terminators follow. */
-int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
+/* Go: voice.Transmitter.Stop. Stop ends the call at now: the queued voice is sent, the last superframe is padded with silence to burst F, and the terminators follow. */
+int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now);
 /* dmrgo_voice_transmitter_tick_need sets *items and *arena to the room that dmrgo_voice_transmitter_tick needs for these arguments, without a change to the handle. */
 int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus dmrgo_voice_transmitter_config_t.lead, and DMRGO_VOICE_OUTPUT_ENDED after the last terminator, or with DMRGO_VOICE_END_DENIED for a polite call that the channel denied for T_IdleSrch. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */

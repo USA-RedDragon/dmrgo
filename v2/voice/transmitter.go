@@ -676,11 +676,12 @@ func (t *Transmitter) push(s *[9]byte) {
 	t.length++
 }
 
-// Stop ends the call: the queued voice is sent, the last superframe is
-// padded with silence to burst F, and the terminators follow. After T_TO,
-// Stop is the release of the PTT, and the next Tick appends OutputEnded. A
-// call in TransmitterAccess or TransmitterChanAuth ends without an output.
-func (t *Transmitter) Stop() {
+// Stop ends the call at now: the queued voice is sent, the last superframe
+// is padded with silence to burst F, and the terminators follow. After T_TO,
+// Stop is the release of the PTT, and the next Tick appends OutputEnded with
+// a Due of now, or of the time after the last terminator when that is later.
+// A call in TransmitterAccess or TransmitterChanAuth ends without an output.
+func (t *Transmitter) Stop(now time.Duration) {
 	if t == nil {
 		return
 	}
@@ -692,6 +693,7 @@ func (t *Transmitter) Stop() {
 		t.stopping = true
 	case TransmitterTimedOut:
 		t.ended = true
+		t.due = max(t.due, now)
 	case TransmitterEnding:
 		t.ended = t.ended || t.timedOut
 	case TransmitterIdle:
@@ -975,7 +977,7 @@ func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 			if reason == EndLost {
 				t.reason = reason
 			}
-			t.Stop()
+			t.Stop(now)
 		}
 	case EventEmbedded, EventTalkerAlias, EventSessionStart, EventSessionEnd:
 	}

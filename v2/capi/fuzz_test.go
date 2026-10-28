@@ -32,7 +32,7 @@ func goOutputs(t *testing.T, frames int) ([]string, [][33]byte) {
 			t.Fatal(err)
 		}
 	}
-	tx.Stop()
+	tx.Stop(0)
 	var keys []string
 	var bursts [][33]byte
 	out := make([]voice.Output, 0, voice.MaxOutputs)

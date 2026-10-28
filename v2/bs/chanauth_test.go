@@ -321,7 +321,7 @@ func TestChanAuthWithTransmitter(t *testing.T) {
 			}
 		}
 		if now == start+time.Second {
-			tx.Stop()
+			tx.Stop(now)
 		}
 	}
 	starts := filter(d.all[mark:], bs.OutputCallStart)

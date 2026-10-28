@@ -82,7 +82,7 @@ func TestTransmitter_ChannelAccess(t *testing.T) {
 				}
 			}
 			if tc.end == voice.EndTerminator {
-				tx.Stop()
+				tx.Stop(tc.freeAt)
 				tx.Channel(0, true)
 			}
 			out := drain(t, tx, 20)
@@ -120,7 +120,7 @@ func TestTransmitter_AccessStop(t *testing.T) {
 	if tx.ReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
 		t.Fatal("Interrupt took a call that is not on air")
 	}
-	tx.Stop()
+	tx.Stop(0)
 	if _, ok := tx.Deadline(); ok || tx.State() != voice.TransmitterIdle || tx.Room() != voice.DefaultQueue {
 		t.Fatalf("after Stop: state %v", tx.State())
 	}
@@ -167,7 +167,7 @@ func TestTransmitter_ReverseChannel(t *testing.T) {
 				t.Fatalf("Interrupt = %v", got)
 			}
 			if !tc.want {
-				tx.Stop()
+				tx.Stop(0)
 			}
 			out = append(out, drain(t, tx, 30)...)
 			want := voice.EndTerminator
@@ -194,7 +194,7 @@ func TestTransmitter_InterruptEnding(t *testing.T) {
 	if err := tx.Frames(vocoder.AMBESilence(), vocoder.AMBESilence(), vocoder.AMBESilence()); err != nil {
 		t.Fatal(err)
 	}
-	tx.Stop()
+	tx.Stop(0)
 	out := drain(t, tx, 3)
 	if tx.State() != voice.TransmitterEnding || !tx.ReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
 		t.Fatalf("state %v", tx.State())

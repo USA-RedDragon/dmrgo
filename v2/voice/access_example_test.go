@@ -26,7 +26,7 @@ func ExampleTransmitter_Channel() {
 	}
 	fmt.Println(tx.State())
 	tx.Channel(200*time.Millisecond, false)
-	tx.Stop()
+	tx.Stop(200 * time.Millisecond)
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	for {
 		at, ok := tx.Deadline()

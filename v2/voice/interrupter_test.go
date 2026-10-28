@@ -256,7 +256,7 @@ func transmissionEnd(t *testing.T) layer2.RawBurst {
 	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
 		t.Fatal(err)
 	}
-	tx.Stop()
+	tx.Stop(0)
 	out := drain(t, tx, 10)
 	return out[len(out)-2].Burst
 }

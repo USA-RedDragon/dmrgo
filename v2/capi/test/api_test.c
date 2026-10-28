@@ -588,7 +588,7 @@ static void test_tx(void) {
 	call.source = 3191868;
 	OK(dmrgo_voice_transmitter_start(vt, 0, &call, NULL));
 	OK(dmrgo_voice_transmitter_frames(vt, frames, 18));
-	OK(dmrgo_voice_transmitter_stop(vt));
+	OK(dmrgo_voice_transmitter_stop(vt, 0));
 	dmrgo_voice_output_t out[16];
 	int outs = 0, ended = 0;
 	for (int64_t now = 0; now < 2000000000 && !ended; now += 10000000) {

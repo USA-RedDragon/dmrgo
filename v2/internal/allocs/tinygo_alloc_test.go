@@ -243,7 +243,7 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 				now += 60 * time.Millisecond
 				outs = vtx.Tick(now, outs[:0])
 			}
-			vtx.Stop()
+			vtx.Stop(now)
 			for {
 				at, ok := vtx.Deadline()
 				if !ok {
