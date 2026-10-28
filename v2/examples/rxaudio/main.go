@@ -31,5 +31,5 @@ func main() {
 	if err := rx.Flush(); err != nil {
 		return
 	}
-	println("bursts", bursts)
+	println("bursts:", bursts > 0)
 }
