@@ -42,14 +42,17 @@ func (s PreamblesState) String() string {
 
 // Preambles follows the Pre_CSBKs of one logical channel. A Pre_CSBK with
 // CSBK Blocks to Follow n announces n more blocks: Pre_CSBKs, then a CSBK or
-// a data message. Preambles reports the first Pre_CSBK, the CSBK, MBC header
-// or data header that follows, joined with the addresses of the Pre_CSBKs,
-// or that nothing followed by the end of the announced blocks. A repeater
+// a data message, with the target and source addresses of the Pre_CSBK.
+// Preambles reports the first Pre_CSBK, the CSBK, MBC header or data header
+// that follows with the same target and source addresses, or that nothing
+// followed by the end of the announced blocks. A CSBK, MBC header or data
+// header with other addresses, or without both, is not joined: it ends the
+// announced transfer as one that did not come. A repeater
 // may send more Pre_CSBKs than the radio did, each with CSBK Blocks to
 // Follow 1; each one moves the end. Make it with NewPreambles; a zero
 // Preambles does nothing. A Preambles
 // is not safe for concurrent use and must not be copied; go vet reports a
-// copy. (ETSI TS 102 361-2 clauses 7.1.2.5 and 7.2.7)
+// copy. (ETSI TS 102 361-2 clause 7.1.2.5, Table 7.7, and clause 7.2.7)
 type Preambles struct {
 	d      decoder
 	state  PreamblesState
@@ -103,10 +106,13 @@ func (p *Preambles) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 
 // Decoded takes the decoded burst b, which may be nil, and appends the
 // outputs to dst: OutputAnnounced for the first Pre_CSBK of a transfer,
-// OutputJoined for the CSBK, MBC header or data header after it, and
-// OutputExpired for a transfer that a Pre_CSBK with other addresses
-// replaces. A CSBK whose CRC fails is dropped. It allocates only when dst
-// has no room for MaxOutputs outputs.
+// OutputJoined for the CSBK, MBC header or data header after it with the
+// target and source addresses of the Pre_CSBKs, and OutputExpired for a
+// transfer that a Pre_CSBK with other addresses replaces, or that a CSBK, MBC
+// header or data header with other addresses follows. Preambles gives no
+// output for such a burst itself. A CSBK whose CRC fails is dropped. It
+// allocates only when dst has no room for MaxOutputs outputs. (ETSI TS 102
+// 361-2 clause 7.1.2.5, Table 7.7)
 func (p *Preambles) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	if p == nil || p.d.b == nil {
 		return dst
@@ -118,11 +124,16 @@ func (p *Preambles) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 		if pre, ok := c.AsPreamble(); ok {
 			return p.preamble(now, &pre, dst)
 		}
-		return p.join(dst, false, &octets)
+		target, source, ok := addresses(c)
+		return p.join(dst, false, &octets, ok && p.parties(target, source))
 	case rxMBCHeader:
-		return p.join(dst, false, nil)
+		h, _ := b.Data.(*pdu.MBCHeader)
+		target, source, ok := mbcAddresses(h)
+		return p.join(dst, false, nil, ok && p.parties(target, source))
 	case rxDataHeader:
-		return p.join(dst, true, nil)
+		h, _ := b.Data.(*pdu.DataHeader)
+		target, source, ok := h.Addresses()
+		return p.join(dst, true, nil, ok && p.parties(target, source))
 	case rxNone, rxOther:
 	}
 	return dst
@@ -142,9 +153,17 @@ func (p *Preambles) preamble(now time.Duration, pre *pdu.PreamblePDU, out []Outp
 	return p.appendAt(out, OutputAnnounced)
 }
 
-func (p *Preambles) join(out []Output, data bool, c *pdu.CSBKBytes) []Output {
+func (p *Preambles) parties(target, source uint32) bool {
+	return target == p.target && source == p.source
+}
+
+func (p *Preambles) join(out []Output, data bool, c *pdu.CSBKBytes, same bool) []Output {
 	if p.state != PreamblesAnnounced {
 		return out
+	}
+	if !same {
+		p.state = PreamblesIdle
+		return p.appendAt(out, OutputExpired)
 	}
 	out = p.appendAt(out, OutputJoined)
 	o := &out[len(out)-1]

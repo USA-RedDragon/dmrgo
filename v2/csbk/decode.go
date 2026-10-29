@@ -96,6 +96,40 @@ func addresses(c *pdu.CSBK) (target, source uint32, ok bool) {
 	return uint32(r[2])<<16 | uint32(r[3])<<8 | uint32(r[4]), uint32(r[5])<<16 | uint32(r[6])<<8 | uint32(r[7]), true
 }
 
+func mbcAddresses(h *pdu.MBCHeader) (target, source uint32, ok bool) {
+	if h == nil {
+		return 0, 0, false
+	}
+	if g, ok := h.AsPrivateVoiceGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsTalkgroupVoiceGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsBroadcastTalkgroupVoiceGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsPrivateDataGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsTalkgroupDataGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsDuplexPrivateVoiceGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsDuplexPrivateDataGrant(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsPrivateDataGrantMultiItem(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	if g, ok := h.AsTalkgroupDataGrantMultiItem(); ok {
+		return g.TargetAddress, g.SourceAddress, true
+	}
+	return 0, 0, false
+}
+
 func checkAddress(a uint32, err error) error {
 	if a>>24 != 0 {
 		return err
