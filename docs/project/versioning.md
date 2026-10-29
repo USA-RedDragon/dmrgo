@@ -4,9 +4,14 @@ This page gives the version rules of the `v2` Go module and of the C ABI of libd
 
 ## The Go module
 
-- The `v2` module follows semantic versioning. The public API only grows: a new package, function, method, struct field, constant or enum value comes in a minor release. A change that breaks code that compiles comes only in a new major version.
+- The `v2` module has versions of the form v2.MINOR.PATCH.
+- A patch release, such as v2.1.1, never breaks callers. Code that builds against v2.1.0 builds against v2.1.1 with no change.
+- A minor release, such as v2.2.0, adds packages, functions, methods, struct fields, constants and enum values. A minor release can also break callers. The breaking-changes page of that release lists each break and the change to make in your code.
 - A minor release can add a value to an enum type, so give a switch over an enum a default case.
-- The release after v2.0.8 has changes that break code that compiles against v2.0.8. [v2.1 breaking changes](breaking-v2.1.md) lists each one.
+
+The breaking-changes page of each minor release:
+
+- [v2.1 breaking changes](breaking-v2.1.md): the changes after v2.0.8 that break code that compiles against v2.0.8.
 
 ## The Go version
 

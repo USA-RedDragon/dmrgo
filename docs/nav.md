@@ -75,7 +75,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Tools](reference/tools.md)
 - Project
   - [Versioning and compatibility](project/versioning.md)
-  - v2.1 breaking changes: `project/breaking-changes.md`
+  - [v2.1 breaking changes](project/breaking-v2.1.md)
   - [Tooling and checks](project/tooling.md) <!-- old: tooling.md -->
   - [License](../LICENSE)
 

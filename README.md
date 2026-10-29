@@ -95,7 +95,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 
 ## Versioning
 
-- The `v2` module follows semantic versioning. A new package, function, method, struct field, constant or enum value comes in a minor release. A change that breaks code that compiles comes only in a new major version.
+- A patch release, such as v2.1.1, never breaks callers. A minor release, such as v2.2.0, adds new API and can also break callers. The breaking-changes page of each minor release lists each break and the change to make in your code. See [Versioning](docs/project/versioning.md).
 - A minor release can add a value to an enum type, so give a switch over an enum a default case.
 - The minimum Go version rises only in a minor release, with a note in the release notes.
 - libdmrgo, the C API, has its own ABI number (`DMRGO_ABI_VERSION`) and soname (`libdmrgo.so.N`). It is built from the `v2` tag, and `v2/capi` has no tags of its own. A change that breaks C code that compiles against `dmrgo.h`, or a program that links an older libdmrgo, gives a new ABI number and soname. v2.0.0 to v2.0.3 have ABI 1, v2.0.4 and v2.0.5 have ABI 2, v2.0.6 to v2.0.8 have ABI 3, and the release after v2.0.8 has ABI 4 (`libdmrgo.so.4`).
