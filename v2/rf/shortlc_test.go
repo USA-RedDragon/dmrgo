@@ -19,6 +19,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -414,5 +415,55 @@ func TestShortLCBench(t *testing.T) {
 	}
 	if err := os.WriteFile(slcBenchPath, append(b, '\n'), 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestShortLCIQ3Cost(t *testing.T) {
+	t.Parallel()
+	rng := rand.New(rand.NewPCG(3, 4))
+	c := &softOSDCodes[softShortLCCode]
+	for _, tc := range []struct {
+		tier Tier
+		iq   bool
+		flip int16
+		ok   bool
+	}{
+		{Tier1, true, 100, true}, {Tier2, true, 100, true}, {Tier3, false, 100, true},
+		{Tier3, true, 100, false}, {Tier3, true, 40, true}, {Tier1, true, 160, false},
+	} {
+		var s burstSink
+		if err := s.attachShortLC(func([]ShortLC) {}, tc.tier, tc.iq, nil); err != nil {
+			t.Fatal(err)
+		}
+		o := s.slc
+		info := softShortLCInfoBits(rng)
+		cach, _ := softCACH(t, rng, info)
+		flipped := map[int]bool{}
+		for k := range 6 {
+			flipped[k*7%c.n] = true
+		}
+		strong := 0
+		for j := range c.n {
+			p := c.pos[j]
+			m := int16(30)
+			switch {
+			case flipped[j]:
+				m = -tc.flip
+			case strong < 40:
+				m = 200
+				strong++
+			}
+			if cach[p/layer2.CACHBits][p%layer2.CACHBits] == 1 {
+				m = -m
+			}
+			o.llr[p/layer2.CACHBits][p%layer2.CACHBits] = m
+		}
+		o.have = [4]bool{true, true, true, true}
+		lc, ok := o.decodeSoft()
+		v := unpacked.Uint(info[:]) << 4
+		want := pdu.DecodeShortLC([5]byte{byte(v >> 32 & 0xff), byte(v >> 24 & 0xff), byte(v >> 16 & 0xff), byte(v >> 8 & 0xff), byte(v & 0xff)})
+		if ok != tc.ok || ok && (!slcSame(lc, want) || lc.FEC.ErrorsCorrected != 6) {
+			t.Errorf("tier %d, I/Q %v, flips of %d: ok %v, LC %+v, want ok %v, LC %+v", tc.tier, tc.iq, tc.flip, ok, lc, tc.ok, want)
+		}
 	}
 }

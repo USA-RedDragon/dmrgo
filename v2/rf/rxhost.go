@@ -64,7 +64,7 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	if n := streamBursts(look); cfg.OnBursts != nil && n > 0 {
 		r.sink.out = make([]Burst, 0, n)
 	}
-	if err := r.sink.attachShortLC(cfg.OnShortLC, cfg.Tier != Tier0, errRxShortLC); err != nil {
+	if err := r.sink.attachShortLC(cfg.OnShortLC, cfg.Tier, true, errRxShortLC); err != nil {
 		return nil, err
 	}
 	return r, nil

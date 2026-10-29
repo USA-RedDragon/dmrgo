@@ -146,7 +146,7 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.bursts.out = make([]Burst, 0, n)
 	}
-	if err := r.bursts.attachShortLC(cfg.OnShortLC, cfg.Tier != Tier0, errAudioShortLC); err != nil {
+	if err := r.bursts.attachShortLC(cfg.OnShortLC, cfg.Tier, false, errAudioShortLC); err != nil {
 		return nil, err
 	}
 	return r, nil

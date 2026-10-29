@@ -163,20 +163,20 @@ The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio
 
 ## Short LC
 
-The CACH of BS-sourced bursts carries the Short LC in four fragments. `OnShortLC` of `RxConfig` and `AudioRxConfig` receives each Short LC that passes its CRC-8, with the stream, slot and time of the burst of the last fragment. The receiver decodes the fragments of the `Decoded` CACH as `layer2.ShortLCAssembler` does. From tier 1 up, when that decode fails, it decodes the Short LC again from the soft values of the four fragments, and sets `ShortLC.Soft`. It accepts a soft decode only when the decode flips few bits and its soft cost is low. Tier 0 gives the hard decode only, and `Init` and TinyGo builds take no `OnShortLC`. The bursts, `FixedCACH` and `layer2.ShortLCAssembler` are the same with it and without it.
+The CACH of BS-sourced bursts carries the Short LC in four fragments. `OnShortLC` of `RxConfig` and `AudioRxConfig` receives each Short LC that passes its CRC-8, with the stream, slot and time of the burst of the last fragment. The receiver decodes the fragments of the `Decoded` CACH as `layer2.ShortLCAssembler` does. From tier 1 up, when that decode fails, it decodes the Short LC again from the soft values of the four fragments, and sets `ShortLC.Soft`. It accepts a soft decode only when the decode flips few bits and its soft cost is low. I/Q tier 3 takes a lower soft cost limit than the other tiers, because at the limit of the other tiers its soft decodes pass the CRC-8 with wrong bits more often than its hard decodes do. Tier 0 gives the hard decode only, and `Init` and TinyGo builds take no `OnShortLC`. The bursts, `FixedCACH` and `layer2.ShortLCAssembler` are the same with it and without it.
 
 <!-- shortlc:begin -->
 | Tier | Input | Hard decode | `OnShortLC` | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode | On noise, `OnShortLC` |
 |------|-------|-------------|-------------|--------------------|--------------------|-----------------------|-----------------------|
-| Audio tier 0 | FM audio, 9.6 kHz, core | 7.6 dB | 7.6 dB | 0 of 3,248 | 0 of 3,248 | 0.0 per hour | 0.0 per hour |
-| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,879 | 0 of 3,623 | 0.0 per hour | 0.0 per hour |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.5 dB | 6.4 dB | 3 of 8,506 | 3 of 9,270 | 0.0 per hour | 0.0 per hour |
-| Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 7.5 dB | 6.4 dB | 4 of 8,507 | 4 of 9,269 | 0.0 per hour | 0.0 per hour |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 7.8 dB | 7.8 dB | 2 of 8,552 | 2 of 8,552 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 0 | I/Q, discriminator core | 7.1 dB | 7.1 dB | 3 of 9,010 | 3 of 9,010 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | 7.0 dB | 5.2 dB | 5 of 9,111 | 5 of 10,219 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 2 | I/Q, coherent detection | 7.2 dB | 5.3 dB | 7 of 9,095 | 7 of 10,203 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 4.1 dB | 2.7 dB | 0 of 4,419 | 2 of 5,281 | 0.0 per hour | 0.0 per hour |
+| Audio tier 0 | FM audio, 9.6 kHz, core | 7.6 dB | 7.6 dB | 0 of 3,249 | 0 of 3,249 | 0.0 per hour | 0.0 per hour |
+| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,880 | 0 of 3,623 | 0.0 per hour | 0.0 per hour |
+| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.4 dB | 6.3 dB | 2 of 2,634 | 2 of 3,374 | 0.0 per hour | 0.0 per hour |
+| Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 7.4 dB | 6.3 dB | 3 of 2,635 | 3 of 3,375 | 0.0 per hour | 0.0 per hour |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 7.8 dB | 7.8 dB | 2 of 5,980 | 2 of 5,980 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 0 | I/Q, discriminator core | 7.1 dB | 7.1 dB | 4 of 5,698 | 4 of 5,698 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 1 | I/Q, soft decoding, noise prediction | 7.0 dB | 5.2 dB | 4 of 3,914 | 4 of 5,034 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 2 | I/Q, coherent detection | 7.1 dB | 5.3 dB | 7 of 3,195 | 7 of 4,279 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 4.2 dB | 2.8 dB | 0 of 4,417 | 0 of 5,195 | 0.0 per hour | 0.0 per hour |
 
 - Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
 - Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
@@ -186,9 +186,9 @@ The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`)
 | Noise sigma | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |-------------|------|------|------|------|
 | 0 | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) |
-| 16 | 18 / 18 (0) | 18 / 38 (20) | 21 / 42 (21) | 45 / 46 (1) |
-| 20 | 0 / 0 (0) | 1 / 9 (8) | 2 / 6 (4) | 22 / 40 (18) |
-| 24 | 0 / 0 (0) | 1 / 1 (0) | 1 / 1 (0) | 3 / 17 (14) |
+| 16 | 18 / 18 (0) | 18 / 37 (19) | 21 / 42 (21) | 45 / 46 (1) |
+| 20 | 0 / 0 (0) | 1 / 10 (9) | 2 / 6 (4) | 23 / 38 (15) |
+| 24 | 0 / 0 (0) | 1 / 1 (0) | 1 / 1 (0) | 4 / 13 (9) |
 
 <!-- shortlc:end -->
 

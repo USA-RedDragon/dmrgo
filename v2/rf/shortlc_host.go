@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	slcNotes    = 512
-	slcMatch    = 1e-3
-	slcMaxFlips = 8
-	slcMaxCost  = 5
+	slcNotes         = 512
+	slcMatch         = 1e-3
+	slcMaxFlips      = 8
+	slcCostTenths    = 50
+	slcCostTenthsIQ3 = 28
 )
 
 type slcNote struct {
@@ -35,18 +36,22 @@ type shortLCOut struct {
 	have   [4]bool
 	bits   [4][layer2.CACHBits]unpacked.Bit
 	out    [1]ShortLC
+	cost   int64
 }
 
 type slcHook struct {
 	slc *shortLCOut
 }
 
-func (s *burstSink) attachShortLC(on func([]ShortLC), soft bool, _ error) error {
+func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, iq bool, _ error) error {
 	if on == nil {
 		return nil
 	}
-	o := &shortLCOut{on: on}
-	if soft {
+	o := &shortLCOut{on: on, cost: slcCostTenths}
+	if iq && t == Tier3 {
+		o.cost = slcCostTenthsIQ3
+	}
+	if t != Tier0 {
 		o.soft = newSoftDecoder()
 		o.soft.OSDOrder, o.soft.OSDWindow, o.soft.ShortLCList = 2, 0, 2
 		o.notes = make([]slcNote, slcNotes)
@@ -167,7 +172,7 @@ func (o *shortLCOut) decodeSoft() (pdu.ShortLC, bool) {
 			cost += l
 		}
 	}
-	if cost*int64(c.n) > slcMaxCost*sum {
+	if 10*cost*int64(c.n) > o.cost*sum {
 		return pdu.ShortLC{}, false
 	}
 	v := unpacked.Uint(info[:]) << 4

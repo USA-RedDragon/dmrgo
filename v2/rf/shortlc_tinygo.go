@@ -6,7 +6,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/layer2"
 
 type slcHook struct{}
 
-func (s *burstSink) attachShortLC(on func([]ShortLC), _ bool, err error) error {
+func (s *burstSink) attachShortLC(on func([]ShortLC), _ Tier, _ bool, err error) error {
 	if on != nil {
 		return err
 	}
