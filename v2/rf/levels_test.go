@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
@@ -128,6 +129,23 @@ func TestCarrierLeadIn(t *testing.T) {
 		env[i] = 1
 	}
 	rxs := append(levelsReceivers(), levelsReceiver{0, Tier2})
+	type leadKey struct{ cn, lead float64 }
+	inputs := map[leadKey]func() []complex64{}
+	for _, cn := range []float64{math.Inf(1), 40} {
+		for _, base := range []float64{0.1, 0.5, 2} {
+			for k := 0; k < 30; k += leadStride() {
+				lead := base + float64(k)*0.001
+				inputs[leadKey{cn, lead}] = sync.OnceValue(func() []complex64 {
+					start := benchPad + lead
+					carrier := make([]float64, int(lead*basebandRate))
+					for i := range carrier {
+						carrier[i] = 1
+					}
+					return signalBaseband([]signalPart{{benchPad, nil, carrier}, {start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, 1)
+				})
+			}
+		}
+	}
 	for _, cn := range []float64{math.Inf(1), 40} {
 		for _, lr := range rxs {
 			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
@@ -136,11 +154,7 @@ func TestCarrierLeadIn(t *testing.T) {
 					for k := 0; k < 30; k += leadStride() {
 						lead := base + float64(k)*0.001
 						start := benchPad + lead
-						carrier := make([]float64, int(lead*basebandRate))
-						for i := range carrier {
-							carrier[i] = 1
-						}
-						x := signalBaseband([]signalPart{{benchPad, nil, carrier}, {start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, 1)
+						x := inputs[leadKey{cn, lead}]()
 						if ex, tot := exactFrom(truth, lr.receive(t, x), start, 1); ex < tot-2 {
 							t.Errorf("%.3f s of carrier: %d of %d payloads exact", lead, ex, tot)
 						}
