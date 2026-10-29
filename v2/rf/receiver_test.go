@@ -391,17 +391,26 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 		t.Run(strconv.FormatFloat(c.ppm, 'f', -1, 64), func(t *testing.T) {
 			t.Parallel()
 			f, e := resampleFM(d.fm, d.env, c.ppm)
-			var exact, total int
+			scores := make([]*benchScore, seeds)
+			var wg sync.WaitGroup
 			for seed := range seeds {
-				var got []Burst
-				if c.ppm == 200 {
-					got = slices.Clone(d.tier3At200[seed]())
-				} else {
-					got = receiveBaseband(noisyFM(f, e, 1400, 5, 40+uint64(seed)), Tier3)
-				}
-				sc := scoreMS(d.truth, got)
-				exact += sc["ambe_c0c1"].Exact
-				total += sc["ambe_c0c1"].Truth
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					var got []Burst
+					if c.ppm == 200 {
+						got = slices.Clone(d.tier3At200[seed]())
+					} else {
+						got = receiveBaseband(noisyFM(f, e, 1400, 5, 40+uint64(seed)), Tier3)
+					}
+					scores[seed] = scoreMS(d.truth, got)["ambe_c0c1"]
+				}()
+			}
+			wg.Wait()
+			var exact, total int
+			for _, sc := range scores {
+				exact += sc.Exact
+				total += sc.Truth
 			}
 			t.Logf("%d of %d frames with C0 and C1 exact", exact, total)
 			if float64(exact) < c.share*float64(total) {
@@ -416,18 +425,32 @@ func TestReceiverTwoPass(t *testing.T) {
 	d := directShared(t)
 	o := tierOptions(Tier3)
 	o.TwoPass = false
+	seeds := testmode.N(6, 6, 2)
+	ones, twos := make([]*benchScore, seeds), make([]*benchScore, seeds)
+	var wg sync.WaitGroup
+	for seed := range seeds {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			x := d.inputAt200[seed]()
+			r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
+			var got []Burst
+			for k := 0; k < len(x); k += 4096 {
+				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
+			}
+			ones[seed] = scoreMS(d.truth, append(got, r.flushAll()...))["ambe_c0c1"]
+		}()
+		go func() {
+			defer wg.Done()
+			twos[seed] = scoreMS(d.truth, slices.Clone(d.tier3At200[seed]()))["ambe_c0c1"]
+		}()
+	}
+	wg.Wait()
 	var one, two, total int
-	for seed := range testmode.N(6, 6, 2) {
-		x := d.inputAt200[seed]()
-		r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
-		var got []Burst
-		for k := 0; k < len(x); k += 4096 {
-			got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
-		}
-		one += scoreMS(d.truth, append(got, r.flushAll()...))["ambe_c0c1"].Exact
-		sc := scoreMS(d.truth, slices.Clone(d.tier3At200[seed]()))["ambe_c0c1"]
-		two += sc.Exact
-		total += sc.Truth
+	for seed := range seeds {
+		one += ones[seed].Exact
+		two += twos[seed].Exact
+		total += twos[seed].Truth
 	}
 	t.Logf("%d of %d frames with C0 and C1 exact, %d in one pass", two, total, one)
 	if two < total || two <= one {
