@@ -3,6 +3,7 @@ package rf
 import "unsafe"
 
 type burstSink struct {
+	slcHook
 	out []Burst
 	on  func([]Burst)
 }
@@ -11,6 +12,7 @@ func (s *burstSink) put(b *Burst) {
 	if s == nil {
 		return
 	}
+	s.seeShortLC(b)
 	if s.on != nil {
 		if cap(s.out) == 0 {
 			s.on(unsafe.Slice(b, 1))

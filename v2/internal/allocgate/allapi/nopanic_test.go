@@ -27,10 +27,13 @@ var nopanicSeeds = map[reflect.Type][]reflect.Value{
 		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier0, Rate: 9600}),
 		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier1}),
 		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier3}),
+		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier0, OnShortLC: func([]rf.ShortLC) {}}),
+		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier2, OnShortLC: func([]rf.ShortLC) {}}),
 	},
 	reflect.TypeFor[rf.AudioRxConfig](): {
 		reflect.ValueOf(rf.AudioRxConfig{Tier: rf.Tier0, Rate: 9600}),
 		reflect.ValueOf(rf.AudioRxConfig{Tier: rf.Tier3, Rate: 48000}),
+		reflect.ValueOf(rf.AudioRxConfig{Tier: rf.Tier1, OnShortLC: func([]rf.ShortLC) {}}),
 	},
 	reflect.TypeFor[rf.TxConfig](): {
 		reflect.ValueOf(rf.TxConfig{Tier: rf.Tier1, Rate: 96000, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30}),

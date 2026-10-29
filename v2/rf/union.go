@@ -105,6 +105,7 @@ func (r *discRx) addUnion(opt *options) {
 		}
 		o.UnionTwins = 0
 		w := &discRx{}
+		w.sink = r.sink
 		w.setup(discSetup{Hz: hz, OnBurst: u.onTwin, opt: &o, pol: pol}, false)
 		w.addExt(&o)
 		u.twins = append(u.twins, w)

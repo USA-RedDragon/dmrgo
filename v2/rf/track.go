@@ -75,6 +75,7 @@ type tracker struct {
 	repair func(*trackEntry, enums.ColorCode, bool)
 	elc    func(*chanTrack, *[4]*trackEntry)
 	es     [4]*trackEntry
+	sink   *burstSink
 }
 
 func newTracker() *tracker {
@@ -137,6 +138,9 @@ func (t *tracker) pop(emit func(*received)) {
 		cc, ok := t.colorCode()
 		if t.repair != nil {
 			t.repair(e, cc, ok)
+		}
+		if e.out.hasCACH {
+			t.sink.noteLLR(e.out.seconds, cachBytes(e.out.cach), &e.rec.cachLLR)
 		}
 		emit(&e.out)
 	}

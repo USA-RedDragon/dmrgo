@@ -20,15 +20,18 @@ func TestAllocsReceiver(t *testing.T) {
 	iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
 	const chunk = 1 << 14
 	x := cf32(basebandStream(built.Slots, 1500))
+	lcs := 0
+	slc := func(l []ShortLC) { lcs += len(l) }
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		for _, c := range []struct {
 			name string
 			cfg  RxConfig
 			in   []byte
 		}{
-			{"CU8 at 2.048 MHz", RxConfig{Rate: 2048000, Tier: tier, Format: IQFormatCU8}, iq},
-			{"CF32 at 48 kHz", RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCF32}, x},
+			{"CU8 at 2.048 MHz", RxConfig{Rate: 2048000, Tier: tier, Format: IQFormatCU8, OnShortLC: slc}, iq},
+			{"CF32 at 48 kHz", RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCF32, OnShortLC: slc}, x},
 		} {
+			lcs = 0
 			r := mustNew(c.cfg)
 			var dst []Burst
 			pos, bursts := 0, 0
@@ -38,10 +41,10 @@ func TestAllocsReceiver(t *testing.T) {
 				pos += chunk
 			})
 			bursts += len(r.AppendFlush(dst[:0]))
-			if n != 0 || bursts == 0 {
-				t.Errorf("tier %d, %s: %v allocations per AppendBursts, %d bursts", tier, c.name, n, bursts)
+			if n != 0 || bursts == 0 || lcs == 0 {
+				t.Errorf("tier %d, %s: %v allocations per AppendBursts, %d bursts, %d Short LCs", tier, c.name, n, bursts, lcs)
 			}
-			bursts = 0
+			bursts, lcs = 0, 0
 			c.cfg.OnBursts = func(bs []Burst) { bursts += len(bs) }
 			r = mustNew(c.cfg)
 			pos = 0
@@ -50,8 +53,8 @@ func TestAllocsReceiver(t *testing.T) {
 				pos += chunk
 			})
 			_ = r.Flush()
-			if n != 0 || bursts == 0 {
-				t.Errorf("tier %d, %s: %v allocations per Write, %d bursts", tier, c.name, n, bursts)
+			if n != 0 || bursts == 0 || lcs == 0 {
+				t.Errorf("tier %d, %s: %v allocations per Write, %d bursts, %d Short LCs", tier, c.name, n, bursts, lcs)
 			}
 		}
 	}

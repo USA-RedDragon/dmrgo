@@ -1977,6 +1977,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		}
 		return
 	}
+	if r.bs {
+		r.sink.noteLean(r, b)
+	}
 	if r.clickSpan > 0 {
 		r.clicks += leanClickGain * (float32(beyond)/slotSymbols - r.clicks)
 		r.clickFloor(v)

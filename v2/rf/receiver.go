@@ -295,6 +295,7 @@ func newEngine(cfg rxSetup, opt options) *engine {
 		r.tk.elc = r.rep.embeddedLC
 	}
 	r.sink = cfg.sink
+	r.tk.sink = cfg.sink
 	if cfg.OffsetHz != 0 {
 		r.chz.tune(cfg.OffsetHz)
 	}

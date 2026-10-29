@@ -40,6 +40,17 @@ type RxConfig struct {
 	// for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0
 	// keeps none, and loses the start of a stream that it enters late.
 	LookbackSlots int
+	// OnShortLC, when not nil, receives each Short LC that the CACH of
+	// the bursts carries and that passes its CRC-8, in stream and in
+	// append mode, in storage of the receiver that is valid only during
+	// the call: usually one. The receiver calls it as it outputs the burst
+	// of the last fragment, before that burst reaches OnBursts or the
+	// slice of AppendBursts. It decodes the fragments of the Decoded CACH
+	// as layer2.ShortLCAssembler does, and from Tier1 up decodes those
+	// that fail again from their soft values. Tier0 gives the hard
+	// decode only. Init and TinyGo builds take no OnShortLC and return a
+	// *dmrgo.ConfigError for it.
+	OnShortLC func([]ShortLC)
 }
 
 type rxSetup struct {
@@ -101,6 +112,7 @@ var (
 	errRxOffset   = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.OffsetHz"}
 	errRxLookback = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.LookbackSlots"}
 	errRxOnBursts = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.OnBursts"}
+	errRxShortLC  = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.OnShortLC"}
 	errRxOpt      = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.opt"}
 )
 
@@ -193,6 +205,9 @@ func (r *Receiver) Init(c RxConfig) error {
 	}
 	if !low {
 		return errRxRate
+	}
+	if c.OnShortLC != nil {
+		return errRxShortLC
 	}
 	r.setLow(c, nil)
 	return nil

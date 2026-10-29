@@ -57,6 +57,17 @@ type AudioRxConfig struct {
 	// chips of hotspots and MMDVM modems give it. Every Tier and Rate takes
 	// it. A RxPreEmphasis that is not set up gives a *dmrgo.ConfigError.
 	PreEmphasis *RxPreEmphasis
+	// OnShortLC, when not nil, receives each Short LC that the CACH of
+	// the bursts carries and that passes its CRC-8, in stream and in
+	// append mode, in storage of the receiver that is valid only during
+	// the call: usually one. The receiver calls it as it outputs the burst
+	// of the last fragment, before that burst reaches OnBursts or the
+	// slice of AppendBursts. It decodes the fragments of the Decoded CACH
+	// as layer2.ShortLCAssembler does, and from Tier1 up decodes those
+	// that fail again from their soft values. Tier0 gives the hard
+	// decode only. Init and TinyGo builds take no OnShortLC and return a
+	// *dmrgo.ConfigError for it.
+	OnShortLC func([]ShortLC)
 }
 
 // AudioReceiver recovers DMR bursts from the output of an FM
@@ -94,6 +105,7 @@ var (
 	errAudioBits     = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.Bits"}
 	errAudioOnBursts = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.OnBursts"}
 	errAudioPreEmph  = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.PreEmphasis"}
+	errAudioShortLC  = &dmrgo.ConfigError{Type: "rf", Field: "AudioRxConfig.OnShortLC"}
 )
 
 // NewAudioReceiver returns an AudioReceiver of c. A nil c means the zero
@@ -133,6 +145,9 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	}
 	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.bursts.out = make([]Burst, 0, n)
+	}
+	if err := r.bursts.attachShortLC(cfg.OnShortLC, cfg.Tier != Tier0, errAudioShortLC); err != nil {
+		return nil, err
 	}
 	return r, nil
 }
@@ -191,6 +206,9 @@ func (r *AudioReceiver) Init(c AudioRxConfig) error {
 	}
 	if err := c.check(Tier0); err != nil {
 		return err
+	}
+	if c.OnShortLC != nil {
+		return errAudioShortLC
 	}
 	r.configure(c, nil)
 	return nil
