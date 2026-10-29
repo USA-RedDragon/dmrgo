@@ -89,6 +89,12 @@ func (h *host) close() {
 	h.s.Wait()
 }
 
+func (h *host) drain() {
+	p := h.s.TransportProtocolInstance(tcp.ProtocolNumber)
+	p.Pause()
+	p.Resume()
+}
+
 func (h *host) outbound() [][]byte {
 	var out [][]byte
 	for {

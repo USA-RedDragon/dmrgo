@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"runtime"
 	"slices"
 	"time"
 
@@ -184,15 +183,16 @@ func (w *world) state() worldState {
 }
 
 func (w *world) settle() {
-	last, stable := w.state(), 0
-	for stable < 4 {
-		runtime.Gosched()
-		time.Sleep(150 * time.Microsecond)
-		if v := w.state(); v == last {
-			stable++
-		} else {
-			last, stable = v, 0
+	last := w.state()
+	for {
+		for _, h := range w.hosts {
+			h.drain()
 		}
+		v := w.state()
+		if v == last {
+			return
+		}
+		last = v
 	}
 }
 
