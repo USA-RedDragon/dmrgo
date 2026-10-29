@@ -1,5 +1,7 @@
 # Tooling
 
+This page lists the generators of the repository and the checks of the generated files and pages. [Tools](../reference/tools.md) gives the flags of each command.
+
 - `go generate ./...` from the repository root runs these generators. Do not edit the files they write.
   - `cmd/tablegen` writes the FEC and CRC lookup tables (`tables_gen.go`).
   - `cmd/dmrgen` writes the decoder and encoder of each struct with `dmr` field tags (`*_decode_gen.go`).
