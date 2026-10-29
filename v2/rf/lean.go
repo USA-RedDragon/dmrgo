@@ -1202,6 +1202,41 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	return best / sxx, src, sxyBest < 0
 }
 
+func (r *leanCore) rcAnchor(base int64, try bool) (int64, bool) {
+	if !try || r.src != 1 {
+		return 0, false
+	}
+	for d := int64(-1); d <= 1; d++ {
+		if r.rcAt(base+leanSyncEnd+d) >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+d, enums.SyncMSSourcedRC) {
+			return d, true
+		}
+	}
+	return 0, false
+}
+
+func (r *leanCore) rcAt(end int64) float32 {
+	var syms [syncSymbols]int8
+	syncSyms(enums.SyncMSSourcedRC, &syms)
+	var mx, xx, sx, ss, sp int32
+	j := ringPos(end - syncSymbols + 1)
+	for k := range syncSymbols {
+		q := int32(r.ring[j])
+		if j++; j == leanRing {
+			j = 0
+		}
+		p := int32(syms[k])
+		mx, xx, sx, ss, sp = mx+q, xx+q*q, sx+q*p, ss+p, sp+p*p
+	}
+	fm, fs := float32(mx), float32(ss)
+	sxx := float32(xx) - fm*fm/syncSymbols
+	spp := float32(sp) - fs*fs/syncSymbols
+	sxy := float32(sx) - fs*fm/syncSymbols
+	if sxx <= 0 || spp <= 0 || sxy <= 0 {
+		return 0
+	}
+	return sxy * sxy / (sxx * spp)
+}
+
 //go:noinline
 //go:section .text.signsMatch
 func (r *leanCore) signsMatch2(a, b uint32) (bool, bool) {
@@ -1555,6 +1590,8 @@ func (r *leanCore) slot() {
 	ms := !r.bs && r.lastAnch != leanNoSlot
 	if ms && (j-r.lastAnch)&1 != 0 {
 		isAnchor = false
+	} else if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
+		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
 	}
 	c := &r.ch[j&1]
 	sf := c.sf

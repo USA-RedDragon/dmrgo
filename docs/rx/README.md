@@ -18,7 +18,7 @@ Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a
 | I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 2.6 dB | 1.8 dB | 1.7 dB | 4.9 dB | 727 ms | 35.5 MiB |
 
 - Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.
-- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 2,008 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,024 B and up to 4.6 MHz. No tier allocates after it starts.
+- CPU is measured on an AMD Ryzen 9 7950X 16-Core Processor. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 2,056 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,072 B and up to 4.6 MHz. Both are over the 2 KB line: the detection of standalone RC bursts adds 40 B of stack, 320 B of flash and up to 0.03 MHz on an MS stream, and this cost is accepted. No tier allocates after it starts.
 - Audio tiers take FM discriminator audio, as from a radio. They also take inverted audio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.
 - [The sweep](#the-sweep) gives the method and [The floors](#the-floors) the bounds.
 
@@ -159,7 +159,7 @@ The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio
 | 3 | 48 kHz | 10 dB | 432/432 | 0/432 | 432/432 | 24/24 | 0/24 | 24/24 |
 
 - The filter runs at 9.6, 12 or 24 kHz, the rate of the receiver after its half-band filters. With the de-emphasis it is flat within 0.1 dB to 2.4 kHz at 24 kHz, 0.4 dB at 12 kHz and 0.7 dB at 9.6 kHz. A first-order filter cannot follow the 3 kHz corner so close to the Nyquist rate of 9.6 kHz, so at 9.6 kHz the tiers get most of the loss back but not all of it.
-- On a Cortex-M4F at 9.6 kHz, audio tier 0 with `PreEmphasis` needs up to 5.3 MHz, 0.46 MHz more than without it, and 2,072 B of RAM with its stack, 56 B more, built with TinyGo -opt z. Its code is 220 B of flash. This Tier 0 cost with the option on, 5.26 MHz and 2,072 B, is accepted. The option is off by default.
+- On a Cortex-M4F at 9.6 kHz, audio tier 0 with `PreEmphasis` needs up to 5.3 MHz, 0.46 MHz more than without it, and 2,112 B of RAM with its stack, 56 B more, built with TinyGo -opt z. Its code is 220 B of flash. This Tier 0 cost with the option on, 5.26 MHz and 2,112 B, is accepted. The option is off by default.
 
 ## The floors
 
