@@ -37,10 +37,11 @@ var jacobian = [128]float32{0.69314718, 0.63259904, 0.57593942, 0.52312326, 0.47
 var jacobianSlope = [128]float32{-0.060548127, -0.05665964, -0.052816153, -0.049046278, -0.0453763, -0.041829675, -0.03842643, -0.035182893, -0.032111555, -0.029221058, -0.026516423, -0.023999378, -0.021668628, -0.019520491, -0.017549098, -0.01574704, -0.014105737, -0.012615718, -0.011267096, -0.010049731, -0.008953534, -0.007968612, -0.007085409, -0.006294828, -0.0055882744, -0.0049577057, -0.004395671, -0.0038952827, -0.0034502223, -0.0030547325, -0.0027035624, -0.0023919735, -0.0021156706, -0.0018707998, -0.0016538864, -0.0014618253, -0.0012918338, -0.0011414271, -0.00100839, -0.0008907458, -0.00078673987, -0.0006948104, -0.0006135693, -0.00054178573, -0.00047836802, -0.00042234873, -0.00037286943, -0.00032917177, -0.00029058312, -0.00025650894, -0.0002264228, -0.0001998602, -0.00017640914, -0.00015570631, -0.0001374305, -0.00012129778, -0.00010705704, -9.448704e-05, -8.339196e-05, -7.359893e-05, -6.49553e-05, -5.7326368e-05, -5.059305e-05, -4.465037e-05, -3.940545e-05, -3.4776487e-05, -3.069114e-05, -2.7085625e-05, -2.3903573e-05, -2.1095315e-05, -1.861692e-05, -1.6429665e-05, -1.4499354e-05, -1.2795805e-05, -1.1292395e-05, -9.96561e-06, -8.794705e-06, -7.761359e-06, -6.8494264e-06, -6.04464e-06, -5.334401e-06, -4.707621e-06, -4.154477e-06, -3.6663278e-06, -3.2355347e-06, -2.8553586e-06, -2.5198497e-06, -2.2237673e-06, -1.9624695e-06, -1.731878e-06, -1.5283795e-06, -1.3487916e-06, -1.1903057e-06, -1.0504427e-06, -9.2701293e-07, -8.180873e-07}
 
 func logAdd(a, b float32) float32 {
-	if a < b {
-		a, b = b, a
+	d := a - b
+	if d < 0 {
+		a, d = b, -d
 	}
-	x := 8 * (a - b)
+	x := 8 * d
 	if x >= 96 {
 		return a
 	}
@@ -74,17 +75,40 @@ func (t *xtrellis) setH(h float64) {
 	}
 }
 
-func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top float32) float32 {
-	dst = dst[:len(src)]
-	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
+type xlanes struct {
+	re, im, bonus [4]float32
+}
+
+func (t *xtrellis) forward(src, d0, d1, d2, d3 []float32, lo int, l *xlanes, thr, top float32) float32 {
+	n := len(src)
+	d0, d1, d2, d3 = d0[:n], d1[:n], d2[:n], d3[:n]
+	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
+	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
+	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
+	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
 	if t.logmap {
 		for i, a := range src {
 			if a < thr {
 				continue
 			}
-			v := logAdd(dst[i], a+re*cos[i]+im*sin[i]+bonus)
-			dst[i] = v
-			top = max(top, v)
+			c, s := cos[i], sin[i]
+			v0 := logAdd(d0[i], a+re0*c+im0*s+b0)
+			v1 := logAdd(d1[i], a+re1*c+im1*s+b1)
+			v2 := logAdd(d2[i], a+re2*c+im2*s+b2)
+			v3 := logAdd(d3[i], a+re3*c+im3*s+b3)
+			d0[i], d1[i], d2[i], d3[i] = v0, v1, v2, v3
+			if v0 > top {
+				top = v0
+			}
+			if v1 > top {
+				top = v1
+			}
+			if v2 > top {
+				top = v2
+			}
+			if v3 > top {
+				top = v3
+			}
 		}
 		return top
 	}
@@ -92,41 +116,103 @@ func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top f
 		if a < thr {
 			continue
 		}
-		if v := a + re*cos[i] + im*sin[i] + bonus; v > dst[i] {
-			dst[i] = v
-			top = max(top, v)
+		c, s := cos[i], sin[i]
+		if v := a + re0*c + im0*s + b0; v > d0[i] {
+			d0[i] = v
+			if v > top {
+				top = v
+			}
+		}
+		if v := a + re1*c + im1*s + b1; v > d1[i] {
+			d1[i] = v
+			if v > top {
+				top = v
+			}
+		}
+		if v := a + re2*c + im2*s + b2; v > d2[i] {
+			d2[i] = v
+			if v > top {
+				top = v
+			}
+		}
+		if v := a + re3*c + im3*s + b3; v > d3[i] {
+			d3[i] = v
+			if v > top {
+				top = v
+			}
 		}
 	}
 	return top
 }
 
-func (t *xtrellis) backward(src, beta, dst []float32, lo int, re, im, bonus, thr, best float32) float32 {
-	beta, dst = beta[:len(src)], dst[:len(src)]
-	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
+func (t *xtrellis) backward(src, e0, e1, e2, e3, dst []float32, lo int, l *xlanes, thr float32, best *[4]float32) {
+	n := len(src)
+	e0, e1, e2, e3, dst = e0[:n], e1[:n], e2[:n], e3[:n], dst[:n]
+	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
+	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
+	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
+	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
+	p0, p1, p2, p3 := best[0], best[1], best[2], best[3]
 	if t.logmap {
 		for i, a := range src {
 			if a < thr {
 				continue
 			}
-			v := re*cos[i] + im*sin[i] + bonus + beta[i]
-			dst[i] = logAdd(dst[i], v)
-			best = logAdd(best, a+v)
+			c, s := cos[i], sin[i]
+			v0 := re0*c + im0*s + b0 + e0[i]
+			v1 := re1*c + im1*s + b1 + e1[i]
+			v2 := re2*c + im2*s + b2 + e2[i]
+			v3 := re3*c + im3*s + b3 + e3[i]
+			dst[i] = logAdd(logAdd(logAdd(logAdd(dst[i], v0), v1), v2), v3)
+			p0 = logAdd(p0, a+v0)
+			p1 = logAdd(p1, a+v1)
+			p2 = logAdd(p2, a+v2)
+			p3 = logAdd(p3, a+v3)
 		}
-		return best
+		best[0], best[1], best[2], best[3] = p0, p1, p2, p3
+		return
 	}
 	for i, a := range src {
 		if a < thr {
 			continue
 		}
-		v := re*cos[i] + im*sin[i] + bonus + beta[i]
-		if v > dst[i] {
-			dst[i] = v
+		c, s := cos[i], sin[i]
+		x := dst[i]
+		if v := re0*c + im0*s + b0 + e0[i]; true {
+			if v > x {
+				x = v
+			}
+			if a+v > p0 {
+				p0 = a + v
+			}
 		}
-		if a+v > best {
-			best = a + v
+		if v := re1*c + im1*s + b1 + e1[i]; true {
+			if v > x {
+				x = v
+			}
+			if a+v > p1 {
+				p1 = a + v
+			}
 		}
+		if v := re2*c + im2*s + b2 + e2[i]; true {
+			if v > x {
+				x = v
+			}
+			if a+v > p2 {
+				p2 = a + v
+			}
+		}
+		if v := re3*c + im3*s + b3 + e3[i]; true {
+			if v > x {
+				x = v
+			}
+			if a+v > p3 {
+				p3 = a + v
+			}
+		}
+		dst[i] = x
 	}
-	return best
+	best[0], best[1], best[2], best[3] = p0, p1, p2, p3
 }
 
 func (t *xtrellis) phaseAfter(p, v int) int {
@@ -182,15 +268,19 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		thr := t.top[k] - t.beam[k]
 		top := negInf
 		lp := t.lp[4*k : 4*k+4]
-		for w := range m.windows {
-			s, s2 := w>>2, w&mask
-			re, im := real(corr[w]), imag(corr[w])
-			bonus := lp[w&3]
+		var l xlanes
+		var dst [4][]float32
+		for s := range ns {
+			for d := range 4 {
+				w := 4*s + d
+				l.re[d], l.im[d], l.bonus[d] = real(corr[w]), imag(corr[w]), lp[d]
+				s2 := w & mask
+				dst[d] = next[s2*np : (s2+1)*np]
+			}
 			src := alpha[s*np : (s+1)*np]
-			dst := next[s2*np : (s2+1)*np]
-			off := t.off[w>>shift]
-			top = t.forward(src[:np-off], dst[off:], 0, re, im, bonus, thr, top)
-			top = t.forward(src[np-off:], dst[:off], np-off, re, im, bonus, thr, top)
+			off := t.off[(4*s)>>shift]
+			top = t.forward(src[:np-off], dst[0][off:], dst[1][off:], dst[2][off:], dst[3][off:], 0, &l, thr, top)
+			top = t.forward(src[np-off:], dst[0][:off], dst[1][:off], dst[2][:off], dst[3][:off], np-off, &l, thr, top)
 		}
 		t.top[k+1] = top
 		for range t.drifts {
@@ -213,20 +303,24 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			t.next[i] = negInf
 		}
 		thr := t.top[k] - t.beam[k]
-		for w := range m.windows {
-			s, s2 := w>>2, w&mask
-			re, im := real(corr[w]), imag(corr[w])
-			bonus := lp[w&3]
+		var l xlanes
+		var e [4][]float32
+		var best [4]float32
+		copy(best[:], a)
+		for s := range ns {
+			for d := range 4 {
+				w := 4*s + d
+				l.re[d], l.im[d], l.bonus[d] = real(corr[w]), imag(corr[w]), lp[d]
+				s2 := w & mask
+				e[d] = beta[s2*np : (s2+1)*np]
+			}
 			src := alpha[s*np : (s+1)*np]
-			bsrc := beta[s2*np : (s2+1)*np]
 			dst := t.next[s*np : (s+1)*np]
-			off := t.off[w>>shift]
-			best := a[w&3]
-			best = t.backward(src[:np-off], bsrc[off:], dst[:np-off], 0, re, im, bonus, thr, best)
-			best = t.backward(src[np-off:], bsrc[:off], dst[np-off:], np-off, re, im, bonus, thr, best)
-
-			a[w&3] = best
+			off := t.off[(4*s)>>shift]
+			t.backward(src[:np-off], e[0][off:], e[1][off:], e[2][off:], e[3][off:], dst[:np-off], 0, &l, thr, &best)
+			t.backward(src[np-off:], e[0][:off], e[1][:off], e[2][:off], e[3][:off], dst[np-off:], np-off, &l, thr, &best)
 		}
+		copy(a, best[:])
 		beta, t.next = t.next, beta
 		for range t.drifts {
 			t.drift(beta, ns, t.jk[max(k-1, 0)])
