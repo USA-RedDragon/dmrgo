@@ -53,7 +53,7 @@ Every method that takes `dst` appends at most [`csbk.MaxOutputs`](https://pkg.go
 | [`Lost`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.Lost) | the time now | `dst`; the channel counts as idle |
 | [`State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.State), [`Reset`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.Reset) | nothing | the state, or nothing |
 
-Feed every burst of the logical channel to `Burst`, or to `Decoded` when you decode the burst once for several machines. Pass `now` as the start of the received burst, because the answer grid starts there. The Responder takes a CSBK whose target is its `Address` and whose source is another radio, and drops a CSBK whose CRC fails. It does not check the color code of the bursts it receives; `ColorCode` sets only the color code of the answers.
+Feed every burst of the logical channel to `Burst`, or to `Decoded` when you decode the burst once for several machines. Pass `now` as the start of the received burst, because the answer grid starts there. The Responder takes a CSBK whose target is its `Address` and whose source is another radio, and drops a CSBK whose CRC fails. `ColorCode` sets the color code of the answers. A `ColorCode` other than 0 also drops received CSBKs with another color code, in `Burst` and in `Decoded`; 0 accepts every color code.
 
 Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Output) is one of:
 

@@ -70,7 +70,7 @@ A request method only starts the request. The first burst comes from the next `T
 
 Call `Channel` each time the activity on the logical channel changes, from the CACH AT bit, the carrier or a repeater. Until the first report the channel counts as idle, as it is for a network transport.
 
-Feed every burst that you receive on the channel to `Burst`, or to `Decoded` when you decode the burst once for several machines. The Requester takes only an answer addressed from the target of the request to its source, and drops a CSBK whose CRC fails.
+Feed every burst that you receive on the channel to `Burst`, or to `Decoded` when you decode the burst once for several machines. The Requester takes only an answer addressed from the target of the request to its source, and drops a CSBK whose CRC fails. A `ColorCode` other than 0 also drops received CSBKs with another color code, in `Burst` and in `Decoded`; 0 accepts every color code.
 
 Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Output) is one of:
 
