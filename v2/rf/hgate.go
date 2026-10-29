@@ -62,8 +62,13 @@ func (r *engine) gateH(lo, hi int64) {
 		if s := r.slot(j); s.index == j && s.anchor && r.pass(j).anchor {
 			r.freq = r.pass(j).smHz
 			e := r.syncSamples(s, 0)
+			pi := slices.Index(syncPatterns[:], s.a.pattern)
 			for k := range hGateN {
-				r.search.setH(hGateLo+float64(k)*hGateStep, &r.pulse)
+				if pi < 0 {
+					r.search.setH(hGateLo+float64(k)*hGateStep, &r.pulse)
+				} else {
+					r.search.setPatternH(pi, hGateLo+float64(k)*hGateStep, &r.pulse)
+				}
 				g.sc[n*hGateN+k] = float32(r.syncCorr(s.a.pattern, e).metric)
 			}
 			n++

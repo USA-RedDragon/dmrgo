@@ -84,17 +84,21 @@ func newSyncSearch(coherent bool, dec int) *syncSearch {
 }
 
 func (s *syncSearch) setH(h float64, p *phasePulse) {
+	for i := range syncPatterns {
+		s.setPatternH(i, h, p)
+	}
+}
+
+func (s *syncSearch) setPatternH(i int, h float64, p *phasePulse) {
 	var syms [syncSymbols]int8
 	var in [syncSymbols]int
-	for i, q := range &syncPatterns {
-		syncSyms(q, &syms)
-		for k, a := range syms {
-			in[k] = int(a)
-		}
-		p.refPhaseInto(in[:], s.sps, h, s.full)
-		for j, ph := range s.full[syncEdge*s.sps : syncEdge*s.sps+s.span] {
-			s.conj[i][j] = complex(float32(math.Cos(ph)), float32(-math.Sin(ph)))
-		}
+	syncSyms(syncPatterns[i], &syms)
+	for k, a := range syms {
+		in[k] = int(a)
+	}
+	p.refPhaseInto(in[:], s.sps, h, s.full)
+	for j, ph := range s.full[syncEdge*s.sps : syncEdge*s.sps+s.span] {
+		s.conj[i][j] = complex(float32(math.Cos(ph)), float32(-math.Sin(ph)))
 	}
 }
 
