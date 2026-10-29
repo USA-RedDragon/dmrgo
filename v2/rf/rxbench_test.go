@@ -362,35 +362,68 @@ func (p *benchPool) do(prio int, f func()) {
 	p.cond.Signal()
 }
 
-func (p *benchPool) wait(prio int, f func()) {
-	done := make(chan struct{})
-	p.do(prio, func() {
-		defer close(done)
-		f()
-	})
-	<-done
-}
-
-type benchRun struct {
+type benchShared struct {
 	t     testing.TB
 	pool  *benchPool
-	prio  int
 	sig   benchSignal
 	truth []benchSlot
-	e     benchEntry
+	es    []benchEntry
 }
 
-func runBench(r benchRun, cases []benchCase) []benchPoint {
-	res := make([]map[string]*benchScore, len(cases))
+const (
+	benchGenPrio   = 9
+	benchFalsePrio = 10
+	benchLevels    = 11
+)
+
+func (s benchShared) run(cases [][]benchCase) [][]benchPoint {
+	type use struct{ e, i int }
+	var order []benchCase
+	users := map[benchCase][]use{}
+	res := make([][]map[string]*benchScore, len(cases))
+	for j, cs := range cases {
+		res[j] = make([]map[string]*benchScore, len(cs))
+		for i, c := range cs {
+			if users[c] == nil {
+				order = append(order, c)
+			}
+			users[c] = append(users[c], use{j, i})
+		}
+	}
 	var wg sync.WaitGroup
-	for i, c := range cases {
-		wg.Add(1)
-		r.pool.do(r.prio, func() {
-			defer wg.Done()
-			res[i] = scoreBench(r.truth, benchReceive(r.t, r.sig.noisy(c.cn, c.seed), r.e))
+	for _, c := range order {
+		us := users[c]
+		wg.Add(len(us))
+		s.pool.do(benchGenPrio, func() {
+			x := s.sig.noisy(c.cn, c.seed)
+			var a []int16
+			if slices.ContainsFunc(us, func(u use) bool { return s.es[u.e].mode == benchAudio }) {
+				a = discAudio(x, benchAudioHz)
+			}
+			for _, u := range us {
+				e := s.es[u.e]
+				s.pool.do(benchPriority(e), func() {
+					defer wg.Done()
+					var got []Burst
+					if e.mode == benchAudio {
+						got = receiveAudioTier(s.t, a, e.tier)
+					} else {
+						got = benchReceive(s.t, x, e)
+					}
+					res[u.e][u.i] = scoreBench(s.truth, got)
+				})
+			}
 		})
 	}
 	wg.Wait()
+	out := make([][]benchPoint, len(cases))
+	for j := range cases {
+		out[j] = benchPoints(cases[j], res[j])
+	}
+	return out
+}
+
+func benchPoints(cases []benchCase, res []map[string]*benchScore) []benchPoint {
 	byCN := map[float64]map[string]*benchScore{}
 	seeds := map[float64]int{}
 	for i, c := range cases {
@@ -467,43 +500,71 @@ func deepNeeds(sc *benchScore) bool {
 	return sc != nil && sc.Truth > 0 && sc.Truth-sc.Exact < deepErrors && sc.Truth < deepFrames
 }
 
-func deepen(r benchRun, pts []benchPoint) []benchPoint {
-	e := r.e
-	below := map[string]int{}
-	for i := range pts {
-		p := &pts[i]
+func (s benchShared) deepen(pts [][]benchPoint) {
+	below := make([]map[string]int, len(s.es))
+	n := 0
+	for j := range s.es {
+		below[j] = map[string]int{}
+		n = max(n, len(pts[j]))
+	}
+	for i := range n {
 		seed := uint64(deepFirstSeed) + uint64(i)<<20
-		for p.Seeds < deepStreams(e) && slices.ContainsFunc(deepPayloads(), func(k string) bool { return below[k] < 2 && deepNeeds(p.Payloads[k]) }) {
-			cases := make([]benchCase, deepBatch)
-			for j := range cases {
-				cases[j] = benchCase{p.CN, seed}
-				seed++
-			}
-			add := runBench(r, cases)[0]
-			p.Seeds += add.Seeds
-			for k, v := range add.Payloads {
-				a := p.Payloads[k]
-				if a == nil {
-					a = &benchScore{}
-					p.Payloads[k] = a
+		for {
+			cases := make([][]benchCase, len(s.es))
+			more := false
+			for j, e := range s.es {
+				if i >= len(pts[j]) {
+					continue
 				}
-				a.Truth += v.Truth
-				a.Exact += v.Exact
+				p := &pts[j][i]
+				if p.Seeds < deepStreams(e) && slices.ContainsFunc(deepPayloads(), func(k string) bool { return below[j][k] < 2 && deepNeeds(p.Payloads[k]) }) {
+					cases[j] = make([]benchCase, deepBatch)
+					for b := range cases[j] {
+						cases[j][b] = benchCase{p.CN, seed + uint64(b)}
+					}
+					more = true
+				}
+			}
+			if !more {
+				break
+			}
+			seed += deepBatch
+			add := s.run(cases)
+			for j := range s.es {
+				if cases[j] == nil {
+					continue
+				}
+				p, d := &pts[j][i], add[j][0]
+				p.Seeds += d.Seeds
+				for k, v := range d.Payloads {
+					a := p.Payloads[k]
+					if a == nil {
+						a = &benchScore{}
+						p.Payloads[k] = a
+					}
+					a.Truth += v.Truth
+					a.Exact += v.Exact
+				}
 			}
 		}
-		for _, k := range deepPayloads() {
-			sc := p.Payloads[k]
-			switch {
-			case below[k] >= 2:
-				delete(p.Payloads, k)
-			case sc != nil && sc.Truth > 0 && float64(sc.Truth-sc.Exact) < deepFloor*float64(sc.Truth):
-				below[k]++
-			default:
-				below[k] = 0
+		for j := range s.es {
+			if i >= len(pts[j]) {
+				continue
+			}
+			p := &pts[j][i]
+			for _, k := range deepPayloads() {
+				sc := p.Payloads[k]
+				switch {
+				case below[j][k] >= 2:
+					delete(p.Payloads, k)
+				case sc != nil && sc.Truth > 0 && float64(sc.Truth-sc.Exact) < deepFloor*float64(sc.Truth):
+					below[j][k]++
+				default:
+					below[j][k] = 0
+				}
 			}
 		}
 	}
-	return pts
 }
 
 func falsePerHour(e benchEntry, noise benchSignal) float64 {
@@ -670,30 +731,51 @@ func TestRxBench(t *testing.T) {
 	fs, ft := benchStream(t, 30)
 	sig, fsig, noise := cleanBaseband(slots, 1400), cleanBaseband(fs, 1400), cleanBaseband(nil, 0)
 	entries := benchEntries()
-	pool := newBenchPool(runtime.GOMAXPROCS(0), len(entries))
+	pool := newBenchPool(runtime.GOMAXPROCS(0), benchLevels)
 	tiers := make([]benchTier, len(entries))
-	var wg sync.WaitGroup
+	var es []benchEntry
+	var at []int
 	for i, e := range entries {
-		want, have := base.find(e)
-		if full && !benchTierSelected(e) && have {
+		if want, have := base.find(e); full && !benchTierSelected(e) && have {
 			tiers[i] = want
 			continue
 		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			bt := benchTier{Mode: e.mode, Tier: e.number()}
-			prio := benchPriority(e)
-			bt.Fast = runBench(benchRun{t, pool, prio, sig, truth, e}, fastCases(e))
-			if full {
-				r := benchRun{t, pool, prio, fsig, ft, e}
-				bt.Full = deepen(r, runBench(r, fullCases()))
-				pool.wait(prio, func() { bt.FalsePerHour = falsePerHour(e, noise) })
-			}
-			tiers[i] = bt
-		}()
+		es, at = append(es, e), append(at, i)
+	}
+	fph := make([]float64, len(es))
+	var wg sync.WaitGroup
+	if full {
+		for j, e := range es {
+			wg.Add(1)
+			pool.do(benchFalsePrio, func() {
+				defer wg.Done()
+				fph[j] = falsePerHour(e, noise)
+			})
+		}
+	}
+	fc := make([][]benchCase, len(es))
+	for j, e := range es {
+		fc[j] = fastCases(e)
+	}
+	fastPts := benchShared{t, pool, sig, truth, es}.run(fc)
+	var deep [][]benchPoint
+	if full {
+		sh := benchShared{t, pool, fsig, ft, es}
+		cs := make([][]benchCase, len(es))
+		for j := range cs {
+			cs[j] = fullCases()
+		}
+		deep = sh.run(cs)
+		sh.deepen(deep)
 	}
 	wg.Wait()
+	for j, e := range es {
+		bt := benchTier{Mode: e.mode, Tier: e.number(), Fast: fastPts[j]}
+		if full {
+			bt.Full, bt.FalsePerHour = deep[j], fph[j]
+		}
+		tiers[at[j]] = bt
+	}
 	out := benchData{Machine: base.Machine}
 	for i, e := range entries {
 		bt := tiers[i]
