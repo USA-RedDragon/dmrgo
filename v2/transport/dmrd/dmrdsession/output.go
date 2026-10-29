@@ -45,7 +45,9 @@ type OutputKind uint8
 const (
 	// OutputSend is a packet in Output.Packet to send to the other side.
 	OutputSend OutputKind = iota + 1
-	// OutputUp reports that the login is complete. Traffic can flow.
+	// OutputUp reports that the login is complete, or that a Bridge took
+	// the first packet with a good signature after StateIdle. Traffic can
+	// flow.
 	OutputUp
 	// OutputDown reports that the session ended. Output.Reason gives the
 	// cause, and Output.State gives the state in which it ended.
@@ -146,8 +148,9 @@ type State uint8
 // The State values.
 const (
 	// StateIdle has no session: a Peer after Close, a Master before an
-	// RPTL or after the end of a session, a Bridge that has not heard
-	// its peer within Timeout.
+	// RPTL or after the end of a session, a Bridge, enhanced or not,
+	// before the first packet with a good signature and after Timeout
+	// without one.
 	StateIdle State = iota
 	// StateWait is a Peer that waits to log in again.
 	StateWait
@@ -161,8 +164,8 @@ const (
 	StateConfig
 	// StateOptions is a Peer that sent RPTO.
 	StateOptions
-	// StateRunning is a logged-in session, or a Bridge that heard its
-	// peer within Timeout.
+	// StateRunning is a logged-in session, or a Bridge, enhanced or not,
+	// whose peer sent a packet with a good signature within Timeout.
 	StateRunning
 )
 

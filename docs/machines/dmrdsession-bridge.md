@@ -4,7 +4,7 @@ This page covers the dmrdsession Bridge, the state machine of one OpenBridge lin
 
 ## What it does
 
-A [Bridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge) is one end of an OpenBridge link. OpenBridge carries DMRD packets between masters, signed with a key that both ends share; it has no login. The Bridge checks the signature of each packet that it takes, and signs the packets that you send with [SignInPlace](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.SignInPlace). With the enhanced OpenBridge of FreeDMR, it also sends the BCKA keepalive and tracks whether the other end is alive. The Bridge is not a dialect of the MMDVM network protocol or HBRP: OpenBridge is a separate protocol built on the same DMRD packet. It does no I/O. (BrandMeister Open Bridge; FreeDMR 546165eb hblink.py and bridge_master.py; HBlink3 1db2730)
+A [Bridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge) is one end of an OpenBridge link. OpenBridge carries DMRD packets between masters, signed with a key that both ends share; it has no login. The Bridge checks the signature of each packet that it takes, signs the packets that you send with [SignInPlace](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.SignInPlace), and tracks whether the other end is alive from the packets with a good signature. With the enhanced OpenBridge of FreeDMR, it also sends the BCKA keepalive. The Bridge is not a dialect of the MMDVM network protocol or HBRP: OpenBridge is a separate protocol built on the same DMRD packet. It does no I/O. (BrandMeister Open Bridge; FreeDMR 546165eb hblink.py and bridge_master.py; HBlink3 1db2730)
 
 ## When to use it
 
@@ -12,15 +12,15 @@ Use a Bridge in a master that links to another master over OpenBridge, such as a
 
 ## Config
 
-Pass a [BridgeConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#BridgeConfig) to [NewBridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewBridge). The config is required. Key is the passphrase of the link, as [dmrdauth.NewBridgeKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth#NewBridgeKey) takes it. Keepalive and Timeout apply only with Enhanced.
+Pass a [BridgeConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#BridgeConfig) to [NewBridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewBridge). The config is required. Key is the passphrase of the link, as [dmrdauth.NewBridgeKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth#NewBridgeKey) takes it. Keepalive applies only with Enhanced.
 
 <!-- dmrgo:config pkg=transport/dmrd/dmrdsession type=BridgeConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Key` | `[]byte` | zero value | Key is the passphrase of the OpenBridge link (see dmrdauth.NewBridgeKey). |
-| `Enhanced` | `bool` | zero value | Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive and takes the peer as down after Timeout without a packet with a good signature. Without it OpenBridge has no keepalive, and the Bridge only checks signatures. |
+| `Enhanced` | `bool` | zero value | Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive. Without it OpenBridge has no keepalive, and the Bridge sends nothing of its own. |
 | `Keepalive` | `time.Duration` | not machine-readable; see the description | Keepalive is the BCKA period. 0 means KeepaliveDefault. |
-| `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet with a good signature after which an enhanced Bridge reports OutputDown. 0 means TimeoutDefault, the time after which FreeDMR stops sending to a peer. |
+| `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet with a good signature after which the Bridge reports OutputDown. 0 means TimeoutDefault, the time after which FreeDMR stops sending to a peer. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
@@ -32,13 +32,13 @@ States of [`Bridge`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 | State | Meaning | Seen in tests |
 |---|---|---|
-| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateIdle) | StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge that has not heard its peer within Timeout. | yes, first state |
+| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateIdle) | StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge, enhanced or not, before the first packet with a good signature and after Timeout without one. | yes, first state |
 | [`StateWait`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateWait) | StateWait is a Peer that waits to log in again. | no |
 | [`StateLogin`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateLogin) | StateLogin is a Peer that sent RPTL, or a Master that waits for Admit or Refuse. | no |
 | [`StateAuth`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateAuth) | StateAuth is a Peer that sent RPTK, or a Master that sent the salt. | no |
 | [`StateConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateConfig) | StateConfig is a Peer that sent RPTC, or a Master that waits for it or for Accept or Refuse. | no |
 | [`StateOptions`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateOptions) | StateOptions is a Peer that sent RPTO. | no |
-| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateRunning) | StateRunning is a logged-in session, or a Bridge that heard its peer within Timeout. | yes |
+| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateRunning) | StateRunning is a logged-in session, or a Bridge, enhanced or not, whose peer sent a packet with a good signature within Timeout. | yes |
 
 Transitions seen in tests:
 
@@ -50,7 +50,7 @@ Transitions seen in tests:
 ![Transitions of Bridge](states/transport-dmrd-dmrdsession-bridge.svg)
 <!-- /dmrgo:states -->
 
-Only an enhanced Bridge tracks the link. Its link runs while the other end sent a packet with a good signature, a BCKA or any other, within Timeout. The first such packet after an idle link reports the link up. When Timeout passes without one, Tick reports the link down. Without the enhanced mode, OpenBridge has no keepalive: the Bridge only checks signatures, and its State stays idle.
+The link runs while the other end sent a packet with a good signature, a BCKA or any other, within Timeout. The first such packet after an idle link reports the link up. When Timeout passes without one, Tick reports the link down. This works with and without the enhanced mode. Without it, OpenBridge has no keepalive, so the link of a quiet peer goes down at Timeout and comes up again with its next packet.
 
 ## Inputs and outputs
 
@@ -58,14 +58,14 @@ Inputs:
 
 - [Packet](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Packet) takes each UDP packet from the other end.
 - [SignInPlace](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.SignInPlace) writes the signature into the last octets of an OpenBridge packet that you send.
-- [Tick](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Tick) sends the keepalive and runs the timeout of an enhanced Bridge. Call it at the time [Deadline](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Deadline) returns. A Bridge without the enhanced mode has no deadline.
+- [Tick](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Tick) runs the timeout and, in the enhanced mode, sends the keepalive. Call it at the time [Deadline](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Deadline) returns. A Bridge without the enhanced mode has no deadline while the link is idle.
 
 Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Output) values with an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#OutputKind): the BCKA to send, the link up and down, the DMRD and DMRE data packets with a good signature, and the BCSQ, BCST and BCVE messages. A packet without a good signature, or that is not OpenBridge, gives no output. The packets of the data and message outputs point into the packet that you passed in. Give each method a slice with capacity <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /dmrgo:const -->.
 
 ## Timers
 
 - Keepalive: the BCKA period of an enhanced Bridge. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=KeepaliveDefault -->`10s`<!-- /dmrgo:const -->, the BCKA period of FreeDMR. The first BCKA goes out at the first Tick.
-- Timeout: the time without a packet with a good signature after which an enhanced Bridge reports the link down. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->, the time after which FreeDMR stops sending to a peer.
+- Timeout: the time without a packet with a good signature after which the Bridge reports the link down. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->, the time after which FreeDMR stops sending to a peer.
 
 ## Worked example
 

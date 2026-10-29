@@ -13,21 +13,21 @@ type BridgeConfig struct {
 	// Key is the passphrase of the OpenBridge link (see dmrdauth.NewBridgeKey).
 	Key []byte
 	// Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a
-	// BCKA every Keepalive and takes the peer as down after Timeout
-	// without a packet with a good signature. Without it OpenBridge has no
-	// keepalive, and the Bridge only checks signatures.
+	// BCKA every Keepalive. Without it OpenBridge has no keepalive, and the
+	// Bridge sends nothing of its own.
 	Enhanced bool
 	// Keepalive is the BCKA period. 0 means KeepaliveDefault.
 	Keepalive time.Duration
 	// Timeout is the time without a packet with a good signature after
-	// which an enhanced Bridge reports OutputDown. 0 means TimeoutDefault,
-	// the time after which FreeDMR stops sending to a peer.
+	// which the Bridge reports OutputDown. 0 means TimeoutDefault, the time
+	// after which FreeDMR stops sending to a peer.
 	Timeout time.Duration
 }
 
 // Bridge is one OpenBridge link between two masters. It checks the
-// signature of each packet and, with BridgeConfig.Enhanced, runs the BCKA
-// keepalive and the liveness of the peer as FreeDMR does. Make it with
+// signature of each packet, tracks the liveness of the peer from the
+// packets with a good signature, and, with BridgeConfig.Enhanced, runs the
+// BCKA keepalive as FreeDMR does. Make it with
 // NewBridge; the zero Bridge takes no packet. A Bridge is not safe for
 // concurrent use and must not be copied.
 type Bridge struct {
@@ -69,7 +69,8 @@ func NewBridge(cfg *BridgeConfig) (*Bridge, error) {
 }
 
 // State returns StateRunning when the peer sent a packet with a good
-// signature within Timeout, and StateIdle before that and after.
+// signature within Timeout, with or without BridgeConfig.Enhanced, and
+// StateIdle before that and after.
 func (b *Bridge) State() State {
 	if b == nil {
 		return 0
@@ -94,14 +95,14 @@ func (b *Bridge) SignInPlace(p []byte) error {
 }
 
 // Deadline returns the time at which the Bridge needs a Tick. ok is false
-// without BridgeConfig.Enhanced.
+// for a Bridge without BridgeConfig.Enhanced in StateIdle.
 func (b *Bridge) Deadline() (at time.Duration, ok bool) {
-	if b == nil {
+	if b == nil || b.key == nil {
 		return 0, false
 	}
 
-	if !b.enhanced || b.key == nil {
-		return 0, false
+	if !b.enhanced {
+		return after(b.lastAt, b.timeout), b.state == StateRunning
 	}
 	if !b.started {
 		return 0, true
@@ -112,21 +113,21 @@ func (b *Bridge) Deadline() (at time.Duration, ok bool) {
 	return b.sendAt, true
 }
 
-// Tick sends the BCKA of an enhanced Bridge when it is due, the first at
-// the first Tick, and reports OutputDown with ReasonTimeout when the peer
-// sent nothing for Timeout. It allocates only when dst has no room for
+// Tick reports OutputDown with ReasonTimeout when the peer sent nothing
+// for Timeout, and sends the BCKA of an enhanced Bridge when it is due, the
+// first at the first Tick. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
-	if b == nil {
+	if b == nil || b.key == nil {
 		return dst
 	}
 
-	if !b.enhanced || b.key == nil {
-		return dst
-	}
 	if b.state == StateRunning && now >= after(b.lastAt, b.timeout) {
 		b.state = StateIdle
 		dst = append(dst, Output{Kind: OutputDown, Reason: ReasonTimeout, State: StateRunning})
+	}
+	if !b.enhanced {
+		return dst
 	}
 	if !b.started || now >= b.sendAt {
 		b.started, b.sendAt = true, after(now, b.keepalive)
@@ -137,9 +138,9 @@ func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
 
 // Packet takes the packet p from the peer. A packet without a good
 // signature, or that is not OpenBridge, gets no output. A DMRD or DMRE
-// packet gives OutputData, and BCSQ, BCST and BCVE give OutputMessage. In
-// an enhanced Bridge, every packet with a good signature, a BCKA among
-// them, is a sign of life: the first after StateIdle reports OutputUp.
+// packet gives OutputData, and BCSQ, BCST and BCVE give OutputMessage.
+// Every packet with a good signature, a BCKA among them, is a sign of
+// life: the first after StateIdle reports OutputUp.
 // It allocates only when dst has no room for MaxOutputs outputs.
 func (b *Bridge) Packet(now time.Duration, p []byte, dst []Output) []Output {
 	if b == nil {
@@ -163,12 +164,10 @@ func (b *Bridge) Packet(now time.Duration, p []byte, dst []Output) []Output {
 	} else {
 		return dst
 	}
-	if b.enhanced {
-		b.lastAt = now
-		if b.state != StateRunning {
-			b.state = StateRunning
-			dst = append(dst, Output{Kind: OutputUp})
-		}
+	b.lastAt = now
+	if b.state != StateRunning {
+		b.state = StateRunning
+		dst = append(dst, Output{Kind: OutputUp})
 	}
 	switch c {
 	case dmrd.CommandDMRD, dmrd.CommandDMRE:
