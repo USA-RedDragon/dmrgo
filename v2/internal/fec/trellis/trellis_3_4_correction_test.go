@@ -1,6 +1,7 @@
 package trellis
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -153,25 +154,33 @@ func TestTrellis34_MaximumLikelihood(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(4))
-	for n := range 200000 {
+	type mlCase struct {
+		data    [18]byte
+		enc, rx [25]byte
+	}
+	checkCases(t, 200000, func(n int) mlCase {
 		data, enc := randomBlock(r)
 		rx := enc
 		for range 1 + n%8 {
 			setDibit(&rx, r.Intn(98), byte(r.Intn(4)))
 		}
+		return mlCase{data, enc, rx}
+	}, func(c *mlCase) string {
+		data, enc, rx := c.data, c.enc, c.rx
 		got, res := Decode(rx)
 		dec := Encode(got)
 		if res.ErrorsCorrected != bitErrors(&rx, &dec) {
-			t.Fatalf("ErrorsCorrected %d, want %d bits between received and decoded block", res.ErrorsCorrected, bitErrors(&rx, &dec))
+			return fmt.Sprintf("ErrorsCorrected %d, want %d bits between received and decoded block", res.ErrorsCorrected, bitErrors(&rx, &dec))
 		}
 		mDec, mSent := cost(&rx, &dec), cost(&rx, &enc)
 		switch {
 		case mDec > mSent:
-			t.Fatalf("block %x: decoded metric %d is above the sent block's %d", data, mDec, mSent)
+			return fmt.Sprintf("block %x: decoded metric %d is above the sent block's %d", data, mDec, mSent)
 		case got != data && mDec == mSent && !res.Uncorrectable:
-			t.Fatalf("block %x: decoded block %x has the sent block's metric %d but no Uncorrectable", data, got, mDec)
+			return fmt.Sprintf("block %x: decoded block %x has the sent block's metric %d but no Uncorrectable", data, got, mDec)
 		}
-	}
+		return ""
+	})
 }
 
 func TestTrellis34_SingleDibitErrors(t *testing.T) {
