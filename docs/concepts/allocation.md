@@ -71,3 +71,5 @@ Three checks hold the rule. None of them has a list of functions to keep up to d
 - [v2/internal/allocs](../../v2/internal/allocs) counts the allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
 
 [Tooling](../tooling.md) gives the commands that write and check the table.
+
+Next: [Tiers](tiers.md).
