@@ -60,11 +60,11 @@ The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded 
 
 An FEC or CRC error does not make `NewBurstFromBytes` fail. `burst.FEC` reports it, and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. Fields of bits are packed in bytes in transmit order, with the first bit on air in the most significant bit of byte 0. A burst is a `[33]byte`, a CSBK a `[12]byte` and a vocoder slot a `[9]byte`.
 
-The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match. [Examples](docs/examples.md) lists the example programs, which run offline on captures.
+The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match. [Examples](docs/reference/examples.md) lists the example programs, which run offline on captures.
 
 ## Features
 
-[Features](docs/features.md) gives the full list.
+[Features](docs/reference/features.md) gives the full list.
 
 - Bursts and PDUs (`layer2`, `layer2/pdu`): decode, encode and build every burst and PDU of the air interface, with in-place field access, voice superframes, the embedded and Short LC assemblers and the MMDVMHost burst check.
 - Packet data (`layer2/packet`, `data`): confirmed and unconfirmed packets at rate 1/2, 3/4 and 1, with selective retry, sliding windows and the applications that radios carry in them: IP, text messages, positions, LIP, and the MOTOTRBO and Hytera services.
@@ -75,20 +75,20 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - Vocoders (`vocoder`): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Transcode voice](docs/guides/transcode-voice.md)).
 - FEC: every DMR code and CRC, each with one result type.
 - C API (`v2/capi`): libdmrgo, a shared or static library with the whole API in C.
-- No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [TinyGo](docs/tinygo.md)).
+- No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [TinyGo](docs/targets/mcu.md)).
 
 ## Documentation
 
 - [Package reference](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2): the Go API of every package, on pkg.go.dev.
-- [Features](docs/features.md): every feature, by package.
-- [Examples](docs/examples.md): the example programs.
+- [Features](docs/reference/features.md): every feature, by package.
+- [Examples](docs/reference/examples.md): the example programs.
 - [Receiver](docs/rx/README.md): the tiers of `rf`, their sensitivity and cost, and how they are measured.
 - [Transmitter](docs/tx/README.md): the tiers, formats and rates, the regional limits and the measured margins.
 - [Transcode voice](docs/guides/transcode-voice.md): AMBE+2 FEC, the Codec2 backends and DVSI chips.
 - [Allocation](docs/concepts/allocation.md): where the library can allocate, and the checks.
-- [TinyGo](docs/tinygo.md): microcontroller builds.
-- [Tooling](docs/tooling.md): the generators and the checks of the generated pages.
-- [ETSI coverage](docs/etsi.md): the status of each clause of ETSI TS 102 361.
+- [TinyGo](docs/targets/mcu.md): microcontroller builds.
+- [Tooling](docs/project/tooling.md): the generators and the checks of the generated pages.
+- [ETSI coverage](docs/reference/etsi.md): the status of each clause of ETSI TS 102 361.
 
 ## Versioning
 
