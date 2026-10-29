@@ -7,17 +7,19 @@ import (
 )
 
 const (
-	fftSize    = 1 << fftBits
-	fftBits    = 8
-	specFrames = 96
-	specBlocks = 8
-	specQuick  = 3
-	specRise   = 2
-	specRearm  = 1.5
-	specPowerN = 48
-	specFloorN = 4800
-	specSettle = 480
-	channelHz  = 12500.0
+	fftSize      = 1 << fftBits
+	fftBits      = 8
+	specFrames   = 96
+	specBlocks   = 8
+	specQuick    = 3
+	specFloorQ   = 30
+	specCutLevel = 0.1
+	specRise     = 2
+	specRearm    = 1.5
+	specPowerN   = 48
+	specFloorN   = 4800
+	specSettle   = 480
+	channelHz    = 12500.0
 )
 
 func fftTransform(x []complex64) {
@@ -185,9 +187,19 @@ func (s *spectrum) estimate() {
 	if n > 8 {
 		floor = sum / float64(n)
 	}
+	win := s.sorted[:2*half+1]
+	for k := range win {
+		win[k] = s.power[(center-half+k+fftSize)%fftSize]
+	}
+	slices.Sort(win)
+	lo := 0
+	for lo < len(win)-1 && win[lo] < specCutLevel*win[len(win)/2] {
+		lo++
+	}
+	floor = max(floor, float64(win[lo+(len(win)-lo)*specFloorQ/100]))
 	var num, den float64
 	for k := center - half; k <= center+half; k++ {
-		e := pass(k) - floor
+		e := max(pass(k)-floor, 0)
 		num += e * float64(k)
 		den += e
 	}
