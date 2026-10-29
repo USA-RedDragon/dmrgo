@@ -11,6 +11,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -537,18 +538,27 @@ func collectFramer(d digests) {
 func TestDigests(t *testing.T) {
 	t.Parallel()
 
-	d := digests{}
-	collectBursts(d)
-	collectBuild(d)
-	collectPDU(d)
-	collectEmbedded(d)
-	collectCACH(d)
-	collectVocoder(d)
-	collectFramer(d)
+	collectors := []func(digests){collectBursts, collectBuild, collectPDU, collectEmbedded, collectCACH, collectVocoder, collectFramer}
+	parts := make([]digests, len(collectors))
+	var wg sync.WaitGroup
+	for i, c := range collectors {
+		parts[i] = digests{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c(parts[i])
+		}()
+	}
+	wg.Wait()
 
 	got := map[string]string{}
-	for k, h := range d {
-		got[k] = hex.EncodeToString(h.Sum(nil))
+	for _, d := range parts {
+		for k, h := range d {
+			if _, dup := got[k]; dup {
+				t.Fatalf("%s: written by two collectors", k)
+			}
+			got[k] = hex.EncodeToString(h.Sum(nil))
+		}
 	}
 	keys := make([]string, 0, len(got))
 	for k := range got {
