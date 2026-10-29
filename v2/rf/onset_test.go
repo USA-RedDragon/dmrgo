@@ -111,7 +111,7 @@ func TestRxRawBitsAtGapEdge(t *testing.T) {
 							bad++
 						}
 					}
-					if bad > 1 {
+					if bad > 0 {
 						t.Errorf("lock burst raw bits differ at %d starts", bad)
 					}
 				})

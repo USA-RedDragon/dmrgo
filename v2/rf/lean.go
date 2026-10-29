@@ -716,6 +716,36 @@ func (win *syncWindow) peak(syms *[syncSymbols]int8, c *[7]float32, end, sps flo
 	return k
 }
 
+func edgeVertex(c *[7]float32, best int) float32 {
+	ninf := float32(math.Inf(-1))
+	if best <= 0 || best >= len(c)-1 {
+		return 0
+	}
+	lo, mid, hi := c[best-1], c[best], c[best+1]
+	switch {
+	case lo != ninf && hi != ninf:
+		if den := lo - 2*mid + hi; den < 0 {
+			return max32(min32(0.5*(lo-hi)/den, 0.5), -0.5)
+		}
+	case lo == ninf && hi != ninf && peakAt(c, best+2) != ninf:
+		if den := mid - 2*hi + peakAt(c, best+2); den < 0 {
+			return max32(min32(1+0.5*(mid-peakAt(c, best+2))/den, 0.5), -0.5)
+		}
+	case hi == ninf && lo != ninf && peakAt(c, best-2) != ninf:
+		if den := peakAt(c, best-2) - 2*lo + mid; den < 0 {
+			return max32(min32(0.5*(peakAt(c, best-2)-mid)/den-1, 0.5), -0.5)
+		}
+	}
+	return 0
+}
+
+func peakAt(c *[7]float32, k int) float32 {
+	if k < 0 || k >= len(c) {
+		return float32(math.Inf(-1))
+	}
+	return c[k]
+}
+
 func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool) (float32, bool) {
 	sps := 2 * r.tm.step
 	end := r.lastAt
@@ -740,11 +770,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		r.again = true
 		return 0, false
 	}
-	bestD := float32(best-3) * sps / 4
-	lo, hi := c[max(best-1, 0)], c[min(best+1, len(c)-1)]
-	if den, lh := lo-2*c[best]+hi, lo+hi; best > 0 && best < len(c)-1 && den < 0 && lh != ninf && lh != -ninf {
-		bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
-	}
+	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
 	bestD = min(bestD, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
 	const n = syncSymbols
