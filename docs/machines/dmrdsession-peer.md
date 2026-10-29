@@ -21,7 +21,7 @@ Pass a [PeerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transpo
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.State) returns the current state. The Peer, the Master and the Bridge share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#State) type, and each uses some of its values.
 
-<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=State -->
+<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=Peer -->
 <!-- /dmrgo:states -->
 
 The first Tick sends the RPTL. Each acknowledgement moves the Peer to the next login step: the token, the config, and the options when it has them. The acknowledgement of the last step completes the login, and the Peer reports that the session is up. When the session ends, by Timeout without an acknowledgement or a pong, by MSTNAK, or by MSTCL, the Peer reports it down and waits before it logs in again. A session that ends before the login completes doubles the wait, from Retry up to Backoff. [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.Close) ends the session for good, until [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.Reset).

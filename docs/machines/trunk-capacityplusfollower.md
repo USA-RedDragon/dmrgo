@@ -23,7 +23,7 @@ Pass a [CapacityPlusConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.State) returns the current state. The type is the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#State) of the Tier III Follower, with the rest channel in place of the TSCC.
 
-<!-- dmrgo:states pkg=trunk type=State -->
+<!-- dmrgo:states pkg=trunk type=CapacityPlusFollower -->
 <!-- /dmrgo:states -->
 
 The Follower starts by hunting. With a plan, the first Tick or Burst requests the first repeater, and the Follower moves to the next repeater in number order when no valid Capacity Plus PDU comes within the no-signal time. A rest channel beacon or site status moves it to the rest channel, and it reports the site. When the site announces a new rest channel, the Follower moves with it. A voice grant or the activity of a site status for a selected call moves it to the payload slot of the call. The hang time after a Terminator with LC, the inactive time, or a lost signal returns it to the rest channel, or to the hunt when no rest channel is known. On the rest channel, the no-signal time without a valid PDU starts the hunt again.

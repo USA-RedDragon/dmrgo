@@ -21,7 +21,7 @@ Pass an [MSConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#MS
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#MS.State) returns the channel state of the MS. It is the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#State) type of the Follower.
 
-<!-- dmrgo:states pkg=trunk type=State -->
+<!-- dmrgo:states pkg=trunk type=MS -->
 <!-- /dmrgo:states -->
 
 The channel states move as for the Follower: hunting, then the confirmed TSCC, then the payload channel of a call, then back to the TSCC. The MS follows its own calls and the individual calls to it, in addition to its talkgroups. It also leaves a TSCC whose signal level falls below MinLevelIdle, as [Quality](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#MS.Quality) reports it, or whose bit error rate is too high. (ETSI TS 102 361-4 clauses 6.3.2.3 and 6.3.3.1)

@@ -21,7 +21,7 @@ Pass a [MasterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trans
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.State) returns the state of the Master. The Peer and the Master share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#State) type. A Master runs from NewMaster until [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Close), and [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Reset) runs it again.
 
-<!-- dmrgo:states pkg=transport/ipsc/ipscsession type=State -->
+<!-- dmrgo:states pkg=transport/ipsc/ipscsession type=Master -->
 <!-- /dmrgo:states -->
 
 Each peer has a link of its own, with no state type. A registration request registers a peer and reports it up. With a key, a keepalive whose trailer proves the key also registers a peer that is not registered, as a repeater keeps sending keepalives for a while after its master restarts. Each packet of a registered peer restarts its Timeout. A peer goes down on a de-registration request from the address it registered from, on Timeout without a packet, or on [Drop](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Drop). The Master then sends the new peer list to the peers left. [Peers](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Peers), [PeerAt](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.PeerAt) and [Peer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Peer) return the registered peers.

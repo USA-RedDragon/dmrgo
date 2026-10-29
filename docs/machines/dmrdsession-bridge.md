@@ -21,7 +21,7 @@ Pass a [BridgeConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trans
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.State) returns the current state. The Peer, the Master and the Bridge share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#State) type. A Bridge uses only two of its values: the link is idle, or it runs.
 
-<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=State -->
+<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=Bridge -->
 <!-- /dmrgo:states -->
 
 Only an enhanced Bridge tracks the link. Its link runs while the other end sent a packet with a good signature, a BCKA or any other, within Timeout. The first such packet after an idle link reports the link up. When Timeout passes without one, Tick reports the link down. Without the enhanced mode, OpenBridge has no keepalive: the Bridge only checks signatures, and its State stays idle.

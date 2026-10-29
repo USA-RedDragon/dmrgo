@@ -23,7 +23,7 @@ Pass a [FollowerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/tru
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Follower.State) returns the current state. The Follower and the MS share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#State) type.
 
-<!-- dmrgo:states pkg=trunk type=State -->
+<!-- dmrgo:states pkg=trunk type=Follower -->
 <!-- /dmrgo:states -->
 
 The Follower starts by hunting. With a hunt list, the first Tick or Burst requests the first channel, and the Follower moves on to the next channel when no TSCC comes within T_Nosig. A TSCC of the selected system moves it to the control channel, and it reports the site. On the control channel, a grant of a call that the config selects moves it to the payload channel. P_CLEAR, the hang time after a Terminator with LC, the inactive time, or a lost signal returns it to the control channel. On the control channel, T_Nosig without a TSCC burst, or NSYSerr C_SYScodes of another system, ends the TSCC and the Follower hunts again. An Ann_WD_TSCC broadcast adds or withdraws hunt list channels. (ETSI TS 102 361-4 clauses 6.3 and 6.6)

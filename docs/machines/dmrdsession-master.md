@@ -21,7 +21,7 @@ Pass a [MasterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trans
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.State) returns the current state, and [ID](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.ID) the repeater ID from the last RPTL. The Peer, the Master and the Bridge share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#State) type, and each uses some of its values.
 
-<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=State -->
+<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=Master -->
 <!-- /dmrgo:states -->
 
 An RPTL starts a login: the Master reports it and waits for [Admit](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Admit) or [Refuse](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Refuse). Admit sends the salt. An RPTK with the token of the salt and the password gets an acknowledgement, and the Master waits for the RPTC. The Master reports the RPTC and waits for [Accept](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Accept) or Refuse. Accept completes the login and the session runs. A wrong token, Refuse, an RPTCL, a new RPTL of a logged-in repeater, the login timeout, the timeout, or [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Close) ends the session. [Resume](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Resume) starts a logged-in session without a login, for a repeater that logged in to another replica of a server and now sends its packets here.

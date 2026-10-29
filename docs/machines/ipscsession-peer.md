@@ -21,7 +21,7 @@ Pass a [PeerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transpo
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.State) returns the state of the Peer with the master. The Peer and the Master share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#State) type.
 
-<!-- dmrgo:states pkg=transport/ipsc/ipscsession type=State -->
+<!-- dmrgo:states pkg=transport/ipsc/ipscsession type=Peer -->
 <!-- /dmrgo:states -->
 
 A new Peer is not registered. The first Tick sends the registration request, and Tick sends it again every Alive until the registration reply comes. The reply from the address of the master registers the Peer, reports the link up, and sends the peer list request at once. After MaxMissed keepalives without a reply, or a de-registration request of the master, the link goes down and the Peer registers again. [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.Close) sends de-registration requests and stops the Peer until [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.Reset).
