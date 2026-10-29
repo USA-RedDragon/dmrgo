@@ -763,6 +763,10 @@ func (x *softExt) firstSlot(c *leanCore) {
 	if n == 0 {
 		return
 	}
+	stretch := x.replayStretch(c, n, last, at, sps)
+	if stretch != 0 {
+		c.tm.rate, c.tm.drift = stretch*sps, stretch*sps
+	}
 	x.ring = c.ring
 	first, eAcc, eSyms, hold, slotEnd := c.first, c.eAcc, c.eSyms, c.tm.hold, c.slotEnd
 	ms := c.ms
@@ -793,7 +797,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 			} else {
 				base := c.first + int64(j)*slotSymbols + int64(c.ms.off[j&1])
 				for k := base - 1; k <= base+slotSymbols; k++ {
-					v := c.keptAt(at - float32(last-k)*sps)
+					v := c.keptAt(at - float32(last-k)*sps*(1+stretch))
 					c.ring[ringPos(k)] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
 				}
 			}
@@ -823,6 +827,80 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.first = first - int64(n)*slotSymbols
 	c.slotEnd = slotEnd
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
+}
+
+func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
+	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
+	var syms [2][syncSymbols]int8
+	syncSyms(voice, &syms[0])
+	syncSyms(data, &syms[1])
+	first := c.first - int64(n)*slotSymbols
+	for j := range int64(n) {
+		span := float32(last-first-j*slotSymbols-leanSyncEnd) * sps
+		if span <= 0 {
+			continue
+		}
+		best, p := keptSyncPeak(c, &syms, at-span, sps)
+		if best < 0 {
+			continue
+		}
+		var cv [9]float32
+		for i := range cv {
+			cv[i] = keptSyncCorr(c, &syms[p], at-span+float32(i-4)*sps/8, sps)
+		}
+		off := float32(best-4) + edgeVertex9(&cv, best)
+		if e := -off * sps / 8 / span; abs32(e) >= leanStretchMin && abs32(e) <= leanClockMax {
+			return e
+		}
+		return 0
+	}
+	return 0
+}
+
+func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32) (best, pat int) {
+	best = -1
+	var top float32
+	for p := range syms {
+		for i := range 9 {
+			t := end + float32(i-4)*sps/8
+			var sv, svv, sxv, sp, spp float32
+			for m, q := range &syms[p] {
+				v := c.keptAt(t - float32(syncSymbols-1-m)*sps)
+				sv += v
+				svv += v * v
+				sxv += float32(q) * v
+				sp += float32(q)
+				spp += float32(q) * float32(q)
+			}
+			const n = syncSymbols
+			cov, vx, vp := sxv-sp*sv/n, svv-sv*sv/n, spp-sp*sp/n
+			if cov <= 0 || vx <= 0 || cov*cov < discLock*discLock*vx*vp {
+				continue
+			}
+			if r := cov * cov / (vx * vp); r > top {
+				top, best, pat = r, i, p
+			}
+		}
+	}
+	return best, pat
+}
+
+func keptSyncCorr(c *leanCore, syms *[syncSymbols]int8, t, sps float32) float32 {
+	var v float32
+	for m, q := range syms {
+		v += float32(q) * c.keptAt(t-float32(syncSymbols-1-m)*sps)
+	}
+	return v
+}
+
+func edgeVertex9(c *[9]float32, best int) float32 {
+	if best <= 0 || best >= len(c)-1 {
+		return 0
+	}
+	if den := c[best-1] - 2*c[best] + c[best+1]; den < 0 {
+		return max32(min32(0.5*(c[best-1]-c[best+1])/den, 0.5), -0.5)
+	}
+	return 0
 }
 
 func (x *softExt) end(c *leanCore) {

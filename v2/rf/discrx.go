@@ -397,9 +397,11 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
 				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
 				tm.last, tm.half = xv, d
-				t += 2 * tm.step
+				t += 2*tm.step + tm.drift
 				if !tm.hold && tm.pow > 0 {
-					t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
+					c := max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
+					t += c
+					tm.corr += c
 				}
 			case tm.mid:
 				tm.half, tm.mid = xv, false
