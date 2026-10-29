@@ -1,14 +1,8 @@
-// Package trellis encodes and decodes the rate 3/4 trellis code that
+// Package trellis encodes the rate 3/4 trellis code that
 // protects rate 3/4 data blocks (ETSI TS 102 361-1 clause B.2.4).
 package trellis
 
-import (
-	"math"
-	mathbits "math/bits"
-
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 
 func dibitsToBits(dibits [98]int8) [196]unpacked.Bit {
 	var bits [196]unpacked.Bit
@@ -29,92 +23,6 @@ func dibitsToBits(dibits [98]int8) [196]unpacked.Bit {
 			bits[o] = 1
 			bits[o+1] = 1
 		}
-	}
-
-	return bits
-}
-
-// Decode decodes 196 received bits into 144 data bits with a hard-decision
-// Viterbi decoder whose path ends in state 0. ErrorsCorrected counts the
-// received bits that differ from the decoded path. Uncorrectable is set only
-// when a path that ends in another state has a lower metric, so callers check
-// the block CRC-9 or the message CRC-32 to detect a miscorrected block.
-func Decode(bits [196]unpacked.Bit) ([144]unpacked.Bit, fec.Result) {
-	unpacked.Mask(bits[:])
-	result := fec.Result{BitsChecked: 196}
-
-	var rxDibits [98]byte
-	for i, j := range interleave_matrix {
-		rxDibits[j] = byte(bits[2*i])<<1 | byte(bits[2*i+1])
-	}
-
-	var pointBits [16]byte
-	for p, pair := range trellis34_reverse_constellation {
-		pointBits[p] = dibitBits(pair[0])<<2 | dibitBits(pair[1])
-	}
-
-	const unreachable = math.MaxInt
-	metric := [8]int{0, unreachable, unreachable, unreachable, unreachable, unreachable, unreachable, unreachable}
-	var prev [49][8]byte
-
-	for k := range prev {
-		rx := rxDibits[2*k]<<2 | rxDibits[2*k+1]
-		next := [8]int{unreachable, unreachable, unreachable, unreachable, unreachable, unreachable, unreachable, unreachable}
-		for s := range metric {
-			if metric[s] == unreachable {
-				continue
-			}
-			for in := range next {
-				point := encoder_state_transition_table[s*8+in]
-				m := metric[s] + mathbits.OnesCount8(rx^pointBits[point])
-				if m < next[in] {
-					next[in] = m
-					prev[k][in] = byte(s)
-				}
-			}
-		}
-		metric = next
-	}
-
-	for s := 1; s < len(metric); s++ {
-		if metric[s] < metric[0] {
-			result.Uncorrectable = true
-			break
-		}
-	}
-	result.ErrorsCorrected = metric[0]
-
-	var tribits [49]byte
-	state := byte(0)
-	for k := len(prev) - 1; k >= 0; k-- {
-		tribits[k] = state
-		state = prev[k][state]
-	}
-
-	return tribitsToBits(tribits), result
-}
-
-func dibitBits(d int8) byte {
-	switch d {
-	case 3:
-		return 0b01
-	case -1:
-		return 0b10
-	case -3:
-		return 0b11
-	default:
-		return 0b00
-	}
-}
-
-func tribitsToBits(tribits [49]byte) [144]unpacked.Bit {
-	var bits [144]unpacked.Bit
-
-	for o := range 48 {
-		tb := tribits[o]
-		bits[3*o] = unpacked.Bit((tb >> 2) & 1)
-		bits[3*o+1] = unpacked.Bit((tb >> 1) & 1)
-		bits[3*o+2] = unpacked.Bit(tb & 1)
 	}
 
 	return bits

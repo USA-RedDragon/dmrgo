@@ -9,8 +9,3 @@ func Checksum5(data [9]byte) uint8 {
 	}
 	return uint8(sum % 31)
 }
-
-// CheckChecksum5 reports whether want is the 5-bit checksum of data.
-func CheckChecksum5(data [9]byte, want uint8) bool {
-	return Checksum5(data) == want
-}

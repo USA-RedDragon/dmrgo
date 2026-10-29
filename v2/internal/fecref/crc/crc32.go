@@ -19,8 +19,3 @@ func CRC32(data []byte) uint32 {
 
 	return crc
 }
-
-// CheckCRC32 reports whether want is the CRC-32 of data.
-func CheckCRC32(data []byte, want uint32) bool {
-	return CRC32(data) == want
-}
