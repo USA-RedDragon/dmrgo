@@ -1,6 +1,6 @@
 # dmrgo
 
-[![go.mod version](https://img.shields.io/github/go-mod/go-version/USA-RedDragon/dmrgo.svg?filename=v2/go.mod)](https://github.com/USA-RedDragon/dmrgo) [![coverage](https://raw.githubusercontent.com/USA-RedDragon/dmrgo/main/.github/badges/coverage-v2.svg)](https://github.com/USA-RedDragon/dmrgo/actions/workflows/test.yaml) [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/USA-RedDragon/dmrgo/v2.svg)](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) [![go.mod version](https://img.shields.io/github/go-mod/go-version/USA-RedDragon/dmrgo.svg?filename=v2/go.mod)](https://github.com/USA-RedDragon/dmrgo) [![coverage](https://raw.githubusercontent.com/USA-RedDragon/dmrgo/main/.github/badges/coverage-v2.svg)](https://github.com/USA-RedDragon/dmrgo/actions/workflows/test.yaml) [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE)
 
 Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI TS 102 361](https://www.etsi.org/standards) parts 1 to 4, run the calls, data, trunking and network protocols of DMR without I/O, and receive and transmit DMR on software radios and FM radios. The library runs on a PC, in the browser and on a microcontroller with TinyGo.
 
@@ -79,6 +79,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 
 ## Documentation
 
+- [Package reference](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2): the Go API of every package, on pkg.go.dev.
 - [Features](docs/features.md): every feature, by package.
 - [Examples](docs/examples.md): the example programs.
 - [Receiver](docs/rx/README.md): the tiers of `rf`, their sensitivity and cost, and how they are measured.
