@@ -77,7 +77,7 @@ With `Offset`, the answer grid starts half a `BurstInterval` later. A polite ans
 
 This example sends a Motorola radio check from a Requester to two Responders: one on the aligned channel timing of a BS, and one with `Offset`. It prints when each answer goes on air.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=127-152 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleResponder -->
 <!-- /dmrgo:code -->
 
 Output:

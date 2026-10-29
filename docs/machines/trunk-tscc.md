@@ -54,7 +54,7 @@ Outputs are [TSCCOutput](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/tr
 
 This example runs a TSCC with one payload channel and one MS. The TSCC reports the registration of the MS, the start of its talkgroup call on the payload channel, and the end of the call when the MS sends P_MAINT. The helper newServiceSite and its run method, in example_services_test.go, carry the bursts on the 30 ms slot clock; the [MS page](trunk-ms.md#worked-example) shows them.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go lines=139-165 -->
+<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleTSCC -->
 <!-- /dmrgo:code -->
 
 Output:

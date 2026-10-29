@@ -71,7 +71,7 @@ T_SyncWu starts at the `Due` time of each BS_Dwn_Act. A negative `SyncWait` wait
 
 This example wakes a repeater that does not answer. With the defaults, the Wakeup sends two BS_Dwn_Act bursts, one T_SyncWu apart, and ends one T_SyncWu after the second.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=91-108 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleWakeup -->
 <!-- /dmrgo:code -->
 
 Output:

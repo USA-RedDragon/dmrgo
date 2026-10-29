@@ -12,7 +12,7 @@ The doc comment of each exported function states when that function allocates.
 
 A state machine appends its outputs to a slice `dst` that you give it, and allocates only to grow `dst`. Make `dst` once, with the capacity that its package gives, and pass it again sliced to `[:0]` on each call. The [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) of [Follow a voice call](../start/03-follow-a-voice-call.md) does this:
 
-<!-- dmrgo:code file=v2/voice/example_test.go lines=25-25 -->
+<!-- dmrgo:code file=v2/voice/example_test.go lines=27-27 -->
 <!-- /dmrgo:code -->
 
 [voice.MaxEvents](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#MaxEvents) is <!-- dmrgo:const pkg=voice name=MaxEvents --><!-- /dmrgo:const -->. A slice with that capacity does not grow. The other machines have the same constants, such as `data.MaxEvents` and `data.MaxOutputs`.

@@ -45,7 +45,7 @@ With `Auth`, sign each voice or data packet with [Peer.Sign](https://pkg.go.dev/
 
 An IPSC user packet carries the decoded payload of a burst in place of the 264-bit burst: three AMBE+2 frames without FEC, or the payload of a data burst. [User.RawBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.RawBurst) rebuilds the burst, [User.SetRawBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.SetRawBurst) takes one apart, and [User.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.Hint) gives the `layer2.Hint` for the voice and data machines. The hint marks voice bursts A and E only; a [layer2.PositionTracker](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#PositionTracker) places B, C, D and F. To build the packets of a call from scratch, [ipsc.UserOpcode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#UserOpcode) picks the opcode and an [ipsc.Stream](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#Stream) fills the RTP header and the call fields of each packet.
 
-<!-- dmrgo:code file=v2/transport/ipsc/example_test.go lines=14-26 -->
+<!-- dmrgo:code file=v2/transport/ipsc/example_test.go symbol=ExampleDecodeUser -->
 <!-- /dmrgo:code -->
 
 ## Output

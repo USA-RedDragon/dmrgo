@@ -27,14 +27,14 @@ A repeater sends P2P commands to the master to request a service: registration, 
 
 Each side also sends a heartbeat. [hytera.DecodeHeartbeat](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#DecodeHeartbeat) reads the 20-octet heartbeat of the P2P service and the 1-octet keepalive of the DMR service. Answer a heartbeat with the reply that the master sends in the capture:
 
-<!-- dmrgo:code file=v2/transport/hytera/example_test.go lines=31-37 -->
+<!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeHeartbeat -->
 <!-- /dmrgo:code -->
 
 ### 2. Read the bursts of a call
 
 Each packet of the DMR service is one 72-octet [Frame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame). [hytera.DecodeFrame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#DecodeFrame) decodes it. `HasBurst` reports whether it holds a burst, as sync and wakeup packets do not. [Frame.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Call) returns the call, and [Frame.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Hint) the `layer2.Hint` for the voice and data machines.
 
-<!-- dmrgo:code file=v2/transport/hytera/example_test.go lines=14-22 -->
+<!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeFrame -->
 <!-- /dmrgo:code -->
 
 ### 3. Send the bursts of a call

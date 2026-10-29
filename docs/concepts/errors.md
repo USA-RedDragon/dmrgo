@@ -13,7 +13,7 @@ A method called on a nil pointer does nothing:
 - it returns `"<nil>"` from `String` and `Error`;
 - it returns zero values otherwise.
 
-<!-- dmrgo:code file=v2/example_test.go lines=92-96 -->
+<!-- dmrgo:code file=v2/example_test.go symbol=ExampleErrNilReceiver -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleErrNilReceiver -->
@@ -43,13 +43,13 @@ Two error types carry the field that failed. Match them with `errors.As`:
 - [*dmrgo.FieldRangeError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#FieldRangeError): an encoder, setter, getter or function got a value that does not fit in its bits, or a field with a padding bit set. `Type` and `Field` name the field, and `Bits` gives its width.
 - [*dmrgo.ConfigError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError): a constructor or a machine method got a config, option or argument field out of range. `Type` names the package and `Field` the field.
 
-<!-- dmrgo:code file=v2/example_test.go lines=45-50 -->
+<!-- dmrgo:code file=v2/example_test.go symbol=ExampleFieldRangeError -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleFieldRangeError -->
 <!-- /dmrgo:output -->
 
-<!-- dmrgo:code file=v2/example_test.go lines=58-62 -->
+<!-- dmrgo:code file=v2/example_test.go symbol=ExampleConfigError -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleConfigError -->

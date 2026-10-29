@@ -45,7 +45,7 @@ Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 This example runs both ends of an enhanced link in memory. The BCKA of one end brings the link up at the other. A signed BCSQ passes, the same packet with one bit changed is dropped, and the link goes down one Timeout after the last good packet.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go lines=154-196 -->
+<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExampleBridge -->
 <!-- /dmrgo:code -->
 
 Output:

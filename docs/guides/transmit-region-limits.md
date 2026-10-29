@@ -25,14 +25,14 @@ dmrgo makes no claim that a station complies with its rules. A setup that the tr
 
 [rf.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewTransmitter) and [rf.NewAudioTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewAudioTransmitter) return a [*RegionError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#RegionError) for a setup that the region, the service and the power do not allow, or that no measurement shows to keep their limits with margin. `Field` names the config field, and `Reason` gives the cause. A field out of range gives a `*dmrgo.ConfigError` instead. Do not transmit when either comes back.
 
-<!-- dmrgo:code file=v2/rf/region_example_test.go lines=13-17 -->
+<!-- dmrgo:code file=v2/rf/region_example_test.go symbol=ExampleRegionError -->
 <!-- /dmrgo:code -->
 
 ### 3. Transmit I/Q from a microcontroller
 
 [Transmitter.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Transmitter.Init) sets up a Tier 0 transmitter in memory of the caller, without an allocation. The txiq example feeds the I/Q DAC of a software radio in stream mode: `Write` takes bursts and hands the samples to `OnSamples`, `Active` reports whether the transmitter is keyed, and `Flush` ends the transmission. It stops when `Init` refuses the setup.
 
-<!-- dmrgo:code file=v2/examples/txiq/main.go lines=25-46 -->
+<!-- dmrgo:code file=v2/examples/txiq/main.go symbol=main -->
 <!-- /dmrgo:code -->
 
 On a PC, [rf.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewTransmitter) makes the same transmitter in the other tiers, at any rate of its config, and `AppendSamples` and `AppendFlush` append the samples to a slice when `OnSamples` is nil.
@@ -41,7 +41,7 @@ On a PC, [rf.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v
 
 An FM radio with a flat modulation input, such as a 9600 baud data port, takes the deviation signal as audio. [AudioTransmitter.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioTransmitter.Init) sets it up for the rate and the resolution of the DAC. `Bits` and `Unsigned` give the codes of the converter. State a pre-emphasis or a low pass of the radio in `PreEmphasis` and `InputLowpassHz`, since both change the signal on air. The txaudio example keys the radio by `Active`:
 
-<!-- dmrgo:code file=v2/examples/txaudio/main.go lines=26-48 -->
+<!-- dmrgo:code file=v2/examples/txaudio/main.go symbol=main -->
 <!-- /dmrgo:code -->
 
 ### 5. Write a test transmission with dmrrf

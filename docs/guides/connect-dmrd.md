@@ -53,7 +53,7 @@ At the Master, `OutputLogin` reports an RPTL. Answer it with `Admit` and a rando
 
 Once the Peer is up, send each burst in a DMRD packet on the same socket. The Master returns each DMRD packet that it gets from a logged-in repeater as `OutputData`. [dmrd.DecodeData](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DecodeData) decodes it, and [Data.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Data.Hint) gives the `layer2.Hint` for the voice and data machines. To build a DMRD packet from the output of a machine, such as a `voice.Transmitter`, set the call and burst kind with [Data.SetCallHint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Data.SetCallHint) and encode it with `Data.AppendBinary`.
 
-<!-- dmrgo:code file=v2/transport/dmrd/example_test.go lines=13-22 -->
+<!-- dmrgo:code file=v2/transport/dmrd/example_test.go symbol=ExampleDecodeData -->
 <!-- /dmrgo:code -->
 
 ## Output

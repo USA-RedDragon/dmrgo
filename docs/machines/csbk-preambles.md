@@ -70,7 +70,7 @@ A Pre_CSBK at time t with CSBK Blocks to Follow n sets `Until` to t plus n burst
 
 This example uses a [csbk.Requester](csbk-requester.md) to make a Motorola call alert with 2 Pre_CSBKs, and feeds its three bursts to a Preambles.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=67-85 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExamplePreambles -->
 <!-- /dmrgo:code -->
 
 Output:

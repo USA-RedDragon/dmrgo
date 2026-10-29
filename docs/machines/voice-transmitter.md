@@ -63,7 +63,7 @@ Each Output has an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrg
 
 This example sends a short call as its source. It queues two bursts of silence frames, stops at once, and ticks until the Transmitter has nothing more to send.
 
-<!-- dmrgo:code file=v2/voice/example_test.go lines=105-151 -->
+<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleTransmitter -->
 <!-- /dmrgo:code -->
 
 Output:
@@ -75,7 +75,7 @@ The two queued bursts go out as voice. The rest of the superframe is silence, ma
 
 The next example shows polite access. The call waits while the channel is busy and starts when it becomes idle. A second call is denied when the channel stays busy for the idle search time.
 
-<!-- dmrgo:code file=v2/voice/access_example_test.go lines=13-52 -->
+<!-- dmrgo:code file=v2/voice/access_example_test.go symbol=ExampleTransmitter_Channel -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=voice.ExampleTransmitter_Channel -->

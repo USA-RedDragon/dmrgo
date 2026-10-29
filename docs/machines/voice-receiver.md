@@ -58,7 +58,7 @@ Call Tick when Deadline is due. A Tick before Deadline does nothing, so a caller
 
 This example reads a recorded call from a file of 33-byte bursts, 60 ms apart, and prints the call start, the call end and the end of the session.
 
-<!-- dmrgo:code file=v2/voice/example_test.go lines=14-55 -->
+<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
 <!-- /dmrgo:code -->
 
 Output:

@@ -34,7 +34,7 @@ Give each received burst to `Burst` of each machine. The Responder returns an `O
 
 In this example the two machines pass the bursts to each other in memory:
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=132-159 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleResponder_callAlert -->
 <!-- /dmrgo:code -->
 
 ### 3. Handle a radio that does not answer
@@ -50,7 +50,7 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 
 [Requester.RequestOACSU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Requester.RequestOACSU) sends the OACSU presence check (UU_V_Req) of a private call, and the Responder answers with UU_Ans_Rsp. `ResponderConfig.OACSU` sets the answer.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=18-35 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=Example -->
 <!-- /dmrgo:code -->
 
 ### 5. Send any other CSBK

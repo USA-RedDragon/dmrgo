@@ -92,7 +92,7 @@ A confirmed packet over `MaxFragment` gets a NACK for memory full, and any packe
 
 This example follows a recorded SMS of one logical channel, with the bursts one TDMA frame apart, and prints its events.
 
-<!-- dmrgo:code file=v2/data/example_test.go lines=12-47 -->
+<!-- dmrgo:code file=v2/data/example_test.go symbol=ExampleReceiver -->
 <!-- /dmrgo:code -->
 
 Output:
@@ -104,7 +104,7 @@ The call ends with `EndQuiet` at the Tick after the last burst, when `Hang` has 
 
 The next example answers a confirmed packet from a recording with its real times: the Receiver of the addressed radio returns the ACK burst to send, with its `Due` time.
 
-<!-- dmrgo:code file=v2/data/example_test.go lines=54-74 -->
+<!-- dmrgo:code file=v2/data/example_test.go symbol=ExampleReceiver_respond -->
 <!-- /dmrgo:code -->
 
 Output:

@@ -52,7 +52,7 @@ Tick sends nothing when the session times out. A packet of the repeater after th
 
 The package example logs a [Peer](dmrdsession-peer.md) into a Master over the MMDVM network protocol in memory. The Master reports the config, which the example accepts, and the options:
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go lines=11-82 -->
+<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=Example -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/dmrd/dmrdsession.Example -->
@@ -60,7 +60,7 @@ The package example logs a [Peer](dmrdsession-peer.md) into a Master over the MM
 
 The next example resumes the session of a repeater, lets it time out, and shows the MSTNAK that answers the next ping of the repeater.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go lines=127-152 -->
+<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExampleMaster -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/dmrd/dmrdsession.ExampleMaster -->

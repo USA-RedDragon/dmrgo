@@ -30,7 +30,7 @@ A radio sends a device registration to UDP port [ip.PortARS](https://pkg.go.dev/
 
 The example first builds the registration as a radio does, with [ars.NewRegistration](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars#NewRegistration) and [ip.AppendIPv4](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#AppendIPv4). [ip.RadioAddress](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#RadioAddress) gives the IPv4 address of a radio ID.
 
-<!-- dmrgo:code file=v2/mototrbo/ars/example_test.go lines=31-57 -->
+<!-- dmrgo:code file=v2/mototrbo/ars/example_test.go symbol=ExampleNewAck -->
 <!-- /dmrgo:code -->
 
 ### 2. Read a text message
@@ -39,14 +39,14 @@ A text goes to UDP port [ip.PortTMS](https://pkg.go.dev/github.com/USA-RedDragon
 
 When `Header.AckRequired` is set, answer with [tms.NewAck](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms#NewAck) and the sequence number of the text. The radio in the capture does not request an acknowledgement.
 
-<!-- dmrgo:code file=v2/mototrbo/tms/example_test.go lines=36-56 -->
+<!-- dmrgo:code file=v2/mototrbo/tms/example_test.go symbol=ExampleDecodeMessage -->
 <!-- /dmrgo:code -->
 
 ### 3. Send a text message
 
 [tms.NewText](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms#NewText) builds a text with a sequence number, and [Message.SetTextUTF8](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms#Message.SetTextUTF8) sets its text. Use a new sequence number for each text, so that the acknowledgement matches it. Put the encoded message in an IPv4 packet to port `ip.PortTMS` of the radio, as in step 1.
 
-<!-- dmrgo:code file=v2/mototrbo/tms/example_test.go lines=16-25 -->
+<!-- dmrgo:code file=v2/mototrbo/tms/example_test.go symbol=ExampleNewText -->
 <!-- /dmrgo:code -->
 
 ### 4. Carry the packets on a channel

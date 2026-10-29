@@ -49,7 +49,7 @@ The hint of each burst that a machine sends carries its slot. The `Call` of the 
 
 A zero machine does nothing. Each method that starts work, such as `Start`, `Request` or `Send`, returns [dmrgo.ErrZeroValue](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrZeroValue) on a zero machine, and the other methods do nothing. Make each machine with its constructor, such as [data.NewSender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#NewSender):
 
-<!-- dmrgo:code file=v2/example_test.go lines=70-83 -->
+<!-- dmrgo:code file=v2/example_test.go symbol=ExampleErrZeroValue -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleErrZeroValue -->

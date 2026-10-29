@@ -84,7 +84,7 @@ Decode and encode make no heap garbage at the default stack size of these target
 
 TinyGo also puts a local variable of your code on the heap when its address goes into the library, such as the `Data` of [layer2.BuildBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildBurst). The [package doc of dmrgo](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) lists those calls. Keep such values in package-level variables, or in a struct that you allocate once. [v2/examples/rxaudio](../../v2/examples/rxaudio/main.go) keeps its receiver and its sample buffer at package level:
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go lines=9-13 -->
+<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=rx -->
 <!-- /dmrgo:code -->
 
 It then sets up the receiver in that memory with `Init`:

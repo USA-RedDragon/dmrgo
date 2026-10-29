@@ -51,7 +51,7 @@ The Master registers at most MaxPeers peers. The default is <!-- dmrgo:const pkg
 
 This example runs a Master with authentication. A peer with the key registers. A peer with another key is dropped for its trailer. The registered peer then sends nothing, and the Master drops it at Timeout.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go lines=115-153 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=ExampleMaster -->
 <!-- /dmrgo:code -->
 
 Output:

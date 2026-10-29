@@ -87,7 +87,7 @@ A response that comes through a network can need a longer `ResponseWait`; <!-- d
 
 This example sends a confirmed message to a [data.Receiver](data-receiver.md). The air between them loses one block of the first try, so the Receiver requests that block again with a SACK, and the Sender resends only that block.
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go lines=13-68 -->
+<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=ExampleSender -->
 <!-- /dmrgo:code -->
 
 Output:
@@ -97,7 +97,7 @@ Output:
 
 The next example sends three IP messages in one window. Only the last header requests a response, and one ACK delivers all three.
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go lines=76-124 -->
+<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=ExampleSender_window -->
 <!-- /dmrgo:code -->
 
 Output:

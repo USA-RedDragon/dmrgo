@@ -12,7 +12,7 @@ A DMR signal is 4FSK, with two TDMA time slots on one carrier. A repeater sends 
 
 ## The code
 
-<!-- dmrgo:code file=v2/rf/example_test.go lines=99-144 -->
+<!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor_capture -->
 <!-- /dmrgo:code -->
 
 Run it from the `v2` directory:

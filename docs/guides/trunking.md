@@ -28,14 +28,14 @@ Each Tier III CSBK has a PDU type in package pdu, such as [pdu.AlohaPDU](https:/
 
 [layer2.BuildBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildBurst) codes the CSBK into a burst with the color code and the SYNC source: `layer2.SyncSourceBS` for the outbound of the control channel, `layer2.SyncSourceMS` for a radio.
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go lines=35-41 -->
+<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=roundTripCSBK -->
 <!-- /dmrgo:code -->
 
 ### 2. Decode a burst
 
 [layer2.Burst.DecodeFromBytesWith](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Burst.DecodeFromBytesWith) decodes the burst. Check the FEC result, then read the PDU with the `As` method of its type, such as [pdu.CSBK.AsAloha](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CSBK.AsAloha).
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go lines=21-33 -->
+<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=decodeAs -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:code file=v2/examples/trunking/main.go lines=84-96 -->
@@ -47,21 +47,21 @@ Opcode 0x38 means a different PDU inbound and outbound. A decode of a BS-sourced
 
 A grant to a channel that the site has not announced carries the frequencies in a CG_AP block. `MBCHeader` of the grant returns the MBC header, and a [pdu.CGAPContinuation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CGAPContinuation) holds the last block with the [layer3.CdefParms](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer3#CdefParms).
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go lines=161-201 -->
+<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=mbcGrant -->
 <!-- /dmrgo:code -->
 
 ### 4. Send the system parameters in the CACH
 
 A Short LC of C_SYS_Parms or P_SYS_Parms carries the system identity code in the CACH of a control or payload channel. [layer2.EncodeShortLCToCACH](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#EncodeShortLCToCACH) splits it into four CACH fields, and a [layer2.ShortLCAssembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#ShortLCAssembler) joins them again.
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go lines=250-276 -->
+<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=cachRoundTrip -->
 <!-- /dmrgo:code -->
 
 ### 5. Follow a site
 
 A [trunk.Follower](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Follower) follows the calls of a site without transmitting. Give it each burst of the control channel. It returns `OutputSite` when it decodes the site, `OutputGrant` for each grant and `OutputTune` with the channel to tune to. A [trunk.ChannelPlan](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#ChannelPlan) maps channel numbers to frequencies; add the plan of your site with `Add` or `AddRule`.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go lines=17-46 -->
+<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleFollower -->
 <!-- /dmrgo:code -->
 
 To decode the voice of a grant, pass `Grant.Call` to [voice.Receiver.Expect](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver.Expect) and feed the bursts of the granted slot to that Receiver, because trunked voice can start without a Voice LC Header.

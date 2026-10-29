@@ -33,21 +33,21 @@ Decoding does not return an error when the FEC or a CRC fails. The `FEC` field o
 
 For a data burst, read the slot type and the payload from the raw bits, and build a new burst from them. [SyncSourceOf](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#SyncSourceOf) returns the source (BS or MS) of the SYNC pattern. The builder takes the payload of the data type: [BuildRate34DataBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildRate34DataBurst) for rate 3/4, [BuildRate1DataBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildRate1DataBurst) for rate 1, and [BuildDataBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildDataBurst) for every BPTC data type.
 
-<!-- dmrgo:code file=v2/examples/conformance/main.go lines=78-117 -->
+<!-- dmrgo:code file=v2/examples/conformance/main.go symbol=checkData -->
 <!-- /dmrgo:code -->
 
 ### 3. Check and write the CRC or RS(12,9) parity
 
 [pdu.CRCMask](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CRCMask) returns the width of the check of a data type. A Full LC (Voice LC Header and Terminator with LC) has RS(12,9) parity; check it with `FullLCParityOK` and write it with [LCBytes.Codeword](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#LCBytes.Codeword). The other BPTC types have a CRC-CCITT; check it with `BlockCRCOK` and write it with [pdu.Seal](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#Seal). A resealed payload must equal the payload on air. (ETSI TS 102 361-1 clause B.3.12, Table B.21)
 
-<!-- dmrgo:code file=v2/examples/conformance/main.go lines=119-149 -->
+<!-- dmrgo:code file=v2/examples/conformance/main.go symbol=checkSeal -->
 <!-- /dmrgo:code -->
 
 ### 4. Re-encode the embedded LC of each superframe
 
 Bursts B to E of a voice superframe carry the Full LC in fragments. A [VoiceReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceReceiver) places each voice burst and returns the LC when a superframe completes it. Keep the embedded data of bursts B to E, and compare it with [EncodeEmbeddedFullLinkControl](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#EncodeEmbeddedFullLinkControl) of the LC. (ETSI TS 102 361-1 clause 7.1.3)
 
-<!-- dmrgo:code file=v2/examples/conformance/main.go lines=151-177 -->
+<!-- dmrgo:code file=v2/examples/conformance/main.go symbol=checkVoice -->
 <!-- /dmrgo:code -->
 
 ## Output

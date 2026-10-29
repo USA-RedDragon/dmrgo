@@ -54,7 +54,7 @@ A now that jumps back by more than the delay, the Lead and one second is a clock
 
 This example pushes four packets of one stream out of order, and a copy of the last one. It then pops each packet at the time that Deadline returns.
 
-<!-- dmrgo:code file=v2/voice/example_test.go lines=56-103 -->
+<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleJitter -->
 <!-- /dmrgo:code -->
 
 Output:

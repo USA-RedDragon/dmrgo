@@ -97,7 +97,7 @@ A negative `Inactivity` keeps the transmitter on after it wakes up. A negative `
 
 This example feeds a recorded SMS to slot 2 of a hotspot in RF mode, with a Tick every slot time, and counts the bursts that go out on each slot.
 
-<!-- dmrgo:code file=v2/bs/example_test.go lines=13-50 -->
+<!-- dmrgo:code file=v2/bs/example_test.go symbol=ExampleRepeater -->
 <!-- /dmrgo:code -->
 
 Output:

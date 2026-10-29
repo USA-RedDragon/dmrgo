@@ -38,21 +38,21 @@ Give the stream to [Framer.Write](https://pkg.go.dev/github.com/USA-RedDragon/dm
 
 Keep one [VoiceReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceReceiver) for each slot. A Voice LC Header starts a call and a Terminator with LC ends it. A voice burst on a slot without a call is a late entry: the scanner started in the middle of the call. `Receive` places each voice burst in its superframe and returns the embedded LC when bursts B to E complete it. `AMBEFrames` returns the AMBE+2 frames and the FEC result of each voice burst, which [fec.BERCalculator](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#BERCalculator) adds up.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go lines=213-245 -->
+<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=channel.receive -->
 <!-- /dmrgo:code -->
 
 ### 4. Read the embedded LC
 
 The embedded LC carries the call, a GPS position or a talker alias. After a late entry, the call IDs come from the embedded LC. A talker alias comes in a header LC and block LCs, in any order, so add each one to a [pdu.TalkerAliasAssembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#TalkerAliasAssembler) until it returns the alias. Reset the assembler at the end of each call. (ETSI TS 102 361-2 clause 5.4.3)
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go lines=258-284 -->
+<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=channel.embedded -->
 <!-- /dmrgo:code -->
 
 ### How the example makes its input
 
 The TS2 call comes from a [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceTransmitter). Its `EmbeddedLC` callback returns the LC of each superframe, here a rotation of the talker alias blocks, a GPS position and the call LC.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go lines=110-153 -->
+<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=generatedCall -->
 <!-- /dmrgo:code -->
 
 ## Output

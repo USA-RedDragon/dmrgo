@@ -8,7 +8,7 @@ A tier sets how a receiver of [package rf](https://pkg.go.dev/github.com/USA-Red
 
 The tiers are the constants of [rf.Tier](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Tier). Their doc comments give what each tier adds:
 
-<!-- dmrgo:code file=v2/rf/receiver.go lines=14-55 -->
+<!-- dmrgo:code file=v2/rf/receiver.go symbol=TierDefault -->
 <!-- /dmrgo:code -->
 
 The [Receiver datasheet](../rx.md) gives the measured sensitivity, CPU and RAM of each tier, for each input: FM discriminator audio, I/Q from a software radio, and I/Q that a radio chip filtered to the channel.

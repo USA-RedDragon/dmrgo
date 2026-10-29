@@ -27,21 +27,21 @@ The README of each example describes its parts, its flags, the columns of its ta
 
 A [data.Sender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender) sends packets and a [data.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver) receives them. Set `Address` to the radio ID of the radio and `Respond` so that the Receiver answers confirmed packets. Make the output and event slices with capacity `data.MaxOutputs` and `data.MaxEvents`, so that they never grow.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go lines=48-63 -->
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=newLink -->
 <!-- /dmrgo:code -->
 
 ### 2. Send a UDP datagram with a compressed header
 
 [ip.AppendCompressed](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#AppendCompressed) puts a compressed UDP/IPv4 header in front of the payload. Send it in a confirmed packet with the SAP UDP/IP header compression. A compressed header has no IPv4 addresses, so the LLIDs of the data header carry the addresses. The Sender takes one packet at a time: send the next one when its state is `data.SenderIdle` again. (ETSI TS 102 361-3 clause 7.2.3)
 
-<!-- dmrgo:code file=v2/examples/udp/link.go lines=70-94 -->
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.pump -->
 <!-- /dmrgo:code -->
 
 ### 3. Send an IPv4 packet
 
 For TCP, send each IPv4 packet of the stack as one confirmed packet with the SAP IP based packet data. The MTU of the stack must fit one DMR packet. `Send` returns `data.ErrBusy` while the Sender has a packet in progress, so keep the packet in the queue and try again later. (ETSI TS 102 361-3 clause 5.5)
 
-<!-- dmrgo:code file=v2/examples/tcp/link.go lines=56-75 -->
+<!-- dmrgo:code file=v2/examples/tcp/link.go symbol=link.pump -->
 <!-- /dmrgo:code -->
 
 ### 4. Drive the machines with the clock and the channel

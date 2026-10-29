@@ -54,7 +54,7 @@ An `lrrp.Message` is large, and a `location.Decoder` holds one. Keep them in a s
 
 [location.AppendPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#AppendPacket) writes a Fix as the NMEA RMC sentence of an AnyTone radio, behind a compressed UDP/IPv4 header in an unconfirmed packet, and sets the data header in a [location.Header](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#Header). The same Decoder reads it back.
 
-<!-- dmrgo:code file=v2/location/example_test.go lines=78-94 -->
+<!-- dmrgo:code file=v2/location/example_test.go symbol=ExampleAppendPacket -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=location.ExampleAppendPacket -->

@@ -6,10 +6,10 @@ This page holds the C headers of libdmrgo: `dmrgo.h`, with the rules of the API,
 
 ## dmrgo.h
 
-<!-- dmrgo:code file=v2/capi/dmrgo.h lines=1-162 -->
+<!-- dmrgo:code file=v2/capi/dmrgo.h -->
 <!-- /dmrgo:code -->
 
 ## dmrgo_gen.h
 
-<!-- dmrgo:code file=v2/capi/dmrgo_gen.h lines=1-11889 -->
+<!-- dmrgo:code file=v2/capi/dmrgo_gen.h -->
 <!-- /dmrgo:code -->

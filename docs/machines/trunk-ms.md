@@ -64,12 +64,12 @@ The MS leaves a TSCC whose bit error rate is above <!-- dmrgo:const pkg=trunk na
 
 This example runs an MS against a TSCC with one payload channel. The MS registers, makes a talkgroup call, follows the grant to the payload channel, and ends the call with P_MAINT.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go lines=98-137 -->
+<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleMS -->
 <!-- /dmrgo:code -->
 
 The helper carries the bursts between the machines. Each 30 ms it gives the TSCC the inbound bursts that are due, ticks the TSCC and the MS, and gives each MS the outbound bursts of its channel:
 
-<!-- dmrgo:code file=v2/trunk/example_services_test.go lines=74-105 -->
+<!-- dmrgo:code file=v2/trunk/example_services_test.go symbol=serviceSite.run -->
 <!-- /dmrgo:code -->
 
 Output:

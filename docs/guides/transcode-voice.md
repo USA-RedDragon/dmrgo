@@ -25,7 +25,7 @@ go run -C v2 ./examples/transcoder
 
 Decode each burst. Keep the LC and the color code of the Voice LC Header, the SYNC source of the voice bursts, the AMBE+2 frames from `AMBEFrames`, and the raw vocoder slots from `VoiceSlots`.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=46-82 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=receive -->
 <!-- /dmrgo:code -->
 
 ### 2. Correct each AMBE+2 frame and encode it again
@@ -39,7 +39,7 @@ A vocoder slot holds one AMBE+2 frame with its FEC. [vocoder.DecodeAMBE72](https
 
 A [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceTransmitter) takes AMBE+2 frames with `AddFrames`, or vocoder slots of any codec with `AddSlots`. Give it the silence slot of the codec, to pad the last superframe.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=84-99 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=transmit -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:code file=v2/examples/transcoder/main.go lines=138-151 -->
@@ -70,7 +70,7 @@ A Codec2 call carries the FID of the codec in its Full LC, so a receiver can sep
 
 [dvsi.New](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi#New) takes the port that you opened and sets up the chip. The Codec that it returns decodes and encodes like any other `vocoder.Codec`. The chip does the AMBE+2 FEC, so give `Decode` the raw slot from `VoiceSlots`, not a frame from `AMBEFrames`.
 
-<!-- dmrgo:code file=v2/vocoder/dvsi/example_test.go lines=15-28 -->
+<!-- dmrgo:code file=v2/vocoder/dvsi/example_test.go symbol=ExampleNew -->
 <!-- /dmrgo:code -->
 
 ## Output
@@ -166,7 +166,7 @@ The chip reports no bit counts, so `CountsKnown` is false. `DecodeLost` sets `LO
 
 [dvsi.AppendChannel](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi#AppendChannel) and [dvsi.Parse](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi#Parse) build and read the packets without a Codec, for a program that runs its own protocol loop:
 
-<!-- dmrgo:code file=v2/vocoder/dvsi/example_test.go lines=34-47 -->
+<!-- dmrgo:code file=v2/vocoder/dvsi/example_test.go symbol=ExampleAppendChannel -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=vocoder/dvsi.ExampleAppendChannel -->

@@ -49,7 +49,7 @@ Give each method a slice with capacity <!-- dmrgo:const pkg=transport/dmrd/dmrds
 
 The package example logs a Peer into a [Master](dmrdsession-master.md) over the MMDVM network protocol in memory, and passes each packet that one sends to the other:
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go lines=11-82 -->
+<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=Example -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/dmrd/dmrdsession.Example -->
@@ -57,7 +57,7 @@ The package example logs a Peer into a [Master](dmrdsession-master.md) over the 
 
 The next example runs an HBRP Peer whose master does not answer, with short timers. The Peer sends the RPTL again each Retry, ends the session at Timeout, and logs in again after the Retry wait.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go lines=84-125 -->
+<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExamplePeer -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/dmrd/dmrdsession.ExamplePeer -->

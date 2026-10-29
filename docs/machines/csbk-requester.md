@@ -96,7 +96,7 @@ T_AckWait starts at the `Due` time of the request burst. `Config.Lead` makes `Ti
 
 This example sends a Motorola radio check with 5 Pre_CSBKs and no retries. No radio answers, so the request ends when T_AckWait passes after the request burst.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=40-62 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleRequester_RequestRadioCheck -->
 <!-- /dmrgo:code -->
 
 Output:
@@ -106,7 +106,7 @@ Output:
 
 The package example sends an OACSU presence check from a Requester to a [csbk.Responder](csbk-responder.md) and reads the answer back:
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=14-34 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=Example -->
 <!-- /dmrgo:code -->
 
 Output:

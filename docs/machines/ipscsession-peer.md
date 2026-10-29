@@ -52,7 +52,7 @@ The peer list holds at most MaxPeers other peers. The default is <!-- dmrgo:cons
 
 The package example registers a Peer with a [Master](ipscsession-master.md) in memory, and shows the registration, the peer list and the first keepalive:
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go lines=11-57 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=Example -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/ipsc/ipscsession.Example -->
@@ -60,7 +60,7 @@ The package example registers a Peer with a [Master](ipscsession-master.md) in m
 
 The next example runs a Master and two Peers in memory. Peer A registers with the master, gets the peer list with peer B, and registers with B.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go lines=59-113 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=ExamplePeer -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/ipsc/ipscsession.ExamplePeer -->

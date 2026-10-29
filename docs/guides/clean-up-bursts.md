@@ -38,14 +38,14 @@ Decode each burst with the color code of the channel. [fec.Result.Combine](https
 
 A [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceTransmitter) makes the Voice LC Header, the voice superframes with their embedded LC, and the Terminator with LC. `AddFrames` encodes each AMBE+2 frame with its FEC, so the new bursts carry no bit errors. The transmitter pads the last superframe with the silence slot of [vocoder.AMBESilenceSlot](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#AMBESilenceSlot).
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go lines=134-150 -->
+<!-- dmrgo:code file=v2/examples/hotspot/main.go symbol=regenerate -->
 <!-- /dmrgo:code -->
 
 ### 4. Rewrite a header and seal it for MMDVMHost
 
 To change the target of a Voice LC Header in place, read the payload with `BPTCPayload`, set the addresses with [LCBytes.SetAddresses](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#LCBytes.SetAddresses), and write the check bits again with [MMDVMHostSeal](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#MMDVMHostSeal). Then build the burst with [BuildDataBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildDataBurst). Before the seal, MMDVMHost rejects the payload. After the seal, it accepts it.
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go lines=182-216 -->
+<!-- dmrgo:code file=v2/examples/hotspot/main.go symbol=rewriteTarget -->
 <!-- /dmrgo:code -->
 
 ## Output

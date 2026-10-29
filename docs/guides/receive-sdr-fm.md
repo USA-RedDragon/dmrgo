@@ -35,7 +35,7 @@ go build -o dmrrf ./cmd/dmrrf
 
 A [Monitor](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Monitor) follows the TDMA channels, as a scanner does. It finds the channel of each burst from the CACHs of its stream, decodes the burst and keeps the LC of the call on each channel. [Burst.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Burst.Hint) gives the `layer2.Hint` of a burst for the voice and data machines.
 
-<!-- dmrgo:code file=v2/rf/example_test.go lines=50-87 -->
+<!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor -->
 <!-- /dmrgo:code -->
 
 ### 3. Decode discriminator audio

@@ -54,7 +54,7 @@ A negative value in the config turns that timer off.
 
 This example reads the rest channel beacons of a Linked Capacity Plus site from a recording: the time, the CACH and the burst of each line. The Follower reports the site with its rest LSN, holds the site number from the beacons, and hunts again one no-signal time after the last beacon.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go lines=167-211 -->
+<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleCapacityPlusFollower -->
 <!-- /dmrgo:code -->
 
 Output:

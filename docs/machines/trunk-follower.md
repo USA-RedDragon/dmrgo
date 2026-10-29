@@ -56,7 +56,7 @@ The count NSYSerr of C_SYScodes of another system has the default <!-- dmrgo:con
 
 This example builds a C_ALOHA and a talkgroup voice grant with a channel plan rule, and feeds them to a Follower. The Follower reports the site, the grant, and a tune request with the receive frequency of the payload channel.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go lines=19-56 -->
+<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleFollower -->
 <!-- /dmrgo:code -->
 
 Output:

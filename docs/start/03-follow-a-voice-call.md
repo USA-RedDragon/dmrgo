@@ -12,7 +12,7 @@ The Receiver does no I/O and reads no clock. You give it the time of each burst,
 
 The capture holds no time stamps, so the example puts the bursts of the time slot 60 ms apart, as they are on air:
 
-<!-- dmrgo:code file=v2/voice/example_test.go lines=15-48 -->
+<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
 <!-- /dmrgo:code -->
 
 Run it from the `v2` directory:

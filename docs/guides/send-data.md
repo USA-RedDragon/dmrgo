@@ -24,19 +24,19 @@ go run -C v2 ./examples/data
 
 Give each decoded burst to a [packet.Assembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Assembler). `AddBurst` returns the [Message](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Message) when the packet is complete. [sms.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/sms#Decode) finds the text format from the header and the user data, and returns the text as UTF-8.
 
-<!-- dmrgo:code file=v2/examples/data/main.go lines=58-92 -->
+<!-- dmrgo:code file=v2/examples/data/main.go symbol=capture -->
 <!-- /dmrgo:code -->
 
 ### 2. Send an unconfirmed packet
 
 Put a compressed UDP/IPv4 header in front of the text, and make an unconfirmed data header with the SAP UDP/IP header compression. [packet.NewPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#NewPacket) cuts the payload into blocks of the rate that you pick and adds the pad octets and the message CRC. [packet.Bursts](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Bursts) codes the header and the blocks as bursts.
 
-<!-- dmrgo:code file=v2/examples/data/main.go lines=94-132 -->
+<!-- dmrgo:code file=v2/examples/data/main.go symbol=unconfirmed -->
 <!-- /dmrgo:code -->
 
 [sms.AppendPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/sms#AppendPacket) builds the user data and the data header of a text in each format that radios use, so you do not build the UDP header yourself:
 
-<!-- dmrgo:code file=v2/sms/example_test.go lines=16-29 -->
+<!-- dmrgo:code file=v2/sms/example_test.go symbol=Example -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=sms.Example -->
@@ -76,7 +76,7 @@ The example above builds every packet and response by hand. On a live channel, a
 
 In this example the air loses one burst of the first try. The Receiver requests the block again with a SACK, and the Sender resends only that block.
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go lines=18-68 -->
+<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=ExampleSender -->
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=data.ExampleSender -->

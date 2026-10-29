@@ -92,7 +92,7 @@ The timer values come from ETSI TS 102 361-2 clauses A.1 and A.2 and have no con
 
 This example joins the channel, takes the timing of a leader from a CT_CSBK_Beacon, and counts the CT_CSBK_Prop bursts that it then sends.
 
-<!-- dmrgo:code file=v2/csbk/timing_example_test.go lines=13-46 -->
+<!-- dmrgo:code file=v2/csbk/timing_example_test.go symbol=ExampleTiming -->
 <!-- /dmrgo:code -->
 
 Output:

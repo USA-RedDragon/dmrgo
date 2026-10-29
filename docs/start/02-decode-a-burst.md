@@ -14,7 +14,7 @@ A DMR burst is the 264 bits that one 30 ms time slot carries. dmrgo holds a burs
 
 [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes) decodes one burst into a [layer2.Burst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Burst). This example decodes each burst of the capture:
 
-<!-- dmrgo:code file=v2/layer2/example_test.go lines=159-188 -->
+<!-- dmrgo:code file=v2/layer2/example_test.go symbol=ExampleNewBurstFromBytes_capture -->
 <!-- /dmrgo:code -->
 
 Run it from the `v2` directory:
