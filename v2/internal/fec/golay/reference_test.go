@@ -47,12 +47,13 @@ func TestGolay23127DecodeMatchesReferenceOnEveryWord(t *testing.T) {
 func TestGolay24128DecodeMatchesReferenceOnEveryWord(t *testing.T) {
 	t.Parallel()
 
-	for w := range uint32(1 << 24) {
+	everyWord(t, 1<<24, func(w uint32) string {
 		data, res := Decode24128(w)
 		if wantData, wantRes := ref.Decode24128(w); data != wantData || res != wantRes {
-			t.Fatalf("Decode24128(%#x) = %#x %+v, want %#x %+v", w, data, res, wantData, wantRes)
+			return fmt.Sprintf("Decode24128(%#x) = %#x %+v, want %#x %+v", w, data, res, wantData, wantRes)
 		}
-	}
+		return ""
+	})
 	for _, w := range []uint32{1 << 24, 1<<31 | 0xA5A5A5, 0xFFFFFFFF} {
 		data, res := Decode24128(w)
 		if wantData, wantRes := ref.Decode24128(w); data != wantData || res != wantRes {
