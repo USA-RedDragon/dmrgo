@@ -6,10 +6,12 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type constValues struct {
@@ -18,10 +20,11 @@ type constValues struct {
 	modRoot string
 	modPath string
 	pkgs    map[string]map[string]uint64
+	files   *Files
 }
 
-func newConstValues(node *ast.File, filePath string, dir bool) *constValues {
-	c := &constValues{local: map[string]uint64{}, imports: map[string]string{}, pkgs: map[string]map[string]uint64{}}
+func newConstValues(fs *Files, node *ast.File, filePath string, dir bool) *constValues {
+	c := &constValues{local: map[string]uint64{}, imports: map[string]string{}, pkgs: map[string]map[string]uint64{}, files: fs}
 	collectConsts(node, c.local)
 	for _, imp := range node.Imports {
 		path, err := strconv.Unquote(imp.Path.Value)
@@ -37,19 +40,60 @@ func newConstValues(node *ast.File, filePath string, dir bool) *constValues {
 	if !dir {
 		return c
 	}
-	for _, f := range packageFiles(filepath.Dir(filePath), node.Name.Name, filePath) {
-		collectConsts(f, c.local)
+	for _, f := range fs.packageFiles(filepath.Dir(filePath), node.Name.Name, filePath) {
+		maps.Copy(c.local, f.consts)
 	}
 	c.modRoot, c.modPath = findModule(filepath.Dir(filePath))
 	return c
 }
 
-func packageFiles(dir, pkg, skip string) []*ast.File {
+type fileSummary struct {
+	size   int64
+	mod    time.Time
+	pkg    string
+	types  map[string]string
+	consts map[string]uint64
+	ok     bool
+}
+
+// Files parses the files of a source tree. It reads each other file of a
+// package once for the base types and constants that File resolves, and
+// reads it again only when its size or modification time changes. The
+// zero value is ready to use. A Files is not safe for concurrent use.
+type Files struct {
+	summaries map[string]*fileSummary
+}
+
+func (fs *Files) summarize(path string) *fileSummary {
+	if fs == nil {
+		fs = &Files{}
+	}
+	fi, err := os.Stat(path)
+	if err != nil {
+		return &fileSummary{}
+	}
+	if s, ok := fs.summaries[path]; ok && s.size == fi.Size() && s.mod.Equal(fi.ModTime()) {
+		return s
+	}
+	s := &fileSummary{size: fi.Size(), mod: fi.ModTime()}
+	if f, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.SkipObjectResolution); err == nil {
+		s.pkg, s.types, s.consts, s.ok = f.Name.Name, map[string]string{}, map[string]uint64{}, true
+		collectBaseTypes(f, s.types)
+		collectConsts(f, s.consts)
+	}
+	if fs.summaries == nil {
+		fs.summaries = map[string]*fileSummary{}
+	}
+	fs.summaries[path] = s
+	return s
+}
+
+func (fs *Files) packageFiles(dir, pkg, skip string) []*fileSummary {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
 	}
-	var files []*ast.File
+	var files []*fileSummary
 	for _, e := range entries {
 		name := e.Name()
 		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
@@ -59,11 +103,9 @@ func packageFiles(dir, pkg, skip string) []*ast.File {
 		if path == skip {
 			continue
 		}
-		f, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.SkipObjectResolution)
-		if err != nil || f.Name.Name != pkg {
-			continue
+		if f := fs.summarize(path); f.ok && f.pkg == pkg {
+			files = append(files, f)
 		}
-		files = append(files, f)
 	}
 	return files
 }
@@ -129,8 +171,8 @@ func (c *constValues) value(name string) (uint64, bool) {
 		if path, found := c.imports[pkg]; found && c.modPath != "" {
 			if rel, inModule := strings.CutPrefix(path, c.modPath); inModule {
 				dir := filepath.Join(c.modRoot, filepath.FromSlash(strings.TrimPrefix(rel, "/")))
-				for _, f := range packageFiles(dir, filepath.Base(dir), "") {
-					collectConsts(f, consts)
+				for _, f := range c.files.packageFiles(dir, filepath.Base(dir), "") {
+					maps.Copy(consts, f.consts)
 				}
 			}
 		}

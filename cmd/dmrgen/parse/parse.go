@@ -8,8 +8,8 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"maps"
 	"math"
-	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -432,12 +432,19 @@ func (p *PDUStruct) IsInput(name string) bool {
 
 // File parses a Go source file and returns all PDU structs with dmr tags.
 func File(filePath string) ([]PDUStruct, error) {
+	var fs Files
+	return fs.File(filePath)
+}
+
+// File parses a Go source file as the package function File does. It
+// reuses what fs read before of the other files of the package.
+func (fs *Files) File(filePath string) ([]PDUStruct, error) {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", filePath, err)
 	}
-	return parseAST(node, filePath, packageBaseTypes(filePath, node), newConstValues(node, filePath, true))
+	return parseAST(node, filePath, fs.packageBaseTypes(filePath, node), newConstValues(fs, node, filePath, true))
 }
 
 // Source parses Go source text; only types declared in src are resolved.
@@ -449,7 +456,7 @@ func Source(fileName, src string) ([]PDUStruct, error) {
 	}
 	types := map[string]string{}
 	collectBaseTypes(node, types)
-	return parseAST(node, fileName, types, newConstValues(node, fileName, false))
+	return parseAST(node, fileName, types, newConstValues(nil, node, fileName, false))
 }
 
 func parseAST(node *ast.File, filePath string, baseTypes map[string]string, consts *constValues) ([]PDUStruct, error) {
@@ -1575,28 +1582,11 @@ func resolveBase(name string, baseTypes map[string]string) string {
 	return ""
 }
 
-func packageBaseTypes(filePath string, node *ast.File) map[string]string {
+func (fs *Files) packageBaseTypes(filePath string, node *ast.File) map[string]string {
 	types := map[string]string{}
 	collectBaseTypes(node, types)
-	dir := filepath.Dir(filePath)
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return types
-	}
-	for _, e := range entries {
-		name := e.Name()
-		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
-			continue
-		}
-		path := filepath.Join(dir, name)
-		if path == filePath {
-			continue
-		}
-		other, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.SkipObjectResolution)
-		if err != nil || other.Name.Name != node.Name.Name {
-			continue
-		}
-		collectBaseTypes(other, types)
+	for _, f := range fs.packageFiles(filepath.Dir(filePath), node.Name.Name, filePath) {
+		maps.Copy(types, f.types)
 	}
 	return types
 }

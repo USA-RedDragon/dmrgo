@@ -999,6 +999,7 @@ func TestParseV2Sources(t *testing.T) {
 
 	root := filepath.Join("..", "..", "..", "v2")
 	structs := 0
+	var files parse.Files
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -1008,7 +1009,7 @@ func TestParseV2Sources(t *testing.T) {
 			strings.HasSuffix(name, "_test.go") || strings.HasSuffix(name, "_gen.go") {
 			return nil
 		}
-		pdus, err := parse.File(path)
+		pdus, err := files.File(path)
 		if err != nil {
 			t.Errorf("%s: %v", path, err)
 		}

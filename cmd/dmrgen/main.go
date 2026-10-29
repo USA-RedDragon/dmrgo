@@ -44,6 +44,7 @@ type sourceFile struct {
 func run(v2Root string) error {
 	var files []sourceFile
 	pkgs := map[string][]parse.PDUStruct{}
+	var sources parse.Files
 	err := filepath.Walk(v2Root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -56,7 +57,7 @@ func run(v2Root string) error {
 			strings.HasSuffix(path, "_gen.go") {
 			return nil
 		}
-		pdus, parseErr := parse.File(path)
+		pdus, parseErr := sources.File(path)
 		if parseErr != nil {
 			return fmt.Errorf("parsing %s: %w", path, parseErr)
 		}
