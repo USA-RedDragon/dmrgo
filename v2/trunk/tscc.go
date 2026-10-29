@@ -73,9 +73,9 @@ type TSCCConfig struct {
 	// which the call keeps its payload slot. 0 or a negative value means
 	// constants.TVHangtimeDefault.
 	Hangtime time.Duration
-	// Inactive is TV_Inactive, the time without an inbound burst after
-	// which the TSCC clears a call that never started. 0 or a negative
-	// value means constants.TVInactiveDefault.
+	// Inactive is TV_Inactive: the TSCC clears a call that has no inbound
+	// burst for this long outside the hang time. 0 or a negative value
+	// means constants.TVInactiveDefault.
 	Inactive time.Duration
 	// AnswerTimeout is how long the TSCC waits for the answer of a called
 	// MS to its C_AHOY, and for the answer to an authentication challenge.
