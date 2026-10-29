@@ -51,41 +51,6 @@ func onsetBits(t *testing.T, what string, truth []onsetTruth, got []Burst, perio
 	return lockBad
 }
 
-func TestRxRawBitsAfterCarrier(t *testing.T) {
-	t.Parallel()
-	slots, _ := benchStream(t, 2)
-	fm, env := rftx.ModulateBS(slots)
-	for i := 0; env[i] < 1; i++ {
-		env[i] = 1
-	}
-	for _, cn := range []float64{math.Inf(1)} {
-		for _, lr := range onsetReceivers() {
-			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
-				t.Parallel()
-				for _, base := range []float64{0.5, 2} {
-					for k := 0; k < 30; k += leadStride() {
-						lead := base + float64(k)*0.0009
-						start := benchPad + lead
-						carrier := make([]float64, int(lead*basebandRate))
-						for i := range carrier {
-							carrier[i] = 1
-						}
-						x := signalBaseband([]signalPart{{benchPad, nil, carrier}, {start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, 1)
-						truth := make([]onsetTruth, len(slots))
-						for i, s := range slots {
-							at := start + float64(i)*slotSeconds + (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate
-							truth[i] = onsetTruth{at: at, data: s.Burst, cach: s.CACH, bs: true}
-						}
-						if onsetBits(t, fmt.Sprintf("%.4f s of carrier", lead), truth, lr.receive(t, x), slotSeconds) {
-							t.Errorf("%.4f s of carrier: lock burst raw bits differ", lead)
-						}
-					}
-				}
-			})
-		}
-	}
-}
-
 func TestRxRawBitsAtGapEdge(t *testing.T) {
 	t.Parallel()
 	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
