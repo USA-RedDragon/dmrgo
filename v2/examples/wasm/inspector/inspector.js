@@ -151,6 +151,12 @@ function treeNode(n, depth) {
     label.appendChild(el("span", "v", n.v.length > 140 ? n.v.slice(0, 140) + "..." : n.v));
   }
   if (n.r) label.appendChild(el("span", "b", "  [" + bitText(n.r) + "]"));
+  if (n.d) {
+    li.classList.add("derived");
+    const tag = el("span", "tag", "derived");
+    tag.title = "Computed from other bits, not sent as its own field";
+    label.appendChild(tag);
+  }
   if (n.err) label.appendChild(el("span", "err", "  error: " + n.err));
   label.title = n.v || "";
   label.onclick = () => {

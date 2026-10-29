@@ -17,6 +17,8 @@ Inside each transport the page decodes the DMR burst: the SYNC, the slot type, t
 
 Decode errors show on the packet and on the field, with the reason that the library returns.
 
+A field that the library computes from other bits, such as the result of a FEC check, shows a "derived" tag. The packet does not carry it as a field of its own, so it has no octets to highlight.
+
 ## Build and serve
 
 From this directory:

@@ -44,6 +44,9 @@ ul.tree .t { cursor: pointer; display: inline-block; width: 1em; color: var(--mu
 ul.tree .v { color: var(--accent); }
 ul.tree .b { color: var(--muted); }
 ul.tree li.closed > ul { display: none; }
+ul.tree li.derived > span:not(.t) { color: var(--muted); }
+ul.tree li.derived > span:not(.t) .v { color: inherit; }
+ul.tree .tag { font: 10px/1 system-ui, sans-serif; border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; margin-left: 6px; vertical-align: 1px; color: var(--muted); }
 .hex { font: 12px/1.5 ui-monospace, monospace; margin: 8px 0; overflow-x: auto; }
 .hex .name { color: var(--muted); }
 .hex .row { white-space: pre; }
