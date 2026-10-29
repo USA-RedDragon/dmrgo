@@ -53,7 +53,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [The layer model](concepts/layers.md)
   - [I/O-free services](concepts/services.md)
   - [Errors and never-panic](concepts/errors.md)
-  - [Allocation](allocation.md)
+  - [Allocation](concepts/allocation.md)
   - [Tiers](concepts/tiers.md)
 - Targets
   - [PC](targets/pc.md)
