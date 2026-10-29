@@ -3,6 +3,7 @@ package csbk_test
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
@@ -122,4 +123,43 @@ func ExampleNewResponder_configError() {
 	}
 	// Output:
 	// Address
+}
+
+// ExampleResponder answers a Motorola radio check and a call alert from
+// radio 3140598 to radio 3191868 on a direct mode channel, and the
+// Requester reports each answer.
+func ExampleResponder() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3191868, ColorCode: 1, Source: layer2.SyncSourceMS})
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	now := time.Duration(0)
+	for i := range 2 {
+		var err error
+		if i == 0 {
+			err = q.RequestRadioCheck(now, 3191868, 3140598, nil)
+		} else {
+			err = q.RequestCallAlert(now, 3191868, 3140598, nil)
+		}
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		out = q.Tick(now, out[:0])
+		request := out[0]
+
+		out = r.Burst(request.Due, &request.Burst, request.Hint, out[:0])
+		fmt.Println("responder:", out[0].Kind, out[0].Service, "from", out[0].Call.Source)
+		at, _ := r.Deadline()
+		out = r.Tick(at, out[:0])
+		answer := out[0]
+
+		out = q.Burst(answer.Due, &answer.Burst, answer.Hint, out[:0])
+		fmt.Println("requester:", out[0].Kind, out[0].Service, out[0].Result, "after", answer.Due-request.Due)
+		now = answer.Due + time.Second
+	}
+	// Output:
+	// responder: Request RadioCheck from 3140598
+	// requester: Done RadioCheck Answered after 60ms
+	// responder: Request CallAlert from 3140598
+	// requester: Done CallAlert Answered after 60ms
 }
