@@ -84,7 +84,6 @@ func (c floorCurve) recovery() []float64 {
 
 type floorRef struct {
 	any, dmr    crossing
-	status      string
 	anyCurve    floorCurve
 	dmrCurve    floorCurve
 	hasDMRCurve bool
@@ -108,7 +107,7 @@ func loadFloors(path string) (map[string]floorRef, error) {
 		if err := json.Unmarshal(raw, &p); err != nil || len(p.Any.EbN0) == 0 {
 			continue
 		}
-		r := floorRef{status: p.Status, anyCurve: p.Any, dmrCurve: p.DMR, hasAnyCurve: true}
+		r := floorRef{anyCurve: p.Any, dmrCurve: p.DMR, hasAnyCurve: true}
 		r.any = at90(p.Any.EbN0, p.Any.recovery())
 		if p.Status == "exact" || p.Status == "lower bound" {
 			r.dmr = at90(p.DMR.EbN0, p.DMR.recovery())
