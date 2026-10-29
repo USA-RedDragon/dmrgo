@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/cmplx"
 	"testing"
@@ -72,18 +73,21 @@ func TestBitErrorRateBySNR(t *testing.T) {
 	fm, env := rftx.Modulate(bursts, rftx.Schedule{Slot: -1})
 	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for _, snr := range []float64{30, 20, 15} {
-		d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6, 2.048e6, -2500, snr, 7)), 2.048e6)
-		var errs, total int
-		for _, r := range d.Bursts {
-			for i := range r.Data {
-				errs += popcount(r.Data[i] ^ bursts[0][i])
-				total += 8
+		t.Run(fmt.Sprintf("%.0fdB", snr), func(t *testing.T) {
+			t.Parallel()
+			d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6, 2.048e6, -2500, snr, 7)), 2.048e6)
+			var errs, total int
+			for _, r := range d.Bursts {
+				for i := range r.Data {
+					errs += popcount(r.Data[i] ^ bursts[0][i])
+					total += 8
+				}
 			}
-		}
-		t.Logf("SNR %2.0f dB (in 2 MHz): %d bursts, BER %.2e", snr, len(d.Bursts), float64(errs)/float64(max(total, 1)))
-		if snr >= 20 && (len(d.Bursts) != len(bursts) || errs != 0) {
-			t.Errorf("SNR %.0f dB: %d of %d bursts, %d bit errors", snr, len(d.Bursts), len(bursts), errs)
-		}
+			t.Logf("SNR %2.0f dB (in 2 MHz): %d bursts, BER %.2e", snr, len(d.Bursts), float64(errs)/float64(max(total, 1)))
+			if snr >= 20 && (len(d.Bursts) != len(bursts) || errs != 0) {
+				t.Errorf("SNR %.0f dB: %d of %d bursts, %d bit errors", snr, len(d.Bursts), len(bursts), errs)
+			}
+		})
 	}
 }
 
