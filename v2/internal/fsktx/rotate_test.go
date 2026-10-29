@@ -30,31 +30,34 @@ func TestRotateMatches(t *testing.T) {
 	t.Parallel()
 	for _, tier := range []Tier{Tier1, Tier2} {
 		for _, rate := range []int{48000, 96000, 192000, 1000000, 2400000} {
-			for _, off := range []float64{0, 1200, -2500, float64(rate)/4 - 100} {
-				a, b := rotatePair(t, tier, rate, off)
-				r := rand.New(rand.NewPCG(1, 2))
-				var x, y []int16
-				worst := 0
-				for i := range 4000 {
-					if i%300 == 10 {
-						a.Key(true)
-						b.Key(true)
+			t.Run(fmt.Sprint(tier-Tier0, "/", rate), func(t *testing.T) {
+				t.Parallel()
+				for _, off := range []float64{0, 1200, -2500, float64(rate)/4 - 100} {
+					a, b := rotatePair(t, tier, rate, off)
+					r := rand.New(rand.NewPCG(1, 2))
+					var x, y []int16
+					worst := 0
+					for i := range 4000 {
+						if i%300 == 10 {
+							a.Key(true)
+							b.Key(true)
+						}
+						if i%300 == 250 {
+							a.Key(false)
+							b.Key(false)
+						}
+						s := int8(2*r.IntN(4) - 3)
+						x = a.AppendS16(x[:0], s)
+						y = b.AppendS16(y[:0], s)
+						for k := range x {
+							worst = max(worst, absInt(int(x[k])-int(y[k])))
+						}
 					}
-					if i%300 == 250 {
-						a.Key(false)
-						b.Key(false)
-					}
-					s := int8(2*r.IntN(4) - 3)
-					x = a.AppendS16(x[:0], s)
-					y = b.AppendS16(y[:0], s)
-					for k := range x {
-						worst = max(worst, absInt(int(x[k])-int(y[k])))
+					if worst > 1 {
+						t.Errorf("tier %d rate %d offset %v: worst difference %d", tier, rate, off, worst)
 					}
 				}
-				if worst > 1 {
-					t.Errorf("tier %d rate %d offset %v: worst difference %d", tier, rate, off, worst)
-				}
-			}
+			})
 		}
 	}
 }
