@@ -77,11 +77,12 @@ func ExamplePeer() {
 	var queue []packet
 	take := func(from ipscsession.Addr, name string, out []ipscsession.Output) {
 		for _, o := range out {
-			if o.Kind == ipscsession.OutputSend {
+			switch {
+			case o.Kind == ipscsession.OutputSend:
 				queue = append(queue, packet{from, o.Addr, append([]byte(nil), o.Packet...)})
-			} else if name == "A" && o.Kind == ipscsession.OutputPeers {
+			case name == "A" && o.Kind == ipscsession.OutputPeers:
 				fmt.Println(name, o.Kind, a.Peers())
-			} else if name == "A" {
+			case name == "A":
 				fmt.Println(name, o.Kind, o.ID)
 			}
 		}
