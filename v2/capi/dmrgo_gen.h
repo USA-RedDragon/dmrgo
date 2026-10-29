@@ -4489,11 +4489,11 @@ struct dmrgo_dmrdsession_bridge_config_t {
 	/* Key is the passphrase of the OpenBridge link (see dmrgo_dmrdauth_new_bridge_key). */
 	uint8_t *key;
 	size_t key_len;
-	/* Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive and takes the peer as down after Timeout without a packet with a good signature. Without it OpenBridge has no keepalive, and the Bridge only checks signatures. */
+	/* Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive. Without it OpenBridge has no keepalive, and the Bridge sends nothing of its own. */
 	bool enhanced;
 	/* Keepalive is the BCKA period. 0 means DMRGO_DMRDSESSION_KEEPALIVE_DEFAULT. */
 	dmrgo_duration_t keepalive;
-	/* Timeout is the time without a packet with a good signature after which an enhanced Bridge reports DMRGO_DMRDSESSION_OUTPUT_DOWN. 0 means DMRGO_DMRDSESSION_TIMEOUT_DEFAULT, the time after which FreeDMR stops sending to a peer. */
+	/* Timeout is the time without a packet with a good signature after which the Bridge reports DMRGO_DMRDSESSION_OUTPUT_DOWN. 0 means DMRGO_DMRDSESSION_TIMEOUT_DEFAULT, the time after which FreeDMR stops sending to a peer. */
 	dmrgo_duration_t timeout;
 };
 
@@ -4504,7 +4504,7 @@ struct dmrgo_dmrdsession_master_config_t {
 	dmrgo_dmrd_dialect_t dialect;
 	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means DMRGO_DMRDSESSION_TIMEOUT_DEFAULT. */
 	dmrgo_duration_t timeout;
-	/* LoginTimeout is the time after the first RPTL of a login, and after the RPTK that proves the password, in which the repeater must finish its login, or the Master ends the session. A repeated RPTL does not restart it. 0 means DMRGO_DMRDSESSION_LOGIN_TIMEOUT_DEFAULT. */
+	/* LoginTimeout is the time after the first RPTL of a login in which the repeater must finish its login, or the Master ends the session. A repeated RPTL or RPTK does not restart it. 0 means DMRGO_DMRDSESSION_LOGIN_TIMEOUT_DEFAULT. */
 	dmrgo_duration_t login_timeout;
 };
 
@@ -5646,7 +5646,7 @@ struct dmrgo_trunk_tscc_config_t {
 	dmrgo_duration_t late_entry;
 	/* Hangtime is TV_Hangtime, the time after the end of a transmission in which the call keeps its payload slot. 0 or a negative value means DMRGO_CONSTANTS_TV_HANGTIME_DEFAULT. */
 	dmrgo_duration_t hangtime;
-	/* Inactive is TV_Inactive, the time without an inbound burst after which the TSCC clears a call that never started. 0 or a negative value means DMRGO_CONSTANTS_TV_INACTIVE_DEFAULT. */
+	/* Inactive is TV_Inactive: the TSCC clears a call that has no inbound burst for this long outside the hang time. 0 or a negative value means DMRGO_CONSTANTS_TV_INACTIVE_DEFAULT. */
 	dmrgo_duration_t inactive;
 	/* AnswerTimeout is how long the TSCC waits for the answer of a called MS to its C_AHOY, and for the answer to an authentication challenge. 0 or a negative value means DMRGO_CONSTANTS_TP_TIMER_DEFAULT. */
 	dmrgo_duration_t answer_timeout;
@@ -7783,7 +7783,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_OUTPUT_PONG ((dmrgo_dmrdsession_output_kind_t)9)
 /* Go: dmrdsession.OutputSend. OutputSend is a packet in dmrgo_dmrdsession_output_t.packet to send to the other side. */
 #define DMRGO_DMRDSESSION_OUTPUT_SEND ((dmrgo_dmrdsession_output_kind_t)1)
-/* Go: dmrdsession.OutputUp. OutputUp reports that the login is complete. */
+/* Go: dmrdsession.OutputUp. OutputUp reports that the login is complete, or that a Bridge took the first packet with a good signature after DMRGO_DMRDSESSION_STATE_IDLE. */
 #define DMRGO_DMRDSESSION_OUTPUT_UP ((dmrgo_dmrdsession_output_kind_t)2)
 /* Go: dmrdsession.ReasonClosed. ReasonClosed is an MSTCL from the master or an RPTCL from the repeater. */
 #define DMRGO_DMRDSESSION_REASON_CLOSED ((dmrgo_dmrdsession_reason_t)3)
@@ -7803,13 +7803,13 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_STATE_AUTH ((dmrgo_dmrdsession_state_t)3)
 /* Go: dmrdsession.StateConfig. StateConfig is a Peer that sent RPTC, or a Master that waits for it or for Accept or Refuse. */
 #define DMRGO_DMRDSESSION_STATE_CONFIG ((dmrgo_dmrdsession_state_t)4)
-/* Go: dmrdsession.StateIdle. StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge that has not heard its peer within Timeout. */
+/* Go: dmrdsession.StateIdle. StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge, enhanced or not, before the first packet with a good signature and after Timeout without one. */
 #define DMRGO_DMRDSESSION_STATE_IDLE ((dmrgo_dmrdsession_state_t)0)
 /* Go: dmrdsession.StateLogin. StateLogin is a Peer that sent RPTL, or a Master that waits for Admit or Refuse. */
 #define DMRGO_DMRDSESSION_STATE_LOGIN ((dmrgo_dmrdsession_state_t)2)
 /* Go: dmrdsession.StateOptions. StateOptions is a Peer that sent RPTO. */
 #define DMRGO_DMRDSESSION_STATE_OPTIONS ((dmrgo_dmrdsession_state_t)5)
-/* Go: dmrdsession.StateRunning. StateRunning is a logged-in session, or a Bridge that heard its peer within Timeout. */
+/* Go: dmrdsession.StateRunning. StateRunning is a logged-in session, or a Bridge, enhanced or not, whose peer sent a packet with a good signature within Timeout. */
 #define DMRGO_DMRDSESSION_STATE_RUNNING ((dmrgo_dmrdsession_state_t)6)
 /* Go: dmrdsession.StateWait. StateWait is a Peer that waits to log in again. */
 #define DMRGO_DMRDSESSION_STATE_WAIT ((dmrgo_dmrdsession_state_t)1)
@@ -11236,11 +11236,11 @@ int dmrgo_dmrdsession_bridge_packet_need(dmrgo_dmrdsession_bridge_t *self, dmrgo
 int dmrgo_dmrdsession_bridge_packet(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrdsession.Bridge.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p into its last octets, as dmrgo_dmrdauth_bridge_key_sign_in_place does. It returns DMRGO_ERR_ZERO_VALUE for a Bridge that NewBridge did not make. */
 int dmrgo_dmrdsession_bridge_sign_in_place(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
-/* Go: dmrdsession.Bridge.State. State returns DMRGO_DMRDSESSION_STATE_RUNNING when the peer sent a packet with a good signature within Timeout, and DMRGO_DMRDSESSION_STATE_IDLE before that and after. */
+/* Go: dmrdsession.Bridge.State. State returns DMRGO_DMRDSESSION_STATE_RUNNING when the peer sent a packet with a good signature within Timeout, with or without dmrgo_dmrdsession_bridge_config_t.enhanced, and DMRGO_DMRDSESSION_STATE_IDLE before that and after. */
 int dmrgo_dmrdsession_bridge_state(dmrgo_dmrdsession_bridge_t *self, dmrgo_dmrdsession_state_t *out);
 /* dmrgo_dmrdsession_bridge_tick_need sets *items and *arena to the room that dmrgo_dmrdsession_bridge_tick needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdsession_bridge_tick_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: dmrdsession.Bridge.Tick. Tick sends the BCKA of an enhanced Bridge when it is due, the first at the first Tick, and reports DMRGO_DMRDSESSION_OUTPUT_DOWN with DMRGO_DMRDSESSION_REASON_TIMEOUT when the peer sent nothing for Timeout. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_bridge_tick_need gives. */
+/* Go: dmrdsession.Bridge.Tick. Tick reports DMRGO_DMRDSESSION_OUTPUT_DOWN with DMRGO_DMRDSESSION_REASON_TIMEOUT when the peer sent nothing for Timeout, and sends the BCKA of an enhanced Bridge when it is due, the first at the first Tick. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_bridge_tick_need gives. */
 int dmrgo_dmrdsession_bridge_tick(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_free frees the handle. self may be NULL. */
 int dmrgo_dmrdsession_master_free(dmrgo_dmrdsession_master_t *self);
