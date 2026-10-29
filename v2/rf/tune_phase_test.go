@@ -9,7 +9,7 @@ import (
 func TestTunePhaseContinuous(t *testing.T) {
 	t.Parallel()
 	const hz = 1000.0
-	c := newChannelizer(8192, false, 1, false, false)
+	c := newChannelizer(8192, 1, false)
 	tone := func(i int) complex64 {
 		p := 2 * math.Pi * hz * float64(i) / basebandRate
 		return complex(float32(math.Cos(p)), float32(math.Sin(p)))

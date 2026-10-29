@@ -58,7 +58,6 @@ func symbolOf(b0, b1 unpacked.Bit) int8 {
 
 type syncSearch struct {
 	dec, sps, span int
-	dx             [syncSymbols]float32
 	xs             []complex64
 	xh             int
 	xFirst         int64
@@ -67,11 +66,8 @@ type syncSearch struct {
 	conj           [2*numSources + 1][]complex64
 }
 
-func newSyncSearch(coherent bool, dec int) *syncSearch {
+func newSyncSearch(dec int) *syncSearch {
 	s := &syncSearch{}
-	if !coherent {
-		return s
-	}
 	s.dec, s.sps, s.span = dec, samplesPerSy/dec, syncSpan/dec
 	s.full = make([]float64, syncSymbols*s.sps)
 	s.xs = make([]complex64, 2*s.span)
@@ -193,35 +189,4 @@ func (s *syncSearch) window(r *ring, first int64) []complex64 {
 	}
 	s.xFirst = first
 	return s.xs[s.xh : s.xh+n]
-}
-
-func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rho2 float32, src int, data bool) {
-	x := s.dx[:]
-	if stride := int(step); u == 0 && float32(stride) == step {
-		r.gather(base, stride, x)
-	} else {
-		for k := range x {
-			x[k] = r.lerpFrom(base, u+float32(k)*step)
-		}
-	}
-	var mx, xx float32
-	var sxy [numSources]float32
-	for k, v := range x {
-		mx += v
-		xx += v * v
-		for i := range sxy {
-			sxy[i] += syncDev[i][k] * v
-		}
-	}
-	sxx := xx - mx*mx/syncSymbols
-	if sxx <= 0 {
-		return 0, 0, false
-	}
-	var best float32
-	for i := range nsrc {
-		if q := sxy[i] * sxy[i] / syncDevSq[i]; q > best {
-			best, src = q, i
-		}
-	}
-	return best / sxx, src, sxy[src] < 0
 }

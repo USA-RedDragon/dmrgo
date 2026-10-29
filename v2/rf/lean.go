@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	discAnchor          = 0.6
+	levelForget         = 0.8
+	discAnchorBits      = 12
+	discFirstSpread     = 0.35
 	leanRing            = slotSymbols + 2
 	leanChunk           = 6
 	leanSyncEnd         = syncFirstSym + syncSymbols - 1

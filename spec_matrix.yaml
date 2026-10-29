@@ -97,7 +97,6 @@ ignore_files:
   - v2/rf/cohlate.go
   - v2/rf/cohlate_tinygo.go
   - v2/rf/comb.go
-  - v2/rf/disc.go
   - v2/rf/disc48.go
   - v2/rf/disccoh.go
   - v2/rf/discfront.go

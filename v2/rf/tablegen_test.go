@@ -54,9 +54,6 @@ func derivedTables() ([]genTable, error) {
 	return []genTable{
 		{"interpTaps", d.interp},
 		{"chanFilterTaps", d.chanTaps},
-		{"discHalfTaps", d.half},
-		{"discPreTaps", d.pre},
-		{"discRRCTaps", d.rrc},
 		{"discHalfQ15", d.halfQ15},
 		{"discPreQ15", d.preQ15},
 		{"discRRCQ15", d.rrcQ15},

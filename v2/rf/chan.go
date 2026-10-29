@@ -222,135 +222,9 @@ func (r *ring) gather(first int64, x []complex64) {
 	}
 }
 
-type fring struct {
-	buf []float32
-	n   int64
-	w   int
-}
-
-func newFring(size int) fring {
-	return fring{buf: make([]float32, size)}
-}
-
-func (r *fring) push(v float32) {
-	r.buf[r.w] = v
-	r.n++
-	if r.w++; r.w == len(r.buf) {
-		r.w = 0
-	}
-}
-
-func (r *fring) at(i int64) float32 {
-	d := r.n - i
-	if i < 0 || d <= 0 || d > int64(len(r.buf)) {
-		return 0
-	}
-	k := r.w - int(d)
-	if k < 0 {
-		k += len(r.buf)
-	}
-	return r.buf[k]
-}
-
-type qring struct {
-	buf  []int8
-	n    int64
-	w    int
-	step float32
-	inv  float32
-	off  float32
-}
-
-func newQring(size int, step float32) qring {
-	return qring{buf: make([]int8, size), step: step, inv: 1 / step}
-}
-
-func (r *qring) quantize(v float32) int8 {
-	q := v*r.inv + 0.5
-	switch {
-	case q >= math.MaxInt8:
-		return math.MaxInt8
-	case q <= math.MinInt8:
-		return math.MinInt8
-	}
-	i := int8(q)
-	if float32(i) > q {
-		i--
-	}
-	return i
-}
-
-func (r *qring) push(v float32) {
-	r.buf[r.w] = r.quantize(v - r.off)
-	r.n++
-	if r.w++; r.w == len(r.buf) {
-		r.w = 0
-	}
-}
-
-func (r *qring) at(i int64) float32 {
-	d := r.n - i
-	if i < 0 || d <= 0 || d > int64(len(r.buf)) {
-		return 0
-	}
-	k := r.w - int(d)
-	if k < 0 {
-		k += len(r.buf)
-	}
-	return float32(r.buf[k])*r.step + r.off
-}
-
-func (r *qring) gather(base int64, stride int, x []float32) {
-	last := base + int64(stride*(len(x)-1))
-	if base < 0 || base < r.n-int64(len(r.buf)) || last >= r.n {
-		for k := range x {
-			x[k] = r.at(base + int64(k*stride))
-		}
-		return
-	}
-	k0 := r.w - int(r.n-base)
-	if k0 < 0 {
-		k0 += len(r.buf)
-	}
-	for k := range x {
-		x[k] = float32(r.buf[k0])*r.step + r.off
-		if k0 += stride; k0 >= len(r.buf) {
-			k0 -= len(r.buf)
-		}
-	}
-}
-
-func (r *qring) add(v float32) {
-	r.off += v
-	k := int32(r.quantize(r.off))
-	if k == 0 {
-		return
-	}
-	r.off -= float32(k) * r.step
-	for i, q := range r.buf {
-		r.buf[i] = int8(max(min(int32(q)+k, math.MaxInt8), math.MinInt8))
-	}
-}
-
-func (r *qring) lerp(t float64) float32 {
-	base := int64(math.Floor(t))
-	return r.lerpFrom(base, float32(t-float64(base)))
-}
-
-func (r *qring) lerpFrom(base int64, u float32) float32 {
-	iu := int32(u)
-	fr := u - float32(iu)
-	i := base + int64(iu)
-	return r.at(i)*(1-fr) + r.at(i+1)*fr
-}
-
-const (
-	energyBin  = 40
-	discStepHz = 64
-)
+const discStepHz = 64
 
 type channelizer struct {
-	disc    bool
 	n       int64
 	ncoHz   float64
 	ncoStep complex64
@@ -365,33 +239,17 @@ type channelizer struct {
 	ch      ring
 	chDec   int
 	compact bool
-
-	df     *discFront
-	sym    qring
-	energy fring
-	step   int64
-	eAcc   float32
-	eBin   int64
 }
 
-func newChannelizer(size int, disc bool, dec int, compact, half bool) *channelizer {
-	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2, step: 1}
-	if !disc {
-		c.chDec, c.compact = dec, compact
-		if !compact {
-			c.wide = newRing(size, 1, false)
-		}
-		c.taps = chanFilterTaps[:]
-		c.hist = make([]complex64, 2*chanTaps)
-		c.ch = newRing((size+dec-1)/dec, dec, compact)
-		return c
+func newChannelizer(size int, dec int, compact bool) *channelizer {
+	c := &channelizer{ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2}
+	c.chDec, c.compact = dec, compact
+	if !compact {
+		c.wide = newRing(size, 1, false)
 	}
-	c.df = newDiscFront(half)
-	if half {
-		c.step = 2
-	}
-	c.sym = newQring(size/2+1, discStepHz)
-	c.energy = newFring(size/energyBin + 2)
+	c.taps = chanFilterTaps[:]
+	c.hist = make([]complex64, 2*chanTaps)
+	c.ch = newRing((size+dec-1)/dec, dec, compact)
 	return c
 }
 
@@ -436,48 +294,12 @@ func (c *channelizer) count() int64 {
 }
 
 func (c *channelizer) oldest() int64 {
-	if c.disc {
-		return c.n - int64(min(len(c.sym.buf)*2, (len(c.energy.buf)-1)*energyBin))
-	}
 	return c.ch.first() * int64(c.chDec)
-}
-
-func (c *channelizer) symAt(t int64) (base int64, u float32) {
-	q := t - int64(c.delayCh) - c.df.center()
-	return q >> 1, float32(q&1) / 2
-}
-
-func (c *channelizer) symIndex(t float64) float64 {
-	return (t - float64(c.delayCh) - float64(c.df.center())) / 2
-}
-
-func (c *channelizer) symStep() float32 {
-	return discSPS
-}
-
-func (c *channelizer) slotEnergyAt(a float64, n int) float64 {
-	b0 := int64(math.Round(a / energyBin))
-	b1 := int64(math.Round((a + float64(n)) / energyBin))
-	var e float64
-	for b := b0; b < b1; b++ {
-		e += float64(c.energy.at(b))
-	}
-	return e / float64(max(b1-b0, 1)*energyBin/2)
 }
 
 func (c *channelizer) tune(hz float64) {
 	p := -2 * math.Pi * hz / basebandRate
 	c.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
-	if c.disc {
-		d := float32(c.ncoHz - hz)
-		c.ncoHz = hz
-		c.df.tune(hz)
-		c.sym.add(d)
-		for i := range c.df.fHist {
-			c.df.fHist[i] += d
-		}
-		return
-	}
 	if c.compact {
 		c.retune(hz)
 		return
@@ -519,10 +341,6 @@ func (c *channelizer) retune(hz float64) {
 }
 
 func (c *channelizer) push(v complex64) {
-	if c.disc {
-		c.discFilter(v)
-		return
-	}
 	n := c.n
 	c.n++
 	if !c.compact {
@@ -547,24 +365,6 @@ func (c *channelizer) filter(v complex64, n int64) {
 	if n&int64(c.chDec-1) == 0 {
 		c.ch.push(fir(c.hist[c.head:c.head+nt], c.taps))
 	}
-}
-
-func (c *channelizer) discFilter(v complex64) {
-	c.n += c.step
-	s, p, ok := c.df.push(v)
-	if !ok {
-		return
-	}
-	t := 2*c.sym.n + c.df.center() + discSpan*samplesPerSy + 1 + int64(c.delayCh)
-	if t >= 0 {
-		for t >= (c.eBin+1)*energyBin {
-			c.energy.push(c.eAcc)
-			c.eAcc = 0
-			c.eBin++
-		}
-		c.eAcc += p
-	}
-	c.sym.push(s)
 }
 
 func fir(x []complex64, h []float32) complex64 {

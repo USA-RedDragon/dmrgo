@@ -7,7 +7,7 @@ import (
 
 func TestHGateInterval(t *testing.T) {
 	t.Parallel()
-	g := newHGate(64, newSyncSearch(true, 1))
+	g := newHGate(64, newSyncSearch(1))
 	rng := uint64(1)
 	for _, c := range []struct {
 		h, noise float64

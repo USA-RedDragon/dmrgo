@@ -83,6 +83,7 @@ const (
 	searchStep     = 2
 	lockMetric     = 0.4
 	discLock       = 0.9
+	sincTaps       = 16
 	anchorMetric   = 0.45
 	levelGain      = 0.5
 	levelJump      = 4.0
@@ -166,9 +167,6 @@ type engine struct {
 	noise     float64
 	offEnergy float64
 	quiet     int
-	devScale  float64
-	dcHz      float64
-	discNoise float64
 	next      int64
 	lost      int
 
@@ -211,17 +209,13 @@ func newEngine(cfg rxSetup, opt options) *engine {
 		r.llrScale = 1
 	}
 	r.nsrc = r.opt.Sources
-	half := cfg.BasebandHz == discRate
 	r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 	r.wide = make([]complex64, wideChunk)
 	r.inChunk = max(r.fe.size*int(float64(wideChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
 	size := (cfg.LookbackSlots + opt.passSlots() + maxGapSlots + 4) * slotSamplesN
-	dec := 2
-	if r.opt.Coherent {
-		dec = max(int(r.opt.ChanDecimation), 1)
-	}
-	r.chz = newChannelizer(size, !r.opt.Coherent, dec, r.opt.CompactChannel, half)
-	if r.opt.Coherent && (r.opt.IQTaps > 0 || r.opt.IQKaiser > 0 || r.opt.IQCutHz > 0) {
+	dec := max(int(r.opt.ChanDecimation), 1)
+	r.chz = newChannelizer(size, dec, r.opt.CompactChannel)
+	if r.opt.IQTaps > 0 || r.opt.IQKaiser > 0 || r.opt.IQCutHz > 0 {
 		r.chz.setFilter(r.opt.IQTaps, r.opt.IQKaiser, r.opt.IQCutHz)
 		if r.opt.IQCutAuto && len(r.chz.taps) == chanTaps {
 			r.chz.alt = r.chz.taps
@@ -229,62 +223,54 @@ func newEngine(cfg rxSetup, opt options) *engine {
 		}
 	}
 	r.spec = newSpectrum(float64(cfg.BasebandHz))
-	r.search = newSyncSearch(r.opt.Coherent, dec)
-	if r.opt.Coherent {
-		d := int(r.opt.Window)
-		r.model = newCPMModel(d, r.opt.TrellisSPS)
-		r.maxRun = (maxGapSlots + 1) * slotSymbols
-		if r.opt.ExactPhase {
-			r.maxRun = exactGapSlots * slotSymbols
-			np := r.opt.PhaseStates
-			if np == 0 {
-				np = phaseStates
-			}
-			r.xt = newXTrellis(r.model, np, r.maxRun)
-			r.xt.logmap = r.opt.LogMAP
-			if r.opt.DriftPenalty > 0 {
-				r.xt.pen = r.opt.DriftPenalty
-			}
-			r.xt.jump, r.xt.fade, r.xt.below = r.opt.PhaseJump, r.opt.PhaseJumpFade, r.opt.PhaseJumpBelow
-			if r.opt.DriftSteps > 0 {
-				r.xt.drifts = int(r.opt.DriftSteps)
-			}
-			r.lp, r.slp = r.xt.lp, r.xt.slp
-			r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
-			r.tapp = make([]float32, 4*r.maxRun)
-		} else {
-			r.tr = newTrellis(r.model, r.maxRun, trellisWin, trellisLook)
-			r.slp = r.tr.slp
-			r.buf = make([]complex64, syncSymbols*r.opt.TrellisSPS)
+	r.search = newSyncSearch(dec)
+	d := int(r.opt.Window)
+	r.model = newCPMModel(d, r.opt.TrellisSPS)
+	r.maxRun = (maxGapSlots + 1) * slotSymbols
+	if r.opt.ExactPhase {
+		r.maxRun = exactGapSlots * slotSymbols
+		np := r.opt.PhaseStates
+		if np == 0 {
+			np = phaseStates
 		}
+		r.xt = newXTrellis(r.model, np, r.maxRun)
+		r.xt.logmap = r.opt.LogMAP
+		if r.opt.DriftPenalty > 0 {
+			r.xt.pen = r.opt.DriftPenalty
+		}
+		r.xt.jump, r.xt.fade, r.xt.below = r.opt.PhaseJump, r.opt.PhaseJumpFade, r.opt.PhaseJumpBelow
+		if r.opt.DriftSteps > 0 {
+			r.xt.drifts = int(r.opt.DriftSteps)
+		}
+		r.lp, r.slp = r.xt.lp, r.xt.slp
+		r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
+		r.tapp = make([]float32, 4*r.maxRun)
+	} else {
+		r.tr = newTrellis(r.model, r.maxRun, trellisWin, trellisLook)
+		r.slp = r.tr.slp
+		r.buf = make([]complex64, syncSymbols*r.opt.TrellisSPS)
 	}
-	if r.opt.Coherent {
-		r.scr = make([]complex64, (fillChunk+1)*samplesPerSy/dec+2*sincTaps+4)
-		r.freqTot = make([]float64, 2*20+1)
-		r.pulse = newPhasePulse(samplesPerSy / dec)
-		r.corrX = make([]complex64, syncSpan/dec)
-	}
+	r.scr = make([]complex64, (fillChunk+1)*samplesPerSy/dec+2*sincTaps+4)
+	r.freqTot = make([]float64, 2*20+1)
+	r.pulse = newPhasePulse(samplesPerSy / dec)
+	r.corrX = make([]complex64, syncSpan/dec)
 	r.slots = make([]slotState, cfg.LookbackSlots+opt.passSlots()+maxGapSlots+4)
 	if opt.passSlots() > 0 {
 		r.passRecs = make([]passRec, len(r.slots))
-		if opt.HGate > 0 && opt.Coherent {
+		if opt.HGate > 0 {
 			r.hg = newHGate(len(r.slots), r.search)
 		}
 	}
-	if r.opt.Coherent {
-		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
-		r.syms.logmap = r.xt != nil && r.opt.LogMAP
-		if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
-			r.refined = newSymStore(maxGapSlots+1, r.llrScale)
-			r.refined.logmap = r.xt != nil && r.opt.LogMAP
-			r.prior = make([]float32, slotSymbols*4)
-			r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
-		}
-		if r.opt.DataPasses > 0 {
-			r.data = new(dataPass)
-		}
-	} else {
-		r.syms = newSymStore(1, 1)
+	r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
+	r.syms.logmap = r.xt != nil && r.opt.LogMAP
+	if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
+		r.refined = newSymStore(maxGapSlots+1, r.llrScale)
+		r.refined.logmap = r.xt != nil && r.opt.LogMAP
+		r.prior = make([]float32, slotSymbols*4)
+		r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
+	}
+	if r.opt.DataPasses > 0 {
+		r.data = new(dataPass)
 	}
 	r.tk = newTracker()
 	r.emitFn = r.emit
@@ -391,59 +377,29 @@ func (r *engine) searchStep() bool {
 	if from := max(r.chz.oldest()+slotSamplesN, r.doneAt); r.searchAt < from {
 		r.searchAt = from
 	}
-	if r.opt.Coherent {
-		r.searchAt = r.alignSearch(r.searchAt)
-	}
+	r.searchAt = r.alignSearch(r.searchAt)
 	for {
-		if !r.opt.Coherent {
-			if !r.spec.OK {
-				return false
+		if r.searchAt+syncSpan+3*samplesPerSy >= r.chz.count() {
+			return false
+		}
+		h := r.search.at(ch, r.searchAt, r.nsrc)
+		if h.Metric >= lockMetric && (r.candAt < 0 || h.Metric > r.cand.Metric) {
+			if r.candAt < 0 {
+				r.candAt = r.searchAt
 			}
-			base, u := r.chz.symAt(r.searchAt)
-			if u != 0 {
-				if b, v := r.chz.symAt(r.searchAt + 1); v == 0 {
-					r.searchAt, base, u = r.searchAt+1, b, v
+			r.cand, r.candPos = h, r.searchAt
+		}
+		if r.candAt >= 0 && r.searchAt >= r.candAt+slotSamplesN {
+			best, bt := r.cand, r.candPos
+			for k := int64(-searchStep); k <= searchStep; k += int64(r.search.dec) {
+				if h2 := r.search.at(ch, r.candPos+k, r.nsrc); h2.Metric > best.Metric {
+					best, bt = h2, r.candPos+k
 				}
 			}
-			step := r.chz.symStep()
-			if base+int64(syncSymbols*step)+2 >= r.chz.sym.n {
-				return false
-			}
-			rho2, src, data := r.search.discAt(&r.chz.sym, base, u, step, r.nsrc)
-			if rho2 >= discLock*discLock {
-				best := r.searchAt
-				for k := int64(1); k < 6; k++ {
-					b, v := r.chz.symAt(r.searchAt + k)
-					if q, s2, d2 := r.search.discAt(&r.chz.sym, b, v, step, r.nsrc); q > rho2 {
-						rho2, src, data, best = q, s2, d2, r.searchAt+k
-					}
-				}
-				r.lock(float64(best), src, data, 0)
-				return true
-			}
-		} else {
-			if r.searchAt+syncSpan+3*samplesPerSy >= r.chz.count() {
-				return false
-			}
-			h := r.search.at(ch, r.searchAt, r.nsrc)
-			if h.Metric >= lockMetric && (r.candAt < 0 || h.Metric > r.cand.Metric) {
-				if r.candAt < 0 {
-					r.candAt = r.searchAt
-				}
-				r.cand, r.candPos = h, r.searchAt
-			}
-			if r.candAt >= 0 && r.searchAt >= r.candAt+slotSamplesN {
-				best, bt := r.cand, r.candPos
-				for k := int64(-searchStep); k <= searchStep; k += int64(r.search.dec) {
-					if h2 := r.search.at(ch, r.candPos+k, r.nsrc); h2.Metric > best.Metric {
-						best, bt = h2, r.candPos+k
-					}
-				}
-				r.candAt = -1
-				r.searchAt = bt
-				r.lock(float64(bt-syncEdge*samplesPerSy), best.Source, best.Data, best.Hz)
-				return true
-			}
+			r.candAt = -1
+			r.searchAt = bt
+			r.lock(float64(bt-syncEdge*samplesPerSy), best.Source, best.Data, best.Hz)
+			return true
 		}
 		r.searchAt += searchStep
 	}
@@ -468,8 +424,6 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	_ = hz
 	r.fw = 0
 	r.amp, r.noise, r.offEnergy, r.quiet = 0, 0, 0, 0
-	r.devScale = 1
-	r.dcHz = 0
 	r.lost = 0
 	back := int64(0)
 	for back < int64(r.cfg.LookbackSlots) && r.slotTime(-back-1)-2*slotSamplesN > float64(r.chz.oldest()) && r.slotTime(-back-1) >= float64(r.doneAt) {
@@ -485,36 +439,30 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	clear(r.passRecs)
 	r.lastAnch = math.MinInt64
 	r.tk.reset()
-	if r.opt.Coherent {
-		s := r.resetSlot(0)
-		voice, dp, _ := sourceAt(src).SyncPatterns()
-		p := voice
-		if data {
-			p = dp
-		}
-		bestM, bestF, bestTau := 0.0, 0.0, 0.0
-		for tau := -2.0; tau <= 2; tau += 0.25 {
-			r.freq = 0
-			e := r.syncSamples(s, tau)
-			t0 := r.syncStart(s, tau)
-			for f := -lockSpanHz; f <= lockSpanHz; f += 5 {
-				if m := r.syncMetricAt(p, e, t0, f); m > bestM {
-					bestM, bestF, bestTau = m, f, tau
-				}
+	s := r.resetSlot(0)
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	p := voice
+	if data {
+		p = dp
+	}
+	bestM, bestF, bestTau := 0.0, 0.0, 0.0
+	for tau := -2.0; tau <= 2; tau += 0.25 {
+		r.freq = 0
+		e := r.syncSamples(s, tau)
+		t0 := r.syncStart(s, tau)
+		for f := -lockSpanHz; f <= lockSpanHz; f += 5 {
+			if m := r.syncMetricAt(p, e, t0, f); m > bestM {
+				bestM, bestF, bestTau = m, f, tau
 			}
 		}
-		r.freq, r.lockFreq = bestF, bestF
-		best := r.syncCorr(p, r.syncSamples(s, bestTau))
-		r.t0 += bestTau
-		r.amp, r.noise = best.amp, best.noise
 	}
+	r.freq, r.lockFreq = bestF, bestF
+	best := r.syncCorr(p, r.syncSamples(s, bestTau))
+	r.t0 += bestTau
+	r.amp, r.noise = best.amp, best.noise
 }
 
 func (r *engine) warmFreq(j int64) {
-	if !r.opt.Coherent {
-		r.devHz = 3 * deviationHz * r.devScale
-		return
-	}
 	r.searchFreq(j, r.lockFreq, lockSpanHz/2, 0.5)
 	if !r.opt.TrackH {
 		r.fw = 1 / (1 - freqForget)
@@ -782,7 +730,7 @@ func (r *engine) checkStream(j int64) {
 	switch {
 	case r.lost >= lostSlots || r.lastAnch == math.MinInt64 && j >= 6 || !r.bs && r.quiet >= msQuietSlots:
 		r.finishStream()
-	case r.opt.Coherent && !r.warm && r.stale(j) && r.scanStale(j):
+	case !r.warm && r.stale(j) && r.scanStale(j):
 	case r.scout && !r.warm && r.next-r.passStart >= int64(r.opt.passSlots()):
 		r.startPass(true)
 	case r.warm && j >= warmSlots:
@@ -865,13 +813,8 @@ func (r *engine) finishStream() {
 		r.detectUpTo(r.next - 1)
 	}
 	if r.first < r.next {
-		if r.opt.Coherent {
-			r.coherentGap(r.first, r.next-1, true)
-		}
+		r.coherentGap(r.first, r.next-1, true)
 		for k := r.first; k < r.next; k++ {
-			if !r.opt.Coherent {
-				r.discDetect(r.slot(k))
-			}
 			if r.emits() {
 				r.finish(r.slot(k))
 			}
@@ -879,23 +822,14 @@ func (r *engine) finishStream() {
 		r.first = r.next
 	}
 	r.offsetHz = r.chz.ncoHz + r.freq
-	if !r.opt.Coherent {
-		r.offsetHz = r.chz.ncoHz + r.dcHz
-	}
 	r.locked = false
 	r.searchAt = max(int64(r.slotTime(r.next)), r.lockAt+searchStep)
 	r.doneAt = int64(r.slotTime(r.next))
-	if r.opt.Coherent {
-		r.searchAt = r.alignSearch(r.searchAt)
-	}
+	r.searchAt = r.alignSearch(r.searchAt)
 	r.tk.flush(r.emitFn)
 }
 
 func (r *engine) measure(s *slotState) {
-	if !r.opt.Coherent {
-		r.measureDisc(s)
-		return
-	}
 	voice, data, _ := sourceAt(r.src).SyncPatterns()
 	pats := [3]enums.SyncPattern{voice, data, enums.SyncMSSourcedRC}
 	np := 2
@@ -1006,9 +940,6 @@ func turn(c float64) complex64 {
 
 func (r *engine) slotEnergy(s *slotState) float64 {
 	n := burstSymbols * samplesPerSy
-	if !r.opt.Coherent {
-		return r.chz.slotEnergyAt(r.symTime(s.index, cachSymbols), n)
-	}
 	ch := &r.chz.ch
 	dec := int64(ch.dec)
 	a := int64(r.symTime(s.index, cachSymbols))
@@ -1031,13 +962,8 @@ func (r *engine) detectUpTo(j int64) {
 	if s.index == j && s.anchor {
 		last = j - 1
 	}
-	if r.opt.Coherent {
-		r.coherentGap(r.first, j, false)
-	}
+	r.coherentGap(r.first, j, false)
 	for k := r.first; k <= last; k++ {
-		if !r.opt.Coherent {
-			r.discDetect(r.slot(k))
-		}
 		if r.emits() {
 			r.finish(r.slot(k))
 		}
@@ -1047,11 +973,7 @@ func (r *engine) detectUpTo(j int64) {
 
 func (r *engine) detectBurst(s *slotState) {
 	if s.present {
-		if !r.opt.Coherent {
-			r.discDetect(s)
-		} else {
-			r.coherentBurst(s.index)
-		}
+		r.coherentBurst(s.index)
 		if r.emits() {
 			r.finish(s)
 		}
@@ -1063,12 +985,10 @@ func (r *engine) finish(s *slotState) {
 	if !s.present {
 		return
 	}
-	if r.opt.Coherent {
-		st, p := r.symsOf(s)
-		for _, h := range st.have[p+cachSymbols : p+slotSymbols] {
-			if h == noRun {
-				return
-			}
+	st, p := r.symsOf(s)
+	for _, h := range st.have[p+cachSymbols : p+slotSymbols] {
+		if h == noRun {
+			return
 		}
 	}
 	rec := &r.finRec
@@ -1148,7 +1068,7 @@ func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		r.repairData(e, cc, ccOK)
 		return
 	}
-	if r.opt.RefinePrior == 0 || !r.opt.Coherent || s.index != j || !r.rep.voiceBits(e, r.known) {
+	if r.opt.RefinePrior == 0 || s.index != j || !r.rep.voiceBits(e, r.known) {
 		return
 	}
 	fixed := &e.out.fixed
