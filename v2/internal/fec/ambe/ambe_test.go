@@ -36,17 +36,32 @@ func TestDecodeMatchesReference(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(2))
-	for n := range 1 << 21 {
-		var slot [9]byte
+	type decodeCase struct {
+		slot   [9]byte
+		frame  [7]byte
+		random bool
+		nflips int
+		flips  [8]int
+	}
+	checkCases(t, 1<<21, func(n int) decodeCase {
+		var c decodeCase
 		if n%2 == 0 {
-			r.Read(slot[:])
-		} else {
-			var frame [7]byte
-			r.Read(frame[:])
-			frame[6] &= 0x80
-			slot = Encode(frame)
-			for range n % 9 {
-				i := r.Intn(72)
+			c.random = true
+			r.Read(c.slot[:])
+			return c
+		}
+		r.Read(c.frame[:])
+		c.frame[6] &= 0x80
+		c.nflips = n % 9
+		for k := range c.nflips {
+			c.flips[k] = r.Intn(72)
+		}
+		return c
+	}, func(c *decodeCase) string {
+		slot := c.slot
+		if !c.random {
+			slot = Encode(c.frame)
+			for _, i := range c.flips[:c.nflips] {
 				slot[i/8] ^= 0x80 >> (i % 8)
 			}
 		}
@@ -55,9 +70,10 @@ func TestDecodeMatchesReference(t *testing.T) {
 		wantInfo, wantRes := refambe.Decode(in)
 		got, res := Decode(slot)
 		if got != [7]byte(unpacked.Pack(wantInfo[:])) || res != wantRes {
-			t.Fatalf("Decode(%x) = %x %+v, want %x %+v", slot, got, res, unpacked.Pack(wantInfo[:]), wantRes)
+			return fmt.Sprintf("Decode(%x) = %x %+v, want %x %+v", slot, got, res, unpacked.Pack(wantInfo[:]), wantRes)
 		}
-	}
+		return ""
+	})
 }
 
 func BenchmarkDecode(b *testing.B) {
