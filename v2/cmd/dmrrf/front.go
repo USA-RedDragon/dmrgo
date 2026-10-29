@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 	"math/cmplx"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
 const (
@@ -100,7 +102,7 @@ func newResampler(rate, out, shiftHz float64, dc bool) *resampler {
 				v = math.Sin(2*math.Pi*fc*u) / (math.Pi * u)
 			}
 			x := u / (resampleTaps / 2)
-			v *= bessel0(beta*math.Sqrt(max(0, 1-x*x))) / bessel0(beta)
+			v *= resample.Bessel0(beta*math.Sqrt(max(0, 1-x*x))) / resample.Bessel0(beta)
 			r.coef[p*resampleTaps+j] = v
 		}
 	}
@@ -115,18 +117,6 @@ func convolve(a, b []float64) []float64 {
 		}
 	}
 	return out
-}
-
-func bessel0(x float64) float64 {
-	s, t := 1.0, 1.0
-	for k := 1; k < 50; k++ {
-		t *= (x / (2 * float64(k))) * (x / (2 * float64(k)))
-		s += t
-		if t < 1e-12*s {
-			break
-		}
-	}
-	return s
 }
 
 func (r *resampler) push(v complex128, out []complex128) []complex128 {
