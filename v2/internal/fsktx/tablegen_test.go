@@ -254,7 +254,7 @@ func renderTables() ([]byte, error) {
 		return nil, err
 	}
 	renderPreEmph(&b)
-	renderNyquist(&b)
+	renderNyquist(&b, *updateTables)
 	if err := renderMCUCorr(&b, mcuCorrPEFile, "mcuCorrPE"); err != nil {
 		return nil, err
 	}
@@ -393,7 +393,20 @@ func renderMCUCorr(b *bytes.Buffer, file, name string) error {
 	return nil
 }
 
-func renderNyquist(b *bytes.Buffer) {
+func iqBaseOf(p pulse) [][5]float64 {
+	n := 2 * p.span
+	d := 1 / float64(iqBaseL)
+	out := make([][5]float64, iqBaseL*n)
+	for ph := range iqBaseL {
+		for i := range n {
+			t := float64(i-p.span) + float64(ph)/float64(iqBaseL)
+			out[ph*n+i] = [5]float64{p.base(t - 2*d), p.base(t - d), p.base(t), p.base(t + d), p.base(t + 2*d)}
+		}
+	}
+	return out
+}
+
+func renderNyquist(b *bytes.Buffer, solve bool) {
 	fmt.Fprintf(b, "var tierShapeTab = [%d]float64{", len(tierShapeSrc))
 	for _, v := range tierShapeSrc {
 		fmt.Fprintf(b, "%v,", v)
@@ -401,14 +414,29 @@ func renderNyquist(b *bytes.Buffer) {
 	b.WriteString("}\n\n")
 	ps := tierPulses()
 	ps[1].tab = tierShapeSrc
-	fmt.Fprintf(b, "var nyquistEcho = [%d][%d]float64{\n", len(ps), 4*maxTaps+1)
-	for _, p := range ps {
-		p.solveNyquist()
+	echo := nyquistEcho
+	if solve {
+		for i := range ps {
+			ps[i].solveNyquist()
+			echo[i] = *ps[i].echo
+		}
+	}
+	fmt.Fprintf(b, "var nyquistEcho = [%d][%d]float64{\n", len(echo), 4*maxTaps+1)
+	for _, e := range echo {
 		b.WriteString("{")
-		for _, v := range p.echo {
+		for _, v := range e {
 			fmt.Fprintf(b, "%v,", v)
 		}
 		b.WriteString("},\n")
+	}
+	b.WriteString("}\n\n")
+	base := iqBaseTab[:]
+	if solve {
+		base = iqBaseOf(ps[0])
+	}
+	fmt.Fprintf(b, "var iqBaseTab = [%d][5]float64{\n", len(base))
+	for _, r := range base {
+		fmt.Fprintf(b, "{%v,%v,%v,%v,%v},\n", r[0], r[1], r[2], r[3], r[4])
 	}
 	b.WriteString("}\n\n")
 }

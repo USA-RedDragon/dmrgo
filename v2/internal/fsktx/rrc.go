@@ -121,13 +121,21 @@ func (p pulse) shape(t float64) float64 {
 
 func (p pulse) at(t, d float64) float64 {
 	if p.inv != [2]float64{} {
-		c1, c2 := p.inv[0], p.inv[1]
-		return (1-2*c1-2*c2)*p.base(t) + c1*(p.base(t-d)+p.base(t+d)) + c2*(p.base(t-2*d)+p.base(t+2*d))
+		return p.mix(&[5]float64{p.base(t - 2*d), p.base(t - d), p.base(t), p.base(t + d), p.base(t + 2*d)})
 	}
 	if p.comp == 0 {
 		return p.base(t)
 	}
 	return (1+2*p.comp)*p.base(t) - p.comp*p.base(t-d) - p.comp*p.base(t+d)
+}
+
+func (p pulse) mix(b *[5]float64) float64 {
+	c1, c2 := p.inv[0], p.inv[1]
+	return (1-2*c1-2*c2)*b[2] + c1*(b[1]+b[3]) + c2*(b[0]+b[4])
+}
+
+func (p pulse) iqBase(l, m int) bool {
+	return l == iqBaseL && m == 1 && p.inv != [2]float64{} && p.echo != nil && *p.echo == nyquistEcho[0] && p.sameDesign(tierPulses()[0])
 }
 
 func (p *pulse) invert(hz float64, chain func(f float64) float64) {
@@ -218,6 +226,8 @@ func (p pulse) base(t float64) float64 {
 	}
 	return v * w
 }
+
+const iqBaseL = iqShaperHz / SymbolRate
 
 const nyquistGrid = 64
 
@@ -367,10 +377,15 @@ func (p pulse) taps(l, m int) []float64 {
 	h := make([]float64, l*n)
 	var sum float64
 	d := float64(m) / float64(l)
+	tab := p.iqBase(l, m)
 	for ph := range l {
 		for i := range n {
-			t := float64(i-p.span) + float64(ph)/float64(l)
-			v := p.at(t, d)
+			var v float64
+			if tab {
+				v = p.mix(&iqBaseTab[ph*n+i])
+			} else {
+				v = p.at(float64(i-p.span)+float64(ph)/float64(l), d)
+			}
 			h[ph*n+i] = v
 			sum += v
 		}

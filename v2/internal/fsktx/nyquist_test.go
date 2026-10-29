@@ -2,6 +2,7 @@ package fsktx
 
 import (
 	"math"
+	"runtime"
 	"slices"
 	"testing"
 )
@@ -73,12 +74,47 @@ func TestNyquistTables(t *testing.T) {
 			cases = append(cases, q)
 		}
 	}
+	tol := 1e-12
+	if runtime.GOARCH == "amd64" {
+		tol = 0
+	}
+	near := func(a, b float64) bool { return math.Abs(a-b) <= tol*(1+math.Abs(b)) }
 	for i, p := range cases {
 		want := p
 		want.solveNyquist()
 		p.nyquist()
-		if *p.echo != *want.echo {
-			t.Errorf("case %d (span %d, tab %v, flat %v): the echoes of the design differ from a solve", i, p.span, p.tab != nil, p.flat)
+		for k := range p.echo {
+			if !near(p.echo[k], want.echo[k]) {
+				t.Errorf("case %d (span %d, tab %v, flat %v): echo %d is %v, a solve gives %v", i, p.span, p.tab != nil, p.flat, k, p.echo[k], want.echo[k])
+				break
+			}
+		}
+	}
+	p := tierPulses()[0]
+	p.nyquist()
+	p.inv = [2]float64{0.01, -0.002}
+	if !p.iqBase(iqBaseL, 1) {
+		t.Fatal("the I/Q tier pulse does not take iqBaseTab")
+	}
+	other := p
+	other.beta++
+	echo := *p.echo
+	echo[3] += 1e-9
+	moved := p
+	moved.echo = &echo
+	if other.iqBase(iqBaseL, 1) || moved.iqBase(iqBaseL, 1) || p.iqBase(iqBaseL+1, 1) {
+		t.Error("a pulse other than the I/Q tier design takes iqBaseTab")
+	}
+	n := 2 * p.span
+	d := 1 / float64(iqBaseL)
+	for ph := range iqBaseL {
+		for i := range n {
+			tm := float64(i-p.span) + float64(ph)/float64(iqBaseL)
+			for j, v := range iqBaseTab[ph*n+i] {
+				if w := p.base(tm + float64(j-2)*d); !near(v, w) {
+					t.Errorf("iqBaseTab phase %d tap %d offset %d: %v, the pulse gives %v", ph, i, j-2, v, w)
+				}
+			}
 		}
 	}
 }
