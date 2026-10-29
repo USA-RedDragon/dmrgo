@@ -4,6 +4,7 @@ package rf
 
 import (
 	"math"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -12,20 +13,24 @@ func mxRowOf(t *testing.T, name string) mxRow {
 	t.Helper()
 	var row mxRow
 	parts := strings.Split(name, ".")
-	if len(parts) != mxDims {
+	if len(parts) < mxBaseDims || len(parts) > mxDims {
 		t.Fatalf("row %s", name)
 	}
-	for d, p := range parts {
-		i := -1
-		for v, x := range mxValues[d] {
-			if x == p {
-				i = v
-			}
+	d := 0
+	for _, p := range parts {
+		i := slices.Index(mxValues[d], p)
+		for d >= mxBaseDims && i < 0 && d+1 < mxDims {
+			d++
+			i = slices.Index(mxValues[d], p)
 		}
 		if i < 0 {
 			t.Fatalf("row %s: no %s value %s", name, mxDimName(d), p)
 		}
 		row[d] = uint8(i)
+		d++
+	}
+	if row.name() != name {
+		t.Fatalf("row %s reads as %s", name, row.name())
 	}
 	return row
 }

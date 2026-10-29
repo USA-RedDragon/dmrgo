@@ -35,7 +35,9 @@ const (
 	mxLevel
 	mxFormat
 	mxCN
+	mxDC
 	mxDims
+	mxBaseDims = mxDC
 )
 
 var mxValues = [mxDims][]string{
@@ -48,6 +50,7 @@ var mxValues = [mxDims][]string{
 	{"nom", "low", "high"},
 	{"a9600", "a12000", "a24000", "a48000", "cu8-48k", "cs16-48k", "cu8-2048k", "cs16-2048k", "cs16-9600"},
 	{"inf", "40dB"},
+	{"none", "dc"},
 }
 
 const (
@@ -65,6 +68,8 @@ const (
 	mxIQRate      = 2048000
 	mxOuterHz     = 3 * 648.0
 	mxCutSeconds  = slotSeconds / 2
+	mxDCRe        = -0.7123
+	mxDCIm        = -0.7019
 )
 
 type mxRow [mxDims]uint8
@@ -72,11 +77,18 @@ type mxRow [mxDims]uint8
 func (r mxRow) val(d int) string { return mxValues[d][r[d]] }
 
 func (r mxRow) name() string {
-	s := make([]string, mxDims)
-	for d := range s {
-		s[d] = r.val(d)
+	s := make([]string, 0, mxDims)
+	for d := range mxDims {
+		if d < mxBaseDims || r[d] != 0 {
+			s = append(s, r.val(d))
+		}
 	}
 	return strings.Join(s, ".")
+}
+
+func (r mxRow) seed() uint64 {
+	r[mxDC] = 0
+	return rxSeed(r.name())
 }
 
 func mxPairOK(d1 int, v1 uint8, d2 int, v2 uint8) bool {
@@ -89,16 +101,18 @@ func mxPairOK(d1 int, v1 uint8, d2 int, v2 uint8) bool {
 		return (lead != "noise" || start != "gap" && start != "mid") && (lead == "none" || start != "mid")
 	case d1 == mxSource && d2 == mxContent:
 		return mxValues[mxSource][v1] != "bs" || mxValues[mxContent][v2] != "rc"
+	case d1 == mxFormat && d2 == mxDC:
+		return v2 == 0 || !strings.HasPrefix(mxValues[mxFormat][v1], "a")
 	}
 	return true
 }
 
 type mxPair struct{ d1, v1, d2, v2 uint8 }
 
-func mxPairs() []mxPair {
+func mxPairs(dims int) []mxPair {
 	var out []mxPair
-	for d1 := range mxDims {
-		for d2 := d1 + 1; d2 < mxDims; d2++ {
+	for d1 := range dims {
+		for d2 := d1 + 1; d2 < dims; d2++ {
 			for v1 := range mxValues[d1] {
 				for v2 := range mxValues[d2] {
 					if mxPairOK(d1, uint8(v1), d2, uint8(v2)) {
@@ -150,32 +164,31 @@ func mxRowCost(r mxRow) float64 {
 }
 
 func mxCover() []mxRow {
-	pairs := mxPairs()
-	left := make([]bool, len(pairs))
-	for i := range left {
-		left[i] = true
-	}
-	open := len(pairs)
+	return mxGreedy(mxFlip(mxGreedy(nil, mxBaseDims)), mxDims)
+}
+
+func mxGreedy(rows []mxRow, dims int) []mxRow {
+	pairs := mxPairs(dims)
+	left, open := mxLeft(pairs, rows)
 	rng := rand.New(rand.NewPCG(7, 11))
-	var rows []mxRow
 	for open > 0 {
 		seed := pairs[slices.Index(left, true)]
 		var best mxRow
 		bestGain := -1.0
 		for range 24 {
 			var row [mxDims]int
-			for d := range row {
+			for d := range dims {
 				row[d] = -1
 			}
 			row[seed.d1], row[seed.d2] = int(seed.v1), int(seed.v2)
-			for _, d := range rng.Perm(mxDims) {
+			for _, d := range rng.Perm(dims) {
 				if row[d] >= 0 {
 					continue
 				}
 				pick, pickGain := -1, -1
 				for _, v := range rng.Perm(len(mxValues[d])) {
 					ok, gain := true, 0
-					for e := range mxDims {
+					for e := range dims {
 						if row[e] < 0 {
 							continue
 						}
@@ -228,6 +241,82 @@ func mxCover() []mxRow {
 	return rows
 }
 
+func mxLeft(pairs []mxPair, rows []mxRow) ([]bool, int) {
+	left := make([]bool, len(pairs))
+	open := 0
+	for i, p := range pairs {
+		left[i] = !slices.ContainsFunc(rows, func(r mxRow) bool { return mxCovers(r, p) })
+		if left[i] {
+			open++
+		}
+	}
+	return left, open
+}
+
+func mxRowOK(r mxRow) bool {
+	for d1 := range mxDims {
+		for d2 := d1 + 1; d2 < mxDims; d2++ {
+			if !mxPairOK(d1, r[d1], d2, r[d2]) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func mxFlip(rows []mxRow) []mxRow {
+	pairs := mxPairs(mxDims)
+	n := make([]int, len(pairs))
+	for i, p := range pairs {
+		for _, r := range rows {
+			if mxCovers(r, p) {
+				n[i]++
+			}
+		}
+	}
+	for {
+		bi, bd, bv, bg := -1, 0, uint8(0), 0
+		for i, r := range rows {
+			for d := mxBaseDims; d < mxDims; d++ {
+				for v := range mxValues[d] {
+					f := r
+					f[d] = uint8(v)
+					if f == r || !mxRowOK(f) {
+						continue
+					}
+					g, ok := 0, true
+					for k, p := range pairs {
+						was, now := mxCovers(r, p), mxCovers(f, p)
+						switch {
+						case now && !was && n[k] == 0:
+							g++
+						case was && !now && n[k] == 1:
+							ok = false
+						}
+					}
+					if ok && g > bg {
+						bi, bd, bv, bg = i, d, uint8(v), g
+					}
+				}
+			}
+		}
+		if bi < 0 {
+			return rows
+		}
+		f := rows[bi]
+		f[bd] = bv
+		for k, p := range pairs {
+			if mxCovers(rows[bi], p) {
+				n[k]--
+			}
+			if mxCovers(f, p) {
+				n[k]++
+			}
+		}
+		rows[bi] = f
+	}
+}
+
 type mxRx struct {
 	format string
 	tier   Tier
@@ -271,28 +360,30 @@ func mxPlan() []mxCase {
 		}
 	}
 	t3 := make([]bool, len(rows))
-	for {
-		best, gain := -1, 0
-		for i, r := range rows {
-			if t3[i] || !mxCostly(r) {
-				continue
-			}
-			g := 0
-			for d := range mxDims {
-				if need[d][r[d]] {
-					g++
+	for _, dims := range []int{mxBaseDims, mxDims} {
+		for {
+			best, gain := -1, 0
+			for i, r := range rows {
+				if t3[i] || !mxCostly(r) {
+					continue
+				}
+				g := 0
+				for d := range dims {
+					if need[d][r[d]] {
+						g++
+					}
+				}
+				if g > gain {
+					best, gain = i, g
 				}
 			}
-			if g > gain {
-				best, gain = i, g
+			if best < 0 {
+				break
 			}
-		}
-		if best < 0 {
-			break
-		}
-		t3[best] = true
-		for d := range mxDims {
-			need[d][rows[best][d]] = false
+			t3[best] = true
+			for d := range mxDims {
+				need[d][rows[best][d]] = false
+			}
 		}
 	}
 	out := make([]mxCase, 0, len(base)+len(rows))
@@ -344,7 +435,7 @@ type mxParams struct {
 }
 
 func mxParamsOf(row mxRow) mxParams {
-	h := rxSeed(row.name())
+	h := row.seed()
 	return mxParams{
 		slot:      int(h & 1),
 		lead2:     int(h>>1) % 3,
@@ -391,7 +482,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 	p := mxParamsOf(row)
 	ppm := map[string]float64{"0ppm": 0, "+500ppm": 500, "-500ppm": -500}[row.val(mxClock)]
 	off, _ := strconv.ParseFloat(row.val(mxOffset), 64)
-	s := &mxSignal{r: 1 + ppm*1e-6, seed: rxSeed(row.name())}
+	s := &mxSignal{r: 1 + ppm*1e-6, seed: row.seed()}
 	if row.val(mxCN) == "40dB" {
 		s.sigma = math.Sqrt(1/(math.Pow(10, 4)*12500)) / math.Sqrt2
 	}
@@ -620,19 +711,25 @@ func mxInputOf(s *mxSignal, row mxRow) mxInput {
 	if u8 {
 		in.iqFmt = IQFormatCU8
 	}
+	var dcRe, dcIm float64
+	if row.val(mxDC) != "none" {
+		lo := mxIQLevel(format, "low")
+		dcRe, dcIm = mxDCRe*lo, mxDCIm*lo
+	}
+	put := func(re, im float64) { in.iq = appendIQ(in.iq, u8, a*re+dcRe, a*im+dcIm) }
 	switch {
 	case strings.HasSuffix(format, "-9600"):
 		in.rate = iq0LowHz
 		for _, v := range lowIQ(s.baseband(), iq0LowHz) {
-			in.iq = appendIQ(in.iq, u8, a*float64(real(v)), a*float64(imag(v)))
+			put(float64(real(v)), float64(imag(v)))
 		}
 	case strings.HasSuffix(format, "-48k"):
 		in.rate = basebandRate
-		s.synth(basebandRate, func(re, im float64) { in.iq = appendIQ(in.iq, u8, a*re, a*im) })
+		s.synth(basebandRate, put)
 	default:
 		in.rate = mxIQRate
 		in.iq = make([]byte, 0, int(s.end*mxIQRate)*in.iqFmt.bytes())
-		s.synth(mxIQRate, func(re, im float64) { in.iq = appendIQ(in.iq, u8, a*re, a*im) })
+		s.synth(mxIQRate, put)
 	}
 	return in
 }
@@ -864,6 +961,17 @@ func mxRun(row mxRow, rxs []mxRx) (map[mxRx]*mxResult, error) {
 	return out, nil
 }
 
+// TestRxMatrix runs every receiver on a pairwise cover of the scenario
+// dimensions in mxValues and scores each run against the transmitted truth.
+//
+// The dc dimension adds a constant I/Q offset to the I/Q formats, as an
+// RTL-SDR does. On the XPR 8400 capture in cmd/dmrrf/testdata the offset is
+// about 0.18 LSB at every tuner gain and, on that weak carrier, as strong as
+// the carrier; the 0 Hz bin of a 62.5 Hz FFT is then about 19 dB above its
+// neighbors. The matrix keeps the offset fixed in ADC units, at the carrier
+// amplitude of the low level and at the angle of the capture, so the low
+// level sees the same offset-to-carrier ratio and the louder levels see it
+// 25 dB or more down.
 func TestRxMatrix(t *testing.T) {
 	t.Parallel()
 	if testmode.Race {
@@ -879,7 +987,7 @@ func TestRxMatrix(t *testing.T) {
 		names[c.row.name()] = true
 		rows = append(rows, c.row)
 	}
-	for _, p := range mxPairs() {
+	for _, p := range mxPairs(mxDims) {
 		if !slices.ContainsFunc(rows, func(r mxRow) bool { return mxCovers(r, p) }) {
 			t.Fatalf("pair %s=%s %s=%s not covered", mxDimName(int(p.d1)), mxValues[p.d1][p.v1], mxDimName(int(p.d2)), mxValues[p.d2][p.v2])
 		}
@@ -944,5 +1052,5 @@ func TestRxMatrix(t *testing.T) {
 }
 
 func mxDimName(d int) string {
-	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn"}[d]
+	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn", "dc"}[d]
 }
