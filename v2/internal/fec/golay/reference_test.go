@@ -1,6 +1,7 @@
 package golay
 
 import (
+	"fmt"
 	"math/bits"
 	"math/rand"
 	"testing"
@@ -25,15 +26,16 @@ func TestGolay23127And24128EncodeMatchReferenceOnEveryWord(t *testing.T) {
 func TestGolay23127DecodeMatchesReferenceOnEveryWord(t *testing.T) {
 	t.Parallel()
 
-	for w := range uint32(1 << 23) {
+	everyWord(t, 1<<23, func(w uint32) string {
 		data, res := Decode23127(w)
 		if wantData, wantRes := ref.Decode23127(w); data != wantData || res != wantRes {
-			t.Fatalf("Decode23127(%#x) = %#x %+v, want %#x %+v", w, data, res, wantData, wantRes)
+			return fmt.Sprintf("Decode23127(%#x) = %#x %+v, want %#x %+v", w, data, res, wantData, wantRes)
 		}
 		if res.Uncorrectable || bits.OnesCount32(Encode23127(data)^w) != res.ErrorsCorrected || res.ErrorsCorrected > 3 {
-			t.Fatalf("Decode23127(%#x) = %#x %+v: not the codeword within 3 bits", w, data, res)
+			return fmt.Sprintf("Decode23127(%#x) = %#x %+v: not the codeword within 3 bits", w, data, res)
 		}
-	}
+		return ""
+	})
 	for _, w := range []uint32{1 << 23, 1<<31 | 0x2A5A5A, 0xFFFFFFFF} {
 		data, res := Decode23127(w)
 		if wantData, wantRes := ref.Decode23127(w); data != wantData || res != wantRes {
