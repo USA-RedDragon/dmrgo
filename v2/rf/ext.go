@@ -743,7 +743,11 @@ func (x *softExt) firstSlot(c *leanCore) {
 	n := 0
 	for n < x.lookback {
 		oldest := c.first - int64(n+1)*slotSymbols - 1
-		if oldest < 0 || float32(last-oldest)*sps > room {
+		start := oldest + 1
+		if !c.bs {
+			start += cachSymbols
+		}
+		if start < 0 || float32(last-oldest)*sps > room {
 			break
 		}
 		n++
@@ -779,7 +783,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 				base := c.first + int64(j)*slotSymbols
 				for k := base - 1; k <= base+slotSymbols; k++ {
 					v := c.keptAt(at - float32(last-k)*sps)
-					c.ring[k%leanRing] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
+					c.ring[ringPos(k)] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
 				}
 			}
 			c.eAcc, c.eSyms = 0, 0
