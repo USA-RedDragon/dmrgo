@@ -605,30 +605,33 @@ func TestRxRobust(t *testing.T) {
 							if (e.mode == benchAudio) != audio {
 								continue
 							}
-							got := rxReceive(t, in, e)
-							sc := rxMatch(rxEligible(in), got)
-							base := baseline(t, baseKey{sn, cn, e, c.bytes})
-							r := rxResult{stream: sn, cond: c.name, recv: e.name(), cn: cn, base: base,
-								ratio: float64(sc.exact) / float64(sc.total), found: sc.found, bound: sc.bound}
-							r.pass = r.ratio >= rxFloor*base && (c.name != conds[0].name || r.ratio >= rxCleanFloor)
-							for i := range sc.found {
-								if sc.found[i] > sc.bound[i] {
-									r.pass = false
+							t.Run(e.name(), func(t *testing.T) {
+								t.Parallel()
+								got := rxReceive(t, in, e)
+								sc := rxMatch(rxEligible(in), got)
+								base := baseline(t, baseKey{sn, cn, e, c.bytes})
+								r := rxResult{stream: sn, cond: c.name, recv: e.name(), cn: cn, base: base,
+									ratio: float64(sc.exact) / float64(sc.total), found: sc.found, bound: sc.bound}
+								r.pass = r.ratio >= rxFloor*base && (c.name != conds[0].name || r.ratio >= rxCleanFloor)
+								for i := range sc.found {
+									if sc.found[i] > sc.bound[i] {
+										r.pass = false
+									}
 								}
-							}
-							msg := fmt.Sprintf("%s: %d of %d payloads (%.3f, clean %.3f), found %v, bound %v", e.name(), sc.exact, sc.total, r.ratio, base, rxSecs(sc.found), rxSecs(sc.bound))
-							switch why, known := rxKnown[name+"/"+e.name()]; {
-							case known && r.pass:
-								t.Logf("known failure passes, remove it from rxKnown: %s", msg)
-							case known:
-								r.known = true
-								t.Logf("known failure, %s: %s", why, msg)
-							case !r.pass:
-								t.Error(msg)
-							}
-							mu.Lock()
-							res = append(res, r)
-							mu.Unlock()
+								msg := fmt.Sprintf("%s: %d of %d payloads (%.3f, clean %.3f), found %v, bound %v", e.name(), sc.exact, sc.total, r.ratio, base, rxSecs(sc.found), rxSecs(sc.bound))
+								switch why, known := rxKnown[name+"/"+e.name()]; {
+								case known && r.pass:
+									t.Logf("known failure passes, remove it from rxKnown: %s", msg)
+								case known:
+									r.known = true
+									t.Logf("known failure, %s: %s", why, msg)
+								case !r.pass:
+									t.Error(msg)
+								}
+								mu.Lock()
+								res = append(res, r)
+								mu.Unlock()
+							})
 						}
 					})
 				}
