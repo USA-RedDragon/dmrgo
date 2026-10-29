@@ -36,6 +36,7 @@ const (
 	mxFormat
 	mxCN
 	mxDC
+	mxGain
 	mxDims
 	mxBaseDims = mxDC
 )
@@ -51,6 +52,7 @@ var mxValues = [mxDims][]string{
 	{"a9600", "a12000", "a24000", "a48000", "cu8-48k", "cs16-48k", "cu8-2048k", "cs16-2048k", "cs16-9600"},
 	{"inf", "40dB"},
 	{"none", "dc"},
+	{"none", "step10dB"},
 }
 
 const (
@@ -70,6 +72,7 @@ const (
 	mxCutSeconds  = slotSeconds / 2
 	mxDCRe        = -0.7123
 	mxDCIm        = -0.7019
+	mxStepDB      = 10.0
 )
 
 type mxRow [mxDims]uint8
@@ -87,7 +90,7 @@ func (r mxRow) name() string {
 }
 
 func (r mxRow) seed() uint64 {
-	r[mxDC] = 0
+	r[mxDC], r[mxGain] = 0, 0
 	return rxSeed(r.name())
 }
 
@@ -422,6 +425,15 @@ type mxSignal struct {
 	seed  uint64
 	truth []mxTruth
 	what  string
+	step  float64
+	gain  [2]float64
+}
+
+func (s *mxSignal) gainAt(t float64) float64 {
+	if t < s.step {
+		return s.gain[0]
+	}
+	return s.gain[1]
 }
 
 type mxParams struct {
@@ -432,6 +444,8 @@ type mxParams struct {
 	weakFirst bool
 	dHz       float64
 	agc       int
+	stepUp    bool
+	stepIn    bool
 }
 
 func mxParamsOf(row mxRow) mxParams {
@@ -444,6 +458,8 @@ func mxParamsOf(row mxRow) mxParams {
 		weakFirst: (h>>10)&1 == 1,
 		dHz:       []float64{150, -200, 250}[(h>>11)%3],
 		agc:       int(h>>13) % mxAGCSteps,
+		stepUp:    (h>>16)&1 == 1,
+		stepIn:    (h>>17)&1 == 1,
 	}
 }
 
@@ -482,7 +498,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 	p := mxParamsOf(row)
 	ppm := map[string]float64{"0ppm": 0, "+500ppm": 500, "-500ppm": -500}[row.val(mxClock)]
 	off, _ := strconv.ParseFloat(row.val(mxOffset), 64)
-	s := &mxSignal{r: 1 + ppm*1e-6, seed: row.seed()}
+	s := &mxSignal{r: 1 + ppm*1e-6, seed: row.seed(), step: math.Inf(1), gain: [2]float64{1, 1}}
 	if row.val(mxCN) == "40dB" {
 		s.sigma = math.Sqrt(1/(math.Pow(10, 4)*12500)) / math.Sqrt2
 	}
@@ -569,7 +585,35 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 		}
 	}
 	slices.SortFunc(s.truth, func(a, b mxTruth) int { return cmp.Compare(a.at, b.at) })
+	if row.val(mxGain) != "none" && len(s.truth) > 0 {
+		mxStep(s, p, burst)
+	}
 	return s, nil
+}
+
+func mxStep(s *mxSignal, p mxParams, burst float64) {
+	j := len(s.truth) / 2
+	quiet := math.Pow(10, -mxStepDB/20)
+	s.gain = [2]float64{1, quiet}
+	if p.stepUp {
+		s.gain = [2]float64{quiet, 1}
+	}
+	where := "in burst"
+	switch {
+	case p.stepIn:
+		s.step = s.truth[j].at + burst/4
+	case j > 0:
+		s.step = (s.truth[j-1].at + burst + s.truth[j].at) / 2
+		where = "before burst"
+	default:
+		s.step = s.truth[0].at - 0.001
+		where = "before burst"
+	}
+	what := fmt.Sprintf("gain %+.0f dB at %.4f s %s #%d", 20*math.Log10(s.gain[1]/s.gain[0]), s.step, where, j)
+	if s.what != "" {
+		what = s.what + ", " + what
+	}
+	s.what = what
 }
 
 func (s *mxSignal) synth(rate float64, emit func(re, im float64)) {
@@ -701,8 +745,10 @@ func mxInputOf(s *mxSignal, row mxRow) mxInput {
 		in.audio = discAudio(s.baseband(), in.hz)
 		for i, v := range in.audio {
 			hzv := (float64(v) - audioOffset) / audioGain
-			in.audio[i] = int16(max(math.MinInt16, min(math.MaxInt16, math.Round(hzv*in.gain+mxAudioDC))))
+			g := in.gain * s.gainAt(float64(i)/float64(in.hz)+in.delay)
+			in.audio[i] = int16(max(math.MinInt16, min(math.MaxInt16, math.Round(hzv*g+mxAudioDC))))
 		}
+		in.gain *= s.gain[1]
 		return in
 	}
 	a := mxIQLevel(format, level)
@@ -716,7 +762,12 @@ func mxInputOf(s *mxSignal, row mxRow) mxInput {
 		lo := mxIQLevel(format, "low")
 		dcRe, dcIm = mxDCRe*lo, mxDCIm*lo
 	}
-	put := func(re, im float64) { in.iq = appendIQ(in.iq, u8, a*re+dcRe, a*im+dcIm) }
+	k := 0
+	put := func(re, im float64) {
+		g := a * s.gainAt(float64(k)/float64(in.rate))
+		k++
+		in.iq = appendIQ(in.iq, u8, g*re+dcRe, g*im+dcIm)
+	}
 	switch {
 	case strings.HasSuffix(format, "-9600"):
 		in.rate = iq0LowHz
@@ -972,6 +1023,13 @@ func mxRun(row mxRow, rxs []mxRx) (map[mxRx]*mxResult, error) {
 // amplitude of the low level and at the angle of the capture, so the low
 // level sees the same offset-to-carrier ratio and the louder levels see it
 // 25 dB or more down.
+//
+// The gain dimension steps the input level by 10 dB, the step between the
+// tuner gains of the RTL-SDR gain sweep that the capture comes from. A step
+// like this happens when a user changes the gain of a streaming RTL-SDR (an
+// rtl_tcp client gain control) or when the R820T tuner in automatic gain mode
+// switches its LNA and mixer gain. The level of the row is the louder side of
+// the step; the step goes up or down, and lands in a burst or between two.
 func TestRxMatrix(t *testing.T) {
 	t.Parallel()
 	if testmode.Race {
@@ -1052,5 +1110,5 @@ func TestRxMatrix(t *testing.T) {
 }
 
 func mxDimName(d int) string {
-	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn", "dc"}[d]
+	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn", "dc", "gain"}[d]
 }
