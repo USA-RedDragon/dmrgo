@@ -298,18 +298,19 @@ func (p *audioPlan) peak(level int) int {
 }
 
 func (c *AudioTxConfig) fitHost(avail int) (int, error) {
-	if _, err := audioPeak(c.Tier, c.Rate, 1); err != nil {
+	ps, err := newAudioPeaks(c.Tier, c.Rate)
+	if err != nil {
 		return 0, audioErrs.rate
 	}
 	if c.Level != 0 {
-		if !c.hostFits(c.Level, avail) {
+		if !hostFits(ps, c.Level, avail) {
 			return 0, audioErrs.level
 		}
 		return c.Level, nil
 	}
 	lo, hi := 0, maxTxLevel+1
 	for hi-lo > 1 {
-		if m := (lo + hi) / 2; c.hostFits(m, avail) {
+		if m := (lo + hi) / 2; hostFits(ps, m, avail) {
 			lo = m
 		} else {
 			hi = m
@@ -321,8 +322,8 @@ func (c *AudioTxConfig) fitHost(avail int) (int, error) {
 	return lo, nil
 }
 
-func (c *AudioTxConfig) hostFits(level, avail int) bool {
-	pk, err := audioPeak(c.Tier, c.Rate, level)
+func hostFits(ps audioPeaks, level, avail int) bool {
+	pk, err := ps.peak(level)
 	return err == nil && pk <= avail
 }
 

@@ -374,6 +374,7 @@ var api = [...]any{
 	(*internal_fsktx.Audio).AppendSymbol,
 	(*internal_fsktx.Audio).MaxSamples,
 	(*internal_fsktx.Audio).Peak,
+	(*internal_fsktx.Audio).PeakAt,
 	(*internal_fsktx.Audio).Symbol,
 	(*internal_fsktx.IQ).AppendS16,
 	(*internal_fsktx.IQ).AppendS8,

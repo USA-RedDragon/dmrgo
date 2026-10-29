@@ -20,7 +20,11 @@ func (*txHost) iqS16(int8) []int16 { return nil }
 
 func (*txHost) audio(int8) []int16 { return nil }
 
-func audioPeak(Tier, int, int) (int, error) { return 0, errTxHost }
+type audioPeaks struct{}
+
+func newAudioPeaks(Tier, int) (audioPeaks, error) { return audioPeaks{}, errTxHost }
+
+func (audioPeaks) peak(int) (int, error) { return 0, errTxHost }
 
 func measuredLevel(_ Tier, _, bits int) int {
 	return fsktx.Setup{Tier: fsktx.Tier0, Bits: bits}.Tier0Level()

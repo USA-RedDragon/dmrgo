@@ -44,12 +44,19 @@ func (h *txHost) iqS16(s int8) []int16 { return h.iq.Symbol(s) }
 
 func (h *txHost) audio(s int8) []int16 { return h.s16[:h.au.Symbol(h.s16, s)] }
 
-func audioPeak(t Tier, rate, level int) (int, error) {
-	a, err := fsktx.NewAudio(fsktx.AudioConfig{Hz: rate, Level: level, Tier: fsktx.Tier(t)})
+type audioPeaks struct{ a *fsktx.Audio }
+
+func newAudioPeaks(t Tier, rate int) (audioPeaks, error) {
+	a, err := fsktx.NewAudio(fsktx.AudioConfig{Hz: rate, Level: 1, Tier: fsktx.Tier(t)})
+	return audioPeaks{a}, err
+}
+
+func (p audioPeaks) peak(level int) (int, error) {
+	pk, err := p.a.PeakAt(level)
 	if err != nil {
 		return 0, err
 	}
-	return int(math.Ceil(a.Peak())), nil
+	return int(math.Ceil(pk)), nil
 }
 
 func measuredLevel(t Tier, rate, bits int) int {
@@ -59,8 +66,9 @@ func measuredLevel(t Tier, rate, bits int) int {
 		return level
 	}
 	half := 1<<(depth-1) - 1
+	ps, _ := newAudioPeaks(t, rate)
 	peak := func(l int) int {
-		pk, err := audioPeak(t, rate, l)
+		pk, err := ps.peak(l)
 		if err != nil {
 			return half + 1
 		}

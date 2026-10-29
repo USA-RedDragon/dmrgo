@@ -392,6 +392,7 @@ type Audio struct {
 	dr     droop
 	peak   float64
 	slack  float64
+	lv     levelDesign
 }
 
 func (a *Audio) bounds() (lo, hi float64) {
@@ -501,20 +502,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			a.peak *= 1 + math.Abs(cfg.Boost)
 		}
 		a.buf = make([]float64, k.l/k.m+1)
-		a.shape = min(max(cfg.Shape, 0), 4)
-		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
-		if cfg.Level < cfg.ShapeMinLevel {
-			a.shape = min(max(cfg.ShapeLow, 0), 4)
-			a.fb = ntf(a.shape, cfg.NoiseLowZerosHz, float64(cfg.Hz))
-			if r := cfg.NoiseLowPoleR; r > 0 && r < 1 {
-				a.poles = true
-				g := r
-				for i := range a.fbp {
-					a.fbp[i] = a.fb[i] * g
-					g *= r
-				}
-			}
-		}
+		a.shape, a.fb, a.fbp, a.poles = cfg.noiseShape(cfg.Level)
 		a.sync = max(cfg.ShapeSync, 0)
 		if cfg.Corr > 0 {
 			var t []int16
@@ -559,15 +547,9 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
 		}
-		if a.shape > 0 {
-			a.slack = 0.5
-			for _, f := range a.fb[:2*a.shape] {
-				a.slack += 0.5 * math.Abs(f)
-			}
-			for _, f := range a.fbp[:2*a.shape] {
-				a.slack += 0.5 * math.Abs(f)
-			}
-		}
+		a.slack = shapeSlack(a.shape, &a.fb, &a.fbp)
+		a.lv = levelDesign{shape: cfg.Shape, low: cfg.ShapeLow, minLevel: cfg.ShapeMinLevel, zeros: cfg.NoiseZerosHz,
+			lowZeros: cfg.NoiseLowZerosHz, lowPoleR: cfg.NoiseLowPoleR, hz: cfg.Hz, carrierHz: cfg.CarrierHz, carrierMin: cfg.CarrierMinLevel}
 		if lo, hi := a.bounds(); hi > math.MaxInt16 || lo < math.MinInt16 {
 			return nil, errOffset
 		}
