@@ -7,8 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
 const (
@@ -18,24 +16,18 @@ const (
 
 func sincResampleIQ(x []complex64, to int) []complex64 {
 	const half = 32
-	fc := 0.45 * float64(min(basebandRate, to)) / basebandRate
+	k := newSincKernel(basebandRate, to, half, 0.45*float64(min(basebandRate, to))/basebandRate)
 	out := make([]complex64, int(int64(len(x))*int64(to)/basebandRate))
-	for k := range out {
-		t := float64(k) * basebandRate / float64(to)
-		c := int(math.Floor(t))
+	for n := range out {
+		c, taps := k.at(n)
 		var re, im float64
-		for j := max(c-half+1, 0); j <= c+half && j < len(x); j++ {
-			u := t - float64(j)
-			v := 2 * fc
-			if u != 0 {
-				v = math.Sin(2*math.Pi*fc*u) / (math.Pi * u)
+		for i, v := range taps {
+			if j := c - half + 1 + i; j >= 0 && j < len(x) {
+				re += float64(real(x[j])) * v
+				im += float64(imag(x[j])) * v
 			}
-			r := u / half
-			v *= resample.Bessel0(10*math.Sqrt(max(0, 1-r*r))) / resample.Bessel0(10)
-			re += float64(real(x[j])) * v
-			im += float64(imag(x[j])) * v
 		}
-		out[k] = complex(float32(re), float32(im))
+		out[n] = complex(float32(re), float32(im))
 	}
 	return out
 }

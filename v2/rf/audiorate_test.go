@@ -9,29 +9,70 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
+type sincKernel struct {
+	from, to, half int
+	fc, norm       float64
+	g, phases      int64
+	tab            []float64
+	have           []bool
+	buf            []float64
+}
+
+func newSincKernel(from, to, half int, fc float64) *sincKernel {
+	g := int64(from)
+	for b := int64(to); b != 0; {
+		g, b = b, g%b
+	}
+	k := &sincKernel{from: from, to: to, half: half, fc: fc, norm: resample.Bessel0(10), g: g, phases: int64(to) / g,
+		buf: make([]float64, 2*half)}
+	if k.phases*int64(2*half) <= 1<<20 {
+		k.tab, k.have = make([]float64, k.phases*int64(2*half)), make([]bool, k.phases)
+	}
+	return k
+}
+
+func (k *sincKernel) fill(taps []float64, frac float64) {
+	for i := range taps {
+		u := frac + float64(k.half-1-i)
+		v := 2 * k.fc
+		if u != 0 {
+			v = math.Sin(2*math.Pi*k.fc*u) / (math.Pi * u)
+		}
+		r := u / float64(k.half)
+		taps[i] = v * resample.Bessel0(10*math.Sqrt(max(0, 1-r*r))) / k.norm
+	}
+}
+
+func (k *sincKernel) at(n int) (int, []float64) {
+	num := int64(n) * int64(k.from)
+	c, p := num/int64(k.to), num%int64(k.to)
+	frac := float64(p) / float64(k.to)
+	if k.tab == nil {
+		k.fill(k.buf, frac)
+		return int(c), k.buf
+	}
+	q := p / k.g
+	taps := k.tab[q*int64(2*k.half) : (q+1)*int64(2*k.half)]
+	if !k.have[q] {
+		k.fill(taps, frac)
+		k.have[q] = true
+	}
+	return int(c), taps
+}
+
 func sincResample(a []int16, from, to int) []int16 {
 	const half = 64
-	fc := 0.45 * float64(min(from, to)) / float64(from)
-	n := int(int64(len(a)) * int64(to) / int64(from))
-	out := make([]int16, n)
-	for k := range out {
-		t := float64(k) * float64(from) / float64(to)
-		c := int(math.Floor(t))
+	k := newSincKernel(from, to, half, 0.45*float64(min(from, to))/float64(from))
+	out := make([]int16, int(int64(len(a))*int64(to)/int64(from)))
+	for n := range out {
+		c, taps := k.at(n)
 		var s float64
-		for j := c - half + 1; j <= c+half; j++ {
-			if j < 0 || j >= len(a) {
-				continue
+		for i, v := range taps {
+			if j := c - half + 1 + i; j >= 0 && j < len(a) {
+				s += float64(a[j]) * v
 			}
-			u := t - float64(j)
-			v := 2 * fc
-			if u != 0 {
-				v = math.Sin(2*math.Pi*fc*u) / (math.Pi * u)
-			}
-			r := u / half
-			v *= resample.Bessel0(10*math.Sqrt(max(0, 1-r*r))) / resample.Bessel0(10)
-			s += float64(a[j]) * v
 		}
-		out[k] = int16(max(min(math.Round(s), 32767), -32768))
+		out[n] = int16(max(min(math.Round(s), 32767), -32768))
 	}
 	return out
 }
