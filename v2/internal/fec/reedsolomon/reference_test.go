@@ -1,6 +1,7 @@
 package reedsolomon
 
 import (
+	"fmt"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -47,30 +48,53 @@ func TestDecodeMatchesReferenceRandom(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	for n := range testmode.N(1_000_000, 1_000_000, 20_000) {
-		var data [9]byte
-		r.Read(data[:])
-		cw := Encode(data)
-		if cw != ref.Encode(data) {
-			t.Fatalf("Encode(%x) = %x, want %x", data, cw, ref.Encode(data))
-		}
+	type rsCase struct {
+		data   [9]byte
+		random bool
+		noise  [12]byte
+		nops   int
+		pos    [8]int
+		xor    [8]byte
+	}
+	checkCases(t, testmode.N(1_000_000, 1_000_000, 20_000), func(n int) rsCase {
+		var c rsCase
+		r.Read(c.data[:])
 		switch n % 4 {
 		case 0:
 		case 1:
-			cw[r.Intn(12)] ^= byte(1 + r.Intn(255))
+			c.nops = 1
+			c.pos[0] = r.Intn(12)
+			c.xor[0] = byte(1 + r.Intn(255))
 		case 2:
-			for range 1 + r.Intn(8) {
-				cw[r.Intn(12)] ^= 1 << r.Intn(8)
+			c.nops = 1 + r.Intn(8)
+			for k := range c.nops {
+				c.pos[k] = r.Intn(12)
+				c.xor[k] = 1 << r.Intn(8)
 			}
 		default:
-			r.Read(cw[:])
+			c.random = true
+			r.Read(c.noise[:])
+		}
+		return c
+	}, func(c *rsCase) string {
+		data := c.data
+		cw := Encode(data)
+		if cw != ref.Encode(data) {
+			return fmt.Sprintf("Encode(%x) = %x, want %x", data, cw, ref.Encode(data))
+		}
+		for k := range c.nops {
+			cw[c.pos[k]] ^= c.xor[k]
+		}
+		if c.random {
+			cw = c.noise
 		}
 		gd, gr := Decode(cw)
 		wd, wr := ref.Decode(cw)
 		if gd != wd || gr != wr {
-			t.Fatalf("Decode(%x) = %x %+v, want %x %+v", cw, gd, gr, wd, wr)
+			return fmt.Sprintf("Decode(%x) = %x %+v, want %x %+v", cw, gd, gr, wd, wr)
 		}
-	}
+		return ""
+	})
 }
 
 func BenchmarkCodec(b *testing.B) {
