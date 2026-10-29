@@ -423,13 +423,6 @@ func send(dst []Output, p []byte, to Addr) []Output {
 	return append(dst, Output{Kind: OutputSend, Packet: p, Addr: to})
 }
 
-func orDefault(d, def time.Duration) time.Duration {
-	if d == 0 {
-		return def
-	}
-	return d
-}
-
 func after(t, d time.Duration) time.Duration {
 	if d > 0 && t > math.MaxInt64-d {
 		return math.MaxInt64

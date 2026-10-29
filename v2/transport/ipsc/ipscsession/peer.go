@@ -1,6 +1,7 @@
 package ipscsession
 
 import (
+	"cmp"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -101,7 +102,7 @@ func NewPeer(cfg *PeerConfig) (*Peer, error) {
 	return &Peer{
 		l:         newLink(cfg.ID, cfg.Mode, flags, cfg.RegisterVersion, cfg.AliveVersion, cfg.Auth, cfg.Key, n),
 		master:    cfg.Master,
-		alive:     orDefault(cfg.Alive, AliveDefault),
+		alive:     cmp.Or(cfg.Alive, AliveDefault),
 		maxMissed: missed,
 		maxPeers:  n,
 		state:     StateRegistering,

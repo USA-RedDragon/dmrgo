@@ -1,6 +1,7 @@
 package ipscsession
 
 import (
+	"cmp"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -86,7 +87,7 @@ func NewMaster(cfg *MasterConfig) (*Master, error) {
 	flags.Set(ipsc.FlagMasterPeer, true)
 	return &Master{
 		l:          newLink(cfg.ID, cfg.Mode, flags, cfg.RegisterVersion, cfg.AliveVersion, cfg.Auth, cfg.Key, n),
-		timeout:    orDefault(cfg.Timeout, TimeoutDefault),
+		timeout:    cmp.Or(cfg.Timeout, TimeoutDefault),
 		maxPeers:   n,
 		adoptKnown: cfg.AdoptKnown,
 		tx:         make([]byte, 0, MaxPacket),

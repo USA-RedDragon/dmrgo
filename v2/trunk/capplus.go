@@ -1,6 +1,7 @@
 package trunk
 
 import (
+	"cmp"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -115,9 +116,9 @@ func NewCapacityPlusFollower(cfg *CapacityPlusConfig) (*CapacityPlusFollower, er
 	f := &CapacityPlusFollower{
 		talk: cfg.Talkgroups, talkLen: cfg.TalkgroupsLen,
 		indiv: cfg.Individual, noFollow: cfg.NoFollow,
-		noSignal: orDefault(cfg.NoSignal, CapacityPlusNoSignalDefault),
-		inactive: orDefault(cfg.Inactive, constants.TVInactiveDefault),
-		hangtime: orDefault(cfg.Hangtime, constants.TVHangtimeDefault),
+		noSignal: cmp.Or(cfg.NoSignal, CapacityPlusNoSignalDefault),
+		inactive: cmp.Or(cfg.Inactive, constants.TVInactiveDefault),
+		hangtime: cmp.Or(cfg.Hangtime, constants.TVHangtimeDefault),
 		b:        cfg.Scratch,
 	}
 	if cfg.Plan != nil {

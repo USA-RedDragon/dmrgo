@@ -1,6 +1,7 @@
 package bs
 
 import (
+	"cmp"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -253,11 +254,11 @@ func New(cfg *Config) (*Repeater, error) {
 	}
 	cfg = &conf
 	r := &Repeater{mode: cfg.Mode, cc: cfg.ColorCode, activation: cfg.Activation, cach: cfg.CACH && cfg.Mode == ModeRF,
-		callHang: orDefault(cfg.CallHang, constants.TCallHang), dataHang: orDefault(cfg.DataHang, constants.TDataHangtime),
-		inactivity: orDefault(cfg.Inactivity, DefaultInactivity), lost: orDefault(cfg.Lost, voice.DefaultLost),
-		pendingMax: cfg.Pending, pendingAge: orDefault(cfg.PendingAge, DefaultPendingAge), lead: cfg.Lead, b: cfg.Scratch,
-		authRsp: cfg.ChanAuthResponse, authSel: orDefault(cfg.ChanAuthSelect, constants.TBSChanAuthSel),
-		jitDelay: orDefault(cfg.Jitter, voice.DefaultJitter)}
+		callHang: cmp.Or(cfg.CallHang, constants.TCallHang), dataHang: cmp.Or(cfg.DataHang, constants.TDataHangtime),
+		inactivity: cmp.Or(cfg.Inactivity, DefaultInactivity), lost: cmp.Or(cfg.Lost, voice.DefaultLost),
+		pendingMax: cfg.Pending, pendingAge: cmp.Or(cfg.PendingAge, DefaultPendingAge), lead: cfg.Lead, b: cfg.Scratch,
+		authRsp: cfg.ChanAuthResponse, authSel: cmp.Or(cfg.ChanAuthSelect, constants.TBSChanAuthSel),
+		jitDelay: cmp.Or(cfg.Jitter, voice.DefaultJitter)}
 	if cfg.Mode == ModeRF {
 		r.chanAuth = cfg.ChannelAuth
 	}
@@ -322,13 +323,6 @@ func New(cfg *Config) (*Repeater, error) {
 	r.idle, _ = layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, r.cc, layer2.SyncSourceBS)
 	r.Reset()
 	return r, nil
-}
-
-func orDefault(d, def time.Duration) time.Duration {
-	if d == 0 {
-		return def
-	}
-	return d
 }
 
 // Reset ends every call without outputs, empties the queues and puts the

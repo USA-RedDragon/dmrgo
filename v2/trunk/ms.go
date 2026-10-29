@@ -1,6 +1,7 @@
 package trunk
 
 import (
+	"cmp"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -267,10 +268,10 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 	if m.slot == enums.SlotUnknown {
 		m.slot = enums.Slot1
 	}
-	m.randTO = orDefault(m.randTO, constants.TRandTCDefault)
-	m.callTO = orDefault(m.callTO, constants.TPTimerDefault)
-	m.regTO = orDefault(m.regTO, constants.TNPTimerDefault)
-	m.deniedTO = orDefault(m.deniedTO, constants.TDenRegDefault)
+	m.randTO = cmp.Or(m.randTO, constants.TRandTCDefault)
+	m.callTO = cmp.Or(m.callTO, constants.TPTimerDefault)
+	m.regTO = cmp.Or(m.regTO, constants.TNPTimerDefault)
+	m.deniedTO = cmp.Or(m.deniedTO, constants.TDenRegDefault)
 	if m.pendingTO <= 0 {
 		m.pendingTO = constants.TPendingDefault
 	}
@@ -285,13 +286,6 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 	}
 	m.rng = pcg.New(cfg.Seed)
 	return m, nil
-}
-
-func orDefault(d, def time.Duration) time.Duration {
-	if d == 0 {
-		return def
-	}
-	return d
 }
 
 // State returns the channel state of the MS.
