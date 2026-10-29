@@ -141,13 +141,9 @@ func checkEMB(t *testing.T, l loop, n int) {
 func TestCaptureXPR8400Weak(t *testing.T) {
 	t.Parallel()
 
-	iq, err := os.ReadFile("testdata/xpr8400_bs_voice_weak.cu8")
-	if err != nil {
-		t.Fatal(err)
-	}
 	var buf bytes.Buffer
 	rep := NewReporter(&buf)
-	d := demodulate(t, rftx.FromCU8(iq), 256e3)
+	d := weakDemod(t)
 	for _, r := range d.Bursts {
 		rep.Burst(r)
 	}

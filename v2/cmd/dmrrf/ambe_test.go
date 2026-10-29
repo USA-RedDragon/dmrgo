@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -21,6 +22,23 @@ import (
 )
 
 const weakCapture = "testdata/xpr8400_bs_voice_weak.cu8"
+
+var weakDemodOnce = sync.OnceValues(func() (Demodulated, error) {
+	iq, err := os.ReadFile(weakCapture)
+	if err != nil {
+		return Demodulated{}, err
+	}
+	return Demodulate(rftx.FromCU8(iq), 256e3)
+})
+
+func weakDemod(t *testing.T) Demodulated {
+	t.Helper()
+	d, err := weakDemodOnce()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
+}
 
 type echoCodec struct {
 	slots [][9]byte
@@ -47,14 +65,10 @@ func (c *echoCodec) DecodeLost(dst []int16) ([]int16, vocoder.FrameReport, error
 
 func weakSlots(t *testing.T) [][9]byte {
 	t.Helper()
-	iq, err := os.ReadFile(weakCapture)
-	if err != nil {
-		t.Fatal(err)
-	}
 	rec := &echoCodec{}
 	rep := NewReporter(io.Discard)
 	rep.audio = &audioOut{codec: rec, w: io.Discard}
-	for _, r := range demodulate(t, rftx.FromCU8(iq), 256e3).Bursts {
+	for _, r := range weakDemod(t).Bursts {
 		rep.Burst(r)
 	}
 	if len(rec.slots) != 18 {
