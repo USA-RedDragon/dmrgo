@@ -16,6 +16,8 @@ import (
 // RequesterConfig.
 type RequesterConfig struct {
 	// ColorCode is the color code of the slot types of the bursts sent.
+	// Other than 0, it also drops received CSBKs with another color code, as
+	// WakeupConfig.ColorCode does; 0 accepts every color code.
 	ColorCode enums.ColorCode
 	// Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value,
 	// for a repeater outbound, layer2.SyncSourceMS for a radio.
@@ -453,14 +455,15 @@ func (q *Requester) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 
 // Decoded takes the decoded burst b, which may be nil, and appends the
 // outputs to dst: an OutputDone when b is the answer to the request, or a
-// NACK_Rsp for it, after the first try went out. A CSBK whose CRC fails is
+// NACK_Rsp for it, after the first try went out. A CSBK whose CRC fails, or
+// whose color code is not a RequesterConfig.ColorCode other than 0, is
 // dropped. It allocates only when dst has no room for MaxOutputs outputs.
 func (q *Requester) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	if q == nil {
 		return dst
 	}
 	dst = q.Tick(now, dst)
-	if q.state == RequesterIdle || q.tries == 0 {
+	if q.state == RequesterIdle || q.tries == 0 || otherColorCode(b, q.s.cc) {
 		return dst
 	}
 	kind, c, octets := classify(b)

@@ -1262,7 +1262,7 @@ struct dmrgo_csbk_preambles_config_t {
 struct dmrgo_csbk_requester_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* ColorCode is the color code of the slot types of the bursts sent. */
+	/* ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as dmrgo_csbk_wakeup_config_t.color_code does; 0 accepts every color code. */
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC pattern: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
@@ -1289,7 +1289,7 @@ struct dmrgo_csbk_responder_config_t {
 	size_t size;
 	/* Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. */
 	uint32_t address;
-	/* ColorCode is the color code of the slot types of the bursts sent. */
+	/* ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as dmrgo_csbk_wakeup_config_t.color_code does; 0 accepts every color code. */
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC pattern: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;

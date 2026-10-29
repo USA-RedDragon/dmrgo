@@ -73,6 +73,8 @@ type ResponderConfig struct {
 	// the CSBKs that address it.
 	Address uint32
 	// ColorCode is the color code of the slot types of the bursts sent.
+	// Other than 0, it also drops received CSBKs with another color code, as
+	// WakeupConfig.ColorCode does; 0 accepts every color code.
 	ColorCode enums.ColorCode
 	// Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value,
 	// for a repeater outbound, layer2.SyncSourceMS for a radio.
@@ -227,13 +229,17 @@ func (r *Responder) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 // Decoded takes the decoded burst b, which may be nil. For a CSBK that
 // addresses the radio and that the Responder answers, it appends an
 // OutputRequest to dst and queues the answer, which Tick sends. A CSBK
-// whose CRC fails is dropped. It allocates only when dst has no room for
+// whose CRC fails, or whose color code is not a ResponderConfig.ColorCode
+// other than 0, is dropped. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (r *Responder) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	if r == nil || r.d.b == nil {
 		return dst
 	}
 	dst = r.Tick(now, dst)
+	if otherColorCode(b, r.s.cc) {
+		return dst
+	}
 	kind, c, octets := classify(b)
 	if kind != rxCSBK {
 		return dst

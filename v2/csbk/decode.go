@@ -96,6 +96,10 @@ func addresses(c *pdu.CSBK) (target, source uint32, ok bool) {
 	return uint32(r[2])<<16 | uint32(r[3])<<8 | uint32(r[4]), uint32(r[5])<<16 | uint32(r[6])<<8 | uint32(r[7]), true
 }
 
+func otherColorCode(b *layer2.Burst, cc enums.ColorCode) bool {
+	return cc != 0 && b != nil && b.Kind == layer2.KindData && b.SlotType.ColorCode != cc
+}
+
 func mbcAddresses(h *pdu.MBCHeader) (target, source uint32, ok bool) {
 	if h == nil {
 		return 0, 0, false
