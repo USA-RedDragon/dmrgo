@@ -163,23 +163,38 @@ func shift128(hi, lo uint64, n uint) (uint64, bool) {
 }
 
 func shiftDecimal(mant uint64, e int) string {
-	d := make([]byte, 0, 330)
-	for ; mant > 0; mant /= 10 {
-		d = append(d, byte(mant%10))
+	var limbs [36]uint32
+	n := 0
+	for ; mant > 0; mant /= 1e9 {
+		limbs[n] = uint32(mant % 1e9)
+		n++
 	}
-	for ; e > 0; e-- {
-		var carry byte
-		for i := range d {
-			x := d[i]*2 + carry
-			d[i], carry = x%10, x/10
+	for e > 0 {
+		k := min(e, 32)
+		e -= k
+		var carry uint64
+		for i := range n {
+			x := uint64(limbs[i])<<k + carry
+			limbs[i], carry = uint32(x%1e9), x/1e9
 		}
-		if carry > 0 {
-			d = append(d, carry)
+		for ; carry > 0; carry /= 1e9 {
+			limbs[n] = uint32(carry % 1e9)
+			n++
 		}
 	}
-	s := make([]byte, len(d))
-	for i, c := range d {
-		s[len(d)-1-i] = '0' + c
+	if n == 0 {
+		return ""
+	}
+	s := make([]byte, 0, 9*n)
+	var b [10]byte
+	s = append(s, b[putUint(b[:], uint64(limbs[n-1])):]...)
+	for i := n - 2; i >= 0; i-- {
+		v := limbs[i]
+		for j := 8; j >= 0; j-- {
+			b[j] = byte('0' + v%10)
+			v /= 10
+		}
+		s = append(s, b[:9]...)
 	}
 	return string(s)
 }
