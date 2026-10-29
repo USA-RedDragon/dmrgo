@@ -15,7 +15,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Follow calls on both slots](guides/follow-both-slots.md)
   - [Clean up bursts for a hotspot](guides/clean-up-bursts.md)
   - [Rewrite and relay a voice call](guides/relay-voice-call.md)
-  - [Transcode voice](guides/transcode-voice.md) <!-- old: vocoders.md -->
+  - [Transcode voice](guides/transcode-voice.md)
   - [Send SMS and confirmed data](guides/send-data.md)
   - [Run TCP or UDP over DMR data](guides/tcp-udp-over-dmr.md)
   - [Report and request location](guides/location.md)
@@ -55,12 +55,12 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [The layer model](concepts/layers.md)
   - [I/O-free services](concepts/services.md)
   - [Errors and never-panic](concepts/errors.md)
-  - [Allocation](concepts/allocation.md) <!-- old: allocation.md -->
+  - [Allocation](concepts/allocation.md)
   - [Tiers](concepts/tiers.md)
 - Targets
   - [PC](targets/pc.md)
   - [Browser](targets/browser.md)
-  - [Microcontrollers](targets/mcu.md) <!-- old: tinygo.md -->
+  - [Microcontrollers](targets/mcu.md)
   - [C API](targets/c.md)
   - [GNU Radio](targets/gnuradio.md)
 - Datasheets
@@ -69,14 +69,14 @@ This page lists the pages of the docs site in reading order, by section; the sit
 - Reference
   - [Go API](reference/go-api.md)
   - [C header](reference/c-api.md)
-  - [ETSI coverage](reference/etsi.md) <!-- old: etsi.md -->
-  - [Features](reference/features.md) <!-- old: features.md -->
-  - [Examples](reference/examples.md) <!-- old: examples.md -->
+  - [ETSI coverage](reference/etsi.md)
+  - [Features](reference/features.md)
+  - [Examples](reference/examples.md)
   - [Tools](reference/tools.md)
 - Project
   - [Versioning and compatibility](project/versioning.md)
   - [v2.1 breaking changes](project/breaking-v2.1.md)
-  - [Tooling and checks](project/tooling.md) <!-- old: tooling.md -->
+  - [Tooling and checks](project/tooling.md)
   - [License](project/license.md)
 
 Each item is a link to a page, or, for a page that is planned and not written, its title and its path in code. A comment `<!-- old: <path> -->` after a link gives the path of the page before it moved; the site uses that file until the new one exists. A link to a file that is not a page, or to another site, shows in the navigation and opens that file or site.
