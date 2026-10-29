@@ -30,7 +30,7 @@ func (r *discRx) addExt(opt *options) {
 	if ph != nil {
 		x.ph = ph
 		x.setCoh(newCohStageOf(opt))
-		x.coh.ph, x.coh.f, ph.coh = ph, &r.f, x.coh
+		x.coh.src, x.coh.ph, x.coh.f, ph.coh = ph, ph, &r.f, x.coh
 		x.coh.easySNR = discEasySNR
 		if ph.lazy {
 			x.coh.dt = lazyDT(r.hz())

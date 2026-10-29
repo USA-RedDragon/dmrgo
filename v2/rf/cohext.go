@@ -17,7 +17,7 @@ const (
 )
 
 type cohStage struct {
-	rx                          *iqRx
+	src                         cohRing
 	ph                          *discPhase
 	f                           *audioFront
 	trial                       float64
@@ -159,7 +159,7 @@ const (
 
 func newCohStage(r *iqRx, opt *options) *cohStage {
 	s := newCohStageOf(opt)
-	s.rx, s.f = r, &r.d.f
+	s.src, s.f = r, &r.d.f
 	s.setRing(float64(r.conv.decim))
 	if s.div == 2 {
 		s.scanTpl = new([4][2][cohScanLen]complex64)
@@ -369,11 +369,101 @@ func symTime(c *leanCore, k int64) float64 {
 	return t / 2
 }
 
-func (s *cohStage) ring() ([]complex64, int64, int64) {
-	if p := s.ph; p != nil {
-		return p.hist, p.n, max(p.lo, p.n-s.size)
+type cohRing interface {
+	cohRing(size int64) ([]complex64, int64, int64)
+	cohLazy() bool
+	cohPhase(a, b, sign, hz, rate float64) float64
+	cohKey() (tunes int, unit, dc float64)
+	cohTrack() (float64, bool)
+	cohClipped(t0, t1 float64) bool
+	cohResidual() bool
+	cohHz() float64
+}
+
+func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
+	return r.yHist, r.yN, r.yN - size
+}
+
+func (r *iqRx) cohLazy() bool {
+	return false
+}
+
+func (r *iqRx) cohPhase(a, b, sign, hz, rate float64) float64 {
+	var ph float64
+	for a < b {
+		n := int64(math.Floor(a))
+		f := hz - float64(r.ncoAt(n))
+		end := b
+		for i := 0; i < min(r.nTunes, iqTunes); i++ {
+			if tn := float64(r.tunes[(r.nTunes-1-i)%iqTunes].n); tn > a && tn < end {
+				end = tn
+			}
+		}
+		ph += f * (end - a)
+		a = end
 	}
-	return s.rx.yHist, s.rx.yN, s.rx.yN - s.size
+	return -2 * math.Pi * sign * ph / rate
+}
+
+func (r *iqRx) cohKey() (int, float64, float64) {
+	return r.nTunes, float64(r.conv.hz), 0
+}
+
+func (r *iqRx) cohTrack() (float64, bool) {
+	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
+	if f := &r.d.f; r.d.locked {
+		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
+	}
+	return hz, r.d.locked
+}
+
+func (r *iqRx) cohClipped(_, _ float64) bool {
+	return false
+}
+
+func (r *iqRx) cohResidual() bool {
+	return true
+}
+
+func (r *iqRx) cohHz() float64 {
+	f := &r.d.f
+	return float64(r.conv.hz) + float64(f.dc/(f.gain*iqUnitsPerHz))
+}
+
+func (p *discPhase) cohRing(size int64) ([]complex64, int64, int64) {
+	return p.hist, p.n, max(p.lo, p.n-size)
+}
+
+func (p *discPhase) cohLazy() bool {
+	return p.lazy
+}
+
+func (p *discPhase) cohPhase(a, b, sign, hz, rate float64) float64 {
+	return -2 * math.Pi * sign * hz * (b - a) / rate
+}
+
+func (p *discPhase) cohKey() (int, float64, float64) {
+	return 0, p.unit, p.dcU
+}
+
+func (p *discPhase) cohTrack() (float64, bool) {
+	return p.offsetHz(), p.c.locked
+}
+
+func (p *discPhase) cohClipped(t0, t1 float64) bool {
+	return p.clipped(t0, t1)
+}
+
+func (p *discPhase) cohResidual() bool {
+	return false
+}
+
+func (p *discPhase) cohHz() float64 {
+	return p.offsetHz()
+}
+
+func (s *cohStage) ring() ([]complex64, int64, int64) {
+	return s.src.cohRing(s.size)
 }
 
 func (s *cohStage) ringAt(hist []complex64, k, lo, n int64) complex64 {
@@ -384,7 +474,7 @@ func (s *cohStage) ringAt(hist []complex64, k, lo, n int64) complex64 {
 }
 
 func (s *cohStage) sample(t float64) complex64 {
-	if s.trialing || s.ph != nil && s.ph.lazy {
+	if s.trialing || s.src.cohLazy() {
 		return s.ph.trialAt(t, s.t0, s.trial, s.totalHz)
 	}
 	hist, n, lo := s.ring()
@@ -396,34 +486,17 @@ func (s *cohStage) sample(t float64) complex64 {
 }
 
 func (s *cohStage) phaseAt(t float64) float64 {
-	r := s.rx
 	a, b := s.t0, t
 	sign := 1.0
 	if b < a {
 		a, b, sign = b, a, -1
 	}
-	if r == nil {
-		return -2 * math.Pi * sign * s.totalHz * (b - a) / s.rate
-	}
-	var ph float64
-	for a < b {
-		n := int64(math.Floor(a))
-		hz := s.totalHz - float64(r.ncoAt(n))
-		end := b
-		for i := 0; i < min(r.nTunes, iqTunes); i++ {
-			if tn := float64(r.tunes[(r.nTunes-1-i)%iqTunes].n); tn > a && tn < end {
-				end = tn
-			}
-		}
-		ph += hz * (end - a)
-		a = end
-	}
-	return -2 * math.Pi * sign * ph / s.rate
+	return s.src.cohPhase(a, b, sign, s.totalHz, s.rate)
 }
 
 func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	sps := s.model.sps
-	if s.dir < 0 || s.trialing || s.ph != nil && s.ph.lazy {
+	if s.dir < 0 || s.trialing || s.src.cohLazy() {
 		for i := k0; i < k1; i++ {
 			s.fillSym(s.g0+s.dir*i, x[(i-k0)*sps:(i-k0+1)*sps])
 		}
@@ -431,12 +504,7 @@ func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	}
 	_, n, lo := s.ring()
 	key := cohSymKey{gen: s.gen, t0: s.t0, hz: s.totalHz, n: n, lo: lo}
-	if p := s.ph; p != nil {
-		key.unit, key.dc = p.unit, p.dcU
-	}
-	if r := s.rx; r != nil {
-		key.tunes, key.unit = r.nTunes, float64(r.conv.hz)
-	}
+	key.tunes, key.unit, key.dc = s.src.cohKey()
 	if key != s.symKey {
 		s.symKey = key
 		s.symStamp++
@@ -633,17 +701,7 @@ const (
 )
 
 func (s *cohStage) track() {
-	var hz float64
-	var locked bool
-	if r := s.rx; r != nil {
-		hz = float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
-		if f := &r.d.f; r.d.locked {
-			hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
-		}
-		locked = r.d.locked
-	} else {
-		hz, locked = s.ph.offsetHz(), s.ph.c.locked
-	}
+	hz, locked := s.src.cohTrack()
 	if d := math.Abs(s.freq - hz); !s.freqOK || s.nFit == 0 && d > cohFreqSpan || locked && d > cohFreqFirst {
 		s.freq, s.freqOK, s.nFit, s.fitVar = hz, true, 0, cohFreqVar
 	}
@@ -652,8 +710,7 @@ func (s *cohStage) track() {
 }
 
 func (s *cohStage) lost(lo int64) bool {
-	p := s.ph
-	return s.t0-s.sps < float64(lo) || p != nil && p.clipped(s.t0-s.sps, s.t0+slotSymbols*s.sps)
+	return s.t0-s.sps < float64(lo) || s.src.cohClipped(s.t0-s.sps, s.t0+slotSymbols*s.sps)
 }
 
 func (s *cohStage) lock() {
@@ -1037,7 +1094,7 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
 	rho := amp * amp / (amp*amp + max(noise, 0))
-	if amp <= 0 || rho < cohVerifyRho || s.ph == nil && 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
+	if amp <= 0 || rho < cohVerifyRho || s.src.cohResidual() && 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
 		return false
 	}
 	s.dt += cohDTGain * d
@@ -1046,13 +1103,8 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 
 func (s *cohStage) verifyHz() {
 	s.totalHz = s.freq
-	switch {
-	case s.freqOK:
-	case s.rx != nil:
-		f := s.f
-		s.totalHz = float64(s.rx.conv.hz) + float64(f.dc/(f.gain*iqUnitsPerHz))
-	default:
-		s.totalHz = s.ph.offsetHz()
+	if !s.freqOK {
+		s.totalHz = s.src.cohHz()
 	}
 }
 
