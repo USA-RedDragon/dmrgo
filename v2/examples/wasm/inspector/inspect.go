@@ -21,12 +21,15 @@ type Range struct {
 }
 
 // Node is one field of the tree: its name, its value as text, the bits it
-// takes, an error with its reason, and its subfields.
+// takes, an error with its reason, and its subfields. Derived is true for a
+// field that the decoder computes from other bits, which the packet does
+// not carry as a field of its own.
 type Node struct {
 	Name     string  `json:"n"`
 	Value    string  `json:"v,omitempty"`
 	Ranges   []Range `json:"r,omitempty"`
 	Err      string  `json:"err,omitempty"`
+	Derived  bool    `json:"d,omitempty"`
 	Children []*Node `json:"c,omitempty"`
 }
 

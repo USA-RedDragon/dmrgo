@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -528,5 +529,39 @@ func TestJSON(t *testing.T) {
 	s := InspectJSON(repo(t, "transport/hytera/testdata/built.txt"), Options{})
 	if !strings.HasPrefix(s, `{"input":"hex text","packets":[`) {
 		t.Errorf("JSON starts %q", s[:min(60, len(s))])
+	}
+}
+
+func TestDerived(t *testing.T) {
+	t.Parallel()
+	r := inspect(t, repo(t, "transport/ipsc/testdata/xpr8400.txt"), Options{})
+	hdr := r.Packets[18]
+	for path, want := range map[string]bool{
+		"IPSC.DMR burst.Slot type.FEC":                 true,
+		"IPSC.DMR burst.Slot type.ColorCode":           false,
+		"IPSC.DMR burst.FullLinkControl.BurstDataType": true,
+		"IPSC.DMR burst.FullLinkControl.FEC":           true,
+		"IPSC.DMR burst.FullLinkControl.ProtectFlag":   false,
+		"IPSC.Source": false,
+	} {
+		if n := node(t, hdr, path); n.Derived != want {
+			t.Errorf("%s: derived %v, want %v", path, n.Derived, want)
+		}
+	}
+	type plain struct {
+		Sent uint8
+		Size uint8 `dmr:"-"`
+	}
+	ns := walkPlain(reflect.ValueOf(plain{Sent: 1, Size: 2}))
+	if len(ns) != 2 || ns[0].Derived || !ns[1].Derived {
+		t.Errorf("walkPlain: %d nodes, want 2 with derived false, true", len(ns))
+	}
+	type stream struct {
+		Sent uint8 `dmr:"u8"`
+		Size uint8 `dmr:"-"`
+	}
+	ns = walkStream(reflect.ValueOf(stream{Sent: 1, Size: 1}), []byte{1}, 0, 0)
+	if len(ns) != 2 || ns[0].Derived || !ns[1].Derived {
+		t.Errorf("walkStream: %d nodes, want 2 with derived false, true", len(ns))
 	}
 }

@@ -108,7 +108,7 @@ func walkBits(v reflect.Value, buf, base int) []*Node {
 				continue
 			}
 		}
-		n := &Node{Name: f.Name}
+		n := &Node{Name: f.Name, Derived: bt.skip}
 		for _, r := range bt.ranges {
 			if buf >= 0 {
 				n.Ranges = append(n.Ranges, Range{Buf: buf, Start: base + r[0], End: base + r[1]})
@@ -196,13 +196,14 @@ func walkPlain(v reflect.Value) []*Node {
 		if fv.Kind() == reflect.Pointer && fv.IsNil() {
 			continue
 		}
-		if bt := parseTag(f.Tag.Get("dmr")); hasOpt(bt, "union") {
+		bt := parseTag(f.Tag.Get("dmr"))
+		if hasOpt(bt, "union") {
 			if vs := unionNodes(v, -1, 0, bt); len(vs) > 0 {
 				out = append(out, vs...)
 				continue
 			}
 		}
-		n := &Node{Name: f.Name}
+		n := &Node{Name: f.Name, Derived: bt.skip}
 		fillValue(n, fv, -1, 0, bitTag{})
 		out = append(out, n)
 	}
@@ -229,7 +230,7 @@ func walkStream(v reflect.Value, data []byte, buf, off int) []*Node {
 		if cond && fv.IsZero() {
 			continue
 		}
-		n := &Node{Name: f.Name}
+		n := &Node{Name: f.Name, Derived: bt.skip}
 		start, size := -1, -1
 		if p, ok := slicePos(fv, data); ok {
 			start, size = p, fv.Len()
