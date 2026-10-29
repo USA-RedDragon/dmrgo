@@ -13,12 +13,32 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 const (
 	nopanicRounds = 256
 	nopanicDepth  = 4
 )
+
+var nopanicSeeds = map[reflect.Type][]reflect.Value{
+	reflect.TypeFor[rf.RxConfig](): {
+		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier0, Rate: 9600}),
+		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier1}),
+		reflect.ValueOf(rf.RxConfig{Tier: rf.Tier3}),
+	},
+	reflect.TypeFor[rf.AudioRxConfig](): {
+		reflect.ValueOf(rf.AudioRxConfig{Tier: rf.Tier0, Rate: 9600}),
+		reflect.ValueOf(rf.AudioRxConfig{Tier: rf.Tier3, Rate: 48000}),
+	},
+	reflect.TypeFor[rf.TxConfig](): {
+		reflect.ValueOf(rf.TxConfig{Tier: rf.Tier1, Rate: 96000, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30}),
+	},
+	reflect.TypeFor[rf.AudioTxConfig](): {
+		reflect.ValueOf(rf.AudioTxConfig{Tier: rf.Tier1, Rate: 48000, Bits: 16, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30}),
+	},
+}
 
 type nopanicGen struct {
 	rng *rand.Rand
@@ -119,6 +139,13 @@ func (g *nopanicGen) fill(v reflect.Value, depth int) {
 		g.fill(p.Elem(), depth-1)
 		v.Set(p)
 	case reflect.Struct:
+		if seeds := nopanicSeeds[t]; len(seeds) > 0 && g.rng.IntN(2) == 0 {
+			v.Set(seeds[g.rng.IntN(len(seeds))])
+			if i := g.rng.IntN(t.NumField()); t.Field(i).IsExported() {
+				g.fill(v.Field(i), depth-1)
+			}
+			return
+		}
 		for i := range t.NumField() {
 			if t.Field(i).IsExported() {
 				g.fill(v.Field(i), depth-1)
@@ -286,7 +313,9 @@ func nopanicName(f any) string {
 // values of their arguments, with an interface argument or field that is
 // nil, a typed nil pointer or a value of a library type, on a receiver that
 // is nil, a zero value, made by a constructor or holds random exported
-// fields, and fails for each call that panics or hangs.
+// fields, and fails for each call that panics or hangs. A radio
+// configuration starts, half of the time, from a valid one with one field
+// set at random.
 func TestNoPanic(t *testing.T) {
 	t.Parallel()
 

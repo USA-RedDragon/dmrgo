@@ -4163,7 +4163,7 @@ struct dmrgo_rf_rx_config_t {
 	double offset_hz;
 	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
-	/* LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for DMRGO_RF_TIER1, 8 for DMRGO_RF_TIER2, and 16 for DMRGO_RF_TIER3. DMRGO_RF_TIER0 keeps none, and loses the start of a stream that it enters late. */
+	/* LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for DMRGO_RF_TIER1, 8 for DMRGO_RF_TIER2, and 16 for DMRGO_RF_TIER3, and at most DMRGO_RF_MAX_LOOKBACK_SLOTS. DMRGO_RF_TIER0 keeps none, and loses the start of a stream that it enters late. */
 	int64_t lookback_slots;
 };
 
@@ -7610,6 +7610,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_IQ_FORMAT_CU8 ((dmrgo_rf_iq_format_t)1)
 /* Go: rf.IQFormatDefault. IQFormatDefault is the zero value: DMRGO_RF_IQ_FORMAT_CS16. */
 #define DMRGO_RF_IQ_FORMAT_DEFAULT ((dmrgo_rf_iq_format_t)0)
+/* Go: rf.MaxLookbackSlots. MaxLookbackSlots is the largest dmrgo_rf_rx_config_t.lookback_slots, 7.68 s of signal. */
+#define DMRGO_RF_MAX_LOOKBACK_SLOTS 256
 /* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01 for amateur. */
 #define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
 /* Go: rf.RegionChina. RegionChina keeps the land mobile limits of the 2025 MIIT notice. */

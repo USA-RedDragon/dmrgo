@@ -37,8 +37,8 @@ type RxConfig struct {
 	OnBursts func([]Burst)
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8
-	// for Tier2, and 16 for Tier3. Tier0 keeps none, and loses the start of
-	// a stream that it enters late.
+	// for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0
+	// keeps none, and loses the start of a stream that it enters late.
 	LookbackSlots int
 }
 
@@ -106,6 +106,10 @@ var (
 
 const defaultRxRate = 2400000
 
+// MaxLookbackSlots is the largest RxConfig.LookbackSlots, 7.68 s of
+// signal.
+const MaxLookbackSlots = 256
+
 // NewReceiver returns a Receiver of c. A nil c means the zero RxConfig. It
 // allocates every buffer of the Receiver, and it returns a
 // *dmrgo.ConfigError when a field of c is out of range.
@@ -149,7 +153,7 @@ func (c *RxConfig) check(o *options) (low bool, hz int, err error) {
 	if !(math.Abs(c.OffsetHz) < float64(hz)/2) {
 		return false, 0, errRxOffset
 	}
-	if c.LookbackSlots < 0 || c.Tier == Tier0 && c.LookbackSlots > 0 {
+	if c.LookbackSlots < 0 || c.LookbackSlots > MaxLookbackSlots || c.Tier == Tier0 && c.LookbackSlots > 0 {
 		return false, 0, errRxLookback
 	}
 	return low, hz, nil

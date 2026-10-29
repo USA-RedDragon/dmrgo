@@ -35,3 +35,24 @@ func TestConstructorsNilConfig(t *testing.T) {
 		t.Errorf("Flush: %v", err)
 	}
 }
+
+func TestLookbackBound(t *testing.T) {
+	t.Parallel()
+
+	for _, tier := range []rf.Tier{rf.TierDefault, rf.Tier1, rf.Tier2, rf.Tier3} {
+		for _, n := range []int{rf.MaxLookbackSlots + 1, 1 << 30, int(^uint(0) >> 1)} {
+			var ce *dmrgo.ConfigError
+			if _, err := rf.NewReceiver(&rf.RxConfig{Tier: tier, LookbackSlots: n}); !errors.As(err, &ce) || ce.Field != "RxConfig.LookbackSlots" {
+				t.Errorf("tier %d, LookbackSlots %d: %v", tier, n, err)
+			}
+		}
+		if _, err := rf.NewReceiver(&rf.RxConfig{Tier: tier, LookbackSlots: rf.MaxLookbackSlots}); err != nil {
+			t.Errorf("tier %d, LookbackSlots %d: %v", tier, rf.MaxLookbackSlots, err)
+		}
+	}
+	var r rf.Receiver
+	var ce *dmrgo.ConfigError
+	if err := r.Init(rf.RxConfig{Rate: 9600, LookbackSlots: 1 << 30}); !errors.As(err, &ce) || ce.Field != "RxConfig.LookbackSlots" {
+		t.Errorf("Init with LookbackSlots 1<<30: %v", err)
+	}
+}

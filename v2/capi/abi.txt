@@ -1398,6 +1398,7 @@ sym #define DMRGO_RF_IQ_FORMAT_CS16 ((dmrgo_rf_iq_format_t)3)
 sym #define DMRGO_RF_IQ_FORMAT_CS8 ((dmrgo_rf_iq_format_t)2)
 sym #define DMRGO_RF_IQ_FORMAT_CU8 ((dmrgo_rf_iq_format_t)1)
 sym #define DMRGO_RF_IQ_FORMAT_DEFAULT ((dmrgo_rf_iq_format_t)0)
+sym #define DMRGO_RF_MAX_LOOKBACK_SLOTS 256
 sym #define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
 sym #define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
 sym #define DMRGO_RF_REGION_JAPAN ((dmrgo_rf_region_t)4)
