@@ -99,6 +99,9 @@ func (r *iqRx) refillKept(c *leanCore, m int64) {
 	fr.rrcHist, fr.hbHist, fr.rrcHead, fr.hbHead, fr.odd = [2 * audio12Taps]int8{}, [halfTaps]int8{}, 0, 0, false
 	j := s / per
 	first := max(m-k, j+warm/per+1)
+	if s == 0 {
+		first = m - k
+	}
 	p := f.head - int(f.n-s)
 	if p < 0 {
 		p += len(f.raw)
