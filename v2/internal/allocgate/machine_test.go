@@ -5,6 +5,8 @@ package allocgate_test
 import (
 	"bufio"
 	"bytes"
+	"cmp"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -208,6 +210,80 @@ func objdumpTool(t *testing.T) string {
 	return strings.TrimSpace(string(out))
 }
 
+type disasm struct {
+	once   sync.Once
+	bodies []*body
+	err    error
+}
+
+var disasmCache sync.Map
+
+var objdumpShards = []string{"[a-e]$", "[f-j]$", "[k-o]$", "[p-t]$", "[u-z]$", "(^|[^a-z])$"}
+
+const shardSize = 4 << 20
+
+func runObjdump(ctx context.Context, tool, export string, args ...string) ([]*body, error) {
+	cmd := exec.CommandContext(ctx, tool, append(args, export)...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	bodies, err := parseObjdump(out)
+	if werr := cmd.Wait(); werr != nil {
+		return nil, fmt.Errorf("%w: %s", werr, stderr.String())
+	}
+	return bodies, err
+}
+
+func firstAddr(b *body) int64 {
+	if len(b.insts) == 0 {
+		return -1
+	}
+	return b.insts[0].addr
+}
+
+func objdumpFile(t *testing.T, tool, export string) ([]*body, error) {
+	v, _ := disasmCache.LoadOrStore(export, &disasm{})
+	d, ok := v.(*disasm)
+	if !ok {
+		return nil, fmt.Errorf("disassembly cache of %s holds a %T", export, v)
+	}
+	d.once.Do(func() {
+		ctx := context.WithoutCancel(t.Context())
+		fi, err := os.Stat(export)
+		if err != nil {
+			d.err = err
+			return
+		}
+		if fi.Size() < shardSize {
+			d.bodies, d.err = runObjdump(ctx, tool, export)
+			return
+		}
+		parts := make([][]*body, len(objdumpShards))
+		errs := make([]error, len(objdumpShards))
+		var wg sync.WaitGroup
+		for i, re := range objdumpShards {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				parts[i], errs[i] = runObjdump(ctx, tool, export, "-s", re)
+			}()
+		}
+		wg.Wait()
+		if d.err = errors.Join(errs...); d.err != nil {
+			return
+		}
+		d.bodies = slices.Concat(parts...)
+		slices.SortStableFunc(d.bodies, func(a, b *body) int { return cmp.Compare(firstAddr(a), firstAddr(b)) })
+	})
+	return d.bodies, d.err
+}
+
 func disassemble(t *testing.T, pkgs []listedPackage) map[string][]*body {
 	t.Helper()
 	tool := objdumpTool(t)
@@ -224,22 +300,7 @@ func disassemble(t *testing.T, pkgs []listedPackage) map[string][]*body {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			cmd := exec.CommandContext(t.Context(), tool, p.Export)
-			var stderr bytes.Buffer
-			cmd.Stderr = &stderr
-			out, err := cmd.StdoutPipe()
-			if err != nil {
-				errs[i] = err
-				return
-			}
-			if err := cmd.Start(); err != nil {
-				errs[i] = err
-				return
-			}
-			results[i], errs[i] = parseObjdump(out)
-			if err := cmd.Wait(); err != nil {
-				errs[i] = fmt.Errorf("%w: %s", err, stderr.String())
-			}
+			results[i], errs[i] = objdumpFile(t, tool, p.Export)
 		}()
 	}
 	wg.Wait()
