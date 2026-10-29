@@ -893,7 +893,7 @@ func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32) (be
 			}
 			const n = syncSymbols
 			cov, vx, vp := sxv-sp*sv/n, svv-sv*sv/n, spp-sp*sp/n
-			if cov <= 0 || vx <= 0 || cov*cov < discLock*discLock*vx*vp {
+			if cov <= 0 || vx <= 0 || cov*cov < replaySyncRho*vx*vp {
 				continue
 			}
 			if r := cov * cov / (vx * vp); r > top {

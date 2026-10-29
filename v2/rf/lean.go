@@ -54,6 +54,7 @@ const (
 	leanClockMax        = 0.002
 	leanStretchMin      = 0.0002
 	replayFlatLevel     = 0.3
+	replaySyncRho       = 0.95
 	leanClockDead       = 0.000075
 	leanClockBlock      = 64
 	leanClockSig        = 4
