@@ -8,8 +8,6 @@ import (
 	"math/rand/v2"
 	"slices"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func keyUnits(full bool) []txUnit {
@@ -237,17 +235,16 @@ func TestTxMatrixLongRun(t *testing.T) {
 	t.Parallel()
 	full := txFull()
 	for _, u := range raceUnits(nominal(full)) {
-		minutes := 2.0
+		// The state carried across symbols has no counter under 32 bits and no float32 accumulator, so four one-second periods show any state off its periodic orbit; full mode runs hours for slow leaks.
+		minutes := 4.0 / 60
 		switch {
 		case full && u.rate > 192000:
 			minutes = 60
 		case full:
 			minutes = 180
-		case u.rate > 192000:
-			minutes = 1.0 / 3
-		}
-		if testmode.Race {
-			minutes = 1.0 / 12
+		case u.format == fmtS8 && u.rate <= 192000:
+			// 115 LSB full scale against the 3 LSB tolerance: a 1e-7 per-symbol leak shows after 2 + 3/(115*1e-7*4800) = 57 periods.
+			minutes = 57.0 / 60
 		}
 		if u.rate > 2400000 && !full {
 			continue
