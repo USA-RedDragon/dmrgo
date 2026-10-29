@@ -214,3 +214,7 @@ func TestAMBEServerSilent(t *testing.T) {
 		t.Errorf("silent AMBEserver: %v after %v", err, time.Since(start))
 	}
 }
+
+func run(args []string, w io.Writer) error {
+	return runIO(args, stdio{in: os.Stdin, out: w, msg: w, software: newSoftware})
+}

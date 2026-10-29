@@ -35,10 +35,6 @@ func main() {
 	}
 }
 
-func run(args []string, w io.Writer) error {
-	return runIO(args, stdio{in: os.Stdin, out: w, msg: w, software: newSoftware})
-}
-
 func runIO(args []string, std stdio) error {
 	if len(args) == 0 {
 		return errors.New("usage: dmrrf tx|rx|cal [flags]")
