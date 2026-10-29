@@ -51,6 +51,10 @@ func derivedTables() ([]genTable, error) {
 		return nil, err
 	}
 	d := deriveDSP()
+	devIQ, devLow, err := deriveDevGain()
+	if err != nil {
+		return nil, err
+	}
 	return []genTable{
 		{"interpTaps", d.interp},
 		{"chanFilterTaps", d.chanTaps},
@@ -85,6 +89,8 @@ func derivedTables() ([]genTable, error) {
 		{"softGridPos", f.gridPos},
 		{"softGridRowH", f.rowH},
 		{"softGridColH", f.colH},
+		{"devGainIQ", devIQ},
+		{"devGainLow", devLow},
 	}, nil
 }
 

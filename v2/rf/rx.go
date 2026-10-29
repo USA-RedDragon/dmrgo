@@ -405,9 +405,13 @@ func (r *Receiver) OffsetHz() float64 {
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
 // Tier3 reads it from the fitted modulation index. The lower tiers read it
-// from the sync symbol levels after the channel filter, and the filter cuts
-// the edges of the FM spectrum, so the reading is low: about 1830 Hz for a
-// 1944 Hz signal on the center, and about 1740 to 1800 Hz 2 kHz off it.
+// from the sync symbol levels and divide out the response of their channel
+// filter and discriminator at the carrier offset from the tuned frequency.
+// For a clean 1944 Hz signal the reading is 1 to 1.5% low and within 3% at
+// every offset. A sync fit made before the timing settles or before an AFC
+// retune can move it by a few percent more. At a Rate of 9600 the reading is
+// up to 3% low, by the sub-sample phase of the bursts, and it does not
+// include the channel filter of the radio chip.
 func (r *Receiver) DeviationHz() float64 {
 	if r == nil {
 		return 0
@@ -415,7 +419,7 @@ func (r *Receiver) DeviationHz() float64 {
 
 	switch r.mode {
 	case rxModeLow:
-		return r.low.d.deviation() / iqUnitsPerHz
+		return r.low.deviation() / iqUnitsPerHz
 	case rxModeFull:
 		return r.full.deviationHz()
 	}

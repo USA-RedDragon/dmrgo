@@ -196,7 +196,7 @@ func (r *rxHost) deviationHz() float64 {
 	case r.iq0 != nil:
 		return r.iq0.d.deviation() / iqUnitsPerHz
 	case r.iqd != nil:
-		return r.iqd.d.deviation() / iqUnitsPerHz
+		return r.iqd.deviation() / iqUnitsPerHz
 	case r.lean != nil:
 		return float64(r.lean.devHz)
 	case r.e != nil:

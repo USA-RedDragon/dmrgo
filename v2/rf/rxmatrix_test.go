@@ -56,6 +56,8 @@ const (
 	mxSecondsCN   = 10.4e-6
 	mxDevHigh     = 0.03
 	mxDevLow      = 0.88
+	mxDevIQ       = 0.95
+	mxDevLowRate  = 0.90
 	mxAudioDC     = 300
 	mxAGCSteps    = 8
 	mxTail        = 0.06
@@ -794,11 +796,14 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 }
 
 func mxDeviation(in mxInput, tier Tier, dev float64, res *mxResult) {
-	want, lo := mxOuterHz, mxDevLow
-	if in.audio != nil {
-		want *= in.gain
-	} else if tier == Tier3 {
+	want, lo := mxOuterHz, mxDevIQ
+	switch {
+	case in.audio != nil:
+		want, lo = want*in.gain, mxDevLow
+	case tier == Tier3:
 		lo = 1 - mxDevHigh
+	case in.rate == iq0LowHz:
+		lo = mxDevLowRate
 	}
 	if dev < want*lo-0.5 || dev > want*(1+mxDevHigh)+0.5 {
 		res.add("deviation", "%.1f, want %.0f to %.0f", dev, want*lo, want*(1+mxDevHigh))

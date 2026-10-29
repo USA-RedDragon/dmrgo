@@ -309,6 +309,7 @@ type iqRx struct {
 	spec      *spectrum
 	specLock  bool
 	center    float32
+	devTab    uint8
 }
 
 func newIQRx(cfg rxSetup, opt options) *iqRx {
@@ -338,6 +339,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.d = cfg.discOf()
 	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt, iq: true}, false)
 	r.d.sink = cfg.sink
+	r.devTab = devTabOf(&opt)
 	r.d.lagTicks += r.conv.lagTicks()
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)

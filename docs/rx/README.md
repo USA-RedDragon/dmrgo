@@ -213,6 +213,32 @@ First burst after a noise lead, I/Q tier 0 at 2.048 Msps, 30 starts per offset (
 - On 1,200 s of noise, 600 s steady and 600 s with 2x steps of the noise power every 0.3 s, the estimate after a power rise retuned 0 times.
 - `TestRxTier0FirstBurstAtOffset` in `v2/rf` checks that the first burst is found at 2.5, 3 and 4 kHz.
 
+## The deviation reading
+
+`Receiver.DeviationHz` gives the outer deviation of the last locked stream. The spec value is 1944 Hz. Tier 3 reads it from the fitted modulation index. The lower tiers read it from the sync symbol levels. Two parts of the receiver make those levels low:
+
+- The discriminator measures the phase step over one sample, so it averages the frequency over that sample. At 12 kHz this takes 2.6% off the levels, at 24 kHz 0.9%.
+- The channel filter cuts the edges of the FM spectrum. On the tuned frequency this takes 2.3 to 3.2% more off the levels, and more when the carrier is off the tuned frequency.
+
+The receiver divides the reading by the response of its own filter and discriminator at the carrier offset from the tuned frequency. `go generate` derives the response, `devGainIQ` and `devGainLow` in `v2/rf/tables_gen.go`: it sends a spec signal through the same filters and fits the sync levels at the best strobe time.
+
+Clean signal, 3 bursts, I/Q at 48 kHz and 2.048 Msps, reading as a fraction of 1944 Hz:
+
+| Input | Before | Now |
+|-------|--------|-----|
+| I/Q tiers 0 to 2, on the tuned frequency | 0.935 to 0.947 | 0.986 to 0.992 |
+| I/Q tiers 0 to 2, 700 Hz to 4 kHz off | 0.923 to 0.952 | 0.971 to 1.022 |
+| I/Q tier 3 | 1.000 | 1.000 |
+| Low-rate I/Q tier 0, 9.6 kHz | 0.937 | 0.975 to 0.994 |
+| Low-rate I/Q tier 0, 12 kHz | 0.969 | 0.991 to 0.994 |
+
+- About 1% stays below tier 3: the strobe and the level steps of the core.
+- At 9.6 kHz the reading follows the sub-sample phase of the bursts, the same sawtooth as the burst time.
+- The table holds the response for a carrier up to 2.75 kHz from the tuned frequency at tiers 0 and 1, and 3.5 kHz at tier 2. Further off, the filter distorts the signal and the receiver uses the response at that limit.
+- The levels keep most of the first sync fit of a stream. A first fit made before the timing settles can read high, 2.5% in a measured tier 0 case 1.5 kHz off. A fit made before an AFC retune gets the response at the offset after the retune, so it reads low.
+- Low-rate I/Q comes from the channel filter of a radio chip. The reading does not include that filter, so it reads low when the filter cuts the signal.
+- `TestIQDeviationReading` in `v2/rf` checks the reading within 3% at tiers 0 to 3 and 12 kHz, and within 4% at 9.6 kHz. The scenario matrix checks 0.95 to 1.03 at the I/Q tiers below tier 3 and 0.90 to 1.03 at 9.6 kHz.
+
 ## The floors
 
 Both floors give a genie receiver the timing, the carrier, the noise level and every transmitted bit outside the payload. It also gets the side information that the tiers use: the color code for the EMB and slot type, and the embedded LC of the earlier superframes of the call.
