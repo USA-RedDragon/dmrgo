@@ -1,6 +1,8 @@
 package trellis
 
 import (
+	"fmt"
+	"sync/atomic"
 	"testing"
 )
 
@@ -64,29 +66,35 @@ func TestTrellis34_TwoBitErrorsMatchML(t *testing.T) {
 
 	data := [18]byte{0xb5, 0x81, 0x1a, 0x2c, 0x2b, 0x9c, 0xe1, 0xb5, 0xe3, 0x14, 0x86, 0xb2, 0xc0, 0xeb, 0x04, 0x37, 0x33, 0x6d}
 	enc := Encode(data)
-	var ok, tied, closer int
+	var ok, tied, closer atomic.Int64
+	pairs := make([][2]int, 0, 196*195/2)
 	for a := range 196 {
 		for b := a + 1; b < 196; b++ {
-			rx := enc
-			rx[a/8] ^= 0x80 >> (a % 8)
-			rx[b/8] ^= 0x80 >> (b % 8)
-			got, res := Decode(rx)
-			ml, metric, paths := scalarML(&rx)
-			dec := Encode(got)
-			if cost(&rx, &dec) != metric || res.Uncorrectable != (paths > 1) || paths == 1 && got != ml {
-				t.Fatalf("bits %d and %d: %x %+v, plain Viterbi %x metric %d over %d paths", a, b, got, res, ml, metric, paths)
-			}
-			switch {
-			case got == data && !res.Uncorrectable:
-				ok++
-			case paths > 1:
-				tied++
-			case metric < cost(&rx, &enc):
-				closer++
-			default:
-				t.Fatalf("bits %d and %d: wrong block %x without a tie or a closer block", a, b, got)
-			}
+			pairs = append(pairs, [2]int{a, b})
 		}
 	}
-	t.Logf("of 19110 two-bit errors: %d corrected, %d tied, %d closer to another block", ok, tied, closer)
+	checkCases(t, len(pairs), func(i int) [2]int { return pairs[i] }, func(p *[2]int) string {
+		a, b := p[0], p[1]
+		rx := enc
+		rx[a/8] ^= 0x80 >> (a % 8)
+		rx[b/8] ^= 0x80 >> (b % 8)
+		got, res := Decode(rx)
+		ml, metric, paths := scalarML(&rx)
+		dec := Encode(got)
+		if cost(&rx, &dec) != metric || res.Uncorrectable != (paths > 1) || paths == 1 && got != ml {
+			return fmt.Sprintf("bits %d and %d: %x %+v, plain Viterbi %x metric %d over %d paths", a, b, got, res, ml, metric, paths)
+		}
+		switch {
+		case got == data && !res.Uncorrectable:
+			ok.Add(1)
+		case paths > 1:
+			tied.Add(1)
+		case metric < cost(&rx, &enc):
+			closer.Add(1)
+		default:
+			return fmt.Sprintf("bits %d and %d: wrong block %x without a tie or a closer block", a, b, got)
+		}
+		return ""
+	})
+	t.Logf("of 19110 two-bit errors: %d corrected, %d tied, %d closer to another block", ok.Load(), tied.Load(), closer.Load())
 }
