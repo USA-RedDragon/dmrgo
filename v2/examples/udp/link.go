@@ -42,7 +42,7 @@ type link struct {
 }
 
 type linkStats struct {
-	datagrams, octets, tries int
+	datagrams, tries int
 }
 
 func newLink(id uint32, rate enums.DataType, seed uint64, h linkHandler, emit func(time.Duration, *layer2.RawBurst)) (*link, error) {
@@ -89,7 +89,6 @@ func (l *link) pump(now time.Duration) {
 		}
 		l.current = p.tag
 		l.stats.datagrams++
-		l.stats.octets += len(l.pkt)
 	}
 }
 

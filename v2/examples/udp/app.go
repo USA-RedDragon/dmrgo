@@ -17,8 +17,8 @@ const (
 )
 
 type appStats struct {
-	submitted, acked, failed, delivered, copies, resends, bad int
-	latencies                                                 []time.Duration
+	submitted, acked, delivered, copies, resends int
+	latencies                                    []time.Duration
 }
 
 type outForm struct {
@@ -80,7 +80,6 @@ func (s *station) retry(now time.Duration) {
 	c := s.cur
 	c.waiting = false
 	if c.attempts >= maxAttempts {
-		s.stats.failed++
 		s.cur = nil
 		return
 	}
@@ -103,7 +102,6 @@ func (s *station) sent(now time.Duration, tag int, r data.Result) {
 
 func (s *station) datagram(now time.Duration, src uint32, p []byte) {
 	if len(p) < 3 || src != s.peer {
-		s.stats.bad++
 		return
 	}
 	id := binary.BigEndian.Uint16(p[1:])
@@ -116,20 +114,16 @@ func (s *station) datagram(now time.Duration, src uint32, p []byte) {
 		}
 	case kindForm:
 		s.form(now, id, p)
-	default:
-		s.stats.bad++
 	}
 }
 
 func (s *station) form(now time.Duration, id uint16, p []byte) {
 	if len(p) < 5 || p[3] != s.tmpl.id || p[4] != s.tmpl.version {
-		s.stats.bad++
 		return
 	}
 	if !s.saw(id) {
 		f, err := s.codec.decode(encoding(p[0]&0x0f), s.tmpl, p[5:])
 		if err != nil {
-			s.stats.bad++
 			return
 		}
 		s.seen[s.nseen%seenSize] = id

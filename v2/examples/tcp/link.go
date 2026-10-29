@@ -11,7 +11,7 @@ import (
 )
 
 type linkStats struct {
-	packets, octets, tries, failed int
+	packets, failed int
 }
 
 // link carries IPv4 packets to and from one radio over DMR confirmed data
@@ -68,7 +68,6 @@ func (l *link) pump(now time.Duration) {
 			l.stats.failed++
 		} else {
 			l.stats.packets++
-			l.stats.octets += len(l.queue[0])
 		}
 		l.queue = l.queue[1:]
 	}
@@ -110,7 +109,6 @@ func (l *link) outputs(outs []data.Output) {
 		case data.OutputBurst:
 			l.emitTx(o.Due, &o.Burst)
 		case data.OutputDone:
-			l.stats.tries += int(o.Try)
 			if o.Result != data.ResultDelivered {
 				l.stats.failed++
 			}

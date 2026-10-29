@@ -64,7 +64,6 @@ type simClock struct {
 	mu     sync.Mutex
 	now    time.Duration
 	timers timerHeap
-	fired  int
 }
 
 func (c *simClock) Now() time.Time {
@@ -105,7 +104,6 @@ func (c *simClock) advance(to time.Duration) int {
 		}
 		t, _ := heap.Pop(&c.timers).(*simTimer)
 		c.now = max(c.now, t.at)
-		c.fired++
 		c.mu.Unlock()
 		t.f()
 		n++

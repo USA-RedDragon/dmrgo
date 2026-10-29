@@ -27,11 +27,10 @@ type cell struct {
 
 type cellResult struct {
 	cell
-	tx, rx  appStats
-	air     airStats
-	link    linkStats
-	elapsed time.Duration
-	sent    []form
+	tx, rx appStats
+	air    airStats
+	link   linkStats
+	sent   []form
 }
 
 var errStuck = errors.New("simulation did not finish")
@@ -88,7 +87,7 @@ func runCell(c cell, t *template, dict []byte) (cellResult, error) {
 		sb.l.tick(now)
 		sa.tick(now)
 	}
-	res.tx, res.rx, res.air, res.link, res.elapsed = sa.stats, sb.stats, a.stats, sa.l.stats, now
+	res.tx, res.rx, res.air, res.link = sa.stats, sb.stats, a.stats, sa.l.stats
 	if !sameForms(res.sent, sb.got, res.tx.acked) {
 		return res, errors.New("delivered forms do not match the sent forms")
 	}

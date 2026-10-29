@@ -54,7 +54,6 @@ type options struct {
 
 type decoder struct {
 	opt      options
-	wav      bool
 	hdr      []byte
 	ready    bool
 	enc      encoding
@@ -84,7 +83,6 @@ func newDecoder(opt options) (*decoder, error) {
 	d := &decoder{opt: opt, rep: newReporter()}
 	switch opt.format {
 	case "wav":
-		d.wav = true
 		d.hdr = make([]byte, 0, 4096)
 		return d, nil
 	case "f32":

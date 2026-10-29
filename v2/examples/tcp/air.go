@@ -27,7 +27,6 @@ type flight struct {
 
 type airStats struct {
 	bursts, collisions int
-	busy               time.Duration
 }
 
 type air struct {
@@ -57,7 +56,6 @@ func (a *air) emit(from int) func(time.Duration, *layer2.RawBurst) {
 			a.stats.collisions++
 		}
 		a.stats.bursts++
-		a.stats.busy += burstTime
 		a.flights = append(a.flights, f)
 	}
 }
