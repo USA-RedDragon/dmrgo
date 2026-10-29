@@ -2,6 +2,7 @@ package fsktx
 
 import (
 	"math"
+	"slices"
 	"testing"
 )
 
@@ -44,4 +45,40 @@ func nyquistResponse(p pulse) (gain, isi float64) {
 		}
 	}
 	return gain, isi
+}
+
+func TestNyquistTables(t *testing.T) {
+	t.Parallel()
+	var cases []pulse
+	for _, p := range tierPulses() {
+		cases = append(cases, p)
+		q := p
+		q.ridge = 2e-6
+		cases = append(cases, q)
+		q = p
+		q.flatGain = 0.001
+		q.flat = true
+		cases = append(cases, q)
+		if p.tab != nil {
+			q = p
+			q.tab = slices.Clone(p.tab)
+			q.tab[len(q.tab)/2] += 1e-3
+			cases = append(cases, q)
+			q = p
+			q.edge = 0.5
+			cases = append(cases, q)
+		} else {
+			q = p
+			q.beta++
+			cases = append(cases, q)
+		}
+	}
+	for i, p := range cases {
+		want := p
+		want.solveNyquist()
+		p.nyquist()
+		if *p.echo != *want.echo {
+			t.Errorf("case %d (span %d, tab %v, flat %v): the echoes of the design differ from a solve", i, p.span, p.tab != nil, p.flat)
+		}
+	}
 }

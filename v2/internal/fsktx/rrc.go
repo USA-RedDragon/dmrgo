@@ -1,6 +1,9 @@
 package fsktx
 
-import "math"
+import (
+	"math"
+	"slices"
+)
 
 // Constants of the DMR 4FSK modulation (ETSI TS 102 361-1 clause 10.2).
 const (
@@ -227,7 +230,34 @@ const (
 
 const nyquistFlat = 1e3
 
+func tierPulses() [2]pulse {
+	iq := pulseOf(Tier1, predPulse)
+	au := pulseOf(Tier1, PulseConfig{Span: 8, PerSymbol: 40, Shape: tierShapeTab[:]})
+	return [2]pulse{iq, au}
+}
+
+func (p *pulse) sameDesign(q pulse) bool {
+	if p.span != q.span || p.ridge != q.ridge || (p.tab == nil) != (q.tab == nil) {
+		return false
+	}
+	if p.tab != nil {
+		return p.per == q.per && p.edge == q.edge && p.flat == q.flat && (!p.flat || p.flatGain == q.flatGain) && slices.Equal(p.tab, q.tab)
+	}
+	return p.win == q.win && p.beta == q.beta && p.flat == q.flat && (!p.flat || p.flatGain == q.flatGain)
+}
+
 func (p *pulse) nyquist() {
+	for i, q := range tierPulses() {
+		if p.sameDesign(q) {
+			p.echo = new([4*maxTaps + 1]float64)
+			*p.echo = nyquistEcho[i]
+			return
+		}
+	}
+	p.solveNyquist()
+}
+
+func (p *pulse) solveNyquist() {
 	n := nyquistStep*2*p.span + 1
 	nm := 4*p.span + 1
 	ng := 2 * p.span * nyquistGrid
