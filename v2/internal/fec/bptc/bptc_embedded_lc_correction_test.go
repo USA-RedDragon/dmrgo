@@ -1,7 +1,9 @@
 package bptc_test
 
 import (
+	"fmt"
 	"math/rand"
+	"slices"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -75,11 +77,14 @@ func TestEmbeddedLC_UpToThreeErrorsCorrected(t *testing.T) {
 	info := embeddedLCInfo()
 	fr := encodeEmbedded(info)
 	for k := 1; k <= testmode.N(3, 3, 2); k++ {
-		forEachErrorPattern(128, k, func(pos []int) {
-			got, res := decodeEmbedded(flipEmbedded(fr, pos...))
+		var patterns [][]int
+		forEachErrorPattern(128, k, func(pos []int) { patterns = append(patterns, slices.Clone(pos)) })
+		checkCases(t, len(patterns), func(i int) []int { return patterns[i] }, func(pos *[]int) string {
+			got, res := decodeEmbedded(flipEmbedded(fr, *pos...))
 			if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
-				t.Fatalf("errors at %v: data match=%v result=%+v", pos, got == info, res)
+				return fmt.Sprintf("errors at %v: data match=%v result=%+v", *pos, got == info, res)
 			}
+			return ""
 		})
 	}
 }
