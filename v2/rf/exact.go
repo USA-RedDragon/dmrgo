@@ -79,13 +79,40 @@ type xlanes struct {
 	re, im, bonus [4]float32
 }
 
-func (t *xtrellis) forward(src, d0, d1, d2, d3 []float32, lo int, l *xlanes, thr, top float32) float32 {
+func (t *xtrellis) forward(src, d0, d1, d2, d3 []float32, lo int, l *xlanes, thr, top float32, first bool) float32 {
 	n := len(src)
 	d0, d1, d2, d3 = d0[:n], d1[:n], d2[:n], d3[:n]
 	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
 	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
 	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
 	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
+	if first {
+		for i, a := range src {
+			if a < thr {
+				d0[i], d1[i], d2[i], d3[i] = negInf, negInf, negInf, negInf
+				continue
+			}
+			c, s := cos[i], sin[i]
+			v0 := a + re0*c + im0*s + b0
+			v1 := a + re1*c + im1*s + b1
+			v2 := a + re2*c + im2*s + b2
+			v3 := a + re3*c + im3*s + b3
+			d0[i], d1[i], d2[i], d3[i] = v0, v1, v2, v3
+			if v0 > top {
+				top = v0
+			}
+			if v1 > top {
+				top = v1
+			}
+			if v2 > top {
+				top = v2
+			}
+			if v3 > top {
+				top = v3
+			}
+		}
+		return top
+	}
 	if t.logmap {
 		for i, a := range src {
 			if a < thr {
@@ -156,6 +183,7 @@ func (t *xtrellis) backward(src, e0, e1, e2, e3, dst []float32, lo int, l *xlane
 	if t.logmap {
 		for i, a := range src {
 			if a < thr {
+				dst[i] = negInf
 				continue
 			}
 			c, s := cos[i], sin[i]
@@ -163,7 +191,7 @@ func (t *xtrellis) backward(src, e0, e1, e2, e3, dst []float32, lo int, l *xlane
 			v1 := re1*c + im1*s + b1 + e1[i]
 			v2 := re2*c + im2*s + b2 + e2[i]
 			v3 := re3*c + im3*s + b3 + e3[i]
-			dst[i] = logAdd(logAdd(logAdd(logAdd(dst[i], v0), v1), v2), v3)
+			dst[i] = logAdd(logAdd(logAdd(v0, v1), v2), v3)
 			p0 = logAdd(p0, a+v0)
 			p1 = logAdd(p1, a+v1)
 			p2 = logAdd(p2, a+v2)
@@ -174,41 +202,35 @@ func (t *xtrellis) backward(src, e0, e1, e2, e3, dst []float32, lo int, l *xlane
 	}
 	for i, a := range src {
 		if a < thr {
+			dst[i] = negInf
 			continue
 		}
 		c, s := cos[i], sin[i]
-		x := dst[i]
-		if v := re0*c + im0*s + b0 + e0[i]; true {
-			if v > x {
-				x = v
-			}
-			if a+v > p0 {
-				p0 = a + v
-			}
+		v0 := re0*c + im0*s + b0 + e0[i]
+		v1 := re1*c + im1*s + b1 + e1[i]
+		v2 := re2*c + im2*s + b2 + e2[i]
+		v3 := re3*c + im3*s + b3 + e3[i]
+		x := v0
+		if v1 > x {
+			x = v1
 		}
-		if v := re1*c + im1*s + b1 + e1[i]; true {
-			if v > x {
-				x = v
-			}
-			if a+v > p1 {
-				p1 = a + v
-			}
+		if v2 > x {
+			x = v2
 		}
-		if v := re2*c + im2*s + b2 + e2[i]; true {
-			if v > x {
-				x = v
-			}
-			if a+v > p2 {
-				p2 = a + v
-			}
+		if v3 > x {
+			x = v3
 		}
-		if v := re3*c + im3*s + b3 + e3[i]; true {
-			if v > x {
-				x = v
-			}
-			if a+v > p3 {
-				p3 = a + v
-			}
+		if a+v0 > p0 {
+			p0 = a + v0
+		}
+		if a+v1 > p1 {
+			p1 = a + v1
+		}
+		if a+v2 > p2 {
+			p2 = a + v2
+		}
+		if a+v3 > p3 {
+			p3 = a + v3
 		}
 		dst[i] = x
 	}
@@ -261,9 +283,6 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 	for k := range steps {
 		alpha := t.alpha[k*n : (k+1)*n]
 		next := t.alpha[(k+1)*n : (k+2)*n]
-		for i := range next {
-			next[i] = negInf
-		}
 		corr := t.corr[k*m.windows : (k+1)*m.windows]
 		thr := t.top[k] - t.beam[k]
 		top := negInf
@@ -278,9 +297,10 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 				dst[d] = next[s2*np : (s2+1)*np]
 			}
 			src := alpha[s*np : (s+1)*np]
-			off := t.off[(4*s)>>shift]
-			top = t.forward(src[:np-off], dst[0][off:], dst[1][off:], dst[2][off:], dst[3][off:], 0, &l, thr, top)
-			top = t.forward(src[np-off:], dst[0][:off], dst[1][:off], dst[2][:off], dst[3][:off], np-off, &l, thr, top)
+			v := (4 * s) >> shift
+			off := t.off[v]
+			top = t.forward(src[:np-off], dst[0][off:], dst[1][off:], dst[2][off:], dst[3][off:], 0, &l, thr, top, v == 0)
+			top = t.forward(src[np-off:], dst[0][:off], dst[1][:off], dst[2][:off], dst[3][:off], np-off, &l, thr, top, v == 0)
 		}
 		t.top[k+1] = top
 		for range t.drifts {
@@ -298,9 +318,6 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		a := app[4*k : 4*k+4]
 		for v := range a {
 			a[v] = negInf
-		}
-		for i := range t.next {
-			t.next[i] = negInf
 		}
 		thr := t.top[k] - t.beam[k]
 		var l xlanes
