@@ -4,6 +4,7 @@ package fsktx
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"slices"
 	"testing"
@@ -58,11 +59,18 @@ func TestTxMatrixLimitsAudio(t *testing.T) {
 		}
 	}
 	audio = append(audio, audioCase{AudioConfig{Tier: Tier2 + 1}, false}, audioCase{AudioConfig{Tier: -1}, false})
-	for _, c := range audio {
-		a, err := NewAudio(c.cfg)
-		if (err == nil) != c.ok || (a == nil) == c.ok {
-			t.Errorf("NewAudio(%+v): %v, want ok %v", c.cfg, err, c.ok)
-		}
+	const chunk = 16
+	for i := 0; i < len(audio); i += chunk {
+		cases := audio[i:min(i+chunk, len(audio))]
+		t.Run(fmt.Sprint(i/chunk), func(t *testing.T) {
+			t.Parallel()
+			for _, c := range cases {
+				a, err := NewAudio(c.cfg)
+				if (err == nil) != c.ok || (a == nil) == c.ok {
+					t.Errorf("NewAudio(%+v): %v, want ok %v", c.cfg, err, c.ok)
+				}
+			}
+		})
 	}
 }
 
