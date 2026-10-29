@@ -79,10 +79,10 @@ type AudioRxConfig struct {
 // output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier
 // also takes the de-emphasized audio of the speaker or accessory output of
 // a radio. With Tier0 it keeps about 1.4 KB of state,
-// for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz
-// and 2,144 B with its stack, built with TinyGo -opt z, over 2 KB by the
+// for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.9 MHz
+// and 2,232 B with its stack, built with TinyGo -opt z, over 2 KB by the
 // accepted cost of the detection of standalone RC bursts and of the MS
-// bursts of both TDMA slots. An AudioReceiver that Init sets up in memory of the
+// bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the
 // caller, such as a package variable, uses no heap in stream mode. An
 // AudioReceiver is not safe for concurrent use, and it must not be copied
 // after Init or NewAudioReceiver.

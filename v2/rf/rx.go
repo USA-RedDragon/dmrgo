@@ -183,9 +183,9 @@ func (r *Receiver) setLow(c RxConfig, opt *options) {
 // Init sets up r for c, in place of any state it holds, in Tier0 at a
 // Rate of 9600 or 12000. It does not allocate, so that r can live in
 // memory of the caller. On a Cortex-M4F at 9.6 kHz the receiver needs
-// up to 4.8 MHz and 2,160 B with its stack, built with TinyGo -opt z, over
+// up to 5.0 MHz and 2,248 B with its stack, built with TinyGo -opt z, over
 // 2 KB by the accepted cost of the detection of standalone RC bursts and of
-// the MS bursts of both TDMA slots. Init
+// the MS bursts of both TDMA slots and of the clock rate tracking. Init
 // returns dmrgo.ErrNilReceiver for a nil r, and a *dmrgo.ConfigError, with
 // r unchanged, when a field of c is out of range.
 func (r *Receiver) Init(c RxConfig) error {
