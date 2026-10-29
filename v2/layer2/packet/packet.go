@@ -51,10 +51,6 @@ func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 }
 
 // ETSI TS 102 361-1 clause B.3.9, Figure B.8C
-func appendMessageCRC(data []byte) []byte {
-	return binary.LittleEndian.AppendUint32(data, crc.CRC32(data))
-}
-
 func checkMessageCRC(data []byte) bool {
 	if len(data) < crcOctets {
 		return false

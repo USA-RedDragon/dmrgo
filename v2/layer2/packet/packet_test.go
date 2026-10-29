@@ -754,9 +754,9 @@ func TestMessageCRC(t *testing.T) {
 	if packet.MessageCRC(data) != ref(data) {
 		t.Fatal("CRC differs from the bitwise B.3.9 reference")
 	}
-	full := packet.AppendMessageCRC(data)
 	c := ref(data)
-	if !bytes.Equal(full[36:], []byte{byte(c), byte(c >> 8), byte(c >> 16), byte(c >> 24)}) || !packet.CheckMessageCRC(full) {
+	full := append(bytes.Clone(data), byte(c), byte(c>>8), byte(c>>16), byte(c>>24))
+	if !packet.CheckMessageCRC(full) {
 		t.Fatal("CRC octet order")
 	}
 	if packet.CheckMessageCRC(full[:3]) {
