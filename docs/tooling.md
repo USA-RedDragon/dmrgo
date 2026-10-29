@@ -47,15 +47,17 @@ docgen needs the Go module cache and no network. It runs the go commands with `-
 
 ## Docs site
 
-`docs/site/build.sh` builds an HTML site from `README.md` and `docs/`, one page per Markdown file, into `artifacts/docs-site/` (git ignores `artifacts/`). It needs pandoc 3.11 and no Go. Run it from any directory:
+`docs/site/build.sh` builds an HTML site from `README.md` and `docs/` into `artifacts/docs-site/` (git ignores `artifacts/`). It needs pandoc 3.11 and no Go. Run it from any directory:
 
 ```sh
 docs/site/build.sh
 ```
 
-Open `artifacts/docs-site/index.html` in a browser. A path as the first argument sets another output directory.
+Open `artifacts/docs-site/index.html` in a browser. A path as the first argument sets another output directory. The site works from the file system and needs no server.
 
+- `docs/nav.md` holds the sections and pages of the site in reading order. `README.md` is the Overview. A page that `docs/nav.md` names by path in code is planned: the build log lists it as not yet written, and the navigation leaves it out. A comment `<!-- old: <path> -->` after a link gives the path of a page before it moved; the build uses the old file until the new one exists.
+- The build log also lists each Markdown file under `docs/` that `docs/nav.md` does not name. The build makes a page for it, but the navigation does not show it.
+- Each page has the sections in a left navigation, an "On this page" list of its headings, links to the previous and next page in outline order, and a § link on each heading.
+- The search box finds pages by title, heading and text. The build writes the index to `search-index.js`, and a short script in each page searches it in the browser. No other service is used.
 - pandoc reads each page as GitHub-flavored Markdown (`-f gfm`), so tables, code blocks and heading anchors match GitHub.
-- `docs/site/template.html` is the page around each doc. `docs/site/site.lua` is a pandoc filter that rewrites links to other docs as links to their pages, links to other files of the repository as GitHub links, and copies each image into the output at the same relative path.
-- The page list comes from the Documentation list of `README.md`. A doc that the list does not name comes after it, by title. The build fails when the list names a file that is not a doc.
-- The package reference is the pkg.go.dev link of `README.md`.
+- `docs/site/template.html` is the page around each doc. `docs/site/nav.lua` reads `docs/nav.md`, `docs/site/pages.lua` lists the pages to build, `docs/site/site.lua` is the pandoc filter of each page, and `docs/site/index.lua` writes the search index. The filter rewrites links to other docs as links to their pages, links to other files of the repository as GitHub links, and copies each image into the output.

@@ -1,46 +1,7 @@
+package.path = "docs/site/?.lua;" .. package.path
+local navlib = require("nav")
 local stringify = pandoc.utils.stringify
-
-local function read_file(p)
-  local f = io.open(p, "rb")
-  if not f then
-    return nil
-  end
-  local data = f:read("a")
-  f:close()
-  return data
-end
-
-local function is_dir(p)
-  return pcall(pandoc.system.list_directory, p)
-end
-
-local function resolve(dir, target)
-  local parts = {}
-  local whole = dir == "" and target or dir .. "/" .. target
-  for seg in whole:gmatch("[^/]+") do
-    if seg == ".." then
-      if #parts == 0 then
-        return nil
-      end
-      table.remove(parts)
-    elseif seg ~= "." then
-      table.insert(parts, seg)
-    end
-  end
-  return table.concat(parts, "/")
-end
-
-local function page_of(p)
-  if p == "README.md" then
-    return "index.html"
-  end
-  local name = p:match("^docs/([^/]+)%.md$") or p:match("^docs/([^/]+)/README%.md$")
-  return name and name .. ".html" or nil
-end
-
-local function out_path(p)
-  return p:match("^docs/(.*)$") or p
-end
+local read_file, resolve, relative, dir_of = navlib.read_file, navlib.resolve, navlib.relative, navlib.dir_of
 
 local function html(s)
   return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;"))
@@ -60,70 +21,6 @@ local function repo_url()
     error("go.mod has no module line")
   end
   return "https://" .. mod
-end
-
-local function readme_nav(readme)
-  local nav, seen = {}, {}
-  local blocks = readme.blocks
-  for i, b in ipairs(blocks) do
-    if b.t == "Header" and b.level == 2 and b.identifier == "documentation" then
-      local list = blocks[i + 1]
-      if not list or list.t ~= "BulletList" then
-        error("README.md: no list after the Documentation heading")
-      end
-      for _, item in ipairs(list.content) do
-        local link
-        pandoc.walk_block(pandoc.Div(item), { Link = function(l) link = link or l end })
-        if link then
-          local p = resolve("", link.target:gsub("#.*$", ""))
-          local page = p and page_of(p)
-          if not page then
-            error("README.md: Documentation links to " .. link.target .. ", which is not a doc page")
-          end
-          if not seen[page] then
-            seen[page] = true
-            table.insert(nav, { page = page, title = stringify(link.content) })
-          end
-        end
-      end
-    end
-  end
-  if #nav == 0 then
-    error("README.md: no Documentation list")
-  end
-  local extra = {}
-  for _, name in ipairs(pandoc.system.list_directory("docs")) do
-    local p
-    if name:match("%.md$") then
-      p = "docs/" .. name
-    elseif read_file("docs/" .. name .. "/README.md") and not read_file("docs/" .. name .. ".md") then
-      p = "docs/" .. name .. "/README.md"
-    end
-    local page = p and page_of(p)
-    if page and not seen[page] then
-      seen[page] = true
-      local h = first_header(pandoc.read(read_file(p), "gfm").blocks, 1)
-      table.insert(extra, { page = page, title = h and stringify(h) or page })
-    end
-  end
-  table.sort(extra, function(a, b) return a.title < b.title end)
-  for _, e in ipairs(extra) do
-    table.insert(nav, e)
-  end
-  return nav
-end
-
-local function pkg_doc(readme)
-  local found
-  readme:walk({
-    Link = function(l)
-      if not found and l.target:match("^https://pkg%.go%.dev/") then
-        local t = stringify(l.content)
-        found = { url = l.target, title = t:sub(1, 1):upper() .. t:sub(2) }
-      end
-    end,
-  })
-  return found
 end
 
 local function only_images(inlines)
@@ -147,16 +44,101 @@ local function blank(inlines)
   return true
 end
 
+local function out_path(p)
+  return p:match("^docs/(.*)$") or p
+end
+
+local function write_file(p, data)
+  pandoc.system.make_directory(dir_of(p), true)
+  local f = assert(io.open(p, "wb"))
+  f:write(data)
+  f:close()
+end
+
+local function nav_html(nav, page, root, repo)
+  local parts = {}
+  for _, sec in ipairs(nav.sections) do
+    local items = {}
+    for _, it in ipairs(sec.items) do
+      local href, attrs = nil, ""
+      if it.kind == "page" then
+        href = root .. it.out
+        if it.out == page then
+          attrs = ' class="on" aria-current="page"'
+        end
+      elseif it.kind == "external" then
+        href = it.target
+      elseif it.kind == "file" and it.path and (read_file(it.path) or navlib.is_dir(it.path)) then
+        href = repo .. (navlib.is_dir(it.path) and "/tree/main/" or "/blob/main/") .. it.path
+      end
+      if href then
+        table.insert(items, '<li><a href="' .. html(href) .. '"' .. attrs .. ">" .. html(it.title) .. "</a></li>")
+      end
+    end
+    if #items > 0 then
+      if sec.title then
+        table.insert(parts, '<li class="sec"><span>' .. html(sec.title) .. "</span><ul>" .. table.concat(items) .. "</ul></li>")
+      else
+        table.insert(parts, table.concat(items))
+      end
+    end
+  end
+  return "<ul>" .. table.concat(parts) .. "</ul>"
+end
+
+local function toc_html(toc)
+  if #toc < 2 then
+    return nil
+  end
+  local items = {}
+  for _, t in ipairs(toc) do
+    table.insert(items, '<li class="l' .. t.level .. '"><a href="#' .. html(t.id) .. '">' .. html(t.title) .. "</a></li>")
+  end
+  return "<ul>" .. table.concat(items) .. "</ul>"
+end
+
+local function pager_html(nav, page, root)
+  local idx
+  for i, it in ipairs(nav.pages) do
+    if it.out == page then
+      idx = i
+    end
+  end
+  if not idx then
+    return nil
+  end
+  local out = {}
+  local prev, nxt = nav.pages[idx - 1], nav.pages[idx + 1]
+  if prev then
+    table.insert(out, '<a class="prev" rel="prev" href="' .. html(root .. prev.out) .. '"><span>Previous</span>' .. html(prev.title) .. "</a>")
+  end
+  if nxt then
+    table.insert(out, '<a class="next" rel="next" href="' .. html(root .. nxt.out) .. '"><span>Next</span>' .. html(nxt.title) .. "</a>")
+  end
+  if #out == 0 then
+    return nil
+  end
+  return table.concat(out)
+end
+
+local function plain_text(blocks, limit)
+  local s = stringify(pandoc.Pandoc(blocks)):gsub("%s+", " ")
+  if #s > limit then
+    s = s:sub(1, limit)
+  end
+  return s
+end
+
 function Pandoc(doc)
   local src = PANDOC_STATE.input_files[1]
-  local here = src:match("^(.*)/[^/]*$") or ""
+  local here = dir_of(src)
   local outdir = stringify(doc.meta.outdir)
+  local page = stringify(doc.meta.page)
+  local page_dir = dir_of(page)
+  local root = relative(page_dir, "x"):gsub("x$", "")
   local repo = repo_url()
-  local page = page_of(src)
+  local nav = navlib.load()
   local readme = src == "README.md" and doc or pandoc.read(read_file("README.md"), "gfm")
-  if not page then
-    error(src .. " is not a doc page")
-  end
 
   doc = doc:walk({
     Image = function(img)
@@ -168,17 +150,10 @@ function Pandoc(doc)
       if not data then
         error(src .. ": image " .. img.src .. " not found")
       end
-      local dest = outdir .. "/" .. out_path(p)
-      pandoc.system.make_directory(dest:match("^(.*)/[^/]*$"), true)
-      local f = assert(io.open(dest, "wb"))
-      f:write(data)
-      f:close()
-      img.src = out_path(p)
+      write_file(outdir .. "/" .. out_path(p), data)
+      img.src = relative(page_dir, out_path(p))
       return img
     end,
-  })
-
-  doc = doc:walk({
     Link = function(l)
       if #l.content == 0 then
         return {}
@@ -192,17 +167,20 @@ function Pandoc(doc)
       if not p then
         return l
       end
-      local target = page_of(p)
+      local target = nav.by_src[p]
+      if not target and p:match("%.md$") and read_file(p) then
+        target = navlib.default_out(p)
+      end
       if target then
-        l.target = target .. frag
-      elseif read_file(p) or is_dir(p) then
-        l.target = repo .. (is_dir(p) and "/tree/main/" or "/blob/main/") .. p .. frag
+        l.target = relative(page_dir, target) .. frag
+      elseif read_file(p) or navlib.is_dir(p) then
+        l.target = repo .. (navlib.is_dir(p) and "/tree/main/" or "/blob/main/") .. p .. frag
       end
       return l
     end,
   })
 
-  local toc = {}
+  local toc, heads = {}, {}
   local h1
   doc = doc:walk({
     Para = function(para)
@@ -217,18 +195,23 @@ function Pandoc(doc)
       return pandoc.Div({ tbl }, { class = "table" })
     end,
     Header = function(h)
-      if h.level == 1 and not h1 then
-        h1 = stringify(h)
-      elseif h.level == 2 then
-        table.insert(toc, { id = h.identifier, title = stringify(h) })
+      local title = stringify(h)
+      if h.level == 1 then
+        h1 = h1 or title
+        return h
       end
+      if h.level <= 3 then
+        table.insert(toc, { id = h.identifier, title = title, level = h.level })
+      end
+      table.insert(heads, { h.identifier, title })
+      if h.identifier ~= "" then
+        h.content:insert(pandoc.Link({ pandoc.Str("§") }, "#" .. h.identifier, "", { class = "self", ["aria-label"] = "Link to " .. title }))
+      end
+      return h
     end,
   })
 
   local site = stringify(first_header(readme.blocks, 1) or "")
-  local nav = readme_nav(readme)
-  local pkg = pkg_doc(readme)
-
   local description
   for i, b in ipairs(doc.blocks) do
     if b.t == "Para" then
@@ -240,33 +223,30 @@ function Pandoc(doc)
     end
   end
 
-  local items = {}
-  for _, n in ipairs(nav) do
-    local on = n.page == page
-    local li = '<li><a href="' .. n.page .. '"' .. (on and ' class="on" aria-current="page"' or "") .. ">" .. html(n.title) .. "</a>"
-    if on and #toc > 1 then
-      local sub = {}
-      for _, t in ipairs(toc) do
-        table.insert(sub, '<li><a href="#' .. t.id .. '">' .. html(t.title) .. "</a></li>")
-      end
-      li = li .. '<ul class="toc">' .. table.concat(sub) .. "</ul>"
-    end
-    table.insert(items, li .. "</li>")
+  local section
+  local it = nav.by_out[page]
+  if it and it.section then
+    section = it.section.title
   end
-
-  local links = {}
-  if pkg then
-    table.insert(links, '<a href="' .. html(pkg.url) .. '">' .. html(pkg.title) .. "</a>")
-  end
-  table.insert(links, '<a href="' .. repo .. '">GitHub</a>')
+  local title = h1 or site
+  local entry = { u = page, t = page == "index.html" and site or title, s = section or "", h = heads, x = plain_text(doc.blocks, 6000) }
+  write_file(outdir .. "/.search/" .. page:gsub("/", "__") .. ".json", pandoc.json.encode(entry))
 
   local raw = function(s) return pandoc.MetaBlocks({ pandoc.RawBlock("html", s) }) end
+  local links = { '<a href="https://pkg.go.dev/' .. repo:gsub("^https://", "") .. '/v2">Go API</a>', '<a href="' .. repo .. '">GitHub</a>' }
   doc.meta.outdir = nil
+  doc.meta.page = nil
+  doc.meta.root = root
   doc.meta.site = site
   doc.meta.pagetitle = (page == "index.html" or not h1) and site or h1 .. " - " .. site
   doc.meta.description = description or site
-  doc.meta.nav = raw('<ul><li><a href="index.html"' .. (page == "index.html" and ' class="on" aria-current="page"' or "") .. ">Overview</a></li>" .. table.concat(items) .. "</ul>")
+  doc.meta.nav = raw(nav_html(nav, page, root, repo))
   doc.meta.links = raw(table.concat(links))
+  local toc_s = toc_html(toc)
+  doc.meta.toc = toc_s and raw(toc_s) or nil
+  local pager = pager_html(nav, page, root)
+  doc.meta.pager = pager and raw(pager) or nil
+  doc.meta.section = section
   doc.meta.source = repo .. "/blob/main/" .. src
   doc.meta.srcname = src
   doc.meta.home = page == "index.html" and "true" or nil

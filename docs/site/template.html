@@ -49,15 +49,41 @@ header nav a:hover { color: var(--band-ink); text-decoration: underline; }
 .mode { margin-left: auto; display: flex; border: 1px solid oklch(from var(--band-soft) l c h / 0.5); }
 .mode button { font: inherit; font-size: 14px; background: none; color: var(--band-soft); border: 0; padding: 4px 10px; cursor: pointer; }
 .mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
-.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; max-width: 1240px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-aside { font-size: 15px; }
-aside > ul { position: sticky; top: 16px; }
-aside ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-aside a { color: var(--ink); text-decoration: none; display: block; padding: 3px 10px; border-left: 3px solid transparent; }
-aside a:hover { color: var(--accent-ink); }
-aside a.on { border-left-color: var(--accent); font-weight: 700; }
-aside .toc { margin: 2px 0 8px 13px; border-left: 1px solid var(--line); }
-aside .toc a { color: var(--soft); font-size: 14px; padding: 1px 10px; }
+.search { position: relative; flex: 1 1 220px; max-width: 360px; }
+.search input { width: 100%; font: inherit; font-size: 15px; padding: 5px 10px; border: 1px solid oklch(from var(--band-soft) l c h / 0.5); background: oklch(from var(--band-ink) l c h / 0.08); color: var(--band-ink); }
+.search input::placeholder { color: var(--band-soft); }
+.search ol { position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; width: min(480px, calc(100vw - 32px)); margin: 0; padding: 4px 0; list-style: none; background: var(--bg); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 8px 24px oklch(0 0 0 / 0.18); max-height: 70vh; overflow-y: auto; }
+.search li a { display: block; padding: 6px 12px; color: var(--ink); text-decoration: none; }
+.search li a:hover, .search li a.sel { background: var(--panel); }
+.search li small { display: block; color: var(--soft); font-size: 13px; }
+.search li.none { padding: 6px 12px; color: var(--soft); }
+.shell { display: grid; grid-template-columns: 230px minmax(0, 1fr) 200px; gap: 40px; max-width: 1440px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.side { font-size: 15px; }
+.side > details { border: 0; margin: 0; padding: 0; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.side summary { display: none; }
+.side ul { list-style: none; margin: 0; padding: 0; }
+.side li.sec { margin-top: 14px; }
+.side li.sec > span { display: block; padding: 0 10px 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soft); }
+.side a { color: var(--ink); text-decoration: none; display: block; padding: 3px 10px; border-left: 3px solid transparent; line-height: 1.35; }
+.side a:hover { color: var(--accent-ink); }
+.side a.on { border-left-color: var(--accent); font-weight: 700; background: var(--panel); }
+.onpage { font-size: 14px; }
+.onpage > div { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.onpage h2, .toc-inline summary { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soft); margin: 0 0 6px; }
+.onpage ul, .toc-inline ul { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
+.onpage a, .toc-inline a { display: block; padding: 2px 10px; color: var(--soft); text-decoration: none; line-height: 1.35; }
+.onpage a:hover, .toc-inline a:hover { color: var(--accent-ink); }
+.onpage li.l3 a, .toc-inline li.l3 a { padding-left: 22px; font-size: 13px; }
+.toc-inline { display: none; border: 1px solid var(--line); padding: 0 14px; margin: 0 0 20px; }
+.toc-inline ul { margin-bottom: 10px; }
+.crumb { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); margin: 0 0 4px; }
+.doc .self { margin-left: 8px; color: var(--line); text-decoration: none; font-weight: 400; opacity: 0; }
+.doc h2:hover .self, .doc h3:hover .self, .doc h4:hover .self, .doc .self:focus { opacity: 1; color: var(--accent-ink); }
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+.pager a { display: block; border: 1px solid var(--line); padding: 10px 14px; text-decoration: none; color: var(--accent-ink); font-weight: 600; }
+.pager a:hover { border-color: var(--accent); }
+.pager span { display: block; font-size: 13px; font-weight: 400; color: var(--soft); }
+.pager .next { grid-column: 2; text-align: right; }
 main { min-width: 0; }
 .doc { max-width: 900px; }
 .doc h1, .doc h2, .doc h3, .doc h4 { font-weight: 600; line-height: 1.15; letter-spacing: -0.01em; text-wrap: balance; }
@@ -89,40 +115,61 @@ tbody tr:last-child td { border-bottom: 0; }
 th { background: var(--panel); color: var(--soft); font-weight: 700; font-size: 13px; letter-spacing: 0.03em; text-transform: uppercase; }
 td { font-variant-numeric: tabular-nums; }
 td:first-child { min-width: 9em; }
-td:not(:first-child) { white-space: nowrap; }
+td code { white-space: nowrap; }
+td:last-child:not(:first-child) { min-width: 14em; }
 details { border: 1px solid var(--line); margin: 14px 0; padding: 0 14px; }
 details[open] { padding-bottom: 6px; }
 summary { cursor: pointer; font-weight: 700; padding: 10px 0; color: var(--accent-ink); }
 blockquote { margin: 12px 0; border-left: 4px solid var(--accent); padding: 4px 14px; background: var(--panel); }
 .source { margin-top: 48px; font-size: 14px; color: var(--soft); }
 footer { border-top: 1px solid var(--line); color: var(--soft); font-size: 14px; padding-block: 18px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (max-width: 1200px) {
+  .shell { grid-template-columns: 220px minmax(0, 1fr); }
+  .onpage { display: none; }
+  .toc-inline { display: block; }
+}
 @media (max-width: 800px) {
-  .shell { grid-template-columns: 1fr; gap: 20px; padding-top: 16px; }
-  aside { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
-  aside > ul { position: static; flex-direction: row; flex-wrap: wrap; gap: 4px 6px; }
-  aside a, aside a.on { border: 1px solid var(--line); padding: 2px 10px; }
-  aside a.on { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
-  aside .toc { display: none; }
+  .shell { grid-template-columns: 1fr; gap: 16px; padding-top: 16px; }
+  .side { border: 1px solid var(--line); }
+  .side > details { position: static; max-height: none; }
+  .side summary { display: block; padding: 8px 12px; font-weight: 700; cursor: pointer; color: var(--accent-ink); }
+  .side > details > ul { padding: 0 0 10px; }
   .mode { margin-left: 0; }
+  .search { order: 3; flex-basis: 100%; max-width: none; }
   .doc:not(.home) h1 { font-size: 30px; }
   .lede { font-size: 18px; }
+  .pager { grid-template-columns: 1fr; }
+  .pager .next { grid-column: 1; }
 }
 </style>
 </head>
 <body>
 <header>
-  <a class="brand" href="index.html">$site$</a>
+  <a class="brand" href="${root}index.html">$site$</a>
   <nav>$links$</nav>
+  <div class="search" role="search" data-root="$root$"><input type="search" placeholder="Search the docs ( / )" aria-label="Search the docs" autocomplete="off" spellcheck="false"><ol hidden></ol></div>
   <div class="mode" role="group" aria-label="Color mode"><button type="button" data-mode="auto">Auto</button><button type="button" data-mode="light">Light</button><button type="button" data-mode="dark">Dark</button></div>
 </header>
 <div class="shell">
-  <aside aria-label="Pages">$nav$</aside>
+  <nav class="side" aria-label="Pages"><details open><summary>Pages</summary>$nav$</details></nav>
   <main>
     <article class="doc$if(home)$ home$endif$">
+$if(section)$
+      <p class="crumb">$section$</p>
+$endif$
+$if(toc)$
+      <details class="toc-inline"><summary>On this page</summary>$toc$</details>
+$endif$
 $body$
+$if(pager)$
+      <nav class="pager" aria-label="Previous and next page">$pager$</nav>
+$endif$
       <p class="source">Source: <a href="$source$">$srcname$</a></p>
     </article>
   </main>
+$if(toc)$
+  <aside class="onpage" aria-label="On this page"><div><h2>On this page</h2>$toc$</div></aside>
+$endif$
 </div>
 <footer>Built from the Markdown of the $site$ repository.</footer>
 <script>
@@ -133,6 +180,78 @@ function setMode(m) {
 }
 document.querySelectorAll(".mode button").forEach(function (b) { b.addEventListener("click", function () { setMode(b.dataset.mode); }); });
 setMode(document.documentElement.getAttribute("data-theme") || "auto");
+if (window.matchMedia("(max-width: 800px)").matches) { document.querySelector(".side > details").removeAttribute("open"); }
+(function () {
+  var box = document.querySelector(".search"), input = box.querySelector("input"), list = box.querySelector("ol"), root = box.dataset.root, sel = -1;
+  function load(then) {
+    if (window.siteSearch) { then(); return; }
+    var s = document.createElement("script");
+    s.src = root + "search-index.js";
+    s.onload = then;
+    document.head.appendChild(s);
+  }
+  function esc(t) { return t.replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function find(q) {
+    var terms = q.toLowerCase().split(/\s+/).filter(Boolean), out = [];
+    if (!terms.length) { return out; }
+    window.siteSearch.forEach(function (p) {
+      var score = 0, anchor = "", head = "", title = p.t.toLowerCase(), body = p.x.toLowerCase();
+      for (var i = 0; i < terms.length; i++) {
+        var t = terms[i], hit = 0;
+        if (title.indexOf(t) >= 0) { hit += 10; }
+        for (var j = 0; j < p.h.length; j++) {
+          if (p.h[j][1].toLowerCase().indexOf(t) >= 0) { hit += 4; if (!anchor) { anchor = p.h[j][0]; head = p.h[j][1]; } break; }
+        }
+        if (body.indexOf(t) >= 0) { hit += 1; }
+        if (!hit) { return; }
+        score += hit;
+      }
+      var phrase = terms.join(" ");
+      if (terms.length > 1) {
+        if (title.indexOf(phrase) >= 0) { score += 20; }
+        for (var k = 0; k < p.h.length; k++) {
+          if (p.h[k][1].toLowerCase().indexOf(phrase) >= 0) { score += 8; anchor = p.h[k][0]; head = p.h[k][1]; break; }
+        }
+        if (body.indexOf(phrase) >= 0) { score += 4; }
+      }
+      out.push({ p: p, score: score, anchor: anchor, head: head });
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out.slice(0, 12);
+  }
+  function show() {
+    var res = find(input.value);
+    sel = res.length ? 0 : -1;
+    if (!input.value.trim()) { list.hidden = true; return; }
+    list.innerHTML = res.length ? res.map(function (r, i) {
+      var href = root + r.p.u + (r.anchor ? "#" + r.anchor : "");
+      return '<li><a href="' + esc(href) + '"' + (i === 0 ? ' class="sel"' : "") + ">" + esc(r.p.t) + (r.head ? " &middot; " + esc(r.head) : "") + "<small>" + esc(r.p.s || "Overview") + "</small></a></li>";
+    }).join("") : '<li class="none">No page matches.</li>';
+    list.hidden = false;
+  }
+  function move(d) {
+    var a = list.querySelectorAll("a");
+    if (!a.length) { return; }
+    if (sel >= 0) { a[sel].classList.remove("sel"); }
+    sel = (sel + d + a.length) % a.length;
+    a[sel].classList.add("sel");
+    a[sel].scrollIntoView({ block: "nearest" });
+  }
+  input.addEventListener("focus", function () { load(function () {}); });
+  input.addEventListener("input", function () { load(show); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown") { e.preventDefault(); move(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); move(-1); }
+    else if (e.key === "Enter") { var a = list.querySelectorAll("a")[sel]; if (a) { location.href = a.getAttribute("href"); } }
+    else if (e.key === "Escape") { list.hidden = true; input.blur(); }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && document.activeElement !== input && ["INPUT", "TEXTAREA"].indexOf(document.activeElement.tagName) < 0) { e.preventDefault(); input.focus(); }
+  });
+  document.addEventListener("click", function (e) { if (!box.contains(e.target)) { list.hidden = true; } });
+  var q = new URLSearchParams(location.search).get("q");
+  if (q) { input.value = q; load(show); }
+})();
 </script>
 </body>
 </html>

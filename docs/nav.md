@@ -1,0 +1,82 @@
+# Site outline
+
+This page lists the pages of the docs site in reading order, by section; the site builds its navigation from it.
+
+- [Overview](../README.md)
+- Get started
+  - [Install](start/01-install.md)
+  - [Decode a burst](start/02-decode-a-burst.md)
+  - [Follow a voice call](start/03-follow-a-voice-call.md)
+  - [Send an SMS](start/04-send-an-sms.md)
+  - [Receive on a radio](start/05-receive-on-a-radio.md)
+  - [Next steps](start/06-next-steps.md)
+- Guides
+  - [Decode and re-encode captures](guides/decode-captures.md)
+  - [Follow calls on both slots](guides/follow-both-slots.md)
+  - [Clean up bursts for a hotspot](guides/clean-up-bursts.md)
+  - [Rewrite and relay a voice call](guides/relay-voice-call.md)
+  - [Transcode voice](guides/transcode-voice.md) <!-- old: vocoders.md -->
+  - [Send SMS and confirmed data](guides/send-data.md)
+  - [Run TCP or UDP over DMR data](guides/tcp-udp-over-dmr.md)
+  - [Report and request location](guides/location.md)
+  - [Register radios and send text](guides/register-radios-send-text.md)
+  - [Radio check, call alert and CSBK services](guides/csbk-services.md)
+  - [Build and decode trunking messages](guides/trunking.md)
+  - [Connect with the MMDVM network protocol or HBRP](guides/connect-dmrd.md)
+  - [Connect to an IPSC system](guides/connect-ipsc.md)
+  - [Connect to a Hytera repeater](guides/connect-hytera.md)
+  - [Use an MMDVM modem](guides/mmdvm-modem.md)
+  - [Use basic privacy](guides/basic-privacy.md)
+  - [Receive with an SDR or an FM radio](guides/receive-sdr-fm.md)
+  - [Transmit within a region's limits](guides/transmit-region-limits.md)
+- State machines
+  - [bs.Repeater](machines/bs-repeater.md)
+  - [csbk.Preambles](machines/csbk-preambles.md)
+  - [csbk.Requester](machines/csbk-requester.md)
+  - [csbk.Responder](machines/csbk-responder.md)
+  - [csbk.Timing](machines/csbk-timing.md)
+  - [csbk.Wakeup](machines/csbk-wakeup.md)
+  - [data.Sender](machines/data-sender.md)
+  - [data.Receiver](machines/data-receiver.md)
+  - [voice.Receiver](machines/voice-receiver.md)
+  - [voice.Transmitter](machines/voice-transmitter.md)
+  - [voice.Interrupter](machines/voice-interrupter.md)
+  - [voice.Jitter](machines/voice-jitter.md)
+  - [trunk.MS](machines/trunk-ms.md)
+  - [trunk.TSCC](machines/trunk-tscc.md)
+  - [trunk.Follower](machines/trunk-follower.md)
+  - [trunk.CapacityPlusFollower](machines/trunk-capacityplusfollower.md)
+  - [dmrdsession.Master](machines/dmrdsession-master.md)
+  - [dmrdsession.Peer](machines/dmrdsession-peer.md)
+  - [dmrdsession.Bridge](machines/dmrdsession-bridge.md)
+  - [ipscsession.Master](machines/ipscsession-master.md)
+  - [ipscsession.Peer](machines/ipscsession-peer.md)
+- Concepts
+  - [The layer model](concepts/layers.md)
+  - [I/O-free services](concepts/services.md)
+  - [Errors and never-panic](concepts/errors.md)
+  - [Allocation](concepts/allocation.md) <!-- old: allocation.md -->
+  - [Tiers](concepts/tiers.md)
+- Targets
+  - [PC](targets/pc.md)
+  - [Browser](targets/browser.md)
+  - [Microcontrollers](targets/mcu.md) <!-- old: tinygo.md -->
+  - [C API](targets/c.md)
+  - [GNU Radio](targets/gnuradio.md)
+- Datasheets
+  - [Receiver](rx.md) <!-- old: rx/README.md -->
+  - [Transmitter](tx.md) <!-- old: tx/README.md -->
+- Reference
+  - [Go API](reference/go-api.md)
+  - [C header](reference/c-api.md)
+  - [ETSI coverage](reference/etsi.md) <!-- old: etsi.md -->
+  - [Features](reference/features.md) <!-- old: features.md -->
+  - [Examples](reference/examples.md) <!-- old: examples.md -->
+  - [Tools](reference/tools.md)
+- Project
+  - [Versioning and compatibility](project/versioning.md)
+  - v2.1 breaking changes: `project/breaking-changes.md`
+  - [Tooling and checks](project/tooling.md) <!-- old: tooling.md -->
+  - [License](../LICENSE)
+
+Each item is a link to a page, or, for a page that is planned and not written, its title and its path in code. A comment `<!-- old: <path> -->` after a link gives the path of the page before it moved; the site uses that file until the new one exists. A link to a file that is not a page, or to another site, shows in the navigation and opens that file or site.

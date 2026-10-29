@@ -4,15 +4,11 @@ cd "$(dirname "$0")/../.."
 out=${1:-artifacts/docs-site}
 rm -rf "$out"
 mkdir -p "$out"
-for src in README.md docs/*.md docs/*/README.md; do
-	case $src in
-	README.md) page=index ;;
-	docs/*/README.md)
-		page=$(basename "$(dirname "$src")")
-		[ ! -f "docs/$page.md" ] || continue
-		;;
-	*) page=$(basename "$src" .md) ;;
-	esac
-	pandoc -f gfm -t html5 --wrap=none --standalone --template docs/site/template.html --lua-filter docs/site/site.lua -M outdir="$out" -o "$out/$page.html" "$src"
-done
+pandoc lua docs/site/pages.lua >"$out/.pages"
+while IFS="$(printf '\t')" read -r src page; do
+	mkdir -p "$out/$(dirname "$page")"
+	pandoc -f gfm -t html5 --wrap=none --standalone --template docs/site/template.html --lua-filter docs/site/site.lua -M outdir="$out" -M page="$page" -o "$out/$page" "$src"
+done <"$out/.pages"
+rm "$out/.pages"
+pandoc lua docs/site/index.lua "$out"
 echo "$out/index.html"
