@@ -856,7 +856,7 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 	first := c.first - int64(n)*slotSymbols
 	for j := range int64(n) {
 		span := float32(last-first-j*slotSymbols-leanSyncEnd) * sps
-		if span <= 0 {
+		if span <= 0 || !c.bs && (int64(n)-j)&1 != 0 {
 			continue
 		}
 		best, p := keptSyncPeak(c, &syms, at-span, sps)
