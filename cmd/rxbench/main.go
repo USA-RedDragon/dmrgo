@@ -223,8 +223,8 @@ func payloadNames() [][2]string {
 }
 
 const (
-	mcuAudio = "2,056 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z,"
-	mcuIQLow = "2,072 B and up to 4.6 MHz. Both are over the 2 KB line: the detection of standalone RC bursts adds 40 B of stack, 320 B of flash and up to 0.03 MHz on an MS stream, and this cost is accepted"
+	mcuAudio = "2,112 B of RAM with its stack and up to 4.8 MHz, built with TinyGo -opt z,"
+	mcuIQLow = "2,128 B and up to 4.6 MHz. Both are over the 2 KB line: the detection of standalone RC bursts adds 40 B of stack, 320 B of flash and up to 0.03 MHz on an MS stream, the gain hold on burst edges and the CACH replay of the lock burst add 56 B of RAM, 396 B of flash and up to 0.044 MHz, and these costs are accepted"
 )
 
 const (
