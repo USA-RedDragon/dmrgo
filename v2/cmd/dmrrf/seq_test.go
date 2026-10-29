@@ -434,35 +434,51 @@ func TestLoopbackBSSourced(t *testing.T) {
 	t.Parallel()
 
 	for _, slot := range []int{0, 1} {
-		cfg := testConfig()
-		cfg.BSSourced, cfg.Slot, cfg.Group, cfg.Superframes = true, slot, true, 2
-		l := runLoop(t, "voice", cfg)
-		ts := fmt.Sprintf("ts=%d", slot+1)
-		l.expect(t, "elc", ts+" flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 checksum=ok", 2)
-		l.expect(t, "emb", fmt.Sprintf("%s pos=B cc=1 pi=0 lcss=%q fec=ok", ts, enums.LCSSFirstFragment.String()), 2)
-		l.expect(t, "lc", ts+" header", 1)
-		l.expect(t, "lc", ts+" terminator", 1)
-		checkAMBE(t, l, 2*18, false)
-		n := len(l.built.Slots)
-		if n%4 != 0 {
-			t.Errorf("%d slots, want a multiple of 4", n)
-		}
-		l.expect(t, "cach", "fec=ok", n)
-		l.expect(t, "cach", "tc=0", n/2)
-		l.expect(t, "cach", fmt.Sprintf("at=1 tc=%d", slot), len(l.built.Bursts))
-		l.expect(t, "cach", fmt.Sprintf("at=1 tc=%d", 1-slot), 0)
-		for _, lcss := range []enums.LCSS{enums.LCSSFirstFragment, enums.LCSSLastFragment} {
-			l.expect(t, "cach", fmt.Sprintf("lcss=%q", lcss.String()), n/4)
-		}
-		l.expect(t, "cach", fmt.Sprintf("lcss=%q", enums.LCSSContinuationFragment.String()), n/2)
-		hash, _ := pdu.AddressHash(cfg.Dest)
-		au := fmt.Sprintf("slco=1 activity ts1=0x0 hash1=0x00 ts2=0x8 hash2=0x%02x fec=ok", hash)
-		if slot == 0 {
-			au = fmt.Sprintf("slco=1 activity ts1=0x8 hash1=0x%02x ts2=0x0 hash2=0x00 fec=ok", hash)
-		}
-		l.expect(t, "slc", au, activeBlocks(l, cfg))
-		l.expect(t, "slc", "activity ts1=0x0 hash1=0x00 ts2=0x0 hash2=0x00 fec=ok", n/4-activeBlocks(l, cfg))
+		t.Run(fmt.Sprintf("ts%d", slot+1), func(t *testing.T) {
+			t.Parallel()
+			bsSourcedVoice(t, slot)
+		})
 	}
+	t.Run("data", func(t *testing.T) {
+		t.Parallel()
+		bsSourcedData(t)
+	})
+}
+
+func bsSourcedVoice(t *testing.T, slot int) {
+	t.Helper()
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Slot, cfg.Group, cfg.Superframes = true, slot, true, 2
+	l := runLoop(t, "voice", cfg)
+	ts := fmt.Sprintf("ts=%d", slot+1)
+	l.expect(t, "elc", ts+" flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 checksum=ok", 2)
+	l.expect(t, "emb", fmt.Sprintf("%s pos=B cc=1 pi=0 lcss=%q fec=ok", ts, enums.LCSSFirstFragment.String()), 2)
+	l.expect(t, "lc", ts+" header", 1)
+	l.expect(t, "lc", ts+" terminator", 1)
+	checkAMBE(t, l, 2*18, false)
+	n := len(l.built.Slots)
+	if n%4 != 0 {
+		t.Errorf("%d slots, want a multiple of 4", n)
+	}
+	l.expect(t, "cach", "fec=ok", n)
+	l.expect(t, "cach", "tc=0", n/2)
+	l.expect(t, "cach", fmt.Sprintf("at=1 tc=%d", slot), len(l.built.Bursts))
+	l.expect(t, "cach", fmt.Sprintf("at=1 tc=%d", 1-slot), 0)
+	for _, lcss := range []enums.LCSS{enums.LCSSFirstFragment, enums.LCSSLastFragment} {
+		l.expect(t, "cach", fmt.Sprintf("lcss=%q", lcss.String()), n/4)
+	}
+	l.expect(t, "cach", fmt.Sprintf("lcss=%q", enums.LCSSContinuationFragment.String()), n/2)
+	hash, _ := pdu.AddressHash(cfg.Dest)
+	au := fmt.Sprintf("slco=1 activity ts1=0x0 hash1=0x00 ts2=0x8 hash2=0x%02x fec=ok", hash)
+	if slot == 0 {
+		au = fmt.Sprintf("slco=1 activity ts1=0x8 hash1=0x%02x ts2=0x0 hash2=0x00 fec=ok", hash)
+	}
+	l.expect(t, "slc", au, activeBlocks(l, cfg))
+	l.expect(t, "slc", "activity ts1=0x0 hash1=0x00 ts2=0x0 hash2=0x00 fec=ok", n/4-activeBlocks(l, cfg))
+}
+
+func bsSourcedData(t *testing.T) {
+	t.Helper()
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Slot = true, 1
 	l := runLoop(t, "data12", cfg)
