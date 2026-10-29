@@ -82,7 +82,7 @@ func TestFloorNoiseless(t *testing.T) {
 	slots, truth := benchStream(t, 2)
 	e := newFloorEval(1)
 	e.f = newFloorSignal(slots, 14, 1)
-	e.slots, e.truth = slots, truth
+	e.truth = truth
 	e.stream()
 	for k, s := range e.sc {
 		t.Logf("%s: %d of %d", k, s.Exact, s.Truth)

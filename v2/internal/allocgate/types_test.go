@@ -242,7 +242,6 @@ type ifaceMethod struct {
 	iface  *types.Interface
 	method *types.Func
 	sealed bool
-	open   bool
 }
 
 var errUnresolved = errors.New("unresolved interface type")
@@ -288,10 +287,9 @@ func (p *program) resolveIfaceMethod(arg string) (ifaceMethod, error) {
 	if (off-base)%8 != 0 || idx < 0 || idx >= len(methods) {
 		return ifaceMethod{}, fmt.Errorf("%s: offset %d is not a method of %d", arg, off, len(methods))
 	}
-	m := ifaceMethod{iface: it, method: methods[idx], open: true}
+	m := ifaceMethod{iface: it, method: methods[idx]}
 	for _, f := range methods {
 		if !f.Exported() {
-			m.open = false
 			if f.Pkg() != nil && p.lib[f.Pkg().Path()] != nil {
 				m.sealed = true
 			}

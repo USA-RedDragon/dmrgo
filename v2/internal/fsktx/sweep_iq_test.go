@@ -22,30 +22,29 @@ const (
 )
 
 type iqPipe struct {
-	sh      shaper
-	buf     []int16
-	up      int
-	l2, m2  int
-	acc2    int
-	prev    int64
-	kq      int64
-	off     int64
-	phase   uint32
-	nco     int
-	tab     []int16
-	bits    uint
-	iters   int
-	amp     float64
-	ampQ    int32
-	rot     complex64
-	rotN    int
-	hzUnit  float64
-	outRate float64
+	sh     shaper
+	buf    []int16
+	up     int
+	l2, m2 int
+	acc2   int
+	prev   int64
+	kq     int64
+	off    int64
+	phase  uint32
+	nco    int
+	tab    []int16
+	bits   uint
+	iters  int
+	amp    float64
+	ampQ   int32
+	rot    complex64
+	rotN   int
+	hzUnit float64
 }
 
 func newIQPipe(sh shaper, hz1, gain float64, rate int, up, nco int, bits uint, iters int, offsetHz, amp float64) *iqPipe {
 	g := gcd(rate, int(hz1))
-	p := &iqPipe{sh: sh, up: up, l2: rate / g, m2: int(hz1) / g, nco: nco, bits: bits, iters: iters, amp: amp, outRate: float64(rate)}
+	p := &iqPipe{sh: sh, up: up, l2: rate / g, m2: int(hz1) / g, nco: nco, bits: bits, iters: iters, amp: amp}
 	p.hzUnit = DeviationHz / gain
 	p.kq = int64(math.Round(p.hzUnit / float64(rate) * (1 << 32) * (1 << 16)))
 	p.off = int64(math.Round(offsetHz / float64(rate) * (1 << 32) * (1 << 16)))

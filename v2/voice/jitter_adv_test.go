@@ -37,7 +37,7 @@ func (a *advJ) drain() {
 		if !a.j.Pop(a.now, &p) {
 			a.t.Fatalf("Pop failed at %v deadline %v", a.now, at)
 		}
-		a.out = append(a.out, jout{id: idOf(&p.Burst), due: p.Due, at: a.now})
+		a.out = append(a.out, jout{id: idOf(&p.Burst), due: p.Due})
 		a.src = append(a.src, p.Source)
 	}
 }

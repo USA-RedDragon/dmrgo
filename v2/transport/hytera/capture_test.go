@@ -51,7 +51,7 @@ func TestCaptures(t *testing.T) {
 }
 
 type captureCounts struct {
-	frames, voiceA, voice, data, noBurst, empty, heartbeats, p2p, other int
+	frames, voiceA, voice, data, noBurst, heartbeats, p2p int
 }
 
 func checkCapture(t *testing.T, p []byte, n *captureCounts) {
@@ -75,8 +75,6 @@ func checkCapture(t *testing.T, p []byte, n *captureCounts) {
 			t.Fatalf("%x: %v", p, err)
 		}
 		n.p2p++
-	default:
-		n.other++
 	}
 }
 
@@ -87,7 +85,6 @@ func checkBurst(t *testing.T, p []byte, f hytera.Frame, n *captureCounts) {
 		return
 	}
 	if f.Burst == (layer2.RawBurst{}) {
-		n.empty++
 		return
 	}
 	h := f.Hint(0)

@@ -27,7 +27,6 @@ type jin struct {
 type jout struct {
 	id  int
 	due time.Duration
-	at  time.Duration
 }
 
 func newJitter(t *testing.T, cfg *voice.JitterConfig) *voice.Jitter {
@@ -79,7 +78,7 @@ func pump(t *testing.T, j *voice.Jitter, in []jin, bits uint8, step time.Duratio
 			if p.Hint.At != p.Due || !p.HasBurst {
 				t.Fatalf("At %v Due %v HasBurst %v", p.Hint.At, p.Due, p.HasBurst)
 			}
-			out = append(out, jout{id: idOf(&p.Burst), due: p.Due, at: now})
+			out = append(out, jout{id: idOf(&p.Burst), due: p.Due})
 		}
 	}
 	return out, res

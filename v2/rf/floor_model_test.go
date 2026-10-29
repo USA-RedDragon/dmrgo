@@ -79,7 +79,7 @@ func TestFloorModel(t *testing.T) {
 	slots, truth := benchStream(t, 2)
 	e := newFloorEval(1)
 	e.f = newFloorSignal(slots, 2, 3)
-	e.slots, e.truth = slots, truth
+	e.truth = truth
 	rng := rand.New(rand.NewPCG(3, 4))
 	var m floorModel
 	sym := make([]int8, len(e.f.sym))

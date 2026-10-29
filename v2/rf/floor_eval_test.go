@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -19,7 +18,6 @@ type floorEval struct {
 	g2         *genieTrellis
 	dec        *softDecoder
 	tail       bool
-	slots      []rftx.BSSlot
 	truth      []benchSlot
 	app        []float32
 	llr        [softBurstBits]int16

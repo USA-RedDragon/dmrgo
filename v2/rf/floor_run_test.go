@@ -64,7 +64,7 @@ func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benc
 			defer wg.Done()
 			e := newFloorEval(d)
 			e.tail, e.only, e.aware = tail, only, aware
-			e.slots, e.truth = slots, truth
+			e.truth = truth
 			for i := range next {
 				c := cases[i]
 				e.f = newFloorSignal(slots, c.cn, c.seed)

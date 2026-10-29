@@ -133,12 +133,10 @@ type penaltyJob struct {
 
 type sweepRunner struct {
 	jobs chan penaltyJob
-	ts   *testStream
-	n    int
 }
 
 func newSweepRunner(ts *testStream, n int) *sweepRunner {
-	r := &sweepRunner{jobs: make(chan penaltyJob), ts: ts, n: n}
+	r := &sweepRunner{jobs: make(chan penaltyJob)}
 	for range runtime.NumCPU() {
 		go func() {
 			for j := range r.jobs {

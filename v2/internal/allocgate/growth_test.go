@@ -77,7 +77,6 @@ func (gt *gate) growers() (map[string]*grower, map[string]string) {
 }
 
 type derivation struct {
-	gt      *gate
 	info    *types.Info
 	set     map[string]*grower
 	derived map[*types.Var]bool
@@ -329,7 +328,7 @@ func isFieldSlice(e ast.Expr) bool {
 }
 
 func (sc *bodyScan) derive() {
-	sc.dv = &derivation{gt: sc.gt, info: sc.info, set: sc.set, derived: map[*types.Var]bool{}}
+	sc.dv = &derivation{info: sc.info, set: sc.set, derived: map[*types.Var]bool{}}
 	for v := range sc.tracked {
 		sc.dv.derived[v] = !sc.poisoned[v]
 	}

@@ -163,7 +163,7 @@ func TestFloorTurbo(t *testing.T) {
 				defer wg.Done()
 				e := newFloorEval(1)
 				e.gridIters, e.gridWeight = gi, float32(gw)
-				e.slots, e.truth = slots, truth
+				e.truth = truth
 				e.f = newFloorSignal(slots, cn, 100+seed)
 				a, b, m := 0, 0, 0
 				for i, ts := range truth {
