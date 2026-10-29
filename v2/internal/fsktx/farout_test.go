@@ -3,6 +3,7 @@
 package fsktx
 
 import (
+	"fmt"
 	"math"
 	"math/cmplx"
 	"testing"
@@ -22,20 +23,23 @@ func TestNoiseShapeFarOut(t *testing.T) {
 		{"notch", 3, [4]float64{12500, 22000, 28000}, 0.99},
 	}
 	for _, rate := range []int{2400000, 1000000, 192000} {
-		var plain float64
-		for _, c := range cases {
-			cfg := IQConfig{Rate: rate, Tier: Tier2, Exact: true, NoiseShape: c.shape, NoiseZerosHz: c.zs, NoisePoleR: c.r}
-			db := farNoise(t, cfg)
-			if c.shape == 0 {
-				plain = db
+		t.Run(fmt.Sprint(rate), func(t *testing.T) {
+			t.Parallel()
+			var plain float64
+			for _, c := range cases {
+				cfg := IQConfig{Rate: rate, Tier: Tier2, Exact: true, NoiseShape: c.shape, NoiseZerosHz: c.zs, NoisePoleR: c.r}
+				db := farNoise(t, cfg)
+				if c.shape == 0 {
+					plain = db
+				}
+				if db > plain+1 {
+					t.Errorf("%d Hz %s: rounding noise %.1f dBc in 100 kHz beyond ntfFarHz, want at most 1 dB over plain rounding (%.1f)", rate, c.name, db, plain)
+				}
+				if rate == 2400000 && db > -60 {
+					t.Errorf("%d Hz %s: rounding noise %.1f dBc in 100 kHz beyond 56.25 kHz, want at most -60", rate, c.name, db)
+				}
 			}
-			if db > plain+1 {
-				t.Errorf("%d Hz %s: rounding noise %.1f dBc in 100 kHz beyond ntfFarHz, want at most 1 dB over plain rounding (%.1f)", rate, c.name, db, plain)
-			}
-			if rate == 2400000 && db > -60 {
-				t.Errorf("%d Hz %s: rounding noise %.1f dBc in 100 kHz beyond 56.25 kHz, want at most -60", rate, c.name, db)
-			}
-		}
+		})
 	}
 }
 
