@@ -72,14 +72,14 @@ func TestTierImpaired(t *testing.T) {
 	for _, sc := range scenarios {
 		for _, cn := range sc.cns {
 			for seed := range uint64(seeds) {
-				x := impairedFM(fm, env, 1400, sc.dev, sc.fd, cn, 100+seed)
+				x := sync.OnceValue(func() []complex64 { return impairedFM(fm, env, 1400, sc.dev, sc.fd, cn, 100+seed) })
 				for _, tier := range tiers {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
 						sem <- struct{}{}
 						defer func() { <-sem }()
-						got := scoreMS(truth, receiveBaseband(x, tier))
+						got := scoreMS(truth, receiveBaseband(x(), tier))
 						mu.Lock()
 						defer mu.Unlock()
 						for _, p := range tierOrderPayloads() {
