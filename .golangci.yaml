@@ -15,6 +15,7 @@ linters:
     - errname
     - errorlint
     - exhaustive
+    - forbidigo
     - forcetypeassert
     - gocheckcompilerdirectives
     - gochecknoglobals
@@ -47,6 +48,13 @@ linters:
   settings:
     exhaustive:
       default-signifies-exhaustive: true
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^testing\.AllocsPerRun$
+          msg: use allocstest.PerRun, which does not count the allocations of other goroutines
+        - pattern: ^runtime\.ReadMemStats$
+          msg: use allocstest.Mallocs or allocstest.Bytes, which do not count the allocations of other goroutines
     revive:
       rules:
         - name: blank-imports
@@ -226,6 +234,12 @@ linters:
         linters:
           - gosec
         text: G204|G703
+      # allocstest is the one package that reads the process-wide
+      # allocation counters.
+      - path: v2/internal/allocstest/
+        linters:
+          - forbidigo
+        text: (testing\.AllocsPerRun|runtime\.ReadMemStats)
       - path: v2/internal/allocstest/count\.go$
         linters:
           - gochecknoglobals
