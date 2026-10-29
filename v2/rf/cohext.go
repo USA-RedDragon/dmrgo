@@ -19,7 +19,6 @@ const (
 type cohStage struct {
 	src                         cohRing
 	ph                          *discPhase
-	f                           *audioFront
 	trial                       float64
 	trialing                    bool
 	amp, noise                  [cohFitScales]float64
@@ -159,7 +158,7 @@ const (
 
 func newCohStage(r *iqRx, opt *options) *cohStage {
 	s := newCohStageOf(opt)
-	s.src, s.f = r, &r.d.f
+	s.src = r
 	s.setRing(float64(r.conv.decim))
 	if s.div == 2 {
 		s.scanTpl = new([4][2][cohScanLen]complex64)
@@ -375,7 +374,8 @@ type cohRing interface {
 	cohPhase(a, b, sign, hz, rate float64) float64
 	cohKey() (tunes int, unit, dc float64)
 	cohTrack() (float64, bool)
-	cohClipped(t0, t1 float64) bool
+	cohWeight(t0, t1 float64) float32
+	cohScale() float32
 	cohResidual() bool
 	cohHz() float64
 }
@@ -417,8 +417,12 @@ func (r *iqRx) cohTrack() (float64, bool) {
 	return hz, r.d.locked
 }
 
-func (r *iqRx) cohClipped(_, _ float64) bool {
-	return false
+func (r *iqRx) cohWeight(_, _ float64) float32 {
+	return 1
+}
+
+func (r *iqRx) cohScale() float32 {
+	return r.d.f.gain
 }
 
 func (r *iqRx) cohResidual() bool {
@@ -450,8 +454,15 @@ func (p *discPhase) cohTrack() (float64, bool) {
 	return p.offsetHz(), p.c.locked
 }
 
-func (p *discPhase) cohClipped(t0, t1 float64) bool {
-	return p.clipped(t0, t1)
+func (p *discPhase) cohWeight(t0, t1 float64) float32 {
+	if p.clipped(t0, t1) {
+		return 0
+	}
+	return 1
+}
+
+func (p *discPhase) cohScale() float32 {
+	return p.c.audio.gain
 }
 
 func (p *discPhase) cohResidual() bool {
@@ -710,7 +721,7 @@ func (s *cohStage) track() {
 }
 
 func (s *cohStage) lost(lo int64) bool {
-	return s.t0-s.sps < float64(lo) || s.src.cohClipped(s.t0-s.sps, s.t0+slotSymbols*s.sps)
+	return s.t0-s.sps < float64(lo) || s.src.cohWeight(s.t0-s.sps, s.t0+slotSymbols*s.sps) == 0
 }
 
 func (s *cohStage) lock() {
@@ -794,7 +805,7 @@ const (
 )
 
 func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) bool {
-	if s.f.gain <= 0 {
+	if s.src.cohScale() <= 0 {
 		return false
 	}
 	_, _, lo := s.ring()
@@ -1002,7 +1013,7 @@ const cohPlaceRho = 0.3
 
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	s.slotRadio(c, int64(j))
-	if s.f.gain <= 0 || !s.freqOK || s.clear(c) {
+	if s.src.cohScale() <= 0 || !s.freqOK || s.clear(c) {
 		return false
 	}
 	_, _, lo := s.ring()
@@ -1066,8 +1077,7 @@ func noiseShare(x []complex64) float64 {
 }
 
 func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
-	f := s.f
-	if f.gain <= 0 {
+	if s.src.cohScale() <= 0 {
 		return false
 	}
 	_, _, lo := s.ring()
