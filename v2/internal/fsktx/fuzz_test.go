@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/cmplx"
 	"slices"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -352,15 +353,12 @@ func FuzzRoundTrip(f *testing.F) {
 		lt := base.withLead(1200 + int(lead%600))
 		refLead := newRefSig(lt)
 		b := u.s8Bytes(u.run(t, lt.syms, keyedOn()))
-		var rb []byte
+		rb := sync.OnceValue(func() []byte { return refLead.native(u, d+(refLead.delay-ref.delay)) })
 		notes = append(notes, checkDetect(t, "native", func(k int, isRef bool) rawScore {
 			if !isRef {
 				return lt.rawScore(nativeBursts(moved(b, timing(k, u.rate)), u.rate), 0)
 			}
-			if rb == nil {
-				rb = refLead.native(u, d+(refLead.delay-ref.delay))
-			}
-			return lt.rawScore(nativeBursts(moved(rb, timing(k, u.rate)), u.rate), 0)
+			return lt.rawScore(nativeBursts(moved(rb(), timing(k, u.rate)), u.rate), 0)
 		}))
 	})
 }

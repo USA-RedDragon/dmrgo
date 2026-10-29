@@ -174,11 +174,20 @@ func (rs *refRuns) get(r *refSig, p rxPath, cn float64, shift, seeds int) int {
 }
 
 func berErrs(ts *testStream, x []complex128, shift, n int, p rxPath, cn float64, seeds int) int {
+	errs := make([]int, seeds*rxTimings)
+	var wg sync.WaitGroup
+	for i := range errs {
+		s, k := i/rxTimings, i%rxTimings
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs[i] = ts.rawScore(p.run(noisy(x, shift+timing(k, rxRate), n, cn, uint64(100+s))), rxPad).errs
+		}()
+	}
+	wg.Wait()
 	e := 0
-	for s := range seeds {
-		for k := range rxTimings {
-			e += ts.rawScore(p.run(noisy(x, shift+timing(k, rxRate), n, cn, uint64(100+s))), rxPad).errs
-		}
+	for _, v := range errs {
+		e += v
 	}
 	return e
 }
@@ -216,8 +225,17 @@ func checkDetect(t *testing.T, name string, score func(k int, ref bool) rawScore
 	lead, refBad, stray := true, false, true
 	ok := func(ref bool) (int, string) {
 		n, line := 0, ""
-		for k := range rxTimings {
-			sc := score(k, ref)
+		var scores [rxTimings]rawScore
+		var wg sync.WaitGroup
+		for k := range scores {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				scores[k] = score(k, ref)
+			}()
+		}
+		wg.Wait()
+		for _, sc := range scores {
 			if sc.bursts > 0 && sc.exact >= sc.bursts-2 {
 				n++
 			}
@@ -293,28 +311,22 @@ func TestTxMatrixReceive(t *testing.T) {
 			var notes []string
 			if !u.audio() {
 				b := u.s8Bytes(u.run(t, lead.syms, keyedOn()))
-				var rb []byte
+				rb := sync.OnceValue(func() []byte { return refLead.native(u, d+(refLead.delay-ref.delay)) })
 				notes = append(notes, checkDetect(t, "native BS", func(k int, isRef bool) rawScore {
 					if !isRef {
 						return lead.rawScore(nativeBursts(moved(b, timing(k, u.rate)), u.rate), 0)
 					}
-					if rb == nil {
-						rb = refLead.native(u, d+(refLead.delay-ref.delay))
-					}
-					return lead.rawScore(nativeBursts(moved(rb, timing(k, u.rate)), u.rate), 0)
+					return lead.rawScore(nativeBursts(moved(rb(), timing(k, u.rate)), u.rate), 0)
 				}))
 				ms, keys := newMSStream(t, u, 2)
 				mraw := u.run(t, ms.syms, keys)
 				mb := u.s8Bytes(mraw)
-				var mrb []byte
+				mrb := sync.OnceValue(func() []byte { return keyedLike(newRefSig(ms).native(u, d), mraw, u.amplitude()) })
 				notes = append(notes, checkDetect(t, "native MS", func(k int, isRef bool) rawScore {
 					if !isRef {
 						return ms.rawScore(nativeBursts(moved(mb, timing(k, u.rate)), u.rate), 0)
 					}
-					if mrb == nil {
-						mrb = keyedLike(newRefSig(ms).native(u, d), mraw, u.amplitude())
-					}
-					return ms.rawScore(nativeBursts(moved(mrb, timing(k, u.rate)), u.rate), 0)
+					return ms.rawScore(nativeBursts(moved(mrb(), timing(k, u.rate)), u.rate), 0)
 				}))
 			}
 			if u.audio() && slices.Contains([]int{24000, 12000, 9600}, u.rate) {
@@ -337,20 +349,23 @@ func TestTxMatrixReceive(t *testing.T) {
 				if p.tier == rxTier3 && !full && u.rate != 44100 {
 					continue
 				}
-				notes = append(notes, checkDetect(t, p.name+" at 30 dB", func(k int, isRef bool) rawScore {
-					if isRef {
-						return ts.rawScore(p.run(noisy(ref.x48, sh+timing(k, rxRate), ref.n, 30, 1)), rxPad)
+				t.Run(p.name, func(t *testing.T) {
+					t.Parallel()
+					notes := append(slices.Clip(notes), checkDetect(t, p.name+" at 30 dB", func(k int, isRef bool) rawScore {
+						if isRef {
+							return ts.rawScore(p.run(noisy(ref.x48, sh+timing(k, rxRate), ref.n, 30, 1)), rxPad)
+						}
+						return ts.rawScore(p.run(noisy(x, timing(k, rxRate), ref.n, 30, 1)), rxPad)
+					}))
+					got := berErrs(ts, x, 0, ref.n, p, p.cn, seeds)
+					lim := refs.get(ref, p, p.cn-u.penaltyDB(), sh, seeds)
+					t.Logf("%s at %v dB: %d bits wrong; reference %d at %v dB", p.name, p.cn, got, lim, p.cn-u.penaltyDB())
+					if got > lim {
+						t.Errorf("%s at %v dB: %d bits wrong, reference %d at %v dB", p.name, p.cn, got, lim, p.cn-u.penaltyDB())
 					}
-					return ts.rawScore(p.run(noisy(x, timing(k, rxRate), ref.n, 30, 1)), rxPad)
-				}))
-				got := berErrs(ts, x, 0, ref.n, p, p.cn, seeds)
-				lim := refs.get(ref, p, p.cn-u.penaltyDB(), sh, seeds)
-				t.Logf("%s at %v dB: %d bits wrong; reference %d at %v dB", p.name, p.cn, got, lim, p.cn-u.penaltyDB())
-				if got > lim {
-					t.Errorf("%s at %v dB: %d bits wrong, reference %d at %v dB", p.name, p.cn, got, lim, p.cn-u.penaltyDB())
-				}
+					skipRF(t, notes)
+				})
 			}
-			skipRF(t, notes)
 		})
 	}
 }
