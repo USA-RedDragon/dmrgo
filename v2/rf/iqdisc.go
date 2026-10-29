@@ -336,7 +336,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	}
 	r.audio = make([]int16, 0, n)
 	r.d = cfg.discOf()
-	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt}, false)
+	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt, iq: true}, false)
 	r.d.sink = cfg.sink
 	r.d.lagTicks += r.conv.lagTicks()
 	if opt.SoftExt {

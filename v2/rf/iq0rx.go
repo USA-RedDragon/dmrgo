@@ -63,7 +63,7 @@ func newIQ0Rx(cfg rxSetup, opt options) *iq0Rx {
 	}
 	r.audio = make([]int16, 0, n)
 	r.d = cfg.discOf()
-	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt}, false)
+	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt, iq: true}, false)
 	r.d.sink = cfg.sink
 	return r
 }

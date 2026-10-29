@@ -58,8 +58,11 @@ func TestRxRawBitsAfterCarrier(t *testing.T) {
 	for i := 0; env[i] < 1; i++ {
 		env[i] = 1
 	}
-	for _, cn := range []float64{math.Inf(1)} {
+	for _, cn := range []float64{math.Inf(1), 40} {
 		for _, lr := range onsetReceivers() {
+			if lr.hz != 0 && !math.IsInf(cn, 1) {
+				continue
+			}
 			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
 				t.Parallel()
 				for _, base := range []float64{0.5, 2} {

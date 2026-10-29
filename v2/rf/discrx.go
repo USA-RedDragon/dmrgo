@@ -15,6 +15,8 @@ const (
 	discLevelUp    = 1.41
 	frontQuarter   = frontBlock / 4
 	discEdgeRatio  = 16
+	discIQMaxGain  = 1
+	discEdgeHot    = 0.5
 	audioMaxK      = 1<<15 - 1
 	audioMaxOff    = 1<<30 - 1<<16
 )
@@ -25,6 +27,7 @@ type discSetup struct {
 	Tier    Tier
 	opt     *options
 	lowIQ   bool
+	iq      bool
 	pol     bool
 }
 
@@ -65,6 +68,9 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 		r.mid96 |= mid96Tab
 	}
 	r.f.gain, r.f.up = 1, opt.LevelUp
+	if cfg.iq || cfg.lowIQ {
+		r.f.maxGain = discIQMaxGain
+	}
 	if cfg.pol {
 		r.f.polBits = polOn
 	}
@@ -518,8 +524,19 @@ func (r *discRx) levels() {
 	v *= f.gain * f.gain
 	f.mean += discMeanGain * (m - f.mean)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
-		if g := discInputRMSHz / rms; !edge && (g > 2 || g < 0.5 || f.up && g > discLevelUp) {
-			r.scaleAudio(g)
+		g := discInputRMSHz / rms
+		switch {
+		case !edge && (g > 2 || g < 0.5 || f.up && g > discLevelUp):
+			if f.maxGain > 0 {
+				g = min(g, f.maxGain/f.gain)
+			}
+			if g != 1 {
+				r.scaleAudio(g)
+			}
+		case edge && f.maxGain > 0:
+			if hot := discInputRMSHz / (sqrtf(max(f.qmax, 0)) * f.gain); hot < discEdgeHot {
+				r.scaleAudio(hot)
+			}
 		}
 	}
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
@@ -550,6 +567,7 @@ type audioFront struct {
 	qmin    float32
 	qmax    float32
 	gain    float32
+	maxGain float32
 	dc      float32
 	k       int32
 	off     int32
