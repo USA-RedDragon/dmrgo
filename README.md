@@ -90,7 +90,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - [Go API](docs/reference/go-api.md) and [C header](docs/reference/c-api.md): the packages and the C declarations.
 - [Tools](docs/reference/tools.md): dmrrf and the commands that build the library and its docs.
 - [Tooling](docs/project/tooling.md): the generators and the checks of the generated pages.
-- [ETSI coverage](docs/etsi.md): the status of each clause of ETSI TS 102 361.
+- [ETSI coverage](docs/reference/etsi.md): the status of each clause of ETSI TS 102 361.
 - [Versioning](docs/project/versioning.md), [v2.1 breaking changes](docs/project/breaking-v2.1.md) and [License](docs/project/license.md).
 
 ## Versioning

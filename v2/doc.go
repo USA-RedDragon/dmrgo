@@ -355,6 +355,7 @@
 //
 // # More
 //
-// docs/examples.md lists the example programs and docs/etsi.md the ETSI
-// coverage of each clause: https://github.com/USA-RedDragon/dmrgo.
+// docs/reference/examples.md lists the example programs and
+// docs/reference/etsi.md the ETSI coverage of each clause:
+// https://github.com/USA-RedDragon/dmrgo.
 package dmrgo

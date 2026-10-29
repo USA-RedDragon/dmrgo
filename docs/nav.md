@@ -67,7 +67,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
 - Reference
   - [Go API](reference/go-api.md)
   - [C header](reference/c-api.md)
-  - [ETSI coverage](etsi.md)
+  - [ETSI coverage](reference/etsi.md)
   - [Features](reference/features.md)
   - [Examples](reference/examples.md)
   - [Tools](reference/tools.md)

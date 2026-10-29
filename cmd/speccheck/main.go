@@ -102,8 +102,8 @@ func main() {
 }
 
 func run() int {
-	updateReadme := flag.Bool("update-readme", false, "Write the Markdown coverage report into docs/etsi.md between the ETSI COVERAGE markers")
-	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/etsi.md is not up to date or a relative link in README.md or docs/ is broken")
+	updateReadme := flag.Bool("update-readme", false, "Write the Markdown coverage report into docs/reference/etsi.md between the ETSI COVERAGE markers")
+	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/reference/etsi.md is not up to date or a relative link in README.md or docs/ is broken")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -146,7 +146,7 @@ func run() int {
 	}
 
 	md := generateMarkdown(matrix.Documents, sectionResults)
-	readmePath := filepath.Join(repoRoot, "docs", "etsi.md")
+	readmePath := filepath.Join(repoRoot, "docs", "reference", "etsi.md")
 
 	if *checkReadme {
 		errCount += checkReadmeFresh(readmePath, md)
@@ -157,11 +157,11 @@ func run() int {
 
 	if *updateReadme {
 		if errCount > 0 {
-			fmt.Fprintf(os.Stderr, "error: not updating docs/etsi.md because of %d error(s)\n", errCount)
+			fmt.Fprintf(os.Stderr, "error: not updating docs/reference/etsi.md because of %d error(s)\n", errCount)
 			return 1
 		}
 		if err := writeReadme(readmePath, md); err != nil {
-			fmt.Fprintf(os.Stderr, "error: cannot update docs/etsi.md: %v\n", err)
+			fmt.Fprintf(os.Stderr, "error: cannot update docs/reference/etsi.md: %v\n", err)
 			return 1
 		}
 		fmt.Fprintf(os.Stderr, "Updated ETSI coverage section in %s\n", readmePath)
@@ -600,7 +600,7 @@ func checkReadmeFresh(readmePath, md string) int {
 		return 1
 	}
 	if want != string(data) {
-		fmt.Fprintln(os.Stderr, "ERROR: docs/etsi.md coverage section is out of date; run `go run -C cmd/speccheck . -update-readme` and commit the result")
+		fmt.Fprintln(os.Stderr, "ERROR: docs/reference/etsi.md coverage section is out of date; run `go run -C cmd/speccheck . -update-readme` and commit the result")
 		return 1
 	}
 	return 0
