@@ -276,7 +276,7 @@ func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
 	case dmrd.CommandRPTL:
 		return m.login(now, b, dst)
 	case dmrd.CommandRPTK:
-		return m.token(now, b, dst)
+		return m.token(b, dst)
 	case dmrd.CommandRPTC:
 		return m.config(now, b, dst)
 	case dmrd.CommandDMRD, dmrd.CommandDMRA, dmrd.CommandDMRG:
@@ -320,7 +320,7 @@ func (m *Master) login(now time.Duration, b []byte, dst []Output) []Output {
 	return append(dst, Output{Kind: OutputLogin, ID: k.ID})
 }
 
-func (m *Master) token(now time.Duration, b []byte, dst []Output) []Output {
+func (m *Master) token(b []byte, dst []Output) []Output {
 	k, err := dmrd.DecodeControl(b, m.dialect)
 	if err != nil {
 		return dst
