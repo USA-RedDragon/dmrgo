@@ -45,7 +45,7 @@ func (f *leanFront) center() int64 {
 }
 
 func (f *leanFront) lagTicks() int32 {
-	c := -int64(2*(preTaps/2)+2*(rrcTaps/2-1))<<8 - 128
+	c := -int64(2*(preTaps/2)+2*(rrcTaps/2-1))<<8 - 256
 	if !f.half {
 		c += int64(1-halfTaps/2) << 8
 	}

@@ -7,12 +7,25 @@ import (
 	"slices"
 	"strconv"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
 const (
-	secondsAudioLag = 46
+	secondsAudioLag = 45.5
 	secondsTol      = 0.01
 )
+
+func exactBaseband(slots []rftx.BSSlot) benchSignal {
+	fm, env := rftx.ModulateBS(slots)
+	x := rftx.Baseband(fm, env, 0)
+	pad := int(benchPad * basebandRate)
+	s := benchSignal{make([]float64, len(x)+2*pad), make([]float64, len(x)+2*pad)}
+	for k, v := range x {
+		s.re[pad+k], s.im[pad+k] = float64(real(v)), float64(imag(v))
+	}
+	return s
+}
 
 func sincResampleIQ(x []complex64, to int) []complex64 {
 	const half = 32
@@ -60,11 +73,17 @@ func secondsErrors(got []Burst, lag float64) []float64 {
 func TestSecondsFirstBit(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	x := cleanBaseband(slots, 0).noisy(40, 3)
+	x := exactBaseband(slots).noisy(40, 3)
 	a48 := discAudio(x, basebandRate)
 	type tcase struct {
 		name string
-		run  func(t testing.TB) ([]Burst, float64)
+		run  func(t testing.TB) ([]float64, float64)
+	}
+	median := func(errs []float64) float64 {
+		if len(errs) == 0 {
+			return math.NaN()
+		}
+		return errs[len(errs)/2]
 	}
 	var cases []tcase
 	for _, hz := range []int{8000, 9600, 11025, 12000, 16000, 24000, 44100, 48000} {
@@ -78,8 +97,9 @@ func TestSecondsFirstBit(t *testing.T) {
 			a = discAudio(x, hz)
 		}
 		for tier := Tier0; tier <= Tier3; tier++ {
-			cases = append(cases, tcase{"audio" + strconv.Itoa(int(tier-Tier0)) + "/" + strconv.Itoa(hz), func(t testing.TB) ([]Burst, float64) {
-				return receiveAudioAt(t, a, hz, tier), secondsAudioLag / float64(basebandRate)
+			cases = append(cases, tcase{"audio" + strconv.Itoa(int(tier-Tier0)) + "/" + strconv.Itoa(hz), func(t testing.TB) ([]float64, float64) {
+				errs := secondsErrors(receiveAudioAt(t, a, hz, tier), secondsAudioLag/float64(basebandRate))
+				return errs, median(errs)
 			}})
 		}
 	}
@@ -88,24 +108,36 @@ func TestSecondsFirstBit(t *testing.T) {
 			if hz < discRate && tier != Tier0 || hz < basebandRate && tier > Tier1 {
 				continue
 			}
-			cases = append(cases, tcase{"iq" + strconv.Itoa(int(tier-Tier0)) + "/" + strconv.Itoa(hz), func(t testing.TB) ([]Burst, float64) {
-				y := x
-				if hz != basebandRate {
-					y = sincResampleIQ(x, hz)
+			cases = append(cases, tcase{"iq" + strconv.Itoa(int(tier-Tier0)) + "/" + strconv.Itoa(hz), func(t testing.TB) ([]float64, float64) {
+				if hz == basebandRate {
+					errs := secondsErrors(receiveIQAt(t, x, hz, tier), 0)
+					return errs, median(errs)
 				}
-				return receiveIQAt(t, y, hz, tier), 0
+				phases := 1
+				if hz == iq0LowHz {
+					phases = basebandRate / hz
+				}
+				var all []float64
+				var mid float64
+				for k := range phases {
+					y := sincResampleIQ(append(make([]complex64, k), x...), hz)
+					errs := secondsErrors(receiveIQAt(t, y, hz, tier), -float64(k)/basebandRate)
+					all = append(all, errs...)
+					mid += median(errs) / float64(phases)
+				}
+				slices.Sort(all)
+				return all, mid
 			}})
 		}
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			got, lag := c.run(t)
-			errs := secondsErrors(got, lag)
+			errs, mid := c.run(t)
 			if len(errs) < 20 {
 				t.Fatalf("%d bursts", len(errs))
 			}
-			lo, mid, hi := errs[len(errs)/10], errs[len(errs)/2], errs[len(errs)*9/10]
+			lo, hi := errs[len(errs)/10], errs[len(errs)*9/10]
 			t.Logf("%-14s %d bursts, error %+.3f symbol, 10%%..90%% %+.3f..%+.3f", c.name, len(errs), mid, lo, hi)
 			if math.Abs(mid) > secondsTol {
 				t.Errorf("Seconds is %+.3f symbol from the first burst bit", mid)

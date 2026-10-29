@@ -253,6 +253,7 @@ func mixLen(carriers []Carrier, rate float64) int {
 func mix(carriers []Carrier, rate, scale float64, emit func(re, im float64)) {
 	n := mixLen(carriers, rate)
 	phase := make([]float64, len(carriers))
+	prev := make([]float64, len(carriers))
 	for i := range n {
 		pos := float64(i) * basebandRate / rate
 		k := int(pos)
@@ -267,7 +268,11 @@ func mix(carriers []Carrier, rate, scale float64, emit func(re, im float64)) {
 					a += (c.Env[k+1] - c.Env[k]) * frac
 				}
 			}
-			phase[j] += 2 * math.Pi * (f + c.OffsetHz) / rate
+			if i == 0 {
+				prev[j] = f
+			}
+			phase[j] += 2 * math.Pi * ((prev[j]+f)/2 + c.OffsetHz) / rate
+			prev[j] = f
 			phase[j] = math.Mod(phase[j], 2*math.Pi)
 			amp := scale * a
 			re += amp * math.Cos(phase[j])
@@ -332,7 +337,11 @@ func Baseband(freq, env []float64, offsetHz float64) []complex64 {
 	x := make([]complex64, len(freq))
 	var ph float64
 	for i := range x {
-		ph += 2 * math.Pi * (freq[i] + offsetHz) / basebandRate
+		f := freq[i]
+		if i > 0 {
+			f = (freq[i-1] + freq[i]) / 2
+		}
+		ph += 2 * math.Pi * (f + offsetHz) / basebandRate
 		x[i] = complex(float32(env[i]*math.Cos(ph)), float32(env[i]*math.Sin(ph)))
 	}
 	return x

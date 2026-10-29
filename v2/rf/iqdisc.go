@@ -151,7 +151,7 @@ func (d *iqDisc) lagTicks() int32 {
 	if d.halfOn {
 		per, hb = 2, len(d.half.hist)/2/2-1
 	}
-	return int32(per*(len(d.taps)/2-(d.step-1))+hb)<<8 + int32(d.decim-1)<<7
+	return int32(per*(len(d.taps)/2-(d.step-1))+hb)<<8 + int32(d.decim)<<7
 }
 
 func (d *iqDisc) tune(hz float32) {

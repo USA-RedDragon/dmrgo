@@ -52,7 +52,7 @@ func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) {
 	*r = iqLowRx{}
 	r.d.setup(discSetup{Hz: hz, OnBurst: on, opt: opt, lowIQ: true}, false)
 	r.d.iqLow = hz == iq0LowHz
-	r.d.lagTicks = int32((basebandRate/hz - 1) << 7)
+	r.d.lagTicks = int32((basebandRate / hz) << 7)
 }
 
 func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {

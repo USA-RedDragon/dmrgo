@@ -87,7 +87,7 @@ func noisyFM(freq, env []float64, offsetHz, cn float64, seed uint64) []complex64
 	for i := range x {
 		var re, im float64
 		if k := i - pad; k >= 0 && k < len(freq) {
-			ph += 2 * math.Pi * (freq[k] + offsetHz) / basebandRate
+			ph += 2 * math.Pi * (fmMid(freq, k) + offsetHz) / basebandRate
 			re, im = env[k]*math.Cos(ph), env[k]*math.Sin(ph)
 		}
 		x[i] = complex(float32(re+rng.NormFloat64()*sigma), float32(im+rng.NormFloat64()*sigma))

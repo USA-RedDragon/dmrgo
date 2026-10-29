@@ -72,7 +72,7 @@ func signalBaseband(parts []signalPart, end, cn float64, seed uint64) []complex6
 	}
 	var ph float64
 	for i := range x {
-		ph += 2 * math.Pi * (f[i] + 300) / basebandRate
+		ph += 2 * math.Pi * (fmMid(f, i) + 300) / basebandRate
 		x[i] = complex(float32(a[i]*math.Cos(ph)+rng.NormFloat64()*sigma), float32(a[i]*math.Sin(ph)+rng.NormFloat64()*sigma))
 	}
 	return x

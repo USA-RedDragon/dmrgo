@@ -89,7 +89,7 @@ func msBaseband(fm, env []float64, offsetHz, cn float64, seed uint64) []complex6
 	for i := range x {
 		var re, im float64
 		if k := i - p; k >= 0 && k < len(fm) {
-			ph += 2 * math.Pi * (fm[k] + offsetHz) / basebandRate
+			ph += 2 * math.Pi * (fmMid(fm, k) + offsetHz) / basebandRate
 			re, im = env[k]*math.Cos(ph), env[k]*math.Sin(ph)
 		}
 		x[i] = complex(float32(re+sigma*rng.NormFloat64()), float32(im+sigma*rng.NormFloat64()))

@@ -14,7 +14,7 @@ func fmAtStart(freq, env []float64, offsetHz, cn float64, seed uint64) []complex
 	sigma := math.Sqrt(basebandRate/(math.Pow(10, cn/10)*12500)) / math.Sqrt2
 	var ph float64
 	for k := range x {
-		ph += 2 * math.Pi * (freq[k] + offsetHz) / basebandRate
+		ph += 2 * math.Pi * (fmMid(freq, k) + offsetHz) / basebandRate
 		x[k] = complex(float32(env[k]*math.Cos(ph)+rng.NormFloat64()*sigma), float32(env[k]*math.Sin(ph)+rng.NormFloat64()*sigma))
 	}
 	return x
