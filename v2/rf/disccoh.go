@@ -25,6 +25,13 @@ const (
 	discFitRho     = 0.3
 )
 
+const (
+	discClickHz     = 3200
+	discClickSpan   = 10
+	discClickWeight = 0.1
+	discHeldFits    = 8
+)
+
 type discPhase struct {
 	c        *leanCore
 	sum      []int64
@@ -52,6 +59,9 @@ type discPhase struct {
 	fitN     int
 	coh      *cohStage
 	clipAt   [discPhaseRaw / discClipBlock]int64
+	clicks   []uint64
+	held     float64
+	heldN    int
 	lazy     bool
 	out      [discPhaseChunk + discPhaseLag + 4]int16
 }
@@ -67,7 +77,7 @@ func lazyDT(hz int) float64 {
 }
 
 func newDiscPhase(r *discRx, hz int, lazy bool, size int64) *discPhase {
-	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, lazy: lazy}
+	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, lazy: lazy, clicks: make([]uint64, (size+63)/64)}
 	for i := range p.clipAt {
 		p.clipAt[i] = -1
 	}
@@ -107,9 +117,11 @@ func (p *discPhase) inputHz() int {
 func (p *discPhase) input(x []int16) (int, []int16) {
 	n := min(len(x), int(discPhaseChunk*p.den/p.num))
 	p.update()
+	lo, hi := p.clickBounds()
 	if p.lazy {
 		for _, u := range x[:n] {
 			p.clip(u)
+			p.click(u, lo, hi)
 			p.last += int64(u)
 			p.sum[p.sumN&(p.size-1)] = p.last
 			p.sumN++
@@ -123,6 +135,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	off := float32(p.b * float64(p.den) / float64(p.num))
 	for _, u := range x[:n] {
 		p.clip(u)
+		p.click(u, lo, hi)
 		i := p.sumN
 		s := p.last + int64(u)
 		p.sum[i&(p.size-1)] = s
@@ -165,6 +178,41 @@ func (p *discPhase) clip(u int16) {
 		b := p.sumN / discClipBlock
 		p.clipAt[b%int64(len(p.clipAt))] = b
 	}
+}
+
+func (p *discPhase) clickBounds() (int32, int32) {
+	unit := p.held
+	if unit <= 0 {
+		unit = p.unit
+	}
+	if unit <= 0 {
+		return math.MinInt32, math.MaxInt32
+	}
+	d := discClickHz / unit
+	return int32(max(math.Floor(p.dcU-d), math.MinInt32)), int32(min(math.Ceil(p.dcU+d), math.MaxInt32))
+}
+
+func (p *discPhase) click(u int16, lo, hi int32) {
+	i := p.sumN & (p.size - 1)
+	w, b := i/64, uint64(1)<<(i%64)
+	if v := int32(u); v < lo || v > hi {
+		p.clicks[w] |= b
+	} else {
+		p.clicks[w] &^= b
+	}
+}
+
+func (p *discPhase) clicked(t0, t1 float64) bool {
+	i0 := int64(math.Floor(max(t0, 0)*float64(p.den)/float64(p.num))) - discClickSpan
+	i1 := int64(math.Ceil(max(t1, 0)*float64(p.den)/float64(p.num))) + discClickSpan
+	i0, i1 = max(i0, p.sumN-p.size, 0), min(i1, p.sumN-1)
+	for i := i0; i <= i1; i++ {
+		k := i & (p.size - 1)
+		if p.clicks[k/64]&(1<<(k%64)) != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *discPhase) clipped(t0, t1 float64) bool {
@@ -317,6 +365,7 @@ func (p *discPhase) lock() {
 	if !p.cal {
 		unit = g / float64(max(c.devScale, 0.1))
 	}
+	p.held, p.heldN = unit, 0
 	p.build(unit, float64(c.audio.dc+c.dcHz)/g)
 	p.acc, p.accN, p.avg = 0, 0, 0
 }
@@ -404,6 +453,10 @@ func (s *cohStage) fitDeviation(k0, k1 int, fit float64) {
 		p.fitUnit = unit
 	} else {
 		p.fitUnit += discFitGain * (unit - p.fitUnit)
+	}
+	if p.heldN < discHeldFits {
+		p.heldN++
+		p.held += (unit - p.held) / float64(p.heldN)
 	}
 	p.fitN++
 	p.cal = true
