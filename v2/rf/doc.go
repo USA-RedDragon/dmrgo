@@ -33,6 +33,12 @@
 // decodes it, and keeps the LC of the call on each channel. Burst.Hint
 // gives the layer2.Hint of a burst for the voice and data machines.
 //
+// OnShortLC of the config receives the Short LCs that the CACHs of the
+// bursts carry. It decodes them as layer2.ShortLCAssembler does, and from
+// Tier1 up decodes a Short LC that fails again from the soft values of its
+// four fragments, with ShortLC.Soft set. The bursts are the same with it
+// and without it.
+//
 // The Tier of the config sets the detection and its cost, from Tier0, which
 // fits a microcontroller, to Tier3, for offline decoding. The constructors
 // allocate every buffer of the receiver, and Write and Flush allocate

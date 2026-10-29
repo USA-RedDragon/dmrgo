@@ -3,7 +3,10 @@
 // -update-readme it first runs the long sweep (DMRRF_RXBENCH=full go test
 // -run TestRxBench in v2/rf), then rewrites the block between the rxbench
 // markers and the SVG files. With -check-readme it renders the committed
-// data and fails when the block or a graph differs.
+// data and fails when the block or a graph differs. The Short LC block
+// between the shortlc markers comes from v2/rf/testdata/rxbench_shortlc.json,
+// which TestShortLCBench writes with DMRRF_SLCBENCH set to the path of the
+// XPR 8400 idle capture; -update-readme runs it when DMRRF_SLCBENCH is set.
 package main
 
 import (
@@ -69,6 +72,13 @@ func run(ctx context.Context, root string, update, sweep bool) error {
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("sweep: %w", err)
 		}
+		if os.Getenv("DMRRF_SLCBENCH") != "" {
+			cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-run", "^TestShortLCBench$", "-timeout", "6h", "./rf")
+			cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("short LC sweep: %w", err)
+			}
+		}
 	}
 	d, err := load(filepath.Join(root, "v2/rf/testdata"))
 	if err != nil {
@@ -86,6 +96,11 @@ func run(ctx context.Context, root string, update, sweep bool) error {
 		return errors.New("docs/rx/README.md has no rxbench markers")
 	}
 	next := append(append(append([]byte{}, readme[:i+len(beginMarker)]...), block...), readme[j:]...)
+	i, j = bytes.Index(next, []byte(shortLCBegin)), bytes.Index(next, []byte(shortLCEnd))
+	if i < 0 || j < i {
+		return errors.New("docs/rx/README.md has no shortlc markers")
+	}
+	next = append(append(append([]byte{}, next[:i+len(shortLCBegin)]...), renderShortLC(d.shortLC)...), next[j:]...)
 	stale := !bytes.Equal(next, readme)
 	for name, svg := range graphs {
 		p := filepath.Join(root, "docs/rx", name)
@@ -187,11 +202,12 @@ type data struct {
 	floor      floors
 	aware      curves
 	recordings []recording
+	shortLC    shortLCData
 }
 
 func load(dir string) (data, error) {
 	var d data
-	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings} {
+	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings, "rxbench_shortlc.json": &d.shortLC} {
 		b, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			return d, err
