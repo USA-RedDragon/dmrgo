@@ -400,14 +400,15 @@ func TestSenderWindowResponses(t *testing.T) {
 		resp   []layer2.RawBurst
 		dones  string
 		resend string
+		blocks int
 	}{
-		{"ACK of all", windowResponse(t, packet.ResponseACK, 2, nil), "0:Delivered 1:Delivered 2:Delivered", ""},
-		{"ACK of the first", windowResponse(t, packet.ResponseACK, 0, nil), "0:Delivered", "1r/7 2r/7A"},
-		{"SACK", windowResponse(t, packet.ResponseSACK, 1, &rd), "0:Delivered", "1r/2 2r/7A"},
-		{"NACK CRC", windowResponse(t, packet.ResponseNACKPacketCRC, 0, nil), "", "0r/7S 1r/7 2r/7A"},
-		{"NACK undeliverable", windowResponse(t, packet.ResponseNACKUndeliverable, 1, nil), "0:Delivered 1:Refused", "2r/7A"},
-		{"NACK out of sequence", windowResponse(t, packet.ResponseNACKOutOfSequence, 6, nil), "", "0/7S 1/7S 2/7SA"},
-		{"other status", windowResponse(t, packet.ResponseACK, 5, nil), "", ""},
+		{"ACK of all", windowResponse(t, packet.ResponseACK, 2, nil), "0:Delivered 1:Delivered 2:Delivered", "", 0},
+		{"ACK of the first", windowResponse(t, packet.ResponseACK, 0, nil), "0:Delivered", "1r/7 2r/7A", 14},
+		{"SACK", windowResponse(t, packet.ResponseSACK, 1, &rd), "0:Delivered", "1r/2 2r/7A", 9},
+		{"NACK CRC", windowResponse(t, packet.ResponseNACKPacketCRC, 0, nil), "", "0r/7S 1r/7 2r/7A", 21},
+		{"NACK undeliverable", windowResponse(t, packet.ResponseNACKUndeliverable, 1, nil), "0:Delivered 1:Refused", "2r/7A", 7},
+		{"NACK out of sequence", windowResponse(t, packet.ResponseNACKOutOfSequence, 6, nil), "", "0/7S 1/7S 2/7SA", 21},
+		{"other status", windowResponse(t, packet.ResponseACK, 5, nil), "", "", 0},
 	} {
 		s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, Window: 3, Resync: true})
 		for _, m := range windowMessages(t, 3, 60) {
@@ -463,6 +464,9 @@ func TestSenderWindowResponses(t *testing.T) {
 		}
 		if strings.Join(heads, " ") != c.resend {
 			t.Errorf("%s: resend %v, want %q", c.name, heads, c.resend)
+		}
+		if blocks != c.blocks {
+			t.Errorf("%s: resent %d blocks, want %d", c.name, blocks, c.blocks)
 		}
 	}
 }
