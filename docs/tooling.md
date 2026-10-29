@@ -16,15 +16,15 @@
 
 ## Docs site
 
-`hack/docs-site/build.sh` builds an HTML site from `README.md` and `docs/`, one page per Markdown file, into `artifacts/docs-site/` (git ignores `artifacts/`). It needs pandoc 3.11 and no Go. Run it from any directory:
+`docs/site/build.sh` builds an HTML site from `README.md` and `docs/`, one page per Markdown file, into `artifacts/docs-site/` (git ignores `artifacts/`). It needs pandoc 3.11 and no Go. Run it from any directory:
 
 ```sh
-hack/docs-site/build.sh
+docs/site/build.sh
 ```
 
 Open `artifacts/docs-site/index.html` in a browser. A path as the first argument sets another output directory.
 
 - pandoc reads each page as GitHub-flavored Markdown (`-f gfm`), so tables, code blocks and heading anchors match GitHub.
-- `hack/docs-site/template.html` is the page around each doc. `hack/docs-site/site.lua` is a pandoc filter that rewrites links to other docs as links to their pages, links to other files of the repository as GitHub links, and copies each image into the output at the same relative path.
+- `docs/site/template.html` is the page around each doc. `docs/site/site.lua` is a pandoc filter that rewrites links to other docs as links to their pages, links to other files of the repository as GitHub links, and copies each image into the output at the same relative path.
 - The page list comes from the Documentation list of `README.md`. A doc that the list does not name comes after it, by title. The build fails when the list names a file that is not a doc.
 - The package reference is the pkg.go.dev link of `README.md`.

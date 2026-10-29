@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>$pagetitle$</title>
+<meta name="description" content="$description$">
+<script>try { var m = localStorage.getItem("mode"); if (m === "light" || m === "dark") { document.documentElement.setAttribute("data-theme", m); } } catch (e) {}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Inconsolata:wght@400;600&display=swap">
+<style>
+:root {
+  --h: 250;
+  --c: 0.15;
+  --bg: oklch(0.99 0.003 var(--h));
+  --ink: oklch(0.22 0.015 var(--h));
+  --soft: oklch(0.46 0.015 var(--h));
+  --line: oklch(0.87 0.008 var(--h));
+  --panel: oklch(0.965 0.006 var(--h));
+  --stripe: oklch(0.975 0.005 var(--h));
+  --accent: oklch(0.52 var(--c) var(--h));
+  --accent-ink: oklch(0.47 var(--c) var(--h));
+  --accent-fg: oklch(0.99 0 0);
+  --band: oklch(0.3 0.06 var(--h));
+  --band-ink: oklch(0.97 0.01 var(--h));
+  --band-soft: oklch(0.8 0.04 var(--h));
+  --tok-kw: oklch(0.47 var(--c) var(--h));
+  --tok-st: oklch(0.48 0.12 150);
+  --tok-dv: oklch(0.5 0.13 40);
+  --tok-co: oklch(0.52 0.015 var(--h));
+  --font-body: "Nunito Sans", system-ui, sans-serif;
+  --font-mono: "Inconsolata", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; --bg: oklch(0.23 0.012 var(--h)); --ink: oklch(0.96 0.004 var(--h)); --soft: oklch(0.8 0.012 var(--h)); --line: oklch(0.4 0.012 var(--h)); --panel: oklch(0.28 0.014 var(--h)); --stripe: oklch(0.255 0.013 var(--h)); --accent: oklch(0.74 var(--c) var(--h)); --accent-ink: oklch(0.8 var(--c) var(--h)); --accent-fg: oklch(0.2 0.02 var(--h)); --band: oklch(0.19 0.03 var(--h)); --band-ink: oklch(0.96 0.01 var(--h)); --band-soft: oklch(0.78 0.03 var(--h)); --tok-kw: oklch(0.8 var(--c) var(--h)); --tok-st: oklch(0.8 0.12 150); --tok-dv: oklch(0.8 0.11 60); --tok-co: oklch(0.7 0.015 var(--h)); }
+}
+:root[data-theme="dark"] { color-scheme: dark; --bg: oklch(0.23 0.012 var(--h)); --ink: oklch(0.96 0.004 var(--h)); --soft: oklch(0.8 0.012 var(--h)); --line: oklch(0.4 0.012 var(--h)); --panel: oklch(0.28 0.014 var(--h)); --stripe: oklch(0.255 0.013 var(--h)); --accent: oklch(0.74 var(--c) var(--h)); --accent-ink: oklch(0.8 var(--c) var(--h)); --accent-fg: oklch(0.2 0.02 var(--h)); --band: oklch(0.19 0.03 var(--h)); --band-ink: oklch(0.96 0.01 var(--h)); --band-soft: oklch(0.78 0.03 var(--h)); --tok-kw: oklch(0.8 var(--c) var(--h)); --tok-st: oklch(0.8 0.12 150); --tok-dv: oklch(0.8 0.11 60); --tok-co: oklch(0.7 0.015 var(--h)); }
+* { box-sizing: border-box; }
+html { scroll-padding-top: 16px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.6; }
+a { color: var(--accent-ink); }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+header { background: var(--band); color: var(--band-ink); padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px 22px; align-items: center; flex-wrap: wrap; }
+.brand { font-family: var(--font-mono); font-size: 24px; font-weight: 600; color: var(--band-ink); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.brand::before { content: ""; width: 14px; height: 14px; background: var(--accent); box-shadow: 18px 0 0 oklch(from var(--accent) l c h / 0.55), 36px 0 0 oklch(from var(--accent) l c h / 0.25); margin-right: 36px; }
+header nav { display: flex; gap: 16px; flex-wrap: wrap; }
+header nav a { color: var(--band-soft); text-decoration: none; }
+header nav a:hover { color: var(--band-ink); text-decoration: underline; }
+.mode { margin-left: auto; display: flex; border: 1px solid oklch(from var(--band-soft) l c h / 0.5); }
+.mode button { font: inherit; font-size: 14px; background: none; color: var(--band-soft); border: 0; padding: 4px 10px; cursor: pointer; }
+.mode button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; max-width: 1240px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+aside { font-size: 15px; }
+aside > ul { position: sticky; top: 16px; }
+aside ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+aside a { color: var(--ink); text-decoration: none; display: block; padding: 3px 10px; border-left: 3px solid transparent; }
+aside a:hover { color: var(--accent-ink); }
+aside a.on { border-left-color: var(--accent); font-weight: 700; }
+aside .toc { margin: 2px 0 8px 13px; border-left: 1px solid var(--line); }
+aside .toc a { color: var(--soft); font-size: 14px; padding: 1px 10px; }
+main { min-width: 0; }
+.doc { max-width: 900px; }
+.doc h1, .doc h2, .doc h3, .doc h4 { font-weight: 600; line-height: 1.15; letter-spacing: -0.01em; text-wrap: balance; }
+.doc h1 { font-size: 38px; margin: 0 0 16px; }
+.doc h2 { font-size: 26px; margin: 40px 0 10px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.doc h3 { font-size: 20px; margin: 28px 0 8px; }
+.doc h4 { font-size: 17px; margin: 22px 0 6px; color: var(--soft); }
+.doc p, .doc li { max-width: 72ch; }
+.home h1 { font-family: var(--font-mono); font-size: clamp(44px, 8vw, 72px); margin: 0 0 8px; letter-spacing: 0; }
+.lede { font-size: 20px; color: var(--soft); border-left: 4px solid var(--accent); padding-left: 16px; margin: 0 0 28px; }
+.lede p { margin: 0; }
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; margin: 12px 0 20px; }
+.figs img { width: 100%; height: auto; background: oklch(0.99 0 0); border: 1px solid var(--line); }
+img { max-width: 100%; }
+code { font-family: var(--font-mono); font-size: 0.95em; background: var(--panel); padding: 1px 5px; overflow-wrap: anywhere; }
+pre { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); padding: 14px 16px; overflow-x: auto; line-height: 1.4; font-size: 16px; }
+pre code { background: none; padding: 0; overflow-wrap: normal; }
+pre code a { display: none; }
+code span.kw, code span.cf, code span.im { color: var(--tok-kw); font-weight: 600; }
+code span.dt, code span.bu { color: var(--tok-kw); }
+code span.st, code span.ch, code span.ss, code span.sc { color: var(--tok-st); }
+code span.dv, code span.fl, code span.bn, code span.cn { color: var(--tok-dv); }
+code span.co, code span.cv, code span.do { color: var(--tok-co); font-style: italic; }
+.table { overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line); }
+table { border-collapse: collapse; font-size: 15px; min-width: 100%; }
+tbody tr:nth-child(even) { background: var(--stripe); }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+th { background: var(--panel); color: var(--soft); font-weight: 700; font-size: 13px; letter-spacing: 0.03em; text-transform: uppercase; }
+td { font-variant-numeric: tabular-nums; }
+td:first-child { min-width: 9em; }
+td:not(:first-child) { white-space: nowrap; }
+details { border: 1px solid var(--line); margin: 14px 0; padding: 0 14px; }
+details[open] { padding-bottom: 6px; }
+summary { cursor: pointer; font-weight: 700; padding: 10px 0; color: var(--accent-ink); }
+blockquote { margin: 12px 0; border-left: 4px solid var(--accent); padding: 4px 14px; background: var(--panel); }
+.source { margin-top: 48px; font-size: 14px; color: var(--soft); }
+footer { border-top: 1px solid var(--line); color: var(--soft); font-size: 14px; padding-block: 18px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (max-width: 800px) {
+  .shell { grid-template-columns: 1fr; gap: 20px; padding-top: 16px; }
+  aside { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  aside > ul { position: static; flex-direction: row; flex-wrap: wrap; gap: 4px 6px; }
+  aside a, aside a.on { border: 1px solid var(--line); padding: 2px 10px; }
+  aside a.on { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
+  aside .toc { display: none; }
+  .mode { margin-left: 0; }
+  .doc:not(.home) h1 { font-size: 30px; }
+  .lede { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">$site$</a>
+  <nav>$links$</nav>
+  <div class="mode" role="group" aria-label="Color mode"><button type="button" data-mode="auto">Auto</button><button type="button" data-mode="light">Light</button><button type="button" data-mode="dark">Dark</button></div>
+</header>
+<div class="shell">
+  <aside aria-label="Pages">$nav$</aside>
+  <main>
+    <article class="doc$if(home)$ home$endif$">
+$body$
+      <p class="source">Source: <a href="$source$">$srcname$</a></p>
+    </article>
+  </main>
+</div>
+<footer>Built from the Markdown of the $site$ repository.</footer>
+<script>
+function setMode(m) {
+  if (m === "auto") { document.documentElement.removeAttribute("data-theme"); } else { document.documentElement.setAttribute("data-theme", m); }
+  document.querySelectorAll(".mode button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === m)); });
+  try { localStorage.setItem("mode", m); } catch (e) {}
+}
+document.querySelectorAll(".mode button").forEach(function (b) { b.addEventListener("click", function () { setMode(b.dataset.mode); }); });
+setMode(document.documentElement.getAttribute("data-theme") || "auto");
+</script>
+</body>
+</html>
