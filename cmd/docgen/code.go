@@ -1,0 +1,297 @@
+package main
+
+import (
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+)
+
+func langOf(path string) string {
+	switch ext := filepath.Ext(path); ext {
+	case ".h":
+		return "c"
+	case ".yml":
+		return "yaml"
+	case ".py":
+		return "python"
+	case ".go", ".c", ".sh", ".yaml", ".json", ".js", ".html", ".css", ".lua", ".toml":
+		return ext[1:]
+	}
+	return ""
+}
+
+func parseRange(s string) (int, int, error) {
+	a, b, ok := strings.Cut(s, "-")
+	x, err1 := strconv.Atoi(a)
+	y, err2 := strconv.Atoi(b)
+	if !ok || err1 != nil || err2 != nil || x < 1 || y < x {
+		return 0, 0, fmt.Errorf("lines=%s is not a range a-b with 1 <= a <= b", s)
+	}
+	return x, y, nil
+}
+
+func (g *gen) fillCode(pg *page, m marker) (string, []outFile, error) {
+	rel := m.args["file"]
+	path := filepath.Join(g.root, filepath.FromSlash(rel))
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return "", nil, err
+	}
+	if sym := m.args["symbol"]; sym != "" {
+		ex, err := symbolExcerpt(path, src, sym)
+		if err != nil {
+			return "", nil, err
+		}
+		return fence(langOf(path), ex), nil, nil
+	}
+	if m.args["lines"] == "" {
+		return fence(langOf(path), strings.TrimRight(string(src), "\n")), nil, nil
+	}
+	fmt.Fprintf(g.log, "docgen: %s:%d: dmrgo:code uses lines=; symbol= does not break when the file changes\n", pg.rel, m.line)
+	a, b, err := parseRange(m.args["lines"])
+	if err != nil {
+		return "", nil, err
+	}
+	lines := strings.Split(string(src), "\n")
+	if b > len(lines) {
+		return "", nil, fmt.Errorf("%s has %d lines, the range ends at %d", rel, len(lines), b)
+	}
+	excerpt := dedent(lines[a-1 : b])
+	lang := langOf(path)
+	want := fence(lang, excerpt)
+	old := strings.Trim(m.body, "\n")
+	if old != "" && old != want {
+		if oa, ob, ok := findExcerpt(lines, old); ok {
+			return "", nil, fmt.Errorf("range drifted: the excerpt in the page is now at lines=%d-%d of %s", oa, ob, rel)
+		}
+		return "", nil, fmt.Errorf("lines %d-%d of %s changed; check the range, then empty the marker body and run -update", a, b, rel)
+	}
+	if lang == "go" {
+		if err := checkGoRange(path, src, a, b); err != nil {
+			return "", nil, err
+		}
+	}
+	return want, nil, nil
+}
+
+func dedent(lines []string) string {
+	prefix := ""
+	first := true
+	for _, l := range lines {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		ws := l[:len(l)-len(strings.TrimLeft(l, " \t"))]
+		if first {
+			prefix, first = ws, false
+			continue
+		}
+		for !strings.HasPrefix(ws, prefix) {
+			prefix = prefix[:len(prefix)-1]
+		}
+	}
+	out := make([]string, len(lines))
+	for i, l := range lines {
+		out[i] = strings.TrimPrefix(l, prefix)
+		if strings.TrimSpace(out[i]) == "" {
+			out[i] = ""
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
+func findExcerpt(lines []string, body string) (int, int, bool) {
+	bl := strings.Split(body, "\n")
+	if len(bl) < 3 {
+		return 0, 0, false
+	}
+	inner := bl[1 : len(bl)-1]
+	n := len(inner)
+	for i := 0; i+n <= len(lines); i++ {
+		if dedent(lines[i:i+n]) == strings.Join(inner, "\n") {
+			return i + 1, i + n, true
+		}
+	}
+	return 0, 0, false
+}
+
+// checkGoRange fails unless lines a to b hold whole syntax nodes that share
+// one parent: one or more declarations, statements, specs or fields, each
+// with its doc comment.
+func checkGoRange(path string, src []byte, a, b int) error {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, path, src, parser.ParseComments)
+	if err != nil {
+		return err
+	}
+	line := func(p token.Pos) int { return fset.Position(p).Line }
+	starts, ends := map[int][]ast.Node{}, map[int][]ast.Node{}
+	var stack []ast.Node
+	ast.Inspect(f, func(n ast.Node) bool {
+		if n == nil {
+			stack = stack[:len(stack)-1]
+			return true
+		}
+		var parent ast.Node
+		if len(stack) > 0 {
+			parent = stack[len(stack)-1]
+		}
+		stack = append(stack, n)
+		switch x := n.(type) {
+		case ast.Decl, ast.Stmt, ast.Spec, *ast.Field, *ast.KeyValueExpr:
+			starts[line(n.Pos())] = append(starts[line(n.Pos())], parent)
+			ends[line(n.End())] = append(ends[line(n.End())], parent)
+			var d *ast.CommentGroup
+			switch y := x.(type) {
+			case *ast.FuncDecl:
+				d = y.Doc
+			case *ast.GenDecl:
+				d = y.Doc
+			case *ast.Field:
+				d = y.Doc
+			case *ast.ValueSpec:
+				d = y.Doc
+			case *ast.TypeSpec:
+				d = y.Doc
+			}
+			if d != nil {
+				starts[line(d.Pos())] = append(starts[line(d.Pos())], parent)
+			}
+		}
+		return true
+	})
+	for _, p := range starts[a] {
+		for _, q := range ends[b] {
+			if p == q {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("lines %d-%d of %s do not hold whole declarations or statements; the range may have drifted", a, b, filepath.Base(path))
+}
+
+// symbolExcerpt returns the source of the func, method (Type.Method), type,
+// or const or var block named sym, without its doc comment. For an Example
+// func it leaves out the output comment.
+func symbolExcerpt(path string, src []byte, sym string) (string, error) {
+	if filepath.Ext(path) != ".go" {
+		return "", fmt.Errorf("symbol= needs a Go file")
+	}
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, path, src, parser.ParseComments)
+	if err != nil {
+		return "", err
+	}
+	node := findSymbol(f, sym)
+	if node == nil {
+		return "", fmt.Errorf("no func, type, const or var %s in %s", sym, filepath.Base(path))
+	}
+	start := fset.Position(node.Pos()).Offset
+	_, spec := node.(*ast.TypeSpec)
+	if spec {
+		start = lineStart(src, start)
+	}
+	text := string(src[start:fset.Position(node.End()).Offset])
+	if fd, ok := node.(*ast.FuncDecl); ok && strings.HasPrefix(fd.Name.Name, "Example") && fd.Body != nil {
+		outs := outputComments(f, fd)
+		for i := len(outs) - 1; i >= 0; i-- {
+			cs := lineStart(src, fset.Position(outs[i].Pos()).Offset) - start
+			ce := fset.Position(outs[i].End()).Offset - start
+			for ce < len(text) && text[ce] != '\n' {
+				ce++
+			}
+			if ce < len(text) {
+				ce++
+			}
+			text = text[:cs] + text[ce:]
+		}
+	}
+	if spec {
+		return dedent(strings.Split(text, "\n")), nil
+	}
+	return text, nil
+}
+
+func findSymbol(f *ast.File, sym string) ast.Node {
+	recv, name, isMethod := strings.Cut(sym, ".")
+	if !isMethod {
+		name = sym
+	}
+	for _, d := range f.Decls {
+		switch x := d.(type) {
+		case *ast.FuncDecl:
+			if x.Name.Name == name && (x.Recv != nil) == isMethod && (!isMethod || recvType(x) == recv) {
+				return x
+			}
+		case *ast.GenDecl:
+			if isMethod {
+				continue
+			}
+			if n := findSpec(x, name); n != nil {
+				return n
+			}
+		}
+	}
+	return nil
+}
+
+func recvType(fd *ast.FuncDecl) string {
+	t := fd.Recv.List[0].Type
+	if st, ok := t.(*ast.StarExpr); ok {
+		t = st.X
+	}
+	if ix, ok := t.(*ast.IndexExpr); ok {
+		t = ix.X
+	}
+	if id, ok := t.(*ast.Ident); ok {
+		return id.Name
+	}
+	return ""
+}
+
+func findSpec(x *ast.GenDecl, name string) ast.Node {
+	for _, s := range x.Specs {
+		switch y := s.(type) {
+		case *ast.TypeSpec:
+			if y.Name.Name != name {
+				continue
+			}
+			if len(x.Specs) > 1 {
+				return y
+			}
+			return x
+		case *ast.ValueSpec:
+			for _, n := range y.Names {
+				if n.Name == name {
+					return x
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func outputComments(f *ast.File, fd *ast.FuncDecl) []*ast.CommentGroup {
+	var out []*ast.CommentGroup
+	for _, c := range f.Comments {
+		if c.Pos() > fd.Body.Lbrace && c.End() < fd.Body.Rbrace {
+			t := strings.TrimSpace(c.Text())
+			if strings.HasPrefix(t, "Output:") || strings.HasPrefix(t, "Unordered output:") {
+				out = append(out, c)
+			}
+		}
+	}
+	return out
+}
+
+func lineStart(src []byte, off int) int {
+	for off > 0 && src[off-1] != '\n' {
+		off--
+	}
+	return off
+}

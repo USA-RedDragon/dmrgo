@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="418" height="184" viewBox="0 0 418 184" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="418" height="184" fill="#ffffff"/>
+<path d="M72.0 86.0C72.0 52.0 198.0 52.0 198.0 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="135.0" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Start</text>
+<path d="M198.0 120.0C198.0 154.0 72.0 154.0 72.0 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="135.0" y="159.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Stop, Tick</text>
+<path d="M72.0 86.0C72.0 22.0 343.0 22.0 343.0 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="207.5" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Break</text>
+<rect x="16.0" y="86.0" width="96.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="64.0" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">LampOff</text>
+<rect x="158.0" y="86.0" width="96.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="206.0" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">LampOn</text>
+<rect x="300.0" y="86.0" width="102.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="351.0" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">LampBroken</text>
+</svg>

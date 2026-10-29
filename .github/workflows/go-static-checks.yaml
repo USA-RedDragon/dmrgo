@@ -20,6 +20,7 @@ jobs:
           - v2
           - v2/capi
           - v2/internal/digest/xcrypto
+          - cmd/docgen
           - cmd/dmrgen
           - cmd/rxbench
           - cmd/rxsweep
