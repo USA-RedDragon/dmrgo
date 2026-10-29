@@ -13,34 +13,36 @@ func TestRxVoiceSlowClock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
-	pad := int(0.2 * basebandRate)
-	fm, env = append(make([]float64, pad), fm...), append(make([]float64, pad), env...)
-	tx := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
-	for _, off := range []float64{0, 3000} {
-		for _, ppm := range []float64{500, -500} {
-			iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
-			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
-				if tier == Tier0 && off != 0 {
-					continue
-				}
-				r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: tier, Format: IQFormatCU8})
-				if err != nil {
-					t.Fatal(err)
-				}
-				got := r.AppendFlush(r.AppendBursts(nil, iq))
-				if len(got) != len(built.Bursts) {
-					t.Errorf("%+.0f Hz %+.0f ppm Tier%d: %d bursts, want %d", off, ppm, tier-Tier0, len(got), len(built.Bursts))
-					continue
-				}
-				bad := 0
-				for i := range got {
-					if got[i].Data != built.Bursts[i] {
-						bad++
+	fm0, env0 := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	for _, lead := range []float64{0, 0.2} {
+		pad := int(lead * basebandRate)
+		fm, env := append(make([]float64, pad), fm0...), append(make([]float64, pad), env0...)
+		tx := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
+		for _, off := range []float64{0, 3000} {
+			for _, ppm := range []float64{500, -500} {
+				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
+				for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+					if tier == Tier0 && off != 0 || tier == Tier0 && lead == 0 && off != 0 {
+						continue
 					}
-				}
-				if bad > 0 {
-					t.Errorf("%+.0f Hz %+.0f ppm Tier%d: raw bits differ in %d of %d bursts", off, ppm, tier-Tier0, bad, len(got))
+					r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: tier, Format: IQFormatCU8})
+					if err != nil {
+						t.Fatal(err)
+					}
+					got := r.AppendFlush(r.AppendBursts(nil, iq))
+					if len(got) != len(built.Bursts) {
+						t.Errorf("%.1f s lead %+.0f Hz %+.0f ppm Tier%d: %d bursts, want %d", lead, off, ppm, tier-Tier0, len(got), len(built.Bursts))
+						continue
+					}
+					bad := 0
+					for i := range got {
+						if got[i].Data != built.Bursts[i] && (lead > 0 || i >= 3) {
+							bad++
+						}
+					}
+					if bad > 0 {
+						t.Errorf("%.1f s lead %+.0f Hz %+.0f ppm Tier%d: raw bits differ in %d of %d bursts", lead, off, ppm, tier-Tier0, bad, len(got))
+					}
 				}
 			}
 		}

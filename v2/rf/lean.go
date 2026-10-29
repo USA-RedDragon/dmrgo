@@ -55,6 +55,8 @@ const (
 	leanStretchMin      = 0.0002
 	replayFlatLevel     = 0.3
 	leanClockDead       = 0.000075
+	leanClockBlock      = 64
+	leanClockSig        = 4
 	leanMidGate         = 0
 	leanSyncUnroll      = true
 	leanRawFuse         = true
@@ -86,6 +88,8 @@ type leanTiming struct {
 	mm             bool
 	rate, rateK    float32
 	drift, corr    float32
+	corr2          float32
+	nc, nall       int32
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -108,9 +112,17 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 }
 
 func (tm *leanTiming) settle() {
+	if tm.nc < leanClockBlock {
+		return
+	}
+	n := float32(tm.nc)
+	step := tm.rateK * tm.corr
+	if v := tm.corr2/n - tm.corr*tm.corr/(n*n); tm.rateK > 0 && tm.corr*tm.corr > leanClockSig*leanClockSig*n*v {
+		step = tm.corr / float32(tm.nall)
+	}
 	lim := leanClockMax * 2 * tm.step
-	tm.rate = max32(min32(tm.rate+tm.rateK*tm.corr, lim), -lim)
-	tm.corr, tm.drift = 0, tm.rate
+	tm.rate = max32(min32(tm.rate+step, lim), -lim)
+	tm.corr, tm.corr2, tm.nc, tm.nall, tm.drift = 0, 0, 0, 0, tm.rate
 	if abs32(tm.rate) < leanClockDead*2*tm.step {
 		tm.drift = 0
 	}
@@ -130,10 +142,11 @@ func (tm *leanTiming) strobe(x float32) bool {
 		tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
 		tm.last, tm.half = x, d
 		tm.t += 2*tm.step + tm.drift
+		tm.nall++
 		if !tm.hold && tm.pow > 0 {
 			c := max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
 			tm.t += c
-			tm.corr += c
+			tm.corr, tm.corr2, tm.nc = tm.corr+c, tm.corr2+c*c, tm.nc+1
 		}
 		return true
 	}
@@ -1614,7 +1627,8 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
 	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.corr = false, r.trackGain, 0, leanClockGain, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift = false, r.trackGain, 0, leanClockGain, 0
+	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	if r.mmOK && !r.tm.mm {
 		r.tm.mm, r.tm.mid = true, false
 		r.tm.t += r.tm.step
@@ -2071,7 +2085,8 @@ func (r *leanCore) unlock() {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
 	r.rebuildSigns()
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.corr = false, r.acqGain, 0, 0, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift = false, r.acqGain, 0, 0, 0
+	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	if r.tm.mm {
 		r.tm.mm, r.tm.mid = false, true
 		r.tm.t -= r.tm.step
