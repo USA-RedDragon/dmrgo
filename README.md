@@ -75,7 +75,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - Vocoders (`vocoder`): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Vocoders](docs/vocoders.md)).
 - FEC: every DMR code and CRC, each with one result type.
 - C API (`v2/capi`): libdmrgo, a shared or static library with the whole API in C.
-- No allocation on the hot path, with gc and TinyGo ([Allocation](docs/allocation.md), [TinyGo](docs/tinygo.md)).
+- No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [TinyGo](docs/tinygo.md)).
 
 ## Documentation
 
@@ -85,7 +85,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - [Receiver](docs/rx/README.md): the tiers of `rf`, their sensitivity and cost, and how they are measured.
 - [Transmitter](docs/tx/README.md): the tiers, formats and rates, the regional limits and the measured margins.
 - [Vocoders](docs/vocoders.md): the Codec2 backends and DVSI chips.
-- [Allocation](docs/allocation.md): where the library can allocate, and the checks.
+- [Allocation](docs/concepts/allocation.md): where the library can allocate, and the checks.
 - [TinyGo](docs/tinygo.md): microcontroller builds.
 - [Tooling](docs/tooling.md): the generators and the checks of the generated pages.
 - [ETSI coverage](docs/etsi.md): the status of each clause of ETSI TS 102 361.

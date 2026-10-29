@@ -12,7 +12,7 @@
   - `go run -C cmd/rxbench . -update-readme` runs the receiver sweep of `v2/rf` (about an hour on 32 cores) and writes the tables and graphs of [Receiver](rx/README.md). `-check-readme` fails when they differ from the sweep data in `v2/rf/testdata`.
   - `DMRRF_RECORDINGS=<dir> go test -timeout 0 -run '^TestRxBenchRecordings$' ./rf` in v2 runs I/Q tiers 0 to 3 on the real recordings and writes `v2/rf/testdata/rxbench_recordings.json`, the data of the recordings table of [Receiver](rx/README.md). `<dir>` holds the `dmrgo-rfcap` and `ipsc2hbrp-rig` capture directories. The test needs `zstd`, and it is skipped when `DMRRF_RECORDINGS` is not set or the directory does not exist.
   - `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the transmitter margins into `v2/internal/fsktx/testdata/txmargins.json` and writes the tables of [Transmitter](tx/README.md). Without the flag the test fails when the tables differ from `minrate_gen.go` and that data. With `DMRGO_LONG=1` it measures the margins again and fails when they differ from the data.
-  - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](allocation.md), and `DMRGO_README=check` fails when it differs.
+  - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](concepts/allocation.md), and `DMRGO_README=check` fails when it differs.
   - `go run -C cmd/docgen . -update` writes the generated facts of every page under `docs/`. `-check` fails and lists each stale marker. See [Generated facts](#generated-facts).
 
 ## Generated facts

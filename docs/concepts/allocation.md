@@ -12,7 +12,7 @@ func send() (layer2.RawBurst, error) {
 }
 ```
 
-The table lists every place where the library can allocate. [v2/internal/allocgate](../v2/internal/allocgate) generates it and fails when this page differs.
+The table lists every place where the library can allocate. [v2/internal/allocgate](../../v2/internal/allocgate) generates it and fails when this page differs.
 
 <!-- allocgate:begin -->
 
@@ -37,6 +37,6 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 - Do not copy a machine or a `layer2.Burst` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
 - A `layer2.Burst` keeps its decoded `Data` until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
 - Three checks keep this true, with no list of functions to maintain:
-  - [v2/internal/allocgate](../v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
+  - [v2/internal/allocgate](../../v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
   - The same package adds each allocation site that `tinygo build -print-allocs` reports for the pico and for `riscv-qemu`.
-  - [v2/internal/allocs](../v2/internal/allocs) measures allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
+  - [v2/internal/allocs](../../v2/internal/allocs) measures allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
