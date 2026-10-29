@@ -469,7 +469,11 @@ func (r *iqRx) hunt(v complex64) {
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
 	r.afcAvg, r.afcPull = 0, 0
-	r.tuneWith(hz-r.conv.hz, 0, iqTuneMaxHz)
+	dc := float32(0)
+	if r.d.locked {
+		dc = r.d.f.dc - (hz-r.conv.hz)*r.d.f.gain*iqUnitsPerHz
+	}
+	r.tuneWith(hz-r.conv.hz, dc, iqTuneMaxHz)
 }
 
 func (r *iqRx) tuneLimit() float32 {
