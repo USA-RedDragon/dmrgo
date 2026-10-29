@@ -449,6 +449,8 @@ const (
 	deepErrors    = 20
 	deepBatch     = 32
 	deepFirstSeed = 1000
+	deepFloor     = 1e-4
+	deepFrames    = deepErrors / deepFloor
 )
 
 func deepStreams(e benchEntry) int {
@@ -461,26 +463,17 @@ func deepStreams(e benchEntry) int {
 	return 4096
 }
 
+func deepNeeds(sc *benchScore) bool {
+	return sc != nil && sc.Truth > 0 && sc.Truth-sc.Exact < deepErrors && sc.Truth < deepFrames
+}
+
 func deepen(r benchRun, pts []benchPoint) []benchPoint {
 	e := r.e
-	done := map[string]bool{}
+	below := map[string]int{}
 	for i := range pts {
 		p := &pts[i]
 		seed := uint64(deepFirstSeed) + uint64(i)<<20
-		for {
-			need := false
-			for _, k := range deepPayloads() {
-				sc := p.Payloads[k]
-				if sc == nil || done[k] || sc.Truth == 0 || sc.Truth-sc.Exact >= deepErrors {
-					continue
-				}
-				if i == 0 || pts[i-1].Payloads[k] == nil || pts[i-1].Payloads[k].Exact < pts[i-1].Payloads[k].Truth || sc.Exact < sc.Truth {
-					need = true
-				}
-			}
-			if !need || p.Seeds >= deepStreams(e) {
-				break
-			}
+		for p.Seeds < deepStreams(e) && slices.ContainsFunc(deepPayloads(), func(k string) bool { return below[k] < 2 && deepNeeds(p.Payloads[k]) }) {
 			cases := make([]benchCase, deepBatch)
 			for j := range cases {
 				cases[j] = benchCase{p.CN, seed}
@@ -499,8 +492,14 @@ func deepen(r benchRun, pts []benchPoint) []benchPoint {
 			}
 		}
 		for _, k := range deepPayloads() {
-			if sc := p.Payloads[k]; sc != nil && sc.Truth > 0 && sc.Exact == sc.Truth {
-				done[k] = true
+			sc := p.Payloads[k]
+			switch {
+			case below[k] >= 2:
+				delete(p.Payloads, k)
+			case sc != nil && sc.Truth > 0 && float64(sc.Truth-sc.Exact) < deepFloor*float64(sc.Truth):
+				below[k]++
+			default:
+				below[k] = 0
 			}
 		}
 	}
