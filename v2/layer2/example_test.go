@@ -3,6 +3,7 @@ package layer2_test
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -149,4 +150,76 @@ func ExamplePositionTracker_Place() {
 	lost, _ := tr.Place(&a, &h)
 	fmt.Println(h.VoiceBurst, lost)
 	// Output: A 11
+}
+
+// ExampleNewBurstFromBytes_capture decodes each burst of a recorded voice
+// call, 33 bytes per burst in the order that the radio sent them, and
+// prints the data bursts and the count of voice bursts.
+func ExampleNewBurstFromBytes_capture() {
+	capture, err := os.ReadFile("testdata/parrot_kerchunk.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	voiceBursts := 0
+	for off := 0; off+33 <= len(capture); off += 33 {
+		burst, err := layer2.NewBurstFromBytes([33]byte(capture[off : off+33]))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if err := burst.FEC.Aggregate().Err(); err != nil {
+			fmt.Println("burst", off/33, err)
+			continue
+		}
+		switch burst.Kind {
+		case layer2.KindVoice:
+			voiceBursts++
+		case layer2.KindData:
+			fmt.Print(burst.SlotType.DataType)
+			if lc, ok := burst.Data.(*pdu.FullLinkControl); ok {
+				target, source, _ := lc.Addresses()
+				fmt.Printf(": call from %d to %d", source, target)
+			}
+			fmt.Println()
+		case layer2.KindUnknown, layer2.KindReverseChannel:
+		}
+	}
+	fmt.Println(voiceBursts, "voice bursts")
+	// Output:
+	// Voice LC Header: call from 3191868 to 9990
+	// Terminator With LC: call from 3191868 to 9990
+	// 13 voice bursts
+}
+
+var headerLC pdu.FullLinkControl
+
+func buildHeader() (layer2.RawBurst, error) {
+	return layer2.BuildBurst(&headerLC, 1, layer2.SyncSourceBS)
+}
+
+// ExampleBuildBurst builds a Voice LC Header from a Full LC in a
+// package-level variable, which TinyGo does not move to the heap, and
+// decodes it back.
+func ExampleBuildBurst() {
+	headerLC.BurstDataType = enums.DataTypeVoiceLCHeader
+	if err := headerLC.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000}); err != nil {
+		fmt.Println(err)
+		return
+	}
+	raw, err := buildHeader()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	b, err := layer2.NewBurstFromBytes(raw)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	lc, _ := b.Data.(*pdu.FullLinkControl)
+	target, source, _ := lc.Addresses()
+	fmt.Println(b.SlotType.DataType, source, target)
+	// Output:
+	// Voice LC Header 3120000 91
 }
