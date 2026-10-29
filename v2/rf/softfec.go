@@ -984,14 +984,6 @@ func softShortLCOf(cw *[softOSDWords]uint64) [softShortLCInfo]unpacked.Bit {
 	return info
 }
 
-func (d *softDecoder) decodeEmbeddedLC(llr *[4][softBurstBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
-	var frags [4][embBits]int16
-	for i := range frags {
-		copy(frags[i][:], llr[i][embFirstBit:embFirstBit+embBits])
-	}
-	return d.decodeEmbeddedFrags(&frags, out)
-}
-
 func (d *softDecoder) decodeEmbeddedFrags(llr *[4][embBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
 	c, s := &softOSDCodes[softEmbLCCode], &d.osd
 	for j := range c.n {

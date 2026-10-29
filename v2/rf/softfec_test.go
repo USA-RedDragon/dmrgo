@@ -874,3 +874,11 @@ func TestSoftOSDCleanWords(t *testing.T) {
 		}
 	}
 }
+
+func (d *softDecoder) decodeEmbeddedLC(llr *[4][softBurstBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
+	var frags [4][embBits]int16
+	for i := range frags {
+		copy(frags[i][:], llr[i][embFirstBit:embFirstBit+embBits])
+	}
+	return d.decodeEmbeddedFrags(&frags, out)
+}
