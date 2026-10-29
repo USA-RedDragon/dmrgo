@@ -74,8 +74,10 @@ func TestNyquistTables(t *testing.T) {
 			cases = append(cases, q)
 		}
 	}
+	// tables_gen.go comes from gc on amd64. Other math libraries move the pulse samples by an ULP, and the ill-conditioned echo solve then lands elsewhere on a flat optimum, so there the test compares the pulses the echoes give.
+	exact := runtime.Compiler == "gc" && runtime.GOARCH == "amd64"
 	tol := 1e-12
-	if runtime.GOARCH == "amd64" {
+	if exact {
 		tol = 0
 	}
 	near := func(a, b float64) bool { return math.Abs(a-b) <= tol*(1+math.Abs(b)) }
@@ -83,11 +85,23 @@ func TestNyquistTables(t *testing.T) {
 		want := p
 		want.solveNyquist()
 		p.nyquist()
-		for k := range p.echo {
-			if !near(p.echo[k], want.echo[k]) {
-				t.Errorf("case %d (span %d, tab %v, flat %v): echo %d is %v, a solve gives %v", i, p.span, p.tab != nil, p.flat, k, p.echo[k], want.echo[k])
-				break
+		if exact {
+			for k := range p.echo {
+				if p.echo[k] != want.echo[k] {
+					t.Errorf("case %d (span %d, tab %v, flat %v): echo %d is %v, a solve gives %v", i, p.span, p.tab != nil, p.flat, k, p.echo[k], want.echo[k])
+					break
+				}
 			}
+			continue
+		}
+		var top, worst float64
+		for j := -p.span * nyquistGrid; j <= p.span*nyquistGrid; j++ {
+			x := float64(j) / nyquistGrid
+			top = max(top, math.Abs(want.base(x)))
+			worst = max(worst, math.Abs(p.base(x)-want.base(x)))
+		}
+		if worst > 1e-5*top {
+			t.Errorf("case %d (span %d, tab %v, flat %v): the pulse of the table is %.3g off that of a solve, peak %.3g", i, p.span, p.tab != nil, p.flat, worst, top)
 		}
 	}
 	p := tierPulses()[0]
