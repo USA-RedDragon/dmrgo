@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync/atomic"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 // scalarML is a plain Viterbi decoder with the metric of Decode. It returns
@@ -73,7 +75,7 @@ func TestTrellis34_TwoBitErrorsMatchML(t *testing.T) {
 			pairs = append(pairs, [2]int{a, b})
 		}
 	}
-	checkCases(t, len(pairs), func(i int) [2]int { return pairs[i] }, func(p *[2]int) string {
+	testmode.Cases(t, len(pairs), func(i int) [2]int { return pairs[i] }, func(p *[2]int) string {
 		a, b := p[0], p[1]
 		rx := enc
 		rx[a/8] ^= 0x80 >> (a % 8)

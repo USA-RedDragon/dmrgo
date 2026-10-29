@@ -79,7 +79,7 @@ func TestEmbeddedLC_UpToThreeErrorsCorrected(t *testing.T) {
 	for k := 1; k <= testmode.N(3, 3, 2); k++ {
 		var patterns [][]int
 		forEachErrorPattern(128, k, func(pos []int) { patterns = append(patterns, slices.Clone(pos)) })
-		checkCases(t, len(patterns), func(i int) []int { return patterns[i] }, func(pos *[]int) string {
+		testmode.Cases(t, len(patterns), func(i int) []int { return patterns[i] }, func(pos *[]int) string {
 			got, res := decodeEmbedded(flipEmbedded(fr, *pos...))
 			if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
 				return fmt.Sprintf("errors at %v: data match=%v result=%+v", *pos, got == info, res)

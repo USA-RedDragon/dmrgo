@@ -5,6 +5,8 @@ import (
 	"math/bits"
 	"math/rand"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 func TestRegenerate(t *testing.T) {
@@ -15,7 +17,7 @@ func TestRegenerate(t *testing.T) {
 		frame [7]byte
 		mask  [9]byte
 	}
-	checkCases(t, 1<<20, func(n int) regenCase {
+	testmode.Cases(t, 1<<20, func(n int) regenCase {
 		var c regenCase
 		r.Read(c.frame[:])
 		c.frame[6] &= 0x80

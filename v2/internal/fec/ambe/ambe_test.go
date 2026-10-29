@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	refambe "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/ambe"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -13,7 +14,7 @@ func TestEncodeMatchesReference(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	checkCases(t, 1<<20, func(n int) [7]byte {
+	testmode.Cases(t, 1<<20, func(n int) [7]byte {
 		var frame [7]byte
 		r.Read(frame[:])
 		frame[6] &= 0x80
@@ -43,7 +44,7 @@ func TestDecodeMatchesReference(t *testing.T) {
 		nflips int
 		flips  [8]int
 	}
-	checkCases(t, 1<<21, func(n int) decodeCase {
+	testmode.Cases(t, 1<<21, func(n int) decodeCase {
 		var c decodeCase
 		if n%2 == 0 {
 			c.random = true

@@ -8,6 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -33,7 +34,7 @@ func TestSingleBurstMatchesReference(t *testing.T) {
 		tx  uint32
 		odd bool
 	}
-	checkCases(t, 2<<11, func(i int) word { return word{uint32(i % (1 << 11)), i >= 1<<11} }, func(c *word) string {
+	testmode.Cases(t, 2<<11, func(i int) word { return word{uint32(i % (1 << 11)), i >= 1<<11} }, func(c *word) string {
 		info, odd := uint16(c.tx), c.odd
 		var b [11]unpacked.Bit
 		unpacked.PutUint(b[:], uint64(info))
@@ -52,7 +53,7 @@ func TestSingleBurstMatchesReference(t *testing.T) {
 		return ""
 	})
 	r := rand.New(rand.NewSource(1))
-	checkCases(t, 4_000_000, func(int) word {
+	testmode.Cases(t, 4_000_000, func(int) word {
 		tx := r.Uint32()
 		return word{tx, r.Intn(2) == 1}
 	}, func(c *word) string { return check(c.tx, c.odd) })

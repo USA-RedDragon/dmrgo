@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	reftrellis "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -158,7 +159,7 @@ func TestTrellis34_MaximumLikelihood(t *testing.T) {
 		data    [18]byte
 		enc, rx [25]byte
 	}
-	checkCases(t, 200000, func(n int) mlCase {
+	testmode.Cases(t, 200000, func(n int) mlCase {
 		data, enc := randomBlock(r)
 		rx := enc
 		for range 1 + n%8 {

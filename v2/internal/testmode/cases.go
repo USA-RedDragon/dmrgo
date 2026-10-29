@@ -1,4 +1,4 @@
-package trellis
+package testmode
 
 import (
 	"runtime"
@@ -7,7 +7,13 @@ import (
 	"testing"
 )
 
-func checkCases[C any](t *testing.T, n int, gen func(i int) C, check func(c *C) string) {
+// Cases checks n cases on GOMAXPROCS goroutines. It calls gen for each
+// index from 0 to n-1 in order on the goroutine of t, so a gen that draws
+// from one random source makes the same cases as a serial loop. check
+// returns an empty string for a case that passes and the failure message
+// otherwise. Cases fails t with the message of the first failing case in
+// index order.
+func Cases[C any](t testing.TB, n int, gen func(i int) C, check func(c *C) string) {
 	t.Helper()
 	const chunk, block = 1 << 14, 64
 	workers := runtime.GOMAXPROCS(0)

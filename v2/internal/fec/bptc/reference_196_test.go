@@ -27,7 +27,7 @@ func TestBPTC19696MatchesReference(t *testing.T) {
 		nflips   int
 		flips    [16]int
 	}
-	checkCases(t, n, func(i int) c196 {
+	testmode.Cases(t, n, func(i int) c196 {
 		var c c196
 		r.Read(c.data[:])
 		c.reserved = uint8(r.Intn(8))

@@ -41,7 +41,7 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 		nflips int
 		flips  [12]int
 	}
-	checkCases(t, n, func(i int) cEmb {
+	testmode.Cases(t, n, func(i int) cEmb {
 		var c cEmb
 		r.Read(c.info[:])
 		c.info[9] &= 0xF8

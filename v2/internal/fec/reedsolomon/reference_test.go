@@ -56,7 +56,7 @@ func TestDecodeMatchesReferenceRandom(t *testing.T) {
 		pos    [8]int
 		xor    [8]byte
 	}
-	checkCases(t, testmode.N(1_000_000, 1_000_000, 20_000), func(n int) rsCase {
+	testmode.Cases(t, testmode.N(1_000_000, 1_000_000, 20_000), func(n int) rsCase {
 		var c rsCase
 		r.Read(c.data[:])
 		switch n % 4 {

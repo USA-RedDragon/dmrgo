@@ -22,7 +22,7 @@ func TestCACHMatchesReference(t *testing.T) {
 		nflips int
 		flips  [8]int
 	}
-	checkCases(t, testmode.N(2_000_000, 2_000_000, 40_000), func(n int) cCACH {
+	testmode.Cases(t, testmode.N(2_000_000, 2_000_000, 40_000), func(n int) cCACH {
 		c := cCACH{info: r.Uint64() & (1<<36 - 1)}
 		switch n % 3 {
 		case 0:
