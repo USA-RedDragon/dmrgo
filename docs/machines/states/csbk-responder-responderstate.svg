@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="539" height="206" viewBox="0 0 539 206" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="539" height="206" fill="#ffffff"/>
+<path d="M86.7 86.0C86.7 52.0 249.9 52.0 249.9 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="168.3" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M249.9 120.0C249.9 154.0 86.7 154.0 86.7 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="168.3" y="159.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M265.9 86.0C265.9 52.0 440.8 52.0 440.8 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="353.3" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Channel, Lost, Tick</text>
+<path d="M86.7 86.0C86.7 22.0 440.8 22.0 440.8 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="263.8" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded</text>
+<path d="M440.8 120.0C440.8 184.0 86.7 184.0 86.7 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="263.8" y="182.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset, Tick</text>
+<rect x="16.0" y="86.0" width="125.4" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="78.7" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">ResponderIdle</text>
+<rect x="187.4" y="86.0" width="141.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="257.9" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">ResponderAccess</text>
+<rect x="374.4" y="86.0" width="148.8" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="448.8" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">ResponderSending</text>
+</svg>

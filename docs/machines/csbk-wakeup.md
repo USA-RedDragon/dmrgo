@@ -19,11 +19,36 @@ A repeater that wakes on any valid burst does not need a Wakeup. On the BS side,
 [`csbk.NewWakeup`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#NewWakeup) takes a [`*csbk.WakeupConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#WakeupConfig). A nil config is the zero config. `Slot` must be slot 1 or slot 2, so a nil config returns an error. `ColorCode` is the color code of the BS: the Wakeup sends BS_Dwn_Act with it and takes only an outbound data burst with it.
 
 <!-- dmrgo:config pkg=csbk type=WakeupConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the BS, of the slot type of the BS_Dwn_Act bursts and of the outbound that ends the wakeup. |
+| `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
+| `SyncWait` | `time.Duration` | `DefaultSyncWait` (360ms) | SyncWait is T_SyncWu, the wait for the outbound after each BS_Dwn_Act. 0 means DefaultSyncWait, and a negative value waits until the outbound or Cancel. |
+| `Attempts` | `int` | `DefaultWakeups` (2) | Attempts is N_Wakeup, the most BS_Dwn_Act bursts. 0 means DefaultWakeups; at most MaxRetries. |
+| `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. |
+| `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
 
 <!-- dmrgo:states pkg=csbk type=WakeupState -->
+States of [`Wakeup`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Wakeup), from [`Wakeup.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Wakeup.State):
+
+| State | Meaning | Seen in tests |
+|---|---|---|
+| [`WakeupIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#WakeupIdle) | WakeupIdle runs no wakeup. | yes, first state |
+| [`WakeupSending`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#WakeupSending) | WakeupSending sends a BS_Dwn_Act at the next Tick. | yes |
+| [`WakeupWaiting`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#WakeupWaiting) | WakeupWaiting waits T_SyncWu for the BS outbound. | yes |
+
+Transitions seen in tests:
+
+| From | Method call | To |
+|---|---|---|
+| WakeupIdle | `Wake` | WakeupSending |
+| WakeupSending | `Lost`, `Tick` | WakeupWaiting |
+| WakeupWaiting | `Burst`, `Cancel`, `Tick` | WakeupIdle |
+
+![Transitions of Wakeup](states/csbk-wakeup-wakeupstate.svg)
 <!-- /dmrgo:states -->
 
 These inputs move the state:
@@ -62,8 +87,8 @@ Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#O
 
 | Timer | Config field | Default |
 |---|---|---|
-| T_SyncWu, the wait for the outbound after each BS_Dwn_Act (ETSI TS 102 361-1 clause F.1) | `SyncWait` | <!-- dmrgo:const pkg=csbk name=DefaultSyncWait --><!-- /dmrgo:const --> |
-| N_Wakeup, the most BS_Dwn_Act bursts (ETSI TS 102 361-1 clause F.2) | `Attempts` | <!-- dmrgo:const pkg=csbk name=DefaultWakeups --><!-- /dmrgo:const -->, at most <!-- dmrgo:const pkg=csbk name=MaxRetries --><!-- /dmrgo:const --> |
+| T_SyncWu, the wait for the outbound after each BS_Dwn_Act (ETSI TS 102 361-1 clause F.1) | `SyncWait` | <!-- dmrgo:const pkg=csbk name=DefaultSyncWait -->`360ms`<!-- /dmrgo:const --> |
+| N_Wakeup, the most BS_Dwn_Act bursts (ETSI TS 102 361-1 clause F.2) | `Attempts` | <!-- dmrgo:const pkg=csbk name=DefaultWakeups -->`2`<!-- /dmrgo:const -->, at most <!-- dmrgo:const pkg=csbk name=MaxRetries -->`255`<!-- /dmrgo:const --> |
 
 T_SyncWu starts at the `Due` time of each BS_Dwn_Act. A negative `SyncWait` waits until the outbound or `Cancel`, and sends one BS_Dwn_Act only. `Lead` makes `Tick` emit each burst early, for an RF FIFO; the next BS_Dwn_Act then goes out when T_SyncWu ends, with its `Due` time one lead later.
 
@@ -72,16 +97,45 @@ T_SyncWu starts at the `Due` time of each BS_Dwn_Act. A negative `SyncWait` wait
 This example wakes a repeater that does not answer. With the defaults, the Wakeup sends two BS_Dwn_Act bursts, one T_SyncWu apart, and ends one T_SyncWu after the second.
 
 <!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleWakeup -->
+```go
+func ExampleWakeup() {
+	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
+	_ = w.Wake(0, 314926, 3191868)
+	for {
+		at, ok := w.Deadline()
+		if !ok {
+			break
+		}
+		for _, o := range w.Tick(at, nil) {
+			if o.Kind == csbk.OutputDone {
+				fmt.Println(at, o.Kind, o.Result)
+			} else {
+				fmt.Println(at, o.Kind)
+			}
+		}
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 Output:
 
 <!-- dmrgo:output test=csbk.ExampleWakeup -->
+```text
+0s Burst
+360ms Burst
+720ms Done NoAnswer
+```
 <!-- /dmrgo:output -->
 
 ## Errors
 
 <!-- dmrgo:errors pkg=csbk type=Wakeup -->
+| Error | Returned by | Meaning |
+|---|---|---|
+| [`csbk.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#ErrBusy) | `Wakeup.Wake` | ErrBusy is returned by a request or a wakeup while another one runs. |
+| [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `Wakeup.Wake` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
+| [`dmrgo.ErrZeroValue`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrZeroValue) | `Wakeup.Wake` | ErrZeroValue is returned by a method of a state machine that starts work, such as Start, Request or Send, when the machine is a zero value and not made with its constructor. |
 <!-- /dmrgo:errors -->
 
 `Wake` returns [`csbk.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#ErrBusy) while a wakeup runs; match it with `errors.Is`. `NewWakeup` and `Wake` return a [`*dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) for a value out of range; match it with `errors.As`. A BS that does not wake gives an `OutputDone` with `ResultNoAnswer`, and no error.

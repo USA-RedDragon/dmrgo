@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="521" viewBox="0 0 1440 521" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="1440" height="521" fill="#ffffff"/>
+<path d="M72.0 221.0C72.0 187.0 198.0 187.0 198.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="135.0" y="190.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M198.0 255.0C198.0 289.0 72.0 289.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="135.0" y="294.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<path d="M214.0 221.0C214.0 157.0 340.0 157.0 340.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="277.0" y="168.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1210.0 221.0C1210.0 187.0 1357.6 187.0 1357.6 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="1283.8" y="190.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1023.0 221.0C1023.0 187.0 1194.0 187.0 1194.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="1108.5" y="190.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M72.0 221.0C72.0 127.0 340.0 127.0 340.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="206.0" y="145.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M340.0 255.0C340.0 319.0 72.0 319.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="206.0" y="317.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Reset, Tick</text>
+<path d="M214.0 221.0C214.0 97.0 492.8 97.0 492.8 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="353.4" y="123.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M492.8 255.0C492.8 289.0 214.0 289.0 214.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="353.4" y="294.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<path d="M356.0 221.0C356.0 187.0 656.4 187.0 656.4 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="506.2" y="190.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M492.8 255.0C492.8 349.0 72.0 349.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="282.4" y="339.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Reset, Tick</text>
+<path d="M508.8 221.0C508.8 157.0 1007.0 157.0 1007.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="757.9" y="168.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M656.4 255.0C656.4 379.0 72.0 379.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="364.2" y="362.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<path d="M214.0 221.0C214.0 67.0 820.0 67.0 820.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="517.0" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reject, Tick</text>
+<path d="M508.8 221.0C508.8 127.0 1194.0 127.0 1194.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="851.4" y="145.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1194.0 255.0C1194.0 289.0 508.8 289.0 508.8 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="851.4" y="294.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M820.0 255.0C820.0 409.0 72.0 409.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="446.0" y="384.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1194.0 255.0C1194.0 319.0 356.0 319.0 356.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="775.0" y="317.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M508.8 221.0C508.8 97.0 1357.6 97.0 1357.6 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="933.2" y="123.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<path d="M72.0 221.0C72.0 37.0 1007.0 37.0 1007.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="539.5" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1194.0 255.0C1194.0 439.0 214.0 439.0 214.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="704.0" y="407.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1357.6 255.0C1357.6 469.0 356.0 469.0 356.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="856.8" y="429.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M72.0 221.0C72.0 7.0 1194.0 7.0 1194.0 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="633.0" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M1194.0 255.0C1194.0 499.0 72.0 499.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="633.0" y="452.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M1357.6 255.0C1357.6 529.0 214.0 529.0 214.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="785.8" y="474.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M72.0 221.0C72.0 -23.0 1357.6 -23.0 1357.6 221.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="714.8" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M1357.6 255.0C1357.6 559.0 72.0 559.0 72.0 255.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="714.8" y="497.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<rect x="16.0" y="221.0" width="96.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="64.0" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotIdle</text>
+<rect x="158.0" y="221.0" width="96.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="206.0" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotVoice</text>
+<rect x="300.0" y="221.0" width="96.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="348.0" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotData</text>
+<rect x="442.0" y="221.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="500.8" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotCallHang</text>
+<rect x="605.6" y="221.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="664.4" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotDataHang</text>
+<rect x="769.2" y="221.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="828.0" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotRejected</text>
+<rect x="932.8" y="221.0" width="164.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="1015.0" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotChanAuthSelect</text>
+<rect x="1143.2" y="221.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="1202.0" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotChanAuth</text>
+<rect x="1306.8" y="221.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="1365.6" y="242.5" font-size="13" text-anchor="middle" fill="#1f2633">SlotPreamble</text>
+</svg>

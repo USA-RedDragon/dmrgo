@@ -13,6 +13,56 @@ A DMR signal is 4FSK, with two TDMA time slots on one carrier. A repeater sends 
 ## The code
 
 <!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor_capture -->
+```go
+func ExampleMonitor_capture() {
+	iq, err := os.ReadFile("../cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	call, err := voice.NewReceiver(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	events := make([]voice.Event, 0, voice.MaxEvents)
+	var m rf.Monitor
+	lb := layer2.NewBurst()
+	voiceBursts := 0
+	onBursts := func(bs []rf.Burst) {
+		for i := range bs {
+			r, err := m.Burst(lb, &bs[i])
+			if err != nil || r.Hint.Slot != enums.Slot2 {
+				continue
+			}
+			now := time.Duration(math.Round(bs[i].Seconds*1000)) * time.Millisecond
+			for _, e := range call.Decoded(now, lb, r.Hint, events[:0]) {
+				switch e.Kind {
+				case voice.EventCallStart:
+					fmt.Printf("call from %d to %d (%v)\n", e.Call.Source, e.Call.Target, e.Call.Origin)
+				case voice.EventVoice:
+					voiceBursts++
+				case voice.EventCallEnd:
+					fmt.Printf("end: %v after %v, %d voice bursts\n", e.Reason, e.Stats.Duration, voiceBursts)
+				default:
+				}
+			}
+		}
+	}
+	rx, err := rf.NewReceiver(&rf.RxConfig{Tier: rf.Tier1, Rate: 256000, Format: rf.IQFormatCU8, OnBursts: onBursts})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if _, err := rx.Write(iq); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err := rx.Flush(); err != nil {
+		fmt.Println(err)
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 Run it from the `v2` directory:
@@ -24,6 +74,10 @@ go test -run ExampleMonitor_capture -v ./rf
 It prints:
 
 <!-- dmrgo:output test=rf.ExampleMonitor_capture -->
+```text
+call from 3191868 to 9 (Header)
+end: Terminator after 540ms, 6 voice bursts
+```
 <!-- /dmrgo:output -->
 
 ## What the code does

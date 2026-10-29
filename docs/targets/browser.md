@@ -11,6 +11,13 @@ This page shows how to build dmrgo to WebAssembly and run it in a web page, with
 The whole `v2` module builds for `GOOS=js GOARCH=wasm`, and CI runs the Codec2 tests on the WebAssembly engine of Node:
 
 <!-- dmrgo:code file=.github/workflows/test.yaml lines=58-62 -->
+```yaml
+- name: Build for js/wasm
+  run: GOOS=js GOARCH=wasm go build -C v2 ./...
+
+- name: Codec2 tests on the browser engine in Node
+  run: GOOS=js GOARCH=wasm go test -C v2 -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./vocoder/codec2/
+```
 <!-- /dmrgo:code -->
 
 ## Build and run the decoder
@@ -26,6 +33,12 @@ go run ./examples/wasm/decoder/serve
 The command builds `decoder.wasm` and serves the page. Open http://localhost:8080/. Its flags:
 
 <!-- dmrgo:code file=v2/examples/wasm/decoder/serve/main.go lines=21-24 -->
+```go
+addr := flag.String("addr", "localhost:8080", "listen address; WebUSB and the microphone need localhost or HTTPS")
+build := flag.Bool("build", true, "build the decoder before serving")
+tinygo := flag.Bool("tinygo", false, "build and serve the decoder with TinyGo instead of Go")
+files := flag.String("files", "", "a directory of recordings to serve under /files/, for the src parameter of the page")
+```
 <!-- /dmrgo:code -->
 
 ## Build and run the packet inspector

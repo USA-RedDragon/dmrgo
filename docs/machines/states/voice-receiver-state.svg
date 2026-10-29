@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="605" height="341" viewBox="0 0 605 341" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="605" height="341" fill="#ffffff"/>
+<path d="M400.1 153.5C400.1 119.5 533.0 119.5 533.0 153.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="466.5" y="123.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded, Lost, Tick</text>
+<path d="M533.0 187.5C533.0 221.5 400.1 221.5 400.1 187.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="466.5" y="227.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M216.6 187.5C216.6 221.5 72.0 221.5 72.0 187.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="144.3" y="227.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Lost, Reset, Tick</text>
+<path d="M72.0 153.5C72.0 119.5 216.6 119.5 216.6 153.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="144.3" y="123.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded</text>
+<path d="M232.6 153.5C232.6 89.5 384.1 89.5 384.1 153.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="308.3" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M384.1 187.5C384.1 251.5 232.6 251.5 232.6 187.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="308.3" y="249.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M232.6 153.5C232.6 59.5 533.0 59.5 533.0 153.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="382.8" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Lost, Tick</text>
+<path d="M533.0 187.5C533.0 281.5 232.6 281.5 232.6 187.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="382.8" y="272.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M72.0 153.5C72.0 29.5 384.1 29.5 384.1 153.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="228.0" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded</text>
+<path d="M384.1 187.5C384.1 311.5 72.0 311.5 72.0 187.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="228.0" y="294.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded, Lost, Reset</text>
+<path d="M72.0 153.5C72.0 -0.5 533.0 -0.5 533.0 153.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="302.5" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded</text>
+<path d="M533.0 187.5C533.0 341.5 72.0 341.5 72.0 187.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="302.5" y="317.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Lost, Reset, Tick</text>
+<rect x="16.0" y="153.5" width="96.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="64.0" y="175.0" font-size="13" text-anchor="middle" fill="#1f2633">StateIdle</text>
+<rect x="158.0" y="153.5" width="133.2" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="224.6" y="175.0" font-size="13" text-anchor="middle" fill="#1f2633">StateLateEntry</text>
+<rect x="337.2" y="153.5" width="109.8" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="392.1" y="175.0" font-size="13" text-anchor="middle" fill="#1f2633">StateInCall</text>
+<rect x="493.0" y="153.5" width="96.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="541.0" y="175.0" font-size="13" text-anchor="middle" fill="#1f2633">StateHang</text>
+</svg>

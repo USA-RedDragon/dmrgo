@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="477" height="206" viewBox="0 0 477 206" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="477" height="206" fill="#ffffff"/>
+<path d="M82.8 86.0C82.8 52.0 230.4 52.0 230.4 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="156.6" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded</text>
+<path d="M230.4 120.0C230.4 154.0 82.8 154.0 82.8 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="156.6" y="159.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M246.4 86.0C246.4 52.0 394.0 52.0 394.0 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="320.2" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M394.0 120.0C394.0 154.0 246.4 154.0 246.4 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="320.2" y="159.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M82.8 86.0C82.8 22.0 394.0 22.0 394.0 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="238.4" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M394.0 120.0C394.0 184.0 82.8 184.0 82.8 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="238.4" y="182.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset</text>
+<rect x="16.0" y="86.0" width="117.6" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="74.8" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">StateHunting</text>
+<rect x="179.6" y="86.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="238.4" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">StateControl</text>
+<rect x="343.2" y="86.0" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="402.0" y="107.5" font-size="13" text-anchor="middle" fill="#1f2633">StatePayload</text>
+</svg>

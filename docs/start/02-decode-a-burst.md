@@ -15,6 +15,40 @@ A DMR burst is the 264 bits that one 30 ms time slot carries. dmrgo holds a burs
 [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes) decodes one burst into a [layer2.Burst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Burst). This example decodes each burst of the capture:
 
 <!-- dmrgo:code file=v2/layer2/example_test.go symbol=ExampleNewBurstFromBytes_capture -->
+```go
+func ExampleNewBurstFromBytes_capture() {
+	capture, err := os.ReadFile("testdata/parrot_kerchunk.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	voiceBursts := 0
+	for off := 0; off+33 <= len(capture); off += 33 {
+		burst, err := layer2.NewBurstFromBytes([33]byte(capture[off : off+33]))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if err := burst.FEC.Aggregate().Err(); err != nil {
+			fmt.Println("burst", off/33, err)
+			continue
+		}
+		switch burst.Kind {
+		case layer2.KindVoice:
+			voiceBursts++
+		case layer2.KindData:
+			fmt.Print(burst.SlotType.DataType)
+			if lc, ok := burst.Data.(*pdu.FullLinkControl); ok {
+				target, source, _ := lc.Addresses()
+				fmt.Printf(": call from %d to %d", source, target)
+			}
+			fmt.Println()
+		case layer2.KindUnknown, layer2.KindReverseChannel:
+		}
+	}
+	fmt.Println(voiceBursts, "voice bursts")
+}
+```
 <!-- /dmrgo:code -->
 
 Run it from the `v2` directory:
@@ -26,6 +60,11 @@ go test -run ExampleNewBurstFromBytes_capture -v ./layer2
 It prints:
 
 <!-- dmrgo:output test=layer2.ExampleNewBurstFromBytes_capture -->
+```text
+Voice LC Header: call from 3191868 to 9990
+Terminator With LC: call from 3191868 to 9990
+13 voice bursts
+```
 <!-- /dmrgo:output -->
 
 ## What the code does

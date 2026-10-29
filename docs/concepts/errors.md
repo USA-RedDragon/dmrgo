@@ -14,9 +14,22 @@ A method called on a nil pointer does nothing:
 - it returns zero values otherwise.
 
 <!-- dmrgo:code file=v2/example_test.go symbol=ExampleErrNilReceiver -->
+```go
+func ExampleErrNilReceiver() {
+	var tx *data.Sender
+	err := tx.Send(0, &data.Message{})
+	fmt.Println(errors.Is(err, dmrgo.ErrNilReceiver))
+	outputs := tx.Tick(0, make([]data.Output, 0, data.MaxOutputs))
+	fmt.Println(len(outputs))
+}
+```
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleErrNilReceiver -->
+```text
+true
+0
+```
 <!-- /dmrgo:output -->
 
 The fuzz tests of the packages feed random input to the decoders, the encoders and the state machines, and fail on a panic. The C API, libdmrgo, also returns a status code for each failure. See [C API](../targets/c.md).
@@ -34,6 +47,12 @@ The root package holds the errors that every package can return:
 Each package holds its own errors, such as [data.ErrBusy](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#ErrBusy) and [layer2.ErrColorCodeMismatch](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#ErrColorCodeMismatch). The "Errors" section of the [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) lists every error of every package, with the calls that return it. The doc comment of each function gives the errors that it returns. For example, the methods of a [data.Sender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender) return these errors:
 
 <!-- dmrgo:errors pkg=data type=Sender -->
+| Error | Returned by | Meaning |
+|---|---|---|
+| [`data.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#ErrBusy) | `Sender.Send` | ErrBusy is returned by Sender.Send while a message is in progress. |
+| [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `Sender.Send` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
+| [`dmrgo.ErrNilArgument`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrNilArgument) | `Sender.Send` | ErrNilArgument is returned by a function or method of the library that returns an error when a pointer, func or interface argument it needs is nil. |
+| [`dmrgo.ErrZeroValue`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrZeroValue) | `Sender.Send` | ErrZeroValue is returned by a method of a state machine that starts work, such as Start, Request or Send, when the machine is a zero value and not made with its constructor. |
 <!-- /dmrgo:errors -->
 
 ## Match error types with errors.As
@@ -44,15 +63,40 @@ Two error types carry the field that failed. Match them with `errors.As`:
 - [*dmrgo.ConfigError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError): a constructor or a machine method got a config, option or argument field out of range. `Type` names the package and `Field` the field.
 
 <!-- dmrgo:code file=v2/example_test.go symbol=ExampleFieldRangeError -->
+```go
+func ExampleFieldRangeError() {
+	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 1 << 24})
+	var rangeErr *dmrgo.FieldRangeError
+	if errors.As(err, &rangeErr) {
+		fmt.Println(rangeErr.Field, rangeErr.Bits)
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleFieldRangeError -->
+```text
+GroupAddress 24
+```
 <!-- /dmrgo:output -->
 
 <!-- dmrgo:code file=v2/example_test.go symbol=ExampleConfigError -->
+```go
+func ExampleConfigError() {
+	_, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 16})
+	var configErr *dmrgo.ConfigError
+	if errors.As(err, &configErr) {
+		fmt.Println(configErr.Type, configErr.Field)
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=.ExampleConfigError -->
+```text
+voice ColorCode
+```
 <!-- /dmrgo:output -->
 
 A setter that returns a `*FieldRangeError` changes nothing.
@@ -62,6 +106,12 @@ A setter that returns a `*FieldRangeError` changes nothing.
 Bit errors on air are normal. A decoder corrects the errors that its FEC can correct, and reports the rest in an FEC result, a [fec.Result](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#Result), beside the decoded value. The decode itself does not fail. For example, [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes) returns no error for a burst whose CRC fails. `burst.FEC` reports the failure, and `burst.Data` still holds the decoded PDU. `Err` on a result returns [fec.ErrUncorrectable](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#ErrUncorrectable) for an uncorrectable result:
 
 <!-- dmrgo:code file=v2/layer2/example_test.go lines=171-174 -->
+```go
+if err := burst.FEC.Aggregate().Err(); err != nil {
+	fmt.Println("burst", off/33, err)
+	continue
+}
+```
 <!-- /dmrgo:code -->
 
 You pick what to do with a failed burst: drop it, count it, or use what it holds.

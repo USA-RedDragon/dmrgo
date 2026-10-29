@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="486" height="161" viewBox="0 0 486 161" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="486" height="161" fill="#ffffff"/>
+<path d="M72.0 63.5C72.0 29.5 403.6 29.5 403.6 63.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="237.8" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset</text>
+<path d="M403.6 97.5C403.6 131.5 72.0 131.5 72.0 97.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="237.8" y="137.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Close</text>
+<rect x="16.0" y="63.5" width="96.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="64.0" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateIdle</text>
+<rect x="158.0" y="63.5" width="148.8" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="232.4" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateRegistering</text>
+<rect x="352.8" y="63.5" width="117.6" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="411.6" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateRunning</text>
+</svg>

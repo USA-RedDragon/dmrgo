@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="859" height="296" viewBox="0 0 859 296" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="859" height="296" fill="#ffffff"/>
+<path d="M75.0 108.5C75.0 74.5 218.7 74.5 218.7 108.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="146.8" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Send</text>
+<path d="M218.7 142.5C218.7 176.5 75.0 176.5 75.0 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="146.8" y="182.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Cancel, Tick</text>
+<path d="M234.7 108.5C234.7 74.5 390.1 74.5 390.1 108.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="312.4" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M390.1 142.5C390.1 176.5 234.7 176.5 234.7 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="312.4" y="182.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M406.1 108.5C406.1 74.5 561.5 74.5 561.5 108.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="483.8" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M577.5 108.5C577.5 74.5 752.4 74.5 752.4 108.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="665.0" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Tick</text>
+<path d="M752.4 142.5C752.4 176.5 577.5 176.5 577.5 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="665.0" y="182.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Tick</text>
+<path d="M390.1 142.5C390.1 206.5 75.0 206.5 75.0 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="232.5" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M234.7 108.5C234.7 44.5 561.5 44.5 561.5 108.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="398.1" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Channel</text>
+<path d="M75.0 108.5C75.0 14.5 561.5 14.5 561.5 108.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="318.2" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Send</text>
+<path d="M561.5 142.5C561.5 236.5 75.0 236.5 75.0 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="318.2" y="227.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Cancel, Tick</text>
+<path d="M752.4 142.5C752.4 266.5 234.7 266.5 234.7 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="493.5" y="249.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Tick</text>
+<path d="M752.4 142.5C752.4 296.5 75.0 296.5 75.0 142.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="413.7" y="272.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Cancel, Reset, Tick</text>
+<rect x="16.0" y="108.5" width="102.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="67.0" y="130.0" font-size="13" text-anchor="middle" fill="#1f2633">SenderIdle</text>
+<rect x="164.0" y="108.5" width="125.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="226.7" y="130.0" font-size="13" text-anchor="middle" fill="#1f2633">SenderWaiting</text>
+<rect x="335.4" y="108.5" width="125.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="398.1" y="130.0" font-size="13" text-anchor="middle" fill="#1f2633">SenderHoldoff</text>
+<rect x="506.8" y="108.5" width="125.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="569.5" y="130.0" font-size="13" text-anchor="middle" fill="#1f2633">SenderSending</text>
+<rect x="678.2" y="108.5" width="164.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="760.4" y="130.0" font-size="13" text-anchor="middle" fill="#1f2633">SenderWaitResponse</text>
+</svg>

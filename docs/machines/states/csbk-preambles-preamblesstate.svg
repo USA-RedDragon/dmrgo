@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="368" height="161" viewBox="0 0 368 161" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="368" height="161" fill="#ffffff"/>
+<path d="M261.6 97.5C261.6 131.5 86.7 131.5 86.7 97.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="174.1" y="137.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Lost, Reset, Tick</text>
+<path d="M86.7 63.5C86.7 29.5 261.6 29.5 261.6 63.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="174.1" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<rect x="16.0" y="63.5" width="125.4" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="78.7" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">PreamblesIdle</text>
+<rect x="187.4" y="63.5" width="164.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="269.6" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">PreamblesAnnounced</text>
+</svg>

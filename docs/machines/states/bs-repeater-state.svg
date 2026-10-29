@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="999" height="274" viewBox="0 0 999 274" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="999" height="274" fill="#ffffff"/>
+<path d="M98.4 131.0C98.4 97.0 265.5 97.0 265.5 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="181.9" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound</text>
+<path d="M265.5 165.0C265.5 199.0 98.4 199.0 98.4 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="181.9" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset, Tick</text>
+<path d="M281.5 131.0C281.5 97.0 460.3 97.0 460.3 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="370.9" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M460.3 165.0C460.3 199.0 281.5 199.0 281.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="370.9" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M694.5 131.0C694.5 97.0 892.8 97.0 892.8 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="793.6" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M892.8 165.0C892.8 199.0 694.5 199.0 694.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="793.6" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound</text>
+<path d="M98.4 131.0C98.4 67.0 460.3 67.0 460.3 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="279.3" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M460.3 165.0C460.3 229.0 98.4 229.0 98.4 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="279.3" y="227.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset</text>
+<path d="M281.5 131.0C281.5 37.0 678.5 37.0 678.5 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="480.0" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M678.5 165.0C678.5 259.0 281.5 259.0 281.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="480.0" y="249.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<path d="M476.3 131.0C476.3 67.0 892.8 67.0 892.8 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="684.5" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<path d="M892.8 165.0C892.8 229.0 476.3 229.0 476.3 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="684.5" y="227.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Inbound, Tick</text>
+<path d="M98.4 131.0C98.4 7.0 678.5 7.0 678.5 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="388.4" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Decoded, Inbound, Tick</text>
+<rect x="16.0" y="131.0" width="148.8" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="90.4" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">StateHibernating</text>
+<rect x="210.8" y="131.0" width="125.4" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="273.5" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">StateHangtime</text>
+<rect x="382.2" y="131.0" width="172.2" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="468.3" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">StateRepeatingSlot1</text>
+<rect x="600.4" y="131.0" width="172.2" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="686.5" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">StateRepeatingSlot2</text>
+<rect x="818.6" y="131.0" width="164.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="900.8" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">StateRepeatingBoth</text>
+</svg>

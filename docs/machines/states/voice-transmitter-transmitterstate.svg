@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1412" height="386" viewBox="0 0 1412 386" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="1412" height="386" fill="#ffffff"/>
+<path d="M94.5 131.0C94.5 97.0 273.3 97.0 273.3 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="183.9" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Relay, Start</text>
+<path d="M273.3 165.0C273.3 199.0 94.5 199.0 94.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="183.9" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset, Tick</text>
+<path d="M289.3 131.0C289.3 97.0 472.0 97.0 472.0 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="380.6" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M488.0 131.0C488.0 97.0 670.7 97.0 670.7 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="579.4" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M686.7 131.0C686.7 97.0 881.1 97.0 881.1 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="783.9" y="100.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M472.0 165.0C472.0 229.0 94.5 229.0 94.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="283.2" y="227.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset, Tick</text>
+<path d="M289.3 131.0C289.3 67.0 670.7 67.0 670.7 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="480.0" y="78.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M670.7 165.0C670.7 199.0 289.3 199.0 289.3 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="480.0" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M670.7 165.0C670.7 259.0 94.5 259.0 94.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="382.6" y="249.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Reset, Tick</text>
+<path d="M881.1 165.0C881.1 289.0 94.5 289.0 94.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="487.8" y="272.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<path d="M1091.5 165.0C1091.5 319.0 289.3 319.0 289.3 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="690.4" y="294.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Channel</text>
+<path d="M94.5 131.0C94.5 37.0 1091.5 37.0 1091.5 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="593.0" y="55.5" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Start</text>
+<path d="M1091.5 165.0C1091.5 349.0 94.5 349.0 94.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="593.0" y="317.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Stop, Tick</text>
+<path d="M1301.9 165.0C1301.9 379.0 289.3 379.0 289.3 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="795.6" y="339.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst</text>
+<path d="M94.5 131.0C94.5 7.0 1301.9 7.0 1301.9 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="698.2" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Start</text>
+<path d="M1301.9 165.0C1301.9 409.0 94.5 409.0 94.5 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="698.2" y="362.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Stop, Tick</text>
+<rect x="16.0" y="131.0" width="141.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="86.5" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterIdle</text>
+<rect x="203.0" y="131.0" width="156.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="281.3" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterHeader</text>
+<rect x="405.6" y="131.0" width="148.8" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="480.0" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterVoice</text>
+<rect x="600.4" y="131.0" width="156.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="678.7" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterEnding</text>
+<rect x="803.0" y="131.0" width="172.2" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="889.1" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterTimedOut</text>
+<rect x="1021.2" y="131.0" width="156.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="1099.5" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterAccess</text>
+<rect x="1223.8" y="131.0" width="172.2" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="1309.9" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">TransmitterChanAuth</text>
+</svg>

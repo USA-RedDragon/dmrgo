@@ -15,6 +15,19 @@ Use a Peer to join an IPSC system as a repeater would: a gateway between IPSC an
 Pass a [PeerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#PeerConfig) to [NewPeer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#NewPeer). The config is required. Set the peer ID and the address of the master. Set Auth and Key when the system uses authentication; [ipscauth.ParseKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth#ParseKey) reads the hex key of a MOTOTRBO or DMRlink configuration. Leave Mode, Flags and the versions zero unless the master needs other values.
 
 <!-- dmrgo:config pkg=transport/ipsc/ipscsession type=PeerConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `ID` | `uint32` | zero value | ID is the peer ID. |
+| `Mode` | `ipsc.Mode` | `ModeDefault` (106) | Mode is the mode that the peer sends. 0 means ModeDefault. |
+| `Flags` | `ipsc.Flags` | zero value | Flags is the flags that the peer sends. The zero Flags means voice and data calls. The Peer sets ipsc.FlagAuth with Auth. |
+| `RegisterVersion` | `[4]byte` | not machine-readable; see the description | RegisterVersion is the protocol version that the peer sends in a register request or reply (0x90, 0x91, 0x94, 0x95). Zero means RegisterVersionDefault. |
+| `AliveVersion` | `[4]byte` | not machine-readable; see the description | AliveVersion is the protocol version that the peer sends in a keepalive request or reply (0x96, 0x97). Zero means AliveVersionDefault. |
+| `Master` | `Addr` | zero value | Master is the address of the master. |
+| `Auth` | `bool` | zero value | Auth turns on the HMAC-SHA1 trailer with Key: the Peer drops a packet without a good trailer and signs what it sends. |
+| `Key` | `[20]byte` | zero value | Key is the authentication key (see ipscauth.ParseKey). |
+| `Alive` | `time.Duration` | not machine-readable; see the description | Alive is the keepalive period. 0 means AliveDefault. |
+| `MaxMissed` | `int` | `MaxMissedDefault` (20) | MaxMissed is the number of keepalives without a reply after which the Peer takes a link as down. 0 means MaxMissedDefault. |
+| `MaxPeers` | `int` | `MaxPeersDefault` (15) | MaxPeers is the most other peers that the Peer keeps from the peer list. 0 means MaxPeersDefault. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
@@ -22,6 +35,25 @@ Pass a [PeerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transpo
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.State) returns the state of the Peer with the master. The Peer and the Master share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#State) type.
 
 <!-- dmrgo:states pkg=transport/ipsc/ipscsession type=Peer -->
+States of [`Peer`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer), from [`Peer.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.State):
+
+| State | Meaning | Seen in tests |
+|---|---|---|
+| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#StateIdle) | StateIdle is a Peer or Master after Close. | yes, first state |
+| [`StateRegistering`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#StateRegistering) | StateRegistering is a Peer that is not registered with the master. | yes, first state |
+| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#StateRunning) | StateRunning is a registered Peer, or a running Master. | yes |
+
+Transitions seen in tests:
+
+| From | Method call | To |
+|---|---|---|
+| StateIdle | `Reset` | StateRegistering |
+| StateRegistering | `Close` | StateIdle |
+| StateRegistering | `Packet` | StateRunning |
+| StateRunning | `Close` | StateIdle |
+| StateRunning | `Packet`, `Tick` | StateRegistering |
+
+![Transitions of Peer](states/transport-ipsc-ipscsession-peer.svg)
 <!-- /dmrgo:states -->
 
 A new Peer is not registered. The first Tick sends the registration request, and Tick sends it again every Alive until the registration reply comes. The reply from the address of the master registers the Peer, reports the link up, and sends the peer list request at once. After MaxMissed keepalives without a reply, or a de-registration request of the master, the link goes down and the Peer registers again. [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.Close) sends de-registration requests and stops the Peer until [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.Reset).
@@ -43,27 +75,129 @@ Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 ## Timers
 
-- Alive: the keepalive period, and the period of the registration and peer list requests. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=AliveDefault --><!-- /dmrgo:const -->, the ALIVE_TIMER of DMRlink.
-- MaxMissed: the keepalives without a reply after which a link goes down. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxMissedDefault --><!-- /dmrgo:const -->, the MAX_MISSED of DMRlink.
+- Alive: the keepalive period, and the period of the registration and peer list requests. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=AliveDefault -->`5s`<!-- /dmrgo:const -->, the ALIVE_TIMER of DMRlink.
+- MaxMissed: the keepalives without a reply after which a link goes down. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxMissedDefault -->`20`<!-- /dmrgo:const -->, the MAX_MISSED of DMRlink.
 
-The peer list holds at most MaxPeers other peers. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxPeersDefault --><!-- /dmrgo:const --> and the largest is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxPeersLimit --><!-- /dmrgo:const -->.
+The peer list holds at most MaxPeers other peers. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxPeersDefault -->`15`<!-- /dmrgo:const --> and the largest is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxPeersLimit -->`134`<!-- /dmrgo:const -->.
 
 ## Worked example
 
 The package example registers a Peer with a [Master](ipscsession-master.md) in memory, and shows the registration, the peer list and the first keepalive:
 
 <!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=Example -->
+```go
+func Example() {
+	master, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
+	peerAddr := ipscsession.Addr{IP: [4]byte{192, 168, 0, 231}, Port: 50000}
+	masterAddr := ipscsession.Addr{IP: [4]byte{192, 168, 0, 10}, Port: 50000}
+	peer, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 315950, Master: masterAddr})
+
+	now := time.Duration(0)
+	for range 2 {
+		var queue [][]byte
+		for _, o := range peer.Tick(now, nil) {
+			queue = append(queue, o.Packet)
+		}
+		for len(queue) > 0 {
+			pk := queue[0]
+			queue = queue[1:]
+			fmt.Println("peer sends", ipsc.Opcode(pk[0]))
+			for _, r := range master.Packet(now, peerAddr, pk, nil, nil) {
+				if r.Kind != ipscsession.OutputSend {
+					fmt.Println("master event", r.Kind, r.ID)
+					continue
+				}
+				fmt.Println("master sends", ipsc.Opcode(r.Packet[0]))
+				for _, e := range peer.Packet(now, masterAddr, r.Packet, nil) {
+					if e.Kind == ipscsession.OutputSend {
+						queue = append(queue, e.Packet)
+						continue
+					}
+					fmt.Println("peer event", e.Kind, e.ID)
+				}
+			}
+		}
+		now += ipscsession.AliveDefault
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/ipsc/ipscsession.Example -->
+```text
+peer sends RegisterRequest
+master sends RegisterReply
+peer event Up 1
+master event Up 315950
+peer sends PeerListRequest
+master sends PeerListReply
+peer event Peers 0
+peer sends AliveRequest
+master sends AliveReply
+```
 <!-- /dmrgo:output -->
 
 The next example runs a Master and two Peers in memory. Peer A registers with the master, gets the peer list with peer B, and registers with B.
 
 <!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=ExamplePeer -->
+```go
+func ExamplePeer() {
+	masterAddr := ipscsession.Addr{IP: [4]byte{192, 168, 0, 10}, Port: 50000}
+	addrA := ipscsession.Addr{IP: [4]byte{192, 168, 0, 231}, Port: 50000}
+	addrB := ipscsession.Addr{IP: [4]byte{192, 168, 0, 232}, Port: 50000}
+	master, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
+	a, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 315950, Master: masterAddr})
+	b, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 315951, Master: masterAddr})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	type packet struct {
+		from, to ipscsession.Addr
+		p        []byte
+	}
+	var queue []packet
+	take := func(from ipscsession.Addr, name string, out []ipscsession.Output) {
+		for _, o := range out {
+			if o.Kind == ipscsession.OutputSend {
+				queue = append(queue, packet{from, o.Addr, append([]byte(nil), o.Packet...)})
+			} else if name == "A" && o.Kind == ipscsession.OutputPeers {
+				fmt.Println(name, o.Kind, a.Peers())
+			} else if name == "A" {
+				fmt.Println(name, o.Kind, o.ID)
+			}
+		}
+	}
+	for now := time.Duration(0); now <= ipscsession.AliveDefault; now += ipscsession.AliveDefault {
+		take(addrA, "A", a.Tick(now, nil))
+		take(addrB, "B", b.Tick(now, nil))
+		for len(queue) > 0 {
+			k := queue[0]
+			queue = queue[1:]
+			switch k.to {
+			case masterAddr:
+				take(masterAddr, "master", master.Packet(now, k.from, k.p, nil, nil))
+			case addrA:
+				take(addrA, "A", a.Packet(now, k.from, k.p, nil))
+			case addrB:
+				take(addrB, "B", b.Packet(now, k.from, k.p, nil))
+			}
+		}
+	}
+	info, _ := a.Peer(315951)
+	fmt.Println("A has", a.Peers(), "peer:", info.ID, "up", info.Up)
+}
+```
 <!-- /dmrgo:code -->
 
 <!-- dmrgo:output test=transport/ipsc/ipscsession.ExamplePeer -->
+```text
+A Up 1
+A Peers 1
+A Peers 1
+A Up 315951
+A has 1 peer: 315951 up true
+```
 <!-- /dmrgo:output -->
 
 The master sends the peer list to every peer each time a peer requests it, so A gets the list twice.
@@ -73,6 +207,9 @@ The master sends the peer list to every peer each time a peer requests it, so A 
 Packet and Tick return no errors: the Peer drops a packet it cannot use. Sign returns an error for a nil Peer. NewPeer returns an error for a nil config, and a configuration error for a negative Alive or MaxMissed, or a MaxPeers out of range.
 
 <!-- dmrgo:errors pkg=transport/ipsc/ipscsession type=Peer -->
+| Error | Returned by | Meaning |
+|---|---|---|
+| [`dmrgo.ErrNilReceiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrNilReceiver) | `Peer.Sign` | ErrNilReceiver is returned by a method of the library that returns an error when it is called on a nil pointer. |
 <!-- /dmrgo:errors -->
 
 ## Related machines and guides

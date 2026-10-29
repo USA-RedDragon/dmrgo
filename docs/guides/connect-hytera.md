@@ -28,6 +28,17 @@ A repeater sends P2P commands to the master to request a service: registration, 
 Each side also sends a heartbeat. [hytera.DecodeHeartbeat](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#DecodeHeartbeat) reads the 20-octet heartbeat of the P2P service and the 1-octet keepalive of the DMR service. Answer a heartbeat with the reply that the master sends in the capture:
 
 <!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeHeartbeat -->
+```go
+func ExampleDecodeHeartbeat() {
+	p, _ := hex.DecodeString("5a5a5a5a0a000000140000005a5a595a00000000")
+	h, err := hytera.DecodeHeartbeat(p)
+	fmt.Printf("%#x %#x %v\n", h.Code, h.Seq, err)
+
+	h.Seq = 0x5B
+	reply, _ := h.AppendBinary(nil)
+	fmt.Printf("%x\n", reply)
+}
+```
 <!-- /dmrgo:code -->
 
 ### 2. Read the bursts of a call
@@ -35,6 +46,19 @@ Each side also sends a heartbeat. [hytera.DecodeHeartbeat](https://pkg.go.dev/gi
 Each packet of the DMR service is one 72-octet [Frame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame). [hytera.DecodeFrame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#DecodeFrame) decodes it. `HasBurst` reports whether it holds a burst, as sync and wakeup packets do not. [Frame.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Call) returns the call, and [Frame.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Hint) the `layer2.Hint` for the voice and data machines.
 
 <!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeFrame -->
+```go
+func ExampleDecodeFrame() {
+	p, _ := hex.DecodeString("c35200502a0300000100050101000000111111111111000040b87900820b4015700f207560056d4457ff5dd7def50031781670382037012f829f0073000000005b0000003cb43000")
+	f, err := hytera.DecodeFrame(p)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(f.Slot, f.SlotType, f.ColorCode, f.Source, f.Destination, f.HasBurst())
+	h := f.Hint(0)
+	fmt.Println(h.Kind, h.DataType)
+}
+```
 <!-- /dmrgo:code -->
 
 ### 3. Send the bursts of a call
@@ -44,6 +68,76 @@ Take the outputs of a machine, such as a [voice.Transmitter](https://pkg.go.dev/
 The example sends a group call over the loopback interface and follows it with a [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) on the other side:
 
 <!-- dmrgo:code file=v2/transport/hytera/udp_example_test.go lines=42-109 -->
+```go
+tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceBS,
+	Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessImpolite, Queue: voice.MaxQueue})
+if err != nil {
+	return err
+}
+rx, err := voice.NewReceiver(nil)
+if err != nil {
+	return err
+}
+if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3191868}, nil); err != nil {
+	return err
+}
+for range 18 {
+	if err := tx.Frame(vocoder.AMBESilence()); err != nil {
+		return err
+	}
+}
+tx.Stop(0)
+
+var f hytera.Frame
+out := make([]voice.Output, 0, voice.MaxOutputs)
+events := make([]voice.Event, 0, voice.MaxEvents)
+packet := make([]byte, 0, hytera.FrameLen)
+buf := make([]byte, 1500)
+voiceBursts := 0
+for now := time.Duration(0); tx.State() != voice.TransmitterIdle; now += 60 * time.Millisecond {
+	for _, o := range tx.Tick(now, out[:0]) {
+		if o.Kind != voice.OutputBurst {
+			continue
+		}
+		f.Burst, f.ColorCode, f.PacketType = o.Burst, 1, 0x01
+		if o.Hint.DataType == enums.DataTypeTerminatorWithLC {
+			f.PacketType = 0x03
+		}
+		if err := f.SetCallHint(o.Hint, o.Call); err != nil {
+			return err
+		}
+		if packet, err = f.AppendBinary(packet[:0]); err != nil {
+			return err
+		}
+		f.Seq++
+		if _, err := txConn.WriteTo(packet, rxConn.LocalAddr()); err != nil {
+			return err
+		}
+
+		_ = rxConn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		n, _, err := rxConn.ReadFrom(buf)
+		if err != nil {
+			return err
+		}
+		got, err := hytera.DecodeFrame(buf[:n])
+		if err != nil || !got.HasBurst() {
+			continue
+		}
+		for _, e := range rx.Burst(o.Due, &got.Burst, got.Hint(o.Due), events[:0]) {
+			switch e.Kind {
+			case voice.EventCallStart:
+				group, target, source := got.Call()
+				fmt.Println(got.SlotType, "on", got.Slot, "from", source, "to", target, "group", group)
+			case voice.EventVoice:
+				voiceBursts++
+			case voice.EventCallEnd:
+				fmt.Println(got.SlotType, "after", voiceBursts, "voice bursts:", e.Reason)
+			default:
+			}
+		}
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 ## Output
@@ -51,14 +145,26 @@ The example sends a group call over the loopback interface and follows it with a
 The group call over the loopback interface:
 
 <!-- dmrgo:output test=hytera.ExampleFrame_SetCallHint -->
+```text
+Voice LC Header on TS1 from 3191868 to 9 group true
+Terminator with LC after 6 voice bursts: Terminator
+```
 <!-- /dmrgo:output -->
 
 A voice LC header frame from a capture, and the heartbeat reply:
 
 <!-- dmrgo:output test=hytera.ExampleDecodeFrame -->
+```text
+TS1 Voice LC Header 1 3191868 91 true
+Data Voice LC Header
+```
 <!-- /dmrgo:output -->
 
 <!-- dmrgo:output test=hytera.ExampleDecodeHeartbeat -->
+```text
+0xa 0x5a <nil>
+5a5a5a5a0a000000140000005b5a595a00000000
+```
 <!-- /dmrgo:output -->
 
 ## How it works

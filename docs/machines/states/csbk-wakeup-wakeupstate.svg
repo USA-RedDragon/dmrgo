@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="477" height="161" viewBox="0 0 477 161" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="477" height="161" fill="#ffffff"/>
+<path d="M75.0 63.5C75.0 29.5 218.7 29.5 218.7 63.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="146.8" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Wake</text>
+<path d="M234.7 63.5C234.7 29.5 390.1 29.5 390.1 63.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="312.4" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Lost, Tick</text>
+<path d="M390.1 97.5C390.1 131.5 75.0 131.5 75.0 97.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="232.5" y="137.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Cancel, Tick</text>
+<rect x="16.0" y="63.5" width="102.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="67.0" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">WakeupIdle</text>
+<rect x="164.0" y="63.5" width="125.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="226.7" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">WakeupSending</text>
+<rect x="335.4" y="63.5" width="125.4" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="398.1" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">WakeupWaiting</text>
+</svg>

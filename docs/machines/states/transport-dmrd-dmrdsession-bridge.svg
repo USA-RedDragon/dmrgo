@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1043" height="161" viewBox="0 0 1043 161" font-family="Inconsolata, ui-monospace, Menlo, Consolas, monospace">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2b5fa8"/></marker><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a0562a"/></marker></defs>
+<rect x="0" width="1043" height="161" fill="#ffffff"/>
+<path d="M72.0 63.5C72.0 29.5 960.2 29.5 960.2 63.5" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
+<text x="516.1" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Packet</text>
+<path d="M960.2 97.5C960.2 131.5 72.0 131.5 72.0 97.5" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
+<text x="516.1" y="137.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Tick</text>
+<rect x="16.0" y="63.5" width="96.0" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
+<text x="64.0" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateIdle</text>
+<rect x="158.0" y="63.5" width="96.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="206.0" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateWait</text>
+<rect x="300.0" y="63.5" width="102.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="351.0" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateLogin</text>
+<rect x="448.0" y="63.5" width="96.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="496.0" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateAuth</text>
+<rect x="590.0" y="63.5" width="109.8" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="644.9" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateConfig</text>
+<rect x="745.8" y="63.5" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="804.6" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateOptions</text>
+<rect x="909.4" y="63.5" width="117.6" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>
+<text x="968.2" y="85.0" font-size="13" text-anchor="middle" fill="#1f2633">StateRunning</text>
+</svg>

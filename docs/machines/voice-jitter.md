@@ -15,6 +15,10 @@ Put a Jitter in front of a [Receiver](voice-receiver.md) for each slot of a netw
 Pass a [JitterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#JitterConfig) to [NewJitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#NewJitter). A nil config gives the default delay. A longer delay rides out more jitter and adds more latency. When a [Transmitter](voice-transmitter.md) relays the packets with a Lead, set the same Lead here, so each packet is there before the Transmitter sends its burst.
 
 <!-- dmrgo:config pkg=voice type=JitterConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `Delay` | `time.Duration` | `DefaultJitter` (360ms) | Delay is the playout delay: the time from the arrival of the packet that came first for its place in the stream to the Pop that returns it. A packet that comes up to Delay later than that, in any order, plays in its place. 0 means DefaultJitter, and a negative value turns the buffer off: Push then returns JitterBypass for every packet. At most MaxJitter. |
+| `Lead` | `time.Duration` | zero value | Lead is the time from a Pop to the Due time of the packet it returns, for a Transmitter that relays the call with this TransmitterConfig.Lead, so that the packet is there before the Transmitter sends its burst. It must not be negative. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
@@ -44,7 +48,7 @@ Outputs:
 
 ## Timers
 
-- Playout delay: the default is <!-- dmrgo:const pkg=voice name=DefaultJitter --><!-- /dmrgo:const -->, the default Jitter of MMDVMHost, and the longest is <!-- dmrgo:const pkg=voice name=MaxJitter --><!-- /dmrgo:const -->. A negative delay turns the buffer off.
+- Playout delay: the default is <!-- dmrgo:const pkg=voice name=DefaultJitter -->`360ms`<!-- /dmrgo:const -->, the default Jitter of MMDVMHost, and the longest is <!-- dmrgo:const pkg=voice name=MaxJitter -->`2s`<!-- /dmrgo:const -->. A negative delay turns the buffer off.
 - Burst period: one packet each 60 ms after the first.
 - Lead: Deadline and Pop work this long before the Due time of each packet.
 
@@ -55,11 +59,58 @@ A now that jumps back by more than the delay, the Lead and one second is a clock
 This example pushes four packets of one stream out of order, and a copy of the last one. It then pops each packet at the time that Deadline returns.
 
 <!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleJitter -->
+```go
+func ExampleJitter() {
+	j, err := voice.NewJitter(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	arrivals := []struct {
+		at  time.Duration
+		seq uint16
+	}{
+		{0, 0},
+		{120 * time.Millisecond, 2},
+		{150 * time.Millisecond, 1},
+		{180 * time.Millisecond, 3},
+		{190 * time.Millisecond, 3},
+	}
+	for _, a := range arrivals {
+		var raw layer2.RawBurst
+		h := layer2.Hint{Slot: enums.Slot1, Kind: layer2.KindVoice, Seq: a.seq, HasSeq: true, SeqBits: 8}
+		fmt.Println("push", a.seq, "at", a.at, j.Push(a.at, &raw, h, 3120001))
+	}
+	var p voice.JitterPacket
+	for {
+		at, ok := j.Deadline()
+		if !ok {
+			break
+		}
+		if j.Pop(at, &p) {
+			fmt.Println("pop", p.Hint.Seq, "due", p.Due)
+		}
+	}
+	fmt.Printf("%+v\n", j.Stats())
+}
+```
 <!-- /dmrgo:code -->
 
 Output:
 
 <!-- dmrgo:output test=voice.ExampleJitter -->
+```text
+push 0 at 0s Buffered
+push 2 at 120ms Buffered
+push 1 at 150ms Buffered
+push 3 at 180ms Buffered
+push 3 at 190ms Duplicate
+pop 0 due 360ms
+pop 1 due 420ms
+pop 2 due 480ms
+pop 3 due 540ms
+{Late:0 Duplicates:1 Overflows:0 Resyncs:0}
+```
 <!-- /dmrgo:output -->
 
 The packets play in the order of their sequence numbers, one burst period apart, starting one playout delay after the first packet arrived. The copy is dropped and counted.
@@ -69,6 +120,7 @@ The packets play in the order of their sequence numbers, one burst period apart,
 Push and Pop return no errors: Push reports what it did in its JitterResult. NewJitter returns a configuration error for a negative Lead or a delay above the longest.
 
 <!-- dmrgo:errors pkg=voice type=Jitter -->
+The doc comments of [`Jitter`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Jitter) and its methods name no error.
 <!-- /dmrgo:errors -->
 
 ## Related machines and guides

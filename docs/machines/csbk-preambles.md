@@ -19,11 +19,29 @@ A [`data.Receiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Re
 [`csbk.NewPreambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#NewPreambles) takes a [`*csbk.PreamblesConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#PreamblesConfig). A nil config is the zero config, which is the usual choice. The only field is the scratch burst that `Burst` decodes into, which machines on one goroutine can share.
 
 <!-- dmrgo:config pkg=csbk type=PreamblesConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
 
 <!-- dmrgo:states pkg=csbk type=PreamblesState -->
+States of [`Preambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles), from [`Preambles.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles.State):
+
+| State | Meaning | Seen in tests |
+|---|---|---|
+| [`PreamblesIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#PreamblesIdle) | PreamblesIdle follows no announced transfer. | yes, first state |
+| [`PreamblesAnnounced`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#PreamblesAnnounced) | PreamblesAnnounced waits for the CSBK or data that Pre_CSBKs announced. | yes |
+
+Transitions seen in tests:
+
+| From | Method call | To |
+|---|---|---|
+| PreamblesIdle | `Burst` | PreamblesAnnounced |
+| PreamblesAnnounced | `Burst`, `Lost`, `Reset`, `Tick` | PreamblesIdle |
+
+![Transitions of Preambles](states/csbk-preambles-preamblesstate.svg)
 <!-- /dmrgo:states -->
 
 These inputs move the state:
@@ -61,21 +79,45 @@ Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#O
 
 | Timer | Config field | Value |
 |---|---|---|
-| Time per announced block, from the start of the Pre_CSBK | none | <!-- dmrgo:const pkg=csbk name=BurstInterval --><!-- /dmrgo:const --> |
-| Wait after the last announced block before `OutputExpired` | none | <!-- dmrgo:const pkg=csbk name=BurstInterval --><!-- /dmrgo:const --> |
+| Time per announced block, from the start of the Pre_CSBK | none | <!-- dmrgo:const pkg=csbk name=BurstInterval -->`60ms`<!-- /dmrgo:const --> |
+| Wait after the last announced block before `OutputExpired` | none | <!-- dmrgo:const pkg=csbk name=BurstInterval -->`60ms`<!-- /dmrgo:const --> |
 
-A Pre_CSBK at time t with CSBK Blocks to Follow n sets `Until` to t plus n burst intervals. The most Pre_CSBKs before one CSBK is <!-- dmrgo:const pkg=csbk name=MaxPreambles --><!-- /dmrgo:const -->, the 8 bits of CSBK Blocks to Follow.
+A Pre_CSBK at time t with CSBK Blocks to Follow n sets `Until` to t plus n burst intervals. The most Pre_CSBKs before one CSBK is <!-- dmrgo:const pkg=csbk name=MaxPreambles -->`255`<!-- /dmrgo:const -->, the 8 bits of CSBK Blocks to Follow.
 
 ## Worked example
 
 This example uses a [csbk.Requester](csbk-requester.md) to make a Motorola call alert with 2 Pre_CSBKs, and feeds its three bursts to a Preambles.
 
 <!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExamplePreambles -->
+```go
+func ExamplePreambles() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS})
+	_ = q.RequestCallAlert(0, 3191868, 3140598, &csbk.RequestOptions{Preambles: 2})
+	p, err := csbk.NewPreambles(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	for range 3 {
+		at, _ := q.Deadline()
+		sent := q.Tick(at, nil)
+		out = p.Burst(at, &sent[0].Burst, layer2.Hint{}, out[:0])
+		for i := range out {
+			fmt.Println(out[i].Kind, "to", out[i].Call.Target, "until", out[i].Until)
+		}
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 Output:
 
 <!-- dmrgo:output test=csbk.ExamplePreambles -->
+```text
+Announced to 3191868 until 120ms
+Joined to 3191868 until 0s
+```
 <!-- /dmrgo:output -->
 
 The first Pre_CSBK announces two more blocks, so `Until` is the time of the call alert. The second Pre_CSBK has the same parties and appends nothing. The call alert joins the transfer.
@@ -83,6 +125,7 @@ The first Pre_CSBK announces two more blocks, so `Until` is the time of the call
 ## Errors
 
 <!-- dmrgo:errors pkg=csbk type=Preambles -->
+The doc comments of [`Preambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles) and its methods name no error.
 <!-- /dmrgo:errors -->
 
 No config is out of range, so `NewPreambles` returns a nil error; it returns one only to have the shape of the other constructors. The other methods return no error. A burst that does not decode, or a CSBK whose CRC fails, is dropped.

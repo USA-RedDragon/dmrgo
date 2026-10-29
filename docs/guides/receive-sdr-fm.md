@@ -36,6 +36,48 @@ go build -o dmrrf ./cmd/dmrrf
 A [Monitor](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Monitor) follows the TDMA channels, as a scanner does. It finds the channel of each burst from the CACHs of its stream, decodes the burst and keeps the LC of the call on each channel. [Burst.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Burst.Hint) gives the `layer2.Hint` of a burst for the voice and data machines.
 
 <!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor -->
+```go
+func ExampleMonitor() {
+	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1,
+		Superframes: 2, BSSourced: true, Slot: 1})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fm, env := rftx.ModulateBS(built.Slots)
+	iq := cf32(rftx.Baseband(fm, env, 800))
+	var m rf.Monitor
+	lb := layer2.NewBurst()
+	voice := 0
+	onBursts := func(bs []rf.Burst) {
+		for i := range bs {
+			r, err := m.Burst(lb, &bs[i])
+			if err != nil || r.Hint.Slot != enums.Slot2 {
+				continue
+			}
+			if lb.Kind == layer2.KindVoice {
+				voice++
+			}
+			if r.End {
+				dst, src, _ := r.LC.Addresses()
+				fmt.Printf("call from %d to %d ended after %d voice bursts\n", src, dst, voice)
+			}
+		}
+	}
+	rx, err := rf.NewReceiver(&rf.RxConfig{Tier: rf.Tier0, Rate: 48000, Format: rf.IQFormatCF32, OnBursts: onBursts})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if _, err := rx.Write(iq); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err := rx.Flush(); err != nil {
+		fmt.Println(err)
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 ### 3. Decode discriminator audio
@@ -45,6 +87,35 @@ An FM radio gives the 4FSK signal at its discriminator output. [rf.NewAudioRecei
 On a microcontroller, [AudioReceiver.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioReceiver.Init) sets up the receiver in Tier 0 in memory of the caller, without an allocation. The rxaudio example runs it as a hotspot board does, with a placeholder `read` in place of the ADC:
 
 <!-- dmrgo:code file=v2/examples/rxaudio/main.go lines=9-35 -->
+```go
+var (
+	rx     rf.AudioReceiver
+	buf    [256]int16
+	bursts int
+)
+
+func onBursts(bs []rf.Burst) { bursts += len(bs) }
+
+func read(x []int16) {
+	clear(x)
+}
+
+func main() {
+	if err := rx.Init(rf.AudioRxConfig{Rate: 9600, OnBursts: onBursts}); err != nil {
+		return
+	}
+	for range 1000 {
+		read(buf[:])
+		if _, err := rx.Write(buf[:]); err != nil {
+			return
+		}
+	}
+	if err := rx.Flush(); err != nil {
+		return
+	}
+	println("bursts:", bursts > 0)
+}
+```
 <!-- /dmrgo:code -->
 
 It builds with TinyGo and `-gc=none`, which fails the link of any program that allocates. The page [Microcontrollers](../targets/mcu.md) gives the build.
@@ -54,19 +125,40 @@ It builds with TinyGo and `-gc=none`, which fails the link of any program that a
 The Monitor follows a group call on TDMA channel 2 of a repeater:
 
 <!-- dmrgo:output test=rf.ExampleMonitor -->
+```text
+call from 3191868 to 9 ended after 12 voice bursts
+```
 <!-- /dmrgo:output -->
 
 The rxaudio example on a PC, with silence as its input:
 
 <!-- dmrgo:output example=rxaudio -->
+```text
+
+```
 <!-- /dmrgo:output -->
 
 The configs of the two receivers:
 
 <!-- dmrgo:config pkg=rf type=RxConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `Tier` | `Tier` | `Tier0` (1) or `discDefaultTier` (2) | Tier selects the detection. The zero value TierDefault is Tier1 for NewReceiver, and Tier0 for Init and under TinyGo. |
+| `Rate` | `int` | `defaultRxRate` (2400000) | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier0 to Tier3 take a Rate from 48000 to 1e9, and Tier0 and Tier1 also one from 24000, which runs their receiver with a complex front end in place of the FM discriminator, with about 2 KB of state for Tier0. Tier0 also takes 9600 and 12000, for I/Q that a radio chip filtered to the channel, with about 1.4 KB of state; Init sets up only these. |
+| `Format` | `IQFormat` | `IQFormatCS16` (3) | Format is the layout of the I/Q samples. 0 means IQFormatCS16. |
+| `OffsetHz` | `float64` | not machine-readable; see the description | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. |
+| `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
+| `LookbackSlots` | `int` | `16` | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3. Tier0 keeps none, and loses the start of a stream that it enters late. |
 <!-- /dmrgo:config -->
 
 <!-- dmrgo:config pkg=rf type=AudioRxConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `Tier` | `Tier` | `discDefaultTier` (2) | Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is Tier1 for NewAudioReceiver, and Tier0 for Init, which does not allocate the stages of the higher tiers, and under TinyGo, which has neither. Tier2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of Tier1. Tier3 runs Tier2 and, beside it, a receiver with more coherent CPU time and four passes over each data burst. It keeps every burst of Tier2 and adds the bursts that Tier2 misses, the data bursts that pass a CRC where those of Tier2 fail, and the embedded LCs that pass where those of Tier2 fail, at about twice the CPU time and memory of Tier2, and 3 s of delay. |
+| `Rate` | `int` | `2 * discRate` (48000) | Rate is the sample rate of the discriminator samples, in Hz, from 8000 to 1000000, and for Tier0 to 48000. 0 means 48000. The receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600: at Rate when it is one of them, else at the lowest of them at or above Rate, or 48000 above 48000, through a resampler. Tier0, also under TinyGo, resamples in fixed point with a table in flash. A lower rate costs less: the receiver halves 48 kHz and then 24 kHz with a half-band filter before its matched filter, which runs at 12 kHz or 9.6 kHz. |
+| `Bits` | `int` | `16` | Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. |
+| `Unsigned` | `bool` | zero value | Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. |
+| `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the bursts of the slots before the lock, decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
 <!-- /dmrgo:config -->
 
 ## How it works

@@ -35,6 +35,38 @@ Give each received burst to `Burst` of each machine. The Responder returns an `O
 In this example the two machines pass the bursts to each other in memory:
 
 <!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleResponder_callAlert -->
+```go
+func ExampleResponder_callAlert() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3191868, ColorCode: 1, Source: layer2.SyncSourceMS})
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	now := time.Duration(0)
+	for i := range 2 {
+		var err error
+		if i == 0 {
+			err = q.RequestRadioCheck(now, 3191868, 3140598, nil)
+		} else {
+			err = q.RequestCallAlert(now, 3191868, 3140598, nil)
+		}
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		out = q.Tick(now, out[:0])
+		request := out[0]
+
+		out = r.Burst(request.Due, &request.Burst, request.Hint, out[:0])
+		fmt.Println("responder:", out[0].Kind, out[0].Service, "from", out[0].Call.Source)
+		at, _ := r.Deadline()
+		out = r.Tick(at, out[:0])
+		answer := out[0]
+
+		out = q.Burst(answer.Due, &answer.Burst, answer.Hint, out[:0])
+		fmt.Println("requester:", out[0].Kind, out[0].Service, out[0].Result, "after", answer.Due-request.Due)
+		now = answer.Due + time.Second
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 ### 3. Handle a radio that does not answer
@@ -42,6 +74,28 @@ In this example the two machines pass the bursts to each other in memory:
 The Requester sends the request again after each wait for the answer, up to the number of retries of its config, and then returns `OutputDone` with `ResultNoAnswer`. Call `Deadline` and `Tick` in a loop until `Deadline` returns false. [RequestOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#RequestOptions) adds Pre_CSBKs before the first try, for radios that scan or sleep, and sets the channel access of each try.
 
 <!-- dmrgo:code file=v2/csbk/example_test.go lines=44-63 -->
+```go
+q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
+if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
+	panic(err)
+}
+out := make([]csbk.Output, 0, csbk.MaxOutputs)
+bursts := 0
+for {
+	at, ok := q.Deadline()
+	if !ok {
+		break
+	}
+	out = q.Tick(at, out[:0])
+	for i := range out {
+		if out[i].Kind == csbk.OutputBurst {
+			bursts++
+		} else {
+			fmt.Println(bursts, "bursts,", out[i].Result, "at", at)
+		}
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 Report the state of the channel with `Channel` of each machine, so that a polite try waits for an idle channel. Until the first report the channel counts as idle, as it is for a network transport.
@@ -51,6 +105,28 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 [Requester.RequestOACSU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Requester.RequestOACSU) sends the OACSU presence check (UU_V_Req) of a private call, and the Responder answers with UU_Ans_Rsp. `ResponderConfig.OACSU` sets the answer.
 
 <!-- dmrgo:code file=v2/csbk/example_test.go symbol=Example -->
+```go
+func Example() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+
+	if err := q.RequestOACSU(0, 1002, 1001, layer3.ServiceOptions{}, nil); err != nil {
+		panic(err)
+	}
+	out = q.Tick(0, out[:0])
+	request := out[0].Burst
+
+	out = r.Burst(out[0].Due, &request, layer2.Hint{}, out[:0])
+	fmt.Println(out[0].Kind, out[0].Service, "from", out[0].Call.Source)
+	at, _ := r.Deadline()
+	out = r.Tick(at, out[:0])
+	answer, due := out[0].Burst, out[0].Due
+
+	out = q.Burst(due, &answer, layer2.Hint{}, out[:0])
+	fmt.Println(out[0].Kind, out[0].Result, "at", due)
+}
+```
 <!-- /dmrgo:code -->
 
 ### 5. Send any other CSBK
@@ -64,6 +140,23 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 - [Timing](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Timing) follows, elects and propagates the timing leader of a TDMA direct mode channel with CT_CSBKs.
 
 <!-- dmrgo:code file=v2/csbk/example_test.go lines=95-109 -->
+```go
+w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
+_ = w.Wake(0, 314926, 3191868)
+for {
+	at, ok := w.Deadline()
+	if !ok {
+		break
+	}
+	for _, o := range w.Tick(at, nil) {
+		if o.Kind == csbk.OutputDone {
+			fmt.Println(at, o.Kind, o.Result)
+		} else {
+			fmt.Println(at, o.Kind)
+		}
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 ## Output
@@ -71,29 +164,76 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 The radio check and the call alert, each answered:
 
 <!-- dmrgo:output test=csbk.ExampleResponder_callAlert -->
+```text
+responder: Request RadioCheck from 3140598
+requester: Done RadioCheck Answered after 60ms
+responder: Request CallAlert from 3140598
+requester: Done CallAlert Answered after 60ms
+```
 <!-- /dmrgo:output -->
 
 A radio check that no radio answers:
 
 <!-- dmrgo:output test=csbk.ExampleRequester_RequestRadioCheck -->
+```text
+6 bursts, NoAnswer at 2.3s
+```
 <!-- /dmrgo:output -->
 
 The OACSU presence check:
 
 <!-- dmrgo:output test=csbk.Example -->
+```text
+Request OACSU from 1001
+Done Answered at 60ms
+```
 <!-- /dmrgo:output -->
 
 The wakeup of a repeater that does not answer:
 
 <!-- dmrgo:output test=csbk.ExampleWakeup -->
+```text
+0s Burst
+360ms Burst
+720ms Done NoAnswer
+```
 <!-- /dmrgo:output -->
 
 The configs of the Requester and the Responder:
 
 <!-- dmrgo:config pkg=csbk type=RequesterConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as WakeupConfig.ColorCode does; 0 accepts every color code. |
+| `Source` | `layer2.SyncSource` | zero value | Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. |
+| `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
+| `AckWait` | `time.Duration` | `constants.TAckWait` (360ms) or `DefaultMotorolaAckWait` (2s) | AckWait is T_AckWait, the wait for the answer after each try. 0 means constants.TAckWait (360 ms), and DefaultMotorolaAckWait for the Motorola radio check and call alert. A negative value waits until an answer or Cancel. (ETSI TS 102 361-2 clause A.1) |
+| `Retries` | `int` | `constants.NCSBKRetry` (1) | Retries is N_CSBKRetry, the number of tries after the first. 0 means constants.NCSBKRetry (1), a negative value means none, and it is at most MaxRetries. |
+| `IdleSearch` | `time.Duration` | `DefaultIdleSearch` (540ms) | IdleSearch is T_IdleSrch, the wait for an idle channel before a polite time critical try. 0 means DefaultIdleSearch, and a negative value does not wait. |
+| `HoldoffMax` | `time.Duration` | `DefaultHoldoffMax` (1s) | HoldoffMax is the upper end of the random holdoff T_Holdoff of a request that is not time critical: a polite try on a busy channel waits a random holdoff, and then another while the channel stays busy. 0 means DefaultHoldoffMax, and a negative value means no holdoff: the try waits for an idle channel. (ETSI TS 102 361-1 clause 5.2.2.3) |
+| `Seed` | `uint64` | zero value | Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. Requesters on one channel need different seeds. |
+| `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. |
+| `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a machine is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Requester makes its own. |
 <!-- /dmrgo:config -->
 
 <!-- dmrgo:config pkg=csbk type=ResponderConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `Address` | `uint32` | zero value | Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. |
+| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as WakeupConfig.ColorCode does; 0 accepts every color code. |
+| `Source` | `layer2.SyncSource` | zero value | Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. |
+| `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
+| `Access` | `enums.Access` | zero value | Access is the channel access policy of the answers. The zero value is polite to own color code. |
+| `Offset` | `bool` | zero value | Offset puts the answers on the offset channel timing of a BS, in which the inbound slot of a logical channel starts half a TDMA frame after its outbound slot: the answer starts 90 ms after the start of the request, and then on that grid. The zero value is the aligned channel timing of a BS, and a direct channel, where it starts 60 ms after. (ETSI TS 102 361-1 clause 5.1.1, Table 5.1) |
+| `OACSU` | `OACSUAnswer` | zero value | OACSU is the answer to UU_V_Req. The zero value is OACSUProceed. |
+| `NoRadioCheck` | `bool` | zero value | NoRadioCheck leaves Motorola radio checks without an answer and without an OutputRequest. An AnyTone radio answers them only when its settings allow it. |
+| `NoCallAlert` | `bool` | zero value | NoCallAlert leaves Motorola call alerts without an acknowledgement and without an OutputRequest. |
+| `NoFNS` | `bool` | zero value | NoFNS leaves standard CSBKs that the Responder does not support without the Feature Not Supported NACK_Rsp, which is mandatory for an MS. Their OutputRequest stays. (ETSI TS 102 361-2 clause 5.1.2) |
+| `IdleSearch` | `time.Duration` | `DefaultIdleSearch` (540ms) | IdleSearch is T_IdleSrch, the wait for an idle channel before a polite answer other than NACK_Rsp. 0 means DefaultIdleSearch, and a negative value does not wait. |
+| `HoldoffMax` | `time.Duration` | `DefaultHoldoffMax` (1s) | HoldoffMax is the upper end of the random holdoff T_Holdoff of a NACK_Rsp: a polite NACK_Rsp on a busy channel waits a random holdoff, and then another while the channel stays busy. 0 means DefaultHoldoffMax, and a negative value means no holdoff: the NACK_Rsp waits for an idle channel. (ETSI TS 102 361-2 clause 5.1.2.2) |
+| `Seed` | `uint64` | zero value | Seed seeds the generator of the random holdoff. |
+| `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. |
+| `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. |
 <!-- /dmrgo:config -->
 
 ## How it works

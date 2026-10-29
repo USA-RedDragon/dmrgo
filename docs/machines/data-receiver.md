@@ -25,6 +25,21 @@ To send data, use a [data.Sender](data-sender.md). Run one Receiver per logical 
 [`data.NewReceiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#NewReceiver) takes a [`*data.ReceiverConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#ReceiverConfig). A nil config is the zero config: it accepts every color code and answers no packet. A duration of 0 selects the default in the field doc, and the field doc gives what a negative duration does.
 
 <!-- dmrgo:config pkg=data type=ReceiverConfig -->
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `ColorCode` | `*enums.ColorCode` | zero value | ColorCode, when set, drops bursts with another color code, and is the color code of the responses. Nil accepts every color code and answers with the color code of the packet. |
+| `Address` | `uint32` | zero value | Address is the LLID of this station. A confirmed packet gets a response only when its destination is Address. 0 answers every confirmed packet to a radio, as a gateway does. |
+| `Respond` | `bool` | zero value | Respond makes the Receiver answer confirmed packets with an ACK, NACK or SACK (EventRespond), and drop duplicate and out of sequence packets outside the IP bearer service, as the package doc describes. False delivers every complete packet and answers none, as a scanner or bridge needs. |
+| `Source` | `layer2.SyncSource` | zero value | Source selects the SYNC of the responses: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. |
+| `ResponseDelay` | `time.Duration` | not machine-readable; see the description | ResponseDelay is the time from the last block of a packet to the first response burst. 0 means one slot period (60 ms), the next burst of the logical channel, and a negative value means at once. |
+| `MaxBlocks` | `int` | not machine-readable; see the description | MaxBlocks is the most data blocks of a packet. 0 means MaxBlocks; a larger packet is dropped. Each block takes 24 bytes, so a microcontroller can set 16. |
+| `MaxFragment` | `int` | not machine-readable; see the description | MaxFragment is the largest payload of one packet. 0 means DefaultMaxFragment; at most MaxMessage. A larger confirmed packet gets a NACK for memory full, and any larger packet is dropped. |
+| `MaxMessage` | `int` | not machine-readable; see the description | MaxMessage is the size of the buffer that joins the fragments of a confirmed message. 0 means DefaultMaxMessage; at most MaxMessage. A longer message is not joined; its fragments are still delivered. |
+| `Peers` | `int` | not machine-readable; see the description | Peers is the number of links whose receive sequence number VI the Receiver keeps. 0 means DefaultPeers; at most MaxPeers. When the table is full, the link heard least recently is dropped (ETSI TS 102 361-1 clause 9.3.24). |
+| `Lost` | `time.Duration` | not machine-readable; see the description | Lost is the time without a burst, while a packet waits for blocks, after which the slots that passed count as lost blocks, one each 60 ms. 0 means DefaultLost, and a negative value counts lost blocks only from the transport sequence number and at the end of the call. A network transport with jitter sets Hint.Seq and a longer Lost. |
+| `Hang` | `time.Duration` | not machine-readable; see the description | Hang is the time without a burst after which a data call ends with EndQuiet. 0 means DefaultHang, and a negative value turns the timer off. |
+| `AcceptBadCRC` | `bool` | zero value | AcceptBadCRC delivers packets whose CRC failed, with Message.BadCRC set, as packet.Assembler.AcceptBadCRC describes. A confirmed packet still gets a NACK, so that a good copy can follow. |
+| `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Receiver makes its own. |
 <!-- /dmrgo:config -->
 
 `MaxBlocks`, `MaxFragment` and `MaxMessage` set the memory of the Receiver. A microcontroller can set a small `MaxBlocks`. [`Receiver.MaxOutputOctets`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver.MaxOutputOctets) returns the most payload octets that the events of one call can hold.
@@ -32,6 +47,26 @@ To send data, use a [data.Sender](data-sender.md). Run one Receiver per logical 
 ## States and transitions
 
 <!-- dmrgo:states pkg=data type=State -->
+States of [`Receiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver), from [`Receiver.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver.State):
+
+| State | Meaning | Seen in tests |
+|---|---|---|
+| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#StateIdle) | StateIdle has no data call. | yes, first state |
+| [`StateCall`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#StateCall) | StateCall has a data call, between packets. | yes |
+| [`StateReceiving`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#StateReceiving) | StateReceiving has a packet that waits for blocks. | yes |
+
+Transitions seen in tests:
+
+| From | Method call | To |
+|---|---|---|
+| StateIdle | `Burst` | StateCall |
+| StateIdle | `Burst`, `Decoded` | StateReceiving |
+| StateCall | `Burst`, `Reset`, `Tick` | StateIdle |
+| StateCall | `Burst` | StateReceiving |
+| StateReceiving | `Decoded`, `Lost`, `Reset`, `Tick` | StateIdle |
+| StateReceiving | `Burst`, `Decoded`, `Tick` | StateCall |
+
+![Transitions of Receiver](states/data-receiver-state.svg)
 <!-- /dmrgo:states -->
 
 These inputs move the state:
@@ -73,18 +108,18 @@ For a packet of IP based packet data, [`Event.ICMP`](https://pkg.go.dev/github.c
 
 | Timer | Config field | Default |
 |---|---|---|
-| Time without a burst, while a packet waits for blocks, after which the slots that passed count as lost blocks | `Lost` | <!-- dmrgo:const pkg=data name=DefaultLost --><!-- /dmrgo:const --> |
-| Time without a burst after which a data call ends | `Hang` | <!-- dmrgo:const pkg=data name=DefaultHang --><!-- /dmrgo:const --> |
+| Time without a burst, while a packet waits for blocks, after which the slots that passed count as lost blocks | `Lost` | <!-- dmrgo:const pkg=data name=DefaultLost -->`90ms`<!-- /dmrgo:const --> |
+| Time without a burst after which a data call ends | `Hang` | <!-- dmrgo:const pkg=data name=DefaultHang -->`360ms`<!-- /dmrgo:const --> |
 | Time from the last block of a packet to the first response burst | `ResponseDelay` | one slot period of the logical channel, as the field doc gives |
 
-`DefaultHang` covers the response wait of the sender, <!-- dmrgo:const pkg=constants name=TResponseWait --><!-- /dmrgo:const -->, and the data hang time of a repeater, <!-- dmrgo:const pkg=constants name=TDataHangtime --><!-- /dmrgo:const -->. A negative `Lost` counts lost blocks only from the transport sequence number and at the end of the call. A negative `Hang` turns the end timer off. A negative `ResponseDelay` sends the response at once.
+`DefaultHang` covers the response wait of the sender, <!-- dmrgo:const pkg=constants name=TResponseWait -->`180ms`<!-- /dmrgo:const -->, and the data hang time of a repeater, <!-- dmrgo:const pkg=constants name=TDataHangtime -->`180ms`<!-- /dmrgo:const -->. A negative `Lost` counts lost blocks only from the transport sequence number and at the end of the call. A negative `Hang` turns the end timer off. A negative `ResponseDelay` sends the response at once.
 
 | Limit | Config field | Default | Most |
 |---|---|---|---|
-| Blocks of one packet | `MaxBlocks` | <!-- dmrgo:const pkg=data name=MaxBlocks --><!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxBlocks --><!-- /dmrgo:const --> |
-| Payload of one packet | `MaxFragment` | <!-- dmrgo:const pkg=data name=DefaultMaxFragment --><!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxMessage --><!-- /dmrgo:const --> |
-| Message joined from fragments | `MaxMessage` | <!-- dmrgo:const pkg=data name=DefaultMaxMessage --><!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxMessage --><!-- /dmrgo:const --> |
-| Links whose VI the Receiver keeps | `Peers` | <!-- dmrgo:const pkg=data name=DefaultPeers --><!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxPeers --><!-- /dmrgo:const --> |
+| Blocks of one packet | `MaxBlocks` | <!-- dmrgo:const pkg=data name=MaxBlocks -->`127`<!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxBlocks -->`127`<!-- /dmrgo:const --> |
+| Payload of one packet | `MaxFragment` | <!-- dmrgo:const pkg=data name=DefaultMaxFragment -->`1500`<!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxMessage -->`65535`<!-- /dmrgo:const --> |
+| Message joined from fragments | `MaxMessage` | <!-- dmrgo:const pkg=data name=DefaultMaxMessage -->`1500`<!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxMessage -->`65535`<!-- /dmrgo:const --> |
+| Links whose VI the Receiver keeps | `Peers` | <!-- dmrgo:const pkg=data name=DefaultPeers -->`8`<!-- /dmrgo:const --> | <!-- dmrgo:const pkg=data name=MaxPeers -->`64`<!-- /dmrgo:const --> |
 
 A confirmed packet over `MaxFragment` gets a NACK for memory full, and any packet over it is dropped. A message over `MaxMessage` is not joined, but its fragments are still delivered. When the table of links is full, the link heard least recently is dropped (ETSI TS 102 361-1 clause 9.3.24).
 
@@ -93,11 +128,53 @@ A confirmed packet over `MaxFragment` gets a NACK for memory full, and any packe
 This example follows a recorded SMS of one logical channel, with the bursts one TDMA frame apart, and prints its events.
 
 <!-- dmrgo:code file=v2/data/example_test.go symbol=ExampleReceiver -->
+```go
+func ExampleReceiver() {
+	capture, err := os.ReadFile("../layer2/testdata/d-sms.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	rx, err := data.NewReceiver(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	events := make([]data.Event, 0, data.MaxEvents)
+	var now time.Duration
+	handle := func(events []data.Event) {
+		for _, e := range events {
+			switch e.Kind {
+			case data.EventCallStart:
+				fmt.Printf("data call from %d to %d\n", e.Call.Source, e.Call.Target)
+			case data.EventDelivered:
+				fmt.Printf("%v packet, %d octets\n", e.Message.Header.Format(), len(e.Message.Payload))
+			case data.EventCallEnd:
+				fmt.Printf("end: %v after %v\n", e.Reason, e.Stats.Duration)
+			case data.EventResponse, data.EventRespond, data.EventReassembled:
+			}
+		}
+	}
+	for off := 0; off+33 <= len(capture); off += 33 {
+		raw := layer2.RawBurst(capture[off : off+33])
+		handle(rx.Burst(now, &raw, layer2.Hint{}, events[:0]))
+		now += 60 * time.Millisecond
+	}
+	if at, ok := rx.Deadline(); ok {
+		handle(rx.Tick(at, events[:0]))
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 Output:
 
 <!-- dmrgo:output test=data.ExampleReceiver -->
+```text
+data call from 3191868 to 9990
+Unconfirmed packet, 56 octets
+end: Quiet after 960ms
+```
 <!-- /dmrgo:output -->
 
 The call ends with `EndQuiet` at the Tick after the last burst, when `Hang` has passed.
@@ -105,16 +182,43 @@ The call ends with `EndQuiet` at the Tick after the last burst, when `Hang` has 
 The next example answers a confirmed packet from a recording with its real times: the Receiver of the addressed radio returns the ACK burst to send, with its `Due` time.
 
 <!-- dmrgo:code file=v2/data/example_test.go symbol=ExampleReceiver_respond -->
+```go
+func ExampleReceiver_respond() {
+	bursts := readTimedExample("testdata/anytone_sms_xpr.txt")
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3140598, Respond: true})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	events := make([]data.Event, 0, data.MaxEvents)
+	for _, b := range bursts[:14] {
+		for _, e := range rx.Burst(b.at, &b.raw, layer2.Hint{}, events[:0]) {
+			switch e.Kind {
+			case data.EventDelivered:
+				fmt.Printf("delivered %d octets at %v\n", len(e.Message.Payload), e.Message.Rate)
+			case data.EventRespond:
+				fmt.Printf("send %v at %v\n", e.Response, e.Due)
+			case data.EventCallStart, data.EventResponse, data.EventCallEnd, data.EventReassembled:
+			}
+		}
+	}
+}
+```
 <!-- /dmrgo:code -->
 
 Output:
 
 <!-- dmrgo:output test=data.ExampleReceiver_respond -->
+```text
+delivered 122 octets at Rate 3/4
+send ACK at 4.14329s
+```
 <!-- /dmrgo:output -->
 
 ## Errors
 
 <!-- dmrgo:errors pkg=data type=Receiver -->
+The doc comments of [`Receiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver) and its methods name no error.
 <!-- /dmrgo:errors -->
 
 Only `NewReceiver` returns an error, a [`*dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) for a field out of range. Match it with `errors.As`; its `Field` names the field. The package example `ExampleNewReceiver_configError` shows a `MaxBlocks` out of range. The burst methods return no error: a bad header CRC, a bad packet CRC, a copy and a packet out of sequence are counts in `Stats`, and with `Respond` a NACK or SACK goes back to the sender.
