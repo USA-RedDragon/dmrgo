@@ -193,6 +193,8 @@ func (r *rxHost) offsetHz() float64 {
 
 func (r *rxHost) deviationHz() float64 {
 	switch {
+	case r.cb != nil && r.e.devHz == 0:
+		return r.cb.t2.deviation() / iqUnitsPerHz
 	case r.iq0 != nil:
 		return r.iq0.d.deviation() / iqUnitsPerHz
 	case r.iqd != nil:

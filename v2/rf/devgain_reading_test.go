@@ -76,3 +76,19 @@ func TestIQDeviationReading(t *testing.T) {
 		}
 	}
 }
+
+func TestCombDeviationFallback(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "agc.noise.-1500.ms.data1.-500ppm.nom.cu8-48k.inf")
+	sig, err := mxBuild(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, dev, err := mxReceive(mxInputOf(sig, row), mxRx{"cu8-48k", Tier3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) == 0 || math.Abs(dev/mxOuterHz-1) > mxDevHigh {
+		t.Errorf("Tier3 with only its Tier2 side locked: %d bursts, %.1f Hz", len(got), dev)
+	}
+}
