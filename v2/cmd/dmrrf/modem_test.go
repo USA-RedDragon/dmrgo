@@ -103,20 +103,23 @@ func TestBitErrorRateWeakBS(t *testing.T) {
 	fm, env := rftx.ModulateBS(built.Slots)
 	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for seed := range uint64(3) {
-		d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
-		if len(d.Bursts) != len(built.Slots) {
-			t.Errorf("seed %d: %d bursts, want %d", seed, len(d.Bursts), len(built.Slots))
-			continue
-		}
-		var errs int
-		for i, r := range d.Bursts {
-			for k := range r.Data {
-				errs += popcount(r.Data[k] ^ built.Slots[i].Burst[k])
+		t.Run(fmt.Sprintf("seed%d", seed), func(t *testing.T) {
+			t.Parallel()
+			d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
+			if len(d.Bursts) != len(built.Slots) {
+				t.Errorf("seed %d: %d bursts, want %d", seed, len(d.Bursts), len(built.Slots))
+				return
 			}
-		}
-		if total := len(built.Slots) * layer2.BurstBits; errs*1000 > total {
-			t.Errorf("seed %d: %d bit errors in %d bits", seed, errs, total)
-		}
+			var errs int
+			for i, r := range d.Bursts {
+				for k := range r.Data {
+					errs += popcount(r.Data[k] ^ built.Slots[i].Burst[k])
+				}
+			}
+			if total := len(built.Slots) * layer2.BurstBits; errs*1000 > total {
+				t.Errorf("seed %d: %d bit errors in %d bits", seed, errs, total)
+			}
+		})
 	}
 }
 
