@@ -65,6 +65,9 @@ ignore_files:
   - v2/internal/fuzztest/loop.go
   - v2/internal/fuzztest/stream.go
   - v2/internal/fuzztest/typednil.go
+  - v2/internal/allocstest/allocstest.go
+  - v2/internal/allocstest/count.go
+  - v2/internal/allocstest/count_tinygo.go
   - v2/internal/testmode/cases.go
   - v2/internal/testmode/norace.go
   - v2/internal/testmode/race.go

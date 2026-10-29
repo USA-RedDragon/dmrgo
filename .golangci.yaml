@@ -226,6 +226,10 @@ linters:
         linters:
           - gosec
         text: G204|G703
+      - path: v2/internal/allocstest/count\.go$
+        linters:
+          - gochecknoglobals
+        text: ^state is a global variable
       # testing.AllocsPerRun panics in a parallel test, and a
       # runtime.MemStats delta counts every test that runs at the same time.
       - path: (_alloc_test|layer2/pdu/fuzz_tinygo_test)\.go$
