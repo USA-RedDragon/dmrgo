@@ -40,7 +40,11 @@
 // and without it.
 //
 // The Tier of the config sets the detection and its cost, from Tier0, which
-// fits a microcontroller, to Tier3, for offline decoding. The constructors
+// fits a microcontroller, to Tier3, for offline decoding. Every tier
+// follows a BS-sourced stream on both TDMA slots, and Tier0 to Tier2 also
+// follow the MS-sourced bursts of both slots, each slot with its own SYNC
+// timing, symbol clock, levels and carrier offset, as on the inbound of a
+// repeater or a duplex hotspot with a radio on each slot. The constructors
 // allocate every buffer of the receiver, and Write and Flush allocate
 // nothing. docs/rx/README.md gives the sensitivity, compute and RAM of each
 // tier, and docs/tx/README.md the limits and cost of the transmitter.

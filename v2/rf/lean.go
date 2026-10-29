@@ -265,6 +265,27 @@ type leanCore struct {
 	sources                            uint8
 	bs                                 bool
 	votes                              [16]uint8
+	ms                                 leanSlots
+}
+
+type leanLevels struct {
+	devScale, dcHz, discVar, amp, noise float32
+}
+
+type leanSlots struct {
+	anch  [2]int32
+	t     [2]float32
+	n, ns [2]uint16
+	off   [2]int16
+	lv    [2]leanLevels
+	moved bool
+	seek  bool
+	retry bool
+	late  bool
+	in    uint8
+	out   uint8
+	fresh [2]uint8
+	rate  float32
 }
 
 type leanRx struct {
@@ -1019,7 +1040,7 @@ func (r *leanCore) endSlot() {
 
 //go:noinline
 func (r *leanCore) huntSym(at float32) {
-	if again, mid, ok := r.huntSigns(at); ok {
+	if again, mid, ok := r.huntSigns(at); ok || r.ms.retry {
 		r.huntMatch(again, mid)
 	}
 }
@@ -1082,6 +1103,10 @@ func (r *leanCore) huntMid(at float32) bool {
 
 //go:noinline
 func (r *leanCore) huntMatch(again, mid bool) {
+	if d := r.gridMiss(); r.ms.seek && d >= -leanSeekSyms && d <= leanSeekSyms {
+		r.seekMatch(d, again && mid)
+		return
+	}
 	switch {
 	case again && mid && r.offGrid():
 		r.midSync()
@@ -1101,6 +1126,10 @@ func (r *leanCore) fitScale() {
 	r.scaleAudio(g)
 	r.devScale, r.dcHz, r.discVar = 1, r.dcHz*g, r.discVar*g*g
 	r.tm.dc, r.tm.dev = r.dcHz, deviationHz
+	for i := range r.ms.lv {
+		l := &r.ms.lv[i]
+		l.devScale, l.dcHz, l.discVar = l.devScale*g, l.dcHz*g, l.discVar*g*g
+	}
 }
 
 func (r *leanRx) block(p float32) {
@@ -1394,6 +1423,7 @@ func (r *leanCore) retime(mid bool) {
 	var saved [syncSymbols]int8
 	if d, ok := r.resample(p, &saved, true); ok {
 		r.resampleStart(d)
+		r.ms.moved = true
 	}
 }
 
@@ -1457,12 +1487,43 @@ func (r *leanCore) stale() bool {
 }
 
 func (r *leanCore) offGrid() bool {
-	k, n := r.ns-1-leanSyncEnd-r.first, uint32(slotSymbols)
-	if !r.bs && r.lastAnch != leanNoSlot {
-		k, n = k-int64(r.lastAnch)*slotSymbols, 2*slotSymbols
+	d := r.gridMiss()
+	return d < -1 || d > 1
+}
+
+func (r *leanCore) gridMiss() int32 {
+	m := int32(mod64(r.ns-1-leanSyncEnd-r.first-int64(r.ms.off[r.next&1]), slotSymbols))
+	if m > slotSymbols/2 {
+		m -= slotSymbols
 	}
-	m := mod64(k, n)
-	return m > 1 && m < n-1
+	return m
+}
+
+const (
+	leanSeekSyms     = 4
+	leanReplayErrors = 1
+	leanRateGain     = 0.5
+	leanSeekRho      = 0.5
+	leanRateMax      = 2e-3
+)
+
+func (r *leanCore) seekMatch(d int32, mid bool) {
+	if rho2, _, _ := r.syncAt(r.ns - 1); !mid && rho2 < leanSeekRho*leanSeekRho {
+		return
+	}
+	if !r.ms.late && r.ms.anch[r.next&1] == leanNoSlot {
+		r.ms.late = true
+		r.slotEnd++
+	}
+	moved, retry := r.ms.moved, r.ms.retry
+	r.ms.moved, r.ms.retry = false, false
+	r.retime(mid)
+	r.ms.retry = !r.ms.moved && !retry
+	if r.ms.moved && d != 0 {
+		r.ms.off[r.next&1] += int16(d)
+		r.slotEnd += int64(d)
+	}
+	r.ms.moved = r.ms.moved || moved
 }
 
 func mod64(k int64, n uint32) uint32 {
@@ -1496,6 +1557,8 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
+	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
+	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain = false, r.trackGain
 	if r.mmOK && !r.tm.mm {
@@ -1569,38 +1632,23 @@ func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) 
 func (r *leanCore) slot() {
 	j := r.next
 	r.next++
-	r.slotEnd += slotSymbols
-	base := r.first + int64(j)*slotSymbols
+	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
 	energy := r.eAcc / float32(max(r.eSyms, 1))
 	r.eAcc, r.eSyms = 0, 0
-	voice, dp, _ := sourceAt(int(r.src)).SyncPatterns()
-	var anchor enums.SyncPattern
-	best, shift := float32(0), int64(0)
-	for d := int64(-1); d <= 1; d++ {
-		rho2, src, data := r.syncAt(base + leanSyncEnd + d)
-		if src == int(r.src) && rho2 > best {
-			best, shift = rho2, d
-			anchor = voice
-			if data {
-				anchor = dp
-			}
-		}
-	}
-	isAnchor := best >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+shift, anchor)
-	ms := !r.bs && r.lastAnch != leanNoSlot
-	if ms && (j-r.lastAnch)&1 != 0 {
-		isAnchor = false
-	} else if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
-		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
-	}
+	_, dp, _ := sourceAt(int(r.src)).SyncPatterns()
+	seek := !r.bs && r.lastAnch != leanNoSlot && r.ms.anch[j&1] == leanNoSlot
+	isAnchor, shift, anchor := r.slotAnchor(base, seek)
 	c := &r.ch[j&1]
 	sf := c.sf
 	if isAnchor {
 		base += shift
+		if seek {
+			r.slotFirst(j, base, anchor)
+		}
 		r.anchorAt(j, base, shift, anchor, energy)
 	}
 	present := isAnchor || r.noise == 0 || energy > 1.5*r.noise
-	if ms && (j-r.lastAnch)&1 != 0 {
+	if seek && !isAnchor {
 		present = false
 		r.noise = min(r.noise, energy)
 	}
@@ -1626,26 +1674,168 @@ func (r *leanCore) slot() {
 		}
 		r.dataAnch[j&1] = isAnchor && anchor == dp
 	}
+	r.slotSwitch(j)
+	r.slotEnd = r.first + int64(j+2)*slotSymbols + int64(r.ms.off[(j+1)&1])
 	r.setHunt()
 	if !r.isReplaying() && r.ended(j, base) {
 		r.unlock()
 	}
 }
 
+func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPattern) {
+	voice, dp, _ := sourceAt(int(r.src)).SyncPatterns()
+	var anchor enums.SyncPattern
+	best, shift := float32(0), int64(0)
+	for d := int64(-1); d <= 1; d++ {
+		rho2, src, data := r.syncAt(base + leanSyncEnd + d)
+		if src == int(r.src) && rho2 > best {
+			best, shift = rho2, d
+			anchor = voice
+			if data {
+				anchor = dp
+			}
+		}
+	}
+	isAnchor := best >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+shift, anchor)
+	ms := !r.bs && r.lastAnch != leanNoSlot
+	if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
+		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
+	}
+	if seek && isAnchor && r.isReplaying() && r.syncErrors(base+leanSyncEnd+shift, anchor) > leanReplayErrors {
+		isAnchor = false
+	}
+	return isAnchor, shift, anchor
+}
+
 func (r *leanCore) holdNext(j int32, present bool) {
 	r.tm.hold = !r.bs && !present
 	if !r.bs && r.lastAnch != leanNoSlot {
-		r.tm.hold = (j+1-r.lastAnch)&1 != 0
+		r.tm.hold = r.ms.anch[(j+1)&1] == leanNoSlot
 	}
+}
+
+func (r *leanCore) slotFirst(j int32, base int64, anchor enums.SyncPattern) {
+	o := (j + 1) & 1
+	r.ms.lv[o] = r.levels()
+	r.fitLevels(base+leanSyncEnd, anchor, true, false)
+	r.amp = 0
+	if !r.isReplaying() {
+		r.ms.fresh[j&1] = 2
+	}
+}
+
+func (r *leanCore) levels() leanLevels {
+	return leanLevels{r.devScale, r.dcHz, r.discVar, r.amp, r.noise}
+}
+
+func (r *leanCore) setLevels(l *leanLevels) {
+	r.devScale, r.dcHz, r.discVar, r.amp, r.noise = l.devScale, l.dcHz, l.discVar, l.amp, l.noise
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+}
+
+func (r *leanCore) symWait() float32 {
+	if !r.tm.mm && r.tm.mid {
+		return r.tm.t + r.tm.step
+	}
+	return r.tm.t
+}
+
+func (r *leanCore) savePhase(i int32) {
+	r.ms.t[i], r.ms.n[i], r.ms.ns[i] = r.symWait(), uint16(r.n), uint16(r.ns)
+}
+
+func (r *leanCore) slotSwitch(j int32) {
+	if r.bs || r.lastAnch == leanNoSlot {
+		return
+	}
+	m := &r.ms
+	p, q := j&1, (j+1)&1
+	live := !r.isReplaying()
+	sps := 2 * r.tm.step
+	if m.anch[p] != leanNoSlot {
+		if live {
+			r.slotRate(p, sps)
+			r.savePhase(p)
+			m.out |= 1 << p
+		}
+		m.lv[p] = r.levels()
+	}
+	m.in &^= 1 << p
+	if m.fresh[p] > 0 {
+		m.fresh[p]--
+	}
+	if m.anch[q] != leanNoSlot && j+1-m.anch[q] >= lostSlots {
+		m.anch[q] = leanNoSlot
+	}
+	moved := m.moved
+	m.moved = false
+	if m.anch[q] == leanNoSlot {
+		m.off[q] = m.off[p]
+		r.tm.hold = true
+		return
+	}
+	r.tm.hold = false
+	if m.anch[p] == leanNoSlot && !moved {
+		return
+	}
+	if m.anch[p] != leanNoSlot {
+		r.setLevels(&m.lv[q])
+	}
+	if !live {
+		return
+	}
+	lo := float32(0)
+	if !r.tm.mm && r.tm.mid {
+		lo = r.tm.step
+	}
+	u := m.t[q] + float32(int16(m.n[q]-uint16(r.n))) + float32(int16(uint16(r.ns)-m.ns[q]))*(sps+m.rate)
+	cur := r.symWait()
+	for k := 0; (u <= lo || u <= cur-sps/2) && k < 4; k++ {
+		u += sps
+		m.off[q]--
+	}
+	for k := 0; u > cur+sps/2 && u-sps > lo && k < 4; k++ {
+		u -= sps
+		m.off[q]++
+	}
+	r.tm.t = u - lo
+	r.savePhase(q)
+	m.in |= 1 << q
+}
+
+func (r *leanCore) slotRate(p int32, sps float32) {
+	m := &r.ms
+	n := int32(int16(uint16(r.ns) - m.ns[p]))
+	if n <= 0 || (m.in|m.out)&(1<<p) == 0 {
+		return
+	}
+	e := r.symWait() - m.t[p] - float32(int16(m.n[p]-uint16(r.n))) - float32(n)*sps
+	if m.in&(1<<p) != 0 {
+		m.rate += leanRateGain * e / float32(2*n)
+	} else {
+		m.rate += leanRateGain * (e/float32(n) - m.rate)
+	}
+	m.rate = max32(min32(m.rate, leanRateMax*sps), -leanRateMax*sps)
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
 	r.fitLevels(base+leanSyncEnd, anchor, false, true)
-	if abs32(r.dcHz) > leanRetuneHz && !r.isReplaying() {
-		r.retune(r.dcHz)
+	d := r.dcHz
+	if o := (j + 1) & 1; !r.bs && r.ms.anch[o] != leanNoSlot {
+		d = (d + r.ms.lv[o].dcHz) / 2
 	}
-	r.first += shift
-	r.slotEnd += shift
+	if abs32(d) > leanRetuneHz && !r.isReplaying() {
+		r.retune(d)
+	}
+	if !r.bs {
+		k := shift + int64(r.ms.off[j&1])
+		r.first += k
+		r.ms.off[(j+1)&1] -= int16(k)
+		r.ms.off[j&1] = 0
+		r.ms.anch[j&1] = j
+	} else {
+		r.first += shift
+	}
 	if r.amp == 0 || energy > levelJump*r.amp || levelJump*energy < r.amp {
 		r.amp, r.noise = energy, energy/4
 	} else {
@@ -1664,9 +1854,12 @@ func (r *leanCore) setHunt() {
 	case r.suspectRun < math.MaxUint8:
 		r.suspectRun++
 	}
+	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
 	if !r.stale() {
 		r.hunt = false
-		return
+		if !r.ms.seek {
+			return
+		}
 	}
 	if !r.hunt {
 		r.acqFrom = r.n
@@ -1675,6 +1868,11 @@ func (r *leanCore) setHunt() {
 		}
 	}
 	r.hunt = true
+}
+
+func (r *leanCore) seeking() bool {
+	p := r.next & 1
+	return !r.bs && r.lastAnch != leanNoSlot && (r.ms.anch[p] == leanNoSlot || r.ms.fresh[p] != 0) && !r.isReplaying()
 }
 
 func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
@@ -1752,6 +1950,8 @@ func (r *leanCore) shift(d float32) {
 		}
 	}
 	r.dcHz -= d
+	r.ms.lv[0].dcHz -= d
+	r.ms.lv[1].dcHz -= d
 	r.tm.s1 -= d
 	r.tm.s2 -= d
 	r.tm.s0 -= d

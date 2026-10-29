@@ -103,6 +103,47 @@ type cohStage struct {
 	hVar                        float64
 	hNew                        bool
 	size                        int64
+	radios                      [2]cohRadio
+	radio                       int8
+}
+
+type cohRadio struct {
+	dt, freq, totalHz, fitVar float64
+	ampAvg, noiseAvg, symAvg  float64
+	hFit, hVar                float64
+	amp, noise                [cohFitScales]float64
+	nFit                      int
+	scale                     float32
+	freqOK, hNew, ok          bool
+}
+
+func (s *cohStage) saveRadio(r *cohRadio) {
+	r.dt, r.freq, r.totalHz, r.fitVar = s.dt, s.freq, s.totalHz, s.fitVar
+	r.ampAvg, r.noiseAvg, r.symAvg, r.hFit, r.hVar = s.ampAvg, s.noiseAvg, s.symAvg, s.hFit, s.hVar
+	r.amp, r.noise, r.nFit, r.scale, r.freqOK, r.hNew, r.ok = s.amp, s.noise, s.nFit, s.scale, s.freqOK, s.hNew, true
+}
+
+func (s *cohStage) loadRadio(r *cohRadio) {
+	s.dt, s.freq, s.totalHz, s.fitVar = r.dt, r.freq, r.totalHz, r.fitVar
+	s.ampAvg, s.noiseAvg, s.symAvg, s.hFit, s.hVar = r.ampAvg, r.noiseAvg, r.symAvg, r.hFit, r.hVar
+	s.amp, s.noise, s.nFit, s.scale, s.freqOK, s.hNew = r.amp, r.noise, r.nFit, r.scale, r.freqOK, r.hNew
+}
+
+func (s *cohStage) slotRadio(c *leanCore, slot int64) {
+	p := int8(slot & 1)
+	if c.bs || p == s.radio {
+		return
+	}
+	if s.radio >= 0 {
+		s.saveRadio(&s.radios[s.radio])
+	}
+	if s.radios[p].ok {
+		s.loadRadio(&s.radios[p])
+	} else if s.radio >= 0 {
+		s.freqOK, s.nFit, s.hNew = false, 0, true
+		s.ampAvg, s.noiseAvg, s.symAvg = 0, 0, 0
+	}
+	s.radio = p
 }
 
 const (
@@ -152,7 +193,7 @@ func newCohStageOf(opt *options) *cohStage {
 		sps = opt.CohSPS
 	}
 	m := newCPMModel(1, sps)
-	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
+	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
 		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise}
 	if s.llrK == 0 {
 		s.llrK = 1
@@ -617,6 +658,7 @@ func (s *cohStage) lost(lo int64) bool {
 
 func (s *cohStage) lock() {
 	s.lastT0, s.lastSync, s.mineOK, s.relock, s.hNew = 0, 0, false, true, true
+	s.radio, s.radios[0].ok, s.radios[1].ok = -1, false, false
 	s.hVar += cohIndexWalk
 }
 
@@ -706,6 +748,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.carry = s.mine
 	}
 	s.mineOK, s.mineSlot = false, b.Slot
+	s.slotRadio(c, b.Slot)
 	s.t0 = s.ringTime(c, c.base) + s.dt
 	if s.lost(lo) {
 		return false
@@ -901,6 +944,7 @@ func (s *cohStage) prevAt(j int) (int8, bool) {
 const cohPlaceRho = 0.3
 
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
+	s.slotRadio(c, int64(j))
 	if s.f.gain <= 0 || !s.freqOK || s.clear(c) {
 		return false
 	}

@@ -433,14 +433,14 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				r.acqHead, r.acqLow = kh, kq
 				if st&st96Lock != 0 {
 					again, mid, match := r.lockSym(tm.last, at)
-					if !match && uint32(r.ns) != uint32(r.slotEnd) {
+					if !match && !r.ms.retry && uint32(r.ns) != uint32(r.slotEnd) {
 						if t > 0 {
 							break
 						}
 						continue
 					}
 					f.rrcHead = h
-					if match {
+					if match || r.ms.retry {
 						r.huntMatch(again, mid)
 					}
 					if uint32(r.ns) == uint32(r.slotEnd) {

@@ -14,7 +14,10 @@ type Tier int
 // The tiers, from the least compute to the most. docs/rx/README.md gives
 // the sensitivity, compute and RAM of each. Every tier decodes each FEC field
 // with soft decisions, and Tier0 to Tier2 each need under 20 ms of CPU per
-// second of signal on a PC.
+// second of signal on a PC. Tier0 to Tier2 follow the MS-sourced bursts of
+// both TDMA slots, as on the inbound of a repeater or a duplex hotspot with
+// a radio on each slot: each slot keeps its own SYNC timing, symbol clock,
+// levels and carrier offset.
 const (
 	// TierDefault is the zero value: Tier1 for NewReceiver and
 	// NewAudioReceiver, and Tier0 for Init and under TinyGo.

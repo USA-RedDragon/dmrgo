@@ -765,6 +765,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	}
 	x.ring = c.ring
 	first, eAcc, eSyms, hold, slotEnd := c.first, c.eAcc, c.eSyms, c.tm.hold, c.slotEnd
+	ms := c.ms
 	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
 	clicks := c.clicks
 	c.replaying = true
@@ -774,8 +775,10 @@ func (x *softExt) firstSlot(c *leanCore) {
 		c.votes = votes
 		c.dcHz, c.devScale, c.discVar, c.clicks = levels[0], levels[1], levels[2], clicks
 		c.next, c.lastAnch, c.lost = 0, leanNoSlot, 0
+		c.ms.anch, c.ms.off = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}
 		if !c.bs {
 			c.lastAnch = int32(n)
+			c.ms.anch[n&1] = int32(n)
 		}
 		c.first = first - int64(n)*slotSymbols
 		c.slotEnd = c.first + slotSymbols
@@ -788,7 +791,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 			if j == n {
 				c.ring = x.ring
 			} else {
-				base := c.first + int64(j)*slotSymbols
+				base := c.first + int64(j)*slotSymbols + int64(c.ms.off[j&1])
 				for k := base - 1; k <= base+slotSymbols; k++ {
 					v := c.keptAt(at - float32(last-k)*sps)
 					c.ring[ringPos(k)] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
@@ -803,6 +806,19 @@ func (x *softExt) firstSlot(c *leanCore) {
 		c.lastAnch = leanNoSlot
 	}
 	c.clicks = clicks
+	rs := &c.ms
+	ms.anch[0], ms.anch[1] = leanNoSlot, leanNoSlot
+	for i := range rs.anch {
+		if a := rs.anch[i]; a != leanNoSlot && a != int32(n) {
+			ms.anch[i], ms.lv[i] = a, rs.lv[i]
+		}
+	}
+	c.ms = ms
+	for i := range c.ms.anch {
+		if c.ms.anch[i] != leanNoSlot {
+			c.savePhase(int32(i))
+		}
+	}
 	c.ring = x.ring
 	c.first = first - int64(n)*slotSymbols
 	c.slotEnd = slotEnd

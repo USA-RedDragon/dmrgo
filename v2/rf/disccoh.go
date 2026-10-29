@@ -325,6 +325,11 @@ func (p *discPhase) build(unit, dc float64) {
 	if p.unit > 0 {
 		if q := p.coh; q != nil {
 			q.freq = (q.freq/p.unit + p.dcU - dc) * unit
+			for i := range q.radios {
+				r := &q.radios[i]
+				r.freq = (r.freq/p.unit + p.dcU - dc) * unit
+				r.totalHz = (r.totalHz/p.unit + p.dcU - dc) * unit
+			}
 		}
 		k := unit / p.unit
 		d := -2 * math.Pi * (dc - p.dcU) * unit / discRate
