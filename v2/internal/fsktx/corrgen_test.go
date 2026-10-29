@@ -169,42 +169,45 @@ func TestCorrFitShort(t *testing.T) {
 	tabs := map[string][]int16{"corr24k5": corr24k5[:], "corr24k6": corr24k6[:], "corr48k5": corr48k5[:], "corr48k6": corr48k6[:]}
 	skips := map[string]int{"corr24k5": corr24k5Skip, "corr24k6": corr24k6Skip, "corr48k5": corr48k5Skip, "corr48k6": corr48k6Skip}
 	for _, hz := range []int{24000, 48000} {
-		for _, f := range fitCorrN(hz, []int{5, 6}, 6000) {
-			name := fmt.Sprintf("corr%dk%d", hz/1000, f.syms)
-			tab := tabs[name]
-			if len(f.t) != len(tab) {
-				t.Fatalf("%s: a fit of %d values, the table has %d", name, len(f.t), len(tab))
-			}
-			var sxy, sxx, syy float64
-			for i, v := range f.t {
-				x, y := v*corrUnits, float64(tab[i])
-				sxy, sxx, syy = sxy+x*y, sxx+x*x, syy+y*y
-			}
-			if spp := hz / SymbolRate; len(tab) != spp<<(2*f.syms) || skips[name] < 3 || skips[name] > 7 {
-				t.Errorf("%s: %d values and skip %d, want %d values and skip 3 to 7", name, len(tab), skips[name], spp<<(2*f.syms))
-			}
-			if lo, hi := slices.Min(tab), slices.Max(tab); lo < -32767 || int(hi)-int(lo) < corrUnits {
-				t.Errorf("%s: values %d to %d", name, lo, hi)
-			}
-			var vs, ns float64
-			for i := range f.t {
-				if f.cnt[i] >= 2 {
-					vs += f.sd[i] * f.sd[i] * f.cnt[i]
-					ns += f.cnt[i]
+		t.Run(fmt.Sprint(hz), func(t *testing.T) {
+			t.Parallel()
+			for _, f := range fitCorrN(hz, []int{5, 6}, 6000) {
+				name := fmt.Sprintf("corr%dk%d", hz/1000, f.syms)
+				tab := tabs[name]
+				if len(f.t) != len(tab) {
+					t.Fatalf("%s: a fit of %d values, the table has %d", name, len(f.t), len(tab))
+				}
+				var sxy, sxx, syy float64
+				for i, v := range f.t {
+					x, y := v*corrUnits, float64(tab[i])
+					sxy, sxx, syy = sxy+x*y, sxx+x*x, syy+y*y
+				}
+				if spp := hz / SymbolRate; len(tab) != spp<<(2*f.syms) || skips[name] < 3 || skips[name] > 7 {
+					t.Errorf("%s: %d values and skip %d, want %d values and skip 3 to 7", name, len(tab), skips[name], spp<<(2*f.syms))
+				}
+				if lo, hi := slices.Min(tab), slices.Max(tab); lo < -32767 || int(hi)-int(lo) < corrUnits {
+					t.Errorf("%s: values %d to %d", name, lo, hi)
+				}
+				var vs, ns float64
+				for i := range f.t {
+					if f.cnt[i] >= 2 {
+						vs += f.sd[i] * f.sd[i] * f.cnt[i]
+						ns += f.cnt[i]
+					}
+				}
+				sd := math.Sqrt(vs / ns)
+				for i, v := range f.t {
+					if f.cnt[i] < 4 {
+						continue
+					}
+					if z := math.Abs(float64(tab[i])/corrUnits-v) / (sd / math.Sqrt(f.cnt[i])); z > 16 {
+						t.Errorf("%s: value %d is %d, %.1f standard errors from %.0f, the mean of %v symbols of a fit on 6000", name, i, tab[i], z, v*corrUnits, f.cnt[i])
+					}
+				}
+				if r := sxy / math.Sqrt(sxx*syy); f.skip != skips[name] || r < 0.7 {
+					t.Errorf("%s: a fit on 6000 symbols has skip %d and correlation %.3f with the table, want skip %d and 0.7", name, f.skip, r, skips[name])
 				}
 			}
-			sd := math.Sqrt(vs / ns)
-			for i, v := range f.t {
-				if f.cnt[i] < 4 {
-					continue
-				}
-				if z := math.Abs(float64(tab[i])/corrUnits-v) / (sd / math.Sqrt(f.cnt[i])); z > 16 {
-					t.Errorf("%s: value %d is %d, %.1f standard errors from %.0f, the mean of %v symbols of a fit on 6000", name, i, tab[i], z, v*corrUnits, f.cnt[i])
-				}
-			}
-			if r := sxy / math.Sqrt(sxx*syy); f.skip != skips[name] || r < 0.7 {
-				t.Errorf("%s: a fit on 6000 symbols has skip %d and correlation %.3f with the table, want skip %d and 0.7", name, f.skip, r, skips[name])
-			}
-		}
+		})
 	}
 }
