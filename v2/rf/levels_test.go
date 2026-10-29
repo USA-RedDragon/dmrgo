@@ -121,6 +121,23 @@ func TestDiscLevelsAfterUnlock(t *testing.T) {
 	}
 }
 
+func TestLevelQuartersAfterUnlock(t *testing.T) {
+	t.Parallel()
+	r := mustAudio(AudioRxConfig{Rate: 9600, Tier: Tier0})
+	r.f.sum, r.f.sq, r.f.n, r.f.qsum, r.f.qsq = 900, 90000, 3*frontQuarter, 600, 60000
+	r.locked = true
+	r.unlock()
+	for range frontQuarter {
+		r.f.sum++
+		r.f.sq++
+		r.f.n++
+	}
+	r.levels()
+	if r.f.qmax > 1 {
+		t.Errorf("quarter variance %g after unlock, want at most 1", r.f.qmax)
+	}
+}
+
 func TestCarrierLeadIn(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 2)

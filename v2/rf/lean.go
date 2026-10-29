@@ -2067,7 +2067,7 @@ func (r *leanCore) unlock() {
 	}
 	r.locked, r.forced, r.hunt = false, false, false
 	if a := r.audio; a != nil {
-		a.sum, a.sq, a.n = 0, 0, 0
+		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
 	r.rebuildSigns()
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.corr = false, r.acqGain, 0, 0, 0, 0
