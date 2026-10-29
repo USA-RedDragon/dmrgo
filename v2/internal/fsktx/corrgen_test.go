@@ -4,15 +4,9 @@ package fsktx
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand/v2"
-	"os"
-	"path/filepath"
-	"runtime"
 	"slices"
 	"sync"
 	"testing"
@@ -31,6 +25,7 @@ const (
 type corrFit struct {
 	hz, syms, skip int
 	t              []float64
+	cnt, sd        []float64
 }
 
 func fitCorr(hz int, syms []int) []corrFit { return fitCorrN(hz, syms, corrFitSyms) }
@@ -84,6 +79,7 @@ func fitCorrN(hz int, syms []int, nsyms int) []corrFit {
 				return idx
 			}
 			sum := make([]float64, spp<<(2*C))
+			sq := make([]float64, spp<<(2*C))
 			cnt := make([]float64, 1<<(2*C))
 			end := len(c)/spp - 1
 			for j := corrFitSkip; j < end; j++ {
@@ -91,11 +87,15 @@ func fitCorrN(hz int, syms []int, nsyms int) []corrFit {
 				cnt[idx]++
 				for p := range spp {
 					sum[idx*spp+p] += c[j*spp+p]
+					sq[idx*spp+p] += c[j*spp+p] * c[j*spp+p]
 				}
 			}
+			ec := make([]float64, len(sum))
 			for i := range sum {
-				if cnt[i/spp] > 0 {
-					sum[i] /= cnt[i/spp]
+				ec[i] = cnt[i/spp]
+				if n := ec[i]; n > 0 {
+					sum[i] /= n
+					sq[i] = math.Sqrt(max(0, sq[i]/n-sum[i]*sum[i]))
 				}
 			}
 			var res float64
@@ -107,7 +107,7 @@ func fitCorrN(hz int, syms []int, nsyms int) []corrFit {
 				}
 			}
 			if ex := 1 - res/tot; ex > bestEx {
-				bestEx, best.skip, best.t = ex, K, sum
+				bestEx, best.skip, best.t, best.cnt, best.sd = ex, K, sum, ec, sq
 			}
 		}
 		out = append(out, best)
@@ -120,95 +120,31 @@ var (
 	corrFitContexts = []int{5, 6}
 )
 
-type corrFitJSON struct {
-	Hz, Syms, Skip int
-	T              []float64
-}
-
-// cachedFitCorr returns fitCorr from the user cache when an earlier run
-// fitted the same source files of the package with the same toolchain,
-// as the fit takes minutes and depends on nothing else.
-func cachedFitCorr(hz int, syms []int) []corrFit {
-	path := corrFitCachePath(hz, syms)
-	if path != "" {
-		if raw, err := os.ReadFile(path); err == nil {
-			var c []corrFitJSON
-			if json.Unmarshal(raw, &c) == nil && len(c) == len(syms) {
-				out := make([]corrFit, len(c))
-				for i, f := range c {
-					out[i] = corrFit{hz: f.Hz, syms: f.Syms, skip: f.Skip, t: f.T}
-				}
-				return out
-			}
+func committedCorr(hz int, syms []int) []corrFit {
+	out := make([]corrFit, 0, len(syms))
+	for _, c := range syms {
+		tab, skip := corrTable(hz, c)
+		t := make([]float64, len(tab))
+		for i, v := range tab {
+			t[i] = float64(v) / corrUnits
 		}
-	}
-	out := fitCorr(hz, syms)
-	if path == "" {
-		return out
-	}
-	c := make([]corrFitJSON, len(out))
-	for i, f := range out {
-		c[i] = corrFitJSON{f.hz, f.syms, f.skip, f.t}
-	}
-	raw, err := json.Marshal(c)
-	if err != nil || os.MkdirAll(filepath.Dir(path), 0o700) != nil {
-		return out
-	}
-	tmp, err := os.CreateTemp(filepath.Dir(path), "fit-*")
-	if err != nil {
-		return out
-	}
-	_, werr := tmp.Write(raw)
-	if cerr := tmp.Close(); werr != nil || cerr != nil || os.Rename(tmp.Name(), path) != nil {
-		_ = os.Remove(tmp.Name())
+		out = append(out, corrFit{hz: hz, syms: c, skip: skip, t: t})
 	}
 	return out
 }
 
-func corrFitsCached() bool {
-	for _, hz := range corrFitRates {
-		p := corrFitCachePath(hz, corrFitContexts)
-		if p == "" {
-			return false
-		}
-		if _, err := os.Stat(p); err != nil {
-			return false
-		}
-	}
-	return true
-}
-
-func corrFitCachePath(hz int, syms []int) string {
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		return ""
-	}
-	files, err := filepath.Glob("*.go")
-	if err != nil || len(files) == 0 {
-		return ""
-	}
-	slices.Sort(files)
-	h := sha256.New()
-	fmt.Fprintf(h, "%s %s/%s %d %v\n", runtime.Version(), runtime.GOOS, runtime.GOARCH, hz, syms)
-	for _, f := range files {
-		raw, err := os.ReadFile(f)
-		if err != nil {
-			return ""
-		}
-		fmt.Fprintf(h, "%s %d\n", f, len(raw))
-		h.Write(raw)
-	}
-	return filepath.Join(dir, "dmrgo-test", "fsktx-corrfit-"+hex.EncodeToString(h.Sum(nil))+".json")
-}
-
-func renderAudioCorr(b *bytes.Buffer) {
+func renderAudioCorr(b *bytes.Buffer, fit bool) {
 	fits := make([][]corrFit, len(corrFitRates))
 	var wg sync.WaitGroup
 	for i, hz := range corrFitRates {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			fits[i] = cachedFitCorr(hz, corrFitContexts)
+			if fit {
+				fits[i] = fitCorr(hz, corrFitContexts)
+			} else {
+				fits[i] = committedCorr(hz, corrFitContexts)
+			}
 		}()
 	}
 	wg.Wait()
@@ -243,6 +179,28 @@ func TestCorrFitShort(t *testing.T) {
 			for i, v := range f.t {
 				x, y := v*corrUnits, float64(tab[i])
 				sxy, sxx, syy = sxy+x*y, sxx+x*x, syy+y*y
+			}
+			if spp := hz / SymbolRate; len(tab) != spp<<(2*f.syms) || skips[name] < 3 || skips[name] > 7 {
+				t.Errorf("%s: %d values and skip %d, want %d values and skip 3 to 7", name, len(tab), skips[name], spp<<(2*f.syms))
+			}
+			if lo, hi := slices.Min(tab), slices.Max(tab); lo < -32767 || int(hi)-int(lo) < corrUnits {
+				t.Errorf("%s: values %d to %d", name, lo, hi)
+			}
+			var vs, ns float64
+			for i := range f.t {
+				if f.cnt[i] >= 2 {
+					vs += f.sd[i] * f.sd[i] * f.cnt[i]
+					ns += f.cnt[i]
+				}
+			}
+			sd := math.Sqrt(vs / ns)
+			for i, v := range f.t {
+				if f.cnt[i] < 4 {
+					continue
+				}
+				if z := math.Abs(float64(tab[i])/corrUnits-v) / (sd / math.Sqrt(f.cnt[i])); z > 16 {
+					t.Errorf("%s: value %d is %d, %.1f standard errors from %.0f, the mean of %v symbols of a fit on 6000", name, i, tab[i], z, v*corrUnits, f.cnt[i])
+				}
 			}
 			if r := sxy / math.Sqrt(sxx*syy); f.skip != skips[name] || r < 0.7 {
 				t.Errorf("%s: a fit on 6000 symbols has skip %d and correlation %.3f with the table, want skip %d and 0.7", name, f.skip, r, skips[name])

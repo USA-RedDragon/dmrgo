@@ -11,8 +11,6 @@ import (
 	"math"
 	"os"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
 var updateTables = flag.Bool("update", false, "rewrite tables_gen.go from the table derivations")
@@ -73,9 +71,6 @@ func roundSum(v []float64) []int {
 
 func TestTablesGenerated(t *testing.T) {
 	t.Parallel()
-	if testmode.Race && !*updateTables && !corrFitsCached() {
-		t.Skip("the fit of the audio corrections is not in the user cache and takes an hour under -race; the runs without -race and go generate check it")
-	}
 	src, err := renderTables()
 	if err != nil {
 		t.Fatal(err)
@@ -254,7 +249,7 @@ func renderTables() ([]byte, error) {
 			renderLUT(&b, h, l, n)
 		}
 	}
-	renderAudioCorr(&b)
+	renderAudioCorr(&b, *updateTables)
 	if err := renderMCUCorr(&b, mcuCorrFile, "mcuCorr"); err != nil {
 		return nil, err
 	}
