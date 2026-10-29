@@ -1,6 +1,7 @@
 package ambe
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -12,20 +13,23 @@ func TestEncodeMatchesReference(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	for n := range 1 << 20 {
+	checkCases(t, 1<<20, func(n int) [7]byte {
 		var frame [7]byte
 		r.Read(frame[:])
 		frame[6] &= 0x80
 		if n < 4096 {
 			frame[0], frame[1] = byte(n>>4), byte(n<<4)|frame[1]&0x0F
 		}
+		return frame
+	}, func(frame *[7]byte) string {
 		var info [49]unpacked.Bit
 		copy(info[:], unpacked.Unpack(frame[:]))
 		want := refambe.Encode(info)
-		if got := Encode(frame); got != [9]byte(unpacked.Pack(want[:])) {
-			t.Fatalf("Encode(%x) = %x, want %x", frame, got, unpacked.Pack(want[:]))
+		if got := Encode(*frame); got != [9]byte(unpacked.Pack(want[:])) {
+			return fmt.Sprintf("Encode(%x) = %x, want %x", *frame, got, unpacked.Pack(want[:]))
 		}
-	}
+		return ""
+	})
 }
 
 func TestDecodeMatchesReference(t *testing.T) {
