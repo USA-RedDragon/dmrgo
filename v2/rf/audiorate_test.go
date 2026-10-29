@@ -130,20 +130,21 @@ func TestAudio44kMatches48k(t *testing.T) {
 		tiers = append(tiers, Tier3)
 	}
 	const tol = 0.03
+	seeds := testmode.N(3, 6, 1)
 	for _, cn := range []float64{4, 6, 8, 10} {
+		in := make([][2][]int16, seeds)
+		for seed := range in {
+			a := discAudio(noisyBaseband(slots, 1400, cn, 100+uint64(seed)), 2*discRate)
+			in[seed] = [2][]int16{a, sincResample(a, 2*discRate, 44100)}
+		}
 		for _, tier := range tiers {
 			var n48, n44, total int
-			for seed := range uint64(testmode.N(3, 6, 1)) {
-				a := discAudio(noisyBaseband(slots, 1400, cn, 100+seed), 2*discRate)
-				for _, c := range []struct {
+			for seed := range in {
+				for i, c := range []struct {
 					hz int
 					n  *int
 				}{{2 * discRate, &n48}, {44100, &n44}} {
-					in := a
-					if c.hz != 2*discRate {
-						in = sincResample(a, 2*discRate, c.hz)
-					}
-					sc := scoreBench(truth, receiveAudioAt(t, in, c.hz, tier))
+					sc := scoreBench(truth, receiveAudioAt(t, in[seed][i], c.hz, tier))
 					for k, s := range sc {
 						if k == "ambe" || k == "rate12" || k == "rate34" || k == "csbk" {
 							*c.n += s.Exact
