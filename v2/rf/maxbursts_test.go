@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"fmt"
+	"sync"
+	"testing"
+)
 
 type rxBoundSignal struct {
 	bb48, bb24, bb96 []complex64
@@ -186,8 +190,29 @@ func TestReceiverMaxBursts(t *testing.T) {
 	t.Parallel()
 	s := newRxBoundSignal(t)
 	engines := map[string]int{}
+	var mu sync.Mutex
+	run := func(t *testing.T, c rxBoundCase, first bool) {
+		name, n := runRxBounds(t, s, c)
+		if name == "" {
+			return
+		}
+		mu.Lock()
+		engines[name] += n
+		mu.Unlock()
+		if first && n == 0 {
+			t.Errorf("tier %d gave no bursts", c.tier-Tier0)
+		}
+	}
+	t.Cleanup(func() {
+		for _, e := range []string{"engine", "lean", "iqdisc", "comb", "iq0", "iqlow"} {
+			if _, ok := engines[e]; !ok {
+				t.Errorf("no case ran the %s receiver: %v", e, engines)
+			}
+		}
+		t.Logf("bursts by receiver: %v", engines)
+	})
 	tiers := []Tier{Tier0, Tier1, Tier2, Tier3}
-	for i, tier := range tiers {
+	for _, tier := range tiers {
 		for j, c := range []rxBoundCase{
 			{baseband: true, mult: 1},
 			{baseband: true, mult: 5, maxWrite: 64, lookback: 1, cuts: []byte{0, 3, 40}},
@@ -201,34 +226,25 @@ func TestReceiverMaxBursts(t *testing.T) {
 				continue
 			}
 			c.tier = tier
-			name, n := runRxBounds(t, s, c)
-			if name == "" {
-				continue
-			}
-			engines[name] += n
-			if j == 0 && n == 0 {
-				t.Errorf("tier %d gave no bursts", i)
-			}
+			t.Run(fmt.Sprintf("tier%d/%d", tier-Tier0, j), func(t *testing.T) {
+				t.Parallel()
+				run(t, c, j == 0)
+			})
 		}
 	}
 	for _, inner := range []int{1, 2, 3} {
-		for _, c := range []rxBoundCase{
+		for j, c := range []rxBoundCase{
 			{tier: Tier3, baseband: true, mult: 1, inner: inner},
 			{tier: Tier3, baseband: true, mult: 1, lookback: 2, cuts: []byte{1, 9, 30}, inner: inner},
 			{tier: Tier3, mult: 1, inner: 3 + inner, cuts: []byte{60}},
 			{tier: Tier3, mult: 2, maxWrite: 999, inner: inner, cuts: []byte{3, 50}},
 		} {
-			if name, n := runRxBounds(t, s, c); name != "" {
-				engines[name] += n
-			}
+			t.Run(fmt.Sprintf("inner%d/%d", inner, j), func(t *testing.T) {
+				t.Parallel()
+				run(t, c, false)
+			})
 		}
 	}
-	for _, e := range []string{"engine", "lean", "iqdisc", "comb", "iq0", "iqlow"} {
-		if _, ok := engines[e]; !ok {
-			t.Errorf("no case ran the %s receiver: %v", e, engines)
-		}
-	}
-	t.Logf("bursts by receiver: %v", engines)
 }
 
 func FuzzReceiverMaxBursts(f *testing.F) {
