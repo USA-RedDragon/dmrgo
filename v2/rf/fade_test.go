@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand/v2"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
@@ -84,12 +85,23 @@ func TestReceiverFading(t *testing.T) {
 		for _, fd := range []float64{5, 50} {
 			t.Run(fmt.Sprintf("%s/%g", c.name, fd), func(t *testing.T) {
 				t.Parallel()
-				exact := map[Tier]int{}
-				for _, seed := range seeds {
-					x := fadedBaseband(c.fm, c.env, fd, c.cn, seed)
-					for _, tier := range []Tier{Tier2, Tier3} {
-						exact[tier] += c0c1InOrder(c.want, voiceFrames(receiveBaseband(x, tier)))
+				got := make([][2]int, len(seeds))
+				var wg sync.WaitGroup
+				for i, seed := range seeds {
+					x := sync.OnceValue(func() []complex64 { return fadedBaseband(c.fm, c.env, fd, c.cn, seed) })
+					for j, tier := range []Tier{Tier2, Tier3} {
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							got[i][j] = c0c1InOrder(c.want, voiceFrames(receiveBaseband(x(), tier)))
+						}()
 					}
+				}
+				wg.Wait()
+				exact := map[Tier]int{}
+				for _, g := range got {
+					exact[Tier2] += g[0]
+					exact[Tier3] += g[1]
 				}
 				total := len(seeds) * len(c.want)
 				for _, tier := range []Tier{Tier2, Tier3} {
