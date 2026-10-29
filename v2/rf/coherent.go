@@ -72,6 +72,8 @@ func (m *cpmModel) setStep(h float64) {
 	m.h = h
 }
 
+const pulseLeadSamples = 0.5
+
 func (m *cpmModel) pulse(j int, h float64) float64 {
 	n := m.pp.n
 	i := j + n/2

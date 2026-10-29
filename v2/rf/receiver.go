@@ -637,6 +637,13 @@ func (r *engine) slotTime(j int64) float64 {
 	return r.t0 + float64(j)*r.period
 }
 
+func (r *engine) pulseLead() float64 {
+	if r.opt.Coherent {
+		return pulseLeadSamples
+	}
+	return 0
+}
+
 func (r *engine) symTime(j int64, k int) float64 {
 	return r.slotTime(j) + float64(k)*r.period/slotSymbols
 }
@@ -1067,7 +1074,7 @@ func (r *engine) finish(s *slotState) {
 	rec := &r.finRec
 	*rec = slotRec{}
 	rec.index, rec.bs, rec.src, rec.stream = s.index, r.bs, sourceAt(r.src), r.streams
-	rec.seconds = (r.symTime(s.index, cachSymbols) - float64(r.chz.delayCh)) / basebandRate
+	rec.seconds = (r.symTime(s.index, cachSymbols) - float64(r.chz.delayCh) - r.pulseLead()) / basebandRate
 	r.fill264(s, rec)
 	if s.anchor {
 		rec.anchor = s.a.pattern
