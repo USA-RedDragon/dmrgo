@@ -1,6 +1,7 @@
 package golay
 
 import (
+	"fmt"
 	"math/bits"
 	"testing"
 
@@ -17,16 +18,17 @@ func bits20(cw uint32) [20]unpacked.Bit {
 func TestGolay2087MatchesReferenceOnEveryWord(t *testing.T) {
 	t.Parallel()
 
-	for cw := range uint32(1 << 20) {
+	everyWord(t, 1<<20, func(cw uint32) string {
 		got, res := Decode2087(cw)
 		want, wantRes := ref.Decode2087(bits20(cw))
 		if got != uint32(unpacked.Uint(want[:])) || res != wantRes {
-			t.Fatalf("Decode2087(%#05x) = %#05x %+v, want %#05x %+v", cw, got, res, unpacked.Uint(want[:]), wantRes)
+			return fmt.Sprintf("Decode2087(%#05x) = %#05x %+v, want %#05x %+v", cw, got, res, unpacked.Uint(want[:]), wantRes)
 		}
 		if Check2087(cw) != ref.Check2087(bits20(cw)) {
-			t.Fatalf("Check2087(%#05x) differs from the reference", cw)
+			return fmt.Sprintf("Check2087(%#05x) differs from the reference", cw)
 		}
-	}
+		return ""
+	})
 	for d := range 256 {
 		data := bits20(uint32(d) << 12)
 		want := ref.Encode2087([8]unpacked.Bit(data[:8]))
