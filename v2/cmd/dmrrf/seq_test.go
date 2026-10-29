@@ -165,11 +165,14 @@ func TestLoopbackVoiceSlowClock(t *testing.T) {
 	t.Parallel()
 
 	for _, bs := range []bool{false, true} {
-		cfg := testConfig()
-		cfg.Superframes, cfg.BSSourced = 4, bs
-		l := runLoopStretch(t, "voice", cfg, 500)
-		l.expect(t, "elc", "checksum=ok fec=ok", 4)
-		checkAMBE(t, l, 4*18, false)
+		t.Run(fmt.Sprintf("bs=%t", bs), func(t *testing.T) {
+			t.Parallel()
+			cfg := testConfig()
+			cfg.Superframes, cfg.BSSourced = 4, bs
+			l := runLoopStretch(t, "voice", cfg, 500)
+			l.expect(t, "elc", "checksum=ok fec=ok", 4)
+			checkAMBE(t, l, 4*18, false)
+		})
 	}
 }
 
