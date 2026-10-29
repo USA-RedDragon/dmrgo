@@ -38,23 +38,26 @@ func TestTierDesignFits(t *testing.T) {
 	ts := newTestStream(t, 2, 40)
 	for _, tier := range []Tier{Tier1, Tier2} {
 		for _, hz := range []int{24000, 44100, 48000, 96000} {
-			lv := 16000
-			for ; lv > 0; lv -= 10 {
-				if _, err := NewAudio(AudioConfig{Hz: hz, Tier: tier, Level: lv}); err == nil {
-					break
-				}
-			}
-			if lv < 15000 {
-				t.Fatalf("Tier%d at %d Hz: Level %d is the most that fits", tier-Tier0, hz, lv)
-			}
-			u := txUnit{tier: tier, format: fmtAudio, rate: hz, level: lv}
-			for _, syms := range [][]int8{ts.syms, u.pattern(patWorst, 300)} {
-				for _, v := range u.run(t, syms, nil) {
-					if v == math.MaxInt16 || v == math.MinInt16 {
-						t.Fatalf("Tier%d at %d Hz, Level %d: the output reaches %d", tier-Tier0, hz, lv, v)
+			t.Run(fmt.Sprint(tier-Tier0, "/", hz), func(t *testing.T) {
+				t.Parallel()
+				lv := 16000
+				for ; lv > 0; lv -= 10 {
+					if _, err := NewAudio(AudioConfig{Hz: hz, Tier: tier, Level: lv}); err == nil {
+						break
 					}
 				}
-			}
+				if lv < 15000 {
+					t.Fatalf("Tier%d at %d Hz: Level %d is the most that fits", tier-Tier0, hz, lv)
+				}
+				u := txUnit{tier: tier, format: fmtAudio, rate: hz, level: lv}
+				for _, syms := range [][]int8{ts.syms, u.pattern(patWorst, 300)} {
+					for _, v := range u.run(t, syms, nil) {
+						if v == math.MaxInt16 || v == math.MinInt16 {
+							t.Fatalf("Tier%d at %d Hz, Level %d: the output reaches %d", tier-Tier0, hz, lv, v)
+						}
+					}
+				}
+			})
 		}
 	}
 }
