@@ -1,6 +1,7 @@
 package bptc_test
 
 import (
+	"fmt"
 	"math/bits"
 	"math/rand"
 	"testing"
@@ -33,47 +34,66 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 	if testing.Short() {
 		n = 20_000
 	}
-	for i := range n {
-		var info [10]byte
-		r.Read(info[:])
-		info[9] &= 0xF8
+	type cEmb struct {
+		info   [10]byte
+		random bool
+		noise  [4]uint32
+		nflips int
+		flips  [12]int
+	}
+	checkCases(t, n, func(i int) cEmb {
+		var c cEmb
+		r.Read(c.info[:])
+		c.info[9] &= 0xF8
+		if i%5 == 4 {
+			c.random = true
+			for k := range c.noise {
+				c.noise[k] = r.Uint32()
+			}
+		} else {
+			c.nflips = r.Intn(12)
+			for k := range c.nflips {
+				c.flips[k] = r.Intn(128)
+			}
+		}
+		return c
+	}, func(c *cEmb) string {
+		info := c.info
 		var refInfo [77]unpacked.Bit
 		unpacked.UnpackAt(refInfo[:], info[:], 0)
 		frags := bptc.EncodeEmbedded(info)
 		refFrags := ref.EncodeEmbedded(refInfo)
 		for k := range frags {
 			if uint64(frags[k]) != unpacked.Uint(refFrags[k][:]) {
-				t.Fatalf("EncodeEmbedded(%x) = %08x, want %v", info, frags, refFrags)
+				return fmt.Sprintf("EncodeEmbedded(%x) = %08x, want %v", info, frags, refFrags)
 			}
 		}
-		if i%5 == 4 {
-			for k := range frags {
-				frags[k] = r.Uint32()
-			}
-		} else {
-			for range r.Intn(12) {
-				p := r.Intn(128)
-				frags[p/32] ^= 1 << (31 - p%32)
-			}
+		if c.random {
+			frags = c.noise
+		}
+		for _, p := range c.flips[:c.nflips] {
+			frags[p/32] ^= 1 << (31 - p%32)
 		}
 		for k := range frags {
 			unpacked.PutUint(refFrags[k][:], uint64(frags[k]))
 		}
-		cmp := func(name string, got [10]byte, gotRes, wantRes any, want [77]unpacked.Bit) {
-			t.Helper()
+		cmp := func(name string, got [10]byte, gotRes, wantRes any, want [77]unpacked.Bit) string {
 			var w [10]byte
 			unpacked.PackAt(w[:], 0, want[:])
 			if got != w || gotRes != wantRes {
-				t.Fatalf("%s(%08x) = %x %+v, want %x %+v", name, frags, got, gotRes, w, wantRes)
+				return fmt.Sprintf("%s(%08x) = %x %+v, want %x %+v", name, frags, got, gotRes, w, wantRes)
 			}
+			return ""
 		}
 		got, gotRes := bptc.DecodeEmbedded(frags)
 		want, wantRes := ref.DecodeEmbedded(refFrags)
-		cmp("DecodeEmbedded", got, gotRes, wantRes, want)
+		if msg := cmp("DecodeEmbedded", got, gotRes, wantRes, want); msg != "" {
+			return msg
+		}
 		got, gotRes = bptc.DecodeEmbeddedWithCheck(frags, evenInfo)
 		want, wantRes = ref.DecodeEmbeddedWithCheck(refFrags, refEvenInfo)
-		cmp("DecodeEmbeddedWithCheck", got, gotRes, wantRes, want)
-	}
+		return cmp("DecodeEmbeddedWithCheck", got, gotRes, wantRes, want)
+	})
 }
 
 func BenchmarkEmbedded(b *testing.B) {
