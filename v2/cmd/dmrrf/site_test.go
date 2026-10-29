@@ -51,6 +51,22 @@ func TestLoopbackT3Site(t *testing.T) {
 	fm, env := rftx.ModulateBS(built.Slots)
 	iq := rftx.MixIQ(built.Signals(fm, env, 0), rate, 0.9)
 
+	t.Run("control", func(t *testing.T) {
+		t.Parallel()
+		siteControl(t, built, iq, rate)
+	})
+	t.Run("traffic", func(t *testing.T) {
+		t.Parallel()
+		tr := siteLoop(t, built, iq, rate, built.Carriers[0].OffsetHz, built.Carriers[0].Slots)
+		tr.expect(t, "lc", "ts=2 header flco=0 fid=0x00 group src=3191868 dst=9990", 1)
+		tr.expect(t, "lc", "ts=2 terminator flco=0 fid=0x00 group src=3191868 dst=9990", 1)
+		tr.expect(t, "elc", "ts=2 flco=0 fid=0x00 group src=3191868 dst=9990", cfg.Superframes)
+		checkAMBE(t, tr, cfg.Superframes*18, false)
+	})
+}
+
+func siteControl(t *testing.T, built rftx.Built, iq []byte, rate float64) {
+	t.Helper()
 	var got []string
 	for _, b := range decodeAll(t, siteLoop(t, built, iq, rate, 0, built.Slots)) {
 		switch d := b.Data.(type) {
@@ -84,10 +100,4 @@ func TestLoopbackT3Site(t *testing.T) {
 			t.Errorf("control channel has no %q in\n%s", w, all)
 		}
 	}
-
-	tr := siteLoop(t, built, iq, rate, built.Carriers[0].OffsetHz, built.Carriers[0].Slots)
-	tr.expect(t, "lc", "ts=2 header flco=0 fid=0x00 group src=3191868 dst=9990", 1)
-	tr.expect(t, "lc", "ts=2 terminator flco=0 fid=0x00 group src=3191868 dst=9990", 1)
-	tr.expect(t, "elc", "ts=2 flco=0 fid=0x00 group src=3191868 dst=9990", cfg.Superframes)
-	checkAMBE(t, tr, cfg.Superframes*18, false)
 }
