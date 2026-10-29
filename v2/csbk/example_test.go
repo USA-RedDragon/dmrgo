@@ -163,3 +163,36 @@ func ExampleResponder() {
 	// responder: Request CallAlert from 3140598
 	// requester: Done CallAlert Answered after 60ms
 }
+
+// ExampleResponder answers a Motorola radio check on the aligned channel
+// timing of a BS and on the offset one, and prints when each answer goes on
+// air.
+func ExampleResponder() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
+	if err := q.RequestRadioCheck(0, 3140598, 3191868, nil); err != nil {
+		fmt.Println(err)
+		return
+	}
+	sent := q.Tick(0, nil)
+	request := sent[0].Burst
+	for _, offset := range []bool{false, true} {
+		r, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3140598, ColorCode: 1, Source: layer2.SyncSourceMS, Offset: offset})
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		out := make([]csbk.Output, 0, csbk.MaxOutputs)
+		for _, o := range r.Burst(sent[0].Due, &request, layer2.Hint{}, out[:0]) {
+			fmt.Println(o.Kind, o.Service, "from", o.Call.Source, "state", r.State())
+		}
+		at, _ := r.Deadline()
+		for _, o := range r.Tick(at, out[:0]) {
+			fmt.Println("offset", offset, o.Kind, "due", o.Due, "state", r.State())
+		}
+	}
+	// Output:
+	// Request RadioCheck from 3191868 state Sending
+	// offset false Burst due 60ms state Idle
+	// Request RadioCheck from 3191868 state Sending
+	// offset true Burst due 90ms state Idle
+}
