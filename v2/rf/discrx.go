@@ -13,6 +13,8 @@ const (
 	audio12Taps    = discSpan*discSPS + 1
 	audio96Taps    = 4*audio96Span + 1
 	discLevelUp    = 1.41
+	frontQuarter   = frontBlock / 4
+	discEdgeRatio  = 16
 	audioMaxK      = 1<<15 - 1
 	audioMaxOff    = 1<<30 - 1<<16
 )
@@ -149,7 +151,7 @@ func (r *discRx) runAll(x []int16) {
 		if search {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
-			if f.n++; f.n == frontBlock {
+			if f.n++; f.n&(frontQuarter-1) == 0 {
 				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 				r.acqHead, r.acqLow = kh, kq
 				r.levels()
@@ -280,7 +282,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				if st&st96Search != 0 {
 					f.sum += int32(v)
 					f.sq += int64(v) * int64(v)
-					if f.n++; f.n == frontBlock {
+					if f.n++; f.n&(frontQuarter-1) == 0 {
 						tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 						r.acqHead, r.acqLow = kh, kq
 						f.rrcHead = h
@@ -495,21 +497,36 @@ func (r *discRx) deviation() float64 {
 //go:noinline
 func (r *discRx) levels() {
 	f := &r.f
+	qm := float32(f.sum-f.qsum) / frontQuarter
+	qv := sq32(f.sq-f.qsq)/frontQuarter - qm*qm
+	f.qsum, f.qsq = f.sum, f.sq
+	if f.n == frontQuarter {
+		f.qmin, f.qmax = qv, qv
+	} else {
+		f.qmin, f.qmax = min(f.qmin, qv), max(f.qmax, qv)
+	}
+	if f.n != frontBlock {
+		return
+	}
 	m := float32(f.sum) / frontBlock
-	sq := float32(uint32(f.sq>>32))*(1<<32) + float32(uint32(f.sq))
-	v := sq/frontBlock - m*m
-	f.sum, f.sq, f.n = 0, 0, 0
+	v := sq32(f.sq)/frontBlock - m*m
+	edge := f.qmax > discEdgeRatio*f.qmin
+	f.sum, f.sq, f.n, f.qsum, f.qsq = 0, 0, 0, 0, 0
 	m *= f.gain
 	v *= f.gain * f.gain
 	f.mean += discMeanGain * (m - f.mean)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
-		if g := discInputRMSHz / rms; g > 2 || g < 0.5 || f.up && g > discLevelUp {
+		if g := discInputRMSHz / rms; !edge && (g > 2 || g < 0.5 || f.up && g > discLevelUp) {
 			r.scaleAudio(g)
 		}
 	}
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
 		r.retune(d)
 	}
+}
+
+func sq32(x int64) float32 {
+	return float32(uint32(x>>32))*(1<<32) + float32(uint32(x))
 }
 
 func (r *leanCore) scaleAudio(g float32) {
@@ -526,6 +543,10 @@ func (r *leanCore) scaleAudio(g float32) {
 
 type audioFront struct {
 	sq      int64
+	qsq     int64
+	qsum    int32
+	qmin    float32
+	qmax    float32
 	gain    float32
 	dc      float32
 	k       int32
