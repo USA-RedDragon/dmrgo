@@ -1,16 +1,113 @@
 # Examples
 
-The programs in [v2/examples](../../v2/examples) run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`):
+This page lists the example programs in `v2/examples` and how to run each one.
 
-- [hotspot](../../v2/examples/hotspot/main.go): the MMDVMHost check and regenerated bursts.
-- [bridge](../../v2/examples/bridge/main.go): rewrite the talkgroup and source of a call.
-- [scanner](../../v2/examples/scanner/main.go): find bursts in a bit stream.
-- [trunking](../../v2/examples/trunking/main.go): Tier III CSBKs, MBC and CACH.
-- [data](../../v2/examples/data/main.go): packet data and selective retry.
-- [transcoder](../../v2/examples/transcoder/main.go): AMBE+2 FEC and Codec2.
-- [conformance](../../v2/examples/conformance/main.go): byte-for-byte re-encode of every capture.
-- [tinygo](../../v2/examples/tinygo/main.go): decode, follow and relay a call on a microcontroller (see [TinyGo](../targets/mcu.md)).
-- [wasm/inspector](../../v2/examples/wasm/inspector/README.md): a packet inspector in the browser, built to WebAssembly.
-- [wasm/decoder](../../v2/examples/wasm/decoder/README.md): DMR from audio, an I/Q file or a live RTL-SDR, decoded in the browser by the receivers of `rf` built to WebAssembly.
+## Offline examples
 
-The [udp](../../v2/examples/udp) and [tcp](../../v2/examples/tcp) examples are their own modules, run with `go run -C v2/examples/<name> .`. udp sends filled forms as UDP datagrams over DMR confirmed data, between two simulated radios on a channel with bit errors, and measures the size of each form encoding and the time per form at each rate. tcp runs a TN3270 session over TCP/IPv4 over DMR, with the TCP of gVisor netstack, on a simplex and a duplex channel.
+These programs run offline on the captures in `v2/layer2/testdata`. Run each one from the root of a clone with `go run -C v2 ./examples/<name>`.
+
+### hotspot
+
+[v2/examples/hotspot](../../v2/examples/hotspot/main.go)
+
+<!-- dmrgo:doc pkg=examples/hotspot -->
+<!-- /dmrgo:doc -->
+
+### bridge
+
+[v2/examples/bridge](../../v2/examples/bridge/main.go)
+
+<!-- dmrgo:doc pkg=examples/bridge -->
+<!-- /dmrgo:doc -->
+
+### scanner
+
+[v2/examples/scanner](../../v2/examples/scanner/main.go)
+
+<!-- dmrgo:doc pkg=examples/scanner -->
+<!-- /dmrgo:doc -->
+
+### trunking
+
+[v2/examples/trunking](../../v2/examples/trunking/main.go)
+
+<!-- dmrgo:doc pkg=examples/trunking -->
+<!-- /dmrgo:doc -->
+
+### data
+
+[v2/examples/data](../../v2/examples/data/main.go)
+
+<!-- dmrgo:doc pkg=examples/data -->
+<!-- /dmrgo:doc -->
+
+### transcoder
+
+[v2/examples/transcoder](../../v2/examples/transcoder/main.go)
+
+<!-- dmrgo:doc pkg=examples/transcoder -->
+<!-- /dmrgo:doc -->
+
+### conformance
+
+[v2/examples/conformance](../../v2/examples/conformance/main.go)
+
+<!-- dmrgo:doc pkg=examples/conformance -->
+<!-- /dmrgo:doc -->
+
+## Microcontroller examples
+
+These programs build with TinyGo for a board. See [Microcontrollers](../targets/mcu.md).
+
+### tinygo
+
+[v2/examples/tinygo](../../v2/examples/tinygo/main.go)
+
+<!-- dmrgo:doc pkg=examples/tinygo -->
+<!-- /dmrgo:doc -->
+
+### rxaudio
+
+[v2/examples/rxaudio](../../v2/examples/rxaudio/main.go)
+
+<!-- dmrgo:doc pkg=examples/rxaudio -->
+<!-- /dmrgo:doc -->
+
+### txaudio
+
+[v2/examples/txaudio](../../v2/examples/txaudio/main.go)
+
+<!-- dmrgo:doc pkg=examples/txaudio -->
+<!-- /dmrgo:doc -->
+
+### txiq
+
+[v2/examples/txiq](../../v2/examples/txiq/main.go)
+
+<!-- dmrgo:doc pkg=examples/txiq -->
+<!-- /dmrgo:doc -->
+
+## Browser examples
+
+These programs build to WebAssembly and run in a web page. See [Browser](../targets/browser.md).
+
+### wasm/inspector
+
+[v2/examples/wasm/inspector](../../v2/examples/wasm/inspector/README.md)
+
+<!-- dmrgo:doc pkg=examples/wasm/inspector -->
+<!-- /dmrgo:doc -->
+
+### wasm/decoder
+
+[v2/examples/wasm/decoder](../../v2/examples/wasm/decoder/README.md)
+
+<!-- dmrgo:doc pkg=examples/wasm/decoder -->
+<!-- /dmrgo:doc -->
+
+## Network examples
+
+The [udp](../../v2/examples/udp) and [tcp](../../v2/examples/tcp) examples are modules of their own, because they import packages that the `v2` module does not. Run each one with `go run -C v2/examples/<name> .`.
+
+- udp sends filled forms as UDP datagrams over DMR confirmed data, between two simulated radios on a channel with bit errors. It prints the size of each form encoding and the time from a form to its acknowledgement at rate 1/2, 3/4 and 1.
+- tcp runs a TN3270 session over TCP/IPv4 over DMR confirmed data, between two simulated radios on a channel with bit errors, with the TCP of gVisor netstack at each end. It prints the time of each screen.
