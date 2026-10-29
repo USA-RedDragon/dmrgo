@@ -68,16 +68,16 @@ func TestSecondsFirstBit(t *testing.T) {
 	}
 	var cases []tcase
 	for _, hz := range []int{8000, 9600, 11025, 12000, 16000, 24000, 44100, 48000} {
+		var a []int16
+		switch hz {
+		case 11025:
+			a = sincResample(discAudio(x, discRate), discRate, hz)
+		case 44100:
+			a = sincResample(a48, basebandRate, hz)
+		default:
+			a = discAudio(x, hz)
+		}
 		for tier := Tier0; tier <= Tier3; tier++ {
-			var a []int16
-			switch hz {
-			case 11025:
-				a = sincResample(discAudio(x, discRate), discRate, hz)
-			case 44100:
-				a = sincResample(a48, basebandRate, hz)
-			default:
-				a = discAudio(x, hz)
-			}
 			cases = append(cases, tcase{"audio" + strconv.Itoa(int(tier-Tier0)) + "/" + strconv.Itoa(hz), func(t testing.TB) ([]Burst, float64) {
 				return receiveAudioAt(t, a, hz, tier), secondsAudioLag / float64(basebandRate)
 			}})
