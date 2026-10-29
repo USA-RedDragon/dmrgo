@@ -194,6 +194,25 @@ The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`)
 
 `TestShortLCBench` in `v2/rf` writes `v2/rf/testdata/rxbench_shortlc.json` with `DMRRF_SLCBENCH` set to the path of the capture, and `go run -C cmd/rxbench . -update-readme -no-sweep` writes the tables.
 
+## A carrier off the tuned frequency
+
+I/Q tier 0 runs at 12 kHz. A carrier more than 2.5 kHz off is outside its AFC range and partly outside its channel filter, so the receiver must retune before it can lock. When the input power rises, the spectrum hunt estimates the carrier from the next three FFT frames, about 8 ms, and retunes. Tier 0 keeps no samples to decode again, so the symbols before the retune are lost, and at 4 kHz the first burst comes out with its first symbols wrong.
+
+First burst after a noise lead, I/Q tier 0 at 2.048 Msps, 30 starts per offset (3 sequences, 5 noise leads, 2 noise seeds), C/N 47 dB in 12.5 kHz:
+
+| Offset | Found, before | Found | Raw bits exact, before | Raw bits exact |
+|--------|---------------|-------|------------------------|----------------|
+| +2.5 kHz | 27/30 | 30/30 | 21/30 | 24/30 |
+| -2.5 kHz | 24/30 | 24/30 | 12/30 | 12/30 |
+| +3 kHz | 12/30 | 30/30 | 9/30 | 15/30 |
+| -3 kHz | 12/30 | 30/30 | 9/30 | 24/30 |
+| +4 kHz | 12/30 | 30/30 | 0/30 | 0/30 |
+| -4 kHz | 6/30 | 30/30 | 0/30 | 0/30 |
+
+- At -2.5 kHz the carrier is inside the AFC range, so the spectrum hunt does not retune.
+- On 1,200 s of noise, 600 s steady and 600 s with 2x steps of the noise power every 0.3 s, the estimate after a power rise retuned 0 times.
+- `TestRxTier0FirstBurstAtOffset` in `v2/rf` checks that the first burst is found at 2.5, 3 and 4 kHz.
+
 ## The floors
 
 Both floors give a genie receiver the timing, the carrier, the noise level and every transmitted bit outside the payload. It also gets the side information that the tiers use: the color code for the EMB and slot type, and the embedded LC of the earlier superframes of the call.

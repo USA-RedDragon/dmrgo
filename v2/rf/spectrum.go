@@ -11,6 +11,12 @@ const (
 	fftBits    = 8
 	specFrames = 96
 	specBlocks = 8
+	specQuick  = 3
+	specRise   = 2
+	specRearm  = 1.5
+	specPowerN = 48
+	specFloorN = 4800
+	specSettle = 480
 	channelHz  = 12500.0
 )
 
@@ -47,6 +53,12 @@ type spectrum struct {
 	Hz, CN  float64
 	OK      bool
 	ready   bool
+	pw      float32
+	floor   float32
+	quick   int
+	armed   bool
+	settled int
+	fast    bool
 }
 
 func (s *spectrum) reset() {
@@ -66,6 +78,9 @@ func newSpectrum(rate float64) *spectrum {
 }
 
 func (s *spectrum) push(v complex64) bool {
+	if s.fast {
+		s.onset(v)
+	}
 	s.hist[s.fill] = v
 	s.fill++
 	if s.fill < fftSize {
@@ -84,6 +99,10 @@ func (s *spectrum) push(v complex64) bool {
 	s.fill = fftSize / 2
 	s.frames++
 	switch {
+	case s.quick > 0 && s.frames == s.quick:
+		s.quick = 0
+		s.estimate()
+		return true
 	case s.frames == specFrames:
 		s.estimateBlocks()
 		clear(s.power)
@@ -94,6 +113,25 @@ func (s *spectrum) push(v complex64) bool {
 		return true
 	}
 	return false
+}
+
+func (s *spectrum) onset(v complex64) {
+	s.pw += (real(v)*real(v) + imag(v)*imag(v) - s.pw) * (1.0 / specPowerN)
+	switch {
+	case s.settled < specSettle:
+		if s.settled == 0 {
+			s.quick = specQuick
+		}
+		s.settled++
+		s.floor = s.pw
+	case s.armed && s.pw > specRise*s.floor:
+		s.armed = false
+		clear(s.power)
+		s.frames, s.quick = 0, specQuick
+	default:
+		s.armed = s.armed || s.pw < specRearm*s.floor
+		s.floor += (s.pw - s.floor) * (1.0 / specFloorN)
+	}
 }
 
 func (s *spectrum) estimateBlocks() {

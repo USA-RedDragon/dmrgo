@@ -352,6 +352,9 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		r.d.ext = x
 		r.attachRefill(x)
 	}
+	if r.spec != nil {
+		r.spec.fast = !opt.SoftExt
+	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
