@@ -310,7 +310,7 @@ func (p *discPhase) move(hz float32) {
 }
 
 func (p *discPhase) lock() {
-	p.fitN, p.seen = 0, true
+	p.fitN, p.seen, p.cal = 0, true, false
 	c := p.c
 	g := float64(c.audio.gain)
 	unit := p.unit

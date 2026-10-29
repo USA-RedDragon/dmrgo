@@ -56,3 +56,17 @@ func TestDiscTier2Weak(t *testing.T) {
 		}
 	}
 }
+
+func TestDiscTier2FalseLockBeforeStream(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 30)
+	a := discAudio(cleanBaseband(slots, 1400).noisy(12, 29363428), benchAudioHz)
+	got := receiveDisc(t, a, benchAudioHz, Tier2)
+	if len(got) == 0 || got[0].Seconds >= benchPad || got[len(got)-1].Stream < 2 {
+		t.Fatal("no false lock in the noise before the stream")
+	}
+	lost := func(b []Burst) int { s := scoreBench(truth, b)["ambe"]; return s.Truth - s.Exact }
+	if n, n1 := lost(got), lost(receiveDisc(t, a, benchAudioHz, Tier1)); n > n1 {
+		t.Errorf("%d voice frames lost after a false lock at 12 dB, %d with Tier1", n, n1)
+	}
+}
