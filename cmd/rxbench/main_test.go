@@ -122,3 +122,28 @@ func binomialAtMost(k, n int, p float64) float64 {
 	}
 	return sum
 }
+
+const realtimeBudgetNs = 20e6
+
+func TestRealtimeTiersWithinBudget(t *testing.T) {
+	t.Parallel()
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("cannot find the rxbench source directory")
+	}
+	d, err := load(filepath.Join(filepath.Dir(thisFile), "..", "..", "v2/rf/testdata"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tr := range d.bench.Tiers {
+		if tr.Tier > 2 {
+			continue
+		}
+		if tr.WorstNs <= 0 {
+			t.Errorf("%s tier %d: no worst-case CPU in the data", tr.Mode, tr.Tier)
+		}
+		if tr.WorstNs >= realtimeBudgetNs {
+			t.Errorf("%s tier %d: worst-case CPU %.1f ms per second of signal, budget 20 ms", tr.Mode, tr.Tier, tr.WorstNs/1e6)
+		}
+	}
+}

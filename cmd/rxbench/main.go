@@ -126,6 +126,7 @@ type tier struct {
 	Tier         int     `json:"tier"`
 	Full         []point `json:"full"`
 	NsPerSecond  float64 `json:"ns_per_second"`
+	WorstNs      float64 `json:"worst_ns_per_second"`
 	RAMBytes     int     `json:"ram_bytes"`
 	Allocs       float64 `json:"allocs"`
 	FalsePerHour float64 `json:"false_per_hour"`
@@ -312,10 +313,10 @@ func f1(v float64) string { return strconv.FormatFloat(math.Round(v*10)/10+0, 'f
 
 func renderBlock(d data) []byte {
 	var b strings.Builder
-	b.WriteString("\n| Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU per second of signal | RAM |\n")
-	b.WriteString("|------|-------|-------|---------------|------|---------------|--------------------------|-----|\n")
+	b.WriteString("\n| Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU at C/N 6 dB | Worst-case CPU | RAM |\n")
+	b.WriteString("|------|-------|-------|---------------|------|---------------|-----------------|----------------|-----|\n")
 	keys := []string{keyAMBE, keyRate12, keyCSBK, keyRate34}
-	row := make([]string, 0, 2+len(keys)+2)
+	row := make([]string, 0, 2+len(keys)+3)
 	row = append(row, "Best possible (4FSK floor)", "-")
 	for _, k := range keys {
 		cell := "-"
@@ -324,18 +325,18 @@ func renderBlock(d data) []byte {
 		}
 		row = append(row, cell)
 	}
-	b.WriteString("| " + strings.Join(append(row, "-", "-"), " | ") + " |\n")
+	b.WriteString("| " + strings.Join(append(row, "-", "-", "-"), " | ") + " |\n")
 	for _, t := range d.bench.Tiers {
-		row := make([]string, 0, 2+len(keys)+2)
+		row := make([]string, 0, 2+len(keys)+3)
 		row = append(row, shortName(t), inputName(t))
 		for _, k := range keys {
 			row = append(row, dbCell(at90(tierCurve(t, k))))
 		}
-		row = append(row, msCell(t.NsPerSecond), ramCell(t.RAMBytes))
+		row = append(row, msCell(t.NsPerSecond), msCell(t.WorstNs), ramCell(t.RAMBytes))
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	b.WriteString("\n- Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.\n")
-	b.WriteString("- CPU is measured on an " + d.bench.Machine + ". RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs " + mcuAudio + " and low-rate I/Q tier 0 " + mcuIQLow + ".")
+	b.WriteString("- CPU is per second of signal, measured on an " + d.bench.Machine + ". Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs " + mcuAudio + " and low-rate I/Q tier 0 " + mcuIQLow + ".")
 	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
 		b.WriteString(" No tier allocates after it starts.")
 	}

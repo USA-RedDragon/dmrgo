@@ -1992,7 +1992,9 @@
      }
     }
    ],
-   "ns_per_second": 331306.5332756384,
+   "ns_per_second": 381346.48716527247,
+   "worst_ns_per_second": 482860.35625158297,
+   "worst_cn": 4,
    "ram_bytes": 1440,
    "allocs": 0
   },
@@ -3987,7 +3989,9 @@
      }
     }
    ],
-   "ns_per_second": 1051900.368590668,
+   "ns_per_second": 1053659.6853353076,
+   "worst_ns_per_second": 2692442.6701334217,
+   "worst_cn": 2,
    "ram_bytes": 50408,
    "allocs": 0
   },
@@ -5982,7 +5986,8 @@
      }
     }
    ],
-   "ns_per_second": 8164491.384125512,
+   "ns_per_second": 9523425.85294748,
+   "worst_ns_per_second": 14808056.322960816,
    "ram_bytes": 562616,
    "allocs": 0
   },
@@ -7977,7 +7982,8 @@
      }
     }
    ],
-   "ns_per_second": 8114247.052361327,
+   "ns_per_second": 18568958.992279503,
+   "worst_ns_per_second": 38379857.1238804,
    "ram_bytes": 1246520,
    "allocs": 0
   },
@@ -9972,7 +9978,9 @@
      }
     }
    ],
-   "ns_per_second": 410541.2496461139,
+   "ns_per_second": 415095.8003970946,
+   "worst_ns_per_second": 566638.4862938606,
+   "worst_cn": 2,
    "ram_bytes": 1424,
    "allocs": 0
   },
@@ -11967,7 +11975,9 @@
      }
     }
    ],
-   "ns_per_second": 2211005.6483084178,
+   "ns_per_second": 1617988.9727435836,
+   "worst_ns_per_second": 1828395.5713858106,
+   "worst_cn": 2,
    "ram_bytes": 18344,
    "allocs": 0
   },
@@ -13962,7 +13972,8 @@
      }
     }
    ],
-   "ns_per_second": 2818953.5617473414,
+   "ns_per_second": 1754376.1488201402,
+   "worst_ns_per_second": 3723708.2612322685,
    "ram_bytes": 110160,
    "allocs": 0
   },
@@ -15957,7 +15968,8 @@
      }
     }
    ],
-   "ns_per_second": 10874029.62474523,
+   "ns_per_second": 7361247.833425729,
+   "worst_ns_per_second": 9674461.844736371,
    "ram_bytes": 578368,
    "allocs": 0
   },
@@ -17952,7 +17964,9 @@
      }
     }
    ],
-   "ns_per_second": 726770997.5717366,
+   "ns_per_second": 515520775.76908296,
+   "worst_ns_per_second": 642604062.5220288,
+   "worst_cn": 4,
    "ram_bytes": 37294544,
    "allocs": 0
   }

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -107,6 +108,8 @@ type benchTier struct {
 	Fast         []benchPoint `json:"fast"`
 	Full         []benchPoint `json:"full,omitempty"`
 	NsPerSecond  float64      `json:"ns_per_second,omitempty"`
+	WorstNs      float64      `json:"worst_ns_per_second,omitempty"`
+	WorstCN      float64      `json:"worst_cn,omitempty"`
 	RAMBytes     int          `json:"ram_bytes"`
 	Allocs       float64      `json:"allocs"`
 	FalsePerHour float64      `json:"false_per_hour,omitempty"`
@@ -727,6 +730,10 @@ func TestRxBench(t *testing.T) {
 	} else if !full {
 		t.Fatal(err)
 	}
+	if os.Getenv("DMRRF_RXBENCH") == "cpu" {
+		benchCPUOnly(t, base)
+		return
+	}
 	slots, truth := benchStream(t, 6)
 	fs, ft := benchStream(t, 30)
 	sig, fsig, noise := cleanBaseband(slots, 1400), cleanBaseband(fs, 1400), cleanBaseband(nil, 0)
@@ -785,21 +792,9 @@ func TestRxBench(t *testing.T) {
 			continue
 		}
 		if full {
-			x := fsig.noisy(6, 1)
-			bt.Allocs = steadyAllocs(x, e)
+			bt.Allocs = steadyAllocs(fsig.noisy(6, 1), e)
 			bt.RAMBytes = receiverRAM(e)
-			var cpu float64
-			switch e.mode {
-			case benchAudio:
-				a := discAudio(x, benchAudioHz)
-				cpu = cpuSeconds(func() { receiveAudioTier(t, a, e.tier) })
-			case benchIQLow:
-				y := lowIQ(x, iq0LowHz)
-				cpu = cpuSeconds(func() { receiveLowIQ(y) })
-			default:
-				cpu = cpuSeconds(func() { receiveBaseband(x, e.tier) })
-			}
-			bt.NsPerSecond = cpu * 1e9 / (float64(len(x)) / basebandRate)
+			bt.NsPerSecond, bt.WorstNs, bt.WorstCN = benchCPU(t, fsig, e)
 		}
 		if have {
 			if !fast {
@@ -807,6 +802,7 @@ func TestRxBench(t *testing.T) {
 			}
 			if !full {
 				bt.Full, bt.NsPerSecond, bt.FalsePerHour, bt.Allocs, bt.RAMBytes = want.Full, want.NsPerSecond, want.FalsePerHour, want.Allocs, want.RAMBytes
+				bt.WorstNs, bt.WorstCN = want.WorstNs, want.WorstCN
 			}
 		}
 		out.Tiers = append(out.Tiers, bt)
@@ -819,6 +815,63 @@ func TestRxBench(t *testing.T) {
 		if err := os.WriteFile(rxbenchPath, append(b, '\n'), 0o600); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+var benchCPUGrid = []float64{0, 2, 4, 6, 8, 12, 20, 40}
+
+const benchCPURuns = 3
+
+func benchCPU(t *testing.T, sig benchSignal, e benchEntry) (at6, worst, worstCN float64) {
+	t.Helper()
+	for _, cn := range benchCPUGrid {
+		x := sig.noisy(cn, 1)
+		var f func()
+		switch e.mode {
+		case benchAudio:
+			a := discAudio(x, benchAudioHz)
+			f = func() { receiveAudioTier(t, a, e.tier) }
+		case benchIQLow:
+			y := lowIQ(x, iq0LowHz)
+			f = func() { receiveLowIQ(y) }
+		default:
+			f = func() { receiveBaseband(x, e.tier) }
+		}
+		best := time.Duration(math.MaxInt64)
+		for range benchCPURuns {
+			start := time.Now()
+			f()
+			best = min(best, time.Since(start))
+		}
+		ns := float64(best) / (float64(len(x)) / basebandRate)
+		if cn == 6 {
+			at6 = ns
+		}
+		if ns > worst {
+			worst, worstCN = ns, cn
+		}
+	}
+	return at6, worst, worstCN
+}
+
+func benchCPUOnly(t *testing.T, base benchData) {
+	fs, _ := benchStream(t, 30)
+	fsig := cleanBaseband(fs, 1400)
+	out := base
+	out.Tiers = slices.Clone(base.Tiers)
+	for i := range out.Tiers {
+		bt := &out.Tiers[i]
+		e := benchEntry{bt.Mode, Tier0 + Tier(bt.Tier)}
+		if benchTierSelected(e) {
+			bt.NsPerSecond, bt.WorstNs, bt.WorstCN = benchCPU(t, fsig, e)
+		}
+	}
+	b, err := json.MarshalIndent(out, "", " ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(rxbenchPath, append(b, '\n'), 0o600); err != nil {
+		t.Fatal(err)
 	}
 }
 
