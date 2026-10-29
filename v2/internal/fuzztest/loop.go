@@ -1,5 +1,5 @@
-// Package fuzztest holds the fuzz helpers that the tests of more than
-// one package share. Only tests import it.
+// Package fuzztest holds the fuzz and robustness helpers that the tests
+// of more than one package share. Only tests import it.
 package fuzztest
 
 // Loop gives the repeat window of a script of n steps. The run plays
