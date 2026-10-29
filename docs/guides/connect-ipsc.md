@@ -15,7 +15,7 @@ Register a peer with the master of an IPSC system over UDP, get the peer list, k
 Run the example from the top of the repository:
 
 ```sh
-go test -C v2 -run 'ExamplePeer$' -v ./transport/ipsc/ipscsession
+go test -C v2 -run 'ExamplePeer_loopback$' -v ./transport/ipsc/ipscsession
 ```
 
 ## Steps
@@ -52,7 +52,7 @@ An IPSC user packet carries the decoded payload of a burst in place of the 264-b
 
 The registration with the master, the peer list, and the voice LC header of a call at the master:
 
-<!-- dmrgo:output test=ipscsession.ExamplePeer -->
+<!-- dmrgo:output test=ipscsession.ExamplePeer_loopback -->
 <!-- /dmrgo:output -->
 
 A voice LC header and a voice burst from a Motorola XPR 8400:

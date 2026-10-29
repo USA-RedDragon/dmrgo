@@ -21,7 +21,7 @@ The MMDVM network protocol and HBRP are different protocols. Pick the dialect th
 Run the example from the top of the repository:
 
 ```sh
-go test -C v2 -run ExamplePeer -v ./transport/dmrd/dmrdsession
+go test -C v2 -run ExamplePeer_loopback -v ./transport/dmrd/dmrdsession
 ```
 
 ## Steps
@@ -60,7 +60,7 @@ Once the Peer is up, send each burst in a DMRD packet on the same socket. The Ma
 
 The login in each dialect, then the voice LC header of a call at the master:
 
-<!-- dmrgo:output test=dmrdsession.ExamplePeer -->
+<!-- dmrgo:output test=dmrdsession.ExamplePeer_loopback -->
 <!-- /dmrgo:output -->
 
 The DMRD packet and the hint of its burst:

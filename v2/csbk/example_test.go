@@ -125,10 +125,10 @@ func ExampleNewResponder_configError() {
 	// Address
 }
 
-// ExampleResponder answers a Motorola radio check and a call alert from
+// ExampleResponder_callAlert answers a Motorola radio check and a call alert from
 // radio 3140598 to radio 3191868 on a direct mode channel, and the
 // Requester reports each answer.
-func ExampleResponder() {
+func ExampleResponder_callAlert() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
 	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3191868, ColorCode: 1, Source: layer2.SyncSourceMS})
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)

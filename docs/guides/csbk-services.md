@@ -70,7 +70,7 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 
 The radio check and the call alert, each answered:
 
-<!-- dmrgo:output test=csbk.ExampleResponder -->
+<!-- dmrgo:output test=csbk.ExampleResponder_callAlert -->
 <!-- /dmrgo:output -->
 
 A radio check that no radio answers:

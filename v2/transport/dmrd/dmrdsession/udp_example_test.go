@@ -14,10 +14,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
 
-// ExamplePeer logs repeater 3149999 into a master over UDP on the loopback
+// ExamplePeer_loopback logs repeater 3149999 into a master over UDP on the loopback
 // interface, first with the MMDVM network protocol and then with HBRP, and
 // sends the voice LC header of a call to the master once the login is up.
-func ExamplePeer() {
+func ExamplePeer_loopback() {
 	call, _ := hex.DecodeString("444d52440030b43c00005b003010afa1506290d020580b4015ec0f6871000d005c4d5d7f77fd757361a416203d52352421818502770000")
 	for _, dialect := range []dmrd.Dialect{dmrd.DialectMMDVM, dmrd.DialectHBRP} {
 		if err := login(dialect, call); err != nil {

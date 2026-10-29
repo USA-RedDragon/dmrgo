@@ -14,10 +14,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
 
-// ExamplePeer registers peer 314926 with a master over UDP on the loopback
+// ExamplePeer_loopback registers peer 314926 with a master over UDP on the loopback
 // interface, with the authentication key 123456789abcdef1234, and sends
 // the master the voice LC header of a call once it is registered.
-func ExamplePeer() {
+func ExamplePeer_loopback() {
 	if err := register(); err != nil {
 		fmt.Println(err)
 	}
