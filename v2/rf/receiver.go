@@ -32,17 +32,21 @@ const (
 	// check fails by ordered statistics, C0 and C1 of each voice frame by
 	// soft ML, the embedded LC of each superframe over its four fragments
 	// and the earlier superframes of the call, and LookbackSlots slots
-	// before the first lock decoded again. It detects the bursts that they
-	// decode, and each rate 3/4 block, from the symbols of the
-	// discriminator with the correlation of their noise. It keeps about
-	// 35 KB on audio and 50 KB on I/Q.
+	// before the first lock decoded again. On I/Q it keeps the input
+	// samples of those slots, and when it tuned to the carrier before the
+	// lock it filters them again at the new tune before it decodes them. It
+	// detects the bursts that they decode, and each rate 3/4 block, from
+	// the symbols of the discriminator with the correlation of their noise.
+	// It keeps about 35 KB on audio and 108 KB on I/Q, 58 KB of that for
+	// the input samples.
 	Tier1
 	// Tier2 adds to the soft decoders of Tier1 the detection again of the
 	// bursts with a trellis over three symbols that carries the carrier
 	// phase with each survivor, from the SYNC or EMB of the burst, within a
 	// compute budget per slot: on I/Q from the samples at 24 kHz, on audio
 	// from the carrier phase that it sums from the discriminator samples.
-	// It holds each burst one slot longer and keeps about 500 KB.
+	// It holds each burst one slot longer and keeps about 550 KB on audio
+	// and 565 KB on I/Q, 75 KB of that for the input samples.
 	Tier2
 	// Tier3 on I/Q detects over a window of three symbols with one of 52
 	// carrier phases in the trellis state, in two passes, detects each

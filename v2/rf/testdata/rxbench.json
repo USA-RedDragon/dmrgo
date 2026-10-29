@@ -13963,7 +13963,7 @@
     }
    ],
    "ns_per_second": 2818953.5617473414,
-   "ram_bytes": 50768,
+   "ram_bytes": 110160,
    "allocs": 0
   },
   {
@@ -13976,23 +13976,23 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 41
+       "exact": 43
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 78
+       "exact": 80
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2448
+       "exact": 2450
       },
       "csbk": {
        "truth": 6,
-       "exact": 4
+       "exact": 5
       },
       "elc": {
        "truth": 6,
-       "exact": 4
+       "exact": 5
       },
       "emb": {
        "truth": 30,
@@ -14000,11 +14000,11 @@
       },
       "header": {
        "truth": 13,
-       "exact": 4
+       "exact": 6
       },
       "lc": {
        "truth": 2,
-       "exact": 1
+       "exact": 0
       },
       "rate1": {
        "truth": 3,
@@ -14016,7 +14016,7 @@
       },
       "rate1_bit": {
        "truth": 576,
-       "exact": 494
+       "exact": 486
       },
       "rate34": {
        "truth": 6,
@@ -14024,11 +14024,11 @@
       },
       "slottype": {
        "truth": 44,
-       "exact": 43
+       "exact": 44
       },
       "sync": {
        "truth": 50,
-       "exact": 49
+       "exact": 50
       }
      }
     },
@@ -15958,7 +15958,7 @@
     }
    ],
    "ns_per_second": 10874029.62474523,
-   "ram_bytes": 502080,
+   "ram_bytes": 578368,
    "allocs": 0
   },
   {
@@ -17953,7 +17953,7 @@
     }
    ],
    "ns_per_second": 726770997.5717366,
-   "ram_bytes": 37215760,
+   "ram_bytes": 37294544,
    "allocs": 0
   }
  ]

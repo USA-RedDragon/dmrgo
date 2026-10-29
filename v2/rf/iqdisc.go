@@ -300,6 +300,7 @@ type iqRx struct {
 	afcPull   float32
 	yHist     []complex64
 	yN        int64
+	refill    *iqRefill
 	tunes     *[iqTunes]iqTune
 	nTunes    int
 	maxHz     float32
@@ -349,6 +350,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 			}
 		}
 		r.d.ext = x
+		r.attachRefill(x)
 	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
@@ -359,6 +361,9 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 }
 
 func (r *iqRx) sample(v complex64) {
+	if r.refill != nil {
+		r.keepRaw(v)
+	}
 	if r.spec != nil {
 		r.hunt(v)
 	}
@@ -483,6 +488,7 @@ func (r *iqRx) tuneWith(hz, dc, lim float32) {
 		return
 	}
 	r.conv.tune(r.conv.hz + hz)
+	r.noteTune(hz)
 	if r.tunes != nil {
 		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN - 1, hz: r.conv.hz}
 		r.nTunes++

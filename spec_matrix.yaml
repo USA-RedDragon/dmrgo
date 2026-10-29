@@ -119,6 +119,8 @@ ignore_files:
   - v2/rf/iqformat.go
   - v2/rf/iqlow.go
   - v2/rf/iqlowhalf_dsp.go
+  - v2/rf/iqrefill.go
+  - v2/rf/iqrefill_tinygo.go
   - v2/rf/lagtab.go
   - v2/rf/lean.go
   - v2/rf/leanfec.go

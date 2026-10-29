@@ -55,6 +55,7 @@ type softExt struct {
 	sum             [4][embBits]int16
 	out             [4]layer2.RawBurst
 	acq             []int16
+	refill          func(*leanCore, int64)
 	lookback        int
 	ring            [leanRing]int8
 	lockSym         int64
@@ -732,6 +733,13 @@ func (x *softExt) locked(c *leanCore, d float32) {
 func (x *softExt) firstSlot(c *leanCore) {
 	if x.lookback == 0 || c.forced && c.devScale <= leanMinScale {
 		return
+	}
+	if x.refill != nil {
+		end := x.lockN
+		if c.hunt {
+			end = c.n
+		}
+		x.refill(c, end)
 	}
 	sps := 2 * c.tm.step
 	last := x.lockSym
