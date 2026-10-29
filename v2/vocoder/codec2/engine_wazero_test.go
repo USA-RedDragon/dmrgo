@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/tetratelabs/wazero"
@@ -92,25 +93,97 @@ func wazeroCompiles() bool {
 	return runtime.GOARCH == "amd64" || runtime.GOARCH == "arm64"
 }
 
+var engineModes = []Mode{Mode2400, Mode3200}
+
+var engineCorpus = sync.OnceValue(func() []int16 { return corpus(300) })
+
+func engineKeys() []string {
+	ops := []string{"silence", "encode", "decode", "auto"}
+	keys := make([]string, 1, 1+len(ops)*len(engineModes))
+	keys[0] = "corpus"
+	for _, mode := range engineModes {
+		for _, op := range ops {
+			keys = append(keys, strconv.Itoa(int(mode))+"/"+op)
+		}
+	}
+	return keys
+}
+
+func digestFrames(frames [][9]byte) string {
+	h := sha256.New()
+	for _, f := range frames {
+		h.Write(f[:])
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func engineDigest(t *testing.T, m *Module, key string, frames func(Mode) [][9]byte) string {
+	t.Helper()
+	if key == "corpus" {
+		return digestPCM(engineCorpus())
+	}
+	ms, op, _ := strings.Cut(key, "/")
+	n, err := strconv.Atoi(ms)
+	if err != nil {
+		t.Fatalf("key %q", key)
+	}
+	mode := Mode(n)
+	switch op {
+	case "silence":
+		s := newCodecOf(t, Config{Mode: mode, WASM: m}).Silence()
+		return digestBytes(s[:])
+	case "encode":
+		return digestFrames(encodeAll(t, newCodecOf(t, Config{Mode: mode, WASM: m}), engineCorpus()))
+	case "decode":
+		return digestPCM(decodeAll(t, newCodecOf(t, Config{Mode: mode, WASM: m}), frames(mode)))
+	case "auto":
+		return digestPCM(decodeAll(t, newCodecOf(t, Config{WASM: m}), frames(mode)))
+	}
+	t.Fatalf("key %q", key)
+	return ""
+}
+
 func engineDigests(t *testing.T, m *Module) map[string]string {
 	t.Helper()
-	pcm := corpus(300)
-	d := map[string]string{"corpus": digestPCM(pcm)}
-	for _, mode := range []Mode{Mode2400, Mode3200} {
-		c := newCodecOf(t, Config{Mode: mode, WASM: m})
-		s := c.Silence()
-		key := strconv.Itoa(int(mode)) + "/"
-		d[key+"silence"] = digestBytes(s[:])
-		frames := encodeAll(t, c, pcm)
-		h := sha256.New()
-		for _, f := range frames {
-			h.Write(f[:])
-		}
-		d[key+"encode"] = hex.EncodeToString(h.Sum(nil))
-		d[key+"decode"] = digestPCM(decodeAll(t, c, frames))
-		d[key+"auto"] = digestPCM(decodeAll(t, newCodecOf(t, Config{WASM: m}), frames))
+	enc := map[Mode][][9]byte{}
+	for _, mode := range engineModes {
+		enc[mode] = encodeAll(t, newCodecOf(t, Config{Mode: mode, WASM: m}), engineCorpus())
+	}
+	d := map[string]string{}
+	for _, k := range engineKeys() {
+		d[k] = engineDigest(t, m, k, func(mode Mode) [][9]byte { return enc[mode] })
 	}
 	return d
+}
+
+type goldenFrames struct {
+	once   sync.Once
+	frames [][9]byte
+	err    error
+}
+
+func (g *goldenFrames) get(mode Mode, want string) ([][9]byte, error) {
+	g.once.Do(func() {
+		c, err := New(&Config{Mode: mode})
+		if err != nil {
+			g.err = err
+			return
+		}
+		defer func() { _ = c.Close() }()
+		pcm := engineCorpus()
+		for off := 0; off < len(pcm); off += FrameSamples {
+			slot, err := c.Encode(pcm[off : off+FrameSamples])
+			if err != nil {
+				g.err = err
+				return
+			}
+			g.frames = append(g.frames, slot)
+		}
+		if got := digestFrames(g.frames); got != want {
+			g.err = errors.New("embedded engine frames digest " + got + ", want " + want)
+		}
+	})
+	return g.frames, g.err
 }
 
 func digestBytes(b []byte) string {
@@ -173,17 +246,36 @@ func TestEnginesMatch(t *testing.T) {
 	if wazeroCompiles() || env == "interpreter" {
 		engines = append(engines, engine{"interpreter", interpretedModule})
 	}
+	golden := map[Mode]*goldenFrames{}
+	for _, mode := range engineModes {
+		golden[mode] = &goldenFrames{}
+	}
+	keys := engineKeys()
+	if len(keys) != len(want) {
+		t.Errorf("%d digests, %s has %d", len(keys), enginesGolden, len(want))
+	}
 	for _, e := range engines {
 		t.Run(e.name, func(t *testing.T) {
 			t.Parallel()
-			got := engineDigests(t, e.m(t))
-			for _, k := range slices.Sorted(maps.Keys(want)) {
-				if got[k] != want[k] {
-					t.Errorf("%s: digest %s, want %s from the interpreter", k, got[k], want[k])
-				}
-			}
-			if len(got) != len(want) {
-				t.Errorf("%d digests, %s has %d", len(got), enginesGolden, len(want))
+			m := e.m(t)
+			for _, k := range keys {
+				t.Run(strings.ReplaceAll(k, "/", "_"), func(t *testing.T) {
+					t.Parallel()
+					frames := func(mode Mode) [][9]byte {
+						f, err := golden[mode].get(mode, want[strconv.Itoa(int(mode))+"/encode"])
+						if err != nil {
+							t.Fatal(err)
+						}
+						return f
+					}
+					w, ok := want[k]
+					if !ok {
+						t.Fatalf("%s has no digest %s", enginesGolden, k)
+					}
+					if got := engineDigest(t, m, k, frames); got != w {
+						t.Errorf("%s: digest %s, want %s from the interpreter", k, got, w)
+					}
+				})
 			}
 		})
 	}
