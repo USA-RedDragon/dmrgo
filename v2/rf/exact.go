@@ -265,14 +265,18 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		seg := x[k*sps : (k+1)*sps]
 		corr := t.corr[k*m.windows : (k+1)*m.windows]
 		var cm float32
-		for w := range m.windows {
-			tp := m.tpl[w*sps : (w+1)*sps]
-			var c complex64
+		for w := 0; w < m.windows; w += 2 {
+			tp0, tp1 := m.tpl[w*sps:(w+1)*sps], m.tpl[(w+1)*sps:(w+2)*sps]
+			tp0, tp1 = tp0[:len(seg)], tp1[:len(seg)]
+			var c0, c1 complex64
 			for j, v := range seg {
-				c += v * tp[j]
+				c0 += v * tp0[j]
+				c1 += v * tp1[j]
 			}
-			corr[w] = c * rot0 * complex(scale, 0)
-			cm = max(cm, real(corr[w])*real(corr[w])+imag(corr[w])*imag(corr[w]))
+			c0 = c0 * rot0 * complex(scale, 0)
+			c1 = c1 * rot0 * complex(scale, 0)
+			corr[w], corr[w+1] = c0, c1
+			cm = max(cm, real(c0)*real(c0)+imag(c0)*imag(c0), real(c1)*real(c1)+imag(c1)*imag(c1))
 		}
 		a := float32(math.Sqrt(float64(cm)))
 		t.beam[k] = exactBeam * max(1, a)
