@@ -473,7 +473,8 @@ func (r *iqRx) hunt(v complex64) {
 	}
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
-	r.afcAvg, r.afcPull = 0, 0
+	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
+	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	dc := float32(0)
 	if r.d.locked {
 		dc = r.d.f.dc - (hz-r.conv.hz)*r.d.f.gain*iqUnitsPerHz
