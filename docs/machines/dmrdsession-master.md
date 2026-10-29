@@ -4,7 +4,7 @@ This page covers the dmrdsession Master, the state machine of the master side of
 
 ## What it does
 
-A [Master](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master) is the master side of the session of one repeater. It speaks one of two dialects of package [dmrd](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd): the MMDVM network protocol of MMDVMHost and DMRGateway ([DialectMMDVM](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DialectMMDVM)), or the HomeBrew Repeater Protocol in the hex text form of its 2015 specification and of BrandMeister ([DialectHBRP](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DialectHBRP)). It answers each login step. It reports the RPTL and the RPTC to you before it answers them, so that you decide which repeaters log in and with which password. It takes the RPTO of a logged-in repeater with an RPTACK, as DMRGateway waits for it before it sends traffic. It answers a packet from a repeater that is not logged in with MSTNAK. It ends the session after LoginTimeout without a packet during the login, and Timeout after it. It does no I/O. (DL5DI, G4KLX and DG1HT, IPSC Protocol Specs for homebrew DMR repeater, 2015-07-26; HBlink3 1db2730 hblink.py master_maintenance_loop; DMRGateway ee79d38)
+A [Master](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master) is the master side of the session of one repeater. It speaks one of two dialects of package [dmrd](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd): the MMDVM network protocol of MMDVMHost and DMRGateway ([DialectMMDVM](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DialectMMDVM)), or the HomeBrew Repeater Protocol in the hex text form of its 2015 specification and of BrandMeister ([DialectHBRP](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DialectHBRP)). It answers each login step. It reports the RPTL and the RPTC to you before it answers them, so that you decide which repeaters log in and with which password. It takes the RPTO of a logged-in repeater with an RPTACK, as DMRGateway waits for it before it sends traffic. It answers a packet from a repeater that is not logged in with MSTNAK. It ends the session when the login does not finish within LoginTimeout of the first RPTL, and after Timeout without a packet once the repeater is logged in. It does no I/O. (DL5DI, G4KLX and DG1HT, IPSC Protocol Specs for homebrew DMR repeater, 2015-07-26; HBlink3 1db2730 hblink.py master_maintenance_loop; DMRGateway ee79d38)
 
 ## When to use it
 
@@ -19,7 +19,7 @@ Pass a [MasterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trans
 |---|---|---|---|
 | `Dialect` | `dmrd.Dialect` | zero value | Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. |
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. |
-| `LoginTimeout` | `time.Duration` | not machine-readable; see the description | LoginTimeout is the time after the first RPTL of a login, and after the RPTK that proves the password, in which the repeater must finish its login, or the Master ends the session. A repeated RPTL does not restart it. 0 means LoginTimeoutDefault. |
+| `LoginTimeout` | `time.Duration` | not machine-readable; see the description | LoginTimeout is the time after the first RPTL of a login in which the repeater must finish its login, or the Master ends the session. A repeated RPTL or RPTK does not restart it. 0 means LoginTimeoutDefault. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
@@ -31,13 +31,13 @@ States of [`Master`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 | State | Meaning | Seen in tests |
 |---|---|---|
-| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateIdle) | StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge that has not heard its peer within Timeout. | yes, first state |
+| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateIdle) | StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge, enhanced or not, before the first packet with a good signature and after Timeout without one. | yes, first state |
 | [`StateWait`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateWait) | StateWait is a Peer that waits to log in again. | no |
 | [`StateLogin`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateLogin) | StateLogin is a Peer that sent RPTL, or a Master that waits for Admit or Refuse. | yes |
 | [`StateAuth`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateAuth) | StateAuth is a Peer that sent RPTK, or a Master that sent the salt. | yes |
 | [`StateConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateConfig) | StateConfig is a Peer that sent RPTC, or a Master that waits for it or for Accept or Refuse. | yes |
 | [`StateOptions`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateOptions) | StateOptions is a Peer that sent RPTO. | no |
-| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateRunning) | StateRunning is a logged-in session, or a Bridge that heard its peer within Timeout. | yes |
+| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateRunning) | StateRunning is a logged-in session, or a Bridge, enhanced or not, whose peer sent a packet with a good signature within Timeout. | yes |
 
 Transitions seen in tests:
 
@@ -49,7 +49,7 @@ Transitions seen in tests:
 | StateLogin | `Admit` | StateAuth |
 | StateAuth | `Packet`, `Tick` | StateIdle |
 | StateAuth | `Packet` | StateConfig |
-| StateConfig | `Accept`, `Refuse` | StateIdle |
+| StateConfig | `Accept`, `Refuse`, `Tick` | StateIdle |
 | StateConfig | `Accept` | StateRunning |
 | StateRunning | `Close`, `Packet`, `Reset`, `Tick` | StateIdle |
 
@@ -75,7 +75,7 @@ Give each method a slice with capacity <!-- dmrgo:const pkg=transport/dmrd/dmrds
 
 ## Timers
 
-- LoginTimeout: the time after the first RPTL, and after the RPTK that proves the password, in which the repeater must finish its login. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=LoginTimeoutDefault -->`15s`<!-- /dmrgo:const -->, the time after which an HBlink3 master drops a repeater. A repeated RPTL does not restart it.
+- LoginTimeout: the time after the first RPTL in which the repeater must finish its login. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=LoginTimeoutDefault -->`15s`<!-- /dmrgo:const -->, the time after which an HBlink3 master drops a repeater. A repeated RPTL or RPTK does not restart it.
 - Timeout: the time without a packet from the repeater after which the Master ends the session. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->.
 
 Tick sends nothing when the session times out. A packet of the repeater after that gets MSTNAK, so the repeater logs in again.

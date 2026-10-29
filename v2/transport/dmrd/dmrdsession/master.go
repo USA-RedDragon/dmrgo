@@ -16,10 +16,10 @@ type MasterConfig struct {
 	// Timeout is the time without a packet from the repeater after which
 	// the Master ends the session. 0 means TimeoutDefault.
 	Timeout time.Duration
-	// LoginTimeout is the time after the first RPTL of a login, and
-	// after the RPTK that proves the password, in which the repeater must
-	// finish its login, or the Master ends the session. A repeated RPTL
-	// does not restart it. 0 means LoginTimeoutDefault.
+	// LoginTimeout is the time after the first RPTL of a login in which
+	// the repeater must finish its login, or the Master ends the session.
+	// A repeated RPTL or RPTK does not restart it. 0 means
+	// LoginTimeoutDefault.
 	LoginTimeout time.Duration
 }
 
@@ -332,7 +332,7 @@ func (m *Master) token(now time.Duration, b []byte, dst []Output) []Output {
 		dst = m.nak(dst, k.ID)
 		return m.down(dst, ReasonRefused)
 	}
-	m.state, m.timeoutAt = StateConfig, after(now, m.loginTimeout)
+	m.state = StateConfig
 	return m.acked(dst)
 }
 

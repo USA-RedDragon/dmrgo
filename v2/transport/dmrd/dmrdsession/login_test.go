@@ -33,16 +33,16 @@ func TestMasterLoginTimeout(t *testing.T) {
 	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
 	m2.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
 	m2.Admit(0, 7, []byte("pw"), nil)
-	m2.Packet(4*s, rptk(5, tok), nil)
-	if at, _ := m2.Deadline(); at != 9*s {
+	m2.Packet(2*s, rptk(5, tok), nil)
+	if at, _ := m2.Deadline(); at != 5*s {
 		t.Fatalf("config deadline %v", at)
 	}
-	m2.Packet(8*s, mmdvmConfig(5), nil)
-	if at, _ := m2.Deadline(); at != 9*s || m2.State() != dmrdsession.StateConfig {
+	m2.Packet(4*s, mmdvmConfig(5), nil)
+	if at, _ := m2.Deadline(); at != 5*s || m2.State() != dmrdsession.StateConfig {
 		t.Fatalf("deadline before Accept %v %v", at, m2.State())
 	}
-	m2.Accept(8*s, nil)
-	if at, _ := m2.Deadline(); at != 108*s || m2.State() != dmrdsession.StateRunning {
+	m2.Accept(4*s, nil)
+	if at, _ := m2.Deadline(); at != 104*s || m2.State() != dmrdsession.StateRunning {
 		t.Fatalf("running deadline %v %v", at, m2.State())
 	}
 	var ce *dmrgo.ConfigError
@@ -122,5 +122,27 @@ func TestMasterRepeatedRPTLDoesNotExtendLogin(t *testing.T) {
 	}
 	if at, _ := m.Deadline(); at != 21*s {
 		t.Fatalf("new attempt deadline %v", at)
+	}
+}
+
+func TestMasterRepeatedRPTKDoesNotExtendLogin(t *testing.T) {
+	t.Parallel()
+
+	s := time.Second
+	m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: 10 * s})
+	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
+	m.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
+	m.Admit(0, 7, []byte("pw"), nil)
+	for now := s; now < 10*s; now += s {
+		if out := m.Packet(now, rptk(5, tok), nil); len(out) != 1 || command(t, out[0].Packet, dmrd.DialectMMDVM) != dmrd.CommandRPTACK {
+			t.Fatalf("RPTK at %v: %+v", now, out)
+		}
+		if at, _ := m.Deadline(); at != 10*s {
+			t.Fatalf("deadline %v after the RPTK at %v", at, now)
+		}
+	}
+	out := m.Tick(10*s, nil)
+	if len(out) != 1 || out[0].Reason != dmrdsession.ReasonTimeout || out[0].State != dmrdsession.StateConfig || m.State() != dmrdsession.StateIdle {
+		t.Fatalf("half-open login kept %+v %v", out, m.State())
 	}
 }

@@ -25,8 +25,8 @@
 // answers the RPTL and the RPTC, takes the RPTO of a logged-in repeater
 // with an RPTACK, as DMRGateway waits for it before it sends traffic,
 // answers a packet from a repeater that is not logged in with MSTNAK, and
-// ends the session after LoginTimeout without a packet during the login and
-// Timeout after it.
+// ends the session when the login does not finish within LoginTimeout of
+// the first RPTL, and after Timeout without a packet once it is logged in.
 //
 // (DMRGateway ee79d38 DMRNetwork.cpp clock; MMDVMHost 7008c62
 // DMRDirectNetwork.cpp clock; DL5DI, G4KLX and DG1HT, IPSC Protocol Specs
