@@ -13,3 +13,18 @@
   - `DMRRF_RECORDINGS=<dir> go test -timeout 0 -run '^TestRxBenchRecordings$' ./rf` in v2 runs I/Q tiers 0 to 3 on the real recordings and writes `v2/rf/testdata/rxbench_recordings.json`, the data of the recordings table of [Receiver](rx/README.md). `<dir>` holds the `dmrgo-rfcap` and `ipsc2hbrp-rig` capture directories. The test needs `zstd`, and it is skipped when `DMRRF_RECORDINGS` is not set or the directory does not exist.
   - `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the transmitter margins into `v2/internal/fsktx/testdata/txmargins.json` and writes the tables of [Transmitter](tx/README.md). Without the flag the test fails when the tables differ from `minrate_gen.go` and that data. With `DMRGO_LONG=1` it measures the margins again and fails when they differ from the data.
   - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](allocation.md), and `DMRGO_README=check` fails when it differs.
+
+## Docs site
+
+`hack/docs-site/build.sh` builds an HTML site from `README.md` and `docs/`, one page per Markdown file, into `artifacts/docs-site/` (git ignores `artifacts/`). It needs pandoc 3.11 and no Go. Run it from any directory:
+
+```sh
+hack/docs-site/build.sh
+```
+
+Open `artifacts/docs-site/index.html` in a browser. A path as the first argument sets another output directory.
+
+- pandoc reads each page as GitHub-flavored Markdown (`-f gfm`), so tables, code blocks and heading anchors match GitHub.
+- `hack/docs-site/template.html` is the page around each doc. `hack/docs-site/site.lua` is a pandoc filter that rewrites links to other docs as links to their pages, links to other files of the repository as GitHub links, and copies each image into the output at the same relative path.
+- The page list comes from the Documentation list of `README.md`. A doc that the list does not name comes after it, by title. The build fails when the list names a file that is not a doc.
+- The package reference is the pkg.go.dev link of `README.md`.
