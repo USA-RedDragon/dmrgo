@@ -75,7 +75,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - Vocoders (`vocoder`): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Transcode voice](docs/guides/transcode-voice.md)).
 - FEC: every DMR code and CRC, each with one result type.
 - C API (`v2/capi`): libdmrgo, a shared or static library with the whole API in C.
-- No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [TinyGo](docs/targets/mcu.md)).
+- No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [Microcontrollers](docs/targets/mcu.md)).
 
 ## Documentation
 
@@ -86,9 +86,12 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - [Transmitter](docs/tx/README.md): the tiers, formats and rates, the regional limits and the measured margins.
 - [Transcode voice](docs/guides/transcode-voice.md): AMBE+2 FEC, the Codec2 backends and DVSI chips.
 - [Allocation](docs/concepts/allocation.md): where the library can allocate, and the checks.
-- [TinyGo](docs/targets/mcu.md): microcontroller builds.
+- Targets: [PC](docs/targets/pc.md), [Browser](docs/targets/browser.md), [Microcontrollers](docs/targets/mcu.md), [C API](docs/targets/c.md) and [GNU Radio](docs/targets/gnuradio.md).
+- [Go API](docs/reference/go-api.md) and [C header](docs/reference/c-api.md): the packages and the C declarations.
+- [Tools](docs/reference/tools.md): dmrrf and the commands that build the library and its docs.
 - [Tooling](docs/project/tooling.md): the generators and the checks of the generated pages.
 - [ETSI coverage](docs/reference/etsi.md): the status of each clause of ETSI TS 102 361.
+- [Versioning](docs/project/versioning.md), [v2.1 breaking changes](docs/project/breaking-v2.1.md) and [License](docs/project/license.md).
 
 ## Versioning
 
