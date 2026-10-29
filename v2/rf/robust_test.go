@@ -122,6 +122,7 @@ type rxCond struct {
 	dc                        complex128
 	audioGain, audioDC        float64
 	iqOnly, audioOnly, highCN bool
+	short                     bool
 }
 
 const (
@@ -138,29 +139,33 @@ func rxConds() []rxCond {
 		f(&c)
 		out = append(out, c)
 	}
-	add("clean", func(*rxCond) {})
+	// Conditions with short set act only at the first lock, so bs runs them on one superframe; ms stays long, as one payload is 4.5% of its one-superframe stream.
+	add("clean", func(c *rxCond) { c.short = true })
 	for _, s := range []float64{0.1, 0.5, 2} {
 		add(fmt.Sprintf("cw %.1f s", s), func(c *rxCond) { c.cw = s })
 	}
-	add("zeros 1 s", func(c *rxCond) { c.zero = 1 })
+	add("zeros 1 s", func(c *rxCond) { c.zero, c.short = 1, true })
 	add("step +20 dB", func(c *rxCond) { c.stepDB = 20 })
 	add("step -20 dB", func(c *rxCond) { c.stepDB = -20 })
 	add("fade -20 dB", func(c *rxCond) { c.fadeDB, c.highCN = -20, true })
-	add("level 1e-4", func(c *rxCond) { c.level, c.iqOnly = 1e-4, true })
+	add("level 1e-4", func(c *rxCond) { c.level, c.iqOnly, c.short = 1e-4, true, true })
 	add("level 1e4", func(c *rxCond) { c.level, c.iqOnly = 1e4, true })
-	add("u8 0.25", func(c *rxCond) { c.bytes, c.level, c.iqOnly = true, 0.25, true })
-	add("u8 3 LSB", func(c *rxCond) { c.bytes, c.level, c.iqOnly = true, 3.0/127.5, true })
-	add("u8 clip x2", func(c *rxCond) { c.bytes, c.level, c.iqOnly = true, 2, true })
-	add("u8 dc", func(c *rxCond) { c.bytes, c.level, c.dc, c.iqOnly = true, 0.25, complex(0.2, -0.15), true })
+	add("u8 0.25", func(c *rxCond) { c.bytes, c.level, c.iqOnly, c.short = true, 0.25, true, true })
+	add("u8 3 LSB", func(c *rxCond) { c.bytes, c.level, c.iqOnly, c.short = true, 3.0/127.5, true, true })
+	add("u8 clip x2", func(c *rxCond) { c.bytes, c.level, c.iqOnly, c.short = true, 2, true, true })
+	add("u8 dc", func(c *rxCond) {
+		c.bytes, c.level, c.dc, c.iqOnly, c.short = true, 0.25, complex(0.2, -0.15), true, true
+	})
 	add("u8 cw 0.5 s", func(c *rxCond) { c.bytes, c.level, c.cw, c.iqOnly = true, 0.25, 0.5, true })
 	add("u8 dc cw 0.5 s", func(c *rxCond) { c.bytes, c.level, c.dc, c.cw, c.iqOnly = true, 0.25, complex(0.2, -0.15), 0.5, true })
 	add("u8 step +20 dB", func(c *rxCond) { c.bytes, c.level, c.stepDB, c.iqOnly = true, 0.04, 20, true })
 	add("u8 step -20 dB", func(c *rxCond) { c.bytes, c.level, c.stepDB, c.iqOnly = true, 0.4, -20, true })
-	add("audio x0.02", func(c *rxCond) { c.audioGain, c.audioOnly = 0.02, true })
-	add("audio x25", func(c *rxCond) { c.audioGain, c.audioOnly = 25, true })
-	add("audio dc", func(c *rxCond) { c.audioDC, c.audioOnly = 12000, true })
+	add("audio x0.02", func(c *rxCond) { c.audioGain, c.audioOnly, c.short = 0.02, true, true })
+	add("audio x25", func(c *rxCond) { c.audioGain, c.audioOnly, c.short = 25, true, true })
+	add("audio dc", func(c *rxCond) { c.audioDC, c.audioOnly, c.short = 12000, true, true })
+	// Offsets of 3000 Hz and level 1e4 stay long: a DC-clamp or clip fault fails different border cells on one superframe.
 	for _, hz := range []float64{1000, 3000, -3000} {
-		add(fmt.Sprintf("offset %+.0f Hz", hz), func(c *rxCond) { c.offsetHz = hz })
+		add(fmt.Sprintf("offset %+.0f Hz", hz), func(c *rxCond) { c.offsetHz, c.short = hz, hz == 1000 })
 	}
 	add("drift 100 Hz/s", func(c *rxCond) { c.offsetHz, c.driftHz = -150, 100 })
 	for _, p := range []float64{50, -50, 200, -200} {
@@ -170,7 +175,8 @@ func rxConds() []rxCond {
 		add("late "+string(rune('A'+k)), func(c *rxCond) { c.late = k + 1 })
 	}
 	for _, g := range []float64{0.05, 0.15, 0.5, 1, 2} {
-		add(fmt.Sprintf("rekey %.2f s", g), func(c *rxCond) { c.gap = g })
+		// A rekey repeats the stream after the gap, so one superframe before and after it covers the relock.
+		add(fmt.Sprintf("rekey %.2f s", g), func(c *rxCond) { c.gap, c.short = g, true })
 	}
 	for _, j := range []float64{0.002, -0.002, 0.015} {
 		add(fmt.Sprintf("jump %+.0f ms", 1000*j), func(c *rxCond) { c.jump = j })
@@ -525,7 +531,7 @@ func rxEligible(in rxInput) rxInput {
 }
 
 func rxStreams(t testing.TB) map[string]rxTx {
-	return map[string]rxTx{"bs": rxBS(t, 3), "ms": rxMS(t, 3), "msj": rxMSCalls(t, 4)}
+	return map[string]rxTx{"bs": rxBS(t, 3), "ms": rxMS(t, 3), "msj": rxMSCalls(t, 4), "bs1": rxBS(t, 1)}
 }
 
 const (
@@ -598,9 +604,13 @@ func TestRxRobust(t *testing.T) {
 					if audio {
 						name += "/audio"
 					}
+					key := sn
+					if c.short && sn == "bs" {
+						key = "bs1"
+					}
 					t.Run(name, func(t *testing.T) {
 						t.Parallel()
-						in := rxBuild(streams[sn], c, cn, audio, rxSeed(sn+c.name))
+						in := rxBuild(streams[key], c, cn, audio, rxSeed(sn+c.name))
 						for _, e := range rxRecvs() {
 							if (e.mode == benchAudio) != audio {
 								continue
@@ -609,7 +619,7 @@ func TestRxRobust(t *testing.T) {
 								t.Parallel()
 								got := rxReceive(t, in, e)
 								sc := rxMatch(rxEligible(in), got)
-								base := baseline(t, baseKey{sn, cn, e, c.bytes})
+								base := baseline(t, baseKey{key, cn, e, c.bytes})
 								r := rxResult{stream: sn, cond: c.name, recv: e.name(), cn: cn, base: base,
 									ratio: float64(sc.exact) / float64(sc.total), found: sc.found, bound: sc.bound}
 								r.pass = r.ratio >= rxFloor*base && (c.name != conds[0].name || r.ratio >= rxCleanFloor)
