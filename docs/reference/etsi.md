@@ -1,6 +1,8 @@
 # ETSI TS 102 361 coverage
 
-Each row is a clause or a subclause. A clause that is only partly implemented is split into subclause rows, so a procedure without code shows as unimplemented. A clause that is not in the table is not claimed.
+This page gives the implementation and test status of the clauses of ETSI TS 102 361.
+
+`cmd/speccheck` writes the table from `spec_matrix.yaml`, which maps each clause to its source files and tests. [Tooling](../project/tooling.md) gives the commands. Each row is a clause or a subclause. A clause that is only partly implemented is split into subclause rows, so a procedure without code shows as unimplemented. A clause that is not in the table is not claimed.
 
 <!-- BEGIN ETSI COVERAGE -->
 
