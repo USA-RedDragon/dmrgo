@@ -404,6 +404,10 @@ func (r *Receiver) OffsetHz() float64 {
 }
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
+// Tier3 reads it from the fitted modulation index. The lower tiers read it
+// from the sync symbol levels after the channel filter, and the filter cuts
+// the edges of the FM spectrum, so the reading is low: about 1830 Hz for a
+// 1944 Hz signal on the center, and about 1740 to 1800 Hz 2 kHz off it.
 func (r *Receiver) DeviationHz() float64 {
 	if r == nil {
 		return 0
