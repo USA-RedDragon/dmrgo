@@ -14,7 +14,8 @@ const (
 	leanChunk           = 6
 	leanSyncEnd         = syncFirstSym + syncSymbols - 1
 	leanAcqSymbols      = leanSyncEnd + 1 - cachSymbols
-	leanAcqSamples      = (leanAcqSymbols*5/2 + 7 + 2) &^ 1
+	leanReplaySymbols   = leanSyncEnd + 1
+	leanAcqSamples      = (leanReplaySymbols*5/2 + 7 + 2) &^ 1
 	leanResample        = 0.7
 	leanCoarse          = 0.75
 	leanOverScale       = 2
@@ -748,7 +749,11 @@ func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols
 }
 
 func (r *leanCore) burstKept() bool {
-	return float32(leanAcqSymbols)*2*r.tm.step+4-r.lastAt <= float32(r.acqKept())
+	return r.keptSymbols(leanAcqSymbols)
+}
+
+func (r *leanCore) keptSymbols(n int) bool {
+	return float32(n)*2*r.tm.step+4-r.lastAt <= float32(r.acqKept())
 }
 
 func (r *leanCore) resampleStart(d float32) {
@@ -757,9 +762,13 @@ func (r *leanCore) resampleStart(d float32) {
 		r.tm.t += d
 		return
 	}
-	j := ringPos(r.ns - leanAcqSymbols)
-	for i := range leanAcqSymbols - syncSymbols {
-		x := r.keptAt(r.lastAt + d - float32(leanAcqSymbols-1-i)*sps)
+	n := leanAcqSymbols
+	if r.keptSymbols(leanReplaySymbols) {
+		n = leanReplaySymbols
+	}
+	j := ringPos(r.ns - int64(n))
+	for i := range n - syncSymbols {
+		x := r.keptAt(r.lastAt + d - float32(n-1-i)*sps)
 		r.ring[j] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
 		if j++; j == leanRing {
 			j = 0
