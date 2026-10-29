@@ -357,7 +357,7 @@ func renderBlock(d data) []byte {
 		b.WriteString(" No tier allocates after it starts.")
 	}
 	b.WriteString("\n")
-	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. They also take inverted audio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.\n")
+	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. They also take inverted audio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel. Its carrier must be less than 2.5 kHz from the center: the 9.6 kHz I/Q holds 4.8 kHz on each side, and at 2.5 kHz off 9.8 dB of the signal power, at 4 kHz 3.7 dB, falls outside the channel filter of the chip, so the bursts are not exact at any C/N.\n")
 	b.WriteString("- [The sweep](#the-sweep) gives the method and [The floors](#the-floors) the bounds.\n\n")
 	renderSensitivity(&b, d)
 	var rec []tier
