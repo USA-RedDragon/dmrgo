@@ -4063,7 +4063,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 107
+       "exact": 108
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -4071,7 +4071,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2699
+       "exact": 2700
       },
       "csbk": {
        "truth": 6,
@@ -6058,7 +6058,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 107
+       "exact": 108
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -6066,7 +6066,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2699
+       "exact": 2700
       },
       "csbk": {
        "truth": 6,

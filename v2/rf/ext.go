@@ -193,7 +193,7 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	fixed, data := b.Fixed, b.Data
 	x.repairAll(c, b, cc, ccOK)
 	coh := b.Data
-	if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
+	if x.voiceKnown(b) && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
 		x.repairAll(c, b, cc, ccOK)
 	} else {
 		x.dataPasses(c, b, cc, ccOK)

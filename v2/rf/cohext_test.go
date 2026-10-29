@@ -25,3 +25,22 @@ func TestCohExtVoice(t *testing.T) {
 		t.Errorf("whole voice frames: %.2f coherent, %.2f soft", coh, soft)
 	}
 }
+
+func TestCohTier2VoiceAboveEasySNR(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 30)
+	sig := cleanBaseband(slots, 1400)
+	lost := func(cn float64) int {
+		n := 0
+		for seed := range uint64(8) {
+			s := scoreBench(truth, receiveBaseband(sig.noisy(cn, seed+1), Tier2))["ambe"]
+			n += s.Truth - s.Exact
+		}
+		return n
+	}
+	n5, n6 := lost(5), lost(6)
+	t.Logf("Tier2 lost %d voice frames at C/N 5 dB, %d at 6 dB", n5, n6)
+	if n6 >= n5 {
+		t.Errorf("Tier2 lost %d voice frames at C/N 6 dB, %d at 5 dB", n6, n5)
+	}
+}
