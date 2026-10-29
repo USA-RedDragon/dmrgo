@@ -72,7 +72,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - Base station and trunking (`bs`, `trunk`): a two-slot repeater or hotspot, and Tier III trunking for the MS, a scanner and a single-site TSCC.
 - Network protocols (`transport/...`): the MMDVM network protocol, HBRP, OpenBridge, Motorola IPSC, Hytera IPMSC and the MMDVM serial protocol, with session machines and their authentication.
 - Radio (`rf`): a receiver of I/Q and FM discriminator audio in four tiers, from a microcontroller to a PC ([Receiver](docs/rx/README.md)), and a transmitter of I/Q and modulator audio that accepts only setups measured to keep the limits of a stated region and service ([Transmitter](docs/tx/README.md)).
-- Vocoders (`vocoder`): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Vocoders](docs/vocoders.md)).
+- Vocoders (`vocoder`): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Transcode voice](docs/guides/transcode-voice.md)).
 - FEC: every DMR code and CRC, each with one result type.
 - C API (`v2/capi`): libdmrgo, a shared or static library with the whole API in C.
 - No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [TinyGo](docs/tinygo.md)).
@@ -84,7 +84,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - [Examples](docs/examples.md): the example programs.
 - [Receiver](docs/rx/README.md): the tiers of `rf`, their sensitivity and cost, and how they are measured.
 - [Transmitter](docs/tx/README.md): the tiers, formats and rates, the regional limits and the measured margins.
-- [Vocoders](docs/vocoders.md): the Codec2 backends and DVSI chips.
+- [Transcode voice](docs/guides/transcode-voice.md): AMBE+2 FEC, the Codec2 backends and DVSI chips.
 - [Allocation](docs/concepts/allocation.md): where the library can allocate, and the checks.
 - [TinyGo](docs/tinygo.md): microcontroller builds.
 - [Tooling](docs/tooling.md): the generators and the checks of the generated pages.
