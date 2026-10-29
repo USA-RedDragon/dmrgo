@@ -13,6 +13,37 @@
   - `DMRRF_RECORDINGS=<dir> go test -timeout 0 -run '^TestRxBenchRecordings$' ./rf` in v2 runs I/Q tiers 0 to 3 on the real recordings and writes `v2/rf/testdata/rxbench_recordings.json`, the data of the recordings table of [Receiver](rx/README.md). `<dir>` holds the `dmrgo-rfcap` and `ipsc2hbrp-rig` capture directories. The test needs `zstd`, and it is skipped when `DMRRF_RECORDINGS` is not set or the directory does not exist.
   - `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the transmitter margins into `v2/internal/fsktx/testdata/txmargins.json` and writes the tables of [Transmitter](tx/README.md). Without the flag the test fails when the tables differ from `minrate_gen.go` and that data. With `DMRGO_LONG=1` it measures the margins again and fails when they differ from the data.
   - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](allocation.md), and `DMRGO_README=check` fails when it differs.
+  - `go run -C cmd/docgen . -update` writes the generated facts of every page under `docs/`. `-check` fails and lists each stale marker. See [Generated facts](#generated-facts).
+
+## Generated facts
+
+Facts that come from the code go inside markers in the Markdown, so that the pages change when the code changes. Write the prose by hand and leave the marker body empty; `cmd/docgen` fills it. Do not edit a marker body by hand.
+
+```text
+<!-- dmrgo:config pkg=csbk type=RequesterConfig -->
+<!-- /dmrgo:config -->
+```
+
+Package paths are relative to `v2`: `csbk`, `transport/dmrd/dmrdsession`, and `.` for the root package. The last elements of one package path are enough (`dmrdsession`). An argument with spaces takes double quotes: `section="Build tags"`.
+
+| Marker | Arguments | Body |
+|---|---|---|
+| `dmrgo:output` | `example=<dir under v2/examples>` | The standard output of `go run` on the example. |
+| `dmrgo:output` | `test=<pkg>.<ExampleName>` | The `// Output:` of a Go Example, after `go test` runs it. `<pkg>.Example` is the package Example. |
+| `dmrgo:code` | `file=<repo path> symbol=<Name>` | One func, method (`Type.Method`), type, or const or var block, without its doc comment. An Example has no `// Output:` comment in the excerpt. |
+| `dmrgo:code` | `file=<repo path>` | The whole file. |
+| `dmrgo:code` | `file=<repo path> lines=<a>-<b>` | Those lines. For Go, the lines must hold whole declarations or statements. It fails when the file changes under the excerpt, so prefer `symbol=`. |
+| `dmrgo:config` | `pkg=<path> type=<Config>` | A table of the exported fields: type, default and doc text. The default comes from the code that applies it. |
+| `dmrgo:const` | `pkg=<path> name=<Name>` | Inline: the value of a constant, or of a package-level var with a constant value, exported or not. Durations print as Go prints them (`60ms`, `2m0s`). |
+| `dmrgo:errors` | `pkg=<path> type=<Type>` | A table of the errors that the doc comments of the constructors and methods of the type name. |
+| `dmrgo:states` | `pkg=<path> type=<Type>` | The states, the transitions seen in the tests and an SVG diagram in `states/` next to the page. `type` is the machine type or its state type (`bs` `SlotState`). |
+| `dmrgo:doc` | `pkg=<path>` and optional `name=<Name>`, `section=<heading>` | The package doc, or the doc of a type, func, method, const or var, as Markdown, or one `# heading` section of it. A `pkg` outside v2, such as `cmd/rxbench`, is a directory from the repository root. |
+| `dmrgo:flags` | `cmd=<dir>` | The usage that the command in that directory prints for `-h`. |
+| `dmrgo:gomod` | `field=go`, `toolchain` or `module` | Inline: that line of `v2/go.mod`. `field=go` is the minimum Go version. |
+
+docgen records the transitions of a state machine from its tests: a go build overlay adds a hook to the top of each exported method, and the hook records the state before and after each call. The package doc of `cmd/docgen` (`go doc` in `cmd/docgen`) gives the details. A transition that no test makes is not in the table, so a missing transition needs a test, not a hand edit.
+
+docgen needs the Go module cache and no network. It runs the go commands with `-p=2` and `GOMAXPROCS=2`. `go test` in `cmd/docgen` runs it on a fixture page that uses every marker kind.
 
 ## Docs site
 
