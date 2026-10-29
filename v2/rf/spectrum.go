@@ -61,6 +61,7 @@ type spectrum struct {
 	armed   bool
 	settled int
 	fast    bool
+	Frames  int
 }
 
 func (s *spectrum) reset() {
@@ -163,6 +164,7 @@ func (s *spectrum) dropDC() {
 
 func (s *spectrum) estimate() {
 	s.dropDC()
+	s.Frames = s.frames
 	bin := s.rate / fftSize
 	passBins := s.pass
 	pass := func(k int) float64 { return float64(s.power[(k+fftSize)%fftSize]) }

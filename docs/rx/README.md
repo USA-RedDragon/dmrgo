@@ -198,19 +198,39 @@ The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`)
 
 I/Q tier 0 runs at 12 kHz. A carrier more than 2.5 kHz off is outside its AFC range and partly outside its channel filter, so the receiver must retune before it can lock. When the input power rises, the spectrum hunt estimates the carrier from the next three FFT frames, about 8 ms, and retunes. Tier 0 keeps no samples to decode again, so the symbols before the retune are lost, and at 4 kHz the first burst comes out with its first symbols wrong.
 
+The AFC of I/Q tiers 0 to 2 takes the angle of the lag-1 product of the channel filter output. This is not an unbiased frequency estimate: for a carrier off the oscillator, the filter passes less of the far side of the FM spectrum, so the estimate reads closer to the oscillator. With no noise, before the lock, it reads a carrier 1400 Hz off as about 740 Hz at Tier 0, 1040 Hz at Tier 1 and 830 Hz at Tier 2. Noise in the filter moves it a further 80 to 100 Hz toward the oscillator at 6 dB C/N. The spectrum hunt corrects this: before the lock it also retunes to an estimate from 12 or more FFT frames, about 32 ms, that is 300 Hz or more from the oscillator. That estimate weights each bin by its power over the noise floor, so the filter shape does not bias it. Its spread comes from the symbols of the burst: about 130 Hz over 32 ms and 260 Hz over 8 ms. After the lock, the AFC tunes to the frequency offset of the discriminator only when the lag-1 estimate agrees with it within 300 Hz. Tiers 1 and 2 do not use the fast estimate after a power rise, so after a noise lead they can lock with the oscillator at the old frequency, and with the lag-1 bias the locked AFC can then take 300 ms or more to follow a carrier 1.4 kHz off.
+
+An I/Q DC offset, as of an RTL-SDR, puts a spur at 0 Hz. The DC block of the front end removes it after about 0.1 s, and until then it pulled the spectrum estimate toward 0 Hz. The hunt takes the three bins around 0 Hz as at most the interpolation of their neighbors, so a spur, which only adds power there, does not move the estimate.
+
+On the XPR 8400 capture (`v2/cmd/dmrrf/testdata/xpr8400_gain_sweep.cu8`), the carrier is about +1.4 kHz: 1364 Hz is the power centroid and 1440 Hz the mirror center of its spectrum. The oscillator of each tier at the lock:
+
+| Tier | Before | Now |
+|------|--------|-----|
+| 0 | 422 Hz, still 422 Hz 200 ms later | 1373 Hz |
+| 1 | 658 Hz, 1340 Hz 200 ms later | 1373 Hz |
+| 2 | 512 Hz, 1318 Hz 200 ms later | 1373 Hz |
+| 3 | 1187 Hz | 1373 Hz |
+
+- Over 64 start points Tier 0 now decodes 1608 of 3072 frames exact, and 1655 before. With the oscillator held fixed, it decodes 1561 at 422 Hz, 1602 at 1373 Hz and 1594 to 1637 from 800 to 1800 Hz, so Tier 0 has no offset bias. The 1655 came from the path of the oscillator before this change, 0 Hz for 60 ms and then 422 Hz, which beats every fixed frequency on this 1 s capture. On synthetic I/Q, Tier 0 with the oscillator held fixed decodes the most frames at the carrier.
+- On 300 synthetic streams with a carrier 1.4 kHz off and a DC spur, each decoded by the receiver before and after the change with the same noise, Tier 0 decodes 8016 of 10800 frames exact, before 7395, at 7 dB C/N in 12.5 kHz. At 10 dB it decodes 10619, before 10344. The 64 start points of the capture share one second of samples, so they are not independent; the 300 streams are.
+- `TestIQLockOffsetXPR8400` in `v2/rf` checks the oscillator of each tier at and after the lock, and `TestIQLockOffsetDCSpur` that of tiers 0 and 3.
+
 First burst after a noise lead, I/Q tier 0 at 2.048 Msps, 30 starts per offset (3 sequences, 5 noise leads, 2 noise seeds), C/N 47 dB in 12.5 kHz:
 
 | Offset | Found, before | Found | Raw bits exact, before | Raw bits exact |
 |--------|---------------|-------|------------------------|----------------|
-| +2.5 kHz | 27/30 | 30/30 | 21/30 | 24/30 |
-| -2.5 kHz | 24/30 | 24/30 | 12/30 | 12/30 |
-| +3 kHz | 12/30 | 30/30 | 9/30 | 15/30 |
-| -3 kHz | 12/30 | 30/30 | 9/30 | 24/30 |
-| +4 kHz | 12/30 | 30/30 | 0/30 | 0/30 |
-| -4 kHz | 6/30 | 30/30 | 0/30 | 0/30 |
+| +1.5 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
+| -1.5 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
+| +2.5 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
+| -2.5 kHz | 30/30 | 30/30 | 18/30 | 18/30 |
+| +3 kHz | 30/30 | 30/30 | 27/30 | 24/30 |
+| -3 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
+| +4 kHz | 30/30 | 30/30 | 0/30 | 0/30 |
+| -4 kHz | 30/30 | 30/30 | 0/30 | 0/30 |
 
-- At -2.5 kHz the carrier is inside the AFC range, so the spectrum hunt does not retune.
-- On 1,200 s of noise, 600 s steady and 600 s with 2x steps of the noise power every 0.3 s, the estimate after a power rise retuned 0 times.
+- Before is the receiver without the small-offset retune and the DC spur handling of this section. The noise leads are 0.2, 0.2131, 0.2517, 0.3011 and 0.3377 s.
+- At +3 kHz the retune from 32 ms of spectrum moves the oscillator again during the first burst in 3 more of the 30 starts.
+- On 1,200 s of noise at 48 kHz, 600 s steady and 600 s with 2x steps of the noise power every 0.3 s, Tier 0 retuned 0 times, before and now.
 - `TestRxTier0FirstBurstAtOffset` in `v2/rf` checks that the first burst is found at 2.5, 3 and 4 kHz.
 
 ## The deviation reading
