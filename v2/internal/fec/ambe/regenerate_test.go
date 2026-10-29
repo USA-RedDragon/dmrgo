@@ -1,6 +1,7 @@
 package ambe
 
 import (
+	"fmt"
 	"math/bits"
 	"math/rand"
 	"testing"
@@ -10,16 +11,21 @@ func TestRegenerate(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(3))
-	for n := range 1 << 20 {
-		var frame [7]byte
-		r.Read(frame[:])
-		frame[6] &= 0x80
-		clean := Encode(frame)
-		var mask [9]byte
+	type regenCase struct {
+		frame [7]byte
+		mask  [9]byte
+	}
+	checkCases(t, 1<<20, func(n int) regenCase {
+		var c regenCase
+		r.Read(c.frame[:])
+		c.frame[6] &= 0x80
 		for range n % 9 {
 			i := r.Intn(72)
-			mask[i/8] ^= 0x80 >> (i % 8)
+			c.mask[i/8] ^= 0x80 >> (i % 8)
 		}
+		return c
+	}, func(tc *regenCase) string {
+		clean, mask := Encode(tc.frame), tc.mask
 		m0, m1, m2, m3 := columns(&mask)
 		nA := bits.OnesCount32(m0<<6 | m1>>12)
 		nB := bits.OnesCount32((m1&0xFFF)<<11 | m2>>7)
@@ -36,21 +42,22 @@ func TestRegenerate(t *testing.T) {
 		got, ok := Regenerate(in)
 		switch {
 		case !ok && got != in:
-			t.Fatalf("Regenerate(%x) = %x, false: changed the slot", in, got)
+			return fmt.Sprintf("Regenerate(%x) = %x, false: changed the slot", in, got)
 		case nA == 4 && ok:
-			t.Fatalf("4 errors in section A %x: Regenerate accepted %x", mask, got)
+			return fmt.Sprintf("4 errors in section A %x: Regenerate accepted %x", mask, got)
 		case nA > 3 || nB > 3:
 		case ok != (nA < 2 || nA+nB < 6):
-			t.Fatalf("%d+%d errors %x: Regenerate ok %v", nA, nB, mask, ok)
+			return fmt.Sprintf("%d+%d errors %x: Regenerate ok %v", nA, nB, mask, ok)
 		case ok && got != want:
-			t.Fatalf("%d+%d errors %x: Regenerate(%x) = %x, want %x", nA, nB, mask, in, got, want)
+			return fmt.Sprintf("%d+%d errors %x: Regenerate(%x) = %x, want %x", nA, nB, mask, in, got, want)
 		}
 		if ok {
 			if f, res := Decode(got); f != frameOf(in) || res.ErrorsCorrected != 0 || res.Uncorrectable {
-				t.Fatalf("Decode(Regenerate(%x)) = %x %+v, want %x", in, f, res, frameOf(in))
+				return fmt.Sprintf("Decode(Regenerate(%x)) = %x %+v, want %x", in, f, res, frameOf(in))
 			}
 		}
-	}
+		return ""
+	})
 }
 
 func TestErrors(t *testing.T) {
