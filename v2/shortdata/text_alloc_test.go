@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/shortdata"
 )
@@ -13,7 +14,7 @@ import (
 func TestAllocs(t *testing.T) {
 	data := unhex(t, appcapture.HSMS)
 	buf := make([]byte, 0, 64)
-	n := testing.AllocsPerRun(50, func() {
+	n := allocstest.PerRun(t, 50, func() {
 		h, err := shortdata.DecodeHyteraText(data)
 		if err != nil {
 			panic(err)

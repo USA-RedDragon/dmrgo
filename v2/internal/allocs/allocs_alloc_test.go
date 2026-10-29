@@ -5,11 +5,11 @@ package allocs_test
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -47,7 +47,7 @@ func captures(t *testing.T) map[string][]layer2.RawBurst {
 func assertZero(t *testing.T, name string, f func()) {
 	t.Helper()
 	f()
-	if n := testing.AllocsPerRun(20, f); n != 0 {
+	if n := allocstest.PerRun(t, 20, f); n != 0 {
 		t.Errorf("%s: %.1f allocations per run, want 0", name, n)
 	}
 }
@@ -72,23 +72,19 @@ func TestAllocsNewBurstFirstDecode(t *testing.T) {
 		streams = append(streams, c)
 	}
 	bursts := make([]*layer2.Burst, len(streams))
-	best := ^uint64(0)
-	for range 5 {
+	n := allocstest.Mallocs(t, func() {
 		for i := range bursts {
 			bursts[i] = layer2.NewBurst()
 		}
-		var before, after runtime.MemStats
-		runtime.ReadMemStats(&before)
+	}, func() {
 		for i, c := range streams {
 			for _, raw := range c {
 				_ = bursts[i].DecodeFromBytes(raw)
 			}
 		}
-		runtime.ReadMemStats(&after)
-		best = min(best, after.Mallocs-before.Mallocs)
-	}
-	if best != 0 {
-		t.Errorf("first decodes into NewBurst: %d allocations, want 0", best)
+	})
+	if n != 0 {
+		t.Errorf("first decodes into NewBurst: %d allocations, want 0", n)
 	}
 }
 

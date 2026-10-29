@@ -5,13 +5,14 @@ package ars_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 )
 
 func TestAllocs(t *testing.T) {
 	data := unhex(t, registration)
 	buf := make([]byte, 0, 64)
-	n := testing.AllocsPerRun(50, func() {
+	n := allocstest.PerRun(t, 50, func() {
 		m, err := ars.DecodeMessage(data)
 		if err != nil {
 			panic(err)

@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsLowIQ(t *testing.T) {
 	slots, _ := benchStream(t, 3)
@@ -12,7 +16,7 @@ func TestAllocsLowIQ(t *testing.T) {
 		var r Receiver
 		var got []Burst
 		on := func(bs []Burst) { got = append(got, bs...) }
-		if n := testing.AllocsPerRun(1, func() {
+		if n := allocstest.PerRun(t, 1, func() {
 			if err := r.Init(RxConfig{Rate: hz, Format: IQFormatCF32, OnBursts: on}); err != nil {
 				t.Fatal(err)
 			}
@@ -24,7 +28,7 @@ func TestAllocsLowIQ(t *testing.T) {
 		in := cf32(y)
 		const chunk = 1 << 12
 		pos := 0
-		if n := testing.AllocsPerRun(len(in)/chunk-2, func() {
+		if n := allocstest.PerRun(t, len(in)/chunk-2, func() {
 			_, _ = r.Write(in[pos : pos+chunk])
 			pos += chunk
 		}); n != 0 {

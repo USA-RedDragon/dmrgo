@@ -230,8 +230,7 @@ linters:
         linters:
           - gochecknoglobals
         text: ^state is a global variable
-      # testing.AllocsPerRun panics in a parallel test, and a
-      # runtime.MemStats delta counts every test that runs at the same time.
+      # allocstest.PerRun and allocstest.Mallocs panic in a parallel test.
       - path: (_alloc_test|layer2/pdu/fuzz_tinygo_test)\.go$
         linters:
           - paralleltest
@@ -263,6 +262,12 @@ linters:
         linters:
           - unused
         text: ^var audioUpTable is unused
+      # Both run in parallel unless they measure allocations, which
+      # allocstest does only outside parallel tests.
+      - path: v2/rf/(rxbench|sweep)_test\.go$
+        linters:
+          - paralleltest
+        text: ^Function Test(RxBench|SweepWorker) missing the call to method parallel
       - path: v2/rf/monitor_test\.go$
         linters:
           - paralleltest

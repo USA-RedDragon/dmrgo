@@ -4,11 +4,11 @@ import (
 	"encoding/binary"
 	"math"
 	"math/rand/v2"
-	"runtime"
 	"slices"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 )
 
 const (
@@ -37,23 +37,6 @@ func (s *fuzzSink) one(b *Burst) {
 }
 
 func (s *fuzzSink) bursts() []Burst { return s.b[:min(s.n, len(s.b))] }
-
-func mallocs(f func()) uint64 {
-	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(1))
-	var a, b runtime.MemStats
-	runtime.ReadMemStats(&a)
-	f()
-	runtime.ReadMemStats(&b)
-	return b.Mallocs - a.Mallocs
-}
-
-func quiet(run func() uint64) uint64 {
-	n := run()
-	for i := 0; i < 2 && n != 0; i++ {
-		n = min(n, run())
-	}
-	return n
-}
 
 func fuzzChunks(n, most int, seed uint64) []int {
 	var out []int
@@ -113,7 +96,7 @@ func fuzzRun(t *testing.T, cfg RxConfig, opt *options, stream bool, in []byte, m
 	}
 	chunks := fuzzChunks(len(in), most, seed)
 	dst := make([]Burst, 0, max(fuzzBursts, r.MaxOutput(most/r.SampleBytes()+1), r.MaxOutput(0)))
-	return mallocs(func() {
+	return allocstest.Mallocs(t, nil, func() {
 		p := 0
 		for _, k := range chunks {
 			if stream {
@@ -213,10 +196,12 @@ func FuzzReceiverWrite(f *testing.F) {
 		}
 		hz := float64(cfg.Rate)
 		var one, chunked *fuzzSink
-		if n := quiet(func() uint64 { one = newFuzzSink(); return run(0, one) }); n != 0 {
+		one = newFuzzSink()
+		if n := run(0, one); n != 0 {
 			t.Fatalf("%d allocations after New", n)
 		}
-		if n := quiet(func() uint64 { chunked = newFuzzSink(); return run(chunkSeed|1, chunked) }); n != 0 {
+		chunked = newFuzzSink()
+		if n := run(chunkSeed|1, chunked); n != 0 {
 			t.Fatalf("%d allocations after New, in chunks", n)
 		}
 		checkBursts(t, one.bursts(), float64(len(iq)/2)/hz)
@@ -275,10 +260,12 @@ func FuzzReceiverBaseband(f *testing.F) {
 		}
 		hz := float64(cfg.Rate)
 		var one, chunked *fuzzSink
-		if n := quiet(func() uint64 { one = newFuzzSink(); return run(0, one) }); n != 0 {
+		one = newFuzzSink()
+		if n := run(0, one); n != 0 {
 			t.Fatalf("%d allocations after New", n)
 		}
-		if n := quiet(func() uint64 { chunked = newFuzzSink(); return run(chunkSeed|1, chunked) }); n != 0 {
+		chunked = newFuzzSink()
+		if n := run(chunkSeed|1, chunked); n != 0 {
 			t.Fatalf("%d allocations after New, in chunks", n)
 		}
 		checkBursts(t, one.bursts(), float64(len(x))/hz)
@@ -330,7 +317,7 @@ func FuzzDiscReceiver(f *testing.F) {
 			}
 			chunks := fuzzChunks(len(x), most, seed)
 			dst := make([]Burst, 0, fuzzBursts)
-			return mallocs(func() {
+			return allocstest.Mallocs(t, nil, func() {
 				p := 0
 				for _, k := range chunks {
 					if stream {
@@ -357,10 +344,12 @@ func FuzzDiscReceiver(f *testing.F) {
 			hz = 2 * discRate
 		}
 		var one, chunked *fuzzSink
-		if n := quiet(func() uint64 { one = newFuzzSink(); return run(0, one) }); n != 0 {
+		one = newFuzzSink()
+		if n := run(0, one); n != 0 {
 			t.Fatalf("%d allocations after setup", n)
 		}
-		if n := quiet(func() uint64 { chunked = newFuzzSink(); return run(chunkSeed|1, chunked) }); n != 0 {
+		chunked = newFuzzSink()
+		if n := run(chunkSeed|1, chunked); n != 0 {
 			t.Fatalf("%d allocations after setup, in chunks", n)
 		}
 		checkBursts(t, one.bursts(), float64(len(x))/float64(hz))

@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsAudioRate(t *testing.T) {
 	slots, _ := benchStream(t, 1)
@@ -10,7 +14,7 @@ func TestAllocsAudioRate(t *testing.T) {
 		t.Fatal(err)
 	}
 	pos := 0
-	if n := testing.AllocsPerRun(len(a)/4096-2, func() {
+	if n := allocstest.PerRun(t, len(a)/4096-2, func() {
 		_, _ = r.Write(a[pos : pos+4096])
 		pos += 4096
 	}); n != 0 {

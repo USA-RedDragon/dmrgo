@@ -3,6 +3,7 @@ package ipsc_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 )
@@ -10,7 +11,7 @@ import (
 func TestAllocsIPSC(t *testing.T) {
 	seeds := fuzzSeeds()
 	buf := make([]byte, 0, 128)
-	n := testing.AllocsPerRun(100, func() {
+	n := allocstest.PerRun(t, 100, func() {
 		for _, p := range seeds {
 			if u, err := ipsc.DecodeUser(p); err == nil {
 				buf, _ = u.AppendBinary(buf[:0])

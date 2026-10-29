@@ -3,13 +3,14 @@ package hytera_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 )
 
 func TestAllocsHytera(t *testing.T) {
 	seeds := fuzzSeeds()
 	buf := make([]byte, 0, 128)
-	n := testing.AllocsPerRun(100, func() {
+	n := allocstest.PerRun(t, 100, func() {
 		for _, p := range seeds {
 			if f, err := hytera.DecodeFrame(p); err == nil {
 				buf, _ = f.AppendBinary(buf[:0])

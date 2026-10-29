@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
@@ -133,7 +134,7 @@ func FuzzMCUAudio(f *testing.F) {
 		var buf, rbuf [64]int16
 		got := make([]int16, 0, len(ops)*len(buf))
 		want := make([]int16, 0, len(ops)*len(buf))
-		allocs := testing.AllocsPerRun(4, func() {
+		allocs := allocstest.PerRun(t, 4, func() {
 			got, want = got[:0], want[:0]
 			_ = m.Init(tab, level, offset)
 			_ = ref.Init(tab, level, offset)
@@ -177,7 +178,7 @@ func FuzzMCUIQ(f *testing.F) {
 		var buf, rbuf [2 * maxSamples << 3]int16
 		got := make([]int16, 0, len(ops)*len(buf))
 		want := make([]int16, 0, len(ops)*len(buf))
-		allocs := testing.AllocsPerRun(4, func() {
+		allocs := allocstest.PerRun(t, 4, func() {
 			got, want = got[:0], want[:0]
 			_ = m.Init(rate, off, ramp)
 			_ = ref.Init(rate, off, ramp)

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 )
@@ -15,7 +16,7 @@ func TestAllocsAppendBursts(t *testing.T) {
 	data := payload(100)
 	dst := make([]layer2.RawBurst, 0, 128)
 	for _, rate := range []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
-		n := testing.AllocsPerRun(20, func() {
+		n := allocstest.PerRun(t, 20, func() {
 			p, err := b.Segment(confirmed(), data, rate)
 			if err != nil {
 				t.Fatal(err)

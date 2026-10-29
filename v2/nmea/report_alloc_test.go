@@ -5,6 +5,7 @@ package nmea_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/nmea"
@@ -15,7 +16,7 @@ func TestAllocsPositionReports(t *testing.T) {
 	a := packet.NewAssembler(127)
 	var b layer2.Burst
 	reports := 0
-	n := testing.AllocsPerRun(20, func() {
+	n := allocstest.PerRun(t, 20, func() {
 		reports = 0
 		for _, raw := range bursts {
 			if b.DecodeFromBytes(raw) != nil {
@@ -44,7 +45,7 @@ func TestAllocsAppendRMC(t *testing.T) {
 	}
 	buf := make([]byte, 0, 128)
 	var out []byte
-	n := testing.AllocsPerRun(20, func() {
+	n := allocstest.PerRun(t, 20, func() {
 		out, err = nmea.AppendRMC(buf[:0], &r)
 	})
 	if n != 0 || err != nil || string(out) != anytone {

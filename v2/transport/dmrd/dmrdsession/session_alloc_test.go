@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
@@ -57,7 +58,7 @@ func TestAllocsSession(t *testing.T) {
 	if p.State() != dmrdsession.StateIdle || m.State() != dmrdsession.StateRunning || b.State() != dmrdsession.StateRunning {
 		t.Fatalf("states %v %v %v", p.State(), m.State(), b.State())
 	}
-	if n := testing.AllocsPerRun(100, run); n != 0 {
+	if n := allocstest.PerRun(t, 100, run); n != 0 {
 		t.Fatalf("%v allocations", n)
 	}
 }

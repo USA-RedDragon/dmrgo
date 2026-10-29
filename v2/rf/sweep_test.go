@@ -10,6 +10,8 @@ import (
 	"slices"
 	"sync"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 )
 
 type sweepJob struct {
@@ -201,9 +203,9 @@ func (j *sweepJob) receive(cfg RxConfig, o *options, x []complex64) ([]Burst, fl
 }
 
 func TestSweepWorker(t *testing.T) {
-	t.Parallel()
 	path := os.Getenv("DMRRF_SWEEP_JOB")
 	if path == "" {
+		t.Parallel()
 		t.Skip("cmd/rxsweep sets DMRRF_SWEEP_JOB")
 	}
 	b, err := os.ReadFile(path)
@@ -306,13 +308,10 @@ func TestSweepRejectsUnknownOption(t *testing.T) {
 
 func sweepCosts(t testing.TB, j *sweepJob, cfg RxConfig, o *options) *sweepCost {
 	var c sweepCost
-	var a, b runtime.MemStats
 	count := 0
 	cfg.OnBursts = func(bs []Burst) { count += len(bs) }
-	runtime.ReadMemStats(&a)
-	r := j.newRx(cfg, o)
-	runtime.ReadMemStats(&b)
-	c.RAMBytes = int(b.TotalAlloc - a.TotalAlloc)
+	var r sweepRx
+	c.RAMBytes = int(allocstest.Bytes(t, nil, func() { r = j.newRx(cfg, o) }))
 	const seconds = 300
 	n := 0
 	var cpu float64
@@ -330,11 +329,11 @@ func sweepCosts(t testing.TB, j *sweepJob, cfg RxConfig, o *options) *sweepCost 
 	const chunk = 1 << 12
 	ar.write(in, 0, chunk)
 	k := in.len()/chunk - 1
-	runtime.ReadMemStats(&a)
-	for i := 1; i <= k; i++ {
-		ar.write(in, i*chunk, (i+1)*chunk)
-	}
-	runtime.ReadMemStats(&b)
-	c.Allocs = float64(b.Mallocs-a.Mallocs) / float64(k)
+	m := allocstest.Mallocs(t, nil, func() {
+		for i := 1; i <= k; i++ {
+			ar.write(in, i*chunk, (i+1)*chunk)
+		}
+	})
+	c.Allocs = float64(m) / float64(k)
 	return &c
 }

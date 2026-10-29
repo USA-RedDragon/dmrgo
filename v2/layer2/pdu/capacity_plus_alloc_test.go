@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -13,7 +14,7 @@ func TestAllocsCapacityPlus(t *testing.T) {
 	raw := [12]byte{0xBE, 0x10, 0xC2, 0x80, 0x1E, 0, 0, 0, 0, 0, 0xCC, 0xD6}
 	var a pdu.CapacityPlusSiteStatusAssembler
 	var sink uint16
-	n := testing.AllocsPerRun(100, func() {
+	n := allocstest.PerRun(t, 100, func() {
 		c := pdu.DecodeCSBK(raw)
 		p, _ := c.AsCapacityPlusSiteStatus()
 		_, _ = a.Add(&p)

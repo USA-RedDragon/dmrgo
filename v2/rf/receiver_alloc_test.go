@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
@@ -35,7 +36,7 @@ func TestAllocsReceiver(t *testing.T) {
 			r := mustNew(c.cfg)
 			var dst []Burst
 			pos, bursts := 0, 0
-			n := testing.AllocsPerRun(len(c.in)/chunk-2, func() {
+			n := allocstest.PerRun(t, len(c.in)/chunk-2, func() {
 				dst = r.AppendBursts(dst[:0], c.in[pos:pos+chunk])
 				bursts += len(dst)
 				pos += chunk
@@ -48,7 +49,7 @@ func TestAllocsReceiver(t *testing.T) {
 			c.cfg.OnBursts = func(bs []Burst) { bursts += len(bs) }
 			r = mustNew(c.cfg)
 			pos = 0
-			n = testing.AllocsPerRun(len(c.in)/chunk-2, func() {
+			n = allocstest.PerRun(t, len(c.in)/chunk-2, func() {
 				_, _ = r.Write(c.in[pos : pos+chunk])
 				pos += chunk
 			})

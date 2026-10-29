@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -30,7 +31,7 @@ func TestAllocsMSUDT(t *testing.T) {
 	r.ms.SetPollResponse(&text)
 	r.ms.SetUSBDResponse(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP})
 	buf := make([]byte, 0, trunk.MaxAppendedOctets*4)
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		_ = r.ms.SendShortData(r.now, false, peer, &text, layer3.ShortDataServiceOptions{})
 		r.feed(a, &idle)
 		r.feed(sdmi, &idle)

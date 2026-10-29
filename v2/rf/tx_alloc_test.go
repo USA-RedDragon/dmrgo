@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsTransmitter(t *testing.T) {
 	b := msBursts(t, "voice")
@@ -11,7 +15,7 @@ func TestAllocsTransmitter(t *testing.T) {
 			t.Fatal(err)
 		}
 		i := 0
-		n := testing.AllocsPerRun(len(b)-1, func() {
+		n := allocstest.PerRun(t, len(b)-1, func() {
 			_, _ = tx.Write(b[i : i+1])
 			i++
 		})
@@ -22,7 +26,7 @@ func TestAllocsTransmitter(t *testing.T) {
 		ap, _ := newTransmitter(c, openGate)
 		dst := make([]byte, 0, ap.MaxOutput(1)*ap.SampleBytes())
 		i = 0
-		n = testing.AllocsPerRun(len(b)-1, func() {
+		n = allocstest.PerRun(t, len(b)-1, func() {
 			dst = ap.AppendSamples(dst[:0], b[i:i+1])
 			i++
 		})
@@ -39,7 +43,7 @@ func TestAllocsTransmitter(t *testing.T) {
 			t.Fatal(err)
 		}
 		i := 0
-		n := testing.AllocsPerRun(len(b)-1, func() {
+		n := allocstest.PerRun(t, len(b)-1, func() {
 			_, _ = tx.Write(b[i : i+1])
 			i++
 		})

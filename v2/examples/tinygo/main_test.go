@@ -1,9 +1,9 @@
 package main
 
 import (
-	"runtime"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -19,11 +19,7 @@ func TestRun(t *testing.T) {
 		t.Fatalf("run = %+v, want %+v", got, want)
 	}
 
-	var before, after runtime.MemStats
-	runtime.ReadMemStats(&before)
-	run(&b, f, capture)
-	runtime.ReadMemStats(&after)
-	if garbage := after.TotalAlloc - before.TotalAlloc; garbage != 0 {
+	if garbage := allocstest.Bytes(t, nil, func() { run(&b, f, capture) }); garbage != 0 {
 		t.Errorf("run allocates %d bytes, want 0", garbage)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fuzztest"
 )
 
@@ -34,7 +35,7 @@ func TestAllocsReceiverCorpus(t *testing.T) {
 		if err != nil {
 			continue
 		}
-		allocs := testing.AllocsPerRun(3, func() {
+		allocs := allocstest.PerRun(t, 3, func() {
 			r.Reset()
 			for j := range s.ops {
 				ev = runRxOp(r, &s.ops[j], ev[:0])

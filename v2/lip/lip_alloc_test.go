@@ -5,6 +5,7 @@ package lip_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/lip"
 )
 
@@ -16,7 +17,7 @@ func TestAllocs(t *testing.T) {
 	}
 	buf := make([]byte, 0, 64)
 	data := make([]byte, 9)
-	n := testing.AllocsPerRun(50, func() {
+	n := allocstest.PerRun(t, 50, func() {
 		p, bits, err := r.Encode(buf[:0])
 		if err != nil {
 			panic(err)

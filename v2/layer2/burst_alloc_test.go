@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -41,7 +42,7 @@ func TestAllocsBurstDecode(t *testing.T) {
 	}
 	var b layer2.Burst
 	for _, o := range opts {
-		all := testing.AllocsPerRun(2, func() {
+		all := allocstest.PerRun(t, 2, func() {
 			for _, f := range frames {
 				_ = b.DecodeFromBytesWith(f, o)
 			}
@@ -50,7 +51,7 @@ func TestAllocsBurstDecode(t *testing.T) {
 			continue
 		}
 		for _, f := range frames {
-			if n := testing.AllocsPerRun(2, func() { _ = b.DecodeFromBytesWith(f, o) }); n != 0 {
+			if n := allocstest.PerRun(t, 2, func() { _ = b.DecodeFromBytesWith(f, o) }); n != 0 {
 				err := b.DecodeFromBytesWith(f, o)
 				t.Fatalf("decode of %x with %+v allocates %.0f times (error %v)", f, o, n, err)
 			}

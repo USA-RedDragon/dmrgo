@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 )
 
 func TestAllocsExpress(t *testing.T) {
@@ -19,7 +20,7 @@ func TestAllocsExpress(t *testing.T) {
 	for _, mode := range []bs.Mode{bs.ModeRF, bs.ModeNetwork} {
 		r := newRepeater(t, &bs.Config{Mode: mode, ColorCode: 1, CACH: true})
 		out := make([]bs.Output, 0, bs.MaxOutputs)
-		allocs := testing.AllocsPerRun(3, func() {
+		allocs := allocstest.PerRun(t, 3, func() {
 			r.Reset()
 			j := 0
 			for now := time.Duration(0); now < 4*time.Second; now += time.Millisecond {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -17,7 +18,7 @@ func TestAllocs(t *testing.T) {
 	for _, mode := range []bs.Mode{bs.ModeRF, bs.ModeNetwork} {
 		r := newRepeater(t, &bs.Config{Mode: mode, ColorCode: 1, CACH: true})
 		out := make([]bs.Output, 0, bs.MaxOutputs)
-		allocs := testing.AllocsPerRun(3, func() {
+		allocs := allocstest.PerRun(t, 3, func() {
 			r.Reset()
 			j := 0
 			for now := time.Duration(0); now < 8*time.Second; now += 10 * time.Millisecond {
@@ -39,7 +40,7 @@ func TestAllocs(t *testing.T) {
 		r := newRepeater(t, &s.cfg)
 		out := make([]bs.Output, 0, bs.MaxOutputs)
 		dec := layer2.NewBurst()
-		allocs := testing.AllocsPerRun(3, func() {
+		allocs := allocstest.PerRun(t, 3, func() {
 			r.Reset()
 			for k := range s.ops {
 				o := &s.ops[k]

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -104,7 +105,7 @@ func TestMonitorAllocs(t *testing.T) {
 	var m Monitor
 	lb := layer2.NewBurst()
 	i := 0
-	allocs := testing.AllocsPerRun(len(bursts), func() {
+	allocs := allocstest.PerRun(t, len(bursts), func() {
 		_, _ = m.Burst(lb, &bursts[i%len(bursts)])
 		i++
 	})

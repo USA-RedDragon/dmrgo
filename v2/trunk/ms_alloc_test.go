@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
@@ -17,7 +18,7 @@ func TestAllocsMS(t *testing.T) {
 	regOK := ack(t, enums.AckReasonRegAccepted)
 	wait := ack(t, enums.AckReasonWait)
 	grant := tvGrant(t, 9, 5, true)
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		r.ms.Reset()
 		r.feed(a, &idle)
 		r.feed(a, &idle)

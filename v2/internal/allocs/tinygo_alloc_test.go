@@ -4,7 +4,6 @@ package allocs_test
 
 import (
 	"math/rand"
-	"runtime"
 	"slices"
 	"strconv"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
@@ -432,16 +432,18 @@ func tinyPDUOps(t *testing.T, r *rand.Rand) []tinyOp {
 	}
 }
 
-func tinyAlloc(run func()) (bytes, mallocs float64) {
-	run()
-	run()
-	var before, after runtime.MemStats
-	runtime.ReadMemStats(&before)
-	for range tinyRuns {
+func tinyAlloc(t *testing.T, run func()) (bytes, mallocs float64) {
+	t.Helper()
+	warm := func() {
+		run()
 		run()
 	}
-	runtime.ReadMemStats(&after)
-	return float64(after.TotalAlloc-before.TotalAlloc) / tinyRuns, float64(after.Mallocs-before.Mallocs) / tinyRuns
+	loop := func() {
+		for range tinyRuns {
+			run()
+		}
+	}
+	return float64(allocstest.Bytes(t, warm, loop)) / tinyRuns, float64(allocstest.Mallocs(t, warm, loop)) / tinyRuns
 }
 
 func tinyDVSIOps(t *testing.T) []tinyOp {
@@ -659,14 +661,14 @@ func TestTinyGoAllocs(t *testing.T) {
 	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t), tinyMMDVMOps(t), tinyDigestOps())
 
 	probe := make([]byte, 0, 1)
-	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {
+	if b, _ := tinyAlloc(t, func() { probe = make([]byte, 64) }); b < 64 {
 		t.Errorf("runtime.MemStats.TotalAlloc does not count a 64-byte allocation: %.0f bytes", b)
 		return
 	}
 	_ = probe
 
 	for _, op := range ops {
-		b, n := tinyAlloc(op.run)
+		b, n := tinyAlloc(t, op.run)
 		if b != 0 {
 			t.Errorf("%s: %.0f bytes, %.1f allocs per call, want 0", op.name, b, n)
 		}

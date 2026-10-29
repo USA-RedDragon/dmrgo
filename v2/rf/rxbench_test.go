@@ -16,6 +16,7 @@ import (
 	"unsafe"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -674,11 +675,11 @@ func liveBytesUnder(f any) int64 {
 	return live
 }
 
-func steadyAllocs(x []complex64, e benchEntry) float64 {
+func steadyAllocs(t *testing.T, x []complex64, e benchEntry) float64 {
 	const chunk = 1 << 14
 	switch e.mode {
 	case benchAudio:
-		return discSteadyAllocs(discAudio(x, benchAudioHz), e.tier)
+		return discSteadyAllocs(t, discAudio(x, benchAudioHz), e.tier)
 	case benchIQLow:
 		x = lowIQ(x, iq0LowHz)
 	}
@@ -689,16 +690,15 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 	r := mustNew(cfg)
 	must(r.writeBB(x[:chunk]))
 	n := len(x)/chunk - 1
-	var a, b runtime.MemStats
-	runtime.ReadMemStats(&a)
-	for i := 1; i <= n; i++ {
-		must(r.writeBB(x[i*chunk : (i+1)*chunk]))
-	}
-	runtime.ReadMemStats(&b)
-	return float64(b.Mallocs-a.Mallocs) / float64(n)
+	m := allocstest.Mallocs(t, nil, func() {
+		for i := 1; i <= n; i++ {
+			must(r.writeBB(x[i*chunk : (i+1)*chunk]))
+		}
+	})
+	return float64(m) / float64(n)
 }
 
-func discSteadyAllocs(a []int16, tier Tier) float64 {
+func discSteadyAllocs(t *testing.T, a []int16, tier Tier) float64 {
 	const chunk = 1 << 11
 	r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: tier, OnBursts: each(func(*Burst) {})})
 	if err != nil {
@@ -706,21 +706,22 @@ func discSteadyAllocs(a []int16, tier Tier) float64 {
 	}
 	must(r.writeAll(a[:chunk]))
 	n := len(a)/chunk - 1
-	var m0, m1 runtime.MemStats
-	runtime.ReadMemStats(&m0)
-	for i := 1; i <= n; i++ {
-		must(r.writeAll(a[i*chunk : (i+1)*chunk]))
-	}
-	runtime.ReadMemStats(&m1)
-	return float64(m1.Mallocs-m0.Mallocs) / float64(n)
+	m := allocstest.Mallocs(t, nil, func() {
+		for i := 1; i <= n; i++ {
+			must(r.writeAll(a[i*chunk : (i+1)*chunk]))
+		}
+	})
+	return float64(m) / float64(n)
 }
 
 func TestRxBench(t *testing.T) {
-	t.Parallel()
+	full := os.Getenv("DMRRF_RXBENCH") == "full"
+	if !full {
+		t.Parallel()
+	}
 	if testmode.Race {
 		t.Skip("compares one goroutine's numbers with the table; the runs without -race check them")
 	}
-	full := os.Getenv("DMRRF_RXBENCH") == "full"
 	fast := os.Getenv("DMRRF_RXBENCH") == "fast"
 	var base benchData
 	if b, err := os.ReadFile(rxbenchPath); err == nil {
@@ -793,7 +794,7 @@ func TestRxBench(t *testing.T) {
 			continue
 		}
 		if full {
-			bt.Allocs = steadyAllocs(fsig.noisy(6, 1), e)
+			bt.Allocs = steadyAllocs(t, fsig.noisy(6, 1), e)
 			bt.RAMBytes = receiverRAM(e)
 			bt.NsPerSecond, bt.WorstNs, bt.WorstCN = benchCPU(t, fsig, e)
 		}

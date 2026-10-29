@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
@@ -21,7 +22,7 @@ func TestAllocsTSCCServices(t *testing.T) {
 	}
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		_ = ts.Stun(now, 3120002, false)
 		_ = ts.Kill(now, 3120003)
 		_ = ts.SendStatus(now, false, 3120002, 0xFFFECB, 3)
@@ -56,7 +57,7 @@ func TestAllocsMSServices(t *testing.T) {
 	_ = supl.SetText(enums.UDTISO8, []byte("supplementary"))
 	now := time.Duration(0)
 	var cach [3]byte
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		ms.Reset()
 		for i := range pool {
 			now += 30 * time.Millisecond

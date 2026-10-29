@@ -1,6 +1,10 @@
 package resample
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsPush(t *testing.T) {
 	h := table(32, 64, true, 0.45)
@@ -9,7 +13,7 @@ func TestAllocsPush(t *testing.T) {
 	c.Init(h, 32, 64, true, 44100.0/48000, make([]complex64, 64))
 	r.Init(h, 32, 64, true, 44100.0/48000, make([]int16, 32))
 	bc, br := make([]complex64, 4), make([]int16, 4)
-	if n := testing.AllocsPerRun(1000, func() {
+	if n := allocstest.PerRun(t, 1000, func() {
 		c.Push(1, bc)
 		r.Push(1, br)
 	}); n != 0 {

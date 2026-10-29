@@ -5,13 +5,14 @@ package tms_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 )
 
 func TestAllocs(t *testing.T) {
 	payload := captured(t)
 	buf := make([]byte, 0, 128)
-	n := testing.AllocsPerRun(50, func() {
+	n := allocstest.PerRun(t, 50, func() {
 		m, err := tms.DecodeMessage(payload)
 		if err != nil {
 			panic(err)

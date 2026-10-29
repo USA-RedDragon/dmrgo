@@ -2,7 +2,11 @@
 
 package fsktx
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsMatrix(t *testing.T) {
 	syms := []int8{3, -1, 1, -3, 0, 3, 3, -3, 7, -128, 127, 1}
@@ -15,7 +19,7 @@ func TestAllocsMatrix(t *testing.T) {
 		m := u.mustMod(t)
 		dst := make([]int16, 0, 2*len(syms)*(u.rate/SymbolRate+2))
 		k := false
-		if n := testing.AllocsPerRun(20, func() {
+		if n := allocstest.PerRun(t, 20, func() {
 			dst = dst[:0]
 			for _, s := range syms {
 				k = !k
@@ -29,7 +33,7 @@ func TestAllocsMatrix(t *testing.T) {
 	var a MCUAudio
 	var pe MCUAudioPE
 	var q MCUIQ
-	if n := testing.AllocsPerRun(20, func() {
+	if n := allocstest.PerRun(t, 20, func() {
 		_ = a.Init(Table24k(), 1080, 2048)
 		_ = a.Init(Table48k(), 0, 0)
 		_ = pe.Init(15000, 0)

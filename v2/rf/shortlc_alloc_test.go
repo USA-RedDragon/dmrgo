@@ -2,7 +2,11 @@
 
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsAudioShortLC(t *testing.T) {
 	slots, _ := benchStream(t, 4)
@@ -12,7 +16,7 @@ func TestAllocsAudioShortLC(t *testing.T) {
 		lcs := 0
 		r := mustAudio(AudioRxConfig{Rate: benchAudioHz, Tier: tier, OnBursts: func([]Burst) {}, OnShortLC: func(l []ShortLC) { lcs += len(l) }})
 		pos := 0
-		n := testing.AllocsPerRun(len(a)/chunk-2, func() {
+		n := allocstest.PerRun(t, len(a)/chunk-2, func() {
 			_, _ = r.Write(a[pos : pos+chunk])
 			pos += chunk
 		})

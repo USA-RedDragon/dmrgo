@@ -3,6 +3,7 @@ package dvsi_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 )
@@ -15,7 +16,7 @@ func TestAllocsDecodeReport(t *testing.T) {
 	}
 	pcm := make([]int16, 0, dvsi.FrameSamples)
 	n := 0
-	allocs := testing.AllocsPerRun(50, func() {
+	allocs := allocstest.PerRun(t, 50, func() {
 		pcm, _, _ = c.Decode(pcm[:0], pairs[n%2].Slot)
 		pcm, _, _ = c.DecodeLost(pcm[:0])
 		n++

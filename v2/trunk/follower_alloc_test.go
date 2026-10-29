@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
@@ -19,7 +20,7 @@ func TestAllocsFollower(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		f.Reset()
 		out = f.Tick(0, out[:0])
 		for i := range caps {

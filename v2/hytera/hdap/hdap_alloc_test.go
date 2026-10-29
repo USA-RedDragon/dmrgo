@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 )
 
 func TestAllocs(t *testing.T) {
 	data := append([]byte{0x08, 0xa0, 0x02, 0x00, 0x32, 0, 0, 0, 7, 10, 0, 0, 80, 0, 0}, append([]byte(gps), 0xa5, 0x03)...)
 	buf := make([]byte, 0, 128)
-	n := testing.AllocsPerRun(50, func() {
+	n := allocstest.PerRun(t, 50, func() {
 		m, err := hdap.DecodeMessage(data)
 		if err != nil {
 			panic(err)

@@ -117,7 +117,7 @@ Three checks hold the rule. None of them has a list of functions to keep up to d
 
 - [v2/internal/allocgate](../../v2/internal/allocgate) follows the machine code of each exported function to the heap allocator of the runtime.
 - The same package adds each allocation site that `tinygo build -print-allocs` reports for the pico and for `riscv-qemu`.
-- [v2/internal/allocs](../../v2/internal/allocs) counts the allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
+- [v2/internal/allocs](../../v2/internal/allocs) counts the allocations of the main calls with [v2/internal/allocstest](../../v2/internal/allocstest). It counts only the allocations of the measured call, not those of other goroutines or of the runtime. Under TinyGo it reads `runtime.MemStats`.
 
 [Tooling](../project/tooling.md) gives the commands that write and check the table.
 

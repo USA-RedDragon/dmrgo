@@ -9,6 +9,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -83,7 +84,7 @@ func checkCodec[B comparable, T any](t *testing.T, name string, in B, dec func(B
 func checkDecodeNoAlloc[B any, T any](t *testing.T, name string, in B, dec func(B) T) {
 	t.Helper()
 	var dst T
-	if n := testing.AllocsPerRun(1, func() { dst = dec(in) }); n != 0 {
+	if n := allocstest.PerRun(t, 1, func() { dst = dec(in) }); n != 0 {
 		t.Fatalf("%s: Decode allocates %v times", name, n)
 	}
 	_ = dst

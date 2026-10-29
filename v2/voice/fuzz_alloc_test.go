@@ -5,6 +5,7 @@ package voice_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -26,7 +27,7 @@ func TestAllocsReceiverCorpus(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		allocs := testing.AllocsPerRun(3, func() {
+		allocs := allocstest.PerRun(t, 3, func() {
 			rx.Reset()
 			rx2.Reset()
 			tx.Reset()

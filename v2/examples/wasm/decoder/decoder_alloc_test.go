@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsWrite(t *testing.T) {
 	noise := make([]byte, 1<<15)
@@ -25,7 +29,7 @@ func TestAllocsWrite(t *testing.T) {
 		if err := d.write(noise); err != nil {
 			t.Fatal(err)
 		}
-		n := testing.AllocsPerRun(20, func() {
+		n := allocstest.PerRun(t, 20, func() {
 			if err := d.write(noise[:len(noise)-3]); err != nil {
 				t.Fatal(err)
 			}

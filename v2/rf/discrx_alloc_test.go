@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsDiscReceiver(t *testing.T) {
 	slots, _ := benchStream(t, 3)
@@ -9,14 +13,14 @@ func TestAllocsDiscReceiver(t *testing.T) {
 	dst := make([]Burst, 0, 16)
 	const chunk = 1 << 10
 	pos, bursts := 0, 0
-	if n := testing.AllocsPerRun(1, func() {
+	if n := allocstest.PerRun(t, 1, func() {
 		if err := r.Init(AudioRxConfig{Rate: 9600}); err != nil {
 			t.Fatal(err)
 		}
 	}); n != 0 {
 		t.Errorf("Init: %v allocations", n)
 	}
-	n := testing.AllocsPerRun(len(a)/chunk-2, func() {
+	n := allocstest.PerRun(t, len(a)/chunk-2, func() {
 		dst = r.AppendBursts(dst[:0], a[pos:pos+chunk])
 		bursts += len(dst)
 		pos += chunk
@@ -25,7 +29,7 @@ func TestAllocsDiscReceiver(t *testing.T) {
 		t.Errorf("%v allocations per AppendBursts, %d bursts", n, bursts)
 	}
 	var pe RxPreEmphasis
-	if n := testing.AllocsPerRun(1, func() {
+	if n := allocstest.PerRun(t, 1, func() {
 		if err := r.Init(AudioRxConfig{Rate: 9600, PreEmphasis: pe.Init()}); err != nil {
 			t.Fatal(err)
 		}
@@ -34,7 +38,7 @@ func TestAllocsDiscReceiver(t *testing.T) {
 	}
 	a = radioAudio(noisyBaseband(slots, 1400, 20, 1), 9600, true)
 	pos, bursts = 0, 0
-	n = testing.AllocsPerRun(len(a)/chunk-2, func() {
+	n = allocstest.PerRun(t, len(a)/chunk-2, func() {
 		dst = r.AppendBursts(dst[:0], a[pos:pos+chunk])
 		bursts += len(dst)
 		pos += chunk

@@ -3,13 +3,14 @@ package ipscauth_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 )
 
 func TestAllocsAuth(t *testing.T) {
 	key := ipscauth.NewKey([20]byte{1})
 	buf := make([]byte, 0, 128)
-	n := testing.AllocsPerRun(100, func() {
+	n := allocstest.PerRun(t, 100, func() {
 		buf = append(buf[:0], 0x96, 0, 0, 0, 1)
 		buf, _ = key.Sign(buf)
 		_, _ = key.Verify(buf)

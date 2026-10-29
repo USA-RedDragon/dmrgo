@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -43,7 +44,7 @@ func TestAllocsTSCCUDT(t *testing.T) {
 		}
 	}
 	run()
-	if allocs := testing.AllocsPerRun(5, run); allocs != 0 {
+	if allocs := allocstest.PerRun(t, 5, run); allocs != 0 {
 		t.Errorf("%v allocations per run, want 0", allocs)
 	}
 }

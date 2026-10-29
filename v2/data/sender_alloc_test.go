@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -20,7 +21,7 @@ func TestAllocsSenderLoopback(t *testing.T) {
 	ev := make([]data.Event, 0, data.MaxEvents)
 	var queue [8]data.Event
 	tries := 0
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		tx.Reset()
 		rx.Reset()
 		if tx.Send(0, m) != nil {
@@ -68,7 +69,7 @@ func TestAllocsSenderWindow(t *testing.T) {
 	ev := make([]data.Event, 0, data.MaxEvents)
 	var queue [8]data.Event
 	delivered := 0
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		tx.Reset()
 		rx.Reset()
 		for _, m := range msgs {
@@ -117,8 +118,8 @@ func TestAllocsSenderCorpus(t *testing.T) {
 	for i, in := range append(txSeeds(), txCorpus(t)...) {
 		cfg := in
 		cfg.ops = nil
-		base := testing.AllocsPerRun(3, func() { checkTxScript(t, &cfg, p, msgs) })
-		allocs := testing.AllocsPerRun(3, func() { checkTxScript(t, &in, p, msgs) })
+		base := allocstest.PerRun(t, 3, func() { checkTxScript(t, &cfg, p, msgs) })
+		allocs := allocstest.PerRun(t, 3, func() { checkTxScript(t, &in, p, msgs) })
 		if allocs > base {
 			t.Errorf("input %d: %v allocations, %v of them in NewSender", i, allocs, base)
 		}
@@ -135,7 +136,7 @@ func TestAllocsSenderProprietary(t *testing.T) {
 	out := make([]data.Output, 0, data.MaxOutputs)
 	ev := make([]data.Event, 0, data.MaxEvents)
 	delivered := 0
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		tx.Reset()
 		rx.Reset()
 		delivered = 0

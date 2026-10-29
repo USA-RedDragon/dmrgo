@@ -2,7 +2,11 @@
 
 package packet_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsRoundTrip(t *testing.T) {
 	s := newSession()
@@ -11,7 +15,7 @@ func TestAllocsRoundTrip(t *testing.T) {
 			t.Fatalf("seed %d does not segment", i)
 		}
 		accept := seed.kind&0x20 != 0 && seed.kind&3 != 0
-		if n := testing.AllocsPerRun(5, func() { s.run(seed.channel, accept) }); n != 0 {
+		if n := allocstest.PerRun(t, 5, func() { s.run(seed.channel, accept) }); n != 0 {
 			t.Errorf("seed %d: %.1f allocations per session, want 0", i, n)
 		}
 		if s.fail != "" {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
@@ -19,7 +20,7 @@ func TestAllocsTSCC(t *testing.T) {
 	}
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
-	allocs := testing.AllocsPerRun(5, func() {
+	allocs := allocstest.PerRun(t, 5, func() {
 		for i := range pool {
 			out = ts.Inbound(now, tsccChannel, &pool[i], layer2.Hint{Slot: enums.Slot1}, out[:0])
 			out = ts.Inbound(now, 10, &pool[i], layer2.Hint{Slot: enums.Slot1}, out[:0])

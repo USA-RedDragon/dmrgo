@@ -82,12 +82,12 @@ func tinyCallerOps(t *testing.T) (stored, local []tinyOp) {
 func TestTinyGoCallerStorage(t *testing.T) {
 	stored, local := tinyCallerOps(t)
 	for _, op := range stored {
-		if b, n := tinyAlloc(op.run); b != 0 {
+		if b, n := tinyAlloc(t, op.run); b != 0 {
 			t.Errorf("%s: %.0f bytes, %.1f allocs per call, want 0", op.name, b, n)
 		}
 	}
 	for _, op := range local {
-		b, _ := tinyAlloc(op.run)
+		b, _ := tinyAlloc(t, op.run)
 		t.Logf("%s: %.0f bytes per call", op.name, b)
 	}
 }

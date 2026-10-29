@@ -3,13 +3,15 @@ package rf
 import (
 	"testing"
 	"unsafe"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 )
 
 func TestAllocsSoftDecoders(t *testing.T) {
 	d := newSoftDecoder()
 	in := newSoftBenchInputs(t, 3)
 	for _, c := range softBenchCases(d, in) {
-		if n := testing.AllocsPerRun(20, c.run); n != 0 {
+		if n := allocstest.PerRun(t, 20, c.run); n != 0 {
 			t.Errorf("%s: %v allocations per decode, want 0", c.name, n)
 		}
 	}

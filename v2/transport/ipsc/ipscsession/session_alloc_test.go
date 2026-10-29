@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
 
@@ -70,7 +71,7 @@ func TestAllocsSession(t *testing.T) {
 	if m.Peers() != 2 || a.Peers() != 1 || !a.PeerAt(0).Up {
 		t.Fatalf("peers %d %d %+v", m.Peers(), a.Peers(), a.PeerAt(0))
 	}
-	if n := testing.AllocsPerRun(100, run); n != 0 {
+	if n := allocstest.PerRun(t, 100, run); n != 0 {
 		t.Fatalf("%v allocations", n)
 	}
 }

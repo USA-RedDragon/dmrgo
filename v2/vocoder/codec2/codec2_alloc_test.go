@@ -2,7 +2,11 @@
 
 package codec2
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsAutoDecode(t *testing.T) {
 	for i, m := range allocModules(t) {
@@ -10,7 +14,7 @@ func TestAllocsAutoDecode(t *testing.T) {
 		slots := encodeAll(t, newCodecOf(t, Config{Mode: Mode3200, WASM: m}), voiced(4))
 		dst := make([]int16, 0, FrameSamples)
 		n := 0
-		allocs := testing.AllocsPerRun(100, func() {
+		allocs := allocstest.PerRun(t, 100, func() {
 			dst, _, _ = c.Decode(dst[:0], slots[n%len(slots)])
 			n++
 			if n%7 == 0 {
@@ -29,7 +33,7 @@ func TestAllocsEncode(t *testing.T) {
 		for _, mode := range []Mode{Mode2400, Mode3200} {
 			c := newCodecOf(t, Config{Mode: mode, WASM: m})
 			n := 0
-			allocs := testing.AllocsPerRun(100, func() {
+			allocs := allocstest.PerRun(t, 100, func() {
 				off := (n % 4) * FrameSamples
 				_, _ = c.Encode(pcm[off : off+FrameSamples])
 				n++
@@ -47,7 +51,7 @@ func TestAllocsDecodeLost(t *testing.T) {
 		slots := encodeAll(t, newCodecOf(t, Config{WASM: m}), voiced(4))
 		dst := make([]int16, 0, FrameSamples)
 		n := 0
-		allocs := testing.AllocsPerRun(100, func() {
+		allocs := allocstest.PerRun(t, 100, func() {
 			dst, _, _ = c.DecodeLost(dst[:0])
 			dst, _, _ = c.Decode(dst[:0], slots[n%len(slots)])
 			n++

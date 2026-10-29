@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -23,7 +24,7 @@ func allocsWant(t *testing.T, path func() (func() error, error), runs int, want 
 			t.Fatal(err)
 		}
 	}
-	n := testing.AllocsPerRun(runs, func() {
+	n := allocstest.PerRun(t, runs, func() {
 		if err := f(); err != nil {
 			t.Fatal(err)
 		}
@@ -46,7 +47,7 @@ func TestAllocsAPIDecodeAsGo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	goAllocs := testing.AllocsPerRun(100, func() { _ = pdu.DecodeCSBK(bits) })
+	goAllocs := allocstest.PerRun(t, 100, func() { _ = pdu.DecodeCSBK(bits) })
 	allocsWant(t, decodePath, 100, goAllocs)
 }
 

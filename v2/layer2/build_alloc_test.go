@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -77,7 +78,7 @@ func TestAllocsBuildBurst(t *testing.T) {
 		if err := c.build(); err != nil {
 			t.Fatalf("%s: %v", c.name, err)
 		}
-		if n := testing.AllocsPerRun(100, func() { _ = c.build() }); n != 0 {
+		if n := allocstest.PerRun(t, 100, func() { _ = c.build() }); n != 0 {
 			t.Errorf("%s: %.1f allocations, want 0", c.name, n)
 		}
 	}

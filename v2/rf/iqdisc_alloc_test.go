@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsIQDisc(t *testing.T) {
 	slots, _ := benchStream(t, 6)
@@ -12,7 +16,7 @@ func TestAllocsIQDisc(t *testing.T) {
 		const chunk = 4096
 		must(r.writeBB(x[:chunk]))
 		i := chunk
-		if n := testing.AllocsPerRun(20, func() {
+		if n := allocstest.PerRun(t, 20, func() {
 			must(r.writeBB(x[i : i+chunk]))
 			i += chunk
 		}); n != 0 {

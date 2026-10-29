@@ -1,6 +1,10 @@
 package rf
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+)
 
 func TestAllocsTier1Weak(t *testing.T) {
 	slots, _ := benchStream(t, 3)
@@ -8,7 +12,7 @@ func TestAllocsTier1Weak(t *testing.T) {
 	const chunk = 1 << 12
 	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier1, Format: IQFormatCU8})
 	pos, bursts := 0, 0
-	n := testing.AllocsPerRun(len(x)/chunk-2, func() {
+	n := allocstest.PerRun(t, len(x)/chunk-2, func() {
 		bursts += len(must(r.writeBB(x[pos : pos+chunk])))
 		pos += chunk
 	})
@@ -22,7 +26,7 @@ func TestAllocsTier1Weak(t *testing.T) {
 	}
 	dst := make([]Burst, 0, d.maxBursts(1<<10))
 	pos, bursts = 0, 0
-	n = testing.AllocsPerRun(len(a)/(1<<10)-2, func() {
+	n = allocstest.PerRun(t, len(a)/(1<<10)-2, func() {
 		dst = d.AppendBursts(dst[:0], a[pos:pos+1<<10])
 		bursts += len(dst)
 		pos += 1 << 10

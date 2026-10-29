@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/privacy"
@@ -49,7 +50,7 @@ func TestAllocs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		n := testing.AllocsPerRun(200, func() {
+		n := allocstest.PerRun(t, 200, func() {
 			if !prx.Data(&msg).Decrypting {
 				t.Fatal("no data decryption")
 			}

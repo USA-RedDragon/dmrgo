@@ -3,6 +3,7 @@ package digest_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 )
 
@@ -14,7 +15,7 @@ func TestAllocsDigest(t *testing.T) {
 	var m digest.HMACSHA1
 	var b digest.BLAKE2b
 	var out [64]byte
-	n := testing.AllocsPerRun(100, func() {
+	n := allocstest.PerRun(t, 100, func() {
 		s1.Reset()
 		s1.Write(msg)
 		a := s1.Sum()

@@ -5,6 +5,7 @@ package lrrp_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 )
 
@@ -12,7 +13,7 @@ func TestAllocs(t *testing.T) {
 	data := unhex(t, specReport)
 	m := new(lrrp.Message)
 	buf := make([]byte, 0, 64)
-	n := testing.AllocsPerRun(50, func() {
+	n := allocstest.PerRun(t, 50, func() {
 		if err := lrrp.DecodeMessageInto(m, data); err != nil {
 			panic(err)
 		}

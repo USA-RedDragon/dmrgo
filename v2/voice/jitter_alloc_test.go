@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -16,7 +17,7 @@ func TestAllocsJitter(t *testing.T) {
 	var p voice.JitterPacket
 	now := time.Duration(0)
 	seq := uint16(0)
-	n := testing.AllocsPerRun(1000, func() {
+	n := allocstest.PerRun(t, 1000, func() {
 		j.Push(now, &raw, layer2.Hint{Seq: seq, HasSeq: true, SeqBits: 8}, 1)
 		seq++
 		now += burst
