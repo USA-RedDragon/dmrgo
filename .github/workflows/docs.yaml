@@ -1,0 +1,37 @@
+name: Docs
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+
+    env:
+      PANDOC_VERSION: "3.11"
+      PANDOC_SHA256: 37edb3bbcf722f921a009941bf5874e2e0c09263226c9b4a2d980788cb062ab6
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Check the generated parts of the docs
+        run: go -C v2 mod download && go run -C cmd/docgen . -check
+
+      - name: Install pandoc
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/pandoc.tar.gz" "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-amd64.tar.gz"
+          echo "${PANDOC_SHA256}  $RUNNER_TEMP/pandoc.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/pandoc.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/pandoc-${PANDOC_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Build the docs site
+        run: docs/site/build.sh
