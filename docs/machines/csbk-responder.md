@@ -96,4 +96,4 @@ Only `NewResponder` returns an error, a [`*dmrgo.ConfigError`](https://pkg.go.de
 
 - [csbk.Requester](csbk-requester.md) sends the requests that a Responder answers.
 - [csbk.Preambles](csbk-preambles.md) follows the Pre_CSBKs that come before a request.
-- The guide on radio check, call alert and other CSBK services uses a Responder.
+- The guide [Radio check, call alert and other CSBK services](../guides/csbk-services.md) uses a Responder.

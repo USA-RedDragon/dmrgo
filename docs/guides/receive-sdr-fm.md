@@ -73,7 +73,7 @@ The configs of the two receivers:
 
 DMR is 4FSK: each symbol is one of four frequency deviations and carries 2 bits. The receiver detects the symbols, searches for the SYNC patterns, locks to the slot timing and follows it, and decodes each FEC field with soft decisions. It also finds the superframe position of each voice burst, since bursts B to F carry no SYNC. (ETSI TS 102 361-1 clauses 6 and 10)
 
-The tiers trade cost for sensitivity. Tier 0 slices the discriminator output and fits a microcontroller. Tier 1 adds the soft decoders. Tier 2 detects the bursts again coherently with a trellis that carries the carrier phase. Tier 3 is for offline decoding. The [Receiver datasheet](../rx.md) gives the sensitivity, compute and RAM of each tier.
+The tiers trade cost for sensitivity. Tier 0 slices the discriminator output and fits a microcontroller. Tier 1 adds the soft decoders. Tier 2 detects the bursts again coherently with a trellis that carries the carrier phase. Tier 3 is for offline decoding. The [Receiver datasheet](../rx/README.md) gives the sensitivity, compute and RAM of each tier.
 
 The receiver gives bursts; the machines do the rest. The state machines: [voice Receiver](../machines/voice-receiver.md), [data Receiver](../machines/data-receiver.md), [bs Repeater](../machines/bs-repeater.md) and, for a trunked site, [trunk Follower](../machines/trunk-follower.md).
 

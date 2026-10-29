@@ -45,6 +45,6 @@ rtl_sdr -f <Hz> -s 2048000 - | go run ./cmd/dmrrf rx -i - -format cu8 -rate 2048
 
 An FM radio with a discriminator output also works. [rf.NewAudioReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewAudioReceiver) takes the samples of the discriminator in place of I/Q.
 
-The [Receiver datasheet](../rx.md) gives the sensitivity, the compute and the memory of each tier.
+The [Receiver datasheet](../rx/README.md) gives the sensitivity, the compute and the memory of each tier.
 
 Next: [Next steps](06-next-steps.md).

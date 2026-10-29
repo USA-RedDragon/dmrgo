@@ -127,4 +127,4 @@ Match [`csbk.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk
 - [csbk.Preambles](csbk-preambles.md) follows the Pre_CSBKs that a Requester sends before its request.
 - [csbk.Wakeup](csbk-wakeup.md) wakes a BS before a request on a repeater that hibernates.
 - [data.Sender](data-sender.md) uses the same channel access rules for data.
-- The guide on radio check, call alert and other CSBK services uses a Requester.
+- The guide [Radio check, call alert and other CSBK services](../guides/csbk-services.md) uses a Requester.

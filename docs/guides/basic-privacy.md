@@ -4,7 +4,7 @@ This guide shows how to send and receive voice calls with Basic Privacy, the 16-
 
 ## Goal
 
-Apply Basic Privacy to the voice of a call that a `voice.Transmitter` sends, and remove it from the voice of a call that a `voice.Receiver` gets, with the key number that the radios use.
+Apply Basic Privacy to the voice of a call that a [voice.Transmitter](../machines/voice-transmitter.md) sends, and remove it from the voice of a call that a [voice.Receiver](../machines/voice-receiver.md) gets, with the key number that the radios use.
 
 ## What you need
 

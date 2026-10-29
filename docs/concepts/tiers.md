@@ -11,7 +11,7 @@ The tiers are the constants of [rf.Tier](https://pkg.go.dev/github.com/USA-RedDr
 <!-- dmrgo:code file=v2/rf/receiver.go symbol=TierDefault -->
 <!-- /dmrgo:code -->
 
-The [Receiver datasheet](../rx.md) gives the measured sensitivity, CPU and RAM of each tier, for each input: FM discriminator audio, I/Q from a software radio, and I/Q that a radio chip filtered to the channel.
+The [Receiver datasheet](../rx/README.md) gives the measured sensitivity, CPU and RAM of each tier, for each input: FM discriminator audio, I/Q from a software radio, and I/Q that a radio chip filtered to the channel.
 
 ## Pick a tier
 
@@ -38,6 +38,6 @@ The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.
 <!-- dmrgo:config pkg=rf type=TxConfig -->
 <!-- /dmrgo:config -->
 
-The [Transmitter datasheet](../tx.md) gives the limits, the formats, the rates and the measured margins of each transmit tier.
+The [Transmitter datasheet](../tx/README.md) gives the limits, the formats, the rates and the measured margins of each transmit tier.
 
 Next: [Get started](../start/01-install.md), if you have not done it yet.

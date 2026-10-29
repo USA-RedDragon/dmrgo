@@ -77,6 +77,6 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Versioning and compatibility](project/versioning.md)
   - [v2.1 breaking changes](project/breaking-v2.1.md)
   - [Tooling and checks](project/tooling.md) <!-- old: tooling.md -->
-  - [License](../LICENSE)
+  - [License](project/license.md)
 
 Each item is a link to a page, or, for a page that is planned and not written, its title and its path in code. A comment `<!-- old: <path> -->` after a link gives the path of the page before it moved; the site uses that file until the new one exists. A link to a file that is not a page, or to another site, shows in the navigation and opens that file or site.

@@ -92,4 +92,4 @@ No config is out of range, so `NewPreambles` returns a nil error; it returns one
 - [csbk.Requester](csbk-requester.md) sends Pre_CSBKs before a request.
 - [data.Sender](data-sender.md) sends Pre_CSBKs before each try of a data message, and [data.Receiver](data-receiver.md) starts a data call at them.
 - [bs.Repeater](bs-repeater.md) holds a slot for the source of Pre_CSBKs.
-- The guide on how to send SMS and confirmed data with retries, and the guide on radio check, call alert and other CSBK services, show Pre_CSBKs on air.
+- The guides [Send SMS and confirmed data with retries](../guides/send-data.md) and [Radio check, call alert and other CSBK services](../guides/csbk-services.md) show Pre_CSBKs on air.

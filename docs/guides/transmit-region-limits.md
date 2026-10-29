@@ -83,7 +83,7 @@ The errors of the transmitters:
 
 The transmitter makes DMR 4FSK on a carrier, with the power ramps of TDMA bursts in the guard time of MS bursts. A BS-sourced burst keeps the carrier up into the next slot. It places each burst on the 30 ms slot grid by its stream and slot, and a new stream keys down and up again. (ETSI TS 102 361-1 clause 10)
 
-Each region and service has an emission mask and spurious domain limits. Tests of the library measure the signal of each tier, rate and setup against them, and the results are tables in the code. A setup is accepted only where the measured signal keeps the limits with margin. The [Transmitter datasheet](../tx.md) gives the limits, the margins and the cost of each tier, generated from those tables. Because the tables change as measurements are added, this guide does not repeat them.
+Each region and service has an emission mask and spurious domain limits. Tests of the library measure the signal of each tier, rate and setup against them, and the results are tables in the code. A setup is accepted only where the measured signal keeps the limits with margin. The [Transmitter datasheet](../tx/README.md) gives the limits, the margins and the cost of each tier, generated from those tables. Because the tables change as measurements are added, this guide does not repeat them.
 
 The bursts come from the service machines: [voice Transmitter](../machines/voice-transmitter.md), [data Sender](../machines/data-sender.md), [csbk Requester](../machines/csbk-requester.md) and [bs Repeater](../machines/bs-repeater.md).
 

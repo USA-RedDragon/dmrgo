@@ -125,4 +125,4 @@ Only `NewReceiver` returns an error, a [`*dmrgo.ConfigError`](https://pkg.go.dev
 - [csbk.Preambles](csbk-preambles.md) follows Pre_CSBKs that announce a CSBK as well as data.
 - [voice.Receiver](voice-receiver.md) follows the voice calls of the same channel. A monitor feeds one decoded burst to both with `Decoded`.
 - [bs.Repeater](bs-repeater.md) repeats the data of a channel.
-- The guide on how to send SMS and confirmed data with retries, the guide on how to report and request location, and the guide on how to follow calls on both slots of a bit stream use a Receiver.
+- The guides [Send SMS and confirmed data with retries](../guides/send-data.md), [Run TCP or UDP over DMR data](../guides/tcp-udp-over-dmr.md) and [Report and request location: LIP, LRRP, NMEA](../guides/location.md) use a Receiver.

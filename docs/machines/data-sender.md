@@ -118,4 +118,4 @@ Match [`data.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data
 - [csbk.Preambles](csbk-preambles.md) follows the Pre_CSBKs that a Sender sends.
 - [bs.Repeater](bs-repeater.md) repeats the data and holds the data hang time for the response.
 - [csbk.Requester](csbk-requester.md) uses the same channel access ideas for CSBK requests.
-- The guide on how to send SMS and confirmed data with retries, and the guide on how to run TCP or UDP over DMR data, use a Sender.
+- The guides [Send SMS and confirmed data with retries](../guides/send-data.md) and [Run TCP or UDP over DMR data](../guides/tcp-udp-over-dmr.md) use a Sender.

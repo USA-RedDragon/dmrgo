@@ -90,4 +90,4 @@ Output:
 
 - [bs.Repeater](bs-repeater.md) is the BS side, which wakes on BS_Dwn_Act with `ActivationWakeup`.
 - [csbk.Requester](csbk-requester.md) and [data.Sender](data-sender.md) send after the outbound starts.
-- The guide on radio check, call alert and other CSBK services sends requests through a repeater.
+- The guide [Radio check, call alert and other CSBK services](../guides/csbk-services.md) wakes a repeater with a Wakeup.

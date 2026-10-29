@@ -6,7 +6,7 @@ This page lists where to go after the first five steps: the concepts behind the 
 
 - [Install](01-install.md): you added the module and got the captures.
 - [Decode a burst](02-decode-a-burst.md): `layer2` turned 33 bytes into a burst, with its FEC result and its PDU.
-- [Follow a voice call](03-follow-a-voice-call.md): a `voice.Receiver` turned bursts into call events.
+- [Follow a voice call](03-follow-a-voice-call.md): a [voice.Receiver](../machines/voice-receiver.md) turned bursts into call events.
 - [Send an SMS](04-send-an-sms.md): `sms` and `data` read a text and sent a confirmed reply.
 - [Receive on a radio](05-receive-on-a-radio.md): `rf` recovered the bursts from I/Q samples.
 
@@ -43,6 +43,6 @@ Each state machine has a page with its states, config, timers and errors. The ma
 ## Reference
 
 - The [Go API](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) on pkg.go.dev.
-- The [Receiver](../rx.md) and [Transmitter](../tx.md) datasheets.
-- [Examples](../examples.md): the example programs, which run offline on captures.
-- [ETSI coverage](../etsi.md): the status of each clause of ETSI TS 102 361.
+- The [Receiver](../rx/README.md) and [Transmitter](../tx/README.md) datasheets.
+- [Examples](../reference/examples.md): the example programs, which run offline on captures.
+- [ETSI coverage](../reference/etsi.md): the status of each clause of ETSI TS 102 361.

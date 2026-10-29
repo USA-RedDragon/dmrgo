@@ -113,4 +113,4 @@ The beacon names a leader, so the radio takes its slot timing at once (`OutputTi
 
 - [csbk.Requester](csbk-requester.md) and [csbk.Responder](csbk-responder.md) run CSBK services on the same channel. Call `Terminator` after a request that the Requester sends.
 - [voice.Transmitter](voice-transmitter.md) and [data.Sender](data-sender.md) send the transmissions that a CT_CSBK_Term follows.
-- The guide on radio check, call alert and other CSBK services covers CSBKs on air.
+- The guide [Radio check, call alert and other CSBK services](../guides/csbk-services.md) covers CSBKs on air.

@@ -33,7 +33,7 @@ Every path through the stack passes a 33-byte burst, a [layer2.RawBurst](https:/
 - Each network gives bursts with a hint: [dmrd.Data.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Data.Hint), [ipsc.User.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.Hint), [hytera.Frame.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Hint) and [mmdvm.DMRData.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DMRData.Hint).
 - The services take a burst and a hint in `Burst` or `Decoded`, and return bursts to send, each with its hint.
 
-So one service machine works with every source. A `voice.Receiver` follows a call from an RTL-SDR, from an MMDVM modem or from a network master with the same code. The [Get started](../start/01-install.md) steps show this: steps 3 and 5 give the same machine bursts from a file and from I/Q.
+So one service machine works with every source. A [voice.Receiver](../machines/voice-receiver.md) follows a call from an RTL-SDR, from an MMDVM modem or from a network master with the same code. The [Get started](../start/01-install.md) steps show this: steps 3 and 5 give the same machine bursts from a file and from I/Q.
 
 ## Where the layers come from
 
@@ -42,6 +42,6 @@ So one service machine works with every source. A `voice.Receiver` follows a cal
 - Packet data and its applications follow ETSI TS 102 361-3. (ETSI TS 102 361-3 clauses 5 and 6)
 - Trunking follows ETSI TS 102 361-4. (ETSI TS 102 361-4 clauses 6.2 to 6.6)
 
-The networks, the MOTOTRBO and Hytera services, and the vocoders are not in ETSI TS 102 361. Each package doc gives the source that it follows. [ETSI coverage](../etsi.md) gives the status of each clause.
+The networks, the MOTOTRBO and Hytera services, and the vocoders are not in ETSI TS 102 361. Each package doc gives the source that it follows. [ETSI coverage](../reference/etsi.md) gives the status of each clause.
 
 Next: [I/O-free services](services.md).

@@ -51,7 +51,7 @@ When `Header.AckRequired` is set, answer with [tms.NewAck](https://pkg.go.dev/gi
 
 ### 4. Carry the packets on a channel
 
-Give the IPv4 packet to a `data.Sender` as the payload of a confirmed data message with the SAP IP based packet data and the radio ID of the radio as the destination LLID. On the receive side, a `data.Receiver` returns the payload of each data packet. Pass it to `ip.Decode`, and pick ARS or TMS by the destination port. The guide [Send SMS and confirmed data with retries](send-data.md) shows both machines.
+Give the IPv4 packet to a [data.Sender](../machines/data-sender.md) as the payload of a confirmed data message with the SAP IP based packet data and the radio ID of the radio as the destination LLID. On the receive side, a [data.Receiver](../machines/data-receiver.md) returns the payload of each data packet. Pass it to `ip.Decode`, and pick ARS or TMS by the destination port. The guide [Send SMS and confirmed data with retries](send-data.md) shows both machines.
 
 To read text in every format that radios use, not only TMS, use [sms.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/sms#Decode). It calls `tms.DecodeMessage` for a packet to the TMS port.
 

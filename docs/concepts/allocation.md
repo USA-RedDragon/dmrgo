@@ -70,6 +70,6 @@ Three checks hold the rule. None of them has a list of functions to keep up to d
 - The same package adds each allocation site that `tinygo build -print-allocs` reports for the pico and for `riscv-qemu`.
 - [v2/internal/allocs](../../v2/internal/allocs) counts the allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
 
-[Tooling](../tooling.md) gives the commands that write and check the table.
+[Tooling](../project/tooling.md) gives the commands that write and check the table.
 
 Next: [Tiers](tiers.md).
