@@ -4,6 +4,7 @@ import (
 	"math"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 )
 
@@ -74,7 +75,20 @@ func floorAt(c curve, x float64) (float64, bool) {
 
 const refConfidence = 1e-3
 
+var errorLowers sync.Map
+
 func errorLower(k, n int) float64 {
+	if v, ok := errorLowers.Load([2]int{k, n}); ok {
+		if p, ok := v.(float64); ok {
+			return p
+		}
+	}
+	p := errorLowerOf(k, n)
+	errorLowers.Store([2]int{k, n}, p)
+	return p
+}
+
+func errorLowerOf(k, n int) float64 {
 	if k == 0 {
 		return 0
 	}
@@ -100,8 +114,8 @@ func binomialAtMost(k, n int, p float64) float64 {
 	}
 	lp, lq := math.Log(p), math.Log1p(-p)
 	var sum float64
+	lg, _ := math.Lgamma(float64(n + 1))
 	for i := 0; i <= k; i++ {
-		lg, _ := math.Lgamma(float64(n + 1))
 		li, _ := math.Lgamma(float64(i + 1))
 		lr, _ := math.Lgamma(float64(n - i + 1))
 		sum += math.Exp(lg - li - lr + float64(i)*lp + float64(n-i)*lq)
