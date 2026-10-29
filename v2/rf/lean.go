@@ -53,6 +53,7 @@ const (
 	leanClockGain       = 0.0002
 	leanClockMax        = 0.002
 	leanStretchMin      = 0.0002
+	replayFlatLevel     = 0.3
 	leanClockDead       = 0.000075
 	leanMidGate         = 0
 	leanSyncUnroll      = true

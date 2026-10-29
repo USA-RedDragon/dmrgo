@@ -802,7 +802,14 @@ func (x *softExt) firstSlot(c *leanCore) {
 				}
 			}
 			c.eAcc, c.eSyms = 0, 0
-			c.slot()
+			if j < n && replayFlat(c, c.first+int64(j)*slotSymbols) {
+				noise := c.noise
+				c.noise = max(noise, 1)
+				c.slot()
+				c.noise = noise
+			} else {
+				c.slot()
+			}
 		}
 	}
 	c.replaying, c.replayDry = false, false
@@ -827,6 +834,18 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.first = first - int64(n)*slotSymbols
 	c.slotEnd = slotEnd
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
+}
+
+func replayFlat(c *leanCore, base int64) bool {
+	var sv, svv float32
+	for k := base; k < base+slotSymbols; k++ {
+		v := float32(c.ring[ringPos(k)])
+		sv += v
+		svv += v * v
+	}
+	const n = slotSymbols
+	lvl := c.devScale * deviationHz / discStepHz * replayFlatLevel
+	return svv/n-(sv/n)*(sv/n) < lvl*lvl
 }
 
 func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
