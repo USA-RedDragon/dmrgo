@@ -176,8 +176,6 @@ type slot struct {
 
 	call      voice.Call
 	hasCall   bool
-	service   Service
-	reason    Reason
 	rejected  bool
 	last      time.Duration
 	hangUntil time.Duration
@@ -662,7 +660,7 @@ func (r *Repeater) Reject(s enums.Slot) error {
 	if sl.state == SlotVoice || sl.state == SlotData {
 		sl.tx.Reset()
 		sl.head, sl.count = 0, 0
-		sl.state, sl.reason, sl.rejected = SlotRejected, ReasonRejected, true
+		sl.state, sl.rejected = SlotRejected, true
 	}
 	return nil
 }
@@ -946,7 +944,7 @@ func (r *Repeater) voice(now time.Duration, s *slot, b *layer2.Burst, lc *pdu.LC
 	}
 	if !s.repeating() {
 		s.rx.Reset()
-		s.state, s.owner, s.service, s.hasCall = SlotVoice, from, ServiceVoice, false
+		s.state, s.owner, s.hasCall = SlotVoice, from, false
 	}
 	s.last = now
 	return r.events(now, s, s.rx.Decoded(now, b, *h, r.ev[:0]), dst)
@@ -1050,7 +1048,7 @@ func (r *Repeater) preamble(now time.Duration, s *slot, c *pdu.CSBKBytes, dt enu
 	case !pre || s.repeating():
 		return
 	}
-	s.state, s.owner, s.service, s.last = SlotPreamble, from, ServiceData, now
+	s.state, s.owner, s.last = SlotPreamble, from, now
 	s.call, s.activity = preambleCall(c)
 	s.hash, s.hasCall = hashOf(s.call.Target), true
 }
@@ -1102,7 +1100,7 @@ func (r *Repeater) dataHeader(now time.Duration, s *slot, raw *layer2.RawBurst, 
 		dst = r.endVoice(now, s, voice.EndDataSync, dst)
 	}
 	start := s.state != SlotData || s.owner != from
-	s.state, s.owner, s.service, s.last = SlotData, from, ServiceData, now
+	s.state, s.owner, s.last = SlotData, from, now
 	s.call, s.hasCall = voice.Call{Group: group, Target: target, Source: source}, true
 	s.activity, s.hash = enums.ActivityIndividualData, hashOf(target)
 	if group {
@@ -1259,7 +1257,7 @@ func (r *Repeater) pull(now time.Duration, s *slot, dst []Output) (layer2.RawBur
 	if s.tx.State() == voice.TransmitterTimedOut {
 		s.tx.Reset()
 		if s.state == SlotVoice {
-			s.state, s.reason = SlotRejected, ReasonTimeout
+			s.state = SlotRejected
 			var o *Output
 			dst, o = appendOutput(dst, OutputRejected)
 			o.Slot, o.From, o.Reason, o.Call = s.id, s.owner, ReasonTimeout, s.call

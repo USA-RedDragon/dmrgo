@@ -24,7 +24,6 @@ type discFront struct {
 	preHist [2 * preTaps]complex64
 	preHead int
 	prev    complex64
-	lag     complex64
 	fHist   [2 * rrcTaps]float32
 	fHead   int
 }
@@ -85,7 +84,7 @@ func (f *discFront) push(v complex64) (s, power float32, ok bool) {
 		y += complex((real(a)+real(b))*h, (imag(a)+imag(b))*h)
 	}
 	d := y * complex(real(f.prev), -imag(f.prev))
-	f.prev, f.lag = y, d
+	f.prev = y
 	fr := atan2f(imag(d), real(d)) * (discRate / (2 * math.Pi))
 	const nr = rrcTaps
 	f.fHist[f.fHead] = fr

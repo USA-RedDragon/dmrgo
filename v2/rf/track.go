@@ -71,7 +71,6 @@ type tracker struct {
 	head   int
 	n      int
 	ch     [2]chanTrack
-	bs     bool
 	votes  [16]int
 	repair func(*trackEntry, enums.ColorCode, bool)
 	elc    func(*chanTrack, *[4]*trackEntry)
@@ -80,13 +79,12 @@ type tracker struct {
 
 func newTracker() *tracker {
 	t := &tracker{q: make([]trackEntry, pendingSlots+2)}
-	t.reset(false)
+	t.reset()
 	return t
 }
 
-func (t *tracker) reset(bs bool) {
+func (t *tracker) reset() {
 	t.head, t.n = 0, 0
-	t.bs = bs
 	for i := range t.ch {
 		t.ch[i].sf, t.ch[i].hdr, t.ch[i].accN, t.ch[i].raw = noSlot, noSlot, 0, false
 	}

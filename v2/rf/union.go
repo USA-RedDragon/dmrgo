@@ -40,30 +40,27 @@ type unionHead struct {
 }
 
 type discUnion struct {
-	r        *discRx
-	twins    []*discRx
-	e        *softExt
-	user     func(*Burst)
-	hz       float64
-	n        int64
-	limit    float64
-	inSec    float64
-	main     []Burst
-	head     Burst
-	fill     []bool
-	extra    []Burst
-	hist     [unionHist]float64
-	hn       int
-	heads    [unionHeads]unionHead
-	headN    int
-	voices   [unionVoices]unionVoice
-	voiceN   int
-	late     int
-	maxLag   float64
-	dropped  int
-	filled   int
-	replaced int
-	elc      int
+	r      *discRx
+	twins  []*discRx
+	e      *softExt
+	user   func(*Burst)
+	hz     float64
+	n      int64
+	limit  float64
+	inSec  float64
+	main   []Burst
+	head   Burst
+	fill   []bool
+	extra  []Burst
+	hist   [unionHist]float64
+	hn     int
+	heads  [unionHeads]unionHead
+	headN  int
+	voices [unionVoices]unionVoice
+	voiceN int
+	late   int
+	maxLag float64
+	elc    int
 }
 
 func (r *discRx) addUnion(opt *options) {
@@ -147,7 +144,6 @@ func (u *discUnion) onMain(b *Burst) {
 func (u *discUnion) onTwin(b *Burst) {
 	u.noteHead(b)
 	if b.Seconds < u.limit || len(u.extra) == cap(u.extra) {
-		u.dropped++
 		return
 	}
 	n := len(u.extra)
@@ -317,13 +313,11 @@ func (u *discUnion) release(limit float64) {
 				_, c := m.Decoded()
 				m.Fixed, _ = x.Decoded()
 				m.FixedCACH, m.HasFixed = c, true
-				u.replaced++
 			}
 			u.embedded(x)
 			continue
 		}
 		u.embedded(x)
-		u.filled++
 		u.insert(x)
 	}
 	u.extra = u.extra[:k]

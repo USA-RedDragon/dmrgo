@@ -132,7 +132,6 @@ type current struct {
 	pending   int
 	hasSeq    bool
 	seq       uint16
-	seqBits   uint8
 	lastBlock time.Duration
 }
 
@@ -565,7 +564,7 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 		case r.cur.pending > 0:
 			r.cur.pending--
 			r.cur.lastBlock = now
-			r.cur.hasSeq, r.cur.seq, r.cur.seqBits = h.HasSeq, h.Seq, h.SeqBits
+			r.cur.hasSeq, r.cur.seq = h.HasSeq, h.Seq
 		}
 		if done {
 			out = r.complete(now, &m, done, err, out)
@@ -578,7 +577,7 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 	prev := r.cur
 	r.cur = current{
 		call: c, format: dh.Format(), cc: cc, full: true,
-		hasSeq: h.HasSeq, seq: h.Seq, seqBits: h.SeqBits, lastBlock: now,
+		hasSeq: h.HasSeq, seq: h.Seq, lastBlock: now,
 	}
 	if r.hasCC {
 		r.cur.cc = r.cc
@@ -646,7 +645,7 @@ func (r *Receiver) block(now time.Duration, b *layer2.Burst, h *layer2.Hint, out
 		}
 	}
 	r.cur.lastBlock = now
-	r.cur.hasSeq, r.cur.seq, r.cur.seqBits = h.HasSeq, h.Seq, h.SeqBits
+	r.cur.hasSeq, r.cur.seq = h.HasSeq, h.Seq
 	r.cur.pending--
 	r.stats.Blocks++
 	if b.FEC.PDU.Uncorrectable {

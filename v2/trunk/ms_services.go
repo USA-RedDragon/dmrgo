@@ -48,9 +48,8 @@ type msSvc struct {
 	intOn   bool
 	intEnd  bool
 
-	ip       [16]byte
-	ipv6     bool
-	ipRemove bool
+	ip   [16]byte
+	ipv6 bool
 
 	supl    Appended
 	hasSupl bool
@@ -329,7 +328,7 @@ func (m *MS) AdviseIP(now time.Duration, ip [16]byte, ipv6, remove bool) error {
 		return ErrBusy
 	}
 	s := &m.svc
-	s.ip, s.ipv6, s.ipRemove = ip, ipv6, remove
+	s.ip, s.ipv6 = ip, ipv6
 	field, _ := layer3.RegistrationServiceOptions{IPInform: true, PowerSave: s.psRQ, Register: !remove}.Field()
 	m.kind = enums.ServiceKindRegistration
 	m.startAccess(now, reqIP, constants.GatewayREGI, field, false)

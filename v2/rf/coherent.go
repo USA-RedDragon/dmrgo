@@ -92,7 +92,6 @@ type trellisSource interface {
 
 type trellis struct {
 	m         *cpmModel
-	maxSteps  int
 	win, look int
 	x         []complex64
 	lp        []float32
@@ -117,7 +116,7 @@ func newTrellis(m *cpmModel, maxSteps, win, look int) *trellis {
 	look = min(look, maxSteps-win)
 	n := win + look
 	return &trellis{
-		m: m, maxSteps: maxSteps, win: win, look: look, x: make([]complex64, n*m.sps), lp: make([]float32, 4*n),
+		m: m, win: win, look: look, x: make([]complex64, n*m.sps), lp: make([]float32, 4*n),
 		alpha: make([]float32, (n+1)*m.states), beta: make([]float32, m.states), next: make([]float32, m.states),
 		rot: make([]complex64, m.states), nrot: make([]complex64, m.states),
 		bm: make([]float32, n*m.windows), corr: make([]complex64, m.windows),

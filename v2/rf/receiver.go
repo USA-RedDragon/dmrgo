@@ -104,7 +104,6 @@ const (
 type anchorInfo struct {
 	pattern enums.SyncPattern
 	metric  float64
-	rot     complex64
 	amp     float64
 	noise   float64
 }
@@ -481,7 +480,7 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	}
 	clear(r.passRecs)
 	r.lastAnch = math.MinInt64
-	r.tk.reset(r.bs)
+	r.tk.reset()
 	if r.opt.Coherent {
 		s := r.resetSlot(0)
 		voice, dp, _ := sourceAt(src).SyncPatterns()
@@ -982,8 +981,7 @@ func (r *engine) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 	span := float64(r.search.span)
 	amp := a / span
 	noise := math.Max(e/span-amp*amp, 1e-12)
-	rot := complex(real(c)/float32(a), -imag(c)/float32(a))
-	return anchorInfo{pattern: p, metric: a * a / (e * span), rot: rot, amp: amp, noise: noise}
+	return anchorInfo{pattern: p, metric: a * a / (e * span), amp: amp, noise: noise}
 }
 
 func (r *engine) rotAt(t float64) complex128 {

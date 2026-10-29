@@ -46,7 +46,6 @@ type aoptimizer struct {
 	pinHi     int
 	indep     bool
 	p         []float64
-	hz, rhz   float64
 	k2        float64
 	wts       []float64
 	f, x      []float64
@@ -101,7 +100,7 @@ func newAudioOptWin(iters, hz, win, anchor int) *aoptimizer {
 	al := w / math.Sqrt2
 	hold := 1 / float64(hz)
 	n := win * up
-	o := &aoptimizer{iters: iters, up: up, hz: float64(hz), rhz: rhz, k2: 2 * math.Pi / radioHz, win: win, ctx: win / 4, step: win / 2, settle: aoptSettle(hz), anchor: anchor}
+	o := &aoptimizer{iters: iters, up: up, k2: 2 * math.Pi / radioHz, win: win, ctx: win / 4, step: win / 2, settle: aoptSettle(hz), anchor: anchor}
 	free := win - o.ctx
 	if up*hz != radioHz {
 		o.k2 = 2 * math.Pi / rhz

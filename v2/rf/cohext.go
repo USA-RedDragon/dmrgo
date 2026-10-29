@@ -99,7 +99,6 @@ type cohStage struct {
 	peakRho                     float64
 	peakSrc                     int
 	peakData                    bool
-	base                        int64
 	hFit                        float64
 	hVar                        float64
 	hNew                        bool
@@ -701,7 +700,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	_, _, lo := s.ring()
 	s.gen++
-	s.base, s.bs, s.nextOK = c.base, c.bs, false
+	s.bs, s.nextOK = c.bs, false
 	s.carryOK = s.mineOK && s.mineSlot == b.Slot-1
 	if s.carryOK {
 		s.carry = s.mine
