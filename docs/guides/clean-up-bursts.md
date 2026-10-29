@@ -24,14 +24,14 @@ go run -C v2 ./examples/hotspot
 
 Decode each burst with the color code of the channel. [fec.Result.Combine](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#Result.Combine) adds the corrected bits of each burst to a total. A [VoiceReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceReceiver) returns the embedded LC of each superframe, which must match the Voice LC Header of the call.
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go lines=80-103 -->
+<!-- dmrgo:code file=v2/examples/hotspot/main.go lines=85-103 -->
 <!-- /dmrgo:code -->
 
 ### 2. Check each data burst as MMDVMHost does
 
 [RawBurst.MMDVMHostPayload](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#RawBurst.MMDVMHostPayload) returns the BPTC payload and whether MMDVMHost uses a burst of that data type from the network. Keep the Voice LC Header for the next step. From each voice burst, keep the AMBE+2 frames after FEC with `AMBEFrames`.
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go lines=104-125 -->
+<!-- dmrgo:code file=v2/examples/hotspot/main.go lines=104-120 -->
 <!-- /dmrgo:code -->
 
 ### 3. Regenerate the call from the LC and the frames

@@ -41,7 +41,10 @@ go test -C v2 -run ExampleTransmitter -v ./privacy
 
 Set the Privacy service option and FID 0x10 in the [voice.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Call), and call [Transmitter.Start](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Start) of the privacy Transmitter for each call. A Basic Privacy key ignores the message indicator, and sends no PI header. Then pass each output of the `voice.Transmitter` through [Transmitter.Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Output) before it goes on air. It changes the three AMBE+2 frames of each voice burst in place and leaves other bursts as they are.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go lines=38-67 -->
+<!-- dmrgo:code file=v2/privacy/example_test.go lines=38-49 -->
+<!-- /dmrgo:code -->
+
+<!-- dmrgo:code file=v2/privacy/example_test.go lines=57-67 -->
 <!-- /dmrgo:code -->
 
 ### 4. Receive the call

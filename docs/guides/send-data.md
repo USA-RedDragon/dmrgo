@@ -46,7 +46,7 @@ Put a compressed UDP/IPv4 header in front of the text, and make an unconfirmed d
 
 A confirmed data header requests a response. Each block of a confirmed packet has its own sequence number (DBSN) and CRC-9, so the receiver can identify each lost block. The example corrupts one block on the air.
 
-<!-- dmrgo:code file=v2/examples/data/main.go lines=134-159 -->
+<!-- dmrgo:code file=v2/examples/data/main.go lines=135-159 -->
 <!-- /dmrgo:code -->
 
 ### 4. Answer with a selective ACK and resend the missing block

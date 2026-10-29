@@ -41,7 +41,7 @@ In this example the two machines pass the bursts to each other in memory:
 
 The Requester sends the request again after each wait for the answer, up to the number of retries of its config, and then returns `OutputDone` with `ResultNoAnswer`. Call `Deadline` and `Tick` in a loop until `Deadline` returns false. [RequestOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#RequestOptions) adds Pre_CSBKs before the first try, for radios that scan or sleep, and sets the channel access of each try.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=44-62 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go lines=44-63 -->
 <!-- /dmrgo:code -->
 
 Report the state of the channel with `Channel` of each machine, so that a polite try waits for an idle channel. Until the first report the channel counts as idle, as it is for a network transport.
@@ -63,7 +63,7 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 - [Wakeup](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Wakeup) sends BS_Dwn_Act until the repeater outbound starts.
 - [Timing](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Timing) follows, elects and propagates the timing leader of a TDMA direct mode channel with CT_CSBKs.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=95-108 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go lines=95-109 -->
 <!-- /dmrgo:code -->
 
 ## Output

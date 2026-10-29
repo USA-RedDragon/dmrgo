@@ -33,7 +33,7 @@ The machines do no I/O. Give each UDP packet to `Packet` of the machine with the
 
 The Peer returns `OutputUp` when the master answers its registration, and `OutputPeers` when it gets a peer list. It then registers with each other peer of the list. The Master returns `OutputUp` for each new peer.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go lines=68-121 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go lines=68-149 -->
 <!-- /dmrgo:code -->
 
 ### 3. Send and receive the packets of a call

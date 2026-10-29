@@ -49,7 +49,7 @@ A [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2
 
 [codec2.New](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#New) returns a [vocoder.Codec](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#Codec). It returns `codec2.ErrUnavailable` in a build without libcodec2, so check for it. `Encode` takes `FrameSamples` samples of 8 kHz audio and returns one vocoder slot.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=173-192 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=174-192 -->
 <!-- /dmrgo:code -->
 
 ### 5. Send the Codec2 slots in a call
