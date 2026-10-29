@@ -152,7 +152,7 @@ func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 		in = s.iq(x, c.mult, c.signed)
 	}
 	sb := r.SampleBytes()
-	total := 0
+	var sizes []int
 	for off, i := 0, 0; off < len(in); i++ {
 		k := 4096
 		if len(c.cuts) > 0 {
@@ -160,26 +160,56 @@ func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 			k = 1 + v*v*v/16
 		}
 		k = min(k, len(in)-off)
-		got := r.AppendBursts(nil, in[off:off+k])
-		before := seen
-		if _, err := ro.Write(in[off : off+k]); err != nil {
-			t.Fatal(err)
-		}
-		if bound := r.MaxOutput(k/sb + 1); seen-before > bound || len(got) > bound {
-			t.Fatalf("%+v: a call of %d bytes gave %d and %d bursts, MaxOutput %d", c, k, len(got), seen-before, bound)
-		}
-		total += len(got)
+		sizes = append(sizes, k)
 		off += k
 	}
-	got := r.AppendFlush(nil)
-	before := seen
-	if err := ro.Flush(); err != nil {
-		t.Fatal(err)
+	n := len(sizes)
+	gots, bounds, seens := make([]int, n+1), make([]int, n+1), make([]int, n+1)
+	var oerr error
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		off := 0
+		for i, k := range sizes {
+			before := seen
+			if _, err := ro.Write(in[off : off+k]); err != nil {
+				oerr = err
+				return
+			}
+			seens[i] = seen - before
+			off += k
+		}
+		before := seen
+		oerr = ro.Flush()
+		seens[n] = seen - before
+	}()
+	off := 0
+	for i, k := range sizes {
+		gots[i] = len(r.AppendBursts(nil, in[off:off+k]))
+		bounds[i] = r.MaxOutput(k/sb + 1)
+		off += k
 	}
-	if bound := r.MaxOutput(0); len(got) > bound || seen-before > bound {
-		t.Fatalf("%+v: Flush gave %d and %d bursts, MaxOutput(0) %d", c, len(got), seen-before, bound)
+	gots[n] = len(r.AppendFlush(nil))
+	bounds[n] = r.MaxOutput(0)
+	<-done
+	if oerr != nil {
+		t.Fatal(oerr)
 	}
-	total += len(got)
+	total := 0
+	for i := range n {
+		if seens[i] > bounds[i] || gots[i] > bounds[i] {
+			t.Fatalf("%+v: a call of %d bytes gave %d and %d bursts, MaxOutput %d", c, sizes[i], gots[i], seens[i], bounds[i])
+		}
+		total += gots[i]
+	}
+	if bound := bounds[n]; gots[n] > bound || seens[n] > bound {
+		t.Fatalf("%+v: Flush gave %d and %d bursts, MaxOutput(0) %d", c, gots[n], seens[n], bound)
+	}
+	total += gots[n]
+	seen = 0
+	for _, v := range seens {
+		seen += v
+	}
 	if seen != total {
 		t.Errorf("%+v: %s appended %d bursts, OnBursts took %d", c, rxEngine(r), total, seen)
 	}
