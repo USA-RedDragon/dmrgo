@@ -13,8 +13,10 @@ const (
 	audioOffset = 300
 )
 
+const audioIFLen = 31
+
 func audioIFTaps() []float64 {
-	const n = 31
+	const n = audioIFLen
 	h := make([]float64, n)
 	fc := 6250.0 / basebandRate
 	for i := range h {
@@ -33,19 +35,45 @@ func discAudio(x []complex64, hz int) []int16 {
 }
 
 func radioAudio(x []complex64, hz int, deemph bool) []int16 {
-	h := audioIFTaps()
+	h := [audioIFLen]float64(audioIFTaps())
 	step := basebandRate / hz
-	aa := lowpassTaps(63, min(6250, 0.42*float64(hz))/basebandRate)
-	disc := make([]float64, 0, len(x))
-	var prev complex128
-	for i := 0; i+len(h) <= len(x); i++ {
-		var y complex128
+	aa := [63]float64(lowpassTaps(63, min(6250, 0.42*float64(hz))/basebandRate))
+	re, im := make([]float64, len(x)), make([]float64, len(x))
+	for i, v := range x {
+		re[i], im[i] = float64(real(v)), float64(imag(v))
+	}
+	n := max(len(x)-len(h)+1, 0)
+	disc := make([]float64, n)
+	var pr, pi float64
+	i := 0
+	for ; i+4 <= n; i += 4 {
+		var r0, r1, r2, r3, i0, i1, i2, i3 float64
+		a, b := (*[audioIFLen + 3]float64)(re[i:]), (*[audioIFLen + 3]float64)(im[i:])
 		for k, t := range h {
-			y += complex128(x[i+k]) * complex(t, 0)
+			r0 += a[k] * t
+			r1 += a[k+1] * t
+			r2 += a[k+2] * t
+			r3 += a[k+3] * t
+			i0 += b[k] * t
+			i1 += b[k+1] * t
+			i2 += b[k+2] * t
+			i3 += b[k+3] * t
 		}
-		d := y * complex(real(prev), -imag(prev))
-		prev = y
-		disc = append(disc, math.Atan2(imag(d), real(d))*basebandRate/(2*math.Pi))
+		d := (*[4]float64)(disc[i:])
+		d[0] = discHz(r0, i0, pr, pi)
+		d[1] = discHz(r1, i1, r0, i0)
+		d[2] = discHz(r2, i2, r1, i1)
+		d[3] = discHz(r3, i3, r2, i2)
+		pr, pi = r3, i3
+	}
+	for ; i < n; i++ {
+		var yr, yi float64
+		for k, t := range h {
+			yr += re[i+k] * t
+			yi += im[i+k] * t
+		}
+		disc[i] = discHz(yr, yi, pr, pi)
+		pr, pi = yr, yi
 	}
 	if deemph {
 		deemphasize(disc)
@@ -53,8 +81,9 @@ func radioAudio(x []complex64, hz int, deemph bool) []int16 {
 	out := make([]int16, 0, len(disc)/step)
 	for i := 0; i+len(aa) <= len(disc); i += step {
 		var hz float64
+		d := (*[len(aa)]float64)(disc[i:])
 		for k, t := range aa {
-			hz += disc[i+k] * t
+			hz += d[k] * t
 		}
 		out = append(out, int16(max(min(math.Round(hz*audioGain+audioOffset), math.MaxInt16), math.MinInt16)))
 	}
@@ -73,6 +102,11 @@ func deemphasize(x []float64) {
 		y := b0*v + b1*x1 - a1*y1
 		x[i], x1, y1 = y, v, y
 	}
+}
+
+func discHz(yr, yi, pr, pi float64) float64 {
+	d := complex(yr, yi) * complex(pr, -pi)
+	return math.Atan2(imag(d), real(d)) * basebandRate / (2 * math.Pi)
 }
 
 func lowpassTaps(n int, fc float64) []float64 {
