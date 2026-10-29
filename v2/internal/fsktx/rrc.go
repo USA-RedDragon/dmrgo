@@ -84,14 +84,14 @@ type pulse struct {
 	ridge    float64
 }
 
-func (p pulse) core(t float64) float64 {
+func (p *pulse) core(t float64) float64 {
 	if p.tab != nil {
 		return p.shape(t)
 	}
 	return rrc(t)
 }
 
-func (p pulse) taper(t float64) float64 {
+func (p *pulse) taper(t float64) float64 {
 	if p.tab != nil {
 		if d := float64(p.span) - math.Abs(t); p.edge > 0 && d >= 0 && d < p.edge {
 			return 0.5 * (1 - math.Cos(math.Pi*d/p.edge))
@@ -101,7 +101,7 @@ func (p pulse) taper(t float64) float64 {
 	return taper(p.win, p.beta, t/float64(p.span))
 }
 
-func (p pulse) shape(t float64) float64 {
+func (p *pulse) shape(t float64) float64 {
 	x := (t + float64(p.span)) * float64(p.per)
 	n := len(p.tab)
 	if x < 0 || x > float64(n-1) {
@@ -109,13 +109,19 @@ func (p pulse) shape(t float64) float64 {
 	}
 	i := int(x)
 	f := x - float64(i)
-	at := func(j int) float64 {
-		if j < 0 || j >= n {
-			return 0
+	var y0, y1, y2, y3 float64
+	if i >= 1 && i+2 < n {
+		y := p.tab[i-1 : i+3]
+		y0, y1, y2, y3 = y[0], y[1], y[2], y[3]
+	} else {
+		at := func(j int) float64 {
+			if j < 0 || j >= n {
+				return 0
+			}
+			return p.tab[j]
 		}
-		return p.tab[j]
+		y0, y1, y2, y3 = at(i-1), at(i), at(i+1), at(i+2)
 	}
-	y0, y1, y2, y3 := at(i-1), at(i), at(i+1), at(i+2)
 	return y1 + 0.5*f*(y2-y0+f*(2*y0-5*y1+4*y2-y3+f*(3*(y1-y2)+y3-y0)))
 }
 
@@ -211,7 +217,7 @@ func interpChain(hz, rate float64) func(f float64) float64 {
 	}
 }
 
-func (p pulse) base(t float64) float64 {
+func (p *pulse) base(t float64) float64 {
 	w := p.taper(t)
 	if w == 0 {
 		return 0
