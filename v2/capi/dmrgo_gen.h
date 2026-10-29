@@ -472,6 +472,7 @@ typedef struct dmrgo_privacy_transmitter_config_t dmrgo_privacy_transmitter_conf
 /* Go: rf.AudioReceiver. AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. */
 typedef struct dmrgo_rf_audio_receiver_t dmrgo_rf_audio_receiver_t;
 typedef struct dmrgo_rf_audio_rx_config_on_bursts_fn_t dmrgo_rf_audio_rx_config_on_bursts_fn_t;
+typedef struct dmrgo_rf_audio_rx_config_on_short_lc_fn_t dmrgo_rf_audio_rx_config_on_short_lc_fn_t;
 /* Go: rf.AudioRxConfig. AudioRxConfig sets up an AudioReceiver. */
 typedef struct dmrgo_rf_audio_rx_config_t dmrgo_rf_audio_rx_config_t;
 /* Go: rf.AudioTransmitter. AudioTransmitter turns DMR bursts into the deviation signal that drives the modulator input of an FM radio, as the radio chips of hotspots and MMDVM modems take it: codes of a converter, with the CACH of BS-sourced bursts and the guard time of MS bursts as a Transmitter places them. */
@@ -496,6 +497,8 @@ typedef struct dmrgo_rf_region_error_t dmrgo_rf_region_error_t;
 typedef struct dmrgo_rf_rx_config_t dmrgo_rf_rx_config_t;
 /* Go: rf.RxPreEmphasis. A RxPreEmphasis is the pre-emphasis of an AudioReceiver for a radio that de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, which dmrgo_rf_audio_rx_config_t.pre_emphasis takes. */
 typedef struct dmrgo_rf_rx_pre_emphasis_t dmrgo_rf_rx_pre_emphasis_t;
+/* Go: rf.ShortLC. ShortLC is a Short LC that a receiver decoded from the CACH of four bursts (ETSI TS 102 361-1 clause 7.1.3, ETSI TS 102 361-2 clause 7.1.3). */
+typedef struct dmrgo_rf_short_lc_t dmrgo_rf_short_lc_t;
 /* Go: rf.Transmitter. Transmitter turns DMR bursts into I/Q samples for a software radio: 4FSK on a carrier, with the power ramps of TDMA bursts. */
 typedef struct dmrgo_rf_transmitter_t dmrgo_rf_transmitter_t;
 /* Go: rf.TxConfig. TxConfig sets up a Transmitter. */
@@ -4086,6 +4089,22 @@ struct dmrgo_rf_audio_rx_config_on_bursts_fn_t {
 	DMRGO_USER_T user;
 };
 
+struct dmrgo_rf_short_lc_t {
+	/* LC is the Short LC. dmrgo_rf_short_lc_t.lc.fec is the result of the decode that recovered it, and is never uncorrectable. */
+	dmrgo_pdu_short_lc_t lc;
+	/* Stream, Slot and Seconds are those of the burst whose CACH carries the last fragment. */
+	int64_t stream;
+	int64_t slot;
+	double seconds;
+	/* Soft is set when soft-decision decoding recovered the Short LC from fragments that the hard decode of dmrgo_layer2_short_lc_assembler_t rejects. */
+	bool soft;
+};
+
+struct dmrgo_rf_audio_rx_config_on_short_lc_fn_t {
+	int (*fn)(DMRGO_USER_T user, const dmrgo_rf_short_lc_t *short_lcs, size_t short_lcs_len);
+	DMRGO_USER_T user;
+};
+
 struct dmrgo_rf_audio_rx_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
@@ -4101,6 +4120,8 @@ struct dmrgo_rf_audio_rx_config_t {
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
 	/* PreEmphasis, when not NULL, states that the radio de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, so that the receiver inverts it with the filter that it holds before it detects the bursts: a RxPreEmphasis of this receiver alone, set up by Init or NewRxPreEmphasis. NULL is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it. Every Tier and Rate takes it. A RxPreEmphasis that is not set up gives a *dmrgo_config_error_t. */
 	dmrgo_rf_rx_pre_emphasis_t *pre_emphasis;
+	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo_config_error_t for it. */
+	dmrgo_rf_audio_rx_config_on_short_lc_fn_t on_short_lc;
 };
 
 struct dmrgo_rf_audio_tx_config_on_samples_fn_t {
@@ -4165,6 +4186,8 @@ struct dmrgo_rf_rx_config_t {
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
 	/* LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for DMRGO_RF_TIER1, 8 for DMRGO_RF_TIER2, and 16 for DMRGO_RF_TIER3, and at most DMRGO_RF_MAX_LOOKBACK_SLOTS. DMRGO_RF_TIER0 keeps none, and loses the start of a stream that it enters late. */
 	int64_t lookback_slots;
+	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo_config_error_t for it. */
+	dmrgo_rf_audio_rx_config_on_short_lc_fn_t on_short_lc;
 };
 
 struct dmrgo_rf_tx_config_on_samples_fn_t {

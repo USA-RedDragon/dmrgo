@@ -13,6 +13,10 @@ static inline int dmrgo_rf_audio_rx_config_on_bursts_fn_t__call(dmrgo_rf_audio_r
 	return f.fn(f.user, bursts, bursts_len);
 }
 
+static inline int dmrgo_rf_audio_rx_config_on_short_lc_fn_t__call(dmrgo_rf_audio_rx_config_on_short_lc_fn_t f, const dmrgo_rf_short_lc_t *short_lcs, size_t short_lcs_len) {
+	return f.fn(f.user, short_lcs, short_lcs_len);
+}
+
 static inline int dmrgo_rf_audio_tx_config_on_samples_fn_t__call(dmrgo_rf_audio_tx_config_on_samples_fn_t f, const int16_t *values, size_t values_len) {
 	return f.fn(f.user, values, values_len);
 }

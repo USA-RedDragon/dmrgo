@@ -12,6 +12,7 @@ void *dmrgo__fnptr0(void);
 void *dmrgo__fnptr1(void);
 void *dmrgo__fnptr2(void);
 void *dmrgo__fnptr3(void);
+void *dmrgo__fnptr4(void);
 */
 import "C"
 
@@ -3448,6 +3449,68 @@ func (c *cb1) call(q0 []g_rf.Burst) {
 	return
 }
 
+func in_rf_ShortLC(s *C.dmrgo_rf_short_lc_t) (d g_rf.ShortLC) {
+	d.LC = in_layer2_pdu_ShortLC(&s.lc)
+	d.Stream = int(s.stream)
+	d.Slot = int64(s.slot)
+	d.Seconds = float64(s.seconds)
+	d.Soft = bool(s.soft)
+	return
+}
+
+func out_rf_ShortLC(d *C.dmrgo_rf_short_lc_t, s *g_rf.ShortLC, oc *outc) {
+	_ = oc
+	out_layer2_pdu_ShortLC(&d.lc, &s.LC, oc)
+	d.stream = C.int64_t(s.Stream)
+	d.slot = C.int64_t(s.Slot)
+	d.seconds = C.double(s.Seconds)
+	d.soft = C.bool(s.Soft)
+}
+
+func fnout2(v func([]g_rf.ShortLC)) C.dmrgo_rf_audio_rx_config_on_short_lc_fn_t {
+	if v == nil {
+		return C.dmrgo_rf_audio_rx_config_on_short_lc_fn_t{}
+	}
+	return C.dmrgo_rf_audio_rx_config_on_short_lc_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr2()), user: newUser(v)}
+}
+
+type cb2 struct {
+	f  C.dmrgo_rf_audio_rx_config_on_short_lc_fn_t
+	s0 []C.dmrgo_rf_short_lc_t
+}
+
+func fnin2(p C.dmrgo_rf_audio_rx_config_on_short_lc_fn_t) func([]g_rf.ShortLC) {
+	if p.fn == nil {
+		return nil
+	}
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr2() {
+		return hvalue[func([]g_rf.ShortLC)](uintptr(p.user))
+	}
+	c := &cb2{f: p}
+	return c.call
+}
+
+func (c *cb2) call(q0 []g_rf.ShortLC) {
+	oc := &outc{}
+	_ = oc
+	if cap(c.s0) < len(q0) {
+		c.s0 = make([]C.dmrgo_rf_short_lc_t, len(q0))
+	}
+	ss0 := c.s0[:len(q0)]
+	for i := range q0 {
+		out_rf_ShortLC(&ss0[i], &q0[i], oc)
+	}
+	var code C.int
+	for {
+		code = C.dmrgo_rf_audio_rx_config_on_short_lc_fn_t__call(c.f, unsafe.SliceData(ss0), C.size_t(len(q0)))
+		break
+	}
+	if code != C.DMRGO_OK {
+		return
+	}
+	return
+}
+
 func in_rf_AudioRxConfig(s *C.dmrgo_rf_audio_rx_config_t) (d g_rf.AudioRxConfig) {
 	d.Tier = g_rf.Tier(s.tier)
 	d.Rate = int(s.rate)
@@ -3458,32 +3521,33 @@ func in_rf_AudioRxConfig(s *C.dmrgo_rf_audio_rx_config_t) (d g_rf.AudioRxConfig)
 	if s.pre_emphasis != nil {
 		d.PreEmphasis = get_rf_RxPreEmphasis(s.pre_emphasis).v
 	}
+	d.OnShortLC = fnin2(s.on_short_lc)
 	return
 }
 
-func fnout2(v func([]int16)) C.dmrgo_rf_audio_tx_config_on_samples_fn_t {
+func fnout3(v func([]int16)) C.dmrgo_rf_audio_tx_config_on_samples_fn_t {
 	if v == nil {
 		return C.dmrgo_rf_audio_tx_config_on_samples_fn_t{}
 	}
-	return C.dmrgo_rf_audio_tx_config_on_samples_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr2()), user: newUser(v)}
+	return C.dmrgo_rf_audio_tx_config_on_samples_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr3()), user: newUser(v)}
 }
 
-type cb2 struct {
+type cb3 struct {
 	f C.dmrgo_rf_audio_tx_config_on_samples_fn_t
 }
 
-func fnin2(p C.dmrgo_rf_audio_tx_config_on_samples_fn_t) func([]int16) {
+func fnin3(p C.dmrgo_rf_audio_tx_config_on_samples_fn_t) func([]int16) {
 	if p.fn == nil {
 		return nil
 	}
-	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr2() {
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr3() {
 		return hvalue[func([]int16)](uintptr(p.user))
 	}
-	c := &cb2{f: p}
+	c := &cb3{f: p}
 	return c.call
 }
 
-func (c *cb2) call(q0 []int16) {
+func (c *cb3) call(q0 []int16) {
 	oc := &outc{}
 	_ = oc
 	var code C.int
@@ -3502,7 +3566,7 @@ func in_rf_AudioTxConfig(s *C.dmrgo_rf_audio_tx_config_t) (d g_rf.AudioTxConfig)
 	d.Rate = int(s.rate)
 	d.Bits = int(s.bits)
 	d.Unsigned = bool(s.unsigned_)
-	d.OnSamples = fnin2(s.on_samples)
+	d.OnSamples = fnin3(s.on_samples)
 	d.Level = int(s.level)
 	d.Offset = int(s.offset)
 	d.PreEmphasis = nil
@@ -3532,32 +3596,33 @@ func in_rf_RxConfig(s *C.dmrgo_rf_rx_config_t) (d g_rf.RxConfig) {
 	d.OffsetHz = float64(s.offset_hz)
 	d.OnBursts = fnin1(s.on_bursts)
 	d.LookbackSlots = int(s.lookback_slots)
+	d.OnShortLC = fnin2(s.on_short_lc)
 	return
 }
 
-func fnout3(v func([]byte)) C.dmrgo_rf_tx_config_on_samples_fn_t {
+func fnout4(v func([]byte)) C.dmrgo_rf_tx_config_on_samples_fn_t {
 	if v == nil {
 		return C.dmrgo_rf_tx_config_on_samples_fn_t{}
 	}
-	return C.dmrgo_rf_tx_config_on_samples_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr3()), user: newUser(v)}
+	return C.dmrgo_rf_tx_config_on_samples_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr4()), user: newUser(v)}
 }
 
-type cb3 struct {
+type cb4 struct {
 	f C.dmrgo_rf_tx_config_on_samples_fn_t
 }
 
-func fnin3(p C.dmrgo_rf_tx_config_on_samples_fn_t) func([]byte) {
+func fnin4(p C.dmrgo_rf_tx_config_on_samples_fn_t) func([]byte) {
 	if p.fn == nil {
 		return nil
 	}
-	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr3() {
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr4() {
 		return hvalue[func([]byte)](uintptr(p.user))
 	}
-	c := &cb3{f: p}
+	c := &cb4{f: p}
 	return c.call
 }
 
-func (c *cb3) call(q0 []byte) {
+func (c *cb4) call(q0 []byte) {
 	oc := &outc{}
 	_ = oc
 	var code C.int
@@ -3576,7 +3641,7 @@ func in_rf_TxConfig(s *C.dmrgo_rf_tx_config_t) (d g_rf.TxConfig) {
 	d.Rate = int(s.rate)
 	d.Format = g_rf.IQFormat(s.format)
 	d.OffsetHz = float64(s.offset_hz)
-	d.OnSamples = fnin3(s.on_samples)
+	d.OnSamples = fnin4(s.on_samples)
 	d.Region = g_rf.Region(s.region)
 	d.Service = g_rf.Service(s.service)
 	d.Power = int(s.power)
@@ -6967,6 +7032,7 @@ func out_rf_AudioRxConfig(d *C.dmrgo_rf_audio_rx_config_t, s *g_rf.AudioRxConfig
 		panic(argPanic{})
 	}
 	d.pre_emphasis = nil
+	d.on_short_lc = fnout2(s.OnShortLC)
 }
 
 func fromC_rf_AudioRxConfig(s *C.dmrgo_rf_audio_rx_config_t) g_rf.AudioRxConfig {
@@ -6980,7 +7046,7 @@ func out_rf_AudioTxConfig(d *C.dmrgo_rf_audio_tx_config_t, s *g_rf.AudioTxConfig
 	d.rate = C.int64_t(s.Rate)
 	d.bits = C.int64_t(s.Bits)
 	d.unsigned_ = C.bool(s.Unsigned)
-	d.on_samples = fnout2(s.OnSamples)
+	d.on_samples = fnout3(s.OnSamples)
 	d.level = C.int64_t(s.Level)
 	d.offset = C.int64_t(s.Offset)
 	if s.PreEmphasis != nil {
@@ -7027,10 +7093,15 @@ func out_rf_RxConfig(d *C.dmrgo_rf_rx_config_t, s *g_rf.RxConfig, oc *outc) {
 	d.offset_hz = C.double(s.OffsetHz)
 	d.on_bursts = fnout1(s.OnBursts)
 	d.lookback_slots = C.int64_t(s.LookbackSlots)
+	d.on_short_lc = fnout2(s.OnShortLC)
 }
 
 func fromC_rf_RxConfig(s *C.dmrgo_rf_rx_config_t) g_rf.RxConfig {
 	return in_rf_RxConfig(s)
+}
+
+func fromC_rf_ShortLC(s *C.dmrgo_rf_short_lc_t) g_rf.ShortLC {
+	return in_rf_ShortLC(s)
 }
 
 func out_rf_TxConfig(d *C.dmrgo_rf_tx_config_t, s *g_rf.TxConfig, oc *outc) {
@@ -7040,7 +7111,7 @@ func out_rf_TxConfig(d *C.dmrgo_rf_tx_config_t, s *g_rf.TxConfig, oc *outc) {
 	d.rate = C.int64_t(s.Rate)
 	d.format = C.dmrgo_rf_iq_format_t(s.Format)
 	d.offset_hz = C.double(s.OffsetHz)
-	d.on_samples = fnout3(s.OnSamples)
+	d.on_samples = fnout4(s.OnSamples)
 	d.region = C.dmrgo_rf_region_t(s.Region)
 	d.service = C.dmrgo_service_t(s.Service)
 	d.power = C.int64_t(s.Power)
@@ -36740,6 +36811,33 @@ func dmrgo__fn1(user C.uintptr_t, c_bursts *C.dmrgo_rf_burst_t, c_bursts_len C.s
 	return C.DMRGO_OK
 }
 
+//export dmrgo__fn2
+func dmrgo__fn2(user C.uintptr_t, c_short_lcs *C.dmrgo_rf_short_lc_t, c_short_lcs_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_short_lcs), c_short_lcs_len, unsafe.Sizeof(*c_short_lcs)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	fv := hvalue[func([]g_rf.ShortLC)](uintptr(user))
+	if c_short_lcs == nil && c_short_lcs_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_short_lcs []g_rf.ShortLC
+	a_short_lcs = nil
+	if c_short_lcs_len > 0 {
+		cs := cSlice[C.dmrgo_rf_short_lc_t](unsafe.Pointer(c_short_lcs), c_short_lcs_len)
+		a_short_lcs = make([]g_rf.ShortLC, len(cs))
+		for i := range cs {
+			a_short_lcs[i] = in_rf_ShortLC(&cs[i])
+		}
+	}
+	fv(a_short_lcs)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_rf_audio_receiver_init
 func dmrgo_rf_audio_receiver_init(c_self *C.dmrgo_rf_audio_receiver_t, c_c *C.dmrgo_rf_audio_rx_config_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37025,8 +37123,8 @@ func dmrgo_rf_audio_transmitter_flush(c_self *C.dmrgo_rf_audio_transmitter_t) (r
 	return C.DMRGO_OK
 }
 
-//export dmrgo__fn2
-func dmrgo__fn2(user C.uintptr_t, c_values *C.int16_t, c_values_len C.size_t) (rc C.int) {
+//export dmrgo__fn3
+func dmrgo__fn3(user C.uintptr_t, c_values *C.int16_t, c_values_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_values), c_values_len, unsafe.Sizeof(*c_values)) {
@@ -37427,8 +37525,8 @@ func dmrgo_rf_new_rx_pre_emphasis(c_out **C.dmrgo_rf_rx_pre_emphasis_t) (rc C.in
 	return C.DMRGO_OK
 }
 
-//export dmrgo__fn3
-func dmrgo__fn3(user C.uintptr_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
+//export dmrgo__fn4
+func dmrgo__fn4(user C.uintptr_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {

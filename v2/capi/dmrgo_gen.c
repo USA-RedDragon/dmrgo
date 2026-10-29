@@ -14,6 +14,8 @@ void *dmrgo__fnptr2(void) { return (void *)dmrgo__fn2; }
 
 void *dmrgo__fnptr3(void) { return (void *)dmrgo__fn3; }
 
+void *dmrgo__fnptr4(void) { return (void *)dmrgo__fn4; }
+
 const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
 	case -100:
