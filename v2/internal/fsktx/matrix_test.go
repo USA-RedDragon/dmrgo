@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -185,6 +186,8 @@ func (u txUnit) lag() int {
 	return 8
 }
 
+var designMods sync.Map
+
 func (u txUnit) designMod() txMod {
 	v := u
 	if v.audio() {
@@ -192,11 +195,7 @@ func (u txUnit) designMod() txMod {
 	} else {
 		v.offHz, v.ramp = 0, max(1, v.rate/1000)
 	}
-	m, err := v.mod()
-	if err != nil {
-		return nil
-	}
-	return m
+	return v.mustDesign()
 }
 
 func (u txUnit) linear() bool {
@@ -291,10 +290,15 @@ func (u txUnit) audioBounds() (lo, hi float64) {
 }
 
 func (u txUnit) mustDesign() txMod {
+	if v, ok := designMods.Load(u); ok {
+		m, _ := v.(txMod)
+		return m
+	}
 	m, err := u.mod()
 	if err != nil {
-		return nil
+		m = nil
 	}
+	designMods.Store(u, m)
 	return m
 }
 
