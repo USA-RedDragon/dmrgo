@@ -154,7 +154,15 @@ func (s *spectrum) estimateBlocks() {
 	s.ready = true
 }
 
+func (s *spectrum) dropDC() {
+	lo, hi := s.power[fftSize-2], s.power[2]
+	s.power[fftSize-1] = min(s.power[fftSize-1], lo+(hi-lo)/4)
+	s.power[0] = min(s.power[0], (lo+hi)/2)
+	s.power[1] = min(s.power[1], hi-(hi-lo)/4)
+}
+
 func (s *spectrum) estimate() {
+	s.dropDC()
 	bin := s.rate / fftSize
 	passBins := s.pass
 	pass := func(k int) float64 { return float64(s.power[(k+fftSize)%fftSize]) }
