@@ -1,6 +1,7 @@
 package fsktx
 
 import (
+	"fmt"
 	"math"
 	"math/rand/v2"
 	"testing"
@@ -9,20 +10,23 @@ import (
 func TestAudioOptRates(t *testing.T) {
 	t.Parallel()
 	for _, hz := range []int{8000, 12000, 24000, 44100, 48000, 96000} {
-		a, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier1, Opt: 2})
-		if err != nil {
-			t.Fatalf("%d: %v", hz, err)
-		}
-		if (a.opt != nil) != aoptRate(hz) {
-			t.Fatalf("%d: optimizer %v", hz, a.opt != nil)
-		}
-		var out []int16
-		for i := range 4800 {
-			out = a.AppendSymbol(out, int8(i%4*2-3))
-		}
-		if len(out) != hz {
-			t.Fatalf("%d: %d samples", hz, len(out))
-		}
+		t.Run(fmt.Sprint(hz), func(t *testing.T) {
+			t.Parallel()
+			a, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier1, Opt: 2})
+			if err != nil {
+				t.Fatalf("%d: %v", hz, err)
+			}
+			if (a.opt != nil) != aoptRate(hz) {
+				t.Fatalf("%d: optimizer %v", hz, a.opt != nil)
+			}
+			var out []int16
+			for i := range 4800 {
+				out = a.AppendSymbol(out, int8(i%4*2-3))
+			}
+			if len(out) != hz {
+				t.Fatalf("%d: %d samples", hz, len(out))
+			}
+		})
 	}
 }
 
