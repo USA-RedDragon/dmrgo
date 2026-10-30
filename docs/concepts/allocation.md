@@ -10,11 +10,46 @@ The doc comment of each exported function states when that function allocates.
 
 ## Size the slices that you pass
 
-A state machine appends its outputs to a slice `dst` that you give it, and allocates only to grow `dst`. Make `dst` once, with the capacity that its package gives, and pass it again sliced to `[:0]` on each call. The [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) of [Follow a voice call](../start/03-follow-a-voice-call.md) does this:
+A state machine appends its outputs to a slice `dst` that you give it, and allocates only to grow `dst`. Make `dst` once, with the capacity that its package gives, and pass it again sliced to `[:0]` on each call. The [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) of [Follow a voice call](../start/03-follow-a-voice-call.md) does this. The example makes `events` once and passes `events[:0]` to each call of `Burst` and `Tick`:
 
-<!-- dmrgo:code file=v2/voice/example_test.go lines=27-27 -->
+<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
 ```go
-events := make([]voice.Event, 0, voice.MaxEvents)
+func ExampleReceiver() {
+	data, err := os.ReadFile("../layer2/testdata/parrot_kerchunk.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	rx, err := voice.NewReceiver(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	events := make([]voice.Event, 0, voice.MaxEvents)
+	var now time.Duration
+	voiceBursts := 0
+	for off := 0; off+33 <= len(data); off += 33 {
+		raw := layer2.RawBurst(data[off : off+33])
+		now += 60 * time.Millisecond
+		events = rx.Burst(now, &raw, layer2.Hint{}, events[:0])
+		for _, e := range events {
+			switch e.Kind {
+			case voice.EventCallStart:
+				fmt.Printf("call from %d to %d (%v)\n", e.Call.Source, e.Call.Target, e.Call.Origin)
+			case voice.EventVoice:
+				voiceBursts++
+			case voice.EventCallEnd:
+				fmt.Printf("end: %v after %v, %d voice bursts\n", e.Reason, e.Stats.Duration, voiceBursts)
+			default:
+			}
+		}
+	}
+	if at, ok := rx.Deadline(); ok {
+		for _, e := range rx.Tick(at, events[:0]) {
+			fmt.Println(e.Kind, "at", at)
+		}
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
@@ -33,10 +68,14 @@ TinyGo moves a local variable to the heap when its address goes into the library
 
 Put such a value in a package-level variable, or in a struct that you allocate once. This excerpt keeps the Full LC of `layer2.BuildBurst` at package level:
 
-<!-- dmrgo:code file=v2/layer2/example_test.go lines=195-199 -->
+<!-- dmrgo:code file=v2/layer2/example_test.go symbol=headerLC -->
 ```go
 var headerLC pdu.FullLinkControl
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/layer2/example_test.go symbol=buildHeader -->
+```go
 func buildHeader() (layer2.RawBurst, error) {
 	return layer2.BuildBurst(&headerLC, 1, layer2.SyncSourceBS)
 }
