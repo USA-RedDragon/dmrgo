@@ -144,12 +144,24 @@ var (
 ```
 <!-- /dmrgo:code -->
 
-It then sets up the receiver in that memory with `Init`:
+Its `main` then sets up the receiver in that memory with `Init` and writes the samples to it:
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go lines=22-24 -->
+<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=main -->
 ```go
-if err := rx.Init(rf.AudioRxConfig{Rate: 9600, OnBursts: onBursts}); err != nil {
-	return
+func main() {
+	if err := rx.Init(rf.AudioRxConfig{Rate: 9600, OnBursts: onBursts}); err != nil {
+		return
+	}
+	for range 1000 {
+		read(buf[:])
+		if _, err := rx.Write(buf[:]); err != nil {
+			return
+		}
+	}
+	if err := rx.Flush(); err != nil {
+		return
+	}
+	println("bursts:", bursts > 0)
 }
 ```
 <!-- /dmrgo:code -->

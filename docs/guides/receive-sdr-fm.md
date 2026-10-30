@@ -86,20 +86,32 @@ An FM radio gives the 4FSK signal at its discriminator output. [rf.NewAudioRecei
 
 On a microcontroller, [AudioReceiver.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioReceiver.Init) sets up the receiver in Tier 0 in memory of the caller, without an allocation. The rxaudio example runs it as a hotspot board does, with a placeholder `read` in place of the ADC:
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go lines=9-35 -->
+<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=rx -->
 ```go
 var (
 	rx     rf.AudioReceiver
 	buf    [256]int16
 	bursts int
 )
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=onBursts -->
+```go
 func onBursts(bs []rf.Burst) { bursts += len(bs) }
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=read -->
+```go
 func read(x []int16) {
 	clear(x)
 }
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=main -->
+```go
 func main() {
 	if err := rx.Init(rf.AudioRxConfig{Rate: 9600, OnBursts: onBursts}); err != nil {
 		return
