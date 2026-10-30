@@ -55,14 +55,15 @@ const (
 	leanMMSPS           = 2.5
 	leanMMSign          = 1
 	leanMMGain          = 2
-	leanClockGain       = 0.0002
+	leanClockGain       = leanClockBudget / (slotSymbols * leanPhaseRatio * leanPhaseRatio)
+	leanClockBudget     = 0.01
+	leanPhaseRatio      = 0.88
+	leanClockAvg        = leanClockSig * leanClockSig / (leanClockGain * leanClockBlock)
 	leanClockMax        = 0.002
 	replayFlatLevel     = 0.3
 	replaySyncRho       = 0.95
-	leanClockDead       = 0.000075
 	leanClockBlock      = 64
 	leanClockSig        = 5
-	leanClockSpan       = 4
 	leanClockLag        = 120
 	leanMidGate         = 0
 	leanSyncUnroll      = true
@@ -97,10 +98,9 @@ type leanTiming struct {
 	drift, corr    float32
 	corr2          float32
 	nc, nall       int32
-	lastStep       float32
-	acorr, acorr2  float32
-	anc, anall     int32
-	aweak          float32
+	owed           float32
+	estS, estW     float32
+	estN           int32
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -127,29 +127,37 @@ func (tm *leanTiming) settle() {
 		return
 	}
 	n := float32(tm.nc)
-	step := tm.rateK * tm.corr
-	if v := tm.corr2/n - tm.corr*tm.corr/(n*n); tm.rateK > 0 && tm.corr*tm.corr > leanClockSig*leanClockSig*n*v {
-		step = (tm.corr - tm.lastStep*leanClockLag) / float32(tm.nall)
-		tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
-	} else if tm.rateK > 0 {
-		tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = tm.acorr+tm.corr, tm.acorr2+tm.corr2, tm.anc+tm.nc, tm.anall+tm.nall, tm.aweak+step
-		an := float32(tm.anc)
-		switch v := tm.acorr2/an - tm.acorr*tm.acorr/(an*an); {
-		case tm.acorr*tm.acorr > leanClockSig*leanClockSig*an*v:
-			step = tm.acorr/float32(tm.anall) - (tm.aweak - step)
-			tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
-		case tm.anc >= leanClockSpan*slotSymbols:
-			tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
+	v := tm.corr2/n - tm.corr*tm.corr/(n*n)
+	nall := float32(tm.nall)
+	q, keep := float32(1-1.0/leanClockLag), float32(1)
+	for k := tm.nall; k > 0; k >>= 1 {
+		if k&1 != 0 {
+			keep *= q
 		}
+		q *= q
 	}
-	lim := leanClockMax * 2 * tm.step
-	old := tm.rate
-	tm.rate = max32(min32(tm.rate+step, lim), -lim)
-	tm.lastStep = tm.rate - old
-	tm.corr, tm.corr2, tm.nc, tm.nall, tm.drift = 0, 0, 0, 0, tm.rate
-	if abs32(tm.rate) < leanClockDead*2*tm.step {
-		tm.drift = 0
+	share := tm.owed * (1 - keep)
+	res := (tm.corr - share) / nall
+	tm.owed -= share
+	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
+	if tm.rateK == 0 || v <= 0 {
+		return
 	}
+	w := nall * nall / (n * v)
+	if tm.estN >= leanClockAvg {
+		tm.estS, tm.estW = tm.estS*(leanClockAvg-1)/leanClockAvg, tm.estW*(leanClockAvg-1)/leanClockAvg
+	} else {
+		tm.estN++
+	}
+	tm.estS, tm.estW = tm.estS+w*res, tm.estW+w
+	if e := tm.estS / tm.estW; e*e*tm.estW > leanClockSig*leanClockSig {
+		lim := leanClockMax * 2 * tm.step
+		old := tm.rate
+		tm.rate = max32(min32(tm.rate+e, lim), -lim)
+		tm.owed += (tm.rate - old) * leanClockLag
+		tm.estS, tm.estW, tm.estN = 0, 0, 0
+	}
+	tm.drift = tm.rate
 }
 
 func (tm *leanTiming) strobe(x float32) bool {
@@ -1678,9 +1686,9 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
 	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.lastStep = false, r.trackGain, 0, leanClockGain, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed = false, r.trackGain, 0, leanClockGain, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
-	r.tm.acorr, r.tm.acorr2, r.tm.anc, r.tm.anall, r.tm.aweak = 0, 0, 0, 0, 0
+	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.mmOK && !r.tm.mm {
 		r.tm.mm, r.tm.mid = true, false
 		r.tm.t += r.tm.step
@@ -2155,9 +2163,9 @@ func (r *leanCore) unlock() {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
 	r.rebuildSigns()
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.lastStep = false, r.acqGain, 0, 0, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed = false, r.acqGain, 0, 0, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
-	r.tm.acorr, r.tm.acorr2, r.tm.anc, r.tm.anall, r.tm.aweak = 0, 0, 0, 0, 0
+	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.tm.mm {
 		r.tm.mm, r.tm.mid = false, true
 		r.tm.t -= r.tm.step
