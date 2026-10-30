@@ -84,7 +84,7 @@ func packCand(c *[leanCandSize]int16, cost int32, data *[12]byte, reserved uint8
 	c[8] = int16(reserved)
 }
 
-func nibbleTables(tab []int16, l []int16) {
+func nibbleTables[T int16 | int32](tab, l []T) {
 	for b := 0; b*4 < len(l); b++ {
 		t := tab[16*b : 16*b+16]
 		t[0] = 0

@@ -787,7 +787,7 @@ func (id softOSDID) refOSD(s *softOSDScratch, order, window, listMax int) {
 	c := &softOSDCodes[id]
 	k := c.k
 	s.prepare(c.n)
-	softNibbleTables(s.tab, s.mag[:c.n])
+	nibbleTables(s.tab[:], s.mag[:c.n])
 	id.basis(s)
 	s.nw = (c.n + 63) / 64
 	var cand [4][softOSDWords]uint64

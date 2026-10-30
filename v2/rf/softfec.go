@@ -121,20 +121,6 @@ func softTables(tab *[softTabLen]int32, l []int32) {
 	}
 }
 
-func softNibbleTables(tab *[softTabLen]int32, l []int32) {
-	for b := 0; b*4 < len(l); b++ {
-		t := (*[16]int32)(tab[16*b:])
-		t[0] = 0
-		for m := 1; m < 16; m++ {
-			if j := b*4 + bits.TrailingZeros(uint(m)); j < len(l) {
-				t[m] = t[m&(m-1)] + l[j]
-			} else {
-				t[m] = t[m&(m-1)]
-			}
-		}
-	}
-}
-
 func softByteTables(tab *[softParWords * 8 * 256]int32, l []int32) {
 	for b := 0; b*8 < len(l); b++ {
 		t := (*[256]int32)(tab[256*b:])
@@ -353,7 +339,7 @@ func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
 	if s.btab != nil {
 		softByteTables(s.btab, s.pm[:np])
 	} else {
-		softNibbleTables(s.tab, s.pm[:np])
+		nibbleTables(s.tab[:], s.pm[:np])
 	}
 	s.phard = [softParWords]uint64{}
 	for q, j := range s.par[:np] {
