@@ -33,11 +33,8 @@ func TestLeanClockRateApplied(t *testing.T) {
 				r.AppendBursts(nil, iq[k:min(k+step, len(iq))])
 				var tm *leanTiming
 				var on bool
-				switch {
-				case h.iqd != nil:
+				if h.iqd != nil {
 					tm, on = &h.iqd.d.tm, h.iqd.d.locked
-				case h.iq0 != nil:
-					tm, on = &h.iq0.d.tm, h.iq0.d.locked
 				}
 				if tm == nil || !on || k < len(iq)/3 {
 					continue

@@ -149,7 +149,7 @@ func (c *RxConfig) check(o *options) (low bool, hz int, err error) {
 	switch {
 	case c.Rate == iq0LowHz || c.Rate == discRate/2:
 		low, hz = true, c.Rate
-		if o != nil && (o.IQFront != 4 || !o.IQDisc) || o == nil && c.Tier != Tier0 {
+		if o != nil && (o.IQLow == 0 || !o.IQDisc) || o == nil && c.Tier != Tier0 {
 			return false, 0, errRxRate
 		}
 	case o != nil && o.IQHalf, c.Rate >= discRate && c.Rate < basebandRate:

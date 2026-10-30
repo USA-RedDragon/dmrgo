@@ -13,7 +13,10 @@ const (
 	iqLowISI      = 0.04
 	iqLowAtanNear = false
 	iqLowRecip    = true
+	iq0Coherence  = 0.2
 )
+
+const iq0LowHz = 9600
 
 var iqLowTab = [128]uint16{
 	81, 244, 407, 570, 732, 894, 1056, 1217, 1377, 1537, 1696, 1854, 2012, 2168, 2324, 2478,

@@ -156,15 +156,6 @@ func iqFormatOf(signed bool) IQFormat {
 
 func ptr[T any](v T) *T { return &v }
 
-func iq0Options(front, hz int) options {
-	o := discOptions()
-	o.IQDisc, o.IQHz, o.IQFront, o.IQPoly, o.IQBuf = true, hz, front, 3, 64
-	if front == 5 {
-		o.IQFront, o.IQPoly = 4, 0
-	}
-	return o
-}
-
 func voiceFrames(bs []Burst) []uint64 {
 	var out []uint64
 	for i := range bs {

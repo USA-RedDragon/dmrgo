@@ -41,7 +41,6 @@ type iqDisc struct {
 	afcPrev complex64
 	afcHead int
 	coh     *iqCohFIR
-	*iq0Front
 }
 
 type iqCohFIR struct {
@@ -194,10 +193,6 @@ func (d *iqDisc) lagTicks() int32 {
 }
 
 func (d *iqDisc) tune(hz float32) {
-	if d.taps == nil {
-		d.tuneLean(hz)
-		return
-	}
 	d.turn(2 * math.Pi * (hz - d.hz) / basebandRate)
 	d.hz = hz
 	p := -2 * math.Pi * float64(hz) / basebandRate
@@ -242,9 +237,6 @@ func (d *iqDisc) turn(w float32) {
 }
 
 func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
-	if d.taps == nil {
-		return d.pushLean(v)
-	}
 	if d.ncoN++; d.ncoN == 512 {
 		d.ncoN = 0
 		g := (3 - real(d.ncoRot)*real(d.ncoRot) - imag(d.ncoRot)*imag(d.ncoRot)) / 2
@@ -367,11 +359,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	if hz == 0 {
 		hz = discRate
 	}
-	if opt.IQFront > 0 {
-		r.conv.initLean(basebandRate/hz, &opt)
-	} else {
-		r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
-	}
+	r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
 	r.maxHz, r.syncOnly, r.pullAgree = opt.IQTuneMaxHz, opt.IQTuneSyncOnly, opt.IQPullAgree
 	r.specPull = iqAFCPullHz
 	if opt.IQSpecFine {
@@ -460,12 +448,9 @@ func (r *iqRx) follow() {
 	}
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	est := r.conv.hzOf(acc)
-	quiet := r.conv.taps == nil && r.conv.quiet(acc)
-	switch {
-	case quiet:
-	case r.afcAvg == 0:
+	if r.afcAvg == 0 {
 		r.afcAvg = acc
-	default:
+	} else {
 		r.afcAvg += complex(iqAFCAvgGain, 0) * (acc - r.afcAvg)
 	}
 	avg := r.conv.hzOf(r.afcAvg)
@@ -494,11 +479,10 @@ func (r *iqRx) follow() {
 	}
 	prev := r.afcPull
 	r.afcPull = 0
-	if !quiet && abs32(est) >= iqAFCPullHz {
+	if abs32(est) >= iqAFCPullHz {
 		r.afcPull = est
 	}
 	switch {
-	case quiet:
 	case abs32(est) >= iqAFCPullHz && (!r.pullAgree || abs32(est) >= iqAFCJumpHz || abs32(prev) >= iqAFCPullHz && est*prev > 0):
 		r.afcAvg = 0
 		r.tune(est, 0)
@@ -581,10 +565,6 @@ func (r *iqRx) tuneWith(hz, dc, lim float32) {
 }
 
 func (r *iqRx) writeBaseband(x []complex64) {
-	if r.conv.taps == nil {
-		r.writeLean(x)
-		return
-	}
 	for _, v := range x {
 		r.sample(v)
 	}

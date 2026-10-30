@@ -77,15 +77,12 @@ func (c rxBoundCase) config() (RxConfig, *options, bool) {
 		if c.half {
 			return cfg, nil, false
 		}
-		o := iq0Options(4, 2*symbolRate)
-		cfg.Tier, opt = Tier0, &o
-		if c.inner == 3 {
-			if c.mult > 1 && !c.baseband {
-				return cfg, nil, false
-			}
-			o.IQLow = 1
-			hz = iq0LowHz
+		if c.inner == 2 || c.mult > 1 && !c.baseband {
+			return cfg, nil, false
 		}
+		o := discOptions()
+		o.IQDisc, o.IQHz, o.IQBuf, o.IQLow = true, 2*symbolRate, 64, 1
+		cfg.Tier, opt, hz = Tier0, &o, iq0LowHz
 	}
 	cfg.Rate = hz * c.mult
 	if c.baseband {
@@ -107,8 +104,6 @@ func rxEngine(r *Receiver) string {
 		return "iqlow"
 	case r.host().cb != nil:
 		return "comb"
-	case r.host().iq0 != nil:
-		return "iq0"
 	case r.host().iqd != nil:
 		return "iqdisc"
 	case r.host().lean != nil:
@@ -234,7 +229,7 @@ func TestReceiverMaxBursts(t *testing.T) {
 		}
 	}
 	t.Cleanup(func() {
-		for _, e := range []string{"engine", "lean", "iqdisc", "comb", "iq0", "iqlow"} {
+		for _, e := range []string{"engine", "lean", "iqdisc", "comb", "iqlow"} {
 			if _, ok := engines[e]; !ok {
 				t.Errorf("no case ran the %s receiver: %v", e, engines)
 			}

@@ -83,8 +83,6 @@ type options struct {
 	IQHalfband                           int
 	IQTuneMaxHz                          float32
 	IQAFCAvg                             int
-	IQFront                              int
-	IQPoly                               int
 	IQBuf                                int
 	CohDataPasses                        int
 	CohWin                               int
@@ -186,7 +184,7 @@ func disc0Options() options {
 func iqLowOptions() options {
 	o := disc0Options()
 	o.HuntLinMid, o.StrobeTab = true, true
-	o.IQDisc, o.IQHz, o.IQFront, o.IQLow, o.IQBuf = true, iq0LowHz, 4, 1, 32
+	o.IQDisc, o.IQHz, o.IQLow, o.IQBuf = true, iq0LowHz, 1, 32
 	o.LeanChase = 1
 	return o
 }

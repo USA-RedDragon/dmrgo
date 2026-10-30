@@ -9,9 +9,6 @@ const (
 )
 
 func devTabOf(o *options) uint8 {
-	if o.IQFront > 0 {
-		return 0
-	}
 	for k, t := range [devGainTiers]Tier{Tier0, Tier1, Tier2} {
 		w := tierOptions(t)
 		if o.IQHz == w.IQHz && o.IQTaps == w.IQTaps && o.IQKaiser == w.IQKaiser && o.IQCutHz == w.IQCutHz && o.IQHalfband == w.IQHalfband {

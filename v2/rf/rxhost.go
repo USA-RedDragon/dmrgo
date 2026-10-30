@@ -8,7 +8,6 @@ type rxHost struct {
 	e      *engine
 	lean   *leanRx
 	iqd    *iqRx
-	iq0    *iq0Rx
 	cb     *combRx
 	bb     []complex64
 	rate   int
@@ -35,7 +34,7 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	if o != nil {
 		opt = *o
 	}
-	if !opt.tabled() || opt.IQFront > 0 && opt.CohExt {
+	if !opt.tabled() {
 		return nil, errRxOpt
 	}
 	r := &Receiver{}
@@ -51,7 +50,7 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 		}
 		s := rxSetup{Rate: float64(cfg.Rate), Signed: cfg.Format == IQFormatCS8, Format: cfg.Format, Tier: cfg.Tier,
 			BasebandHz: hz, OffsetHz: cfg.OffsetHz, LookbackSlots: cfg.LookbackSlots, sink: &r.sink, disc: &r.low.d}
-		h.build(s, opt, low)
+		h.build(s, opt)
 		r.full = h
 	}
 	look := opt.ExtLookback
@@ -70,14 +69,10 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	return r, nil
 }
 
-func (r *rxHost) build(s rxSetup, opt options, low bool) {
+func (r *rxHost) build(s rxSetup, opt options) {
 	switch {
-	case low:
-		r.iq0 = newIQ0Rx(s, opt)
 	case !opt.Coherent:
 		switch {
-		case opt.IQDisc && s.BasebandHz == basebandRate && opt.IQFront > 0 && !opt.SoftExt && s.Rate == float64(s.BasebandHz):
-			newIQ0Receiver(r, s, opt)
 		case opt.IQDisc && s.BasebandHz == basebandRate:
 			r.iqd = newIQRx(s, opt)
 		default:
@@ -96,21 +91,11 @@ func (r *rxHost) build(s rxSetup, opt options, low bool) {
 	}
 }
 
-func newIQ0Receiver(r *rxHost, cfg rxSetup, opt options) {
-	if opt.IQFront == 4 {
-		r.iq0 = newIQ0Rx(cfg, opt)
-		return
-	}
-	r.iqd = newIQ0(cfg, opt)
-}
-
 func (r *rxHost) write(x []byte) {
 	if !r.base {
 		switch {
 		case r.cb != nil:
 			r.cb.write(x)
-		case r.iq0 != nil:
-			r.iq0.write(x)
 		case r.iqd != nil:
 			r.iqd.write(x)
 		case r.lean != nil:
@@ -135,8 +120,6 @@ func (r *rxHost) writeBaseband(x []complex64) {
 	switch {
 	case r.cb != nil:
 		r.cb.writeBaseband(x)
-	case r.iq0 != nil:
-		r.iq0.writeBaseband(x)
 	case r.iqd != nil:
 		r.iqd.writeBaseband(x)
 	case r.lean != nil:
@@ -150,8 +133,6 @@ func (r *rxHost) flush() {
 	switch {
 	case r.cb != nil:
 		r.cb.flush()
-	case r.iq0 != nil:
-		r.iq0.flush()
 	case r.iqd != nil:
 		r.iqd.flush()
 	case r.lean != nil:
@@ -165,8 +146,6 @@ func (r *rxHost) active() bool {
 	switch {
 	case r.cb != nil:
 		return r.cb.t3.locked || r.cb.t2.d.locked
-	case r.iq0 != nil:
-		return r.iq0.d.locked
 	case r.iqd != nil:
 		return r.iqd.d.locked
 	case r.lean != nil:
@@ -179,8 +158,6 @@ func (r *rxHost) active() bool {
 
 func (r *rxHost) offsetHz() float64 {
 	switch {
-	case r.iq0 != nil:
-		return float64(r.iq0.hz) + r.iq0.d.offset()/iqUnitsPerHz
 	case r.iqd != nil:
 		return float64(r.iqd.conv.hz) + r.iqd.d.offset()/iqUnitsPerHz
 	case r.lean != nil:
@@ -195,8 +172,6 @@ func (r *rxHost) deviationHz() float64 {
 	switch {
 	case r.cb != nil && r.e.devHz == 0:
 		return r.cb.t2.deviation() / iqUnitsPerHz
-	case r.iq0 != nil:
-		return r.iq0.d.deviation() / iqUnitsPerHz
 	case r.iqd != nil:
 		return r.iqd.deviation() / iqUnitsPerHz
 	case r.lean != nil:
@@ -230,8 +205,6 @@ func (r *rxHost) lag() int {
 	switch {
 	case r.cb != nil:
 		s = r.e.holdSeconds() + combT2Hold + t2LagSeconds
-	case r.iq0 != nil:
-		s = r.iq0.d.lagSeconds() + blockLagSeconds
 	case r.iqd != nil:
 		s = r.iqd.d.lagSeconds() + blockLagSeconds
 	case r.lean != nil:
