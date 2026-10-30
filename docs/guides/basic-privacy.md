@@ -27,16 +27,18 @@ go test -C v2 -run ExampleTransmitter -v ./privacy
 
 [privacy.NewBasicKeyNumber](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewBasicKeyNumber) returns the key of a key number as a radio shows it. [privacy.NewBasicKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewBasicKey) takes the 16-bit value instead. [privacy.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewTransmitter) takes the key and the radio service of the station. It returns [ErrAmateur](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#ErrAmateur) for the amateur service, and an error for a service that is not stated.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go lines=20-28 -->
+<!-- dmrgo:code file=v2/privacy/example_test.go symbol=basicTransmitter -->
 ```go
-key := privacy.NewBasicKeyNumber(100)
-if _, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceAmateur}); errors.Is(err, privacy.ErrAmateur) {
-	fmt.Println("amateur:", err)
-}
-ptx, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceLandMobile})
-if err != nil {
-	fmt.Println(err)
-	return
+func basicTransmitter() (*privacy.Key, *privacy.Transmitter, error) {
+	key := privacy.NewBasicKeyNumber(100)
+	if _, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceAmateur}); errors.Is(err, privacy.ErrAmateur) {
+		fmt.Println("amateur:", err)
+	}
+	ptx, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceLandMobile})
+	if err != nil {
+		return nil, nil, err
+	}
+	return key, ptx, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -45,49 +47,52 @@ if err != nil {
 
 [privacy.NewReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewReceiver) makes a Receiver, and [Receiver.AddKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Receiver.AddKey) gives it the key. A Receiver holds one Basic Privacy key; a new one replaces it.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go lines=29-33 -->
+<!-- dmrgo:code file=v2/privacy/example_test.go symbol=basicReceiver -->
 ```go
-prx := privacy.NewReceiver()
-if err := prx.AddKey(key); err != nil {
-	fmt.Println(err)
-	return
+func basicReceiver(key *privacy.Key) (*privacy.Receiver, error) {
+	prx := privacy.NewReceiver()
+	if err := prx.AddKey(key); err != nil {
+		return nil, err
+	}
+	return prx, nil
 }
 ```
 <!-- /dmrgo:code -->
 
 ### 3. Send the call
 
-Set the Privacy service option and FID 0x10 in the [voice.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Call), and call [Transmitter.Start](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Start) of the privacy Transmitter for each call. A Basic Privacy key ignores the message indicator, and sends no PI header. Then pass each output of the `voice.Transmitter` through [Transmitter.Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Output) before it goes on air. It changes the three AMBE+2 frames of each voice burst in place and leaves other bursts as they are.
+Set the Privacy service option and FID 0x10 in the [voice.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Call), and call [Transmitter.Start](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Start) of the privacy Transmitter for each call. A Basic Privacy key ignores the message indicator, and sends no PI header. Then pass each burst output of the `voice.Transmitter` through [Transmitter.Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Output) before it goes on air. It changes the three AMBE+2 frames of each voice burst in place and leaves other bursts as they are.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go lines=38-49 -->
+<!-- dmrgo:code file=v2/privacy/example_test.go symbol=sendPrivateCall -->
 ```go
-call := voice.Call{Group: true, Target: 9, Source: 3191868, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
-ptx.Start(0)
-if err := tx.Start(0, call, nil); err != nil {
-	fmt.Println(err)
-	return
+func sendPrivateCall(ptx *privacy.Transmitter, tx *voice.Transmitter) ([]vocoder.AMBEFrame, error) {
+	call := voice.Call{Group: true, Target: 9, Source: 3191868, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
+	ptx.Start(0)
+	if err := tx.Start(0, call, nil); err != nil {
+		return nil, err
+	}
+	sent := make([]vocoder.AMBEFrame, 18)
+	for i := range sent {
+		sent[i] = vocoder.AMBEFrame{byte(i), 0x5A, 0xA5, byte(3 * i), 0x0F, 0xF0, 0x80}
+		_ = tx.Frame(sent[i])
+	}
+	tx.Stop(0)
+	return sent, nil
 }
-sent := make([]vocoder.AMBEFrame, 18)
-for i := range sent {
-	sent[i] = vocoder.AMBEFrame{byte(i), 0x5A, 0xA5, byte(3 * i), 0x0F, 0xF0, 0x80}
-	_ = tx.Frame(sent[i])
-}
-tx.Stop(0)
 ```
 <!-- /dmrgo:code -->
 
-<!-- dmrgo:code file=v2/privacy/example_test.go lines=57-67 -->
+<!-- dmrgo:code file=v2/privacy/example_test.go symbol=encryptOutput -->
 ```go
-if o.Kind != voice.OutputBurst {
-	continue
-}
-if err := ptx.Output(&o); err != nil {
-	fmt.Println(err)
-	return
-}
-if o.Hint.Kind == layer2.KindVoice {
-	frames, _ := o.Burst.AMBEFrames()
-	onAir = append(onAir, frames[:]...)
+func encryptOutput(ptx *privacy.Transmitter, o *voice.Output, onAir []vocoder.AMBEFrame) ([]vocoder.AMBEFrame, error) {
+	if err := ptx.Output(o); err != nil {
+		return onAir, err
+	}
+	if o.Hint.Kind == layer2.KindVoice {
+		frames, _ := o.Burst.AMBEFrames()
+		onAir = append(onAir, frames[:]...)
+	}
+	return onAir, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -96,14 +101,17 @@ if o.Hint.Kind == layer2.KindVoice {
 
 Give each event of the `voice.Receiver` to [Receiver.Event](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Receiver.Event). For a voice event it writes the three frames of the burst, in the clear when it holds the key. It returns the [Info](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Info) of the call: `Encrypted` when the call carries privacy, `Decrypting` when the Receiver removes it.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go lines=68-74 -->
+<!-- dmrgo:code file=v2/privacy/example_test.go symbol=decryptBurst -->
 ```go
-for _, e := range rx.Burst(o.Due, &o.Burst, o.Hint, events[:0]) {
-	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
-	info = prx.Event(&e, &frames)
-	if e.Kind == voice.EventVoice {
-		received = append(received, frames[:]...)
+func decryptBurst(rx *voice.Receiver, prx *privacy.Receiver, o *voice.Output, events []voice.Event, received []vocoder.AMBEFrame, info privacy.Info) ([]vocoder.AMBEFrame, privacy.Info) {
+	for _, e := range rx.Burst(o.Due, &o.Burst, o.Hint, events[:0]) {
+		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
+		info = prx.Event(&e, &frames)
+		if e.Kind == voice.EventVoice {
+			received = append(received, frames[:]...)
+		}
 	}
+	return received, info
 }
 ```
 <!-- /dmrgo:code -->

@@ -17,17 +17,13 @@ import (
 // land mobile service and receives it with the same key. A transmitter in
 // the amateur service gets ErrAmateur.
 func ExampleTransmitter() {
-	key := privacy.NewBasicKeyNumber(100)
-	if _, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceAmateur}); errors.Is(err, privacy.ErrAmateur) {
-		fmt.Println("amateur:", err)
-	}
-	ptx, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceLandMobile})
+	key, ptx, err := basicTransmitter()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	prx := privacy.NewReceiver()
-	if err := prx.AddKey(key); err != nil {
+	prx, err := basicReceiver(key)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -35,18 +31,11 @@ func ExampleTransmitter() {
 		Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessImpolite, Queue: voice.MaxQueue})
 	rx, _ := voice.NewReceiver(nil)
 
-	call := voice.Call{Group: true, Target: 9, Source: 3191868, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
-	ptx.Start(0)
-	if err := tx.Start(0, call, nil); err != nil {
+	sent, err := sendPrivateCall(ptx, tx)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	sent := make([]vocoder.AMBEFrame, 18)
-	for i := range sent {
-		sent[i] = vocoder.AMBEFrame{byte(i), 0x5A, 0xA5, byte(3 * i), 0x0F, 0xF0, 0x80}
-		_ = tx.Frame(sent[i])
-	}
-	tx.Stop(0)
 
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	events := make([]voice.Event, 0, voice.MaxEvents)
@@ -57,21 +46,11 @@ func ExampleTransmitter() {
 			if o.Kind != voice.OutputBurst {
 				continue
 			}
-			if err := ptx.Output(&o); err != nil {
+			if onAir, err = encryptOutput(ptx, &o, onAir); err != nil {
 				fmt.Println(err)
 				return
 			}
-			if o.Hint.Kind == layer2.KindVoice {
-				frames, _ := o.Burst.AMBEFrames()
-				onAir = append(onAir, frames[:]...)
-			}
-			for _, e := range rx.Burst(o.Due, &o.Burst, o.Hint, events[:0]) {
-				var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
-				info = prx.Event(&e, &frames)
-				if e.Kind == voice.EventVoice {
-					received = append(received, frames[:]...)
-				}
-			}
+			received, info = decryptBurst(rx, prx, &o, events, received, info)
 		}
 	}
 	fmt.Println("on air:", same(onAir, sent), "of", len(sent), "frames in the clear")
@@ -82,6 +61,63 @@ func ExampleTransmitter() {
 	// on air: 0 of 18 frames in the clear
 	// received: 18 of 18 frames in the clear
 	// encrypted true PI header false decrypting true
+}
+
+func basicTransmitter() (*privacy.Key, *privacy.Transmitter, error) {
+	key := privacy.NewBasicKeyNumber(100)
+	if _, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceAmateur}); errors.Is(err, privacy.ErrAmateur) {
+		fmt.Println("amateur:", err)
+	}
+	ptx, err := privacy.NewTransmitter(&privacy.TransmitterConfig{Key: key, Service: privacy.ServiceLandMobile})
+	if err != nil {
+		return nil, nil, err
+	}
+	return key, ptx, nil
+}
+
+func basicReceiver(key *privacy.Key) (*privacy.Receiver, error) {
+	prx := privacy.NewReceiver()
+	if err := prx.AddKey(key); err != nil {
+		return nil, err
+	}
+	return prx, nil
+}
+
+func sendPrivateCall(ptx *privacy.Transmitter, tx *voice.Transmitter) ([]vocoder.AMBEFrame, error) {
+	call := voice.Call{Group: true, Target: 9, Source: 3191868, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
+	ptx.Start(0)
+	if err := tx.Start(0, call, nil); err != nil {
+		return nil, err
+	}
+	sent := make([]vocoder.AMBEFrame, 18)
+	for i := range sent {
+		sent[i] = vocoder.AMBEFrame{byte(i), 0x5A, 0xA5, byte(3 * i), 0x0F, 0xF0, 0x80}
+		_ = tx.Frame(sent[i])
+	}
+	tx.Stop(0)
+	return sent, nil
+}
+
+func encryptOutput(ptx *privacy.Transmitter, o *voice.Output, onAir []vocoder.AMBEFrame) ([]vocoder.AMBEFrame, error) {
+	if err := ptx.Output(o); err != nil {
+		return onAir, err
+	}
+	if o.Hint.Kind == layer2.KindVoice {
+		frames, _ := o.Burst.AMBEFrames()
+		onAir = append(onAir, frames[:]...)
+	}
+	return onAir, nil
+}
+
+func decryptBurst(rx *voice.Receiver, prx *privacy.Receiver, o *voice.Output, events []voice.Event, received []vocoder.AMBEFrame, info privacy.Info) ([]vocoder.AMBEFrame, privacy.Info) {
+	for _, e := range rx.Burst(o.Due, &o.Burst, o.Hint, events[:0]) {
+		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
+		info = prx.Event(&e, &frames)
+		if e.Kind == voice.EventVoice {
+			received = append(received, frames[:]...)
+		}
+	}
+	return received, info
 }
 
 func same(got, want []vocoder.AMBEFrame) int {
