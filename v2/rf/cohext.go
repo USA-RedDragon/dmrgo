@@ -849,8 +849,10 @@ func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
 }
 
 const (
-	cohWarmSpanHz = 2 * cohFreqSpan
-	cohWarmStepHz = 0.26 * symbolRate / syncSymbols
+	cohWarmSpanHz  = cohFreqFirst
+	cohWarmStepHz  = 0.26 * symbolRate / syncSymbols
+	cohWarmSpanSym = 0.5
+	cohWarmStepSym = 0.25
 )
 
 func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
@@ -864,32 +866,35 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 	syncSyms(voice, &syms[0])
 	syncSyms(data, &syms[1])
 	steps := int(math.Ceil(cohWarmSpanHz / cohWarmStepHz))
-	best, bestHz := 0.0, hz0
+	best, bestHz, bestTau := 0.0, hz0, 0.0
 	t0, hz := s.t0, s.totalHz
-	for k := -steps; k <= steps; k++ {
-		f := hz0 + float64(k)*cohWarmStepHz
-		var sum float64
-		for j := 0; j <= n; j++ {
-			s.t0 = s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt
-			if s.t0-s.sps < float64(lo) {
-				continue
-			}
-			s.totalHz = f
-			top := 0.0
-			for p := range syms {
-				for i, v := range syms[p] {
-					s.known[syncFirstSym+i] = v
+	for tau := -cohWarmSpanSym; tau <= cohWarmSpanSym; tau += cohWarmStepSym {
+		for k := -steps; k <= steps; k++ {
+			f := hz0 + float64(k)*cohWarmStepHz
+			var sum float64
+			for j := 0; j <= n; j++ {
+				s.t0 = s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt + tau*s.sps
+				if s.t0-s.sps < float64(lo) {
+					continue
 				}
-				if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
-					top = max(top, a*a/(a*a+max(v, 0)))
+				s.totalHz = f
+				top := 0.0
+				for p := range syms {
+					for i, v := range syms[p] {
+						s.known[syncFirstSym+i] = v
+					}
+					if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
+						top = max(top, a*a/(a*a+max(v, 0)))
+					}
 				}
+				sum += top
 			}
-			sum += top
-		}
-		if sum > best {
-			best, bestHz = sum, f
+			if sum > best {
+				best, bestHz, bestTau = sum, f, tau
+			}
 		}
 	}
+	s.dt += bestTau * s.sps
 	s.t0, s.totalHz = t0, hz
 	s.freq, s.freqOK, s.nFit, s.fitVar = bestHz, true, 1, cohWarmStepHz*cohWarmStepHz
 }

@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/cmplx"
 	"math/rand/v2"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -94,6 +95,37 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 		rate := earlyExact(t, c.cn)
 		if rate < c.min {
 			t.Errorf("core Tier 3 at %v dB: %.3f of the AMBE frames in the first 12 slots exact", c.cn, rate)
+		}
+	}
+}
+
+func TestCoreTier3NoLostStream(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 6)
+	sig := cleanBaseband(slots, 1400)
+	rates := make([]float64, 24)
+	var wg sync.WaitGroup
+	for i := range rates {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+			x := sig.noisy(0, 7024+uint64(i))
+			var got []Burst
+			for k := 0; k < len(x); k += 4096 {
+				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
+			}
+			got = append(got, r.flushAll()...)
+			e, n := ambeInSlots(truth, got, len(truth))
+			rates[i] = float64(e) / float64(n)
+		}()
+	}
+	wg.Wait()
+	sorted := slices.Clone(rates)
+	slices.Sort(sorted)
+	for i, v := range rates {
+		if v < sorted[len(sorted)/2]/2 {
+			t.Errorf("seed %d at 0 dB: %.3f of the AMBE frames exact, under half the median %.3f", 7024+i, v, sorted[len(sorted)/2])
 		}
 	}
 }
