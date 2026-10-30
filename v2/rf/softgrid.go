@@ -90,3 +90,17 @@ func (g *softGrid) extrinsic(ext *[softBurstBits]float32) {
 		}
 	}
 }
+
+func satLLR(v float32) int16 {
+	v = max32(min32(8*v, 32000), -32000)
+	i := int16(v)
+	if i == 0 {
+		switch {
+		case v > 0:
+			return 1
+		case v < 0:
+			return -1
+		}
+	}
+	return i
+}

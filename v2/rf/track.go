@@ -2,20 +2,15 @@ package rf
 
 import (
 	"math"
-	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
 const (
-	damagedSyncDistance = 8
-	voiceSyncDistance   = 16
-	pendingSlots        = 14
-	noSlot              = math.MinInt64
+	pendingSlots = 14
+	noSlot       = math.MinInt64
 )
 
 type slotRec struct {
@@ -162,10 +157,6 @@ func (t *tracker) resolveLeftover(e *trackEntry) {
 		e.out.distance, e.out.sync, e.keep = d, data, true
 	}
 	e.resolved = true
-}
-
-func syncDist(b *layer2.RawBurst, p enums.SyncPattern) int {
-	return bits.OnesCount64(ibits.Field(b[:], framer.SyncOffset, framer.SyncBits) ^ uint64(p))
 }
 
 func (t *tracker) setA(e *trackEntry, c *chanTrack, d int, timed bool) {

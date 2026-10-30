@@ -7,7 +7,6 @@ import (
 
 const (
 	ddWindow     = 12
-	runMargin    = 4
 	phaseBank    = 8
 	fillChunk    = trellisWin + trellisLook
 	noRun        = math.MaxInt16

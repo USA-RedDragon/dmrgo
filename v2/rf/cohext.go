@@ -1795,3 +1795,13 @@ func (s *cohStage) runExact(rot complex64, scale float32) {
 		s.runKeep(k, app[4*k:4*k+4])
 	}
 }
+
+func dibitLLR(a []float32, scale float32) (int16, int16) {
+	b0 := max32(a[2], a[3]) - max32(a[0], a[1])
+	b1 := max32(a[1], a[2]) - max32(a[0], a[3])
+	return satLLR(scale * b0), satLLR(scale * b1)
+}
+
+const (
+	runMargin = 4
+)

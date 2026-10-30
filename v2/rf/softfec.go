@@ -1193,3 +1193,9 @@ func softCombine(dst, src []int16) {
 		dst[i] = int16(max(math.MinInt16, min(math.MaxInt16, int32(dst[i])+int32(src[i]))))
 	}
 }
+
+const (
+	embFirstBit = 116
+	embBits     = 32
+	maxCombine  = 4
+)

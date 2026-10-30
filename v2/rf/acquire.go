@@ -4,16 +4,10 @@ import (
 	"math"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
 const (
-	syncSymbols  = framer.SyncBits / 2
-	syncEdge     = 2
 	syncSpan     = (syncSymbols - 2*syncEdge) * samplesPerSy
-	numSources   = 4
 	searchFreqs  = 3
 	searchStepHz = 200.0
 	preBlocks    = 4
@@ -21,40 +15,6 @@ const (
 )
 
 func searchHzAt(i int) float64 { return float64(i-searchFreqs/2) * searchStepHz }
-
-func sourceAt(i int) layer2.SyncSource {
-	switch i {
-	case 0:
-		return layer2.SyncSourceBS
-	case 1:
-		return layer2.SyncSourceMS
-	case 2:
-		return layer2.SyncSourceDirectTS1
-	}
-	return layer2.SyncSourceDirectTS2
-}
-
-func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
-	v := uint64(p) << (64 - 2*syncSymbols)
-	for k := range syncSymbols {
-		d := uint8(v >> 62)
-		v <<= 2
-		out[k] = symbolOf(unpacked.Bit(d>>1), unpacked.Bit(d&1))
-	}
-}
-
-// ETSI TS 102 361-1 Table 10.3
-func symbolOf(b0, b1 unpacked.Bit) int8 {
-	switch b0<<1 | b1 {
-	case 0b01:
-		return 3
-	case 0b00:
-		return 1
-	case 0b10:
-		return -1
-	}
-	return -3
-}
 
 type syncSearch struct {
 	dec, sps, span int

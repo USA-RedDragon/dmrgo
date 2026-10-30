@@ -8,7 +8,6 @@ const (
 	chanTaps   = 95
 	chanPassHz = 7500.0
 	chanStopHz = 11000.0
-	discCutHz  = 4500.0
 )
 
 type ring struct {
@@ -221,8 +220,6 @@ func (r *ring) gather(first int64, x []complex64) {
 		}
 	}
 }
-
-const discStepHz = 64
 
 type channelizer struct {
 	n       int64

@@ -21,13 +21,6 @@ type repairer struct {
 	raw            bool
 }
 
-const (
-	embFirstBit = 116
-	embBits     = 32
-)
-
-const maxCombine = 4
-
 func newRepairer(osd, grid bool) *repairer {
 	p := &repairer{soft: newSoftDecoder(), osd: osd, grid: grid}
 	for dt := range p.checks {

@@ -60,3 +60,10 @@ func extPrior(lp *[4]float32, e0, e1, w float32) {
 		lp[d] = bitPrior(w*e0, b0) + bitPrior(w*e1, b1)
 	}
 }
+
+func bitPrior(l float32, b unpacked.Bit) float32 {
+	if b == 0 {
+		return l / 2
+	}
+	return -l / 2
+}
