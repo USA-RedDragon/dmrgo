@@ -14,71 +14,81 @@ Command dmrrf builds DMR transmissions as I/Q or FM modulator audio and decodes 
 
 Build it from the `v2` directory with `go build -o dmrrf ./cmd/dmrrf`. It has three subcommands. Its README gives the sample formats, the sequences of `tx`, the output lines of `rx` and examples for common radios.
 
-`dmrrf tx` writes a transmission as I/Q or modulator audio:
+`dmrrf tx` writes a transmission as I/Q or modulator audio. Its flags:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=95-130 -->
+<!-- dmrgo:code file=v2/cmd/dmrrf/main.go symbol=txFlags -->
 ```go
-out := fs.String("o", "", "output file, or - for standard output")
-format := fs.String("format", "", formatUsage)
-seq := fs.String("seq", "data12", strings.Join(rftx.Sequences(), ", "))
-cw := fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead (I/Q only)")
-rate := fs.Float64("rate", 0, "sample rate in Hz (default 48000 for audio; required for I/Q)")
-tune := tuningFlags(fs, "carrier frequency in Hz, for -ppm and the example command", "frequency offset of the carrier from the tuned frequency in Hz (I/Q only)")
-level := fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
-slot := fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
-cc := enums.ColorCode(1)
-fs.Func("cc", "color code, 0 to 15 (default 1)", func(s string) error {
-	v, err := strconv.ParseUint(s, 10, 8)
-	if err != nil {
+func txFlags(fs *flag.FlagSet) *txOptions {
+	o := &txOptions{cc: enums.ColorCode(1), dd: uint8(enums.DDUTF16LE)}
+	o.out = fs.String("o", "", "output file, or - for standard output")
+	o.format = fs.String("format", "", formatUsage)
+	o.seq = fs.String("seq", "data12", strings.Join(rftx.Sequences(), ", "))
+	o.cw = fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead (I/Q only)")
+	o.rate = fs.Float64("rate", 0, "sample rate in Hz (default 48000 for audio; required for I/Q)")
+	o.tune = tuningFlags(fs, "carrier frequency in Hz, for -ppm and the example command", "frequency offset of the carrier from the tuned frequency in Hz (I/Q only)")
+	o.level = fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
+	o.slot = fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
+	fs.Func("cc", "color code, 0 to 15 (default 1)", func(s string) error {
+		v, err := strconv.ParseUint(s, 10, 8)
+		if err != nil {
+			return err
+		}
+		o.cc, err = enums.NewColorCode(uint8(v))
 		return err
+	})
+	o.src = idFlag(fs, "src", "source radio ID")
+	o.dst = idFlag(fs, "dst", "destination radio or talkgroup ID")
+	o.bs = idFlag(fs, "bs", "BS (repeater) address for the wakeup CSBK")
+	o.group = fs.Bool("group", false, "send to a talkgroup instead of a radio")
+	o.wakeups = fs.Int("wakeups", 3, "wakeup CSBKs before the sequence, or idle frames before a -bs-sourced stream")
+	o.msg = fs.String("msg", "DMRGO TEST", "message text")
+	o.repeat = fs.Float64("repeat", 0, "repeat the sequence, padded to whole 60 ms frames, for this many seconds")
+	o.stretch = fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
+	o.superframes = fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
+	o.silence = fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
+	o.lateEntry = fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
+	o.preambles = fs.Int("preambles", 4, "preamble CSBKs of the preamble and sms sequences")
+	fs.Func("dd", "Defined Data format of the sms sequence, 0 to 63; the text is always UTF-16LE (default 21, UTF-16LE)", func(s string) error {
+		v, err := strconv.ParseUint(s, 10, 6)
+		o.dd = uint8(v)
+		return err
+	})
+	o.bsSourced = fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
+	return o
+}
+```
+<!-- /dmrgo:code -->
+
+`dmrrf rx` decodes I/Q or discriminator audio. Its flags:
+
+<!-- dmrgo:code file=v2/cmd/dmrrf/main.go symbol=rxFlags -->
+```go
+func rxFlags(fs *flag.FlagSet) rxOptions {
+	return rxOptions{
+		in:       fs.String("i", "", "input file, or - for standard input"),
+		format:   fs.String("format", "", formatUsage),
+		rate:     fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)"),
+		tune:     tuningFlags(fs, "tuned frequency in Hz, for -ppm and the ppm figure", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune (I/Q only)"),
+		tier:     fs.Int("tier", 3, "receiver tier 0 to 3: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state; audio defaults to the rf default"),
+		ambeSpec: fs.String("ambe", "", ambeUsage),
+		pcmPath:  fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit little-endian PCM to this file, or - for standard output (needs -ambe)"),
 	}
-	cc, err = enums.NewColorCode(uint8(v))
-	return err
-})
-src := idFlag(fs, "src", "source radio ID")
-dst := idFlag(fs, "dst", "destination radio or talkgroup ID")
-bs := idFlag(fs, "bs", "BS (repeater) address for the wakeup CSBK")
-group := fs.Bool("group", false, "send to a talkgroup instead of a radio")
-wakeups := fs.Int("wakeups", 3, "wakeup CSBKs before the sequence, or idle frames before a -bs-sourced stream")
-msg := fs.String("msg", "DMRGO TEST", "message text")
-repeat := fs.Float64("repeat", 0, "repeat the sequence, padded to whole 60 ms frames, for this many seconds")
-stretch := fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
-superframes := fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
-silence := fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
-lateEntry := fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
-preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble and sms sequences")
-dd := uint8(enums.DDUTF16LE)
-fs.Func("dd", "Defined Data format of the sms sequence, 0 to 63; the text is always UTF-16LE (default 21, UTF-16LE)", func(s string) error {
-	v, err := strconv.ParseUint(s, 10, 6)
-	dd = uint8(v)
-	return err
-})
-bsSourced := fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
+}
 ```
 <!-- /dmrgo:code -->
 
-`dmrrf rx` decodes I/Q or discriminator audio:
+`dmrrf cal` gives the frequency offset of an unmodulated carrier in I/Q. Its flags:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=506-512 -->
+<!-- dmrgo:code file=v2/cmd/dmrrf/main.go symbol=calFlags -->
 ```go
-in := fs.String("i", "", "input file, or - for standard input")
-format := fs.String("format", "", formatUsage)
-rate := fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)")
-tune := tuningFlags(fs, "tuned frequency in Hz, for -ppm and the ppm figure", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune (I/Q only)")
-tier := fs.Int("tier", 3, "receiver tier 0 to 3: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state; audio defaults to the rf default")
-ambeSpec := fs.String("ambe", "", ambeUsage)
-pcmPath := fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit little-endian PCM to this file, or - for standard output (needs -ambe)")
-```
-<!-- /dmrgo:code -->
-
-`dmrrf cal` gives the frequency offset of an unmodulated carrier in I/Q:
-
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=603-606 -->
-```go
-in := fs.String("i", "", "input file of I/Q, or - for standard input")
-format := fs.String("format", "", formatUsage)
-rate := fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)")
-tune := tuningFlags(fs, "frequency the carrier should be on, in Hz", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune")
+func calFlags(fs *flag.FlagSet) calOptions {
+	return calOptions{
+		in:     fs.String("i", "", "input file of I/Q, or - for standard input"),
+		format: fs.String("format", "", formatUsage),
+		rate:   fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)"),
+		tune:   tuningFlags(fs, "frequency the carrier should be on, in Hz", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune"),
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
@@ -86,11 +96,15 @@ tune := tuningFlags(fs, "frequency the carrier should be on, in Hz", "frequency 
 
 `cmd/rxbench` writes the sensitivity tables and graphs of the [Receiver](../rx/README.md) datasheet from the sweep data of `v2/rf`. With `-update-readme` it first runs the long sweep, then writes the tables and graphs. With `-check-readme` it renders the committed data and fails when the page or a graph differs. Give one of the two.
 
-<!-- dmrgo:code file=cmd/rxbench/main.go lines=43-45 -->
+<!-- dmrgo:code file=cmd/rxbench/main.go symbol=defineFlags -->
 ```go
-update := flag.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs")
-check := flag.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data")
-noSweep := flag.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep")
+func defineFlags(fs *flag.FlagSet) options {
+	return options{
+		update:  fs.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs"),
+		check:   fs.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data"),
+		noSweep: fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
@@ -100,23 +114,31 @@ noSweep := flag.Bool("no-sweep", false, "with -update-readme, render the committ
 
 The flags of `rxsweep run`:
 
-<!-- dmrgo:code file=cmd/rxsweep/main.go lines=64-69 -->
+<!-- dmrgo:code file=cmd/rxsweep/main.go symbol=runFlags -->
 ```go
-space := fs.String("space", "", "space file of the variants")
-out := fs.String("out", "", "output directory")
-jobs := fs.Int("jobs", 2, "worker processes at once; each gets an equal share of the cores")
-only := fs.String("only", "", "comma-separated variant names to run; all when empty")
-noCost := fs.Bool("no-cost", false, "skip the cost phase")
-m4 := fs.String("m4", "", "command that measures a variant on a Cortex-M4F: it gets the patched v2 directory and the variant JSON file, and prints one JSON object")
+func runFlags(fs *flag.FlagSet) runOptions {
+	return runOptions{
+		space:  fs.String("space", "", "space file of the variants"),
+		out:    fs.String("out", "", "output directory"),
+		jobs:   fs.Int("jobs", 2, "worker processes at once; each gets an equal share of the cores"),
+		only:   fs.String("only", "", "comma-separated variant names to run; all when empty"),
+		noCost: fs.Bool("no-cost", false, "skip the cost phase"),
+		m4:     fs.String("m4", "", "command that measures a variant on a Cortex-M4F: it gets the patched v2 directory and the variant JSON file, and prints one JSON object"),
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
 The flags of `rxsweep report`:
 
-<!-- dmrgo:code file=cmd/rxsweep/main.go lines=88-89 -->
+<!-- dmrgo:code file=cmd/rxsweep/main.go symbol=reportFlags -->
 ```go
-out := fs.String("out", "", "output directory of rxsweep run")
-floor := fs.String("floor", "", "floor file; default v2/rf/testdata/rxbench_floor.json of this checkout")
+func reportFlags(fs *flag.FlagSet) reportOptions {
+	return reportOptions{
+		out:   fs.String("out", "", "output directory of rxsweep run"),
+		floor: fs.String("floor", "", "floor file; default v2/rf/testdata/rxbench_floor.json of this checkout"),
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
@@ -124,10 +146,14 @@ floor := fs.String("floor", "", "floor file; default v2/rf/testdata/rxbench_floo
 
 `cmd/speccheck` checks `spec_matrix.yaml` against the code. It runs the tests that the file lists for each clause of ETSI TS 102 361 and gives each clause a status: verified, failing, untested or unimplemented. It also checks that each Go file under `v2` that is not a test and not generated is in the file. With `-update-readme` it writes the table of [ETSI coverage](etsi.md). With `-check-readme` it fails when that table is out of date, or when a relative link in `README.md` or `docs/` names a file or heading that does not exist.
 
-<!-- dmrgo:code file=cmd/speccheck/main.go lines=105-106 -->
+<!-- dmrgo:code file=cmd/speccheck/main.go symbol=defineFlags -->
 ```go
-updateReadme := flag.Bool("update-readme", false, "Write the Markdown coverage report into docs/reference/etsi.md between the ETSI COVERAGE markers")
-checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/reference/etsi.md is not up to date or a relative link in README.md or docs/ is broken")
+func defineFlags(fs *flag.FlagSet) options {
+	return options{
+		updateReadme: fs.Bool("update-readme", false, "Write the Markdown coverage report into docs/reference/etsi.md between the ETSI COVERAGE markers"),
+		checkReadme:  fs.Bool("check-readme", false, "Fail if the coverage section in docs/reference/etsi.md is not up to date or a relative link in README.md or docs/ is broken"),
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
@@ -143,11 +169,15 @@ checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in
 
 `cmd/docgen` fills the generated parts of the pages under `docs/` from the code of `v2`: example output, code excerpts, constants, config tables, error tables, state tables and doc comments. Give one of `-update` and `-check`.
 
-<!-- dmrgo:code file=cmd/docgen/main.go lines=23-26 -->
+<!-- dmrgo:code file=cmd/docgen/main.go symbol=defineFlags -->
 ```go
-update := fl.Bool("update", false, "rewrite the body of each marker in docs/**/*.md")
-check := fl.Bool("check", false, "exit 1 and list each marker whose body differs from what docgen writes")
-root := fl.String("root", "", "repository root (default: two directories above the docgen source)")
-docs := fl.String("docs", "docs", "directory of the Markdown pages, relative to the root")
+func defineFlags(fl *flag.FlagSet) options {
+	return options{
+		update: fl.Bool("update", false, "rewrite the body of each marker in docs/**/*.md"),
+		check:  fl.Bool("check", false, "exit 1 and list each marker whose body differs from what docgen writes"),
+		root:   fl.String("root", "", "repository root (default: two directories above the docgen source)"),
+		docs:   fl.String("docs", "docs", "directory of the Markdown pages, relative to the root"),
+	}
+}
 ```
 <!-- /dmrgo:code -->

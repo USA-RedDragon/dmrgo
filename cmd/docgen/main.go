@@ -18,39 +18,52 @@ func main() {
 	os.Exit(run(os.Args[1:], os.Stderr))
 }
 
+type options struct {
+	update *bool
+	check  *bool
+	root   *string
+	docs   *string
+}
+
+func defineFlags(fl *flag.FlagSet) options {
+	return options{
+		update: fl.Bool("update", false, "rewrite the body of each marker in docs/**/*.md"),
+		check:  fl.Bool("check", false, "exit 1 and list each marker whose body differs from what docgen writes"),
+		root:   fl.String("root", "", "repository root (default: two directories above the docgen source)"),
+		docs:   fl.String("docs", "docs", "directory of the Markdown pages, relative to the root"),
+	}
+}
+
 func run(args []string, stderr io.Writer) int {
 	fl := flag.NewFlagSet("docgen", flag.ContinueOnError)
-	update := fl.Bool("update", false, "rewrite the body of each marker in docs/**/*.md")
-	check := fl.Bool("check", false, "exit 1 and list each marker whose body differs from what docgen writes")
-	root := fl.String("root", "", "repository root (default: two directories above the docgen source)")
-	docs := fl.String("docs", "docs", "directory of the Markdown pages, relative to the root")
+	o := defineFlags(fl)
 	fl.SetOutput(stderr)
 	if err := fl.Parse(args); err != nil {
 		return 2
 	}
-	if *update == *check {
+	if *o.update == *o.check {
 		fmt.Fprintln(stderr, "docgen: give exactly one of -update or -check")
 		return 2
 	}
-	if *root == "" {
+	if *o.root == "" {
 		_, this, _, ok := runtime.Caller(0)
 		if !ok {
 			fmt.Fprintln(stderr, "docgen: cannot find the docgen source directory")
 			return 1
 		}
-		*root = filepath.Join(filepath.Dir(this), "..", "..")
+		*o.root = filepath.Join(filepath.Dir(this), "..", "..")
 	}
-	g := newGen(*root, stderr)
-	dir := *docs
+	g := newGen(*o.root, stderr)
+	dir := *o.docs
 	if !filepath.IsAbs(dir) {
-		dir = filepath.Join(*root, dir)
+		dir = filepath.Join(*o.root, dir)
 	}
-	stale, err := g.run(dir, *update)
+	stale, err := g.run(dir, *o.update)
 	if err != nil {
 		fmt.Fprintln(stderr, "docgen:", err)
 		return 1
 	}
-	if *check && len(stale) > 0 {
+	if *o.check && len(stale) > 0 {
 		for _, s := range stale {
 			fmt.Fprintln(stderr, "stale:", s)
 		}
