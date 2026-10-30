@@ -70,6 +70,14 @@ type cohStage struct {
 	easy                        bool
 	symNoise                    uint8
 	symSums                     [syncSymbols]complex128
+	refPh                       []float64
+	refX                        []complex64
+	refC                        []complex64
+	pp48                        phasePulse
+	refR                        []complex64
+	refIn                       []int
+	refSym                      [slotSymbols]int8
+	refK                        [slotSymbols]bool
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -210,6 +218,12 @@ func newCohStageOf(opt *options) *cohStage {
 	s.size = opt.cohRing()
 	s.setRing(2)
 	s.buf = make([]complex64, (syncSymbols+2)*sps)
+	s.refPh = make([]float64, (syncSymbols+2*m.pp.span+1)*samplesPerSy)
+	s.refC = make([]complex64, (syncSymbols+2*m.pp.span+1)*sps)
+	s.pp48 = newPhasePulse(samplesPerSy)
+	s.refR = make([]complex64, (syncSymbols+2*m.pp.span+1)*samplesPerSy)
+	s.refX = make([]complex64, (syncSymbols+2*m.pp.span+1)*sps)
+	s.refIn = make([]int, syncSymbols+2*m.pp.span+1)
 	s.symX = make([]complex64, cohSymN*sps)
 	s.symAt = make([]uint32, cohSymN)
 	for i := range s.runs {
@@ -384,6 +398,7 @@ type cohRing interface {
 	cohUnit() float64
 	cohResidual() bool
 	cohHz() float64
+	cohTaps() []float32
 }
 
 func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
@@ -437,6 +452,17 @@ func (r *iqRx) cohUnit() float64 {
 
 func (r *iqRx) cohResidual() bool {
 	return true
+}
+
+func (r *iqRx) cohTaps() []float32 {
+	if r.conv.halfOn || r.conv.decim != 2 {
+		return nil
+	}
+	return r.conv.taps
+}
+
+func (p *discPhase) cohTaps() []float32 {
+	return nil
 }
 
 func (r *iqRx) cohHz() float64 {
@@ -748,41 +774,103 @@ func (s *cohStage) lock() {
 }
 
 func (s *cohStage) freqFit(k0, k1 int) float64 {
-	acc := s.freqAcc(k0, k1)
+	return freqOf(s.freqAcc(k0, k1))
+}
+
+func freqOf(acc complex128) float64 {
 	if acc == 0 {
 		return 0
 	}
 	return cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
 }
 
+func (s *cohStage) refFixed(fixed *layer2.RawBurst, k0, k1 int) {
+	for k := k0; k < k1; k++ {
+		p := 2 * (k - cachSymbols)
+		b0 := fixed[p/8] >> (7 - p%8) & 1
+		b1 := fixed[(p+1)/8] >> (7 - (p+1)%8) & 1
+		s.refSym[k], s.refK[k] = symbolOf(unpacked.Bit(b0), unpacked.Bit(b1)), true
+	}
+}
+
 func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 	m := s.model
-	s.g0, s.dir = k0, 1
-	n := min(k1-k0+1, syncSymbols)
-	var syms [syncSymbols]int
-	for i := range n {
-		syms[i] = int(s.known[k0+i])
+	span := m.pp.span
+	lo, hi := max(k0-span, 0), min(k1+span, slotSymbols-1)
+	n := hi - lo + 1
+	syms := s.refIn[:n]
+	for i := range syms {
+		syms[i] = 0
+		if s.refK[lo+i] {
+			syms[i] = int(s.refSym[lo+i])
+		}
 	}
-	s.fill(0, n, s.buf)
+	s.g0, s.dir = lo, 1
+	x := s.refX[:n*m.sps]
+	s.fill(0, n, x)
+	ref := s.refC[:n*m.sps]
+	s.refWave(syms, ref)
 	var prev, acc complex128
-	ph := 0.0
-	for k := range n - 2*m.d {
-		w := 0
-		for i := range 2*m.d + 1 {
-			w = w<<2 | (syms[k+i]+3)/2
-		}
+	have := false
+	for k := k0 - lo; k <= k1-lo; k++ {
 		var c complex128
-		for j := range m.sps {
-			c += complex128(s.buf[(k+m.d)*m.sps+j]) * complex128(m.tpl[w*m.sps+j])
+		if s.refNear(lo + k) {
+			for j := k * m.sps; j < (k+1)*m.sps; j++ {
+				c += complex128(x[j]) * complex128(ref[j])
+			}
 		}
-		c *= cmplx.Exp(complex(0, -ph))
-		if k > 0 {
+		if have && c != 0 {
 			acc += c * cmplx.Conj(prev)
 		}
-		prev = c
-		ph += m.h * math.Pi * float64(syms[k])
+		prev, have = c, c != 0
 	}
 	return acc
+}
+
+func (s *cohStage) refNear(k int) bool {
+	for i := max(k-syncEdge, 0); i <= min(k+syncEdge, slotSymbols-1); i++ {
+		if !s.refK[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *cohStage) refWave(syms []int, out []complex64) {
+	m := s.model
+	taps := s.src.cohTaps()
+	if taps == nil || 2*m.sps != samplesPerSy {
+		ph := s.refPh[:len(out)]
+		m.pp.refPhaseInto(syms, m.sps, m.h, ph)
+		for i, v := range ph {
+			sn, cs := math.Sincos(v)
+			out[i] = complex(float32(cs), float32(-sn))
+		}
+		return
+	}
+	n := len(syms) * samplesPerSy
+	ph := s.refPh[:n]
+	s.pp48.refPhaseInto(syms, samplesPerSy, m.h, ph)
+	r := s.refR[:n]
+	for j := range n {
+		sn, cs := math.Sincos(ph[j])
+		r[j] = complex(float32(cs), float32(sn))
+	}
+	for j := range n - 1 {
+		r[j] += r[j+1]
+	}
+	r[n-1] *= 2
+	h := len(taps) / 2
+	for i := range out {
+		c := 2*i + 1 + h
+		var y complex64
+		for t, a := range taps {
+			if j := c - t; j >= 0 && j < n {
+				y += complex(a, 0) * r[j]
+			}
+		}
+		out[i] = complex(real(y)/2, -imag(y)/2)
+	}
 }
 
 func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
@@ -792,6 +880,8 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 		b1 := fixed[(p+1)/8] >> (7 - (p+1)%8) & 1
 		s.known[cachSymbols+k] = symbolOf(unpacked.Bit(b0), unpacked.Bit(b1))
 	}
+	clear(s.refK[:])
+	s.refFixed(fixed, cachSymbols, slotSymbols)
 	var acc complex128
 	var snr float64
 	n := 0
@@ -806,7 +896,7 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 		return
 	}
 	snr /= float64(n)
-	fit := cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
+	fit := freqOf(acc)
 	if math.Abs(fit) >= cohFreqSpan {
 		return
 	}
@@ -907,8 +997,14 @@ func (s *cohStage) knownSegs(b *Burst) (segs [2][2]int, nseg int) {
 	if _, _, ok := layer2.SyncSourceOf(b.Sync); ok && b.Distance >= 0 {
 		var syms [syncSymbols]int8
 		syncSyms(b.Sync, &syms)
+		clear(s.refK[:])
 		for i, v := range syms {
 			s.known[syncFirstSym+i], s.isK[syncFirstSym+i] = v, true
+			s.refSym[syncFirstSym+i], s.refK[syncFirstSym+i] = v, true
+		}
+		if _, kind, _ := layer2.SyncSourceOf(b.Sync); kind == layer2.KindData && b.HasFixed && !b.Fixed.SlotType().FEC.Uncorrectable {
+			s.refFixed(&b.Fixed, syncFirstSym-slotTypeSymbols, syncFirstSym)
+			s.refFixed(&b.Fixed, syncFirstSym+syncSymbols, syncFirstSym+syncSymbols+slotTypeSymbols)
 		}
 		segs[0] = [2]int{syncFirstSym, syncFirstSym + syncSymbols - 1}
 		nseg, s.priorK = 1, true
@@ -1004,6 +1100,8 @@ const cohLevelSyms = 48
 const cohEasySNR = 6
 
 const cohShift = 3
+
+const slotTypeSymbols = 5
 
 const cohMaxRun = slotSymbols + syncSymbols + cohShift + runMargin
 
