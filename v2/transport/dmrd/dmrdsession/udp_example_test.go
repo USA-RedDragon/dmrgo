@@ -60,27 +60,39 @@ func login(dialect dmrd.Dialect, call []byte) error {
 	}
 	defer peerConn.Close()
 
-	var rptc []byte
+	peer, master, err := newMachines(dialect, rptcConfig(dialect))
+	if err != nil {
+		return err
+	}
+	return passPackets(dialect, call, masterConn, peerConn, peer, master)
+}
+
+func rptcConfig(dialect dmrd.Dialect) []byte {
 	if dialect == dmrd.DialectMMDVM {
 		var c dmrd.MMDVMConfig
 		c.Reset()
 		c.SetID(3149999)
-		rptc = c[:]
-	} else {
-		var c dmrd.HBRPConfig
-		c.Reset()
-		c.SetID(3149999)
-		rptc = c[:]
+		return c[:]
 	}
+	var c dmrd.HBRPConfig
+	c.Reset()
+	c.SetID(3149999)
+	return c[:]
+}
+
+func newMachines(dialect dmrd.Dialect, rptc []byte) (*dmrdsession.Peer, *dmrdsession.Master, error) {
 	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dialect, ID: 3149999, Password: []byte("passw0rd"), Config: rptc})
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	master, err := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dialect})
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
+	return peer, master, nil
+}
 
+func passPackets(dialect dmrd.Dialect, call []byte, masterConn, peerConn *net.UDPConn, peer *dmrdsession.Peer, master *dmrdsession.Master) error {
 	start := time.Now()
 	toMaster, toPeer := 0, 0
 	send := func(conn *net.UDPConn, to net.Addr, n *int, outs []dmrdsession.Output) {
