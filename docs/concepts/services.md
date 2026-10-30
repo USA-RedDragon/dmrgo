@@ -31,17 +31,19 @@ Three machines differ. [bs.Repeater](https://pkg.go.dev/github.com/USA-RedDragon
 
 This example sends a confirmed message to no one. Each loop calls `Deadline` and then `Tick` at that time, so the example does not wait for real time to pass. The Sender tries again at each timeout, and then gives up:
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go lines=153-164 -->
+<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=driveClock -->
 ```go
-outputs := make([]data.Output, 0, data.MaxOutputs)
-for {
-	at, ok := tx.Deadline()
-	if !ok {
-		return
-	}
-	for _, o := range tx.Tick(at, outputs[:0]) {
-		if icmp, ok := o.ICMP(); ok {
-			fmt.Printf("%v after %d tries: ICMP %v (type %d, code %d)\n", o.Result, o.Try, icmp, icmp.Type(), icmp.Code())
+func driveClock(tx *data.Sender) {
+	outputs := make([]data.Output, 0, data.MaxOutputs)
+	for {
+		at, ok := tx.Deadline()
+		if !ok {
+			return
+		}
+		for _, o := range tx.Tick(at, outputs[:0]) {
+			if icmp, ok := o.ICMP(); ok {
+				fmt.Printf("%v after %d tries: ICMP %v (type %d, code %d)\n", o.Result, o.Try, icmp, icmp.Type(), icmp.Code())
+			}
 		}
 	}
 }

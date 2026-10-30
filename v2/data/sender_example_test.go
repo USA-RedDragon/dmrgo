@@ -150,6 +150,12 @@ func ExampleOutput_ICMP() {
 		fmt.Println(err)
 		return
 	}
+	driveClock(tx)
+	// Output:
+	// RetryLimit after 2 tries: ICMP Host Unreachable (type 3, code 1)
+}
+
+func driveClock(tx *data.Sender) {
 	outputs := make([]data.Output, 0, data.MaxOutputs)
 	for {
 		at, ok := tx.Deadline()
@@ -162,6 +168,4 @@ func ExampleOutput_ICMP() {
 			}
 		}
 	}
-	// Output:
-	// RetryLimit after 2 tries: ICMP Host Unreachable (type 3, code 1)
 }
