@@ -82,6 +82,7 @@ type cohStage struct {
 	tfitBase                    int64
 	tfitRef                     float64
 	slotFit                     bool
+	warm                        bool
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -213,7 +214,7 @@ func newCohStageOf(opt *options) *cohStage {
 	}
 	m := newCPMModel(1, sps)
 	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}

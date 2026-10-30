@@ -2291,9 +2291,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.clickFloor(v)
 	}
 	if r.hasExt() {
-		if !r.isReplayDry() {
-			r.ext.burst(r, b)
-		}
+		r.ext.burst(r, b)
 		return
 	}
 	if r.softFEC {

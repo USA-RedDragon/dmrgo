@@ -5,6 +5,8 @@ package rf
 import (
 	"math"
 	"math/rand/v2"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -81,4 +83,58 @@ func TestCohSlotFit(t *testing.T) {
 	if math.Abs(s.t0-pt-3) > 1e-9 {
 		t.Errorf("a 3 sample timing jump moved the fit to %.3f instead of restarting it", s.t0-pt)
 	}
+}
+
+func TestCoreTier3EarlySlots(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 6)
+	sig := cleanBaseband(slots, 1400)
+	var exact, total atomic.Int64
+	var wg sync.WaitGroup
+	for seed := range uint64(16) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+			x := sig.noisy(1, 7000+seed)
+			var got []Burst
+			for k := 0; k < len(x); k += 4096 {
+				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
+			}
+			got = append(got, r.flushAll()...)
+			e, n := ambeInSlots(truth, got, 12)
+			exact.Add(int64(e))
+			total.Add(int64(n))
+		}()
+	}
+	wg.Wait()
+	if rate := float64(exact.Load()) / float64(total.Load()); rate < 0.78 {
+		t.Errorf("core Tier 3 at 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
+	}
+}
+
+func ambeInSlots(truth []benchSlot, got []Burst, n int) (exact, total int) {
+	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
+	byIndex := map[int]Burst{}
+	for _, r := range got {
+		if i := int(math.Round((r.Seconds - start) / slotSeconds)); i >= 0 && i < n && math.Abs(r.Seconds-start-float64(i)*slotSeconds) < 0.002 {
+			byIndex[i] = r
+		}
+	}
+	for i, ts := range truth[:n] {
+		if ts.kind != "voice" {
+			continue
+		}
+		r, have := byIndex[i]
+		data, _ := r.Decoded()
+		want, _ := ts.burst.AMBEFrames()
+		gotF, _ := data.AMBEFrames()
+		for j := range want {
+			total++
+			if have && gotF[j] == want[j] {
+				exact++
+			}
+		}
+	}
+	return exact, total
 }

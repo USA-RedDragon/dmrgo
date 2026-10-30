@@ -135,6 +135,10 @@ func newSoftExtStages(st uint8, lookback int, sps float32) *softExt {
 }
 
 func (x *softExt) burst(c *leanCore, b *Burst) {
+	if c.isReplayDry() {
+		x.warm(c, b)
+		return
+	}
 	if x.np != nil && c.anchor != 0 {
 		x.np.fitSync(c, c.anchor, c.base)
 	}
@@ -186,6 +190,17 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	if x.coh != nil && x.coh.budget > 0 {
 		x.coh.credit -= float64(x.coh.work + x.work - x.work0)
 	}
+}
+
+func (x *softExt) warm(c *leanCore, b *Burst) {
+	s := x.coh
+	if s == nil || !s.warm {
+		return
+	}
+	fit := s.fitOnly
+	s.fitOnly = true
+	s.detect(c, b, &x.llr)
+	s.fitOnly = fit
 }
 
 func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCode, ccOK bool) bool {
