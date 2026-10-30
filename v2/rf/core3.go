@@ -4,7 +4,7 @@ package rf
 
 func coreIQ3Options() options {
 	o := coreExactOptions(tierOptions(Tier2))
-	o.ExtLookback, o.CohSlotFit, o.CohWarm, o.CohRing = 16, true, true, 14
+	o.ExtLookback, o.CohSlotFit, o.CohWarm, o.CohRing, o.IQSpecFine = 16, true, true, 14, true
 	o.CohTaps, o.CohCutHz, o.CohKaiser = coreCohTaps, coreCohCutHz, coreCohKaiser
 	return o
 }

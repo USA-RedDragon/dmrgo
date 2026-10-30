@@ -346,6 +346,7 @@ type iqRx struct {
 	yHist     []complex64
 	cHist     []complex64
 	cLag      int64
+	specPull  float32
 	yN        int64
 	refill    *iqRefill
 	tunes     *[iqTunes]iqTune
@@ -372,6 +373,10 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
 	}
 	r.maxHz, r.syncOnly, r.pullAgree = opt.IQTuneMaxHz, opt.IQTuneSyncOnly, opt.IQPullAgree
+	r.specPull = iqAFCPullHz
+	if opt.IQSpecFine {
+		r.specPull = iqAFCFineHz
+	}
 	if r.center = float32(cfg.OffsetHz); r.center != 0 {
 		r.conv.tune(r.center)
 	}
@@ -522,7 +527,7 @@ func (r *iqRx) hunt(v complex64) {
 		return
 	}
 	hz := float32(r.spec.Hz)
-	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 || abs32(hz-r.conv.hz) < iqAFCPullHz {
+	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
 	r.d.write(r.audio)

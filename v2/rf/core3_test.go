@@ -88,16 +88,27 @@ func TestCohSlotFit(t *testing.T) {
 
 func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
+	for _, c := range []struct {
+		cn, min float64
+	}{{1, 0.78}, {0, 0.5}} {
+		rate := earlyExact(t, c.cn)
+		if rate < c.min {
+			t.Errorf("core Tier 3 at %v dB: %.3f of the AMBE frames in the first 12 slots exact", c.cn, rate)
+		}
+	}
+}
+
+func earlyExact(t *testing.T, cn float64) float64 {
 	slots, truth := benchStream(t, 6)
 	sig := cleanBaseband(slots, 1400)
 	var exact, total atomic.Int64
 	var wg sync.WaitGroup
-	for seed := range uint64(16) {
+	for seed := range uint64(24) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
-			x := sig.noisy(1, 7000+seed)
+			x := sig.noisy(cn, 7000+seed)
 			var got []Burst
 			for k := 0; k < len(x); k += 4096 {
 				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
@@ -109,9 +120,7 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	if rate := float64(exact.Load()) / float64(total.Load()); rate < 0.78 {
-		t.Errorf("core Tier 3 at 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
-	}
+	return float64(exact.Load()) / float64(total.Load())
 }
 
 func ambeInSlots(truth []benchSlot, got []Burst, n int) (exact, total int) {
