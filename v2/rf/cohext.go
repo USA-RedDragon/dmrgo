@@ -434,6 +434,7 @@ type cohRing interface {
 	cohTaps(acq bool) []float32
 	cohAcqRing(size int64) ([]complex64, int64, int64)
 	cohLockHz() (hz, perHz float64)
+	cohSettle()
 }
 
 func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
@@ -474,6 +475,17 @@ func (r *iqRx) cohTrack() (float64, bool) {
 		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
 	}
 	return hz, r.d.locked
+}
+
+func (r *iqRx) cohSettle() {
+	f := &r.d.f
+	if f.gain <= 0 {
+		return
+	}
+	scale := f.gain * iqUnitsPerHz
+	if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz {
+		r.tune(hz, f.dc-hz*scale)
+	}
 }
 
 func (r *iqRx) cohLockHz() (float64, float64) {
@@ -544,6 +556,8 @@ func (p *discPhase) cohKey() (int, float64, float64) {
 func (p *discPhase) cohTrack() (float64, bool) {
 	return p.offsetHz(), p.c.locked
 }
+
+func (p *discPhase) cohSettle() {}
 
 func (p *discPhase) cohLockHz() (float64, float64) {
 	return float64(p.coreHz()), float64(p.c.audio.gain) / p.unit
