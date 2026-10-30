@@ -68,11 +68,6 @@ const (
 	leanClockBlock      = 64
 	leanClockSig        = 5
 	leanClockLag        = 120
-	leanMidGate         = 0
-	leanSyncUnroll      = true
-	leanRawFuse         = true
-	leanHuntMid         = true
-	leanHuntFuse        = true
 )
 
 const (
@@ -658,29 +653,6 @@ func (win *syncWindow) coarseAt(syms *[syncSymbols]int8, e, step int32) (c, sv, 
 	return c, sv, svv
 }
 
-//go:noinline
-func (r *leanCore) midNear(p enums.SyncPattern) bool {
-	back := int32(r.tm.step - r.lastAt + 0.5)
-	if back+2*syncSymbols > r.acqKept() {
-		return true
-	}
-	var sv, svv, c, sp float32
-	for k := range syncSymbols {
-		v := r.kept(back + 2*int32(syncSymbols-1-k))
-		s := float32(3)
-		if uint64(p)>>(2*(syncSymbols-1-k))&2 != 0 {
-			s = -3
-		}
-		c += s * v
-		sv += v
-		svv += v * v
-		sp += s
-	}
-	const n = syncSymbols
-	cov := c - sp*sv/n
-	return cov > 0 && cov*cov >= leanMidGate*leanMidGate*(svv-sv*sv/n)*(9*n-sp*sp/n)
-}
-
 func (r *leanCore) fillWindow(win *syncWindow, b0 int32) {
 	win.b0, win.off = b0, r.off*(1.0/discStepHz)
 	buf, an := r.acqBuf()
@@ -1042,38 +1014,32 @@ func (r *leanCore) searchHit(sym, mid bool) {
 //go:noinline
 //go:section .text.rawSym
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
-	if leanRawFuse {
-		q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
-		h := uint32(r.head)
-		nh := h + 1
-		if nh == leanRing {
-			nh = 0
-		}
-		r.ring[h] = q
-		r.head = uint8(nh)
-		old := h + leanRing - syncSymbols
-		if old >= leanRing {
-			old -= leanRing
-		}
-		sum := r.ringSum + (int32(q) - int32(r.ring[old]))
-		r.ringSum = sum
-		a := r.signs << 1
-		if int32(q)*syncSymbols > sum {
-			a |= 1
-		}
-		r.signs = a
-		r.ns++
-		b := r.midSigns << 1
-		if (r.tm.half-r.off)*(float32(syncSymbols)/discStepHz) > float32(sum) {
-			b |= 1
-		}
-		r.midSigns = b
-		sym, mid = signsMatch[site0](r, a, b)
-	} else {
-		pushSymAt[site0](r, x)
-		midSignAt[site0](r)
-		sym, mid = signsMatch[site0](r, r.signs, r.midSigns)
+	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
+	h := uint32(r.head)
+	nh := h + 1
+	if nh == leanRing {
+		nh = 0
 	}
+	r.ring[h] = q
+	r.head = uint8(nh)
+	old := h + leanRing - syncSymbols
+	if old >= leanRing {
+		old -= leanRing
+	}
+	sum := r.ringSum + (int32(q) - int32(r.ring[old]))
+	r.ringSum = sum
+	a := r.signs << 1
+	if int32(q)*syncSymbols > sum {
+		a |= 1
+	}
+	r.signs = a
+	r.ns++
+	b := r.midSigns << 1
+	if (r.tm.half-r.off)*(float32(syncSymbols)/discStepHz) > float32(sum) {
+		b |= 1
+	}
+	r.midSigns = b
+	sym, mid = signsMatch[site0](r, a, b)
 	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.hasExt() || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
@@ -1083,14 +1049,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	r.pushSym(x)
-	if !leanHuntMid {
-		if !r.hunt || r.ns < leanRing {
-			return false, false, false
-		}
-		r.again = false
-		return false, false, r.signsOne(r.signs)
-	}
-	if leanHuntFuse && r.hunt && !r.hasExt() && r.midTiming && r.linHunt {
+	if r.hunt && !r.hasExt() && r.midTiming && r.linHunt {
 		return r.lockHunt(at)
 	}
 	if !r.hunt || !r.huntMid(r.lastAt) {
@@ -1156,13 +1115,6 @@ func (r *leanCore) huntSym(at float32) {
 }
 
 func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
-	if !leanHuntMid {
-		if r.ns < leanRing {
-			return false, false, false
-		}
-		r.again = false
-		return false, false, r.signsOne(r.signs)
-	}
 	if !r.huntMid(at) {
 		return false, false, false
 	}
@@ -1298,34 +1250,20 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	var mx, xx int32
 	var sr [numSources]int32
 	j := ringPos(end - syncSymbols + 1)
-	if leanSyncUnroll {
-		var s0, s1, s2, s3 int32
-		for k := range syncSymbols {
-			q := int32(r.ring[j])
-			if j++; j == leanRing {
-				j = 0
-			}
-			mx += q
-			xx += q * q
-			s0 += int32(syncSyms8[0][k]) * q
-			s1 += int32(syncSyms8[1][k]) * q
-			s2 += int32(syncSyms8[2][k]) * q
-			s3 += int32(syncSyms8[3][k]) * q
+	var s0, s1, s2, s3 int32
+	for k := range syncSymbols {
+		q := int32(r.ring[j])
+		if j++; j == leanRing {
+			j = 0
 		}
-		sr = [numSources]int32{s0, s1, s2, s3}
-	} else {
-		for k := range syncSymbols {
-			q := int32(r.ring[j])
-			if j++; j == leanRing {
-				j = 0
-			}
-			mx += q
-			xx += q * q
-			for i := range r.sources {
-				sr[i] += int32(syncSyms8[i][k]) * q
-			}
-		}
+		mx += q
+		xx += q * q
+		s0 += int32(syncSyms8[0][k]) * q
+		s1 += int32(syncSyms8[1][k]) * q
+		s2 += int32(syncSyms8[2][k]) * q
+		s3 += int32(syncSyms8[3][k]) * q
 	}
+	sr = [numSources]int32{s0, s1, s2, s3}
 	fm := float32(mx)
 	sxx := float32(xx) - fm*fm/syncSymbols
 	if sxx <= 0 {
@@ -1395,13 +1333,6 @@ func syncDists2[_ any](a, b uint32) (uint32, uint32) {
 			syncNib[3][a>>12&15] + syncNib[4][a>>16&15] + syncNib[5][a>>20&15],
 		syncNib[0][b&15] + syncNib[1][b>>4&15] + syncNib[2][b>>8&15] +
 			syncNib[3][b>>12&15] + syncNib[4][b>>16&15] + syncNib[5][b>>20&15]
-}
-
-func (r *leanCore) signsOne(a uint32) bool {
-	lo := (uint32(r.signMiss) + 1) * 0x01010101
-	hi := (syncSymbols - uint32(r.signMiss)) * 0x01010101
-	m := uint32(0x80808080) >> (32 - 8*uint32(r.sources))
-	return syncHits(syncDists(a), lo, hi)&m != 0
 }
 
 func syncDists(s uint32) uint32 {
@@ -1487,9 +1418,6 @@ func (r *leanCore) searchMid() {
 	p := voice
 	if data {
 		p = dp
-	}
-	if leanMidGate > 0 && !r.midNear(p) {
-		return
 	}
 	at := r.lastAt
 	r.lastAt = at - r.tm.step

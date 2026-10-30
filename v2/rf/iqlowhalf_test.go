@@ -20,7 +20,7 @@ func TestIQLowHalfAsmLayout(t *testing.T) {
 	if want := [...]uintptr{4, 8, 12, 24, 34, 36}; got != want {
 		t.Fatalf("offsets from q of ar, ai, pow, step, n, buf: got %v, want %v", got, want)
 	}
-	if !iqLowRecip || iqLowBuf != 16 || 2*iq0LowHz != 19200 {
+	if iqLowBuf != 16 || 2*iq0LowHz != 19200 {
 		t.Fatal("the assembly of iqlowhalf_dsp.go takes the reciprocal path, 16 samples and 2*9600")
 	}
 }

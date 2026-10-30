@@ -7,13 +7,11 @@ import (
 )
 
 const (
-	iqLowBuf      = 16
-	iqLowPack     = 16
-	iqLowScale    = 4096
-	iqLowISI      = 0.04
-	iqLowAtanNear = false
-	iqLowRecip    = true
-	iq0Coherence  = 0.2
+	iqLowBuf     = 16
+	iqLowPack    = 16
+	iqLowScale   = 4096
+	iqLowISI     = 0.04
+	iq0Coherence = 0.2
 )
 
 const iq0LowHz = 9600
@@ -27,11 +25,6 @@ var iqLowTab = [128]uint16{
 	25890, 25575, 25266, 24966, 24672, 24385, 24105, 23831, 23563, 23301, 23045, 22795, 22550, 22310, 22075, 21845,
 	21620, 21399, 21183, 20971, 20763, 20560, 20360, 20164, 19972, 19784, 19599, 19418, 19239, 19065, 18893, 18724,
 	18558, 18396, 18236, 18078, 17924, 17772, 17623, 17476, 17331, 17189, 17050, 16912, 16777, 16644, 16513, 16384,
-}
-
-var iqLowAtan = [16]uint32{
-	0x028B0000, 0x0286028B, 0x027C0511, 0x026E078D, 0x025C09FB, 0x02470C57, 0x02300E9E, 0x021610CE,
-	0x01FC12E4, 0x01E214E0, 0x01C816C2, 0x01AE188A, 0x01951A38, 0x017D1BCD, 0x01661D4A, 0x01501EB0,
 }
 
 type iqLowRx struct {
@@ -188,17 +181,9 @@ func (r *iqLowRx) halfRunGo(x []uint32) {
 			ax, ay = ay, ax
 		}
 		z := uint(bits.LeadingZeros32(ax | 1))
-		var a int32
-		if iqLowRecip {
-			x := ax << z
-			t := ((ay << z) >> 16 * uint32(iqLowTab[x>>25])) >> 24
-			a = int32(iqLowTab[t&63])
-		} else if t := (ay << z) / ((ax<<z)>>16 + 1); iqLowAtanNear {
-			a = int32(iqLowTab[t>>10&63])
-		} else {
-			w := iqLowAtan[t>>12&15]
-			a = int32(w&0xFFFF) + int32(w>>16)*int32(t&0xFFF)>>12
-		}
+		u := ax << z
+		t := ((ay << z) >> 16 * uint32(iqLowTab[u>>25])) >> 24
+		a := int32(iqLowTab[t&63])
 		if sw {
 			a = 1<<14 - a
 		}

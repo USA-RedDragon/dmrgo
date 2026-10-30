@@ -12,15 +12,12 @@ import (
 )
 
 const (
-	leanChase      = 4
-	leanSmallHard  = true
-	leanBPTCGather = true
-	leanR34Pair    = false
-	leanBPTCBits   = 196
-	leanBPTCHalf   = leanBPTCBits / 2
-	leanNibbles    = softSmallMaxN / 4
-	leanCandSize   = 9
-	leanShared     = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
+	leanChase    = 4
+	leanBPTCBits = 196
+	leanBPTCHalf = leanBPTCBits / 2
+	leanNibbles  = softSmallMaxN / 4
+	leanCandSize = 9
+	leanShared   = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
 )
 
 type leanBest struct {
@@ -165,19 +162,17 @@ func (r *leanCore) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 
 func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := r.gather(f, id, cach)
-	if leanSmallHard {
-		c := &softSmallCodes[id]
-		var hi uint32
-		cw := c.base
-		for i := range c.k {
-			if hard>>(c.k-1-i)&1 != 0 {
-				hi |= 1 << i
-				cw ^= c.rows[i]
-			}
+	c := &softSmallCodes[id]
+	var hi uint32
+	hc := c.base
+	for i := range c.k {
+		if hard>>(c.k-1-i)&1 != 0 {
+			hi |= 1 << i
+			hc ^= c.rows[i]
 		}
-		if cw == hard && (hi^want)&fixed == 0 {
-			return hi, cw, 0
-		}
+	}
+	if hc == hard && (hi^want)&fixed == 0 {
+		return hi, hc, 0
 	}
 	nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id].n])
 	f.top.reset()
@@ -237,43 +232,32 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 	}
 	var rows [13]uint16
 	var base int32
-	if !leanBPTCGather {
-		if v := r.llrAt(bptcPos(0)); v < 0 {
-			base = -int32(v)
-		}
-	}
 	var bit [leanChase]int16
 	at, c := r.base+cachSymbols, 0
 	var hi int16
 	for cell := range 13 * 15 {
-		var p int
+		var p, row, col int
 		var v int16
-		row, col := cell/15, cell%15
-		if leanBPTCGather {
-			p = cell + 1
-			v = hi
-			if p == leanBPTCHalf {
-				at += (softBurstBits - 2*leanBPTCHalf) / 2
-			}
-			if p&1 == 0 {
-				v, hi = r.symLLR(at + int64(p>>1))
-			}
-			if p == 1 {
-				l0, l1 := r.symLLR(at)
-				if l0 < 0 {
-					base = -int32(l0)
-				}
-				v = l1
-			}
-			c += 13
-			if c >= leanBPTCBits {
-				c -= leanBPTCBits
-			}
-			row, col = (c-1)/15, (c-1)%15
-		} else {
-			p = bptc.GridBit(row, col)
-			v = llrAtS[site0](r, bptcPos(p))
+		p = cell + 1
+		v = hi
+		if p == leanBPTCHalf {
+			at += (softBurstBits - 2*leanBPTCHalf) / 2
 		}
+		if p&1 == 0 {
+			v, hi = r.symLLR(at + int64(p>>1))
+		}
+		if p == 1 {
+			l0, l1 := r.symLLR(at)
+			if l0 < 0 {
+				base = -int32(l0)
+			}
+			v = l1
+		}
+		c += 13
+		if c >= leanBPTCBits {
+			c -= leanBPTCBits
+		}
+		row, col = (c-1)/15, (c-1)%15
 		if v < 0 {
 			rows[row] |= 1 << col
 			v = -v
@@ -370,14 +354,8 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	var bc [16]int32
 	for k := range softTrellisSteps {
 		var l [4]int16
-		if leanR34Pair {
-			at := r.base + cachSymbols
-			l[0], l[1] = r.symLLR(at + int64(tr.pos[tr.step[k][0]]>>1))
-			l[2], l[3] = r.symLLR(at + int64(tr.pos[tr.step[k][2]]>>1))
-		} else {
-			for b, j := range &tr.step[k] {
-				l[b] = r.llrAt(int(tr.pos[j]))
-			}
+		for b, j := range &tr.step[k] {
+			l[b] = r.llrAt(int(tr.pos[j]))
 		}
 		for lab := 1; lab < 16; lab++ {
 			bc[lab] = bc[lab&(lab-1)] + int32(l[3-bits.TrailingZeros(uint(lab))])
