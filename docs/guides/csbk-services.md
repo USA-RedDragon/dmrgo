@@ -73,25 +73,27 @@ func ExampleResponder_callAlert() {
 
 The Requester sends the request again after each wait for the answer, up to the number of retries of its config, and then returns `OutputDone` with `ResultNoAnswer`. Call `Deadline` and `Tick` in a loop until `Deadline` returns false. [RequestOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#RequestOptions) adds Pre_CSBKs before the first try, for radios that scan or sleep, and sets the channel access of each try.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=44-63 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleRequester_RequestRadioCheck -->
 ```go
-q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
-if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
-	panic(err)
-}
-out := make([]csbk.Output, 0, csbk.MaxOutputs)
-bursts := 0
-for {
-	at, ok := q.Deadline()
-	if !ok {
-		break
+func ExampleRequester_RequestRadioCheck() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
+	if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
+		panic(err)
 	}
-	out = q.Tick(at, out[:0])
-	for i := range out {
-		if out[i].Kind == csbk.OutputBurst {
-			bursts++
-		} else {
-			fmt.Println(bursts, "bursts,", out[i].Result, "at", at)
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	bursts := 0
+	for {
+		at, ok := q.Deadline()
+		if !ok {
+			break
+		}
+		out = q.Tick(at, out[:0])
+		for i := range out {
+			if out[i].Kind == csbk.OutputBurst {
+				bursts++
+			} else {
+				fmt.Println(bursts, "bursts,", out[i].Result, "at", at)
+			}
 		}
 	}
 }
@@ -139,20 +141,22 @@ func Example() {
 - [Wakeup](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Wakeup) sends BS_Dwn_Act until the repeater outbound starts.
 - [Timing](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Timing) follows, elects and propagates the timing leader of a TDMA direct mode channel with CT_CSBKs.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go lines=95-109 -->
+<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleWakeup -->
 ```go
-w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
-_ = w.Wake(0, 314926, 3191868)
-for {
-	at, ok := w.Deadline()
-	if !ok {
-		break
-	}
-	for _, o := range w.Tick(at, nil) {
-		if o.Kind == csbk.OutputDone {
-			fmt.Println(at, o.Kind, o.Result)
-		} else {
-			fmt.Println(at, o.Kind)
+func ExampleWakeup() {
+	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
+	_ = w.Wake(0, 314926, 3191868)
+	for {
+		at, ok := w.Deadline()
+		if !ok {
+			break
+		}
+		for _, o := range w.Tick(at, nil) {
+			if o.Kind == csbk.OutputDone {
+				fmt.Println(at, o.Kind, o.Result)
+			} else {
+				fmt.Println(at, o.Kind)
+			}
 		}
 	}
 }
