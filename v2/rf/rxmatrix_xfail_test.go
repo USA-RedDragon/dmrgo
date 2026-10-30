@@ -177,7 +177,7 @@ var rxMatrixXFail = map[string]mxXFail{
 	"mid.none.+1500.bs.voice.+500ppm.low.a24000.40dB/t1":       {checks: "missing"},
 	"mid.none.+1500.bs.voice.+500ppm.low.a24000.40dB/t2":       {checks: "missing"},
 	"mid.none.+1500.bs.voice.+500ppm.low.a24000.40dB/t3":       {checks: "missing"},
-	"mid.none.+3000.bs.pi.0ppm.high.cu8-48k.40dB/t2":           {checks: "bits,cach,missing"},
+	"mid.none.+3000.bs.pi.0ppm.high.cu8-48k.40dB/t2":           {checks: "missing"},
 	"mid.none.+3000.ms.data34.-500ppm.low.a12000.40dB/t0":      {checks: "missing"},
 	"mid.none.+3000.ms.data34.-500ppm.low.a12000.40dB/t1":      {checks: "missing"},
 	"mid.none.+3000.ms.data34.-500ppm.low.a12000.40dB/t2":      {checks: "bits,deviation"},
