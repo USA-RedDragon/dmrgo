@@ -28,6 +28,8 @@
 //   - dmrgo:code file=<repo path> symbol=<Name> writes one func, method
 //     (Type.Method), type, or const or var block, without its doc comment
 //     and, for an Example, without its output comment.
+//   - dmrgo:code file=<YAML file> symbol=<key.key> writes the block of
+//     the key at that dotted path, such as jobs.test of a workflow.
 //   - dmrgo:code file=<repo path> writes the whole file.
 //   - dmrgo:code file=<repo path> lines=<a>-<b> writes those lines of the
 //     file. For a Go file the lines must hold whole declarations or

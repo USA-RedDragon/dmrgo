@@ -179,8 +179,12 @@ func checkGoRange(path string, src []byte, a, b int) error {
 // or const or var block named sym, without its doc comment. For an Example
 // func it leaves out the output comment.
 func symbolExcerpt(path string, src []byte, sym string) (string, error) {
-	if filepath.Ext(path) != ".go" {
-		return "", fmt.Errorf("symbol= needs a Go file")
+	switch filepath.Ext(path) {
+	case ".go":
+	case ".yaml", ".yml":
+		return yamlExcerpt(src, sym)
+	default:
+		return "", fmt.Errorf("symbol= needs a Go or YAML file")
 	}
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, src, parser.ParseComments)
@@ -294,4 +298,52 @@ func lineStart(src []byte, off int) int {
 		off--
 	}
 	return off
+}
+
+// yamlExcerpt returns the block of the key at the dotted path sym, such as
+// jobs.test, with the key line and without the blank lines at its end.
+func yamlExcerpt(src []byte, sym string) (string, error) {
+	lines := strings.Split(string(src), "\n")
+	start, end, indent := 0, len(lines), -1
+	at := -1
+	for _, key := range strings.Split(sym, ".") {
+		at = -1
+		child := -1
+		for i := start; i < end; i++ {
+			t := strings.TrimLeft(lines[i], " ")
+			if t == "" || strings.HasPrefix(t, "#") {
+				continue
+			}
+			ind := len(lines[i]) - len(t)
+			if ind <= indent {
+				break
+			}
+			if child < 0 {
+				child = ind
+			}
+			if ind == child && (t == key+":" || strings.HasPrefix(t, key+": ")) {
+				at = i
+				break
+			}
+		}
+		if at < 0 {
+			return "", fmt.Errorf("no key %s in the YAML file", sym)
+		}
+		indent = len(lines[at]) - len(strings.TrimLeft(lines[at], " "))
+		start, end = at+1, yamlBlockEnd(lines, at+1, end, indent)
+	}
+	for end > at+1 && strings.TrimSpace(lines[end-1]) == "" {
+		end--
+	}
+	return dedent(lines[at:end]), nil
+}
+
+func yamlBlockEnd(lines []string, from, end, indent int) int {
+	for i := from; i < end; i++ {
+		t := strings.TrimLeft(lines[i], " ")
+		if t != "" && len(lines[i])-len(t) <= indent {
+			return i
+		}
+	}
+	return end
 }

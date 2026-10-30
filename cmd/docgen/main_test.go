@@ -150,3 +150,28 @@ func TestCodeRange(t *testing.T) {
 		t.Error("a range that ends inside the func passed")
 	}
 }
+
+func TestYAMLSymbol(t *testing.T) {
+	t.Parallel()
+	src := []byte("on: push\njobs:\n  a:\n    steps:\n      - run: x\n\n  # b runs y\n  b:\n    steps:\n      - run: y\n")
+	got, err := yamlExcerpt(src, "jobs.a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "a:\n  steps:\n    - run: x"; got != want {
+		t.Errorf("jobs.a = %q, want %q", got, want)
+	}
+	got, err = yamlExcerpt(src, "jobs.b.steps")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "steps:\n  - run: y"; got != want {
+		t.Errorf("jobs.b.steps = %q, want %q", got, want)
+	}
+	if _, err := yamlExcerpt(src, "jobs.c"); err == nil {
+		t.Error("a missing key passed")
+	}
+	if _, err := yamlExcerpt(src, "steps"); err == nil {
+		t.Error("a key below the top level passed as a top-level key")
+	}
+}

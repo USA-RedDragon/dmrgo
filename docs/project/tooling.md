@@ -33,6 +33,7 @@ Package paths are relative to `v2`: `csbk`, `transport/dmrd/dmrdsession`, and `.
 | `dmrgo:output` | `example=<dir under v2/examples>` | The standard output of `go run` on the example. |
 | `dmrgo:output` | `test=<pkg>.<ExampleName>` | The `// Output:` of a Go Example, after `go test` runs it. `<pkg>.Example` is the package Example. |
 | `dmrgo:code` | `file=<repo path> symbol=<Name>` | One func, method (`Type.Method`), type, or const or var block, without its doc comment. An Example has no `// Output:` comment in the excerpt. |
+| `dmrgo:code` | `file=<YAML file> symbol=<key.key>` | The block of the key at that dotted path, such as `jobs.test` of a workflow. |
 | `dmrgo:code` | `file=<repo path>` | The whole file. |
 | `dmrgo:code` | `file=<repo path> lines=<a>-<b>` | Those lines. For Go, the lines must hold whole declarations or statements. It fails when the file changes under the excerpt, so prefer `symbol=`. |
 | `dmrgo:config` | `pkg=<path> type=<Config>` | A table of the exported fields: type, default and doc text. The default comes from the code that applies it. |
