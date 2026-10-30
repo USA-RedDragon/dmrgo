@@ -55,6 +55,7 @@
  *   vtable function that returns a value other than DMRGO_OK and the
  *   statuses of this API fails the call with DMRGO_ERR_OTHER. Other
  *   structs, such as outputs, have a fixed layout.
+ * docgen:region threads
  * - Use a handle from one thread at a time. A handle that a call takes,
  *   such as the port of dmrgo_dvsi_new or the authenticator of a config,
  *   stays in use by the handle that the call makes: freeing the handle
@@ -67,7 +68,9 @@
  *   that is valid only during the call: copy what it keeps.
  * - libdmrgo runs the Go runtime, whose threads a child of fork() does not
  *   have, so a child process calls libdmrgo only after an exec.
+ * docgen:end
  *
+ * docgen:region abi
  * The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
  * independent of the version of the Go module and changes only when a
  * declaration changes in a way that breaks a program built against the
@@ -76,6 +79,7 @@
  * libdmrgo.so.1 for ABI version 1, and the symbols have the version node
  * DMRGO_1. New functions, codes and members at the end of a sized struct
  * keep the ABI version.
+ * docgen:end
  */
 
 #ifndef DMRGO_H
