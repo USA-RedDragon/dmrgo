@@ -4,6 +4,7 @@ package rf
 
 import (
 	"math"
+	"math/cmplx"
 	"math/rand/v2"
 	"sync"
 	"sync/atomic"
@@ -137,4 +138,38 @@ func ambeInSlots(truth []benchSlot, got []Burst, n int) (exact, total int) {
 		}
 	}
 	return exact, total
+}
+
+func TestCoreTier3Ring(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 2)
+	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+	x := noisyBaseband(slots, 1400, 40, 1)
+	for k := 0; k < len(x); k += 4096 {
+		must(r.writeBB(x[k:min(k+4096, len(x))]))
+	}
+	h, _ := r.full.(*rxHost)
+	if h == nil || h.iqd == nil || h.iqd.cHist == nil {
+		t.Fatal("core Tier 3 I/Q runs without the coherent ring")
+	}
+	q := h.iqd
+	m := int64(len(q.cHist) - 1)
+	end := q.yN - q.cLag
+	best, bestLag := 0.0, 0
+	for lag := -2; lag <= 2; lag++ {
+		var c complex128
+		var ey, ec float64
+		for k := end - 4096; k < end; k++ {
+			y, v := complex128(q.yHist[k&m]), complex128(q.cHist[(k+int64(lag))&m])
+			c += y * cmplx.Conj(v)
+			ey += real(y)*real(y) + imag(y)*imag(y)
+			ec += real(v)*real(v) + imag(v)*imag(v)
+		}
+		if rho := cmplx.Abs(c) / math.Sqrt(ey*ec); rho > best {
+			best, bestLag = rho, lag
+		}
+	}
+	if bestLag != 0 || best < 0.9 {
+		t.Errorf("coherent ring best matches the narrow ring at lag %d with correlation %.3f", bestLag, best)
+	}
 }

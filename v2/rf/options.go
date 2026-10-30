@@ -78,6 +78,8 @@ type options struct {
 	CohVoiceOnly                         bool
 	CohSlotFit                           bool
 	CohWarm                              bool
+	CohTaps                              int
+	CohCutHz, CohKaiser                  float64
 	CohSignMiss                          uint8
 	CohSymNoise                          uint8
 	MidTiming                            bool

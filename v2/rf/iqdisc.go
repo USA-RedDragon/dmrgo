@@ -40,7 +40,46 @@ type iqDisc struct {
 	afcSum  complex64
 	afcPrev complex64
 	afcHead int
+	coh     *iqCohFIR
 	*iq0Front
+}
+
+type iqCohFIR struct {
+	taps []float32
+	hist []complex64
+	head int
+	y    complex64
+}
+
+func newIQCohFIR(n int, beta, cutHz float64) *iqCohFIR {
+	f := &iqCohFIR{taps: make([]float32, n), hist: make([]complex64, 2*n)}
+	var sum float64
+	w := windowTaps(n, cutHz/basebandRate, beta)
+	for _, v := range w {
+		sum += v
+	}
+	for i, v := range w {
+		f.taps[i] = float32(v / sum)
+	}
+	return f
+}
+
+func (f *iqCohFIR) push(w complex64) {
+	n := len(f.taps)
+	f.hist[f.head], f.hist[f.head+n] = w, w
+	if f.head++; f.head == n {
+		f.head = 0
+	}
+}
+
+func (f *iqCohFIR) out() {
+	h := f.hist[f.head : f.head+len(f.taps)]
+	var re, im float32
+	for k, t := range f.taps {
+		re += t * real(h[k])
+		im += t * imag(h[k])
+	}
+	f.y = complex(re, im)
 }
 
 type iqFilter struct {
@@ -224,10 +263,16 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	if d.head++; d.head == n {
 		d.head = 0
 	}
+	if d.coh != nil {
+		d.coh.push(w)
+	}
 	if d.phase++; d.phase < d.step {
 		return 0, 0, false
 	}
 	d.phase = 0
+	if d.coh != nil {
+		d.coh.out()
+	}
 	var re, im float32
 	if n == iqTaps {
 		h := (*[iqTaps]complex64)(d.hist[d.head : d.head+iqTaps])
@@ -299,6 +344,8 @@ type iqRx struct {
 	afcAvg    complex64
 	afcPull   float32
 	yHist     []complex64
+	cHist     []complex64
+	cLag      int64
 	yN        int64
 	refill    *iqRefill
 	tunes     *[iqTunes]iqTune
@@ -345,6 +392,10 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
 			r.yHist = make([]complex64, opt.cohRing())
+			if d := opt.CohTaps - len(r.conv.taps); opt.CohTaps > 0 && !r.conv.halfOn && r.conv.decim == 2 && d >= 0 && d%4 == 0 {
+				r.conv.coh = newIQCohFIR(opt.CohTaps, opt.CohKaiser, opt.CohCutHz)
+				r.cHist, r.cLag = make([]complex64, opt.cohRing()), int64(d/4)
+			}
 			r.tunes = new([iqTunes]iqTune)
 			x.setCoh(newCohStage(r, &opt))
 			if !opt.CohLocked {
@@ -382,6 +433,9 @@ func (r *iqRx) sample(v complex64) {
 	}
 	if r.yHist != nil {
 		r.yHist[r.yN&int64(len(r.yHist)-1)] = y
+		if r.cHist != nil {
+			r.cHist[(r.yN-r.cLag)&int64(len(r.cHist)-1)] = r.conv.coh.y
+		}
 		r.yN++
 	}
 	n := len(r.audio)

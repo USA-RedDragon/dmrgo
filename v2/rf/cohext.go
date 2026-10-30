@@ -83,6 +83,7 @@ type cohStage struct {
 	tfitRef                     float64
 	slotFit                     bool
 	warm                        bool
+	acq                         bool
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -291,6 +292,13 @@ func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64)
 }
 
 func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
+	s.acq = true
+	src, data, back, ok := s.scanAcq(c)
+	s.acq = false
+	return src, data, back, ok
+}
+
+func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 	hist, n, lo := s.ring()
 	if s.scanTpl == nil || n < s.size/2 || s.step != 1 || s.div != 2 {
 		return 0, false, 0, false
@@ -353,6 +361,14 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 }
 
 func (s *cohStage) scanShare(c *leanCore, p enums.SyncPattern) float64 {
+	acq := s.acq
+	s.acq = true
+	v := s.scanShareAcq(c, p)
+	s.acq = acq
+	return v
+}
+
+func (s *cohStage) scanShareAcq(c *leanCore, p enums.SyncPattern) float64 {
 	hist, n, lo := s.ring()
 	if n < s.size/2 || s.step != 1 || s.div != 2 {
 		return 1
@@ -409,10 +425,14 @@ type cohRing interface {
 	cohUnit() float64
 	cohResidual() bool
 	cohHz() float64
-	cohTaps() []float32
+	cohTaps(acq bool) []float32
+	cohAcqRing(size int64) ([]complex64, int64, int64)
 }
 
 func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
+	if r.cHist != nil {
+		return r.cHist, r.yN - r.cLag, r.yN - size
+	}
 	return r.yHist, r.yN, r.yN - size
 }
 
@@ -465,14 +485,25 @@ func (r *iqRx) cohResidual() bool {
 	return true
 }
 
-func (r *iqRx) cohTaps() []float32 {
+func (r *iqRx) cohAcqRing(size int64) ([]complex64, int64, int64) {
+	return r.yHist, r.yN, r.yN - size
+}
+
+func (p *discPhase) cohAcqRing(size int64) ([]complex64, int64, int64) {
+	return p.cohRing(size)
+}
+
+func (r *iqRx) cohTaps(acq bool) []float32 {
 	if r.conv.halfOn || r.conv.decim != 2 {
 		return nil
+	}
+	if r.conv.coh != nil && !acq {
+		return r.conv.coh.taps
 	}
 	return r.conv.taps
 }
 
-func (p *discPhase) cohTaps() []float32 {
+func (p *discPhase) cohTaps(bool) []float32 {
 	return nil
 }
 
@@ -528,6 +559,9 @@ func (p *discPhase) cohHz() float64 {
 }
 
 func (s *cohStage) ring() ([]complex64, int64, int64) {
+	if s.acq {
+		return s.src.cohAcqRing(s.size)
+	}
 	return s.src.cohRing(s.size)
 }
 
@@ -568,7 +602,7 @@ func (s *cohStage) fill(k0, k1 int, x []complex64) {
 		return
 	}
 	_, n, lo := s.ring()
-	key := cohSymKey{gen: s.gen, t0: s.t0, hz: s.totalHz, n: n, lo: lo}
+	key := cohSymKey{gen: s.gen, t0: s.t0, hz: s.totalHz, n: n, lo: lo, acq: s.acq}
 	key.tunes, key.unit, key.dc = s.src.cohKey()
 	if key != s.symKey {
 		s.symKey = key
@@ -597,6 +631,7 @@ type cohSymKey struct {
 	n, lo    int64
 	unit, dc float64
 	tunes    int
+	acq      bool
 }
 
 func (s *cohStage) fillSym(k int, x []complex64) {
@@ -917,7 +952,7 @@ func (s *cohStage) refNear(k int) bool {
 
 func (s *cohStage) refWave(syms []int, out []complex64) {
 	m := s.model
-	taps := s.src.cohTaps()
+	taps := s.src.cohTaps(s.acq)
 	if taps == nil || 2*m.sps != samplesPerSy {
 		ph := s.refPh[:len(out)]
 		m.pp.refPhaseInto(syms, m.sps, m.h, ph)
@@ -1279,6 +1314,13 @@ func noiseShare(x []complex64) float64 {
 }
 
 func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
+	s.acq = true
+	ok := s.verifyAcq(c, p)
+	s.acq = false
+	return ok
+}
+
+func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	if s.src.cohScale() <= 0 {
 		return false
 	}
