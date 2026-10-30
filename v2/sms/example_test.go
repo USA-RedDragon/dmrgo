@@ -69,16 +69,30 @@ func ExampleAppendAck() {
 // takes the place of the radio: it acknowledges the reply, and the Sender
 // reports the result.
 func Example_reply() {
-	f, err := os.Open("../data/testdata/anytone_sms_xpr.txt")
+	in, err := readText("../data/testdata/anytone_sms_xpr.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	fmt.Printf("%v text from %d to %d: %q\n", in.Format, in.Source, in.Destination, in.Body)
+	if err := sendReply(in); err != nil {
+		fmt.Println(err)
+	}
+	// Output:
+	// AnyTone text from 3191868 to 3140598: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
+	// radio: "got it" from 3140598 <nil>
+	// sender: Delivered after 1 tries (ACK)
+}
+
+func readText(path string) (sms.Text, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return sms.Text{}, err
+	}
 	defer f.Close()
 	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3140598})
 	if err != nil {
-		fmt.Println(err)
-		return
+		return sms.Text{}, err
 	}
 	events := make([]data.Event, 0, data.MaxEvents)
 	var in sms.Text
@@ -91,8 +105,7 @@ func Example_reply() {
 		ms, err := strconv.ParseFloat(fields[0], 64)
 		b, err2 := hex.DecodeString(fields[1])
 		if err != nil || err2 != nil || len(b) != 33 {
-			fmt.Println(sc.Text(), err, err2)
-			return
+			return sms.Text{}, fmt.Errorf("bad capture line %q", sc.Text())
 		}
 		raw := layer2.RawBurst(b)
 		now := time.Duration(ms * float64(time.Millisecond))
@@ -101,35 +114,33 @@ func Example_reply() {
 				continue
 			}
 			if _, in, err = sms.Decode(nil, &e.Message.Header, e.Message.Payload); err != nil {
-				fmt.Println(err)
-				return
+				return sms.Text{}, err
 			}
 		}
 	}
-	fmt.Printf("%v text from %d to %d: %q\n", in.Format, in.Source, in.Destination, in.Body)
+	return in, sc.Err()
+}
 
+func sendReply(in sms.Text) error {
 	out := sms.Text{Format: in.Format, Source: in.Destination, Destination: in.Source, Confirmed: true, Body: []byte("got it")}
 	var h sms.Header
 	payload, err := sms.AppendPacket(nil, &out, &h)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot2, Source: layer2.SyncSourceMS, ColorCode: 7})
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	if err := tx.Send(0, &data.Message{Header: h.Data, Payload: payload}); err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	radio, err := data.NewReceiver(&data.ReceiverConfig{Address: in.Source, Respond: true})
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	outputs := make([]data.Output, 0, data.MaxOutputs)
+	events := make([]data.Event, 0, data.MaxEvents)
 	var replies []data.Event
 	for now := time.Duration(0); tx.State() != data.SenderIdle; now += 10 * time.Millisecond {
 		for _, e := range replies {
@@ -151,8 +162,5 @@ func Example_reply() {
 			}
 		}
 	}
-	// Output:
-	// AnyTone text from 3191868 to 3140598: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
-	// radio: "got it" from 3140598 <nil>
-	// sender: Delivered after 1 tries (ACK)
+	return nil
 }
