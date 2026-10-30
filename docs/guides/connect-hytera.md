@@ -67,75 +67,78 @@ Take the outputs of a machine, such as a [voice.Transmitter](https://pkg.go.dev/
 
 The example sends a group call over the loopback interface and follows it with a [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) on the other side:
 
-<!-- dmrgo:code file=v2/transport/hytera/udp_example_test.go lines=42-109 -->
+<!-- dmrgo:code file=v2/transport/hytera/udp_example_test.go symbol=sendCall -->
 ```go
-tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceBS,
-	Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessImpolite, Queue: voice.MaxQueue})
-if err != nil {
-	return err
-}
-rx, err := voice.NewReceiver(nil)
-if err != nil {
-	return err
-}
-if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3191868}, nil); err != nil {
-	return err
-}
-for range 18 {
-	if err := tx.Frame(vocoder.AMBESilence()); err != nil {
+func sendCall(txConn, rxConn *net.UDPConn) error {
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceBS,
+		Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessImpolite, Queue: voice.MaxQueue})
+	if err != nil {
 		return err
 	}
-}
-tx.Stop(0)
+	rx, err := voice.NewReceiver(nil)
+	if err != nil {
+		return err
+	}
+	if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3191868}, nil); err != nil {
+		return err
+	}
+	for range 18 {
+		if err := tx.Frame(vocoder.AMBESilence()); err != nil {
+			return err
+		}
+	}
+	tx.Stop(0)
 
-var f hytera.Frame
-out := make([]voice.Output, 0, voice.MaxOutputs)
-events := make([]voice.Event, 0, voice.MaxEvents)
-packet := make([]byte, 0, hytera.FrameLen)
-buf := make([]byte, 1500)
-voiceBursts := 0
-for now := time.Duration(0); tx.State() != voice.TransmitterIdle; now += 60 * time.Millisecond {
-	for _, o := range tx.Tick(now, out[:0]) {
-		if o.Kind != voice.OutputBurst {
-			continue
-		}
-		f.Burst, f.ColorCode, f.PacketType = o.Burst, 1, 0x01
-		if o.Hint.DataType == enums.DataTypeTerminatorWithLC {
-			f.PacketType = 0x03
-		}
-		if err := f.SetCallHint(o.Hint, o.Call); err != nil {
-			return err
-		}
-		if packet, err = f.AppendBinary(packet[:0]); err != nil {
-			return err
-		}
-		f.Seq++
-		if _, err := txConn.WriteTo(packet, rxConn.LocalAddr()); err != nil {
-			return err
-		}
+	var f hytera.Frame
+	out := make([]voice.Output, 0, voice.MaxOutputs)
+	events := make([]voice.Event, 0, voice.MaxEvents)
+	packet := make([]byte, 0, hytera.FrameLen)
+	buf := make([]byte, 1500)
+	voiceBursts := 0
+	for now := time.Duration(0); tx.State() != voice.TransmitterIdle; now += 60 * time.Millisecond {
+		for _, o := range tx.Tick(now, out[:0]) {
+			if o.Kind != voice.OutputBurst {
+				continue
+			}
+			f.Burst, f.ColorCode, f.PacketType = o.Burst, 1, 0x01
+			if o.Hint.DataType == enums.DataTypeTerminatorWithLC {
+				f.PacketType = 0x03
+			}
+			if err := f.SetCallHint(o.Hint, o.Call); err != nil {
+				return err
+			}
+			if packet, err = f.AppendBinary(packet[:0]); err != nil {
+				return err
+			}
+			f.Seq++
+			if _, err := txConn.WriteTo(packet, rxConn.LocalAddr()); err != nil {
+				return err
+			}
 
-		_ = rxConn.SetReadDeadline(time.Now().Add(2 * time.Second))
-		n, _, err := rxConn.ReadFrom(buf)
-		if err != nil {
-			return err
-		}
-		got, err := hytera.DecodeFrame(buf[:n])
-		if err != nil || !got.HasBurst() {
-			continue
-		}
-		for _, e := range rx.Burst(o.Due, &got.Burst, got.Hint(o.Due), events[:0]) {
-			switch e.Kind {
-			case voice.EventCallStart:
-				group, target, source := got.Call()
-				fmt.Println(got.SlotType, "on", got.Slot, "from", source, "to", target, "group", group)
-			case voice.EventVoice:
-				voiceBursts++
-			case voice.EventCallEnd:
-				fmt.Println(got.SlotType, "after", voiceBursts, "voice bursts:", e.Reason)
-			default:
+			_ = rxConn.SetReadDeadline(time.Now().Add(2 * time.Second))
+			n, _, err := rxConn.ReadFrom(buf)
+			if err != nil {
+				return err
+			}
+			got, err := hytera.DecodeFrame(buf[:n])
+			if err != nil || !got.HasBurst() {
+				continue
+			}
+			for _, e := range rx.Burst(o.Due, &got.Burst, got.Hint(o.Due), events[:0]) {
+				switch e.Kind {
+				case voice.EventCallStart:
+					group, target, source := got.Call()
+					fmt.Println(got.SlotType, "on", got.Slot, "from", source, "to", target, "group", group)
+				case voice.EventVoice:
+					voiceBursts++
+				case voice.EventCallEnd:
+					fmt.Println(got.SlotType, "after", voiceBursts, "voice bursts:", e.Reason)
+				default:
+				}
 			}
 		}
 	}
+	return nil
 }
 ```
 <!-- /dmrgo:code -->

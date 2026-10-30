@@ -38,7 +38,10 @@ func relay() error {
 		return err
 	}
 	defer txConn.Close()
+	return sendCall(txConn, rxConn)
+}
 
+func sendCall(txConn, rxConn *net.UDPConn) error {
 	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceBS,
 		Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessImpolite, Queue: voice.MaxQueue})
 	if err != nil {
