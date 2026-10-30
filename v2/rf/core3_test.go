@@ -10,6 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
 func TestCoreTier3(t *testing.T) {
@@ -304,6 +306,40 @@ func TestCoreTier3Codec2Call(t *testing.T) {
 		got = append(got, r.flushAll()...)
 		if bad := codec2Bad(got, want, start, late); bad != 0 {
 			t.Errorf("late entry %v: %d of %d Codec2 frames differ", late, bad, len(want))
+		}
+	}
+}
+
+func TestCoreTier3SlowClock(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4}
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm0, env0 := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	for _, lead := range []float64{0, 0.2} {
+		pad := int(lead * basebandRate)
+		tx := rftx.ToIQ(append(make([]float64, pad), fm0...), append(make([]float64, pad), env0...), 2e6, 0, 0.9)
+		for _, off := range []float64{0, 3000} {
+			for _, ppm := range []float64{500, -500} {
+				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
+				r := mustNewOpt(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+				got := r.AppendFlush(r.AppendBursts(nil, iq))
+				if len(got) != len(built.Bursts) {
+					t.Errorf("%.1f s lead %+.0f Hz %+.0f ppm: %d bursts, want %d", lead, off, ppm, len(got), len(built.Bursts))
+					continue
+				}
+				bad := 0
+				for i := range got {
+					if got[i].Data != built.Bursts[i] && (lead > 0 || i >= 3) {
+						bad++
+					}
+				}
+				if bad > 0 {
+					t.Errorf("%.1f s lead %+.0f Hz %+.0f ppm: raw bits differ in %d of %d bursts", lead, off, ppm, bad, len(got))
+				}
+			}
 		}
 	}
 }

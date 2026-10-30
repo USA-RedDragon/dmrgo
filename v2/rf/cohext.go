@@ -75,6 +75,7 @@ type cohStage struct {
 	tfit            [5]float64
 	tfitBase        int64
 	tfitRef         float64
+	slotDrift       float64
 	slotFit         bool
 	warm            bool
 	acq             bool
@@ -884,13 +885,13 @@ func (s *cohStage) slotPredict(slot int64) (float64, bool) {
 	if !s.slotFit || f[0] <= 1.5 {
 		return 0, false
 	}
-	s2 := f[2] + cohSlotPrior
+	s2, s4 := f[2]+cohSlotPrior, f[4]+cohSlotPrior*s.slotDrift
 	det := f[0]*s2 - f[1]*f[1]
 	if det <= 1e-9 {
 		return 0, false
 	}
-	c := (f[0]*f[4] - f[1]*f[3]) / det
-	a := (f[3]*s2 - f[1]*f[4]) / det
+	c := (f[0]*s4 - f[1]*f[3]) / det
+	a := (f[3]*s2 - f[1]*s4) / det
 	if math.Abs(c) >= 1 {
 		return 0, false
 	}
@@ -1066,6 +1067,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	s.mineOK, s.mineSlot = false, b.Slot
 	s.slotRadio(c, b.Slot)
 	s.t0 = s.ringTime(c, c.base) + s.dt
+	s.slotDrift = float64(c.tm.rate) * slotSymbols * 2 / s.div
 	if s.lost(lo) {
 		return false
 	}
