@@ -27,17 +27,21 @@ const (
 	// check fails by ordered statistics, C0 and C1 of each voice frame by
 	// soft ML, the embedded LC of each superframe over its four fragments
 	// and the earlier superframes of the call, and LookbackSlots slots
-	// before the first lock decoded again. It detects the bursts that they
-	// decode, and each rate 3/4 block, from the symbols of the
-	// discriminator with the correlation of their noise. It keeps about
-	// 35 KB on audio and 50 KB on I/Q.
+	// before the first lock decoded again. On I/Q it keeps the input
+	// samples of those slots, and when it tuned to the carrier before the
+	// lock it filters them again at the new tune before it decodes them. It
+	// detects the bursts that they decode, and each rate 3/4 block, from
+	// the symbols of the discriminator with the correlation of their noise.
+	// It keeps about 35 KB on audio and 108 KB on I/Q, 58 KB of that for
+	// the input samples.
 	Tier1
 	// Tier2 adds to the soft decoders of Tier1 the detection again of the
 	// bursts with a trellis over three symbols that carries the carrier
 	// phase with each survivor, from the SYNC or EMB of the burst, within a
 	// compute budget per slot: on I/Q from the samples at 24 kHz, on audio
 	// from the carrier phase that it sums from the discriminator samples.
-	// It holds each burst one slot longer and keeps about 500 KB.
+	// It holds each burst one slot longer and keeps about 550 KB on audio
+	// and 565 KB on I/Q, 75 KB of that for the input samples.
 	Tier2
 	// Tier3 on I/Q detects over a window of three symbols with one of 52
 	// carrier phases in the trellis state, in two passes, detects each
@@ -74,7 +78,8 @@ The `Tier` field of [rf.RxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dm
 | `Format` | `IQFormat` | `IQFormatCS16` (3) | Format is the layout of the I/Q samples. 0 means IQFormatCS16. |
 | `OffsetHz` | `float64` | not machine-readable; see the description | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. |
 | `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
-| `LookbackSlots` | `int` | `16` | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3. Tier0 keeps none, and loses the start of a stream that it enters late. |
+| `LookbackSlots` | `int` | `16` | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
+| `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo.ConfigError for it. |
 <!-- /dmrgo:config -->
 
 [rf.AudioRxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioRxConfig) has the same `Tier` field for a receiver of discriminator audio. On audio, Tier3 is Tier2 with more passes over each data burst.
@@ -93,7 +98,7 @@ The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.
 | `OnSamples` | `func([]byte)` | zero value | OnSamples, when not nil, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When nil, the transmitter is in append mode, for AppendSamples and AppendFlush. |
 | `Region` | `Region` | zero value | Region is the regulatory region whose limits the signal keeps. |
 | `Service` | `Service` | zero value | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. A station of the license-free service must state it. |
-| `Power` | `int` | `top` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. |
+| `Power` | `int` | `top` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. |
 <!-- /dmrgo:config -->
 
 The [Transmitter datasheet](../tx/README.md) gives the limits, the formats, the rates and the measured margins of each transmit tier.

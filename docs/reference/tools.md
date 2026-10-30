@@ -16,7 +16,7 @@ Build it from the `v2` directory with `go build -o dmrrf ./cmd/dmrrf`. It has th
 
 `dmrrf tx` writes a transmission as I/Q or modulator audio:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=99-134 -->
+<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=95-130 -->
 ```go
 out := fs.String("o", "", "output file, or - for standard output")
 format := fs.String("format", "", formatUsage)
@@ -59,7 +59,7 @@ bsSourced := fs.Bool("bs-sourced", false, "send a continuous BS outbound stream 
 
 `dmrrf rx` decodes I/Q or discriminator audio:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=510-516 -->
+<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=506-512 -->
 ```go
 in := fs.String("i", "", "input file, or - for standard input")
 format := fs.String("format", "", formatUsage)
@@ -73,7 +73,7 @@ pcmPath := fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit 
 
 `dmrrf cal` gives the frequency offset of an unmodulated carrier in I/Q:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=607-610 -->
+<!-- dmrgo:code file=v2/cmd/dmrrf/main.go lines=603-606 -->
 ```go
 in := fs.String("i", "", "input file of I/Q, or - for standard input")
 format := fs.String("format", "", formatUsage)
@@ -86,7 +86,7 @@ tune := tuningFlags(fs, "frequency the carrier should be on, in Hz", "frequency 
 
 `cmd/rxbench` writes the sensitivity tables and graphs of the [Receiver](../rx/README.md) datasheet from the sweep data of `v2/rf`. With `-update-readme` it first runs the long sweep, then writes the tables and graphs. With `-check-readme` it renders the committed data and fails when the page or a graph differs. Give one of the two.
 
-<!-- dmrgo:code file=cmd/rxbench/main.go lines=40-42 -->
+<!-- dmrgo:code file=cmd/rxbench/main.go lines=43-45 -->
 ```go
 update := flag.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs")
 check := flag.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data")

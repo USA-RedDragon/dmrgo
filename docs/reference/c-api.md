@@ -71,6 +71,10 @@ This page holds the C headers of libdmrgo: `dmrgo.h`, with the rules of the API,
  *   that was taken does not stop that use. The user value of a vtable or
  *   callback must stay valid until the handle made from it and every
  *   handle that took that handle or callback are freed.
+ * - A callback that gets an array, such as the bursts of
+ *   dmrgo_rf_rx_config_t.on_bursts or the samples of
+ *   dmrgo_rf_tx_config_t.on_samples, gets it in storage of the library
+ *   that is valid only during the call: copy what it keeps.
  * - libdmrgo runs the Go runtime, whose threads a child of fork() does not
  *   have, so a child process calls libdmrgo only after an exec.
  *
@@ -648,6 +652,40 @@ typedef struct dmrgo_privacy_receiver_t dmrgo_privacy_receiver_t;
 typedef struct dmrgo_privacy_transmitter_t dmrgo_privacy_transmitter_t;
 /* Go: privacy.TransmitterConfig. TransmitterConfig configures NewTransmitter. */
 typedef struct dmrgo_privacy_transmitter_config_t dmrgo_privacy_transmitter_config_t;
+/* Go: rf.AudioReceiver. AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. */
+typedef struct dmrgo_rf_audio_receiver_t dmrgo_rf_audio_receiver_t;
+typedef struct dmrgo_rf_audio_rx_config_on_bursts_fn_t dmrgo_rf_audio_rx_config_on_bursts_fn_t;
+typedef struct dmrgo_rf_audio_rx_config_on_short_lc_fn_t dmrgo_rf_audio_rx_config_on_short_lc_fn_t;
+/* Go: rf.AudioRxConfig. AudioRxConfig sets up an AudioReceiver. */
+typedef struct dmrgo_rf_audio_rx_config_t dmrgo_rf_audio_rx_config_t;
+/* Go: rf.AudioTransmitter. AudioTransmitter turns DMR bursts into the deviation signal that drives the modulator input of an FM radio, as the radio chips of hotspots and MMDVM modems take it: codes of a converter, with the CACH of BS-sourced bursts and the guard time of MS bursts as a Transmitter places them. */
+typedef struct dmrgo_rf_audio_transmitter_t dmrgo_rf_audio_transmitter_t;
+typedef struct dmrgo_rf_audio_tx_config_on_samples_fn_t dmrgo_rf_audio_tx_config_on_samples_fn_t;
+/* Go: rf.AudioTxConfig. AudioTxConfig sets up an AudioTransmitter. */
+typedef struct dmrgo_rf_audio_tx_config_t dmrgo_rf_audio_tx_config_t;
+/* Go: rf.Burst. Burst is one burst that a Receiver recovered. */
+typedef struct dmrgo_rf_burst_t dmrgo_rf_burst_t;
+/* Go: rf.Monitor. Monitor follows the TDMA channels of the bursts of one Receiver or AudioReceiver, as a scanner does. */
+typedef struct dmrgo_rf_monitor_t dmrgo_rf_monitor_t;
+/* Go: rf.MonitorBurst. MonitorBurst is what a Monitor finds in one Burst. */
+typedef struct dmrgo_rf_monitor_burst_t dmrgo_rf_monitor_burst_t;
+typedef struct dmrgo_rf_tx_config_on_samples_fn_t dmrgo_rf_tx_config_on_samples_fn_t;
+/* Go: rf.PreEmphasis. A PreEmphasis is the DMRGO_RF_TIER0 modulator of an AudioTransmitter for a radio that pre-emphasizes its modulator input from 300 Hz to 3 kHz, which dmrgo_rf_audio_tx_config_t.pre_emphasis takes. */
+typedef struct dmrgo_rf_pre_emphasis_t dmrgo_rf_pre_emphasis_t;
+/* Go: rf.Receiver. Receiver recovers DMR bursts from a stream of I/Q samples. */
+typedef struct dmrgo_rf_receiver_t dmrgo_rf_receiver_t;
+/* Go: rf.RegionError. RegionError is the error of a transmitter setup that the Region, Service and Power do not allow, or that no measurement shows to keep their limits. */
+typedef struct dmrgo_rf_region_error_t dmrgo_rf_region_error_t;
+/* Go: rf.RxConfig. RxConfig sets up a Receiver. */
+typedef struct dmrgo_rf_rx_config_t dmrgo_rf_rx_config_t;
+/* Go: rf.RxPreEmphasis. A RxPreEmphasis is the pre-emphasis of an AudioReceiver for a radio that de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, which dmrgo_rf_audio_rx_config_t.pre_emphasis takes. */
+typedef struct dmrgo_rf_rx_pre_emphasis_t dmrgo_rf_rx_pre_emphasis_t;
+/* Go: rf.ShortLC. ShortLC is a Short LC that a receiver decoded from the CACH of four bursts (ETSI TS 102 361-1 clause 7.1.3, ETSI TS 102 361-2 clause 7.1.3). */
+typedef struct dmrgo_rf_short_lc_t dmrgo_rf_short_lc_t;
+/* Go: rf.Transmitter. Transmitter turns DMR bursts into I/Q samples for a software radio: 4FSK on a carrier, with the power ramps of TDMA bursts. */
+typedef struct dmrgo_rf_transmitter_t dmrgo_rf_transmitter_t;
+/* Go: rf.TxConfig. TxConfig sets up a Transmitter. */
+typedef struct dmrgo_rf_tx_config_t dmrgo_rf_tx_config_t;
 /* Go: shortdata.HyteraText. HyteraText is the data of the defined data text that AnyTone radios send in H-SMS mode, with SAP short data and DD format 1. */
 typedef struct dmrgo_shortdata_hytera_text_t dmrgo_shortdata_hytera_text_t;
 /* Go: sms.AnyToneText. AnyToneText is the payload of the text that AnyTone radios send to UDP port 5016 in their DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE. */
@@ -1084,6 +1122,12 @@ typedef uint8_t dmrgo_tms_encoding_t;
 typedef uint8_t dmrgo_tms_type_t;
 /* Go: privacy.Algorithm. Algorithm is the algorithm ID octet of a PI header with FID 0x10. */
 typedef uint8_t dmrgo_privacy_algorithm_t;
+/* Go: rf.IQFormat. IQFormat is the layout of one I/Q sample in the bytes of a Receiver. */
+typedef uint8_t dmrgo_rf_iq_format_t;
+/* Go: rf.Region. Region is the regulatory region whose limits a transmitter keeps. */
+typedef uint8_t dmrgo_rf_region_t;
+/* Go: rf.Tier. Tier selects how a Receiver detects symbols, by compute budget. */
+typedef int64_t dmrgo_rf_tier_t;
 /* Go: sms.Format. Format is the format of a text message. */
 typedef uint8_t dmrgo_sms_format_t;
 /* Go: dmrd.Command. Command is the kind of a message, named by its tag. */
@@ -4198,6 +4242,175 @@ struct dmrgo_voice_output_t {
 	dmrgo_layer2_call_t call;
 };
 
+struct dmrgo_rf_burst_t {
+	/* Data is the 264 burst bits as detected, in transmit order. */
+	dmrgo_layer2_raw_burst_t data;
+	/* Seconds is the time of the first burst bit from the first sample, within 2 µs on a clean signal at every tier, input and rate. */
+	double seconds;
+	/* Distance is the Hamming distance of the SYNC field from Sync, or -1 for a burst placed by timing without a SYNC (voice bursts B to F). */
+	int64_t distance;
+	/* Sync is the SYNC pattern of the burst. */
+	dmrgo_enums_sync_pattern_t sync;
+	/* Voice is the superframe position of a voice burst whose position comes from the slot timing, or DMRGO_ENUMS_VOICE_BURST_UNKNOWN when the SYNC field alone classifies the burst. */
+	dmrgo_enums_voice_burst_type_t voice;
+	/* CACH is the 24 bits before the burst in transmit order, when HasCACH. */
+	uint8_t cach[3];
+	bool has_cach;
+	/* BS is set when the burst is BS-sourced, so that the bits before it are a CACH. */
+	bool bs;
+	/* Stream numbers the transmissions that the Receiver locked to, from 1. Slot is the 30 ms slot of the burst in its stream. */
+	int64_t stream;
+	int64_t slot;
+	/* Fixed and FixedCACH hold Data and CACH with each FEC field replaced by the codeword that soft-decision decoding picked, when HasFixed. The voice slots of a call whose voice LC has FID 0xC2 (Codec2) carry no FEC and keep the bits of Data, from the LC that gives the FID on. */
+	dmrgo_layer2_raw_burst_t fixed;
+	uint8_t fixed_cach[3];
+	bool has_fixed;
+};
+
+struct dmrgo_rf_audio_rx_config_on_bursts_fn_t {
+	int (*fn)(DMRGO_USER_T user, const dmrgo_rf_burst_t *bursts, size_t bursts_len);
+	DMRGO_USER_T user;
+};
+
+struct dmrgo_rf_short_lc_t {
+	/* LC is the Short LC. dmrgo_rf_short_lc_t.lc.fec is the result of the decode that recovered it, and is never uncorrectable. */
+	dmrgo_pdu_short_lc_t lc;
+	/* Stream, Slot and Seconds are those of the burst whose CACH carries the last fragment. */
+	int64_t stream;
+	int64_t slot;
+	double seconds;
+	/* Soft is set when soft-decision decoding recovered the Short LC from fragments that the hard decode of dmrgo_layer2_short_lc_assembler_t rejects. */
+	bool soft;
+};
+
+struct dmrgo_rf_audio_rx_config_on_short_lc_fn_t {
+	int (*fn)(DMRGO_USER_T user, const dmrgo_rf_short_lc_t *short_lcs, size_t short_lcs_len);
+	DMRGO_USER_T user;
+};
+
+struct dmrgo_rf_audio_rx_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
+	/* Tier is DMRGO_RF_TIER0, DMRGO_RF_TIER1, DMRGO_RF_TIER2 or DMRGO_RF_TIER3. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewAudioReceiver, and DMRGO_RF_TIER0 for Init, which does not allocate the stages of the higher tiers, and under TinyGo, which has neither. DMRGO_RF_TIER2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of DMRGO_RF_TIER1. DMRGO_RF_TIER3 runs DMRGO_RF_TIER2 and, beside it, a receiver with more coherent CPU time and four passes over each data burst. It keeps every burst of DMRGO_RF_TIER2 and adds the bursts that DMRGO_RF_TIER2 misses, the data bursts that pass a CRC where those of DMRGO_RF_TIER2 fail, and the embedded LCs that pass where those of DMRGO_RF_TIER2 fail, at about twice the CPU time and memory of DMRGO_RF_TIER2, and 3 s of delay. */
+	dmrgo_rf_tier_t tier;
+	/* Rate is the sample rate of the discriminator samples, in Hz, from 8000 to 1000000, and for DMRGO_RF_TIER0 to 48000. 0 means 48000. The receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600: at Rate when it is one of them, else at the lowest of them at or above Rate, or 48000 above 48000, through a resampler. DMRGO_RF_TIER0, also under TinyGo, resamples in fixed point with a table in flash. A lower rate costs less: the receiver halves 48 kHz and then 24 kHz with a half-band filter before its matched filter, which runs at 12 kHz or 9.6 kHz. */
+	int64_t rate;
+	/* Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. */
+	int64_t bits;
+	/* Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. */
+	bool unsigned_;
+	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the bursts of the slots before the lock, decoded again. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
+	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
+	/* PreEmphasis, when not NULL, states that the radio de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, so that the receiver inverts it with the filter that it holds before it detects the bursts: a RxPreEmphasis of this receiver alone, set up by Init or NewRxPreEmphasis. NULL is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it. Every Tier and Rate takes it. A RxPreEmphasis that is not set up gives a *dmrgo_config_error_t. */
+	dmrgo_rf_rx_pre_emphasis_t *pre_emphasis;
+	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo_config_error_t for it. */
+	dmrgo_rf_audio_rx_config_on_short_lc_fn_t on_short_lc;
+};
+
+struct dmrgo_rf_audio_tx_config_on_samples_fn_t {
+	int (*fn)(DMRGO_USER_T user, const int16_t *values, size_t values_len);
+	DMRGO_USER_T user;
+};
+
+struct dmrgo_rf_audio_tx_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
+	/* Tier selects the modulator: DMRGO_RF_TIER0, DMRGO_RF_TIER1 or DMRGO_RF_TIER2. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewAudioTransmitter, and DMRGO_RF_TIER0 for Init and under TinyGo. DMRGO_RF_TIER3 has no modulator of its own yet and gives a *dmrgo_config_error_t. */
+	dmrgo_rf_tier_t tier;
+	/* Rate is the sample rate of the converter, in Hz. 0 means 48000. DMRGO_RF_TIER0 makes 24000 and 48000. DMRGO_RF_TIER1 and DMRGO_RF_TIER2 make any rate from 8000 whose ratio to 4800 has a numerator of at most 1024 in lowest terms, such as 8000, 22050 or 44100, and the limits are measured to 96000. */
+	int64_t rate;
+	/* Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. */
+	int64_t bits;
+	/* Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. */
+	bool unsigned_;
+	/* OnSamples, when not NULL, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When NULL, the transmitter is in append mode, for AppendSamples and AppendFlush. */
+	dmrgo_rf_audio_tx_config_on_samples_fn_t on_samples;
+	/* Level is the code of a run of symbol +3, 1944 Hz of deviation, less the center, from 1 to 16000. 0 means the most that fits in Bits with Offset over every run of symbols. The limits are measured at about half of full scale, 1040 codes at 12 bits. Under 16 bits, DMRGO_RF_TIER1 and DMRGO_RF_TIER2 at 24000 Hz and above reach 2.12 times Level, so there they are measured at the most that fits Bits at Offset 0, 965 to 981 codes at 12 bits. A Level under the measured level gives a *RegionError. */
+	int64_t level;
+	/* Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned. */
+	int64_t offset;
+	/* PreEmphasis, when not NULL, states that the radio pre-emphasizes its modulator input from 300 Hz to 3 kHz, so that the transmitter inverts it with the modulator that it holds: a PreEmphasis of this transmitter alone, set up by Init or NewPreEmphasis. NULL is a radio with no pre-emphasis. Only DMRGO_RF_TIER0 at Rate 48000 takes it, and only in the regions, services and powers where the limits keep their margin with it; elsewhere it gives a *RegionError. */
+	dmrgo_rf_pre_emphasis_t *pre_emphasis;
+	/* InputLowpassHz states the cutoff in Hz of a low pass of at least two poles that the radio puts before its modulator input; 0 means none, a converter that drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these, so 6000 counts as 8000 and a cutoff above 8000 as none. A low pass lowers the least Rate that keeps the limits. A negative cutoff gives a *dmrgo_config_error_t. */
+	int64_t input_lowpass_hz;
+	/* Region is the regulatory region whose limits the signal keeps. */
+	dmrgo_rf_region_t region;
+	/* Service is the radio service of the station, as in TxConfig. */
+	dmrgo_service_t service;
+	/* Power is the most power of the station in dBm, as in TxConfig. */
+	int64_t power;
+};
+
+struct dmrgo_rf_monitor_burst_t {
+	/* Hint is the data of the Monitor about the burst besides its bits: Slot is the TDMA channel from the CACHs of the stream, or DMRGO_ENUMS_SLOT_UNKNOWN for a burst without a CACH, and Kind and VoiceBurst come from the timing, as dmrgo_rf_burst_hint gives them. */
+	dmrgo_layer2_hint_t hint;
+	/* LC is the LC of the call on the TDMA channel, when HasLC. */
+	dmrgo_pdu_lc_bytes_t lc;
+	/* HasLC reports that LC is set. */
+	bool has_lc;
+	/* LCDone reports that this burst completed a Full LC: a voice LC header, a terminator with LC, or the embedded LC of a superframe. */
+	bool lc_done;
+	/* End reports a terminator with LC: the call on the channel ended, and the Monitor clears its LC after this burst. */
+	bool end;
+};
+
+struct dmrgo_rf_rx_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
+	/* Tier selects the detection. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewReceiver, and DMRGO_RF_TIER0 for Init and under TinyGo. */
+	dmrgo_rf_tier_t tier;
+	/* Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. DMRGO_RF_TIER0 to DMRGO_RF_TIER3 take a Rate from 48000 to 1e9, and DMRGO_RF_TIER0 and DMRGO_RF_TIER1 also one from 24000, which runs their receiver with a complex front end in place of the FM discriminator, with about 2 KB of state for DMRGO_RF_TIER0. DMRGO_RF_TIER0 also takes 9600 and 12000, for I/Q that a radio chip filtered to the channel, with about 1.4 KB of state; Init sets up only these. */
+	int64_t rate;
+	/* Format is the layout of the I/Q samples. 0 means DMRGO_RF_IQ_FORMAT_CS16. */
+	dmrgo_rf_iq_format_t format;
+	/* OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. */
+	double offset_hz;
+	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
+	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
+	/* LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for DMRGO_RF_TIER1, 8 for DMRGO_RF_TIER2, and 16 for DMRGO_RF_TIER3, and at most DMRGO_RF_MAX_LOOKBACK_SLOTS. DMRGO_RF_TIER0 keeps none, and loses the start of a stream that it enters late. */
+	int64_t lookback_slots;
+	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo_config_error_t for it. */
+	dmrgo_rf_audio_rx_config_on_short_lc_fn_t on_short_lc;
+};
+
+struct dmrgo_rf_tx_config_on_samples_fn_t {
+	int (*fn)(DMRGO_USER_T user, const uint8_t *data, size_t data_len);
+	DMRGO_USER_T user;
+};
+
+struct dmrgo_rf_tx_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
+	/* Tier selects the modulator: DMRGO_RF_TIER0, DMRGO_RF_TIER1 or DMRGO_RF_TIER2. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewTransmitter, and DMRGO_RF_TIER0 for Init and under TinyGo. DMRGO_RF_TIER3 has no modulator of its own yet and gives a *dmrgo_config_error_t. */
+	dmrgo_rf_tier_t tier;
+	/* Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. DMRGO_RF_TIER1 and DMRGO_RF_TIER2 make any Rate from 48000 to 20000000, and DMRGO_RF_TIER0 makes 96000. Under 62500 the image of the main lobe falls within two channels of the carrier, where no limit can count on a filter of the radio, so it gives a *RegionError. */
+	int64_t rate;
+	/* Format is the layout of the I/Q samples. 0 means DMRGO_RF_IQ_FORMAT_CS16. DMRGO_RF_IQ_FORMAT_CF32 values lie on the grid of DMRGO_RF_IQ_FORMAT_CS16. */
+	dmrgo_rf_iq_format_t format;
+	/* OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, under Rate/4 in size. DMRGO_RF_TIER0 rounds it to whole Hz. */
+	double offset_hz;
+	/* OnSamples, when not NULL, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When NULL, the transmitter is in append mode, for AppendSamples and AppendFlush. */
+	dmrgo_rf_tx_config_on_samples_fn_t on_samples;
+	/* Region is the regulatory region whose limits the signal keeps. */
+	dmrgo_rf_region_t region;
+	/* Service is the radio service of the station. DMRGO_RF_SERVICE_UNKNOWN keeps the limits of the land mobile and amateur services at once. A station of the license-free service must state it. */
+	dmrgo_service_t service;
+	/* Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. */
+	int64_t power;
+};
+
+struct dmrgo_rf_region_error_t {
+	/* Type is the package, "rf", and Field the config field that the limits do not allow, such as "dmrgo_rf_tx_config_t.rate". */
+	char *type;
+	size_t type_len;
+	/* Type is the package, "rf", and Field the config field that the limits do not allow, such as "dmrgo_rf_tx_config_t.rate". */
+	char *field;
+	size_t field_len;
+	/* Reason gives the cause. */
+	char *reason;
+	size_t reason_len;
+};
+
 struct dmrgo_shortdata_hytera_text_t {
 	/* Field is a 16-bit value before the text whose meaning is not known: it was 00 00 in four captures and 45 00 in one. Decode keeps it as it is. */
 	uint16_t field;
@@ -6030,6 +6243,12 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_PRIVACY_DATA_ALGORITHM (-237)
 #define DMRGO_ERR_PRIVACY_KEYS_FULL (-235)
 #define DMRGO_ERR_PRIVACY_NOT_STARTED (-236)
+#define DMRGO_ERR_RF_BURST_ORDER (-240)
+#define DMRGO_ERR_RF_BURST_SERVICE (-241)
+#define DMRGO_ERR_RF_NIL_BURST (-242)
+#define DMRGO_ERR_RF_NOT_SET_UP (-243)
+#define DMRGO_ERR_RF_REGION (-239)
+#define DMRGO_ERR_RF_TX_TIMEOUT (-244)
 #define DMRGO_ERR_SHORTDATA_CHARACTER (-171)
 #define DMRGO_ERR_SHORTDATA_FORMAT (-172)
 #define DMRGO_ERR_SHORTDATA_LENGTH (-173)
@@ -7587,6 +7806,46 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 /* Go: privacy.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
 #define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_service_t)0)
+/* Go: rf.IQFormatCF32. IQFormatCF32 is little-endian float32, as GNU Radio gives it, with full scale at 1. */
+#define DMRGO_RF_IQ_FORMAT_CF32 ((dmrgo_rf_iq_format_t)4)
+/* Go: rf.IQFormatCS16. IQFormatCS16 is signed 16-bit little-endian, as PlutoSDR, LimeSDR, USRP and the radio chips give it. */
+#define DMRGO_RF_IQ_FORMAT_CS16 ((dmrgo_rf_iq_format_t)3)
+/* Go: rf.IQFormatCS8. IQFormatCS8 is signed 8-bit, as hackrf_transfer writes it. */
+#define DMRGO_RF_IQ_FORMAT_CS8 ((dmrgo_rf_iq_format_t)2)
+/* Go: rf.IQFormatCU8. IQFormatCU8 is unsigned 8-bit, as rtl_sdr writes it. */
+#define DMRGO_RF_IQ_FORMAT_CU8 ((dmrgo_rf_iq_format_t)1)
+/* Go: rf.IQFormatDefault. IQFormatDefault is the zero value: DMRGO_RF_IQ_FORMAT_CS16. */
+#define DMRGO_RF_IQ_FORMAT_DEFAULT ((dmrgo_rf_iq_format_t)0)
+/* Go: rf.MaxLookbackSlots. MaxLookbackSlots is the largest dmrgo_rf_rx_config_t.lookback_slots, 7.68 s of signal. */
+#define DMRGO_RF_MAX_LOOKBACK_SLOTS 256
+/* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile, ERC/REC 74-01 for amateur, and ETSI EN 303 405 and EN 300 390 for PMR446, the license-free service. */
+#define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
+/* Go: rf.RegionChina. RegionChina keeps the 2025 MIIT notice for land mobile and the 409 MHz license-free walkie-talkie, and the Radio Frequency Allocation Regulations for amateur. */
+#define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
+/* Go: rf.RegionJapan. RegionJapan keeps the Radio Equipment Regulations for land mobile and amateur. */
+#define DMRGO_RF_REGION_JAPAN ((dmrgo_rf_region_t)4)
+/* Go: rf.RegionUS. RegionUS keeps 47 CFR 90.210 Emission Mask D for land mobile and 47 CFR 97.307 for amateur. */
+#define DMRGO_RF_REGION_US ((dmrgo_rf_region_t)1)
+/* Go: rf.RegionWorld. RegionWorld keeps the limits of every other region at once, the strictest of each. */
+#define DMRGO_RF_REGION_WORLD ((dmrgo_rf_region_t)0)
+/* Go: rf.ServiceAmateur. ServiceAmateur is the amateur or amateur-satellite service. */
+#define DMRGO_RF_SERVICE_AMATEUR ((dmrgo_service_t)1)
+/* Go: rf.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
+#define DMRGO_RF_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
+/* Go: rf.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
+#define DMRGO_RF_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
+/* Go: rf.ServiceUnknown. ServiceUnknown is a service that the caller did not state: the transmitter keeps the limits of the land mobile and amateur services at once. */
+#define DMRGO_RF_SERVICE_UNKNOWN ((dmrgo_service_t)0)
+/* Go: rf.Tier0. Tier0 slices the output of an FM discriminator and its matched filter. */
+#define DMRGO_RF_TIER0 ((dmrgo_rf_tier_t)1)
+/* Go: rf.Tier1. Tier1 adds to DMRGO_RF_TIER0 the soft decoders: a BPTC(196,96) block whose check fails by ordered statistics, C0 and C1 of each voice frame by soft ML, the embedded LC of each superframe over its four fragments and the earlier superframes of the call, and LookbackSlots slots before the first lock decoded again. */
+#define DMRGO_RF_TIER1 ((dmrgo_rf_tier_t)2)
+/* Go: rf.Tier2. Tier2 adds to the soft decoders of DMRGO_RF_TIER1 the detection again of the bursts with a trellis over three symbols that carries the carrier phase with each survivor, from the SYNC or EMB of the burst, within a compute budget per slot: on I/Q from the samples at 24 kHz, on audio from the carrier phase that it sums from the discriminator samples. */
+#define DMRGO_RF_TIER2 ((dmrgo_rf_tier_t)3)
+/* Go: rf.Tier3. Tier3 on I/Q detects over a window of three symbols with one of 52 carrier phases in the trellis state, in two passes, detects each voice burst again with the bits that its FEC fixed, and takes each voice frame from it or from a DMRGO_RF_TIER2 receiver beside it. */
+#define DMRGO_RF_TIER3 ((dmrgo_rf_tier_t)4)
+/* Go: rf.TierDefault. TierDefault is the zero value: DMRGO_RF_TIER1 for NewReceiver and NewAudioReceiver, and DMRGO_RF_TIER0 for Init and under TinyGo. */
+#define DMRGO_RF_TIER_DEFAULT ((dmrgo_rf_tier_t)0)
 /* Go: sms.FormatAnyTone. FormatAnyTone is the text to UDP port 5016 that AnyTone radios send in DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE. */
 #define DMRGO_SMS_FORMAT_ANYTONE ((dmrgo_sms_format_t)3)
 /* Go: sms.FormatDefinedData. FormatDefinedData is a short data packet (DD_HEAD) whose DD format gives the coding of the text. */
@@ -10742,6 +11001,154 @@ int dmrgo_privacy_transmitter_output(dmrgo_privacy_transmitter_t *self, dmrgo_vo
 int dmrgo_privacy_transmitter_pi_header(dmrgo_privacy_transmitter_t *self, uint32_t target, dmrgo_pdu_pi_header_t *h, bool *ok);
 /* Go: privacy.Transmitter.Start. Start begins a call with the message indicator mi. */
 int dmrgo_privacy_transmitter_start(dmrgo_privacy_transmitter_t *self, uint32_t mi);
+/* dmrgo_rf_audio_receiver_free frees the handle. self may be NULL. */
+int dmrgo_rf_audio_receiver_free(dmrgo_rf_audio_receiver_t *self);
+/* Go: rf.AudioReceiver.Active. Active reports whether the stream is inside a transmission that the receiver is locked to. */
+int dmrgo_rf_audio_receiver_active(dmrgo_rf_audio_receiver_t *self, bool *out);
+/* dmrgo_rf_audio_receiver_append_bursts_need sets *items and *arena to the room that dmrgo_rf_audio_receiver_append_bursts needs for these arguments, without a change to the handle. */
+int dmrgo_rf_audio_receiver_append_bursts_need(dmrgo_rf_audio_receiver_t *self, const int16_t *x, size_t x_len, size_t *items, size_t *arena);
+/* Go: rf.AudioReceiver.AppendBursts. AppendBursts processes the discriminator samples x in append mode, appends the bursts that they complete to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_audio_receiver_append_bursts_need gives. */
+int dmrgo_rf_audio_receiver_append_bursts(dmrgo_rf_audio_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const int16_t *x, size_t x_len);
+/* dmrgo_rf_audio_receiver_append_flush_need sets *items and *arena to the room that dmrgo_rf_audio_receiver_append_flush needs for these arguments, without a change to the handle. */
+int dmrgo_rf_audio_receiver_append_flush_need(dmrgo_rf_audio_receiver_t *self, size_t *items, size_t *arena);
+/* Go: rf.AudioReceiver.AppendFlush. AppendFlush ends the stream in append mode, appends the remaining bursts to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_audio_receiver_append_flush_need gives. */
+int dmrgo_rf_audio_receiver_append_flush(dmrgo_rf_audio_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: rf.AudioReceiver.Flush. Flush ends the stream in stream mode and hands the remaining bursts to OnBursts. */
+int dmrgo_rf_audio_receiver_flush(dmrgo_rf_audio_receiver_t *self);
+/* Go: rf.AudioReceiver.Init. Init sets up r for c, in place of any state it holds, in DMRGO_RF_TIER0. It returns DMRGO_ERR_HANDLE for a NULL self, and a DMRGO_ERR_CONFIG, with r unchanged, when a field of c is out of range. */
+int dmrgo_rf_audio_receiver_init(dmrgo_rf_audio_receiver_t *self, const dmrgo_rf_audio_rx_config_t *c);
+/* Go: rf.AudioReceiver.Lag. Lag returns the most samples between the last sample of a burst and the call that hands the burst out. */
+int dmrgo_rf_audio_receiver_lag(dmrgo_rf_audio_receiver_t *self, int64_t *out);
+/* Go: rf.AudioReceiver.Level. Level returns the outer level of the last locked stream: the code of a run of symbol +3 (1944 Hz) less the DC code. */
+int dmrgo_rf_audio_receiver_level(dmrgo_rf_audio_receiver_t *self, int64_t *out);
+/* Go: rf.AudioReceiver.MaxOutput. MaxOutput returns the most bursts that AppendBursts can append for n samples, and for n == 0 the most that AppendFlush can append. */
+int dmrgo_rf_audio_receiver_max_output(dmrgo_rf_audio_receiver_t *self, int64_t n, int64_t *out);
+/* Go: rf.AudioReceiver.Offset. Offset returns the DC code of the last locked stream: the code of the carrier, from its offset and the offset of the converter. */
+int dmrgo_rf_audio_receiver_offset(dmrgo_rf_audio_receiver_t *self, int64_t *out);
+/* Go: rf.AudioReceiver.Write. Write processes the discriminator samples x in stream mode and hands the bursts that they complete to OnBursts. It returns len(x) and NULL, DMRGO_ERR_HANDLE for a NULL self, DMRGO_ERR_RF_NOT_SET_UP before Init or NewAudioReceiver, and a DMRGO_ERR_CONFIG for OnBursts in append mode. */
+int dmrgo_rf_audio_receiver_write(dmrgo_rf_audio_receiver_t *self, const int16_t *x, size_t x_len, int64_t *out);
+/* dmrgo_rf_audio_transmitter_free frees the handle. self may be NULL. */
+int dmrgo_rf_audio_transmitter_free(dmrgo_rf_audio_transmitter_t *self);
+/* Go: rf.AudioTransmitter.Active. Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last, the time that the radio must be keyed. */
+int dmrgo_rf_audio_transmitter_active(dmrgo_rf_audio_transmitter_t *self, bool *out);
+/* dmrgo_rf_audio_transmitter_append_flush_need sets *items and *arena to the room that dmrgo_rf_audio_transmitter_append_flush needs for these arguments, without a change to the handle. */
+int dmrgo_rf_audio_transmitter_append_flush_need(dmrgo_rf_audio_transmitter_t *self, size_t *items, size_t *arena);
+/* Go: rf.AudioTransmitter.AppendFlush. AppendFlush ends the transmission in append mode, appends the tail of the pulse to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_audio_transmitter_append_flush_need gives. */
+int dmrgo_rf_audio_transmitter_append_flush(dmrgo_rf_audio_transmitter_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_rf_audio_transmitter_append_samples_need sets *items and *arena to the room that dmrgo_rf_audio_transmitter_append_samples needs for these arguments, without a change to the handle. */
+int dmrgo_rf_audio_transmitter_append_samples_need(dmrgo_rf_audio_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, size_t *items, size_t *arena);
+/* Go: rf.AudioTransmitter.AppendSamples. AppendSamples turns the bursts x into samples in append mode, appends them to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_audio_transmitter_append_samples_need gives. */
+int dmrgo_rf_audio_transmitter_append_samples(dmrgo_rf_audio_transmitter_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_rf_burst_t *x, size_t x_len);
+/* Go: rf.AudioTransmitter.Flush. Flush ends the transmission in stream mode: it hands the tail of the pulse to OnSamples. */
+int dmrgo_rf_audio_transmitter_flush(dmrgo_rf_audio_transmitter_t *self);
+/* Go: rf.AudioTransmitter.Init. Init sets up t for c, in place of any state it holds, in DMRGO_RF_TIER0 at a Rate of 24000 or 48000. */
+int dmrgo_rf_audio_transmitter_init(dmrgo_rf_audio_transmitter_t *self, const dmrgo_rf_audio_tx_config_t *c);
+/* Go: rf.AudioTransmitter.Lag. Lag returns the most samples between the start of a burst in its slot and its first sample. */
+int dmrgo_rf_audio_transmitter_lag(dmrgo_rf_audio_transmitter_t *self, int64_t *out);
+/* Go: rf.AudioTransmitter.Level. Level returns the code of a run of symbol +3 less the center that t sends, after the 0 default resolves. */
+int dmrgo_rf_audio_transmitter_level(dmrgo_rf_audio_transmitter_t *self, int64_t *out);
+/* Go: rf.AudioTransmitter.MaxOutput. MaxOutput returns the most samples that AppendSamples can append for n bursts, and for n == 0 the most that AppendFlush can append. */
+int dmrgo_rf_audio_transmitter_max_output(dmrgo_rf_audio_transmitter_t *self, int64_t n, int64_t *out);
+/* Go: rf.AudioTransmitter.Offset. Offset returns the DC code that t sends: the center and Offset. */
+int dmrgo_rf_audio_transmitter_offset(dmrgo_rf_audio_transmitter_t *self, int64_t *out);
+/* Go: rf.AudioTransmitter.Write. Write turns the bursts x into samples in stream mode and hands them to OnSamples. */
+int dmrgo_rf_audio_transmitter_write(dmrgo_rf_audio_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, int64_t *out);
+/* Go: rf.Burst.Decoded. Decoded returns the burst and CACH bits to decode: Fixed and FixedCACH when the burst has them, Data and CACH otherwise. */
+int dmrgo_rf_burst_decoded(const dmrgo_rf_burst_t *self, dmrgo_layer2_raw_burst_t *raw_burst, uint8_t data[3]);
+/* Go: rf.Burst.Hint. Hint returns the data of the Receiver about b besides its bits, for a machine that takes a dmrgo_layer2_raw_burst_t with a dmrgo_layer2_hint_t. */
+int dmrgo_rf_burst_hint(const dmrgo_rf_burst_t *self, dmrgo_layer2_hint_t *out);
+/* Go: rf.Burst.Timed. Timed reports whether the burst was placed by timing instead of a SYNC. */
+int dmrgo_rf_burst_timed(const dmrgo_rf_burst_t *self, bool *out);
+/* dmrgo_rf_monitor_new makes a zero dmrgo_rf_monitor_t. */
+int dmrgo_rf_monitor_new(dmrgo_rf_monitor_t **out);
+/* dmrgo_rf_monitor_free frees the handle. self may be NULL. */
+int dmrgo_rf_monitor_free(dmrgo_rf_monitor_t *self);
+/* Go: rf.Monitor.Burst. Burst decodes b into dst, finds its TDMA channel and updates the call of the channel. Burst returns DMRGO_ERR_RF_NIL_BURST for a NULL m, dst or b, and the error of dmrgo_layer2_burst_decode_from_bytes_with, with dst and Hint set but the call of the channel unchanged. b may be NULL. */
+int dmrgo_rf_monitor_burst(dmrgo_rf_monitor_t *self, dmrgo_layer2_burst_t *dst, const dmrgo_rf_burst_t *b, dmrgo_rf_monitor_burst_t *out);
+/* Go: rf.Monitor.Reset. Reset clears the streams and the calls of every channel. */
+int dmrgo_rf_monitor_reset(dmrgo_rf_monitor_t *self);
+/* Go: rf.NewAudioReceiver. NewAudioReceiver returns an AudioReceiver of c. It returns a DMRGO_ERR_CONFIG when a field of c is out of range. c may be NULL. */
+int dmrgo_rf_new_audio_receiver(const dmrgo_rf_audio_rx_config_t *c, dmrgo_rf_audio_receiver_t **out);
+/* Go: rf.NewAudioTransmitter. NewAudioTransmitter returns an AudioTransmitter of c. c may be NULL. */
+int dmrgo_rf_new_audio_transmitter(const dmrgo_rf_audio_tx_config_t *c, dmrgo_rf_audio_transmitter_t **out);
+/* Go: rf.NewPreEmphasis. NewPreEmphasis allocates a PreEmphasis and returns it set up. */
+int dmrgo_rf_new_pre_emphasis(dmrgo_rf_pre_emphasis_t **out);
+/* Go: rf.NewReceiver. NewReceiver returns a Receiver of c. It allocates every buffer of the Receiver, and it returns a DMRGO_ERR_CONFIG when a field of c is out of range. c may be NULL. */
+int dmrgo_rf_new_receiver(const dmrgo_rf_rx_config_t *c, dmrgo_rf_receiver_t **out);
+/* Go: rf.NewRxPreEmphasis. NewRxPreEmphasis allocates a RxPreEmphasis and returns it set up. */
+int dmrgo_rf_new_rx_pre_emphasis(dmrgo_rf_rx_pre_emphasis_t **out);
+/* Go: rf.NewTransmitter. NewTransmitter returns a Transmitter of c. It returns a DMRGO_ERR_CONFIG when a field of c is out of range or names a setup that the modulator cannot make, and a DMRGO_ERR_RF_REGION when the limits of the Region, Service and Power do not allow the setup. c may be NULL. */
+int dmrgo_rf_new_transmitter(const dmrgo_rf_tx_config_t *c, dmrgo_rf_transmitter_t **out);
+/* dmrgo_rf_pre_emphasis_free frees the handle. self may be NULL. */
+int dmrgo_rf_pre_emphasis_free(dmrgo_rf_pre_emphasis_t *self);
+/* Go: rf.PreEmphasis.Init. Init sets up p, in place of any state it holds, and returns p, for dmrgo_rf_audio_tx_config_t.pre_emphasis. In C, *out is self when the result is the receiver. */
+int dmrgo_rf_pre_emphasis_init(dmrgo_rf_pre_emphasis_t *self, dmrgo_rf_pre_emphasis_t **out);
+/* dmrgo_rf_receiver_free frees the handle. self may be NULL. */
+int dmrgo_rf_receiver_free(dmrgo_rf_receiver_t *self);
+/* Go: rf.Receiver.Active. Active reports whether the stream is inside a transmission that the receiver is locked to. */
+int dmrgo_rf_receiver_active(dmrgo_rf_receiver_t *self, bool *out);
+/* dmrgo_rf_receiver_append_bursts_need sets *items and *arena to the room that dmrgo_rf_receiver_append_bursts needs for these arguments, without a change to the handle. */
+int dmrgo_rf_receiver_append_bursts_need(dmrgo_rf_receiver_t *self, const uint8_t *x, size_t x_len, size_t *items, size_t *arena);
+/* Go: rf.Receiver.AppendBursts. AppendBursts processes the I/Q samples x in append mode, appends the bursts that they complete to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_receiver_append_bursts_need gives. */
+int dmrgo_rf_receiver_append_bursts(dmrgo_rf_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *x, size_t x_len);
+/* dmrgo_rf_receiver_append_flush_need sets *items and *arena to the room that dmrgo_rf_receiver_append_flush needs for these arguments, without a change to the handle. */
+int dmrgo_rf_receiver_append_flush_need(dmrgo_rf_receiver_t *self, size_t *items, size_t *arena);
+/* Go: rf.Receiver.AppendFlush. AppendFlush ends the stream in append mode, appends the remaining bursts to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_receiver_append_flush_need gives. */
+int dmrgo_rf_receiver_append_flush(dmrgo_rf_receiver_t *self, dmrgo_rf_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: rf.Receiver.DeviationHz. DeviationHz returns the outer deviation of the last locked stream, in Hz. */
+int dmrgo_rf_receiver_deviation_hz(dmrgo_rf_receiver_t *self, double *out);
+/* Go: rf.Receiver.Flush. Flush ends the stream in stream mode and hands the remaining bursts to OnBursts. */
+int dmrgo_rf_receiver_flush(dmrgo_rf_receiver_t *self);
+/* Go: rf.Receiver.Init. Init sets up r for c, in place of any state it holds, in DMRGO_RF_TIER0 at a Rate of 9600 or 12000. Init returns DMRGO_ERR_HANDLE for a NULL self, and a DMRGO_ERR_CONFIG, with r unchanged, when a field of c is out of range. */
+int dmrgo_rf_receiver_init(dmrgo_rf_receiver_t *self, const dmrgo_rf_rx_config_t *c);
+/* Go: rf.Receiver.Lag. Lag returns the most samples between the last sample of a burst and the call that hands the burst out. */
+int dmrgo_rf_receiver_lag(dmrgo_rf_receiver_t *self, int64_t *out);
+/* Go: rf.Receiver.MaxOutput. MaxOutput returns the most bursts that AppendBursts can append for n samples, and for n == 0 the most that AppendFlush can append. */
+int dmrgo_rf_receiver_max_output(dmrgo_rf_receiver_t *self, int64_t n, int64_t *out);
+/* Go: rf.Receiver.OffsetHz. OffsetHz returns the carrier offset of the last stream that ended, in Hz. */
+int dmrgo_rf_receiver_offset_hz(dmrgo_rf_receiver_t *self, double *out);
+/* Go: rf.Receiver.SampleBytes. SampleBytes returns the bytes of one I/Q sample in the Format of r. */
+int dmrgo_rf_receiver_sample_bytes(dmrgo_rf_receiver_t *self, int64_t *out);
+/* Go: rf.Receiver.Write. Write processes the I/Q samples x in stream mode and hands the bursts that they complete to OnBursts. It returns len(x) and NULL, DMRGO_ERR_HANDLE for a NULL self, DMRGO_ERR_RF_NOT_SET_UP before Init or NewReceiver, and a DMRGO_ERR_CONFIG for OnBursts in append mode. */
+int dmrgo_rf_receiver_write(dmrgo_rf_receiver_t *self, const uint8_t *x, size_t x_len, int64_t *out);
+/* Go: rf.Region.String. String returns the name of the region. */
+int dmrgo_rf_region_string(dmrgo_rf_region_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: rf.RegionError.Error. Error returns the message of e. */
+int dmrgo_rf_region_error_error(const dmrgo_rf_region_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_rf_region_error_last sets *ok when the last error of this thread holds a dmrgo_rf_region_error_t and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+int dmrgo_rf_region_error_last(dmrgo_rf_region_error_t *out, bool *ok);
+/* dmrgo_rf_rx_pre_emphasis_free frees the handle. self may be NULL. */
+int dmrgo_rf_rx_pre_emphasis_free(dmrgo_rf_rx_pre_emphasis_t *self);
+/* Go: rf.RxPreEmphasis.Init. Init sets up p, in place of any state it holds, and returns p, for dmrgo_rf_audio_rx_config_t.pre_emphasis. In C, *out is self when the result is the receiver. */
+int dmrgo_rf_rx_pre_emphasis_init(dmrgo_rf_rx_pre_emphasis_t *self, dmrgo_rf_rx_pre_emphasis_t **out);
+/* dmrgo_rf_transmitter_free frees the handle. self may be NULL. */
+int dmrgo_rf_transmitter_free(dmrgo_rf_transmitter_t *self);
+/* Go: rf.Transmitter.Active. Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last. */
+int dmrgo_rf_transmitter_active(dmrgo_rf_transmitter_t *self, bool *out);
+/* dmrgo_rf_transmitter_append_flush_need sets *items and *arena to the room that dmrgo_rf_transmitter_append_flush needs for these arguments, without a change to the handle. */
+int dmrgo_rf_transmitter_append_flush_need(dmrgo_rf_transmitter_t *self, size_t *items, size_t *arena);
+/* Go: rf.Transmitter.AppendFlush. AppendFlush ends the transmission in append mode, appends the tail of the pulse and the power ramp down to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_transmitter_append_flush_need gives. */
+int dmrgo_rf_transmitter_append_flush(dmrgo_rf_transmitter_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_rf_transmitter_append_samples_need sets *items and *arena to the room that dmrgo_rf_transmitter_append_samples needs for these arguments, without a change to the handle. */
+int dmrgo_rf_transmitter_append_samples_need(dmrgo_rf_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, size_t *items, size_t *arena);
+/* Go: rf.Transmitter.AppendSamples. AppendSamples turns the bursts x into samples in append mode, appends them to dst in Format and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_rf_transmitter_append_samples_need gives. */
+int dmrgo_rf_transmitter_append_samples(dmrgo_rf_transmitter_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_rf_burst_t *x, size_t x_len);
+/* Go: rf.Transmitter.DeviationHz. DeviationHz returns the outer deviation that t sends, 1944 Hz. */
+int dmrgo_rf_transmitter_deviation_hz(dmrgo_rf_transmitter_t *self, double *out);
+/* Go: rf.Transmitter.Flush. Flush ends the transmission in stream mode: it hands the tail of the pulse and the power ramp down to OnSamples. */
+int dmrgo_rf_transmitter_flush(dmrgo_rf_transmitter_t *self);
+/* Go: rf.Transmitter.Init. Init sets up t for c, in place of any state it holds, in DMRGO_RF_TIER0 at a Rate of 96000. It returns DMRGO_ERR_HANDLE for a NULL self, and a DMRGO_ERR_CONFIG or DMRGO_ERR_RF_REGION, with t unchanged, as NewTransmitter does. */
+int dmrgo_rf_transmitter_init(dmrgo_rf_transmitter_t *self, const dmrgo_rf_tx_config_t *c);
+/* Go: rf.Transmitter.Lag. Lag returns the most samples between the start of a burst in its slot and its first sample. */
+int dmrgo_rf_transmitter_lag(dmrgo_rf_transmitter_t *self, int64_t *out);
+/* Go: rf.Transmitter.MaxOutput. MaxOutput returns the most samples that AppendSamples can append for n bursts, and for n == 0 the most that AppendFlush can append. */
+int dmrgo_rf_transmitter_max_output(dmrgo_rf_transmitter_t *self, int64_t n, int64_t *out);
+/* Go: rf.Transmitter.OffsetHz. OffsetHz returns the carrier offset that t sends, in Hz, as DMRGO_RF_TIER0 rounds it. */
+int dmrgo_rf_transmitter_offset_hz(dmrgo_rf_transmitter_t *self, double *out);
+/* Go: rf.Transmitter.SampleBytes. SampleBytes returns the bytes of one I/Q sample in the Format of t. */
+int dmrgo_rf_transmitter_sample_bytes(dmrgo_rf_transmitter_t *self, int64_t *out);
+/* Go: rf.Transmitter.Write. Write turns the bursts x into samples in stream mode and hands them to OnSamples. It returns len(x) and NULL, DMRGO_ERR_HANDLE for a NULL self, DMRGO_ERR_RF_NOT_SET_UP before Init or NewTransmitter, a DMRGO_ERR_CONFIG for OnSamples in append mode, and for a burst that it does not accept the count of bursts before it with DMRGO_ERR_RF_BURST_ORDER, DMRGO_ERR_RF_BURST_SERVICE or DMRGO_ERR_RF_TX_TIMEOUT. */
+int dmrgo_rf_transmitter_write(dmrgo_rf_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, int64_t *out);
 /* Go: shortdata.AppendText. AppendText appends the UTF-8 text to dst, coded as format selects, and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format, or DMRGO_ERR_SHORTDATA_CHARACTER for a character that BCD, 7-bit text or the ISO/IEC 8859 part cannot hold. Invalid UTF-8 gives U+FFFD, or DMRGO_ERR_SHORTDATA_CHARACTER for BCD, 7-bit text and ISO/IEC 8859. */
 int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
 /* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. It returns DMRGO_ERR_SHORTDATA_SHORT when data ends inside a field. */

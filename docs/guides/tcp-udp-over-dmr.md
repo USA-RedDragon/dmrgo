@@ -76,7 +76,6 @@ func (l *link) pump(now time.Duration) {
 		}
 		l.current = p.tag
 		l.stats.datagrams++
-		l.stats.octets += len(l.pkt)
 	}
 }
 ```
@@ -103,7 +102,6 @@ func (l *link) pump(now time.Duration) {
 			l.stats.failed++
 		} else {
 			l.stats.packets++
-			l.stats.octets += len(l.queue[0])
 		}
 		l.queue = l.queue[1:]
 	}
@@ -115,7 +113,7 @@ func (l *link) pump(now time.Duration) {
 
 The machines do no I/O. Call `Tick` at the time that `Deadline` returns, and pass each burst that the radio hears to `Burst` of both machines. Call `Channel` when the channel goes busy or idle. A polite Sender waits for an idle channel before it starts a try.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go lines=96-119 -->
+<!-- dmrgo:code file=v2/examples/udp/link.go lines=95-118 -->
 ```go
 func (l *link) deadline() (time.Duration, bool) {
 	at, ok := l.tx.Deadline()
@@ -148,7 +146,7 @@ func (l *link) channel(now time.Duration, busy bool) {
 
 An `OutputBurst` is a burst to send at its `Due` time, and `OutputDone` ends a packet with its result and its count of tries. An `EventRespond` is a response burst that the Receiver sends, and `EventDelivered` holds a packet. [ip.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#Decode) reads the datagram from the user data for the SAP of the header.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go lines=121-153 -->
+<!-- dmrgo:code file=v2/examples/udp/link.go lines=120-152 -->
 ```go
 func (l *link) outputs(now time.Duration, outs []data.Output) {
 	for i := range outs {
