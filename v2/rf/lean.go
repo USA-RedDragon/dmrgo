@@ -1451,6 +1451,9 @@ func (r *leanCore) searchSym(strict bool) {
 		if strict || !r.hasExt() || !r.ext.verify(r, p) {
 			return
 		}
+		if t, ok := r.ext.lockShift(r, p, 0); ok {
+			d = r.shiftSync(t * 2 * r.tm.step)
+		}
 		r.fitLevels(r.ns-1, p, true, false)
 	}
 	r.lockStream(src, d, 0)
@@ -1543,6 +1546,22 @@ func (r *leanCore) midSync() {
 		return
 	}
 	r.restoreSync(&saved)
+}
+
+func (r *leanCore) shiftSync(d float32) float32 {
+	sps := 2 * r.tm.step
+	end := r.lastAt
+	b0 := max(int32(-end-sps/2)-2, 0)
+	if !r.burstKept() && b0+leanSyncWindow > r.acqKept() {
+		return 0
+	}
+	var win syncWindow
+	r.fillWindow(&win, b0)
+	d = min(d, -end)
+	var saved [syncSymbols]int8
+	r.ringSync(&win, end+d, sps, &saved)
+	r.resampleStart(d)
+	return d
 }
 
 //go:noinline
@@ -1642,7 +1661,12 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 		p = dp
 	}
 	r.fitLevels(r.ns-1-back, p, true, false)
-	r.lockStream(src, 0, back)
+	d := float32(0)
+	if t, ok := r.ext.lockShift(r, p, back); ok {
+		d = t * 2 * r.tm.step
+		r.tm.t += d
+	}
+	r.lockStream(src, d, back)
 	r.forced, r.hunt = true, true
 }
 

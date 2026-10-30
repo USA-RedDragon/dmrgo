@@ -1446,6 +1446,55 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	return true
 }
 
+func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float64, bool) {
+	s.acq = true
+	defer func() { s.acq = false }()
+	if s.src.cohScale() <= 0 {
+		return 0, false
+	}
+	_, _, lo := s.ring()
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	clear(s.refK[:])
+	for i, v := range syms {
+		s.known[syncFirstSym+i] = v
+		s.refSym[syncFirstSym+i], s.refK[syncFirstSym+i] = v, true
+	}
+	s.verifyHz()
+	span := float64(cohFreqSpan)
+	if s.vOK {
+		s.totalHz, span = s.vHz, 0
+	}
+	k0, k1 := syncFirstSym, syncFirstSym+syncSymbols-1
+	t0 := s.ringTime(c, c.ns-1-back-leanSyncEnd) + s.dt
+	hz0, steps := s.totalHz, int(math.Ceil(span/cohWarmStepHz))
+	best, bestTau, bestHz := -1.0, 0.0, hz0
+	for k := -steps; k <= steps; k++ {
+		s.totalHz = hz0 + float64(k)*cohWarmStepHz
+		for tau := -cohWarmSpanSym; tau <= cohWarmSpanSym; tau += cohWarmStepSym {
+			if s.t0 = t0 + tau*s.sps; s.t0-s.sps < float64(lo) {
+				continue
+			}
+			if r := s.rho(k0, k1); r > best {
+				best, bestTau, bestHz = r, tau, s.totalHz
+			}
+		}
+	}
+	if best < 0 {
+		return 0, false
+	}
+	s.totalHz = bestHz
+	s.t0 = t0 + bestTau*s.sps
+	s.fineTime(k0, k1)
+	if s.rho(k0, k1) < cohPlaceRho {
+		return 0, false
+	}
+	if fit := s.freqFit(k0, k1); math.Abs(fit) < cohFreqSpan {
+		s.vHz, s.vOK = s.totalHz+fit, true
+	}
+	return (s.t0 - t0) / s.sps, true
+}
+
 func (s *cohStage) verifyHz() {
 	s.totalHz = s.freq
 	if !s.freqOK {

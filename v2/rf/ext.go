@@ -18,6 +18,7 @@ type leanExt interface {
 	unplaced(c *leanCore, b *Burst)
 	verify(c *leanCore, p enums.SyncPattern) bool
 	scan(c *leanCore) (src int, data bool, back int64, ok bool)
+	lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool)
 }
 
 const extQueue = 8
@@ -735,6 +736,17 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
 		}
 	}
 	return 4*n <= syncSymbols && x.coh.verify(c, p)
+}
+
+func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool) {
+	if x.coh == nil {
+		return 0, false
+	}
+	d, ok := x.coh.lockShift(c, p, back)
+	if math.Abs(d) < cohWarmStepSym/2 {
+		return 0, false
+	}
+	return float32(d), ok
 }
 
 func (x *softExt) locked(c *leanCore, d float32) {

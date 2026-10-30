@@ -81,6 +81,9 @@ func TestTier2LockError(t *testing.T) {
 				if math.Abs(e.hz) > cohFreqSpan {
 					t.Errorf("%s at %v dB seed %d: lock %.0f Hz off", rx.name, cn, e.seed, e.hz)
 				}
+				if math.Abs(e.sym) > 0.25 {
+					t.Errorf("%s at %v dB seed %d: lock %.2f symbol off", rx.name, cn, e.seed, e.sym)
+				}
 			}
 		}
 	}
