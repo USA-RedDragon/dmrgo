@@ -363,7 +363,7 @@ func symTime(c *leanCore, k int64) float64 {
 
 type cohRing interface {
 	cohRing(size int64) ([]complex64, int64, int64)
-	cohPhase(a, b, sign, hz, rate float64) float64
+	cohPhase(a, b, sign, hz, rate float64, acq bool) float64
 	cohKey() (tunes int, unit, dc float64)
 	cohTrack() (float64, bool)
 	cohWeight(t0, t1 float64) float32
@@ -382,8 +382,18 @@ func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
 	return r.yHist, r.yN, r.yN - size
 }
 
-func (r *iqRx) cohPhase(a, b, sign, hz, rate float64) float64 {
+func (r *iqRx) cohPhase(a, b, sign, hz, rate float64, acq bool) float64 {
+	lag := 0.0
+	if r.cHist != nil && !acq {
+		lag = float64(r.cLag)
+	}
+	a, b = a+lag, b+lag
 	var ph float64
+	for i := 0; lag != 0 && i < min(r.nTunes, iqTunes); i++ {
+		if t := r.tunes[(r.nTunes-1-i)%iqTunes]; float64(t.n) > a && float64(t.n) < b {
+			ph -= float64(r.ncoAt(t.n-1)-t.hz) * lag
+		}
+	}
 	for a < b {
 		n := int64(math.Floor(a))
 		f := hz - float64(r.ncoAt(n))
@@ -460,7 +470,7 @@ func (p *discPhase) cohRing(size int64) ([]complex64, int64, int64) {
 	return p.hist, p.n, max(p.lo, p.n-size)
 }
 
-func (p *discPhase) cohPhase(a, b, sign, hz, rate float64) float64 {
+func (p *discPhase) cohPhase(a, b, sign, hz, rate float64, _ bool) float64 {
 	return -2 * math.Pi * sign * hz * (b - a) / rate
 }
 
@@ -530,7 +540,7 @@ func (s *cohStage) phaseAt(t float64) float64 {
 	if b < a {
 		a, b, sign = b, a, -1
 	}
-	return s.src.cohPhase(a, b, sign, s.totalHz, s.rate)
+	return s.src.cohPhase(a, b, sign, s.totalHz, s.rate, s.acq)
 }
 
 func (s *cohStage) fill(k0, k1 int, x []complex64) {

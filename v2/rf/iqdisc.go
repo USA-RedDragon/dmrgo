@@ -224,6 +224,14 @@ func (d *iqDisc) turn(w float32) {
 		d.hist[j] *= turnBy(w, age0+per*r-ref)
 		d.hist[j+n] = d.hist[j]
 	}
+	if c := d.coh; c != nil {
+		m := len(c.taps)
+		for r := range m {
+			j := (c.head - 1 - r + m) % m
+			c.hist[j] *= turnBy(w, age0+per*r-ref)
+			c.hist[j+m] = c.hist[j]
+		}
+	}
 	d.ncoRot *= turnBy(w, -ref)
 	if m := len(d.afc); m > 0 {
 		d.afcSum = 0

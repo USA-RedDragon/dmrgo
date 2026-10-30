@@ -259,3 +259,51 @@ func TestCoreTier3Lag(t *testing.T) {
 		t.Errorf("I/Q at %d Hz: %d bursts, a lag of %.0f samples, Lag %d", rate, n, worst, r.Lag())
 	}
 }
+
+func TestCoreTier3WideTune(t *testing.T) {
+	t.Parallel()
+	run := func(tuneAt int) []complex64 {
+		var d iqDisc
+		d.init(2, iqFilter{})
+		d.coh = newIQCohFIR(cohWideTaps, cohWideKaiser, cohWideCutHz)
+		if tuneAt < 0 {
+			d.tune(1500)
+		}
+		var out []complex64
+		for i := range 4800 {
+			if i == tuneAt {
+				d.tune(1500)
+			}
+			p := 2 * math.Pi * 1700 * float64(i) / basebandRate
+			if _, _, ok := d.push(complex64(cmplx.Rect(1, p))); ok {
+				out = append(out, d.coh.y)
+			}
+		}
+		return out
+	}
+	ref, got := run(-1), run(2001)
+	rot := got[len(got)-1] / ref[len(ref)-1]
+	worst := 0.0
+	for i := 1001; i < len(got); i++ {
+		worst = max(worst, cmplx.Abs(complex128(got[i]-rot*ref[i])))
+	}
+	if worst > 1e-3 {
+		t.Errorf("wide filter output after a tune differs from a filter tuned from the start by up to %.4f", worst)
+	}
+}
+
+func TestCoreTier3Codec2Call(t *testing.T) {
+	t.Parallel()
+	for _, late := range []bool{false, true} {
+		x, want, start := codec2Call(t, 4, late, 30)
+		r := mustNewOpt(RxConfig{Tier: Tier3, Rate: basebandRate, Format: IQFormatCU8}, coreIQ3Options())
+		var got []Burst
+		for k := 0; k < len(x); k += 4096 {
+			got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
+		}
+		got = append(got, r.flushAll()...)
+		if bad := codec2Bad(got, want, start, late); bad != 0 {
+			t.Errorf("late entry %v: %d of %d Codec2 frames differ", late, bad, len(want))
+		}
+	}
+}

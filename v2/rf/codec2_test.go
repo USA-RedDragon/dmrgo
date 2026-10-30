@@ -93,32 +93,37 @@ func TestReceiverCodec2Call(t *testing.T) {
 				} else {
 					got = receiveBaseband(x, rn.tier)
 				}
-				slots := make([][9]byte, len(want))
-				seen := make([]bool, len(want)/layer2.VoiceSlotsPerBurst)
-				for i := range got {
-					b := &got[i]
-					k := int(math.Round((b.Seconds - start) / (2 * slotSeconds)))
-					if k < 0 || k >= len(seen) {
-						continue
-					}
-					seen[k] = true
-					data, _ := b.Decoded()
-					if late && k == 0 {
-						data = b.Data
-					}
-					s := data.VoiceSlots()
-					copy(slots[layer2.VoiceSlotsPerBurst*k:], s[:])
-				}
-				bad := 0
-				for i := range want {
-					if !seen[i/layer2.VoiceSlotsPerBurst] || slots[i] != want[i] {
-						bad++
-					}
-				}
+				bad := codec2Bad(got, want, start, late)
 				if bad != 0 {
 					t.Errorf("%d of %d Codec2 frames differ", bad, len(want))
 				}
 			})
 		}
 	}
+}
+
+func codec2Bad(got []Burst, want [][9]byte, start float64, late bool) int {
+	slots := make([][9]byte, len(want))
+	seen := make([]bool, len(want)/layer2.VoiceSlotsPerBurst)
+	for i := range got {
+		b := &got[i]
+		k := int(math.Round((b.Seconds - start) / (2 * slotSeconds)))
+		if k < 0 || k >= len(seen) {
+			continue
+		}
+		seen[k] = true
+		data, _ := b.Decoded()
+		if late && k == 0 {
+			data = b.Data
+		}
+		s := data.VoiceSlots()
+		copy(slots[layer2.VoiceSlotsPerBurst*k:], s[:])
+	}
+	bad := 0
+	for i := range want {
+		if !seen[i/layer2.VoiceSlotsPerBurst] || slots[i] != want[i] {
+			bad++
+		}
+	}
+	return bad
 }
