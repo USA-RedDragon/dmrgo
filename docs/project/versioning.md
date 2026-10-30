@@ -15,13 +15,7 @@ The breaking-changes page of each minor release:
 
 ## The Go version
 
-The `go` line of `v2/go.mod` gives the oldest Go release that builds the module:
-
-<!-- dmrgo:code file=v2/go.mod lines=3-3 -->
-```
-go 1.24.0
-```
-<!-- /dmrgo:code -->
+The `go` line of `v2/go.mod` gives the oldest Go release that builds the module, now Go <!-- dmrgo:gomod field=go -->`1.24.0`<!-- /dmrgo:gomod -->.
 
 The minimum Go version rises only in a minor release, with a note in the release notes. CI runs the tests at this version. See [PC](../targets/pc.md#platforms-in-ci).
 
@@ -40,11 +34,11 @@ The ABI number of each release:
 | v2.0.6 to v2.0.8 | 3 | `libdmrgo.so.3` |
 | the release after v2.0.8 | 4 | `libdmrgo.so.4` |
 
-`v2/capi/abi.txt` holds the ABI number and each C declaration of the current ABI. Its first line is the number:
+`v2/capi/abi.txt` holds the ABI number and each C declaration of the current ABI. The generated header `v2/capi/dmrgo_gen.h` defines the number:
 
-<!-- dmrgo:code file=v2/capi/abi.txt lines=1-1 -->
-```
-abi 4
+<!-- dmrgo:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
+```c
+#define DMRGO_ABI_VERSION 4
 ```
 <!-- /dmrgo:code -->
 

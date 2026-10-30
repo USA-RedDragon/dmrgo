@@ -4,13 +4,7 @@ This page shows how to build libdmrgo, the C form of dmrgo in `v2/capi`, and how
 
 ## What you need
 
-- Go, at the version of the `go` line of `v2/capi/go.mod`:
-
-<!-- dmrgo:code file=v2/capi/go.mod lines=3-3 -->
-```
-go 1.24.0
-```
-<!-- /dmrgo:code -->
+- Go <!-- dmrgo:gomod field=go file=v2/capi/go.mod -->`1.24.0`<!-- /dmrgo:gomod --> or later, the version of the `go` line of `v2/capi/go.mod`.
 
 - A C compiler and GNU make. `make static` also needs `ld`, `objcopy` and `ar` from binutils. `make test` also needs a C++ compiler and `nm`.
 - Optional: libcodec2 and its pkg-config file, for the native Codec2 backend (`GOFLAGS=-tags=codec2native`). The default build runs libcodec2 in WebAssembly and needs no system libcodec2.
@@ -21,7 +15,7 @@ go 1.24.0
 
 libdmrgo has a C ABI number of its own, `DMRGO_ABI_VERSION`. The generated header defines it:
 
-<!-- dmrgo:code file=v2/capi/dmrgo_gen.h lines=14-14 -->
+<!-- dmrgo:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
 ```c
 #define DMRGO_ABI_VERSION 4
 ```
@@ -60,7 +54,7 @@ This writes `v2/capi/build/libdmrgo.so.N` and the link `libdmrgo.so`. Other targ
 
 The CI job of the C API runs these builds, also with the native Codec2 backend and without libcodec2:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=211-221 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.capi.steps[Go tests of the C API:Build libdmrgo without libcodec2]" -->
 ```yaml
 - name: Go tests of the C API
   run: go test -C v2/capi -race ./...
@@ -82,7 +76,7 @@ Include `dmrgo.h`. It includes `dmrgo_gen.h`, which holds the C form of each pac
 
 This part of the C test program builds a CSBK burst, decodes it, reads its addresses and encodes it again:
 
-<!-- dmrgo:code file=v2/capi/test/api_test.c lines=475-512 -->
+<!-- dmrgo:code file=v2/capi/test/api_test.c symbol=test_layer2 -->
 ```c
 static void test_layer2(void) {
 	dmrgo_layer2_data_t data = {0};

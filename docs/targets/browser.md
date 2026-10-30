@@ -10,7 +10,7 @@ This page shows how to build dmrgo to WebAssembly and run it in a web page, with
 
 The whole `v2` module builds for `GOOS=js GOARCH=wasm`, and CI runs the Codec2 tests on the WebAssembly engine of Node:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=58-62 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.js-wasm.steps[Build for js/wasm:Codec2 tests on the browser engine in Node]" -->
 ```yaml
 - name: Build for js/wasm
   run: GOOS=js GOARCH=wasm go build -C v2 ./...

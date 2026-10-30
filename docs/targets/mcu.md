@@ -6,7 +6,7 @@ This page shows how to build dmrgo with TinyGo for a microcontroller, which boar
 
 - TinyGo 0.41 or 0.44. CI uses the TinyGo 0.44 image:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=226-226 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.tinygo.container.image -->
 ```yaml
 image: tinygo/tinygo:0.44.0@sha256:98126534a0653966913b803d26805ea79250a244217d921d74044cfedc1d24a2
 ```
@@ -47,7 +47,7 @@ go test -run '^Example$' -v ./examples/tinygo
 
 The TinyGo job of CI builds these targets from the `v2` directory:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=240-261 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.tinygo.steps[Build the example:Build the Tier 0 modulator examples without a heap]" -->
 ```yaml
 - name: Build the example
   run: |
@@ -80,7 +80,7 @@ The TinyGo job of CI builds these targets from the `v2` directory:
 
 The same job runs the library tests with TinyGo, except the commands, `rf` and the examples other than `examples/tinygo`, and runs the allocation tests at the stack size of the Pico:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=263-275 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.tinygo.steps[Test the library:Check the heap allocation sites of the whole API for the pico and riscv-qemu]" -->
 ```yaml
 - name: Test the library
   run: tinygo test $(go list ./... | grep -v -e /cmd/ -e /examples/ -e /rf$) ./examples/tinygo
