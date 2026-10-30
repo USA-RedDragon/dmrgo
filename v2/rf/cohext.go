@@ -228,12 +228,12 @@ func newCohStageOf(opt *options) *cohStage {
 	s.size = opt.cohRing()
 	s.setRing(2)
 	s.buf = make([]complex64, (syncSymbols+2)*sps)
-	s.refPh = make([]float64, (syncSymbols+2*m.pp.span+1)*samplesPerSy)
-	s.refC = make([]complex64, (syncSymbols+2*m.pp.span+1)*sps)
+	s.refPh = make([]float64, slotSymbols*samplesPerSy)
+	s.refC = make([]complex64, slotSymbols*sps)
 	s.pp48 = newPhasePulse(samplesPerSy)
-	s.refR = make([]complex64, (syncSymbols+2*m.pp.span+1)*samplesPerSy)
-	s.refX = make([]complex64, (syncSymbols+2*m.pp.span+1)*sps)
-	s.refIn = make([]int, syncSymbols+2*m.pp.span+1)
+	s.refR = make([]complex64, slotSymbols*samplesPerSy)
+	s.refX = make([]complex64, slotSymbols*sps)
+	s.refIn = make([]int, slotSymbols)
 	s.symX = make([]complex64, cohSymN*sps)
 	s.symAt = make([]uint32, cohSymN)
 	for i := range s.runs {
@@ -960,12 +960,10 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 	}
 	clear(s.refK[:])
 	s.refFixed(fixed, cachSymbols, slotSymbols)
-	var acc, accL complex128
+	acc, accL := s.freqAcc(cachSymbols, slotSymbols-1)
 	var snr float64
 	n := 0
 	for k0 := cachSymbols; k0+syncSymbols <= slotSymbols; k0 += syncSymbols {
-		a1, aL := s.freqAcc(k0, k0+syncSymbols-1)
-		acc, accL = acc+a1, accL+aL
 		if amp, noise := s.levels(k0, k0+syncSymbols-1); noise > 0 {
 			snr += amp * amp / noise
 			n++
