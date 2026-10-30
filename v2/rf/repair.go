@@ -129,25 +129,8 @@ func (p *repairer) embeddedLC(c *chanTrack, es *[4]*trackEntry) {
 		}
 		p.bursts[i] = e.out.fixed
 	}
-	ok := false
-	var lc [9]byte
-	if c.accN > 0 {
-		for i := range p.sum {
-			p.sum[i] = c.acc[i]
-			softCombine(p.sum[i][:], p.cur[i][:])
-		}
-		l, res := p.soft.decodeEmbeddedFrags(&p.sum, &p.bursts)
-		if ok = !res.Uncorrectable; ok {
-			lc = l
-			c.acc = p.sum
-			c.accN = min(c.accN+1, maxCombine)
-		}
-	}
-	if !ok {
-		l, res := p.soft.decodeEmbeddedFrags(&p.cur, &p.bursts)
-		ok, lc = !res.Uncorrectable, l
-		c.acc, c.accN = p.cur, 1
-	}
+	c.es.rho = elcSpreadCoh
+	lc, ok := p.soft.decodeELC(&p.cur, &c.acc, &p.sum, &c.accN, &c.accLC, &p.bursts, true, &c.es)
 	if !ok {
 		return
 	}

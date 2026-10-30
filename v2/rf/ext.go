@@ -41,6 +41,8 @@ type extChan struct {
 	b     int64
 	acc   [4][embBits]int16
 	accN  int
+	accLC [9]byte
+	es    elcStat
 	late  [extLate]lateBurst
 	lateN int
 	raw   bool
@@ -558,23 +560,11 @@ func (x *softExt) embeddedLC(ch *extChan, e int64) {
 		}
 		x.out[i] = b.Fixed
 	}
-	ok := false
-	var lc [9]byte
-	if ch.accN > 0 {
-		for i := range x.sum {
-			x.sum[i] = ch.acc[i]
-			softCombine(x.sum[i][:], ch.frag[i][:])
-		}
-		if l, res := x.soft.decodeEmbeddedFrags(&x.sum, &x.out); !res.Uncorrectable {
-			ok, lc = true, l
-			ch.acc, ch.accN = x.sum, min(ch.accN+1, maxCombine)
-		}
+	ch.es.rho = elcSpreadLean
+	if x.coh != nil {
+		ch.es.rho = elcSpreadCoh
 	}
-	if !ok {
-		l, res := x.soft.decodeEmbeddedFrags(&ch.frag, &x.out)
-		ok, lc = !res.Uncorrectable, l
-		ch.acc, ch.accN = ch.frag, 1
-	}
+	lc, ok := x.soft.decodeELC(&ch.frag, &ch.acc, &x.sum, &ch.accN, &ch.accLC, &x.out, true, &ch.es)
 	if ok {
 		if r, voice := rawVoiceLC(lc[:]); voice {
 			ch.raw = r
@@ -1114,6 +1104,7 @@ func (x *softExt) end(c *leanCore) {
 	x.ch[0].accN, x.ch[1].accN = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.ch[0].raw, x.ch[1].raw = false, false
+	x.ch[0].es, x.ch[1].es = elcStat{}, elcStat{}
 	if c.unproven {
 		x.n = 0
 	}

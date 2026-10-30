@@ -1003,6 +1003,169 @@ func (d *softDecoder) decodeEmbeddedFrags(llr *[4][embBits]int16, out *[4]layer2
 	return softEmbLCOf(cw), fec.Result{BitsChecked: c.n, ErrorsCorrected: s.errors(cw), Uncorrectable: !ok}
 }
 
+// embMiss is the share of right embedded LC words that elcStat.bound lets a
+// check reject.
+const embMiss = 0.001
+
+// embLCDistance is the minimum distance of the embedded LC block of ETSI TS
+// 102 361-1 B.2.1: the product of the distance 4 of its Hamming (16,11,4) rows
+// and the distance 2 of its parity column.
+const embLCDistance = 8
+
+// The superframe-to-superframe spread of the fragment errors, as the
+// intraclass correlation of a beta-binomial: the variance of the count of
+// disagreeing bits among 128, measured on 24 streams of one LC at 0 and 1 dB,
+// is 1.4 times binomial after the lean demodulator and 2.7 times after the
+// coherent stage, from error events that span symbols.
+const (
+	elcSpreadLean = (1.4 - 1) / (4*embBits - 1)
+	elcSpreadCoh  = (2.7 - 1) / (4*embBits - 1)
+)
+
+// embLCRadius is the number of bit errors that the embedded LC block corrects
+// without doubt.
+const embLCRadius = (embLCDistance - 1) / 2
+
+// elcStat holds the fragment bits of the last embedded LC word of one channel
+// and counts the hard fragment bits of each later superframe that disagree
+// with them, over the last maxCombine superframes. The word is fixed before
+// the superframe arrives, so the count is not biased toward the noise of the
+// superframe as the count against its own decode would be.
+type elcStat struct {
+	k, m   float64
+	rho    float64
+	prev   [4]uint32
+	prevOK bool
+	miss   bool
+}
+
+func (e *elcStat) note(d int) {
+	if e.m >= maxCombine*4*embBits {
+		e.k, e.m = e.k*(maxCombine-1)/maxCombine, e.m*(maxCombine-1)/maxCombine
+	}
+	e.k, e.m = e.k+float64(d), e.m+4*embBits
+}
+
+func (e *elcStat) disagree(cur *[4][embBits]int16) int {
+	n := 0
+	for i := range cur {
+		for j, v := range cur[i] {
+			if v != 0 && (v < 0) != (e.prev[i]>>(embBits-1-j)&1 != 0) {
+				n++
+			}
+		}
+	}
+	return n
+}
+
+func (e *elcStat) keep(out *[4]layer2.RawBurst) {
+	for i := range out {
+		var w uint32
+		for j := range embBits {
+			q := embFirstBit + j
+			w = w<<1 | uint32(out[i][q/8]>>(7-q%8)&1)
+		}
+		e.prev[i] = w
+	}
+	e.prevOK = true
+}
+
+// bound returns the smallest t with P(X > t) <= embMiss for the number X of
+// disagreeing bits among n. X is beta-binomial: its rate has the mean of the
+// counts and the spread of whichever is wider, the Jeffreys posterior of the
+// counts or the superframe-to-superframe spread rho of the demodulator.
+func (e *elcStat) bound(n int) int {
+	if e.m == 0 {
+		return n
+	}
+	p := (e.k + 0.5) / (e.m + 1)
+	c := e.m + 1
+	if e.rho > 0 {
+		c = min(c, 1/e.rho-1)
+	}
+	a, b := p*c, (1-p)*c
+	lb, _ := math.Lgamma(a + b)
+	la, _ := math.Lgamma(a)
+	lbb, _ := math.Lgamma(b)
+	ln, _ := math.Lgamma(float64(n) + a + b)
+	lc, _ := math.Lgamma(float64(n + 1))
+	cdf := 0.0
+	for t := range n {
+		x, _ := math.Lgamma(float64(t) + a)
+		y, _ := math.Lgamma(float64(n-t) + b)
+		c2, _ := math.Lgamma(float64(t + 1))
+		c3, _ := math.Lgamma(float64(n - t + 1))
+		cdf += math.Exp(lc - c2 - c3 + x + y - ln + lb - la - lbb)
+		if cdf >= 1-embMiss {
+			return t
+		}
+	}
+	return n
+}
+
+// decodeELC decodes the embedded LC of one superframe from cur and the
+// combined fragments of the earlier superframes in acc. A decode of cur alone
+// within embLCRadius wins over the combined decode, so a talker who changes the
+// LC within a call gets the new LC at once. A combined decode that gives the
+// last LC again needs the hard bits of cur within the bound of the error rate
+// measured against that LC, or a changed LC would pass as the old one. The
+// first superframe out of the bound yields no LC and leaves acc as it is, so
+// one superframe of bad luck costs one LC; a second one in a row resets acc.
+// keep false leaves acc and st unchanged.
+func (d *softDecoder) decodeELC(cur, acc, sum *[4][embBits]int16, accN *int, accLC *[9]byte, out *[4]layer2.RawBurst, keep bool, st *elcStat) ([9]byte, bool) {
+	fit := true
+	if keep && st.prevOK {
+		np := st.disagree(cur)
+		if fit = np <= st.bound(4*embBits); fit {
+			st.note(np)
+		}
+	}
+	l, res := d.decodeEmbeddedFrags(cur, out)
+	if !res.Uncorrectable && res.ErrorsCorrected <= embLCRadius {
+		if keep {
+			if *accN > 0 && l == *accLC {
+				for i := range acc {
+					softCombine(acc[i][:], cur[i][:])
+				}
+				*accN = min(*accN+1, maxCombine)
+			} else {
+				*acc, *accN = *cur, 1
+			}
+			*accLC = l
+			st.keep(out)
+			st.miss = false
+		}
+		return l, true
+	}
+	if *accN > 0 && keep {
+		for i := range sum {
+			sum[i] = acc[i]
+			softCombine(sum[i][:], cur[i][:])
+		}
+		c, cres := d.decodeEmbeddedFrags(sum, out)
+		switch {
+		case cres.Uncorrectable:
+		case fit || c != *accLC:
+			*acc, *accN, *accLC = *sum, min(*accN+1, maxCombine), c
+			st.keep(out)
+			st.miss = false
+			return c, true
+		case !st.miss:
+			st.miss = true
+			return c, false
+		}
+		st.miss = false
+		l, res = d.decodeEmbeddedFrags(cur, out)
+	}
+	if keep {
+		*acc, *accN, *accLC = *cur, 1, l
+		if !res.Uncorrectable {
+			st.keep(out)
+		}
+	}
+	return l, !res.Uncorrectable
+}
+
 func softEmbLCAccept(cw *[softOSDWords]uint64) bool {
 	c := &softOSDCodes[softEmbLCCode]
 	var cs uint8

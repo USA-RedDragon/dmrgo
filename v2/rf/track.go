@@ -59,11 +59,13 @@ type trackEntry struct {
 }
 
 type chanTrack struct {
-	sf   int64
-	hdr  int64
-	acc  [4][embBits]int16
-	accN int
-	raw  bool
+	sf    int64
+	hdr   int64
+	acc   [4][embBits]int16
+	accN  int
+	accLC [9]byte
+	es    elcStat
+	raw   bool
 }
 
 type tracker struct {
@@ -87,7 +89,7 @@ func newTracker() *tracker {
 func (t *tracker) reset() {
 	t.head, t.n = 0, 0
 	for i := range t.ch {
-		t.ch[i].sf, t.ch[i].hdr, t.ch[i].accN, t.ch[i].raw = noSlot, noSlot, 0, false
+		t.ch[i].sf, t.ch[i].hdr, t.ch[i].accN, t.ch[i].raw, t.ch[i].es = noSlot, noSlot, 0, false, elcStat{}
 	}
 	t.votes = [16]int{}
 }
