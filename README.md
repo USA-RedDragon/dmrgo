@@ -66,15 +66,15 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 
 [Features](docs/reference/features.md) gives the full list.
 
-- Bursts and PDUs (`layer2`, `layer2/pdu`): decode, encode and build every burst and PDU of the air interface, with in-place field access, voice superframes, the embedded and Short LC assemblers and the MMDVMHost burst check.
-- Packet data (`layer2/packet`, `data`): confirmed and unconfirmed packets at rate 1/2, 3/4 and 1, with selective retry, sliding windows and the applications that radios carry in them: IP, text messages, positions, LIP, and the MOTOTRBO and Hytera services.
-- Calls (`voice`, `csbk`, `privacy`): voice call receive and transmit with late entry, channel access and hang time; CSBK services and TDMA direct mode timing; ARC4, AES and Basic Privacy, opt in.
-- Base station and trunking (`bs`, `trunk`): a two-slot repeater or hotspot, and Tier III trunking for the MS, a scanner and a single-site TSCC.
-- Network protocols (`transport/...`): the MMDVM network protocol, HBRP, OpenBridge, Motorola IPSC, Hytera IPMSC and the MMDVM serial protocol, with session machines and their authentication.
-- Radio (`rf`): a receiver of I/Q and FM discriminator audio in four tiers, from a microcontroller to a PC ([Receiver](docs/rx/README.md)), and a transmitter of I/Q and modulator audio that accepts only setups measured to keep the limits of a stated region and service ([Transmitter](docs/tx/README.md)).
-- Vocoders (`vocoder`): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Transcode voice](docs/guides/transcode-voice.md)).
+- Bursts and PDUs ([`layer2`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2), [`layer2/pdu`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu)): decode, encode and build every burst and PDU of the air interface, with in-place field access, voice superframes, the embedded and Short LC assemblers and the MMDVMHost burst check.
+- Packet data ([`layer2/packet`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet), [`data`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data)): confirmed and unconfirmed packets at rate 1/2, 3/4 and 1, with selective retry, sliding windows and the applications that radios carry in them: IP, text messages, positions, LIP, and the MOTOTRBO and Hytera services.
+- Calls ([`voice`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice), [`csbk`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk), [`privacy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy)): voice call receive and transmit with late entry, channel access and hang time; CSBK services and TDMA direct mode timing; ARC4, AES and Basic Privacy, opt in.
+- Base station and trunking ([`bs`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/bs), [`trunk`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk)): a two-slot repeater or hotspot, and Tier III trunking for the MS, a scanner and a single-site TSCC.
+- Network protocols (`transport/...`: [`dmrd`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd), [`ipsc`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc), [`hytera`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera), [`mmdvm`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm)): the MMDVM network protocol, HBRP, OpenBridge, Motorola IPSC, Hytera IPMSC and the MMDVM serial protocol, with session machines and their authentication.
+- Radio ([`rf`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf)): a receiver of I/Q and FM discriminator audio in four tiers, from a microcontroller to a PC ([Receiver](docs/rx/README.md)), and a transmitter of I/Q and modulator audio that accepts only setups measured to keep the limits of a stated region and service ([Transmitter](docs/tx/README.md)).
+- Vocoders ([`vocoder`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder)): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Transcode voice](docs/guides/transcode-voice.md)).
 - FEC: every DMR code and CRC, each with one result type.
-- C API (`v2/capi`): libdmrgo, a shared or static library with the whole API in C.
+- C API (`v2/capi`, [C header](docs/reference/c-api.md)): libdmrgo, a shared or static library with the whole API in C.
 - No allocation on the hot path, with gc and TinyGo ([Allocation](docs/concepts/allocation.md), [Microcontrollers](docs/targets/mcu.md)).
 
 ## Documentation
