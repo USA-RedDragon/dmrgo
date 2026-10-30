@@ -766,7 +766,7 @@ func (x *softExt) scan(c *leanCore) (int, bool, int64, bool) {
 }
 
 func (x *softExt) verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool {
-	if x.coh == nil || x.coh.locked {
+	if x.coh == nil {
 		return false
 	}
 	n := 0

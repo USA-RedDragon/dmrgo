@@ -391,9 +391,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 			}
 			r.tunes = new([iqTunes]iqTune)
 			x.setCoh(newCohStage(r, &opt))
-			if !opt.CohLocked {
-				r.d.signMiss = opt.signMiss()
-			}
+			r.d.signMiss = opt.signMiss()
 		}
 		r.d.ext = x
 		r.attachRefill(x)

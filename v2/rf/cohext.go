@@ -22,8 +22,6 @@ type cohStage struct {
 	trialing        bool
 	amp, noise      [cohFitScales]float64
 	easySNR         float64
-	skipSNR         float64
-	locked          bool
 	model           *cpmModel
 	tr              *trellis
 	ex              *exactStage
@@ -212,7 +210,7 @@ func (s *cohStage) ringTime(c *leanCore, k int64) float64 {
 func newCohStageOf(opt *options) *cohStage {
 	sps := cohSPS
 	m := newCPMModel(1, sps)
-	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
+	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, budget: opt.CohBudget,
 		noNext: opt.CohNoNext, noCross: opt.CohNoCross, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm}
 	if s.llrK == 0 {
 		s.llrK = 1
@@ -365,7 +363,6 @@ func symTime(c *leanCore, k int64) float64 {
 
 type cohRing interface {
 	cohRing(size int64) ([]complex64, int64, int64)
-	cohLazy() bool
 	cohPhase(a, b, sign, hz, rate float64) float64
 	cohKey() (tunes int, unit, dc float64)
 	cohTrack() (float64, bool)
@@ -384,10 +381,6 @@ func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
 		return r.cHist, r.yN - r.cLag, r.yN - size
 	}
 	return r.yHist, r.yN, r.yN - size
-}
-
-func (r *iqRx) cohLazy() bool {
-	return false
 }
 
 func (r *iqRx) cohPhase(a, b, sign, hz, rate float64) float64 {
@@ -472,10 +465,6 @@ func (p *discPhase) cohRing(size int64) ([]complex64, int64, int64) {
 	return p.hist, p.n, max(p.lo, p.n-size)
 }
 
-func (p *discPhase) cohLazy() bool {
-	return p.lazy
-}
-
 func (p *discPhase) cohPhase(a, b, sign, hz, rate float64) float64 {
 	return -2 * math.Pi * sign * hz * (b - a) / rate
 }
@@ -533,7 +522,7 @@ func (s *cohStage) ringAt(hist []complex64, k, lo, n int64) complex64 {
 }
 
 func (s *cohStage) sample(t float64) complex64 {
-	if s.trialing || s.src.cohLazy() {
+	if s.trialing {
 		return s.ph.trialAt(t, s.t0, s.trial, s.totalHz)
 	}
 	hist, n, lo := s.ring()
@@ -555,7 +544,7 @@ func (s *cohStage) phaseAt(t float64) float64 {
 
 func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	sps := s.model.sps
-	if s.dir < 0 || s.trialing || s.src.cohLazy() {
+	if s.dir < 0 || s.trialing {
 		for i := k0; i < k1; i++ {
 			s.fillSym(s.g0+s.dir*i, x[(i-k0)*sps:(i-k0+1)*sps])
 		}
@@ -1087,7 +1076,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	for i := range s.dist {
 		s.dist[i] = math.MaxInt
 	}
-	if s.quiet(c, segs[0], nseg, b) {
+	if s.quiet(b) {
 		return false
 	}
 	if nseg != 1 {
@@ -1118,9 +1107,6 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 			s.totalHz = s.freq
 		}
 		s.fitDeviation(segs[0][0], segs[0][1], f0+fit-s.freq)
-	}
-	if p := s.ph; p != nil && p.lazy && !p.cal {
-		return false
 	}
 	if !s.average(segs, nseg) {
 		return false
@@ -1203,21 +1189,9 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 	return true
 }
 
-func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int, b *Burst) bool {
-	if !s.clear(c) {
-		if s.fitOnly || s.spend(b.Slot) {
-			return false
-		}
-		s.lastSync = 0
-		return true
-	}
-	if nseg == 1 {
-		if amp, noise := s.levels(seg[0], seg[1]); amp > 0 && noise > 0 {
-			g := float64(syncSymbols) / (syncSymbols + cohLevelSyms)
-			s.ampAvg += g * (amp - s.ampAvg)
-			s.noiseAvg += g * (noise - s.noiseAvg)
-			s.symAvg += g * (s.lastSym - s.symAvg)
-		}
+func (s *cohStage) quiet(b *Burst) bool {
+	if s.fitOnly || s.spend(b.Slot) {
+		return false
 	}
 	s.lastSync = 0
 	return true
@@ -1235,19 +1209,6 @@ func (s *cohStage) spend(j int64) bool {
 }
 
 const cohBudgetMax = 6
-
-func (s *cohStage) clear(c *leanCore) bool {
-	if s.skipSNR <= 0 {
-		return false
-	}
-	return c.dev*c.dev >= cohClearCore*c.discVar || s.nFit >= cohQuietFits && s.ampAvg*s.ampAvg >= s.skipSNR*s.noiseAvg && c.dev*c.dev >= cohQuietCore*c.discVar
-}
-
-const (
-	cohQuietFits = 4
-	cohQuietCore = 4
-	cohClearCore = 16
-)
 
 const cohLevelSyms = 48
 
@@ -1293,7 +1254,7 @@ const cohPlaceRho = 0.3
 
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	s.slotRadio(c, int64(j))
-	if s.src.cohScale() <= 0 || !s.freqOK || s.clear(c) {
+	if s.src.cohScale() <= 0 || !s.freqOK {
 		return false
 	}
 	_, _, lo := s.ring()

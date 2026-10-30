@@ -17,14 +17,11 @@ func (r *discRx) addExt(opt *options) {
 		return
 	}
 	var ph *discPhase
-	switch {
-	case opt.CohExt && opt.CohLazy:
-		ph = newDiscPhase(r, r.hz(), true, opt.cohRing())
-	case opt.CohExt:
+	if opt.CohExt {
 		hz := r.hz()
 		r.setup(discSetup{Hz: discRate, OnBurst: r.onBurst, opt: opt, pol: r.f.polBits&polOn != 0}, r.f.dec)
 		r.lagTicks -= int32(math.Round(float64(discRate-hz) * 256 / float64(hz)))
-		ph = newDiscPhase(r, hz, false, opt.cohRing())
+		ph = newDiscPhase(r, hz, opt.cohRing())
 	}
 	x := softExtOf(opt, 2*r.tm.step)
 	if ph != nil {
@@ -33,12 +30,7 @@ func (r *discRx) addExt(opt *options) {
 		x.coh.src, x.coh.ph, ph.coh = ph, ph, x.coh
 		ph.useHeld = opt.CohExact
 		x.coh.easySNR = discEasySNR
-		if ph.lazy {
-			x.coh.dt = lazyDT(r.hz())
-		}
-		if !opt.CohLocked {
-			r.signMiss = opt.signMiss()
-		}
+		r.signMiss = opt.signMiss()
 	}
 	r.ext = x
 }
@@ -99,7 +91,7 @@ func (r *discRx) writeCore(x []int16) {
 }
 
 func (r *discRx) inputHz() int {
-	if e, _ := r.ext.(*softExt); e != nil && e.ph != nil && !e.ph.lazy {
+	if e, _ := r.ext.(*softExt); e != nil && e.ph != nil {
 		return e.ph.inputHz()
 	}
 	return r.hz()

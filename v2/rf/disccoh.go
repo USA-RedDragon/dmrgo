@@ -63,28 +63,15 @@ type discPhase struct {
 	held     float64
 	heldN    int
 	useHeld  bool
-	lazy     bool
 	out      [discPhaseChunk + discPhaseLag + 4]int16
 }
 
-func lazyDT(hz int) float64 {
-	switch hz {
-	case discRate:
-		return 0.7
-	case discRate / 2:
-		return -0.8
-	}
-	return -0.9
-}
-
-func newDiscPhase(r *discRx, hz int, lazy bool, size int64) *discPhase {
-	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, lazy: lazy, clicks: make([]uint64, (size+63)/64)}
+func newDiscPhase(r *discRx, hz int, size int64) *discPhase {
+	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, clicks: make([]uint64, (size+63)/64)}
 	for i := range p.clipAt {
 		p.clipAt[i] = -1
 	}
-	if !lazy {
-		p.hist = make([]complex64, size)
-	}
+	p.hist = make([]complex64, size)
 	fc := discCutHz / discRate
 	var sum float64
 	for i := range p.taps {
@@ -119,18 +106,6 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	n := min(len(x), int(discPhaseChunk*p.den/p.num))
 	p.update()
 	lo, hi := p.clickBounds()
-	if p.lazy {
-		for _, u := range x[:n] {
-			p.clip(u)
-			p.click(u, lo, hi)
-			p.last += int64(u)
-			p.sum[p.sumN&(p.size-1)] = p.last
-			p.sumN++
-		}
-		p.n = max((p.sumN-3)*p.num/p.den, 0)
-		p.lo = (max(p.sumN-p.size, p.o)+2)*p.num/p.den + 1
-		return n, x[:n]
-	}
 	k := 0
 	scale := float32(float64(p.num) / (float64(p.den) * p.a))
 	off := float32(p.b * float64(p.den) / float64(p.num))
@@ -400,9 +375,6 @@ func (p *discPhase) build(unit, dc float64) {
 	if p.sumN > 0 {
 		p.sumO = p.sum[p.o&(p.size-1)]
 	}
-	if p.lazy {
-		return
-	}
 	lo := max(((p.o+p.wait)*p.num+p.den-1)/p.den, p.rawN-p.size)
 	p.lo = lo + discPhaseLag
 	for m := lo; m < p.rawN; m++ {
@@ -423,7 +395,7 @@ func rescaleTurn(v complex64, k, d float64) complex64 {
 }
 
 func (p *discPhase) offsetHz() float64 {
-	if c := p.c; p.lazy || c.locked && !c.bs {
+	if c := p.c; c.locked && !c.bs {
 		return float64(p.coreHz())
 	}
 	return float64(ringHz(p.avg))

@@ -56,7 +56,6 @@ const (
 type options struct {
 	DiscOutlier           float64
 	ClickSpan             float64
-	CohSkipSNR            float64
 	CohBudget             float64
 	CombBudget            float64
 	HGate                 float64
@@ -112,16 +111,13 @@ type options struct {
 	IQSpecHunt            bool
 	LevelUp               bool
 	CohExt                bool
-	CohLazy               bool
 	CohExact              bool
-	CohLocked             bool
 	CohNoNext, CohNoCross bool
 	IQCutAuto             bool
 	CohSlotFit            bool
 	CohWarm               bool
 	CohWide               bool
 	IQSpecFine            bool
-	CohSignMiss           uint8
 	CohSymNoise           uint8
 	MidTiming             bool
 	HuntLinMid            bool
@@ -228,9 +224,6 @@ const (
 )
 
 func (o *options) signMiss() uint8 {
-	if o.CohSignMiss > 0 {
-		return o.CohSignMiss
-	}
 	return leanExtSignMiss
 }
 
