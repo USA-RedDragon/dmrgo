@@ -151,7 +151,7 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.none.+700.ms.rc.+500ppm.low.a48000.inf/t3":            {checks: "missing"},
 	"gap.none.-1500.ms.voice.0ppm.low.cs16-2048k.40dB/t0":      {checks: "missing,seconds"},
 	"gap.none.-1500.ms.voice.0ppm.low.cs16-2048k.40dB/t1":      {checks: "missing,seconds"},
-	"gap.none.-1500.ms.voice.0ppm.low.cs16-2048k.40dB/t2":      {checks: "extra,missing,seconds"},
+	"gap.none.-1500.ms.voice.0ppm.low.cs16-2048k.40dB/t2":      {checks: "missing,seconds"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t0":       {checks: "cach"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t1":       {checks: "cach"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t2":       {checks: "cach"},

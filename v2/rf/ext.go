@@ -19,6 +19,8 @@ type leanExt interface {
 	verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool
 	scan(c *leanCore) (src int, data bool, back int64, ok bool)
 	lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool)
+	weakAt(end int64)
+	anchorProves(end int64) bool
 }
 
 const extQueue = 8
@@ -56,6 +58,9 @@ type softExt struct {
 	ch              [2]extChan
 	q               [extQueue]Burst
 	held            [extQueue]bool
+	proofCC         enums.ColorCode
+	weakEnd         int64
+	proofs          uint8
 	head            int
 	n               int
 	sum             [4][embBits]int16
@@ -143,6 +148,9 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	if c.isReplayDry() {
 		x.warm(c, b)
 		return
+	}
+	if c.unproven {
+		x.prove(c, b)
 	}
 	if x.np != nil && c.anchor != 0 {
 		x.np.fitSync(c, c.anchor, c.base)
@@ -592,7 +600,51 @@ func (x *softExt) release(ch *extChan) {
 	}
 }
 
+func (x *softExt) weakAt(end int64) { x.weakEnd = end }
+
+func (x *softExt) anchorProves(end int64) bool {
+	d := end - x.weakEnd
+	return d < -2 || d > 2
+}
+
+func (x *softExt) prove(c *leanCore, b *Burst) {
+	var cc enums.ColorCode
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	switch {
+	case known && kind == layer2.KindData:
+		st := b.Data.SlotType()
+		if st.FEC.Uncorrectable || st.FEC.ErrorsCorrected > leanProofErrors {
+			return
+		}
+		cc = st.ColorCode
+	case b.Voice > enums.VoiceBurstA && b.Voice <= enums.VoiceBurstF:
+		emb := embOf(&b.Data)
+		if emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected > leanProofErrors {
+			return
+		}
+		cc = emb.ColorCode
+	default:
+		return
+	}
+	if k, ok := c.colorCode(); ok {
+		c.unproven = k != cc
+		return
+	}
+	if x.proofs > 0 && x.proofCC == cc {
+		c.unproven = false
+		return
+	}
+	if x.proofs == 0 {
+		x.proofCC = cc
+	}
+	x.proofs++
+}
+
 func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
+	if x.n == extQueue && c.unproven {
+		x.head = (x.head + 1) % extQueue
+		x.n--
+	}
 	if x.n == extQueue {
 		x.held[x.head] = false
 		x.drain(c, true, 0)
@@ -605,7 +657,7 @@ func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
 }
 
 func (x *softExt) drain(c *leanCore, one bool, keep int) {
-	for x.n > keep && !x.held[x.head] {
+	for x.n > keep && !x.held[x.head] && !c.unproven {
 		x.side = x.qside[x.head]
 		c.emit(&x.q[x.head])
 		x.head = (x.head + 1) % extQueue
@@ -755,6 +807,7 @@ func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
 	x.vOK = false
+	x.proofs = 0
 	if x.coh != nil {
 		x.vHz, x.vOK, x.coh.vOK, x.coh.vTauOK = x.coh.vHz, x.coh.vOK, false, false
 		x.lockHz(c)
@@ -1038,6 +1091,9 @@ func (x *softExt) end(c *leanCore) {
 	x.ch[0].accN, x.ch[1].accN = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.ch[0].raw, x.ch[1].raw = false, false
+	if c.unproven {
+		x.n = 0
+	}
 	x.drain(c, false, 0)
 }
 

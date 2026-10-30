@@ -37,6 +37,7 @@ const (
 	leanPresent         = 2
 	leanSearchHz        = 200
 	leanSignMiss        = 5
+	leanProofErrors     = 0
 	leanExtSignMiss     = 9
 	leanExtRho          = 0.3
 	llrStepHz           = 4
@@ -249,6 +250,7 @@ type leanCore struct {
 	n        int64
 	first    int64
 	lockNs   int64
+	unproven bool
 	base     int64
 	anchor   enums.SyncPattern
 	onBurst  func(*Burst)
@@ -1017,6 +1019,8 @@ func (r *leanCore) searchHit(sym, mid bool) {
 	case r.ns >= leanRing && r.hasExt():
 		if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 			r.forceLock(src, data, back)
+			r.unproven = true
+			r.ext.weakAt(r.ns - 1 - back)
 		}
 	}
 	if mid && !r.locked && r.ns > leanSyncEnd+2 {
@@ -1446,6 +1450,7 @@ func (r *leanCore) searchSym(strict bool) {
 			d = 0
 		}
 	}
+	verified := false
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
 		if strict || !r.hasExt() || !r.ext.verify(r, p, rho2) {
 			return
@@ -1455,8 +1460,13 @@ func (r *leanCore) searchSym(strict bool) {
 			d = t * 2 * r.tm.step
 			r.tm.t += d
 		}
+		verified = true
 	}
 	r.lockStream(src, d, 0)
+	if verified {
+		r.unproven = true
+		r.ext.weakAt(r.ns - 1)
+	}
 }
 
 //go:noinline
@@ -1655,9 +1665,13 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 }
 
 func (r *leanCore) lockStream(src int, d float32, back int64) {
+	if r.unproven && r.hasExt() {
+		r.ext.end(r)
+	}
 	r.locked, r.forced, r.suspect, r.hunt, r.src, r.bs = true, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.suspectRun = 0
 	r.lockNs = r.ns
+	r.unproven = false
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
@@ -1962,6 +1976,10 @@ func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern
 		r.amp = levelForget*r.amp + (1-levelForget)*energy
 	}
 	r.lastAnch = j
+	if r.unproven && anchor != enums.SyncMSSourcedRC && r.ext.anchorProves(base+leanSyncEnd) &&
+		r.syncErrors(base+leanSyncEnd, anchor) <= layer2.DefaultSyncThreshold {
+		r.unproven = false
+	}
 	if base > r.lockNs {
 		r.forced = false
 	}
@@ -2364,7 +2382,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 				ok := r.embOK(&emb)
 				r.suspect = r.suspect || !ok
 				r.forced = r.forced && !ok
-				if ok && emb.FEC.ErrorsCorrected == 0 && r.votes[emb.ColorCode&0xF] < math.MaxUint8 {
+				if ok && !r.unproven && emb.FEC.ErrorsCorrected == 0 && r.votes[emb.ColorCode&0xF] < math.MaxUint8 {
 					r.votes[emb.ColorCode&0xF]++
 				}
 			}
@@ -2431,7 +2449,7 @@ func (r *leanCore) noteData(b *Burst, j int32, c *leanChan) {
 		return
 	}
 	c.data = !r.bs && !isHeader(st.DataType)
-	if st.FEC.ErrorsCorrected <= leanVoteErrors && r.votes[st.ColorCode&0xF] < math.MaxUint8 {
+	if !r.unproven && st.FEC.ErrorsCorrected <= leanVoteErrors && r.votes[st.ColorCode&0xF] < math.MaxUint8 {
 		r.votes[st.ColorCode&0xF]++
 	}
 	if isHeader(st.DataType) {
