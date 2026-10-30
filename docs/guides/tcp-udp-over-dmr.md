@@ -113,7 +113,7 @@ func (l *link) pump(now time.Duration) {
 
 The machines do no I/O. Call `Tick` at the time that `Deadline` returns, and pass each burst that the radio hears to `Burst` of both machines. Call `Channel` when the channel goes busy or idle. A polite Sender waits for an idle channel before it starts a try.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go lines=95-118 -->
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.deadline -->
 ```go
 func (l *link) deadline() (time.Duration, bool) {
 	at, ok := l.tx.Deadline()
@@ -122,20 +122,32 @@ func (l *link) deadline() (time.Duration, bool) {
 	}
 	return at, ok
 }
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.tick -->
+```go
 func (l *link) tick(now time.Duration) {
 	l.outputs(now, l.tx.Tick(now, l.outs[:0]))
 	l.events(now, l.rx.Tick(now, l.evs[:0]))
 	l.pump(now)
 }
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.hear -->
+```go
 func (l *link) hear(now time.Duration, raw *layer2.RawBurst) {
 	h := layer2.Hint{At: now}
 	l.outputs(now, l.tx.Burst(now, raw, h, l.outs[:0]))
 	l.events(now, l.rx.Burst(now, raw, h, l.evs[:0]))
 	l.pump(now)
 }
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.channel -->
+```go
 func (l *link) channel(now time.Duration, busy bool) {
 	l.tx.Channel(now, busy)
 }
@@ -146,7 +158,7 @@ func (l *link) channel(now time.Duration, busy bool) {
 
 An `OutputBurst` is a burst to send at its `Due` time, and `OutputDone` ends a packet with its result and its count of tries. An `EventRespond` is a response burst that the Receiver sends, and `EventDelivered` holds a packet. [ip.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#Decode) reads the datagram from the user data for the SAP of the header.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go lines=120-152 -->
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.outputs -->
 ```go
 func (l *link) outputs(now time.Duration, outs []data.Output) {
 	for i := range outs {
@@ -160,7 +172,11 @@ func (l *link) outputs(now time.Duration, outs []data.Output) {
 		}
 	}
 }
+```
+<!-- /dmrgo:code -->
 
+<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.events -->
+```go
 func (l *link) events(now time.Duration, evs []data.Event) {
 	for i := range evs {
 		e := &evs[i]
