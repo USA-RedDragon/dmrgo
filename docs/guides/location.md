@@ -33,35 +33,34 @@ Which format to use depends on the radio:
 
 Make an [lrrp.Message](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp#Message) with an immediate request document and a request ID, and write it with `AppendBinary`. Put it in a UDP datagram to the LRRP port with [ip.AppendIPv4](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#AppendIPv4). [ip.RadioAddress](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#RadioAddress) gives the IPv4 address of each radio ID. Send the datagram in a data packet with the SAP IP based packet data.
 
-<!-- dmrgo:code file=v2/location/example_test.go lines=105-131 -->
+<!-- dmrgo:code file=v2/location/example_test.go symbol=requestLRRP -->
 ```go
-const server, radio = 3140598, 3191868
-request = lrrp.Message{Document: lrrp.DocumentImmediateRequest}
-request.Request.RequestID, request.Request.HasRequestID = []byte{0x24, 0x68, 0xac, 0xe0}, true
-request.Request.AccuracyAndTime = true
-payload, err := request.AppendBinary(nil)
-if err != nil {
-	fmt.Println(err)
-	return
+func requestLRRP(server, radio uint32) (ip.Datagram, []byte, error) {
+	request = lrrp.Message{Document: lrrp.DocumentImmediateRequest}
+	request.Request.RequestID, request.Request.HasRequestID = []byte{0x24, 0x68, 0xac, 0xe0}, true
+	request.Request.AccuracyAndTime = true
+	payload, err := request.AppendBinary(nil)
+	if err != nil {
+		return ip.Datagram{}, nil, err
+	}
+	d := ip.Datagram{
+		SourcePort: ip.PortLRRP, DestinationPort: ip.PortLRRP,
+		Source: ip.RadioAddress(ip.DefaultNetwork, server), Destination: ip.RadioAddress(ip.DefaultNetwork, radio), Payload: payload,
+	}
+	data, err := ip.AppendIPv4(nil, &d)
+	if err != nil {
+		return ip.Datagram{}, nil, err
+	}
+	var h pdu.DataHeader
+	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: radio, LLIDSource: server,
+	}); err != nil {
+		return ip.Datagram{}, nil, err
+	}
+	_, err = decoder.Decode(&h, data)
+	fmt.Println("request:", err)
+	return d, data, nil
 }
-d := ip.Datagram{
-	SourcePort: ip.PortLRRP, DestinationPort: ip.PortLRRP,
-	Source: ip.RadioAddress(ip.DefaultNetwork, server), Destination: ip.RadioAddress(ip.DefaultNetwork, radio), Payload: payload,
-}
-data, err := ip.AppendIPv4(nil, &d)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-var h pdu.DataHeader
-if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
-	SAP: enums.SAPIPBasedPacketData, LLIDDestination: radio, LLIDSource: server,
-}); err != nil {
-	fmt.Println(err)
-	return
-}
-_, err = decoder.Decode(&h, data)
-fmt.Println("request:", err)
 ```
 <!-- /dmrgo:code -->
 
@@ -71,46 +70,44 @@ fmt.Println("request:", err)
 
 The radio reads the request with [lrrp.DecodeMessageInto](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp#DecodeMessageInto) and answers with an immediate report that carries the same request ID, a result code and a position. The Decoder reads the answer into a [location.Fix](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#Fix), with the request ID that it answers.
 
-<!-- dmrgo:code file=v2/location/example_test.go lines=133-170 -->
+<!-- dmrgo:code file=v2/location/example_test.go symbol=answerLRRP -->
 ```go
-got, err := ip.Decode(enums.SAPIPBasedPacketData, data)
-if err != nil {
-	fmt.Println(err)
-	return
+func answerLRRP(server, radio uint32, d ip.Datagram, data []byte) error {
+	got, err := ip.Decode(enums.SAPIPBasedPacketData, data)
+	if err != nil {
+		return err
+	}
+	if err := lrrp.DecodeMessageInto(&request, got.Payload); err != nil {
+		return err
+	}
+	report = lrrp.Message{Document: lrrp.DocumentImmediateReport}
+	r := &report.Report
+	r.RequestID, r.HasRequestID = request.Request.RequestID, true
+	r.Result, r.HasResult = lrrp.ResultSuccess, true
+	r.Circle2D, r.HasCircle2D = lrrp.Circle2D{Latitude: 34.212166, Longitude: 108.833333, Radius: 5}, true
+	payload, err := report.AppendBinary(nil)
+	if err != nil {
+		return err
+	}
+	d.Source, d.Destination, d.Payload = d.Destination, d.Source, payload
+	data, err = ip.AppendIPv4(nil, &d)
+	if err != nil {
+		return err
+	}
+	var h pdu.DataHeader
+	if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: server, LLIDSource: radio,
+	}); err != nil {
+		return err
+	}
+	f, err := decoder.Decode(&h, data)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s from %d: %.5f %.5f, %.0f m, request %x, result %d\n",
+		f.Format, f.Source, f.Latitude, f.Longitude, f.Radius, f.RequestID[:f.RequestIDLength], f.Result)
+	return nil
 }
-if err := lrrp.DecodeMessageInto(&request, got.Payload); err != nil {
-	fmt.Println(err)
-	return
-}
-report = lrrp.Message{Document: lrrp.DocumentImmediateReport}
-r := &report.Report
-r.RequestID, r.HasRequestID = request.Request.RequestID, true
-r.Result, r.HasResult = lrrp.ResultSuccess, true
-r.Circle2D, r.HasCircle2D = lrrp.Circle2D{Latitude: 34.212166, Longitude: 108.833333, Radius: 5}, true
-payload, err = report.AppendBinary(nil)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-d.Source, d.Destination, d.Payload = d.Destination, d.Source, payload
-data, err = ip.AppendIPv4(nil, &d)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
-	SAP: enums.SAPIPBasedPacketData, LLIDDestination: server, LLIDSource: radio,
-}); err != nil {
-	fmt.Println(err)
-	return
-}
-f, err := decoder.Decode(&h, data)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-fmt.Printf("%s from %d: %.5f %.5f, %.0f m, request %x, result %d\n",
-	f.Format, f.Source, f.Latitude, f.Longitude, f.Radius, f.RequestID[:f.RequestIDLength], f.Result)
 ```
 <!-- /dmrgo:code -->
 
@@ -164,37 +161,36 @@ To read or write the sentence alone, use [nmea.ParseRMC](https://pkg.go.dev/gith
 
 A LIP PDU is a string of bits. Encode an [lip.ImmediateRequest](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#ImmediateRequest) with the report type that you want, and put it in the appended data of a UDT with [trunk.Appended.SetLIP](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Appended.SetLIP). The radio reads the PDU type with [lip.DecodeHeader](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#DecodeHeader) and the request with `DecodeImmediateRequest`. (ETSI TS 102 361-4 clause B.3.10, ETSI TS 100 392-18-1 clause 6.2.16)
 
-<!-- dmrgo:code file=v2/lip/example_test.go lines=39-67 -->
+<!-- dmrgo:code file=v2/lip/example_test.go symbol=requestLIP -->
 ```go
-q := lip.ImmediateRequest{ReportType: lip.ReportLongPosition}
-req, _, err := q.Encode(nil)
-if err != nil {
-	fmt.Println(err)
-	return
+func requestLIP(a *trunk.Appended) ([]byte, error) {
+	q := lip.ImmediateRequest{ReportType: lip.ReportLongPosition}
+	req, _, err := q.Encode(nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.SetLIP(req); err != nil {
+		return nil, err
+	}
+	fmt.Println(a.Format, a.Blocks, "block")
+	got, err := a.LIP(nil)
+	if err != nil {
+		return nil, err
+	}
+	h, err := lip.DecodeHeader(got)
+	if err != nil {
+		return nil, err
+	}
+	if h.Extension != lip.ExtensionImmediateReport {
+		return nil, fmt.Errorf("lip: got %v", h.Extension)
+	}
+	in, err := lip.DecodeImmediateRequest(got)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("request:", in.ReportType)
+	return got, nil
 }
-var a trunk.Appended
-if err := a.SetLIP(req); err != nil {
-	fmt.Println(err)
-	return
-}
-fmt.Println(a.Format, a.Blocks, "block")
-
-got, err := a.LIP(nil)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-h, err := lip.DecodeHeader(got)
-if err != nil || h.Extension != lip.ExtensionImmediateReport {
-	fmt.Println(h.Extension, err)
-	return
-}
-in, err := lip.DecodeImmediateRequest(got)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-fmt.Println("request:", in.ReportType)
 ```
 <!-- /dmrgo:code -->
 
@@ -202,33 +198,32 @@ fmt.Println("request:", in.ReportType)
 
 The radio answers with an [lip.LongReport](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#LongReport) of the type that the request specified, here with the time of the position. [lip.DecodeLongReport](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#DecodeLongReport) reads it. Velocities and accuracies stay codes, as the spec codes them in steps. (ETSI TS 100 392-18-1 clause 6.2.2)
 
-<!-- dmrgo:code file=v2/lip/example_test.go lines=69-93 -->
+<!-- dmrgo:code file=v2/lip/example_test.go symbol=answerLIP -->
 ```go
-r := lip.LongReport{
-	Time:     lip.Time{Type: lip.TimePosition, Day: 2, Hour: 20, Minute: 0, Second: 37},
-	Location: lip.Location{Shape: lip.ShapePoint, Latitude: 34.212166, Longitude: 108.833333},
+func answerLIP(a *trunk.Appended, buf []byte) error {
+	r := lip.LongReport{
+		Time:     lip.Time{Type: lip.TimePosition, Day: 2, Hour: 20, Minute: 0, Second: 37},
+		Location: lip.Location{Shape: lip.ShapePoint, Latitude: 34.212166, Longitude: 108.833333},
+	}
+	answer, _, err := r.Encode(nil)
+	if err != nil {
+		return err
+	}
+	if err := a.SetLIP(answer); err != nil {
+		return err
+	}
+	got, err := a.LIP(buf[:0])
+	if err != nil {
+		return err
+	}
+	rep, err := lip.DecodeLongReport(got)
+	if err != nil {
+		return err
+	}
+	t := rep.Time
+	fmt.Printf("answer: %v %.4f %.4f, day %d %02d:%02d:%02d UTC\n", rep.Location.Shape, rep.Location.Latitude, rep.Location.Longitude, t.Day, t.Hour, t.Minute, t.Second)
+	return nil
 }
-answer, _, err := r.Encode(nil)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-if err := a.SetLIP(answer); err != nil {
-	fmt.Println(err)
-	return
-}
-got, err = a.LIP(got[:0])
-if err != nil {
-	fmt.Println(err)
-	return
-}
-rep, err := lip.DecodeLongReport(got)
-if err != nil {
-	fmt.Println(err)
-	return
-}
-t := rep.Time
-fmt.Printf("answer: %v %.4f %.4f, day %d %02d:%02d:%02d UTC\n", rep.Location.Shape, rep.Location.Latitude, rep.Location.Longitude, t.Day, t.Hour, t.Minute, t.Second)
 ```
 <!-- /dmrgo:code -->
 

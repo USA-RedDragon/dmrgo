@@ -103,13 +103,27 @@ var request, report lrrp.Message
 // immediate request, answers it as the radio does, and reads the answer.
 func ExampleDecoder_Decode_lrrp() {
 	const server, radio = 3140598, 3191868
+	d, data, err := requestLRRP(server, radio)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err := answerLRRP(server, radio, d, data); err != nil {
+		fmt.Println(err)
+		return
+	}
+	// Output:
+	// request: location: packet carries no position
+	// LRRP from 3191868: 34.21217 108.83333, 5 m, request 2468ace0, result 0
+}
+
+func requestLRRP(server, radio uint32) (ip.Datagram, []byte, error) {
 	request = lrrp.Message{Document: lrrp.DocumentImmediateRequest}
 	request.Request.RequestID, request.Request.HasRequestID = []byte{0x24, 0x68, 0xac, 0xe0}, true
 	request.Request.AccuracyAndTime = true
 	payload, err := request.AppendBinary(nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return ip.Datagram{}, nil, err
 	}
 	d := ip.Datagram{
 		SourcePort: ip.PortLRRP, DestinationPort: ip.PortLRRP,
@@ -117,58 +131,52 @@ func ExampleDecoder_Decode_lrrp() {
 	}
 	data, err := ip.AppendIPv4(nil, &d)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return ip.Datagram{}, nil, err
 	}
 	var h pdu.DataHeader
 	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: radio, LLIDSource: server,
 	}); err != nil {
-		fmt.Println(err)
-		return
+		return ip.Datagram{}, nil, err
 	}
 	_, err = decoder.Decode(&h, data)
 	fmt.Println("request:", err)
+	return d, data, nil
+}
 
+func answerLRRP(server, radio uint32, d ip.Datagram, data []byte) error {
 	got, err := ip.Decode(enums.SAPIPBasedPacketData, data)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	if err := lrrp.DecodeMessageInto(&request, got.Payload); err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	report = lrrp.Message{Document: lrrp.DocumentImmediateReport}
 	r := &report.Report
 	r.RequestID, r.HasRequestID = request.Request.RequestID, true
 	r.Result, r.HasResult = lrrp.ResultSuccess, true
 	r.Circle2D, r.HasCircle2D = lrrp.Circle2D{Latitude: 34.212166, Longitude: 108.833333, Radius: 5}, true
-	payload, err = report.AppendBinary(nil)
+	payload, err := report.AppendBinary(nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	d.Source, d.Destination, d.Payload = d.Destination, d.Source, payload
 	data, err = ip.AppendIPv4(nil, &d)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
+	var h pdu.DataHeader
 	if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: server, LLIDSource: radio,
 	}); err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	f, err := decoder.Decode(&h, data)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	fmt.Printf("%s from %d: %.5f %.5f, %.0f m, request %x, result %d\n",
 		f.Format, f.Source, f.Latitude, f.Longitude, f.Radius, f.RequestID[:f.RequestIDLength], f.Result)
-	// Output:
-	// request: location: packet carries no position
-	// LRRP from 3191868: 34.21217 108.83333, 5 m, request 2468ace0, result 0
+	return nil
 }
