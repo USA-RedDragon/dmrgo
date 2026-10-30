@@ -113,8 +113,6 @@ ignore_files:
   - v2/rf/frontend.go
   - v2/rf/gap.go
   - v2/rf/hgate.go
-  - v2/rf/iq0front.go
-  - v2/rf/iq0rx.go
   - v2/rf/iqdisc.go
   - v2/rf/iqdsp.go
   - v2/rf/iqdsp_dsp.go

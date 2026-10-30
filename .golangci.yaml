@@ -112,7 +112,7 @@ linters:
       # The fixed-point receiver of Tier 0 narrows values whose range its
       # levels, rings and saturations bound; a check on each conversion
       # would cost cycles of its 4 MHz budget on a Cortex-M4F.
-      - path: v2/rf/(lean|leanfec|leanfront|discrx|discfront|iqdisc|iqrefill|iq0front|iqlow|iqdsp|lagtab|audio|audiorate0|frontend|iqformat)\.go$
+      - path: v2/rf/(lean|leanfec|leanfront|discrx|discfront|iqdisc|iqrefill|iqlow|iqdsp|lagtab|audio|audiorate0|frontend|iqformat)\.go$
         linters:
           - gosec
         text: ^G115
