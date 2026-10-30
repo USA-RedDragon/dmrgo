@@ -43,7 +43,7 @@ func TestDiscPhaseClickWeights(t *testing.T) {
 		a := discAudio(noisyBaseband(slots, 1400, cn, 5), hz)
 		spikes := map[int]bool{}
 		for i := len(a) - 3000; i < len(a)-100; i += 487 {
-			a[i] = int16(audioOffset + (1400+4500)*audioGain)
+			a[i] = int16(audioOffset + (1400+3*discClickHz)*audioGain)
 			spikes[i] = true
 		}
 		r := mustAudio(AudioRxConfig{Rate: hz, Tier: Tier2})
@@ -53,8 +53,9 @@ func TestDiscPhaseClickWeights(t *testing.T) {
 			t.Fatalf("%g dB: %d input samples, want at least %d", cn, p.sumN, len(a))
 		}
 		mean := audioOffset + 1400*audioGain
+		span := int(p.clickSpan())
 		near := func(i int, f func(int) bool) bool {
-			for k := i - discClickSpan; k <= i+discClickSpan; k++ {
+			for k := i - span; k <= i+span; k++ {
 				if k >= 0 && k < len(a) && f(k) {
 					return true
 				}

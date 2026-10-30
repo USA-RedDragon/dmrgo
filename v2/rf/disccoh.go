@@ -26,8 +26,8 @@ const (
 )
 
 const (
-	discClickHz     = 3200
-	discClickSpan   = 10
+	discClickHz     = 2.5 * 3 * deviationHz
+	discClickSyms   = 1
 	discClickWeight = 0.1
 	discHeldFits    = 8
 )
@@ -202,9 +202,14 @@ func (p *discPhase) click(u int16, lo, hi int32) {
 	}
 }
 
+func (p *discPhase) clickSpan() int64 {
+	return (discClickSyms*discRate*p.den + symbolRate*p.num - 1) / (symbolRate * p.num)
+}
+
 func (p *discPhase) clicked(t0, t1 float64) bool {
-	i0 := int64(math.Floor(max(t0, 0)*float64(p.den)/float64(p.num))) - discClickSpan
-	i1 := int64(math.Ceil(max(t1, 0)*float64(p.den)/float64(p.num))) + discClickSpan
+	span := p.clickSpan()
+	i0 := int64(math.Floor(max(t0, 0)*float64(p.den)/float64(p.num))) - span
+	i1 := int64(math.Ceil(max(t1, 0)*float64(p.den)/float64(p.num))) + span
 	i0, i1 = max(i0, p.sumN-p.size, 0), min(i1, p.sumN-1)
 	for i := i0; i <= i1; i++ {
 		k := i & (p.size - 1)
