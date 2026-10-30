@@ -61,7 +61,7 @@ const (
 	replaySyncRho       = 0.95
 	leanClockDead       = 0.000075
 	leanClockBlock      = 64
-	leanClockSig        = 4
+	leanClockSig        = 5
 	leanClockSpan       = 4
 	leanClockLag        = 120
 	leanMidGate         = 0
