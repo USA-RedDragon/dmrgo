@@ -43,6 +43,8 @@ type extChan struct {
 }
 
 type softExt struct {
+	vP              enums.SyncPattern
+	vEnd            int64
 	vHz             float64
 	vOK             bool
 	soft            *softDecoder
@@ -742,6 +744,7 @@ func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float
 	if x.coh == nil {
 		return 0, false
 	}
+	x.vP, x.vEnd = p, c.ns-1-back
 	d, ok := x.coh.lockShift(c, p, back)
 	if math.Abs(d) < cohWarmStepSym/2 {
 		return 0, false
@@ -777,8 +780,30 @@ func (x *softExt) lockHz(c *leanCore) {
 	d := float32((x.vHz - hz) * perHz)
 	c.dcHz += d
 	c.tm.dc = c.dcHz
+	x.refitScale(c)
 	if a := c.audio; a != nil {
 		c.fitHz += d / a.gain
+	}
+}
+
+func (x *softExt) refitScale(c *leanCore) {
+	if c.ns-x.vEnd+syncSymbols > leanRing {
+		return
+	}
+	var syms [syncSymbols]int8
+	syncSyms(x.vP, &syms)
+	j := ringPos(x.vEnd - syncSymbols + 1)
+	var sxy, spp float32
+	for k := range syncSymbols {
+		sxy += float32(syms[k]) * (float32(c.ring[j])*discStepHz + c.off - c.dcHz)
+		spp += float32(syms[k]) * float32(syms[k])
+		if j++; j == leanRing {
+			j = 0
+		}
+	}
+	if g := sxy / spp / deviationHz; g > 0 {
+		c.devScale = max(g, leanMinScale)
+		c.tm.dev = c.devScale * deviationHz
 	}
 }
 
