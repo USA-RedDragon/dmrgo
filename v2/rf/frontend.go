@@ -17,11 +17,17 @@ const (
 	dcStartSeconds = 0.01
 	dcFastSeconds  = 0.05
 	dcMove         = 0.1
+	dcEdgeSeconds  = 0.002
+	dcCarrierShare = 0.5
+	dcFlat         = 1.2
+	dcTurn         = 0.5
 )
 
 type dcBlock struct {
 	dc, fast    complex64
 	pow         float32
+	env, env2   float32
+	proj, edge  float32
 	n, m        float32
 	slow, quick float32
 	start, cap  float32
@@ -32,9 +38,17 @@ func (d *dcBlock) init(rate float64) {
 	d.quick = float32(1 / (dcFastSeconds * rate))
 	d.start = float32(dcStartSeconds * rate)
 	d.cap = float32(dcSeconds * rate)
+	d.edge = float32(1 / (dcEdgeSeconds * rate))
 }
 
 func (d *dcBlock) remove(v complex64) complex64 {
+	p := real(v)*real(v) + imag(v)*imag(v)
+	d.env += (p - d.env) * d.edge
+	d.env2 += (p*p - d.env2) * d.edge
+	d.proj += (real(v)*real(d.dc) + imag(v)*imag(d.dc) - d.proj) * d.edge
+	if c := real(d.dc)*real(d.dc) + imag(d.dc)*imag(d.dc); c > dcCarrierShare*d.env && d.env2 < dcFlat*d.env*d.env && d.proj < dcTurn*c {
+		d.dc, d.fast, d.n, d.m, d.proj = 0, 0, 0, 0, 0
+	}
 	d.n = min(d.n+1, d.cap)
 	d.m = min(d.m+1, d.cap)
 	g := max(d.slow, 1/(d.n+d.start))
