@@ -23,6 +23,7 @@ type slcNote struct {
 	llr     [layer2.CACHBits]int16
 	cach    [3]byte
 	set     bool
+	coh     bool
 }
 
 type shortLCOut struct {
@@ -78,7 +79,7 @@ func (s *burstSink) noteLean(r *leanCore, b *Burst) {
 	if n == nil {
 		return
 	}
-	n.seconds, n.cach = b.Seconds, b.CACH
+	n.seconds, n.cach, n.coh = b.Seconds, b.CACH, false
 	for k := range cachSymbols {
 		n.llr[2*k], n.llr[2*k+1] = r.symLLR(r.base + int64(k))
 	}
@@ -86,7 +87,13 @@ func (s *burstSink) noteLean(r *leanCore, b *Burst) {
 
 func (s *burstSink) noteLLR(seconds float64, cach [3]byte, llr *[layer2.CACHBits]int16) {
 	if n := s.noted(); n != nil {
-		n.seconds, n.cach, n.llr = seconds, cach, *llr
+		n.seconds, n.cach, n.llr, n.coh = seconds, cach, *llr, false
+	}
+}
+
+func (s *burstSink) noteCoh(seconds float64, cach [3]byte, llr *[layer2.CACHBits]int16) {
+	if n := s.noted(); n != nil {
+		n.seconds, n.cach, n.llr, n.coh = seconds, cach, *llr, true
 	}
 }
 
@@ -132,6 +139,10 @@ func (o *shortLCOut) put(b *Burst) {
 }
 
 func (o *shortLCOut) find(b *Burst, dst *[layer2.CACHBits]int16) bool {
+	return o.findOf(b, dst, true) || o.findOf(b, dst, false)
+}
+
+func (o *shortLCOut) findOf(b *Burst, dst *[layer2.CACHBits]int16, coh bool) bool {
 	for i := range o.notes {
 		k := o.head - 1 - i
 		if k < 0 {
@@ -141,7 +152,7 @@ func (o *shortLCOut) find(b *Burst, dst *[layer2.CACHBits]int16) bool {
 		if !n.set {
 			return false
 		}
-		if n.cach == b.CACH && math.Abs(n.seconds-b.Seconds) < slcMatch {
+		if (!coh || n.coh) && n.cach == b.CACH && math.Abs(n.seconds-b.Seconds) < slcMatch {
 			*dst = n.llr
 			return true
 		}

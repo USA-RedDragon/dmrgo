@@ -650,7 +650,7 @@ func (s *cohStage) runKeep(k int, app []float32) {
 		copy(s.next[j+cohNext][:], app)
 		return
 	}
-	if j < cachSymbols || j >= slotSymbols {
+	if j < s.keepLo() || j >= slotSymbols {
 		return
 	}
 	if s.cross {
@@ -1135,6 +1135,26 @@ func (s *cohStage) verifyHz() {
 	}
 }
 
+func (s *cohStage) keepLo() int {
+	if s.ex != nil && s.bs {
+		return 0
+	}
+	return cachSymbols
+}
+
+func (s *cohStage) cachLLR(llr *[layer2.CACHBits]int16) bool {
+	if s.ex == nil || !s.bs {
+		return false
+	}
+	for k := range cachSymbols {
+		if s.dist[k] == math.MaxInt {
+			return false
+		}
+		llr[2*k], llr[2*k+1] = dibitLLR(s.app[k][:], s.llrK)
+	}
+	return true
+}
+
 func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	for i := range s.dist {
 		s.dist[i] = math.MaxInt
@@ -1148,7 +1168,7 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 		s.nextOK = true
 		s.run(g1, g1+cohNext+1+runMargin, -1, s.scale)
 	} else {
-		s.run(g1, g1-lo+1+runMargin, -1, s.scale)
+		s.run(g1, g1-s.keepLo()+1+runMargin, -1, s.scale)
 	}
 	if s.prevOK && !s.easy && !s.noCross && (!s.crossVoice || s.nseg == 2) {
 		s.cross, s.runAt = true, 2

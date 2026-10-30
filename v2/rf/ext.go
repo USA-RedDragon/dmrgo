@@ -47,6 +47,7 @@ type softExt struct {
 	work, work0     int64
 	passes          int
 	llr             [layer2.BurstBits]int16
+	cachLLR         [layer2.CACHBits]int16
 	ch              [2]extChan
 	q               [extQueue]Burst
 	held            [extQueue]bool
@@ -202,6 +203,9 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	x.uncoded(b, &data, &coh, true)
 	if x.bptcRetry(b) && x.affords(extCoreCredit) {
 		x.coreData(c, b, fixed, data)
+	}
+	if x.coh.cachLLR(&x.cachLLR) {
+		c.sink.noteCoh(b.Seconds, b.CACH, &x.cachLLR)
 	}
 	x.coh.trackBurst(&b.Fixed)
 	hold := false
