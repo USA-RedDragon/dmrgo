@@ -31,6 +31,7 @@ func (r *discRx) addExt(opt *options) {
 		x.ph = ph
 		x.setCoh(newCohStageOf(opt))
 		x.coh.src, x.coh.ph, ph.coh = ph, ph, x.coh
+		ph.useHeld = opt.CohExact
 		x.coh.easySNR = discEasySNR
 		if ph.lazy {
 			x.coh.dt = lazyDT(r.hz())

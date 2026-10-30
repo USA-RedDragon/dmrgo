@@ -62,6 +62,7 @@ type discPhase struct {
 	clicks   []uint64
 	held     float64
 	heldN    int
+	useHeld  bool
 	lazy     bool
 	out      [discPhaseChunk + discPhaseLag + 4]int16
 }
@@ -312,6 +313,8 @@ func (p *discPhase) update() {
 	g := float64(f.gain)
 	unit := p.unit
 	switch {
+	case c.locked && p.useHeld && p.heldN >= discHeldFits:
+		unit = p.held
 	case c.locked && p.fitN > 0:
 		unit = p.fitUnit
 	case p.cal:
@@ -465,8 +468,12 @@ func (s *cohStage) fitDeviation(k0, k1 int, fit float64) {
 	}
 	p.fitN++
 	p.cal = true
-	if math.Abs(p.fitUnit/p.unit-1) >= discPhaseDev {
-		p.build(p.fitUnit, p.dcU)
+	u := p.fitUnit
+	if p.useHeld && p.heldN >= discHeldFits {
+		u = p.held
+	}
+	if math.Abs(u/p.unit-1) >= discPhaseDev {
+		p.build(u, p.dcU)
 		s.totalHz = s.freq
 	}
 }

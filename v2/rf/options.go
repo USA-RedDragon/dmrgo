@@ -70,6 +70,8 @@ type options struct {
 	LevelUp                              bool
 	CohExt                               bool
 	CohLazy                              bool
+	CohExact                             bool
+	CohClicks                            bool
 	CohLocked                            bool
 	CohNoNext, CohNoCross, CohCrossVoice bool
 	IQCutAuto                            bool
@@ -113,6 +115,13 @@ func tier1Options(o options) options {
 	return o
 }
 
+var coreTier3 = false
+
+func coreExactOptions(o options) options {
+	o.CohExact, o.PhaseStates, o.LogMAP, o.CohBudget = true, 52, true, 0
+	return o
+}
+
 func tier2Options(o options) options {
 	o = softOptions(o)
 	o.ExtLookback, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = 8, true, true, 0.2, 0.5
@@ -144,6 +153,9 @@ func discTierOptions(t Tier) options {
 	case Tier3:
 		o := tier2Options(discOptions())
 		o.CohNoCross, o.CohNoNext, o.CohBudget, o.CohSymNoise, o.CohDataPasses = true, true, 1000, 8, 4
+		if coreTier3 {
+			return coreExactOptions(o)
+		}
 		o.UnionTwins = 1
 		return o
 	case TierDefault, Tier0:
@@ -167,6 +179,9 @@ func tierOptions(t Tier) options {
 		o.IQDisc, o.IQHz, o.CohNoCross, o.CohNoNext, o.CohBudget = true, 24000, true, true, 300
 		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg, o.IQSpecHunt = iqHuntMaxHz, true, 5, true
 	case Tier3:
+		if coreTier3 {
+			return coreExactOptions(tierOptions(Tier2))
+		}
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, true, 52, true, 7, 0.35
 		o.TwoPass, o.TwoPassLevels, o.LogMAP, o.Comb, o.CombMode = true, 2, true, true, 12

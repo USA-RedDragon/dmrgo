@@ -27,6 +27,8 @@ type cohStage struct {
 	locked                      bool
 	model                       *cpmModel
 	tr                          *trellis
+	ex                          *exactStage
+	clicks                      bool
 	mu                          float32
 	llrK                        float32
 	buf                         []complex64
@@ -202,6 +204,9 @@ func newCohStageOf(opt *options) *cohStage {
 		win, look = opt.CohWin, cohLook
 	}
 	s.tr = newTrellis(m, cohMaxRun, win, look)
+	if opt.CohExact {
+		s.ex, s.clicks = newExactStage(m, opt, cohMaxRun+2*m.d), opt.CohClicks
+	}
 	s.size = opt.cohRing()
 	s.setRing(2)
 	s.buf = make([]complex64, (syncSymbols+2)*sps)
@@ -1205,6 +1210,11 @@ func (s *cohStage) run(g, n, dir int, scale float32) {
 	}
 	s.fill(0, cohKnown, s.buf)
 	rot := m.anchor(s.buf, syms[:])
+	if s.ex != nil {
+		s.work += int64(s.steps)
+		s.runExact(rot, scale)
+		return
+	}
 	for i := range 2 * d {
 		s.runPrior(i-2*d, s.tr.slp[4*i:4*i+4])
 	}
@@ -1260,4 +1270,30 @@ func (s *cohStage) levels(k0, k1 int) (amp, noise float64) {
 		s.lastSym = q / float64(cnt)
 	}
 	return amp, noise
+}
+
+func (s *cohStage) runExact(rot complex64, scale float32) {
+	m, e := s.model, s.ex
+	d, sps := m.d, m.sps
+	n := min(s.steps+2*d, len(e.buf)/sps)
+	s.steps = n - 2*d
+	s.fill(0, n, e.buf[:n*sps])
+	for i := range n {
+		tc := s.t0 + float64(s.g0+s.dir*i)*s.sps
+		if w := s.src.cohWeight(tc-s.sps/2, tc+s.sps/2); w == 0 || w < 1 && s.clicks {
+			for j := i * sps; j < (i+1)*sps; j++ {
+				e.buf[j] *= complex(w, 0)
+			}
+		}
+	}
+	for i := range 2 * d {
+		s.runPrior(i-2*d, e.xt.slp[4*i:4*i+4])
+	}
+	for k := range s.steps {
+		s.runPrior(k, e.xt.lp[4*k:4*k+4])
+	}
+	app := e.exec(s.steps, rot, scale, anchorKappa)
+	for k := range s.steps {
+		s.runKeep(k, app[4*k:4*k+4])
+	}
 }
