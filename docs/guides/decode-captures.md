@@ -24,46 +24,54 @@ go run -C v2 ./examples/conformance
 
 Cut the file into [RawBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#RawBurst) values of [RawBurstSize](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#RawBurstSize) octets each. Decode each one into a [Burst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Burst) with `DecodeFromBytes`, read the FEC result with `FEC.Aggregate`, and call `Encode`. A burst without corrected bits must encode to the same octets. A burst with corrected bits encodes to the corrected bits, so it can differ from the capture.
 
-<!-- dmrgo:code file=v2/examples/conformance/main.go lines=36-74 -->
+<!-- dmrgo:code file=v2/examples/conformance/main.go symbol=checkCapture -->
 ```go
-var rx layer2.VoiceReceiver
-var frags [4][4]byte
-b := layer2.NewBurst()
-for i := 0; i < len(raw)/layer2.RawBurstSize; i++ {
-	in := [layer2.RawBurstSize]byte(raw[i*layer2.RawBurstSize : (i+1)*layer2.RawBurstSize])
-	t.bursts++
-	if err := b.DecodeFromBytes(in); err != nil {
-		t.failf(i, "decode: %v", err)
-		continue
+func checkCapture(name string, raw []byte) *tally {
+	t := &tally{file: name}
+	if len(raw)%layer2.RawBurstSize != 0 {
+		t.failf(0, "length %d is not a multiple of %d", len(raw), layer2.RawBurstSize)
+		return t
 	}
-	agg := b.FEC.Aggregate()
-	if agg.Uncorrectable {
-		t.failf(i, "uncorrectable FEC %+v", b.FEC)
-	} else if agg.ErrorsCorrected > 0 {
-		t.fec++
-	}
-	out, err := b.Encode()
-	switch {
-	case err != nil:
-		t.failf(i, "encode: %v", err)
-	case out != in && agg.ErrorsCorrected == 0:
-		t.failf(i, "re-encode differs: %x", out)
-	case out == in:
-		t.reencoded++
-	}
+	var rx layer2.VoiceReceiver
+	var frags [4][4]byte
+	b := layer2.NewBurst()
+	for i := 0; i < len(raw)/layer2.RawBurstSize; i++ {
+		in := [layer2.RawBurstSize]byte(raw[i*layer2.RawBurstSize : (i+1)*layer2.RawBurstSize])
+		t.bursts++
+		if err := b.DecodeFromBytes(in); err != nil {
+			t.failf(i, "decode: %v", err)
+			continue
+		}
+		agg := b.FEC.Aggregate()
+		if agg.Uncorrectable {
+			t.failf(i, "uncorrectable FEC %+v", b.FEC)
+		} else if agg.ErrorsCorrected > 0 {
+			t.fec++
+		}
+		out, err := b.Encode()
+		switch {
+		case err != nil:
+			t.failf(i, "encode: %v", err)
+		case out != in && agg.ErrorsCorrected == 0:
+			t.failf(i, "re-encode differs: %x", out)
+		case out == in:
+			t.reencoded++
+		}
 
-	rb := layer2.RawBurst(in)
-	switch b.Kind {
-	case layer2.KindData:
-		t.data++
-		checkData(t, i, b, rb)
-		rx.Reset()
-	case layer2.KindVoice:
-		t.voice++
-		checkVoice(t, i, b, rb, &rx, &frags)
-	case layer2.KindReverseChannel, layer2.KindUnknown:
-		t.failf(i, "unexpected kind %v", b.Kind)
+		rb := layer2.RawBurst(in)
+		switch b.Kind {
+		case layer2.KindData:
+			t.data++
+			checkData(t, i, b, rb)
+			rx.Reset()
+		case layer2.KindVoice:
+			t.voice++
+			checkVoice(t, i, b, rb, &rx, &frags)
+		case layer2.KindReverseChannel, layer2.KindUnknown:
+			t.failf(i, "unexpected kind %v", b.Kind)
+		}
 	}
+	return t
 }
 ```
 <!-- /dmrgo:code -->
