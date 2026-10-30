@@ -661,6 +661,7 @@ func (x *softExt) unplaced(c *leanCore, b *Burst) {
 	l := &ch.late[ch.lateN]
 	ch.lateN++
 	l.b, l.ring, l.base = *b, c.ring, c.base
+	x.drain(c, false, 0)
 }
 
 func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCode, ccOK bool) {

@@ -214,3 +214,48 @@ func TestCoreTier3Ring(t *testing.T) {
 		t.Errorf("coherent ring best matches the narrow ring at lag %d with correlation %.3f", bestLag, best)
 	}
 }
+
+func TestCoreTier3Lag(t *testing.T) {
+	t.Parallel()
+	if testing.Short() {
+		t.Skip("long stream")
+	}
+	long, _ := benchStream(t, 16)
+	x := noisyBaseband(long, 1400, 12, 3)
+	x = x[int(0.9*basebandRate):]
+	const chunk = 16
+	for _, hz := range []int{9600, 48000} {
+		a := discAudio(x, hz)
+		fed, worst, n := 0, 0.0, 0
+		r := coreAudio3(t, AudioRxConfig{Rate: hz, Tier: Tier3, OnBursts: func(bs []Burst) {
+			for _, b := range bs {
+				worst, n = max(worst, float64(fed)-(b.Seconds+burstSeconds)*float64(hz)), n+1
+			}
+		}})
+		for k := 0; k < len(a); k += chunk {
+			fed = min(k+chunk, len(a))
+			_, _ = r.Write(a[k:fed])
+		}
+		_ = r.Flush()
+		if n == 0 || worst > float64(r.Lag()+chunk) {
+			t.Errorf("audio at %d Hz: %d bursts, a lag of %.0f samples, Lag %d", hz, n, worst, r.Lag())
+		}
+	}
+	const rate = 48000
+	in := cf32(dgUpsample(x, rate))
+	fed, worst, n := 0, 0.0, 0
+	r := mustNewOpt(RxConfig{Rate: rate, Tier: Tier3, Format: IQFormatCF32, OnBursts: func(bs []Burst) {
+		for _, b := range bs {
+			worst, n = max(worst, float64(fed/8)-(b.Seconds+burstSeconds)*float64(rate)), n+1
+		}
+	}}, coreIQ3Options())
+	step := 8 * max(chunk, rate/3000)
+	for k := 0; k < len(in); k += step {
+		fed = min(k+step, len(in))
+		_, _ = r.Write(in[k:fed])
+	}
+	_ = r.Flush()
+	if n == 0 || worst > float64(r.Lag()+step/8) {
+		t.Errorf("I/Q at %d Hz: %d bursts, a lag of %.0f samples, Lag %d", rate, n, worst, r.Lag())
+	}
+}
