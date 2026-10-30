@@ -848,6 +848,52 @@ func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
 	}
 }
 
+const (
+	cohWarmSpanHz = 2 * cohFreqSpan
+	cohWarmStepHz = 0.26 * symbolRate / syncSymbols
+)
+
+func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
+	if !s.warm || n <= 0 || s.src.cohScale() <= 0 {
+		return
+	}
+	hz0, _ := s.src.cohTrack()
+	_, _, lo := s.ring()
+	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
+	var syms [2][syncSymbols]int8
+	syncSyms(voice, &syms[0])
+	syncSyms(data, &syms[1])
+	steps := int(math.Ceil(cohWarmSpanHz / cohWarmStepHz))
+	best, bestHz := 0.0, hz0
+	t0, hz := s.t0, s.totalHz
+	for k := -steps; k <= steps; k++ {
+		f := hz0 + float64(k)*cohWarmStepHz
+		var sum float64
+		for j := 0; j <= n; j++ {
+			s.t0 = s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt
+			if s.t0-s.sps < float64(lo) {
+				continue
+			}
+			s.totalHz = f
+			top := 0.0
+			for p := range syms {
+				for i, v := range syms[p] {
+					s.known[syncFirstSym+i] = v
+				}
+				if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
+					top = max(top, a*a/(a*a+max(v, 0)))
+				}
+			}
+			sum += top
+		}
+		if sum > best {
+			best, bestHz = sum, f
+		}
+	}
+	s.t0, s.totalHz = t0, hz
+	s.freq, s.freqOK, s.nFit, s.fitVar = bestHz, true, 1, cohWarmStepHz*cohWarmStepHz
+}
+
 func (s *cohStage) slotHold(slot int64) {
 	if !s.slotFit {
 		return

@@ -90,7 +90,7 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {
 		cn, min float64
-	}{{1, 0.78}, {0, 0.5}} {
+	}{{1, 0.83}, {0, 0.6}} {
 		rate := earlyExact(t, c.cn)
 		if rate < c.min {
 			t.Errorf("core Tier 3 at %v dB: %.3f of the AMBE frames in the first 12 slots exact", c.cn, rate)

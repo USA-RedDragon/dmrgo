@@ -782,6 +782,9 @@ func (x *softExt) firstSlot(c *leanCore) {
 	if n == 0 {
 		return
 	}
+	if x.coh != nil {
+		x.coh.warmFreq(c, c.first, n)
+	}
 	stretch := x.replayStretch(c, n, last, at, sps)
 	if stretch != 0 {
 		c.tm.rate, c.tm.drift = stretch*sps, stretch*sps
