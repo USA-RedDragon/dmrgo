@@ -3,9 +3,11 @@
 package rf
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"runtime"
+	"slices"
 	"sync"
 	"testing"
 )
@@ -50,20 +52,36 @@ type sweepResult struct {
 	Cost  *sweepCost        `json:"cost,omitempty"`
 }
 
-func (j *sweepJob) config(t testing.TB) (RxConfig, *options) {
-	t.Helper()
+func (j *sweepJob) options() (options, error) {
 	tier := Tier0 + Tier(j.Tier)
-	o := discOptions()
-	if j.Tier > 0 {
+	var o options
+	switch {
+	case j.Disc:
+		o = discTierOptions(tier)
+	case j.Tier > 0:
 		o = tierOptions(tier)
 		if tier == Tier1 || tier == Tier2 {
 			o.ExtLookback = 8
 		}
+	default:
+		o = discOptions()
 	}
 	if len(j.Opt) > 0 {
-		if err := json.Unmarshal(j.Opt, &o); err != nil {
-			t.Fatalf("opt: %v", err)
+		d := json.NewDecoder(bytes.NewReader(j.Opt))
+		d.DisallowUnknownFields()
+		if err := d.Decode(&o); err != nil {
+			return o, err
 		}
+	}
+	return o, nil
+}
+
+func (j *sweepJob) config(t testing.TB) (RxConfig, *options) {
+	t.Helper()
+	tier := Tier0 + Tier(j.Tier)
+	o, err := j.options()
+	if err != nil {
+		t.Fatalf("opt: %v", err)
 	}
 	hz := j.hz()
 	if j.Disc {
@@ -102,12 +120,11 @@ type sweepInput struct {
 
 func (j *sweepJob) newRx(cfg RxConfig, o *options) sweepRx {
 	if j.Disc {
-		c := AudioRxConfig{Rate: j.audioHz(), OnBursts: cfg.OnBursts}
+		c := AudioRxConfig{Rate: j.audioHz(), Tier: cfg.Tier, OnBursts: cfg.OnBursts}
 		if j.PreEmphasis {
 			c.PreEmphasis = NewRxPreEmphasis()
 		}
 		if j.Public {
-			c.Tier = cfg.Tier
 			d, err := NewAudioReceiver(&c)
 			if err != nil {
 				panic(err)
@@ -119,7 +136,10 @@ func (j *sweepJob) newRx(cfg RxConfig, o *options) sweepRx {
 			panic(err)
 		}
 		if o.SoftExt {
-			d.addExt(o)
+			if err := d.addSoft(o); err != nil {
+				panic(err)
+			}
+			d.attachFix(c.Tier != Tier0)
 		}
 		return sweepRx{d: d}
 	}
@@ -195,7 +215,11 @@ func TestSweepWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg, o := j.config(t)
-	if _, err := newReceiver(cfg, o); err != nil {
+	if j.Disc {
+		if _, err := newAudioReceiver(AudioRxConfig{Rate: j.audioHz(), Tier: cfg.Tier}, o); err != nil {
+			t.Fatal(err)
+		}
+	} else if _, err := newReceiver(cfg, o); err != nil {
 		t.Fatal(err)
 	}
 	var res sweepResult
@@ -237,6 +261,46 @@ func TestSweepWorker(t *testing.T) {
 	}
 	if err := os.WriteFile(os.Getenv("DMRRF_SWEEP_OUT"), b, 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSweepAudioShipped(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 2)
+	x := noisyBaseband(slots, 1400, 8, 3)
+	for _, hz := range []int{9600, 48000} {
+		for tier := Tier0; tier <= Tier3; tier++ {
+			j := sweepJob{Tier: int(tier - Tier0), Disc: true, Hz: hz}
+			cfg, o := j.config(t)
+			got, _, _ := j.receive(cfg, o, x)
+			var want []Burst
+			r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: tier, OnBursts: func(bs []Burst) { want = append(want, bs...) }})
+			if err != nil {
+				t.Fatal(err)
+			}
+			a := radioAudio(x, hz, false)
+			for k := 0; k < len(a); k += 4096 {
+				must(r.writeAll(a[k:min(k+4096, len(a))]))
+			}
+			r.flushAll()
+			if len(want) == 0 || !slices.EqualFunc(got, want, func(a, b Burst) bool { return a == b }) {
+				t.Errorf("%d Hz tier %d: sweep job gives %d bursts, NewAudioReceiver %d, or they differ", hz, tier-Tier0, len(got), len(want))
+			}
+		}
+	}
+}
+
+func TestSweepRejectsUnknownOption(t *testing.T) {
+	t.Parallel()
+	for _, opt := range []string{`{"CohSPS": 2}`, `{"NoSuchKnob": true}`} {
+		j := sweepJob{Disc: true, Hz: 9600, Opt: json.RawMessage(opt)}
+		if _, err := j.options(); err == nil {
+			t.Errorf("opt %s: no error", opt)
+		}
+	}
+	j := sweepJob{Disc: true, Hz: 9600, Opt: json.RawMessage(`{"SoftExt": true}`)}
+	if o, err := j.options(); err != nil || !o.SoftExt {
+		t.Errorf("known opt: %v, SoftExt %v", err, o.SoftExt)
 	}
 }
 
