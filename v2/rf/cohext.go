@@ -86,6 +86,8 @@ type cohStage struct {
 	acq                         bool
 	vHz                         float64
 	vOK                         bool
+	vTau                        float64
+	vTauOK                      bool
 	frontCut                    float64
 	segs                        [2][2]int
 	nseg                        int
@@ -1420,10 +1422,13 @@ func (s *cohStage) leanInBand() bool {
 	return math.Abs(hz-nco)+3*deviationHz <= s.frontCut
 }
 
-func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
-	s.vOK = false
+func (s *cohStage) verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool {
+	s.vOK, s.vTauOK = false, false
 	s.acq = true
 	ok := s.verifyAcq(c, p)
+	if !ok && rho2 >= cohSumGate*cohSumGate {
+		ok = s.verifySum(c, p, c.ns-1-leanSyncEnd)
+	}
 	s.acq = false
 	return ok
 }
@@ -1472,6 +1477,82 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 
 const cohRhoSlope = 49
 
+const (
+	cohSumSlots = 8
+	cohSumGate  = 0.75
+)
+
+func (s *cohStage) verifySum(c *leanCore, p enums.SyncPattern, base int64) bool {
+	src, _, ok := layer2.SyncSourceOf(p)
+	if !ok {
+		return false
+	}
+	step := int64(1)
+	if src != layer2.SyncSourceBS {
+		step = 2
+	}
+	n := int64(cohSumSlots) / step
+	_, _, lo := s.ring()
+	if s.ringTime(c, base-n*step*slotSymbols)+s.dt-s.sps*(1+cohWarmSpanSym) < float64(lo) {
+		return false
+	}
+	var t0 [cohSumSlots]float64
+	for j := int64(1); j <= n; j++ {
+		t0[j-1] = s.ringTime(c, base-j*step*slotSymbols) + s.dt
+	}
+	voice, data, _ := src.SyncPatterns()
+	best, bestHz, bestTau := s.syncSum(&t0, int(n), voice, data, s.totalHz)
+	if best < cohSumBar(int(n)) {
+		return false
+	}
+	s.vHz, s.vOK, s.vTau, s.vTauOK = bestHz, true, bestTau, true
+	return true
+}
+
+func (s *cohStage) syncSum(t0 *[cohSumSlots]float64, n int, voice, data enums.SyncPattern, hz0 float64) (best, bestHz, bestTau float64) {
+	var syms [2][syncSymbols]int8
+	syncSyms(voice, &syms[0])
+	syncSyms(data, &syms[1])
+	steps := int(math.Ceil(cohFreqSpan / cohWarmStepHz))
+	bestHz = hz0
+	for k := -steps; k <= steps; k++ {
+		s.totalHz = hz0 + float64(k)*cohWarmStepHz
+		for tau := -cohWarmSpanSym; tau <= cohWarmSpanSym; tau += cohWarmStepSym {
+			var sum float64
+			for j := range n {
+				s.t0 = t0[j] + tau*s.sps
+				top := 0.0
+				for q := range syms {
+					for i, v := range syms[q] {
+						s.known[syncFirstSym+i] = v
+					}
+					if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
+						top = max(top, a*a/(a*a+max(v, 0)))
+					}
+				}
+				sum += top
+			}
+			if sum > best {
+				best, bestHz, bestTau = sum, s.totalHz, tau
+			}
+		}
+	}
+	s.totalHz = bestHz
+	return best, bestHz, bestTau
+}
+
+const (
+	cohSumBarBS = 0.83
+	cohSumBarMS = 0.57
+)
+
+func cohSumBar(n int) float64 {
+	if n == cohSumSlots {
+		return cohSumBarBS
+	}
+	return cohSumBarMS
+}
+
 func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float64, bool) {
 	s.acq = true
 	defer func() { s.acq = false }()
@@ -1514,6 +1595,9 @@ func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (floa
 	s.fineTime(k0, k1)
 	taus := math.Floor(2*cohWarmSpanSym/cohWarmStepSym) + 1
 	if s.rho(k0, k1) < cohPlaceRho+math.Log(float64(2*steps+1)*taus)/cohRhoSlope {
+		if s.vTauOK {
+			return s.vTau, true
+		}
 		return 0, false
 	}
 	if fit := s.freqFit(k0, k1); math.Abs(fit) < cohFreqSpan {

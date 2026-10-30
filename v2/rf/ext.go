@@ -16,7 +16,7 @@ type leanExt interface {
 	firstSlot(c *leanCore)
 	place(c *leanCore, b *Burst, j int32) bool
 	unplaced(c *leanCore, b *Burst)
-	verify(c *leanCore, p enums.SyncPattern) bool
+	verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool
 	scan(c *leanCore) (src int, data bool, back int64, ok bool)
 	lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool)
 }
@@ -727,7 +727,7 @@ func (x *softExt) scan(c *leanCore) (int, bool, int64, bool) {
 	return x.coh.scan(c)
 }
 
-func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
+func (x *softExt) verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool {
 	if x.coh == nil || x.coh.locked {
 		return false
 	}
@@ -737,7 +737,7 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
 			n++
 		}
 	}
-	return 4*n <= syncSymbols && x.coh.verify(c, p)
+	return 4*n <= syncSymbols && x.coh.verify(c, p, rho2)
 }
 
 func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool) {
@@ -756,7 +756,7 @@ func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
 	x.vOK = false
 	if x.coh != nil {
-		x.vHz, x.vOK, x.coh.vOK = x.coh.vHz, x.coh.vOK, false
+		x.vHz, x.vOK, x.coh.vOK, x.coh.vTauOK = x.coh.vHz, x.coh.vOK, false, false
 		x.lockHz(c)
 		x.coh.freqOK = false
 		x.coh.lock()

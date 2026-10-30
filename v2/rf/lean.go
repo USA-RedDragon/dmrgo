@@ -1447,7 +1447,7 @@ func (r *leanCore) searchSym(strict bool) {
 		}
 	}
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
-		if strict || !r.hasExt() || !r.ext.verify(r, p) {
+		if strict || !r.hasExt() || !r.ext.verify(r, p, rho2) {
 			return
 		}
 		if t, ok := r.ext.lockShift(r, p, 0); ok {
