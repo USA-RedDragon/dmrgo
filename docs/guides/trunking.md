@@ -23,28 +23,31 @@ go run -C v2 ./examples/trunking
 
 Each Tier III CSBK has a PDU type in package pdu, such as [pdu.AlohaPDU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#AlohaPDU) for C_ALOHA or [pdu.TalkgroupVoiceGrantPDU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#TalkgroupVoiceGrantPDU) for TV_GRANT. Its `CSBK` method returns the [pdu.CSBK](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CSBK). [pdu.SysCode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#SysCode) packs the network model, network and site into the system identity code of a C_ALOHA.
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go lines=44-64 -->
+<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=buildCSBKs -->
 ```go
-code, err := sc.Pack()
-if err != nil {
-	return err
-}
-builds := []func() (pdu.CSBK, error){
-	pdu.AlohaPDU{TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}.CSBK,
-	pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}.CSBK,
-	pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}.CSBK,
-	pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
-	pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
-	pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}.CSBK,
-	pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}.CSBK,
-}
-csbks := make([]*pdu.CSBK, len(builds))
-for i, build := range builds {
-	c, err := build()
+func buildCSBKs(sc pdu.SysCode) (uint16, []*pdu.CSBK, error) {
+	code, err := sc.Pack()
 	if err != nil {
-		return err
+		return 0, nil, err
 	}
-	csbks[i] = &c
+	builds := []func() (pdu.CSBK, error){
+		pdu.AlohaPDU{TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}.CSBK,
+		pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}.CSBK,
+		pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}.CSBK,
+		pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
+		pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
+		pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}.CSBK,
+		pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}.CSBK,
+	}
+	csbks := make([]*pdu.CSBK, len(builds))
+	for i, build := range builds {
+		c, err := build()
+		if err != nil {
+			return 0, nil, err
+		}
+		csbks[i] = &c
+	}
+	return code, csbks, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -85,21 +88,24 @@ func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 ```
 <!-- /dmrgo:code -->
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go lines=84-96 -->
+<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=checkAloha -->
 ```go
-aloha, _, err := roundTripCSBK(csbks[0], layer2.SyncSourceBS)
-if err != nil {
-	return err
+func checkAloha(w io.Writer, c *pdu.CSBK, sc pdu.SysCode, code uint16) error {
+	aloha, _, err := roundTripCSBK(c, layer2.SyncSourceBS)
+	if err != nil {
+		return err
+	}
+	ap, ok := aloha.AsAloha()
+	if !ok {
+		return fmt.Errorf("C_ALOHA decoded as %s", aloha.Opcode)
+	}
+	var got pdu.SysCode
+	if got.Unpack(ap.SysIdentCode); got != sc {
+		return fmt.Errorf("C_ALOHA SYScode %+v, want %+v", got, sc)
+	}
+	fmt.Fprintf(w, "C_ALOHA SYScode 0x%04x: model %d net %d site %d par %d\n", code, got.Model, got.Net, got.Site, got.Par)
+	return nil
 }
-ap, ok := aloha.AsAloha()
-if !ok {
-	return fmt.Errorf("C_ALOHA decoded as %s", aloha.Opcode)
-}
-var got pdu.SysCode
-if got.Unpack(ap.SysIdentCode); got != sc {
-	return fmt.Errorf("C_ALOHA SYScode %+v, want %+v", got, sc)
-}
-fmt.Fprintf(w, "C_ALOHA SYScode 0x%04x: model %d net %d site %d par %d\n", code, got.Model, got.Net, got.Site, got.Par)
 ```
 <!-- /dmrgo:code -->
 

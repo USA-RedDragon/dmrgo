@@ -40,10 +40,10 @@ func roundTripCSBK(c *pdu.CSBK, src layer2.SyncSource) (*pdu.CSBK, *layer2.Burst
 	return decodeAs[*pdu.CSBK](raw)
 }
 
-func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
+func buildCSBKs(sc pdu.SysCode) (uint16, []*pdu.CSBK, error) {
 	code, err := sc.Pack()
 	if err != nil {
-		return err
+		return 0, nil, err
 	}
 	builds := []func() (pdu.CSBK, error){
 		pdu.AlohaPDU{TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}.CSBK,
@@ -58,9 +58,34 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	for i, build := range builds {
 		c, err := build()
 		if err != nil {
-			return err
+			return 0, nil, err
 		}
 		csbks[i] = &c
+	}
+	return code, csbks, nil
+}
+
+func checkAloha(w io.Writer, c *pdu.CSBK, sc pdu.SysCode, code uint16) error {
+	aloha, _, err := roundTripCSBK(c, layer2.SyncSourceBS)
+	if err != nil {
+		return err
+	}
+	ap, ok := aloha.AsAloha()
+	if !ok {
+		return fmt.Errorf("C_ALOHA decoded as %s", aloha.Opcode)
+	}
+	var got pdu.SysCode
+	if got.Unpack(ap.SysIdentCode); got != sc {
+		return fmt.Errorf("C_ALOHA SYScode %+v, want %+v", got, sc)
+	}
+	fmt.Fprintf(w, "C_ALOHA SYScode 0x%04x: model %d net %d site %d par %d\n", code, got.Model, got.Net, got.Site, got.Par)
+	return nil
+}
+
+func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
+	code, csbks, err := buildCSBKs(sc)
+	if err != nil {
+		return err
 	}
 	for _, c := range csbks {
 		got, b, err := roundTripCSBK(c, layer2.SyncSourceBS)
@@ -81,20 +106,9 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	}
 	fmt.Fprintf(w, "outbound CSBKs: %d round trips ok\n", len(csbks))
 
-	aloha, _, err := roundTripCSBK(csbks[0], layer2.SyncSourceBS)
-	if err != nil {
+	if err := checkAloha(w, csbks[0], sc, code); err != nil {
 		return err
 	}
-	ap, ok := aloha.AsAloha()
-	if !ok {
-		return fmt.Errorf("C_ALOHA decoded as %s", aloha.Opcode)
-	}
-	var got pdu.SysCode
-	if got.Unpack(ap.SysIdentCode); got != sc {
-		return fmt.Errorf("C_ALOHA SYScode %+v, want %+v", got, sc)
-	}
-	fmt.Fprintf(w, "C_ALOHA SYScode 0x%04x: model %d net %d site %d par %d\n", code, got.Model, got.Net, got.Site, got.Par)
-
 	return encodeMatchesBuild(w, csbks[2])
 }
 
