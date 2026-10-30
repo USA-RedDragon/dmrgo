@@ -4,15 +4,15 @@ This page shows how to build dmrgo with TinyGo for a microcontroller, which boar
 
 ## What you need
 
-- TinyGo 0.41 or 0.43. CI uses the TinyGo 0.43 image:
+- TinyGo 0.41 or 0.44. CI uses the TinyGo 0.44 image:
 
 <!-- dmrgo:code file=.github/workflows/test.yaml lines=226-226 -->
 ```yaml
-image: tinygo/tinygo:0.43.0@sha256:3470986dbce0b43cc5c590d46b8770f656528bc3e9f29267214d464c0fbbe9c5
+image: tinygo/tinygo:0.44.0@sha256:98126534a0653966913b803d26805ea79250a244217d921d74044cfedc1d24a2
 ```
 <!-- /dmrgo:code -->
 
-- The Go release that your TinyGo needs on the `PATH`: Go 1.25 to 1.27 for TinyGo 0.43, and Go 1.24 to 1.26 for TinyGo 0.41.
+- The Go release that your TinyGo needs on the `PATH`: Go 1.25 to 1.27 for TinyGo 0.44, and Go 1.24 to 1.26 for TinyGo 0.41.
 - A board that TinyGo supports, such as a Raspberry Pi Pico, and a USB cable. The steps below use the Pico.
 - A clone of the repository. The example embeds a capture from it.
 
