@@ -84,6 +84,8 @@ type cohStage struct {
 	slotFit                     bool
 	warm                        bool
 	acq                         bool
+	vHz                         float64
+	vOK                         bool
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -424,6 +426,7 @@ type cohRing interface {
 	cohHz() float64
 	cohTaps(acq bool) []float32
 	cohAcqRing(size int64) ([]complex64, int64, int64)
+	cohLockHz() (hz, perHz float64)
 }
 
 func (r *iqRx) cohRing(size int64) ([]complex64, int64, int64) {
@@ -464,6 +467,12 @@ func (r *iqRx) cohTrack() (float64, bool) {
 		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
 	}
 	return hz, r.d.locked
+}
+
+func (r *iqRx) cohLockHz() (float64, float64) {
+	f := &r.d.f
+	scale := float64(f.gain * iqUnitsPerHz)
+	return float64(r.conv.hz) + float64(f.dc+r.d.dcHz)/scale, scale
 }
 
 func (r *iqRx) cohWeight(_, _ float64) float32 {
@@ -527,6 +536,10 @@ func (p *discPhase) cohKey() (int, float64, float64) {
 
 func (p *discPhase) cohTrack() (float64, bool) {
 	return p.offsetHz(), p.c.locked
+}
+
+func (p *discPhase) cohLockHz() (float64, float64) {
+	return float64(p.coreHz()), float64(p.c.audio.gain) / p.unit
 }
 
 func (p *discPhase) cohWeight(t0, t1 float64) float32 {
@@ -1384,6 +1397,7 @@ func noiseShare(x []complex64) float64 {
 }
 
 func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
+	s.vOK = false
 	s.acq = true
 	ok := s.verifyAcq(c, p)
 	s.acq = false
@@ -1422,6 +1436,13 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 		return false
 	}
 	s.dt += cohDTGain * d
+	clear(s.refK[:])
+	for i, v := range syms {
+		s.refSym[syncFirstSym+i], s.refK[syncFirstSym+i] = v, true
+	}
+	if fit := s.freqFit(syncFirstSym, syncFirstSym+syncSymbols-1); math.Abs(fit) < cohFreqSpan {
+		s.vHz, s.vOK = s.totalHz+fit, true
+	}
 	return true
 }
 

@@ -42,6 +42,8 @@ type extChan struct {
 }
 
 type softExt struct {
+	vHz             float64
+	vOK             bool
 	soft            *softDecoder
 	checks          [16]func([12]byte) bool
 	work, work0     int64
@@ -737,7 +739,10 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
 
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
+	x.vOK = false
 	if x.coh != nil {
+		x.vHz, x.vOK, x.coh.vOK = x.coh.vHz, x.coh.vOK, false
+		x.lockHz(c)
 		x.coh.freqOK = false
 		x.coh.lock()
 	}
@@ -746,6 +751,22 @@ func (x *softExt) locked(c *leanCore, d float32) {
 	}
 	if x.np != nil {
 		x.np.end()
+	}
+}
+
+func (x *softExt) lockHz(c *leanCore) {
+	if !x.vOK {
+		return
+	}
+	hz, perHz := x.coh.src.cohLockHz()
+	if perHz <= 0 || math.IsInf(perHz, 0) {
+		return
+	}
+	d := float32((x.vHz - hz) * perHz)
+	c.dcHz += d
+	c.tm.dc = c.dcHz
+	if a := c.audio; a != nil {
+		c.fitHz += d / a.gain
 	}
 }
 
@@ -856,6 +877,8 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.first = first - int64(n)*slotSymbols
 	c.slotEnd = slotEnd
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
+	x.lockHz(c)
+	x.vOK = false
 }
 
 func replayFlat(c *leanCore, base int64) bool {
