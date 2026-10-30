@@ -18,8 +18,6 @@ func devTabOf(o *options) uint8 {
 	return 0
 }
 
-func devGainHz(i int) float64 { return float64((i - devGainN/2) * devGainStep) }
-
 func (r *iqRx) deviation() float64 {
 	d := r.d.deviation()
 	if r.devTab == 0 {

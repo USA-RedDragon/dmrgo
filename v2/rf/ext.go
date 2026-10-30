@@ -103,10 +103,6 @@ const (
 	extAll = extAMBE | extOSD | extELC
 )
 
-func newSoftExt(lookback int, sps float32) *softExt {
-	return newSoftExtStages(extAll, lookback, sps)
-}
-
 func softExtOf(opt *options, sps float32) *softExt {
 	var st uint8
 	if opt.ExtAMBE {

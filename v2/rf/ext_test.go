@@ -81,3 +81,7 @@ func TestSoftExtLookback(t *testing.T) {
 		t.Errorf("with lookback, the first voice burst B is at %.3f s, the first burst without at %.3f s", b, plain)
 	}
 }
+
+func newSoftExt(lookback int, sps float32) *softExt {
+	return newSoftExtStages(extAll, lookback, sps)
+}

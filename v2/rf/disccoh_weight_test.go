@@ -87,3 +87,7 @@ func TestDiscPhaseClickWeights(t *testing.T) {
 		t.Logf("%g dB: %d samples, %d missed, %d extra, held %.4f", cn, n, miss, bad, p.held)
 	}
 }
+
+func (p *discPhase) cohUnit() float64 {
+	return p.held
+}

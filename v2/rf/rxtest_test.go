@@ -195,3 +195,15 @@ func (r *Receiver) host() *rxHost {
 	}
 	return &rxHost{}
 }
+
+func (r *iqLowRx) writeBaseband(x []complex64) {
+	var b [iqLowPack]uint32
+	for len(x) > 0 {
+		m := min(len(x), len(b))
+		for i, v := range x[:m] {
+			b[i] = uint32(uint16(q15(real(v)))) | uint32(q15(imag(v)))<<16
+		}
+		r.run(b[:m])
+		x = x[m:]
+	}
+}

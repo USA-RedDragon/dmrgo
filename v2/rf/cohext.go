@@ -368,7 +368,6 @@ type cohRing interface {
 	cohTrack() (float64, bool)
 	cohWeight(t0, t1 float64) float32
 	cohScale() float32
-	cohUnit() float64
 	cohResidual() bool
 	cohHz() float64
 	cohTaps(acq bool) []float32
@@ -424,10 +423,6 @@ func (r *iqRx) cohWeight(_, _ float64) float32 {
 
 func (r *iqRx) cohScale() float32 {
 	return r.d.f.gain
-}
-
-func (r *iqRx) cohUnit() float64 {
-	return 1
 }
 
 func (r *iqRx) cohResidual() bool {
@@ -493,10 +488,6 @@ func (p *discPhase) cohWeight(t0, t1 float64) float32 {
 
 func (p *discPhase) cohScale() float32 {
 	return p.c.audio.gain
-}
-
-func (p *discPhase) cohUnit() float64 {
-	return p.held
 }
 
 func (p *discPhase) cohResidual() bool {

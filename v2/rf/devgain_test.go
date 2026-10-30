@@ -218,3 +218,5 @@ func deriveDevGain() (iq [devGainTiers][devGainN]uint16, low [devGainRates]uint1
 	}
 	return iq, low, nil
 }
+
+func devGainHz(i int) float64 { return float64((i - devGainN/2) * devGainStep) }
