@@ -24,36 +24,27 @@ go test -C v2 -run 'ExamplePeer_loopback$' -v ./transport/ipsc/ipscsession
 
 [ipscauth.ParseKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth#ParseKey) reads the hex key of the configuration and pads it on the left to 20 octets, as DMRlink does. Set `Auth` and `Key` in the config of each side. [ipscsession.NewPeer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#NewPeer) takes the peer ID and the address of the master as an [Addr](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Addr). [AddrOf](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#AddrOf) converts the IP and port of a `net.UDPAddr`, as the example does for each packet that it reads. [ipscsession.NewMaster](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#NewMaster) makes the master.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go lines=37-65 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=newMachines -->
 ```go
-key, err := ipscauth.ParseKey("123456789abcdef1234")
-if err != nil {
-	return err
-}
-loopback := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)}
-masterConn, err := net.ListenUDP("udp4", loopback)
-if err != nil {
-	return err
-}
-defer masterConn.Close()
-peerConn, err := net.ListenUDP("udp4", loopback)
-if err != nil {
-	return err
-}
-defer peerConn.Close()
-
-at, err := netip.ParseAddrPort(masterConn.LocalAddr().String())
-if err != nil {
-	return err
-}
-masterAddr := ipscsession.Addr{IP: at.Addr().As4(), Port: at.Port()}
-master, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
-if err != nil {
-	return err
-}
-peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 314926, Master: masterAddr, Auth: true, Key: key})
-if err != nil {
-	return err
+func newMachines(masterAt net.Addr) (*ipscsession.Peer, *ipscsession.Master, error) {
+	key, err := ipscauth.ParseKey("123456789abcdef1234")
+	if err != nil {
+		return nil, nil, err
+	}
+	at, err := netip.ParseAddrPort(masterAt.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	masterAddr := ipscsession.Addr{IP: at.Addr().As4(), Port: at.Port()}
+	master, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
+	if err != nil {
+		return nil, nil, err
+	}
+	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 314926, Master: masterAddr, Auth: true, Key: key})
+	if err != nil {
+		return nil, nil, err
+	}
+	return peer, master, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -64,89 +55,88 @@ The machines do no I/O. Give each UDP packet to `Packet` of the machine with the
 
 The Peer returns `OutputUp` when the master answers its registration, and `OutputPeers` when it gets a peer list. It then registers with each other peer of the list. The Master returns `OutputUp` for each new peer.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go lines=68-149 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=passPackets -->
 ```go
-start := time.Now()
-toMaster, toPeer := 0, 0
-send := func(conn *net.UDPConn, n *int, outs []ipscsession.Output) error {
-	for _, o := range outs {
-		if o.Kind != ipscsession.OutputSend {
-			continue
-		}
-		to := &net.UDPAddr{IP: o.Addr.IP[:], Port: int(o.Addr.Port)}
-		if _, err := conn.WriteTo(o.Packet, to); err != nil {
-			return err
-		}
-		*n++
-	}
-	return nil
-}
-read := func(conn *net.UDPConn, buf []byte) ([]byte, ipscsession.Addr, error) {
-	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-	n, from, err := conn.ReadFromUDP(buf)
-	if err != nil {
-		return nil, ipscsession.Addr{}, err
-	}
-	a, _ := ipscsession.AddrOf(from.IP, from.Port)
-	return buf[:n], a, nil
-}
-if err := send(peerConn, &toMaster, peer.Tick(time.Since(start), nil)); err != nil {
-	return err
-}
-
-buf := make([]byte, ipscsession.MaxPacket)
-for toMaster+toPeer > 0 {
-	for ; toMaster > 0; toMaster-- {
-		p, from, err := read(masterConn, buf)
-		if err != nil {
-			return err
-		}
-		fmt.Println("master gets", ipsc.Opcode(p[0]))
-		outs := master.Packet(time.Since(start), from, p, nil, nil)
+func passPackets(call []byte, masterConn, peerConn *net.UDPConn, peer *ipscsession.Peer, master *ipscsession.Master) error {
+	start := time.Now()
+	toMaster, toPeer := 0, 0
+	send := func(conn *net.UDPConn, n *int, outs []ipscsession.Output) error {
 		for _, o := range outs {
-			switch o.Kind {
-			case ipscsession.OutputData:
-				u, err := ipsc.DecodeUser(o.Packet)
-				if err != nil {
-					return err
-				}
-				fmt.Println("master:", o.Kind, o.ID, u.Opcode, "from", u.Source, "to", u.Destination)
-			case ipscsession.OutputSend:
-			default:
-				fmt.Println("master:", o.Kind, o.ID)
-			}
-		}
-		if err := send(masterConn, &toPeer, outs); err != nil {
-			return err
-		}
-	}
-	for ; toPeer > 0; toPeer-- {
-		p, from, err := read(peerConn, buf)
-		if err != nil {
-			return err
-		}
-		fmt.Println("peer gets", ipsc.Opcode(p[0]))
-		outs := peer.Packet(time.Since(start), from, p, nil)
-		for _, o := range outs {
-			if o.Kind == ipscsession.OutputSend {
+			if o.Kind != ipscsession.OutputSend {
 				continue
 			}
-			fmt.Println("peer:", o.Kind, o.ID)
-			if o.Kind == ipscsession.OutputPeers {
-				signed, err := peer.Sign(append([]byte(nil), call...))
-				if err != nil {
-					return err
+			to := &net.UDPAddr{IP: o.Addr.IP[:], Port: int(o.Addr.Port)}
+			if _, err := conn.WriteTo(o.Packet, to); err != nil {
+				return err
+			}
+			*n++
+		}
+		return nil
+	}
+	read := func(conn *net.UDPConn, buf []byte) ([]byte, ipscsession.Addr, error) {
+		_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		n, from, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			return nil, ipscsession.Addr{}, err
+		}
+		a, _ := ipscsession.AddrOf(from.IP, from.Port)
+		return buf[:n], a, nil
+	}
+	if err := send(peerConn, &toMaster, peer.Tick(time.Since(start), nil)); err != nil {
+		return err
+	}
+
+	buf := make([]byte, ipscsession.MaxPacket)
+	for toMaster+toPeer > 0 {
+		for ; toMaster > 0; toMaster-- {
+			p, from, err := read(masterConn, buf)
+			if err != nil {
+				return err
+			}
+			fmt.Println("master gets", ipsc.Opcode(p[0]))
+			outs := master.Packet(time.Since(start), from, p, nil, nil)
+			for _, o := range outs {
+				switch o.Kind {
+				case ipscsession.OutputData:
+					u, err := ipsc.DecodeUser(o.Packet)
+					if err != nil {
+						return err
+					}
+					fmt.Println("master:", o.Kind, o.ID, u.Opcode, "from", u.Source, "to", u.Destination)
+				case ipscsession.OutputSend:
+				default:
+					fmt.Println("master:", o.Kind, o.ID)
 				}
-				if _, err := peerConn.WriteTo(signed, masterConn.LocalAddr()); err != nil {
-					return err
-				}
-				toMaster++
+			}
+			if err := send(masterConn, &toPeer, outs); err != nil {
+				return err
 			}
 		}
-		if err := send(peerConn, &toMaster, outs); err != nil {
-			return err
+		for ; toPeer > 0; toPeer-- {
+			p, from, err := read(peerConn, buf)
+			if err != nil {
+				return err
+			}
+			fmt.Println("peer gets", ipsc.Opcode(p[0]))
+			outs := peer.Packet(time.Since(start), from, p, nil)
+			for _, o := range outs {
+				if o.Kind == ipscsession.OutputSend {
+					continue
+				}
+				fmt.Println("peer:", o.Kind, o.ID)
+				if o.Kind == ipscsession.OutputPeers {
+					if err := sendSigned(peer, peerConn, masterConn.LocalAddr(), call); err != nil {
+						return err
+					}
+					toMaster++
+				}
+			}
+			if err := send(peerConn, &toMaster, outs); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -155,17 +145,15 @@ for toMaster+toPeer > 0 {
 
 With `Auth`, sign each voice or data packet with [Peer.Sign](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.Sign) before you send it. The machines check the trailer of each packet that they get, and return the voice and data packets of registered peers as `OutputData`, without the trailer. [ipsc.DecodeUser](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#DecodeUser) decodes one. The Master does not send them on by itself; send each one to the other peers that should get it.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go lines=134-143 -->
+<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=sendSigned -->
 ```go
-if o.Kind == ipscsession.OutputPeers {
-	signed, err := peer.Sign(append([]byte(nil), call...))
+func sendSigned(peer *ipscsession.Peer, conn *net.UDPConn, to net.Addr, packet []byte) error {
+	signed, err := peer.Sign(append([]byte(nil), packet...))
 	if err != nil {
 		return err
 	}
-	if _, err := peerConn.WriteTo(signed, masterConn.LocalAddr()); err != nil {
-		return err
-	}
-	toMaster++
+	_, err = conn.WriteTo(signed, to)
+	return err
 }
 ```
 <!-- /dmrgo:code -->

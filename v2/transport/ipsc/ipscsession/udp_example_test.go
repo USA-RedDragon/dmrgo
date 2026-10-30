@@ -34,10 +34,6 @@ func ExamplePeer_loopback() {
 }
 
 func register() error {
-	key, err := ipscauth.ParseKey("123456789abcdef1234")
-	if err != nil {
-		return err
-	}
 	loopback := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)}
 	masterConn, err := net.ListenUDP("udp4", loopback)
 	if err != nil {
@@ -50,21 +46,36 @@ func register() error {
 	}
 	defer peerConn.Close()
 
-	at, err := netip.ParseAddrPort(masterConn.LocalAddr().String())
-	if err != nil {
-		return err
-	}
-	masterAddr := ipscsession.Addr{IP: at.Addr().As4(), Port: at.Port()}
-	master, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
-	if err != nil {
-		return err
-	}
-	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 314926, Master: masterAddr, Auth: true, Key: key})
+	peer, master, err := newMachines(masterConn.LocalAddr())
 	if err != nil {
 		return err
 	}
 	call, _ := hex.DecodeString("800004ce2e1d30b43c0000090200000d9e2080dd7b5f482e7d3e0000000001c0000a800a006000000000000930b43ce9f8ed0071466f")
+	return passPackets(call, masterConn, peerConn, peer, master)
+}
 
+func newMachines(masterAt net.Addr) (*ipscsession.Peer, *ipscsession.Master, error) {
+	key, err := ipscauth.ParseKey("123456789abcdef1234")
+	if err != nil {
+		return nil, nil, err
+	}
+	at, err := netip.ParseAddrPort(masterAt.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	masterAddr := ipscsession.Addr{IP: at.Addr().As4(), Port: at.Port()}
+	master, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
+	if err != nil {
+		return nil, nil, err
+	}
+	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 314926, Master: masterAddr, Auth: true, Key: key})
+	if err != nil {
+		return nil, nil, err
+	}
+	return peer, master, nil
+}
+
+func passPackets(call []byte, masterConn, peerConn *net.UDPConn, peer *ipscsession.Peer, master *ipscsession.Master) error {
 	start := time.Now()
 	toMaster, toPeer := 0, 0
 	send := func(conn *net.UDPConn, n *int, outs []ipscsession.Output) error {
@@ -132,11 +143,7 @@ func register() error {
 				}
 				fmt.Println("peer:", o.Kind, o.ID)
 				if o.Kind == ipscsession.OutputPeers {
-					signed, err := peer.Sign(append([]byte(nil), call...))
-					if err != nil {
-						return err
-					}
-					if _, err := peerConn.WriteTo(signed, masterConn.LocalAddr()); err != nil {
+					if err := sendSigned(peer, peerConn, masterConn.LocalAddr(), call); err != nil {
 						return err
 					}
 					toMaster++
@@ -148,4 +155,13 @@ func register() error {
 		}
 	}
 	return nil
+}
+
+func sendSigned(peer *ipscsession.Peer, conn *net.UDPConn, to net.Addr, packet []byte) error {
+	signed, err := peer.Sign(append([]byte(nil), packet...))
+	if err != nil {
+		return err
+	}
+	_, err = conn.WriteTo(signed, to)
+	return err
 }
