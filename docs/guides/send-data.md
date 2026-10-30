@@ -145,32 +145,34 @@ func Example() {
 
 A confirmed data header requests a response. Each block of a confirmed packet has its own sequence number (DBSN) and CRC-9, so the receiver can identify each lost block. The example corrupts one block on the air.
 
-<!-- dmrgo:code file=v2/examples/data/main.go lines=135-159 -->
+<!-- dmrgo:code file=v2/examples/data/main.go symbol=lossyConfirmed -->
 ```go
-lip := []byte("LIP: 41.878,-87.629,hdg=90,v=12")
-h, err := pdu.ConfirmedDataHeader{
-	ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
-	FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}.DataHeader()
-if err != nil {
-	return err
-}
-p, err := packet.NewPacket(h, lip, enums.DataTypeRate34)
-if err != nil {
-	return err
-}
-bursts, err := packet.Bursts(&p, colorCode, layer2.SyncSourceMS)
-if err != nil {
-	return err
-}
-good := bursts[2]
-blk, ok := p.Blocks[1].(*pdu.Rate34Data)
-if !ok {
-	return fmt.Errorf("block 1 is %T", p.Blocks[1])
-}
-bad := *blk
-bad.Data[7] ^= 0x10
-if bursts[2], err = layer2.BuildRate34DataBurst(bad.Data, colorCode, layer2.SyncSourceMS); err != nil {
-	return err
+func lossyConfirmed(lip []byte) ([]layer2.RawBurst, layer2.RawBurst, error) {
+	h, err := pdu.ConfirmedDataHeader{
+		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
+		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}.DataHeader()
+	if err != nil {
+		return nil, layer2.RawBurst{}, err
+	}
+	p, err := packet.NewPacket(h, lip, enums.DataTypeRate34)
+	if err != nil {
+		return nil, layer2.RawBurst{}, err
+	}
+	bursts, err := packet.Bursts(&p, colorCode, layer2.SyncSourceMS)
+	if err != nil {
+		return nil, layer2.RawBurst{}, err
+	}
+	good := bursts[2]
+	blk, ok := p.Blocks[1].(*pdu.Rate34Data)
+	if !ok {
+		return nil, layer2.RawBurst{}, fmt.Errorf("block 1 is %T", p.Blocks[1])
+	}
+	bad := *blk
+	bad.Data[7] ^= 0x10
+	if bursts[2], err = layer2.BuildRate34DataBurst(bad.Data, colorCode, layer2.SyncSourceMS); err != nil {
+		return nil, layer2.RawBurst{}, err
+	}
+	return bursts, good, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -179,37 +181,40 @@ if bursts[2], err = layer2.BuildRate34DataBurst(bad.Data, colorCode, layer2.Sync
 
 The receiving Assembler returns `packet.ErrBlocksMissing`, and `Missing` returns the blocks that it did not get. `Response` builds the SACK packet. At the sender, `RetryBlocks` of the response returns the blocks to send again.
 
-<!-- dmrgo:code file=v2/examples/data/main.go lines=161-190 -->
+<!-- dmrgo:code file=v2/examples/data/main.go symbol=requestRetry -->
 ```go
-rx := packet.NewAssembler(127)
-if _, err := receive(rx, bursts); !errors.Is(err, packet.ErrBlocksMissing) {
-	return fmt.Errorf("corrupted packet: %w, want %w", err, packet.ErrBlocksMissing)
-}
-sack, err := rx.Response()
-if err != nil {
-	return err
-}
-sackBursts, err := packet.Bursts(&sack, colorCode, layer2.SyncSourceMS)
-if err != nil {
-	return err
-}
-tx := packet.NewAssembler(127)
-rm, err := receive(tx, sackBursts)
-if err != nil {
-	return err
-}
-if rm.Response == nil {
-	return errors.New("SACK carries no response data")
-}
-retry := rm.Response.RetryBlocks()
-sackCode, err := responseOf(&rm.Header)
-if err != nil {
-	return err
-}
-fmt.Fprintf(w, "confirmed: %d bursts, missing %v, %s requests %v\n",
-	len(bursts), rx.Missing(), sackCode, retry)
-if !slices.Equal(retry, []int{1}) {
-	return fmt.Errorf("retry %v, want [1]", retry)
+func requestRetry(w io.Writer, bursts []layer2.RawBurst) (*packet.Assembler, *packet.Assembler, error) {
+	rx := packet.NewAssembler(127)
+	if _, err := receive(rx, bursts); !errors.Is(err, packet.ErrBlocksMissing) {
+		return nil, nil, fmt.Errorf("corrupted packet: %w, want %w", err, packet.ErrBlocksMissing)
+	}
+	sack, err := rx.Response()
+	if err != nil {
+		return nil, nil, err
+	}
+	sackBursts, err := packet.Bursts(&sack, colorCode, layer2.SyncSourceMS)
+	if err != nil {
+		return nil, nil, err
+	}
+	tx := packet.NewAssembler(127)
+	rm, err := receive(tx, sackBursts)
+	if err != nil {
+		return nil, nil, err
+	}
+	if rm.Response == nil {
+		return nil, nil, errors.New("SACK carries no response data")
+	}
+	retry := rm.Response.RetryBlocks()
+	sackCode, err := responseOf(&rm.Header)
+	if err != nil {
+		return nil, nil, err
+	}
+	fmt.Fprintf(w, "confirmed: %d bursts, missing %v, %s requests %v\n",
+		len(bursts), rx.Missing(), sackCode, retry)
+	if !slices.Equal(retry, []int{1}) {
+		return nil, nil, fmt.Errorf("retry %v, want [1]", retry)
+	}
+	return rx, tx, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -218,39 +223,41 @@ if !slices.Equal(retry, []int{1}) {
 
 Send the header and the missing block again. The Assembler completes the packet, and [packet.NewResponse](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#NewResponse) builds the ACK.
 
-<!-- dmrgo:code file=v2/examples/data/main.go lines=192-222 -->
+<!-- dmrgo:code file=v2/examples/data/main.go symbol=completeRetry -->
 ```go
-m, err := receive(rx, []layer2.RawBurst{bursts[0], good})
-if err != nil {
-	return err
+func completeRetry(w io.Writer, rx, tx *packet.Assembler, lip []byte, header, good layer2.RawBurst) error {
+	m, err := receive(rx, []layer2.RawBurst{header, good})
+	if err != nil {
+		return err
+	}
+	if !bytes.Equal(m.Data, lip) {
+		return fmt.Errorf("payload %q, want %q", m.Data, lip)
+	}
+	ch, ok := m.Header.AsConfirmed()
+	if !ok {
+		return fmt.Errorf("header format %s, want confirmed", m.Header.Format())
+	}
+	ack, err := packet.NewResponse(&ch, packet.ResponseACK, nil)
+	if err != nil {
+		return err
+	}
+	ackBursts, err := packet.Bursts(&ack, colorCode, layer2.SyncSourceMS)
+	if err != nil {
+		return err
+	}
+	am, err := receive(tx, ackBursts)
+	if err != nil {
+		return err
+	}
+	ackDst, ackSrc, _ := am.Header.Addresses()
+	ackCode, err := responseOf(&am.Header)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "confirmed: retry done, %q, %s %d -> %d: ok\n",
+		m.Data, ackCode, ackSrc, ackDst)
+	return nil
 }
-if !bytes.Equal(m.Data, lip) {
-	return fmt.Errorf("payload %q, want %q", m.Data, lip)
-}
-ch, ok := m.Header.AsConfirmed()
-if !ok {
-	return fmt.Errorf("header format %s, want confirmed", m.Header.Format())
-}
-ack, err := packet.NewResponse(&ch, packet.ResponseACK, nil)
-if err != nil {
-	return err
-}
-ackBursts, err := packet.Bursts(&ack, colorCode, layer2.SyncSourceMS)
-if err != nil {
-	return err
-}
-am, err := receive(tx, ackBursts)
-if err != nil {
-	return err
-}
-ackDst, ackSrc, _ := am.Header.Addresses()
-ackCode, err := responseOf(&am.Header)
-if err != nil {
-	return err
-}
-fmt.Fprintf(w, "confirmed: retry done, %q, %s %d -> %d: ok\n",
-	m.Data, ackCode, ackSrc, ackDst)
-return nil
 ```
 <!-- /dmrgo:code -->
 

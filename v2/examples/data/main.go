@@ -133,63 +133,81 @@ func unconfirmed(w io.Writer) error {
 
 func confirmed(w io.Writer) error {
 	lip := []byte("LIP: 41.878,-87.629,hdg=90,v=12")
+	bursts, good, err := lossyConfirmed(lip)
+	if err != nil {
+		return err
+	}
+	rx, tx, err := requestRetry(w, bursts)
+	if err != nil {
+		return err
+	}
+	return completeRetry(w, rx, tx, lip, bursts[0], good)
+}
+
+func lossyConfirmed(lip []byte) ([]layer2.RawBurst, layer2.RawBurst, error) {
 	h, err := pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
 		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}.DataHeader()
 	if err != nil {
-		return err
+		return nil, layer2.RawBurst{}, err
 	}
 	p, err := packet.NewPacket(h, lip, enums.DataTypeRate34)
 	if err != nil {
-		return err
+		return nil, layer2.RawBurst{}, err
 	}
 	bursts, err := packet.Bursts(&p, colorCode, layer2.SyncSourceMS)
 	if err != nil {
-		return err
+		return nil, layer2.RawBurst{}, err
 	}
 	good := bursts[2]
 	blk, ok := p.Blocks[1].(*pdu.Rate34Data)
 	if !ok {
-		return fmt.Errorf("block 1 is %T", p.Blocks[1])
+		return nil, layer2.RawBurst{}, fmt.Errorf("block 1 is %T", p.Blocks[1])
 	}
 	bad := *blk
 	bad.Data[7] ^= 0x10
 	if bursts[2], err = layer2.BuildRate34DataBurst(bad.Data, colorCode, layer2.SyncSourceMS); err != nil {
-		return err
+		return nil, layer2.RawBurst{}, err
 	}
+	return bursts, good, nil
+}
 
+func requestRetry(w io.Writer, bursts []layer2.RawBurst) (*packet.Assembler, *packet.Assembler, error) {
 	rx := packet.NewAssembler(127)
 	if _, err := receive(rx, bursts); !errors.Is(err, packet.ErrBlocksMissing) {
-		return fmt.Errorf("corrupted packet: %w, want %w", err, packet.ErrBlocksMissing)
+		return nil, nil, fmt.Errorf("corrupted packet: %w, want %w", err, packet.ErrBlocksMissing)
 	}
 	sack, err := rx.Response()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	sackBursts, err := packet.Bursts(&sack, colorCode, layer2.SyncSourceMS)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	tx := packet.NewAssembler(127)
 	rm, err := receive(tx, sackBursts)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if rm.Response == nil {
-		return errors.New("SACK carries no response data")
+		return nil, nil, errors.New("SACK carries no response data")
 	}
 	retry := rm.Response.RetryBlocks()
 	sackCode, err := responseOf(&rm.Header)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	fmt.Fprintf(w, "confirmed: %d bursts, missing %v, %s requests %v\n",
 		len(bursts), rx.Missing(), sackCode, retry)
 	if !slices.Equal(retry, []int{1}) {
-		return fmt.Errorf("retry %v, want [1]", retry)
+		return nil, nil, fmt.Errorf("retry %v, want [1]", retry)
 	}
+	return rx, tx, nil
+}
 
-	m, err := receive(rx, []layer2.RawBurst{bursts[0], good})
+func completeRetry(w io.Writer, rx, tx *packet.Assembler, lip []byte, header, good layer2.RawBurst) error {
+	m, err := receive(rx, []layer2.RawBurst{header, good})
 	if err != nil {
 		return err
 	}
