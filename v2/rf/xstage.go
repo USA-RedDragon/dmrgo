@@ -18,13 +18,6 @@ func newExactStage(m *cpmModel, opt *options, maxRun int) *exactStage {
 	}
 	xt := newXTrellis(m, np, maxRun)
 	xt.logmap = opt.LogMAP
-	if opt.DriftPenalty > 0 {
-		xt.pen = opt.DriftPenalty
-	}
-	xt.jump, xt.fade, xt.below = opt.PhaseJump, opt.PhaseJumpFade, opt.PhaseJumpBelow
-	if opt.DriftSteps > 0 {
-		xt.drifts = int(opt.DriftSteps)
-	}
 	return &exactStage{xt: xt, buf: make([]complex64, maxRun*m.sps), app: make([]float32, 4*maxRun)}
 }
 

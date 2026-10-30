@@ -13,118 +13,114 @@ const (
 	cohSPS   = discRate / symbolRate
 	cohHist  = 1 << 13
 	cohKnown = 4
-	cohLook  = 8
 )
 
 type cohStage struct {
-	src                         cohRing
-	ph                          *discPhase
-	trial                       float64
-	trialing                    bool
-	amp, noise                  [cohFitScales]float64
-	easySNR                     float64
-	skipSNR                     float64
-	locked                      bool
-	model                       *cpmModel
-	tr                          *trellis
-	ex                          *exactStage
-	clicks                      bool
-	mu                          float32
-	llrK                        float32
-	buf                         []complex64
-	runs                        [cohRuns]cohRunCorr
-	runAt                       int
-	gen                         int
-	symX                        []complex64
-	symAt                       []uint32
-	symStamp                    uint32
-	symKey                      cohSymKey
-	known                       [slotSymbols]int8
-	isK                         [slotSymbols]bool
-	app                         [slotSymbols][4]float32
-	dist                        [slotSymbols]int
-	g0                          int
-	dir                         int
-	steps                       int
-	t0                          float64
-	dt                          float64
-	relock                      bool
-	budget                      float64
-	voiceOnly                   bool
-	credit                      float64
-	budgetSlot                  int64
-	work                        int64
-	fitOnly                     bool
-	noNext, noCross, crossVoice bool
-	verifyScan                  float64
-	totalHz                     float64
-	freq                        float64
-	freqOK                      bool
-	nFit                        int
-	fitVar                      float64
-	scale                       float32
-	ampAvg                      float64
-	noiseAvg                    float64
-	symAvg                      float64
-	lastSym                     float64
-	easy                        bool
-	symNoise                    uint8
-	symSums                     [syncSymbols]complex128
-	refPh                       []float64
-	refX                        []complex64
-	refC                        []complex64
-	pp48                        phasePulse
-	refR                        []complex64
-	refIn                       []int
-	refSym                      [slotSymbols]int8
-	refK                        [slotSymbols]bool
-	tfit                        [5]float64
-	tfitBase                    int64
-	tfitRef                     float64
-	slotFit                     bool
-	warm                        bool
-	acq                         bool
-	vHz                         float64
-	vOK                         bool
-	vTau                        float64
-	vTauOK                      bool
-	frontCut                    float64
-	segs                        [2][2]int
-	nseg                        int
-	prior                       [slotSymbols][4]float32
-	hasPrior                    bool
-	prevOK                      bool
-	cross                       bool
-	prevK0                      int
-	prevSyms                    [syncSymbols]int8
-	lastT0                      float64
-	lastSync                    enums.SyncPattern
-	bs                          bool
-	next                        [cohNext][4]float32
-	nextOK                      bool
-	mine                        [cohNext][4]float32
-	mineOK                      bool
-	mineSlot                    int64
-	carry                       [cohNext][4]float32
-	carryOK                     bool
-	qllr                        [extQueue][layer2.BurstBits]int16
-	priorK                      bool
-	sps                         float64
-	div, rate, step             float64
-	scanTpl                     *[4][2][cohScanLen]complex64
-	scanX                       [cohScanLen]complex64
-	nsrc                        int
-	peakOK                      bool
-	peakAt                      int64
-	peakRho                     float64
-	peakSrc                     int
-	peakData                    bool
-	hFit                        float64
-	hVar                        float64
-	hNew                        bool
-	size                        int64
-	radios                      [2]cohRadio
-	radio                       int8
+	src             cohRing
+	ph              *discPhase
+	trial           float64
+	trialing        bool
+	amp, noise      [cohFitScales]float64
+	easySNR         float64
+	skipSNR         float64
+	locked          bool
+	model           *cpmModel
+	tr              *trellis
+	ex              *exactStage
+	mu              float32
+	llrK            float32
+	buf             []complex64
+	runs            [cohRuns]cohRunCorr
+	runAt           int
+	gen             int
+	symX            []complex64
+	symAt           []uint32
+	symStamp        uint32
+	symKey          cohSymKey
+	known           [slotSymbols]int8
+	isK             [slotSymbols]bool
+	app             [slotSymbols][4]float32
+	dist            [slotSymbols]int
+	g0              int
+	dir             int
+	steps           int
+	t0              float64
+	dt              float64
+	relock          bool
+	budget          float64
+	credit          float64
+	budgetSlot      int64
+	work            int64
+	fitOnly         bool
+	noNext, noCross bool
+	totalHz         float64
+	freq            float64
+	freqOK          bool
+	nFit            int
+	fitVar          float64
+	scale           float32
+	ampAvg          float64
+	noiseAvg        float64
+	symAvg          float64
+	lastSym         float64
+	easy            bool
+	symNoise        uint8
+	symSums         [syncSymbols]complex128
+	refPh           []float64
+	refX            []complex64
+	refC            []complex64
+	pp48            phasePulse
+	refR            []complex64
+	refIn           []int
+	refSym          [slotSymbols]int8
+	refK            [slotSymbols]bool
+	tfit            [5]float64
+	tfitBase        int64
+	tfitRef         float64
+	slotFit         bool
+	warm            bool
+	acq             bool
+	vHz             float64
+	vOK             bool
+	vTau            float64
+	vTauOK          bool
+	frontCut        float64
+	segs            [2][2]int
+	nseg            int
+	prior           [slotSymbols][4]float32
+	hasPrior        bool
+	prevOK          bool
+	cross           bool
+	prevK0          int
+	prevSyms        [syncSymbols]int8
+	lastT0          float64
+	lastSync        enums.SyncPattern
+	bs              bool
+	next            [cohNext][4]float32
+	nextOK          bool
+	mine            [cohNext][4]float32
+	mineOK          bool
+	mineSlot        int64
+	carry           [cohNext][4]float32
+	carryOK         bool
+	qllr            [extQueue][layer2.BurstBits]int16
+	priorK          bool
+	sps             float64
+	div, rate, step float64
+	scanTpl         *[4][2][cohScanLen]complex64
+	scanX           [cohScanLen]complex64
+	nsrc            int
+	peakOK          bool
+	peakAt          int64
+	peakRho         float64
+	peakSrc         int
+	peakData        bool
+	hFit            float64
+	hVar            float64
+	hNew            bool
+	size            int64
+	radios          [2]cohRadio
+	radio           int8
 }
 
 type cohRadio struct {
@@ -217,17 +213,13 @@ func newCohStageOf(opt *options) *cohStage {
 	sps := cohSPS
 	m := newCPMModel(1, sps)
 	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
-	win, look := cohMaxRun, 0
-	if opt.CohWin > 0 {
-		win, look = opt.CohWin, cohLook
-	}
-	s.tr = newTrellis(m, cohMaxRun, win, look)
+	s.tr = newTrellis(m, cohMaxRun, cohMaxRun, 0)
 	if opt.CohExact {
-		s.ex, s.clicks = newExactStage(m, opt, cohMaxRun+2*m.d), opt.CohClicks
+		s.ex = newExactStage(m, opt, cohMaxRun+2*m.d)
 	}
 	s.size = opt.cohRing()
 	s.setRing(2)
@@ -364,55 +356,6 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 	}
 	s.peakOK = false
 	return s.peakSrc, s.peakData, back, true
-}
-
-func (s *cohStage) scanShare(c *leanCore, p enums.SyncPattern) float64 {
-	acq := s.acq
-	s.acq = true
-	v := s.scanShareAcq(c, p)
-	s.acq = acq
-	return v
-}
-
-func (s *cohStage) scanShareAcq(c *leanCore, p enums.SyncPattern) float64 {
-	hist, n, lo := s.ring()
-	if n < s.size/2 || s.step != 1 || s.div != 2 {
-		return 1
-	}
-	src, data := -1, false
-	for i := range s.nsrc {
-		voice, dp, _ := sourceAt(i).SyncPatterns()
-		if p == voice || p == dp {
-			src, data = i, p == dp
-			break
-		}
-	}
-	sps := float64(samplesPerSy) / 2
-	t := symTime(c, c.ns-1) + s.dt - float64(syncSymbols-2)*sps - float64(cohSPS/2)
-	b0 := int64(math.Round(t))
-	if src < 0 || b0-cohScanOff < lo || b0+cohScanOff+cohScanLen > n {
-		return 1
-	}
-	best := 0.0
-	for o := -cohScanOff; o <= cohScanOff; o++ {
-		x := s.scanX[:]
-		var e float64
-		for i := range x {
-			v := hist[(b0+int64(o)+int64(i))&(s.size-1)]
-			x[i] = v
-			e += float64(real(v)*real(v) + imag(v)*imag(v))
-		}
-		if e == 0 {
-			continue
-		}
-		mv, md, _ := scanPair(x, &s.scanTpl[src][0], 0, -1)
-		m := mv
-		if data {
-			m = md
-		}
-		best = max(best, m*cohScanSegs/(e*cohScanLen))
-	}
-	return best
 }
 
 func symTime(c *leanCore, k int64) float64 {
@@ -1443,9 +1386,6 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	if s.t0-s.sps < float64(lo) {
 		return false
 	}
-	if s.verifyScan > 0 && s.scanTpl != nil && s.scanShare(c, p) < s.verifyScan {
-		return false
-	}
 	s.verifyHz()
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
@@ -1648,7 +1588,7 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	} else {
 		s.run(g1, g1-s.keepLo()+1+runMargin, -1, s.scale)
 	}
-	if s.prevOK && !s.easy && !s.noCross && (!s.crossVoice || s.nseg == 2) {
+	if s.prevOK && !s.easy && !s.noCross {
 		s.cross, s.runAt = true, 2
 		s.run(s.prevK0, syncFirstSym+syncSymbols-s.prevK0+runMargin, 1, s.scale)
 		s.cross = false
@@ -1778,7 +1718,7 @@ func (s *cohStage) runExact(rot complex64, scale float32) {
 	s.fill(0, n, e.buf[:n*sps])
 	for i := range n {
 		tc := s.t0 + float64(s.g0+s.dir*i)*s.sps
-		if w := s.src.cohWeight(tc-s.sps/2, tc+s.sps/2); w == 0 || w < 1 && s.clicks {
+		if w := s.src.cohWeight(tc-s.sps/2, tc+s.sps/2); w == 0 {
 			for j := i * sps; j < (i+1)*sps; j++ {
 				e.buf[j] *= complex(w, 0)
 			}

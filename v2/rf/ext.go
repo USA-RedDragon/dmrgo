@@ -126,9 +126,6 @@ func softExtOf(opt *options, sps float32) *softExt {
 	if opt.ExtOSDOrder > 0 {
 		x.soft.OSDOrder = opt.ExtOSDOrder - 1
 	}
-	if opt.ExtGridIters > 0 {
-		x.soft.GridIters = opt.ExtGridIters
-	}
 	if opt.ExtNPML {
 		x.np = &npml{}
 	}
@@ -168,7 +165,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	out := &b.Fixed
 	if x.coh != nil {
 		s := x.coh
-		s.fitOnly = (s.budget > 0 || s.ex != nil) && x.checked(b) && s.leanInBand() || s.voiceOnly && !isVoiceBurst(b)
+		s.fitOnly = (s.budget > 0 || s.ex != nil) && x.checked(b) && s.leanInBand()
 		x.work0 = s.work + x.work
 		done := x.cohBurst(c, b, ch, cc, ccOK)
 		if s.budget > 0 && done {
@@ -444,11 +441,6 @@ func (x *softExt) bptcRetry(b *Burst) bool {
 		h, _ := b.Data.BPTCPayload()
 		return h != p
 	}
-}
-
-func isVoiceBurst(b *Burst) bool {
-	_, kind, ok := layer2.SyncSourceOf(b.Sync)
-	return b.Voice != enums.VoiceBurstUnknown || ok && kind == layer2.KindVoice
 }
 
 func (x *softExt) voiceKnown(b *Burst) bool {
