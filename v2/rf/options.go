@@ -115,7 +115,7 @@ func tier1Options(o options) options {
 	return o
 }
 
-var coreTier3 = false
+const coreTier3 = false
 
 func coreExactOptions(o options) options {
 	o.CohExact, o.PhaseStates, o.LogMAP, o.CohBudget = true, 52, true, 0

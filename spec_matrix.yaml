@@ -157,6 +157,7 @@ ignore_files:
   - v2/rf/txhost_tinygo.go
   - v2/rf/txregion.go
   - v2/rf/union.go
+  - v2/rf/xstage.go
   - v2/transport/dmrd/alias.go
   - v2/transport/dmrd/alias_lc.go
   - v2/transport/dmrd/dmrdauth/auth.go
