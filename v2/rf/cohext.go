@@ -891,25 +891,35 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 					continue
 				}
 				s.totalHz = f
-				top := 0.0
-				for p := range syms {
-					for i, v := range syms[p] {
-						s.known[syncFirstSym+i] = v
-					}
-					if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
-						top = max(top, a*a/(a*a+max(v, 0)))
-					}
-				}
-				sum += top
+				sum += s.syncRho(&syms)
 			}
 			if sum > best {
 				best, bestHz, bestTau = sum, f, tau
 			}
 		}
 	}
+	s.t0 = s.ringTime(c, first) + s.dt + bestTau*s.sps
+	s.totalHz = bestHz
+	if s.syncRho(&syms) < cohPlaceRho {
+		s.t0, s.totalHz = t0, hz
+		return
+	}
 	s.dt += bestTau * s.sps
 	s.t0, s.totalHz = t0, hz
 	s.freq, s.freqOK, s.nFit, s.fitVar = bestHz, true, 1, cohWarmStepHz*cohWarmStepHz
+}
+
+func (s *cohStage) syncRho(syms *[2][syncSymbols]int8) float64 {
+	top := 0.0
+	for p := range syms {
+		for i, v := range syms[p] {
+			s.known[syncFirstSym+i] = v
+		}
+		if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
+			top = max(top, a*a/(a*a+max(v, 0)))
+		}
+	}
+	return top
 }
 
 func (s *cohStage) slotHold(slot int64) {
