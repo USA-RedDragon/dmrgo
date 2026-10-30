@@ -23,7 +23,7 @@ libdmrgo has a C ABI number of its own, `DMRGO_ABI_VERSION`. The generated heade
 
 The soname is `libdmrgo.so.N`, with N the ABI number. `dmrgo.h` gives the rules of the number:
 
-<!-- dmrgo:code file=v2/capi/dmrgo.h lines=71-78 -->
+<!-- dmrgo:code file=v2/capi/dmrgo.h region=abi -->
 ```c
 * The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
 * independent of the version of the Go module and changes only when a
@@ -125,7 +125,7 @@ Each function returns `DMRGO_OK` or a negative status. [C header](../reference/c
 
 These rules of `dmrgo.h` apply to threads, callback storage and processes:
 
-<!-- dmrgo:code file=v2/capi/dmrgo.h lines=58-69 -->
+<!-- dmrgo:code file=v2/capi/dmrgo.h region=threads -->
 ```c
 * - Use a handle from one thread at a time. A handle that a call takes,
 *   such as the port of dmrgo_dvsi_new or the authenticator of a config,
