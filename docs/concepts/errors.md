@@ -103,13 +103,41 @@ A setter that returns a `*FieldRangeError` changes nothing.
 
 ## FEC failures go in the result
 
-Bit errors on air are normal. A decoder corrects the errors that its FEC can correct, and reports the rest in an FEC result, a [fec.Result](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#Result), beside the decoded value. The decode itself does not fail. For example, [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes) returns no error for a burst whose CRC fails. `burst.FEC` reports the failure, and `burst.Data` still holds the decoded PDU. `Err` on a result returns [fec.ErrUncorrectable](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#ErrUncorrectable) for an uncorrectable result:
+Bit errors on air are normal. A decoder corrects the errors that its FEC can correct, and reports the rest in an FEC result, a [fec.Result](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#Result), beside the decoded value. The decode itself does not fail. For example, [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes) returns no error for a burst whose CRC fails. `burst.FEC` reports the failure, and `burst.Data` still holds the decoded PDU. `Err` on a result returns [fec.ErrUncorrectable](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#ErrUncorrectable) for an uncorrectable result. This example prints the failure of a burst and skips the burst:
 
-<!-- dmrgo:code file=v2/layer2/example_test.go lines=171-174 -->
+<!-- dmrgo:code file=v2/layer2/example_test.go symbol=ExampleNewBurstFromBytes_capture -->
 ```go
-if err := burst.FEC.Aggregate().Err(); err != nil {
-	fmt.Println("burst", off/33, err)
-	continue
+func ExampleNewBurstFromBytes_capture() {
+	capture, err := os.ReadFile("testdata/parrot_kerchunk.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	voiceBursts := 0
+	for off := 0; off+33 <= len(capture); off += 33 {
+		burst, err := layer2.NewBurstFromBytes([33]byte(capture[off : off+33]))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if err := burst.FEC.Aggregate().Err(); err != nil {
+			fmt.Println("burst", off/33, err)
+			continue
+		}
+		switch burst.Kind {
+		case layer2.KindVoice:
+			voiceBursts++
+		case layer2.KindData:
+			fmt.Print(burst.SlotType.DataType)
+			if lc, ok := burst.Data.(*pdu.FullLinkControl); ok {
+				target, source, _ := lc.Addresses()
+				fmt.Printf(": call from %d to %d", source, target)
+			}
+			fmt.Println()
+		case layer2.KindUnknown, layer2.KindReverseChannel:
+		}
+	}
+	fmt.Println(voiceBursts, "voice bursts")
 }
 ```
 <!-- /dmrgo:code -->
