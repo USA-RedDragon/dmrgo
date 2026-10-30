@@ -1470,6 +1470,8 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	return true
 }
 
+const cohRhoSlope = 49
+
 func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float64, bool) {
 	s.acq = true
 	defer func() { s.acq = false }()
@@ -1510,7 +1512,8 @@ func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (floa
 	s.totalHz = bestHz
 	s.t0 = t0 + bestTau*s.sps
 	s.fineTime(k0, k1)
-	if s.rho(k0, k1) < cohPlaceRho {
+	taus := math.Floor(2*cohWarmSpanSym/cohWarmStepSym) + 1
+	if s.rho(k0, k1) < cohPlaceRho+math.Log(float64(2*steps+1)*taus)/cohRhoSlope {
 		return 0, false
 	}
 	if fit := s.freqFit(k0, k1); math.Abs(fit) < cohFreqSpan {
