@@ -166,6 +166,9 @@ func checkArgs(m marker, want []string) error {
 	if m.kind == kindDoc {
 		allowed["name"], allowed["section"] = true, true
 	}
+	if m.kind == kindGoMod {
+		allowed["file"] = true
+	}
 	for k := range m.args {
 		if !allowed[k] {
 			return fmt.Errorf("line %d: dmrgo:%s does not take %s=", m.line, m.kind, k)

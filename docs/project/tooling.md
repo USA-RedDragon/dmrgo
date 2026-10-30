@@ -33,7 +33,8 @@ Package paths are relative to `v2`: `csbk`, `transport/dmrd/dmrdsession`, and `.
 | `dmrgo:output` | `example=<dir under v2/examples>` | The standard output of `go run` on the example. |
 | `dmrgo:output` | `test=<pkg>.<ExampleName>` | The `// Output:` of a Go Example, after `go test` runs it. `<pkg>.Example` is the package Example. |
 | `dmrgo:code` | `file=<repo path> symbol=<Name>` | One func, method (`Type.Method`), type, or const or var block, without its doc comment. An Example has no `// Output:` comment in the excerpt. |
-| `dmrgo:code` | `file=<YAML file> symbol=<key.key>` | The block of the key at that dotted path, such as `jobs.test` of a workflow. |
+| `dmrgo:code` | `file=<YAML file> symbol=<key.key>` | The block of the key at that dotted path, such as `jobs.test` of a workflow. A last segment `key[A:B]` gives the items of the list at `key` from the item named `A` to the item named `B`, and `key[A]` the one item `A`. Quote a value that has spaces. |
+| `dmrgo:code` | `file=<C file> symbol=<Name>` | The `#define` of `Name`, or the definition of the function `Name`. |
 | `dmrgo:code` | `file=<repo path>` | The whole file. |
 | `dmrgo:code` | `file=<repo path> lines=<a>-<b>` | Those lines. For Go, the lines must hold whole declarations or statements. It fails when the file changes under the excerpt, so prefer `symbol=`. |
 | `dmrgo:config` | `pkg=<path> type=<Config>` | A table of the exported fields: type, default and doc text. The default comes from the code that applies it. |
@@ -42,7 +43,7 @@ Package paths are relative to `v2`: `csbk`, `transport/dmrd/dmrdsession`, and `.
 | `dmrgo:states` | `pkg=<path> type=<Type>` | The states, the transitions seen in the tests and an SVG diagram in `states/` next to the page. `type` is the machine type or its state type (`bs` `SlotState`). |
 | `dmrgo:doc` | `pkg=<path>` and optional `name=<Name>`, `section=<heading>` | The package doc, or the doc of a type, func, method, const or var, as Markdown, or one `# heading` section of it. A `pkg` outside v2, such as `cmd/rxbench`, is a directory from the repository root. |
 | `dmrgo:flags` | `cmd=<dir>` | The usage that the command in that directory prints for `-h`. |
-| `dmrgo:gomod` | `field=go`, `toolchain` or `module` | Inline: that line of `v2/go.mod`. `field=go` is the minimum Go version. |
+| `dmrgo:gomod` | `field=go`, `toolchain` or `module`, optional `file=<repo path>` | Inline: that line of `v2/go.mod`, or of the `go.mod` at `file=`. `field=go` is the minimum Go version. |
 
 docgen records the transitions of a state machine from its tests: a go build overlay adds a hook to the top of each exported method, and the hook records the state before and after each call. The package doc of `cmd/docgen` (`go doc` in `cmd/docgen`) gives the details. A transition that no test makes is not in the table, so a missing transition needs a test, not a hand edit.
 

@@ -29,7 +29,11 @@
 //     (Type.Method), type, or const or var block, without its doc comment
 //     and, for an Example, without its output comment.
 //   - dmrgo:code file=<YAML file> symbol=<key.key> writes the block of
-//     the key at that dotted path, such as jobs.test of a workflow.
+//     the key at that dotted path, such as jobs.test of a workflow. A last
+//     segment key[A:B] writes the items of the list at key from the item
+//     with name A to the item with name B, and key[A] the one item A.
+//   - dmrgo:code file=<C file> symbol=<Name> writes the #define of Name or
+//     the definition of the function Name.
 //   - dmrgo:code file=<repo path> writes the whole file.
 //   - dmrgo:code file=<repo path> lines=<a>-<b> writes those lines of the
 //     file. For a Go file the lines must hold whole declarations or
@@ -50,8 +54,8 @@
 //     method (Type.Method), const or var, or one "# heading" section of it.
 //     A pkg= that names a directory outside v2, such as cmd/rxbench, reads
 //     the package doc of that directory.
-//   - dmrgo:gomod field=<go|toolchain|module> writes that line of
-//     v2/go.mod.
+//   - dmrgo:gomod field=<go|toolchain|module> [file=<repo path>] writes
+//     that line of v2/go.mod, or of the go.mod at file=.
 //   - dmrgo:flags cmd=<dir> runs go run on the command in that directory
 //     (relative to the repository root) with -h and writes the usage.
 //

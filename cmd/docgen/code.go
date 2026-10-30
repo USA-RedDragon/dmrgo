@@ -183,8 +183,10 @@ func symbolExcerpt(path string, src []byte, sym string) (string, error) {
 	case ".go":
 	case ".yaml", ".yml":
 		return yamlExcerpt(src, sym)
+	case ".c", ".h":
+		return cExcerpt(src, sym)
 	default:
-		return "", fmt.Errorf("symbol= needs a Go or YAML file")
+		return "", fmt.Errorf("symbol= needs a Go, YAML or C file")
 	}
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, src, parser.ParseComments)
@@ -301,12 +303,17 @@ func lineStart(src []byte, off int) int {
 }
 
 // yamlExcerpt returns the block of the key at the dotted path sym, such as
-// jobs.test, with the key line and without the blank lines at its end.
+// jobs.test, with the key line and without the blank lines at its end. A
+// last segment key[A:B] or key[A] selects named items of the list at key.
 func yamlExcerpt(src []byte, sym string) (string, error) {
+	path, items := sym, ""
+	if j := strings.IndexByte(sym, '['); j >= 0 && strings.HasSuffix(sym, "]") {
+		path, items = sym[:j], sym[j+1:len(sym)-1]
+	}
 	lines := strings.Split(string(src), "\n")
 	start, end, indent := 0, len(lines), -1
 	at := -1
-	for _, key := range strings.Split(sym, ".") {
+	for _, key := range strings.Split(path, ".") {
 		at = -1
 		child := -1
 		for i := start; i < end; i++ {
@@ -327,15 +334,109 @@ func yamlExcerpt(src []byte, sym string) (string, error) {
 			}
 		}
 		if at < 0 {
-			return "", fmt.Errorf("no key %s in the YAML file", sym)
+			return "", fmt.Errorf("no key %s in the YAML file", path)
 		}
 		indent = len(lines[at]) - len(strings.TrimLeft(lines[at], " "))
 		start, end = at+1, yamlBlockEnd(lines, at+1, end, indent)
+	}
+	if items != "" {
+		return yamlItems(lines, start, end, sym, items)
 	}
 	for end > at+1 && strings.TrimSpace(lines[end-1]) == "" {
 		end--
 	}
 	return dedent(lines[at:end]), nil
+}
+
+func yamlItems(lines []string, start, end int, sym, items string) (string, error) {
+	first, last, ok := strings.Cut(items, ":")
+	if !ok {
+		last = first
+	}
+	var starts []int
+	var names []string
+	for i := start; i < end; i++ {
+		t := strings.TrimLeft(lines[i], " ")
+		if !strings.HasPrefix(t, "- ") {
+			continue
+		}
+		if len(starts) > 0 && len(lines[i])-len(t) != len(lines[starts[0]])-len(strings.TrimLeft(lines[starts[0]], " ")) {
+			continue
+		}
+		starts = append(starts, i)
+		names = append(names, yamlItemName(lines, i, end))
+	}
+	a, b := -1, -1
+	for k, n := range names {
+		if n == first && a < 0 {
+			a = k
+		}
+		if n == last && a >= 0 {
+			b = k
+			break
+		}
+	}
+	if a < 0 || b < 0 {
+		return "", fmt.Errorf("no items %s in the YAML file", sym)
+	}
+	stop := end
+	if b+1 < len(starts) {
+		stop = starts[b+1]
+	}
+	for stop > starts[a]+1 && strings.TrimSpace(lines[stop-1]) == "" {
+		stop--
+	}
+	return dedent(lines[starts[a]:stop]), nil
+}
+
+func yamlItemName(lines []string, at, end int) string {
+	ind := len(lines[at]) - len(strings.TrimLeft(lines[at], " "))
+	for i := at; i < end; i++ {
+		t := strings.TrimLeft(lines[i], " ")
+		if i > at && t != "" && len(lines[i])-len(t) <= ind {
+			break
+		}
+		t = strings.TrimPrefix(t, "- ")
+		if n, ok := strings.CutPrefix(t, "name: "); ok {
+			return strings.TrimSpace(n)
+		}
+	}
+	return ""
+}
+
+// cExcerpt returns the #define of sym, with its continuation lines, or the
+// definition of the function sym, from its first line at column 0 to the
+// closing brace at column 0.
+func cExcerpt(src []byte, sym string) (string, error) {
+	lines := strings.Split(string(src), "\n")
+	for i, l := range lines {
+		if rest, ok := strings.CutPrefix(l, "#define "+sym); ok && (rest == "" || rest[0] == ' ' || rest[0] == '\t' || rest[0] == '(') {
+			j := i
+			for j < len(lines)-1 && strings.HasSuffix(lines[j], "\\") {
+				j++
+			}
+			return strings.Join(lines[i:j+1], "\n"), nil
+		}
+	}
+	for i, l := range lines {
+		if l == "" || l[0] == ' ' || l[0] == '\t' || l[0] == '#' || l[0] == '/' || l[0] == '*' || strings.HasSuffix(strings.TrimSpace(l), ";") {
+			continue
+		}
+		k := strings.Index(l, sym+"(")
+		if k < 0 || (k > 0 && (isIdent(l[k-1]))) {
+			continue
+		}
+		for j := i + 1; j < len(lines); j++ {
+			if lines[j] == "}" {
+				return strings.Join(lines[i:j+1], "\n"), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no #define or function %s in the C file", sym)
+}
+
+func isIdent(c byte) bool {
+	return c == '_' || c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
 }
 
 func yamlBlockEnd(lines []string, from, end, indent int) int {

@@ -175,3 +175,46 @@ func TestYAMLSymbol(t *testing.T) {
 		t.Error("a key below the top level passed as a top-level key")
 	}
 }
+
+func TestYAMLItems(t *testing.T) {
+	t.Parallel()
+	src := []byte("jobs:\n  a:\n    steps:\n      - name: One\n        run: x\n\n      - name: Two.b\n        run: |\n          y\n\n      - run: z\n\n      - name: Four\n        run: w\n  b:\n    steps: []\n")
+	got, err := yamlExcerpt(src, "jobs.a.steps[Two.b:Four]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "- name: Two.b\n  run: |\n    y\n\n- run: z\n\n- name: Four\n  run: w"; got != want {
+		t.Errorf("Two.b:Four = %q, want %q", got, want)
+	}
+	got, err = yamlExcerpt(src, "jobs.a.steps[One]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "- name: One\n  run: x"; got != want {
+		t.Errorf("One = %q, want %q", got, want)
+	}
+	if _, err := yamlExcerpt(src, "jobs.a.steps[Four:One]"); err == nil {
+		t.Error("a reversed item range passed")
+	}
+}
+
+func TestCSymbol(t *testing.T) {
+	t.Parallel()
+	src := []byte("#define A_B 4\n#define A 1 \\\n  + 2\nint f(void);\nstatic int f(void) {\n\treturn A;\n}\nint xf(void) {\n}\n")
+	for _, c := range []struct{ sym, want string }{
+		{"A", "#define A 1 \\\n  + 2"},
+		{"A_B", "#define A_B 4"},
+		{"f", "static int f(void) {\n\treturn A;\n}"},
+	} {
+		got, err := cExcerpt(src, c.sym)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != c.want {
+			t.Errorf("%s = %q, want %q", c.sym, got, c.want)
+		}
+	}
+	if _, err := cExcerpt(src, "g"); err == nil {
+		t.Error("a missing symbol passed")
+	}
+}

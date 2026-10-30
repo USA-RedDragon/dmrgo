@@ -10,6 +10,9 @@ import (
 
 func (g *gen) fillGoMod(m marker) (string, []outFile, error) {
 	p := filepath.Join(g.v2, "go.mod")
+	if f := m.args["file"]; f != "" {
+		p = filepath.Join(g.root, filepath.FromSlash(f))
+	}
 	b, err := os.ReadFile(p)
 	if err != nil {
 		return "", nil, err
@@ -36,7 +39,7 @@ func (g *gen) fillGoMod(m marker) (string, []outFile, error) {
 		return "", nil, fmt.Errorf("field=%s: want go, toolchain or module", m.args["field"])
 	}
 	if v == "" {
-		return "", nil, fmt.Errorf("v2/go.mod has no %s line", m.args["field"])
+		return "", nil, fmt.Errorf("%s has no %s line", filepath.Base(filepath.Dir(p))+"/go.mod", m.args["field"])
 	}
 	return "`" + v + "`", nil, nil
 }
