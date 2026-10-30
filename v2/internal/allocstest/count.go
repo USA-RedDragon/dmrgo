@@ -24,6 +24,9 @@ var state struct {
 	mark           *[16]byte
 	created        []metrics.Sample
 	tiny           []metrics.Sample
+	nested         uint64
+	skipped        uint64
+	nestedStacks   map[string]bool
 }
 
 // PerRun returns the average number of heap allocations of one call of f,
@@ -68,6 +71,7 @@ func measure(tb testing.TB, f func(), runs int, setup func(), wantBytes bool) (o
 		state.created = []metrics.Sample{{Name: "/sched/goroutines-created:goroutines"}, {Name: "/sched/goroutines:goroutines"}}
 		state.tiny = []metrics.Sample{{Name: "/gc/heap/tiny/allocs:objects"}}
 	}
+	state.skipped = 0
 	rate := runtime.MemProfileRate
 	mallocs, total, tiny, started := window(f, runs, setup, wantBytes)
 	runtime.MemProfileRate = rate
@@ -79,26 +83,31 @@ func measure(tb testing.TB, f func(), runs int, setup func(), wantBytes bool) (o
 	if mallocs == 0 && total == 0 {
 		return 0, 0
 	}
+	o, b, n := settle(tb)
+	state.skipped, state.nested = n-state.nested, n
+	objects, allocated = o-state.objects+tiny, b-state.bytes
+	state.objects, state.bytes = o, b
+	return objects, allocated
+}
+
+func settle(tb testing.TB) (objects, allocated, nestedObjects uint64) {
+	tb.Helper()
+	rate := runtime.MemProfileRate
 	runtime.MemProfileRate = 1
 	mark()
 	runtime.MemProfileRate = rate
 	state.marks++
-	settled := 0
 	for range 50 {
 		runtime.GC()
-		o, b, m := profiled(tb)
+		o, b, n, m := profiled(tb)
 		if m < state.marks {
 			continue
 		}
 		state.marks = m
-		if settled++; settled < 3 {
-			continue
-		}
-		objects, allocated = o-state.objects+tiny, b-state.bytes
-		state.objects, state.bytes = o, b
-		return objects, allocated
+		return o, b, n
 	}
-	return mallocs, total
+	tb.Fatal("allocstest: the heap profile does not show the sentinel allocation after 50 GC cycles")
+	return 0, 0, 0
 }
 
 func fuzzing() bool {
@@ -188,7 +197,7 @@ func goroutines() (created, system uint64) {
 //go:noinline
 func inside(f func()) { f() }
 
-func profiled(tb testing.TB) (objects, allocated, marks uint64) {
+func profiled(tb testing.TB) (objects, allocated, nestedObjects, marks uint64) {
 	tb.Helper()
 	name := "\t" + runtime.FuncForPC(reflect.ValueOf(inside).Pointer()).Name() + "+"
 	markName := "\t" + runtime.FuncForPC(reflect.ValueOf(mark).Pointer()).Name() + "+"
@@ -197,6 +206,7 @@ func profiled(tb testing.TB) (objects, allocated, marks uint64) {
 		tb.Fatal(err)
 	}
 	var o, b uint64
+	var pcs string
 	counted := true
 	for line := range strings.Lines(buf.String()) {
 		switch {
@@ -205,9 +215,13 @@ func profiled(tb testing.TB) (objects, allocated, marks uint64) {
 				break
 			}
 			if strings.Contains(line, name) {
+				counted = true
+				if nested(pcs) {
+					nestedObjects += o
+					break
+				}
 				objects += o
 				allocated += b
-				counted = true
 			} else if strings.Contains(line, markName) {
 				marks += o
 				counted = true
@@ -217,10 +231,43 @@ func profiled(tb testing.TB) (objects, allocated, marks uint64) {
 			if o, b, ok = allocCounts(line); !ok {
 				tb.Fatalf("allocstest: heap profile record without counts: %q", line)
 			}
+			_, pcs, _ = strings.Cut(line, " @ ")
 			counted = false
 		}
 	}
-	return objects, allocated, marks
+	return objects, allocated, nestedObjects, marks
+}
+
+func nested(pcs string) bool {
+	if v, ok := state.nestedStacks[pcs]; ok {
+		return v
+	}
+	var stack []uintptr
+	for _, f := range strings.Fields(pcs) {
+		if pc, err := strconv.ParseUint(strings.TrimPrefix(f, "0x"), 16, 64); err == nil {
+			stack = append(stack, uintptr(pc))
+		}
+	}
+	found, other := false, false
+	frames := runtime.CallersFrames(stack)
+	for more := true; more && !found; {
+		var frame runtime.Frame
+		frame, more = frames.Next()
+		if allocator(frame.Function) {
+			found = other
+		} else {
+			other = true
+		}
+	}
+	if state.nestedStacks == nil {
+		state.nestedStacks = map[string]bool{}
+	}
+	state.nestedStacks[pcs] = found
+	return found
+}
+
+func allocator(fn string) bool {
+	return strings.HasPrefix(fn, "runtime.mallocgc") || fn == "runtime.profilealloc" || fn == "runtime.mProf_Malloc"
 }
 
 func allocCounts(rec string) (objects, allocated uint64, ok bool) {

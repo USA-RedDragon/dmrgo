@@ -168,3 +168,38 @@ func TestAllocsGoroutineStart(t *testing.T) {
 		t.Errorf("a call that starts a goroutine passes: %q", tb.msg)
 	}
 }
+
+var (
+	big   []byte
+	procs int
+)
+
+func TestAllocsNestedRuntime(t *testing.T) {
+	procs = max(procs, runtime.GOMAXPROCS(0))
+	setup := func(n int) func() {
+		return func() {
+			big = nil
+			runtime.GC()
+			runtime.GOMAXPROCS(n)
+		}
+	}
+	procs++
+	n := procs
+	got := Mallocs(t, setup(n), func() { big = make([]byte, 16<<20) })
+	if state.skipped == 0 {
+		t.Error("the runtime made no allocation inside the allocation of the call")
+	}
+	if got != 1 {
+		t.Errorf("Mallocs = %d with %d allocations that the runtime made inside the allocation of the call, want 1", got, state.skipped)
+	}
+	procs++
+	n = procs
+	b := Bytes(t, setup(n), func() { big = make([]byte, 16<<20) })
+	if state.skipped == 0 {
+		t.Error("the runtime made no allocation inside the allocation of the call")
+	}
+	if b != 16<<20 {
+		t.Errorf("Bytes = %d with %d allocations that the runtime made inside the allocation of the call, want %d", b, state.skipped, 16<<20)
+	}
+	big = nil
+}

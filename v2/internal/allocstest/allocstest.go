@@ -18,8 +18,18 @@
 // block, so the functions add each such allocation of the window, from the
 // /gc/heap/tiny/allocs:objects metric, as one of the call. They measure the
 // call once and do not repeat it, so an allocation on a path that the call
-// takes only sometimes is counted when it occurs. If the heap profile does
-// not settle, they return the process-wide count.
+// takes only sometimes is counted when it occurs. They read the heap
+// profile only after it shows a sentinel allocation made after the call.
+// The runtime publishes a record one or two GC cycles after the allocation,
+// in cycle order, so the sentinel's record comes after the records of the
+// call.
+//
+// An allocation of the call can start a GC, and the runtime can then
+// allocate for itself inside that allocation, for example a sudog when
+// gcStart waits on a semaphore, or the mark workers that gcStart starts
+// when GOMAXPROCS grew. Its stack passes through the call, but it also
+// passes through runtime.mallocgc of the outer allocation, so the functions
+// do not count it. The allocation that started it still counts.
 //
 // The allocations of a goroutine that the call starts have no stack through
 // the call, so the functions fail the test when a user goroutine starts
