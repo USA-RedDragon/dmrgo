@@ -512,6 +512,7 @@ func (r *iqRx) tuneWith(hz, dc, lim float32) {
 	} else {
 		f.mean = dc
 	}
+	r.d.tunePrev, r.d.tuneNs = r.d.tuneHz, uint32(r.d.ns)
 	f.dc, r.d.tuneHz = dc, dc
 	f.refresh()
 	if !r.d.locked {

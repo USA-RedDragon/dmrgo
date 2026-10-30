@@ -276,6 +276,8 @@ type leanCore struct {
 	acqGain        float32
 	trackGain      float32
 	tuneHz         float32
+	tunePrev       float32
+	tuneNs         uint32
 	lastAt         float32
 	next           int32
 	lastAnch       int32
@@ -283,6 +285,7 @@ type leanCore struct {
 	lagTicks       int32
 	dcHz           float32
 	devScale       float32
+	fitHz          float32
 	discVar        float32
 	amp            float32
 	noise          float32
@@ -304,6 +307,7 @@ type leanCore struct {
 	fec            leanFEC
 	huntBuf        [leanHuntSamples / 2]int16
 	devHz          int16
+	devAtHz        int16
 
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
@@ -326,6 +330,7 @@ type leanCore struct {
 
 type leanLevels struct {
 	devScale, dcHz, discVar, amp, noise float32
+	fitHz                               float32
 }
 
 type leanSlots struct {
@@ -1674,12 +1679,26 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		}
 		g = max(g, leanMinScale)
 		r.devScale, r.dcHz, r.discVar = g, dc, res
+		if a := r.audio; a != nil {
+			t := r.tuneHz
+			if int32(uint32(end)-r.tuneNs) < 0 {
+				t = r.tunePrev
+			}
+			r.fitHz = (t + dc) / a.gain
+		}
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		return true
 	}
 	r.devScale = levelForget*r.devScale + (1-levelForget)*g
 	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
 	r.discVar = levelForget*r.discVar + (1-levelForget)*res
+	if a := r.audio; a != nil {
+		t := r.tuneHz
+		if int32(uint32(end)-r.tuneNs) < 0 {
+			t = r.tunePrev
+		}
+		r.fitHz = levelForget*r.fitHz + (1-levelForget)*(t+dc)/a.gain
+	}
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	return true
 }
@@ -1818,11 +1837,11 @@ func (r *leanCore) slotFirst(j int32, base int64, anchor enums.SyncPattern) {
 }
 
 func (r *leanCore) levels() leanLevels {
-	return leanLevels{r.devScale, r.dcHz, r.discVar, r.amp, r.noise}
+	return leanLevels{r.devScale, r.dcHz, r.discVar, r.amp, r.noise, r.fitHz}
 }
 
 func (r *leanCore) setLevels(l *leanLevels) {
-	r.devScale, r.dcHz, r.discVar, r.amp, r.noise = l.devScale, l.dcHz, l.discVar, l.amp, l.noise
+	r.devScale, r.dcHz, r.discVar, r.amp, r.noise, r.fitHz = l.devScale, l.dcHz, l.discVar, l.amp, l.noise, l.fitHz
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 }
 
@@ -2119,6 +2138,7 @@ func (r *leanCore) unlock() {
 	}
 	r.offsetHz = int16(max32(min32(roundf(r.tuneHz+r.dcHz), math.MaxInt16), math.MinInt16))
 	r.devHz = int16(max32(min32(roundf(3*deviationHz*r.devScale), math.MaxInt16), math.MinInt16))
+	r.devAtHz = int16(max32(min32(roundf(r.fitHz), math.MaxInt16), math.MinInt16))
 }
 
 func (r *leanCore) rebuildSigns() {

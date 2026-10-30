@@ -409,10 +409,11 @@ func (r *Receiver) OffsetHz() float64 {
 // symbol levels and divide out the response of their channel filter and
 // discriminator at the carrier offset from the tuned frequency. For a clean
 // 1944 Hz signal the reading is 1 to 1.5% low and within 3% at every offset.
-// A sync fit made before the timing settles or before an AFC retune can move
-// it by a few percent more. At a Rate of 9600 the reading is up to 3% low,
-// by the sub-sample phase of the bursts, and it does not include the channel
-// filter of the radio chip.
+// The lookup uses the carrier offset of the samples of each sync fit, so a
+// retune after a fit does not change it. A sync fit made before the timing
+// settles can move the reading by a few percent more. At a Rate of 9600 the
+// reading is up to 3% low, by the sub-sample phase of the bursts, and it
+// does not include the channel filter of the radio chip.
 func (r *Receiver) DeviationHz() float64 {
 	if r == nil {
 		return 0

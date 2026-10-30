@@ -97,3 +97,45 @@ func TestCombDeviationFallback(t *testing.T) {
 		t.Errorf("Tier3 with only its Tier2 side locked: %d bursts, %.1f Hz", len(got), dev)
 	}
 }
+
+func TestDeviationAfterRetune(t *testing.T) {
+	t.Parallel()
+	const offHz = 1400
+	row := mxRowOf(t, "s0.none.+1500.ms.data12.0ppm.nom.cs16-48k.inf")
+	s, err := mxBuild(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.parts[0].hz = offHz
+	in := mxInputOf(s, row)
+	last := s.truth[len(s.truth)-1]
+	cut := int((last.at+float64(burstSymbols)/symbolRate)*float64(in.rate)) * in.iqFmt.bytes()
+	read := func(retune bool) (float64, int) {
+		r, err := NewReceiver(&RxConfig{Rate: in.rate, Tier: Tier0, Format: in.iqFmt})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := r.AppendBursts(nil, in.iq[:cut])
+		h, ok := r.full.(*rxHost)
+		if !ok || h.iqd == nil {
+			t.Fatal("no I/Q tier 0 receiver")
+		}
+		iq := h.iqd
+		if retune {
+			if !iq.d.locked {
+				t.Fatal("the stream is not locked at the retune")
+			}
+			iq.d.write(iq.audio)
+			iq.audio = iq.audio[:0]
+			f := &iq.d.f
+			iq.tune(offHz, f.dc-offHz*f.gain*iqUnitsPerHz)
+		}
+		got = r.AppendFlush(r.AppendBursts(got, in.iq[cut:]))
+		return r.DeviationHz(), len(got)
+	}
+	want, n0 := read(false)
+	got, n := read(true)
+	if n != n0 || n == 0 || math.Abs(got/want-1) > 0.005 {
+		t.Errorf("%.1f Hz after a locked retune of %d Hz, %.1f Hz without it (%d and %d bursts)", got, offHz, want, n, n0)
+	}
+}

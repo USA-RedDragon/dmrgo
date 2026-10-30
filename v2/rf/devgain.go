@@ -28,7 +28,7 @@ func (r *iqRx) deviation() float64 {
 	if r.devTab == 0 {
 		return d
 	}
-	u := float32(r.d.offset())/(iqUnitsPerHz*devGainStep) + devGainN/2
+	u := float32(r.d.devAtHz)/(iqUnitsPerHz*devGainStep) + devGainN/2
 	if !(u > 0) {
 		u = 0
 	}
