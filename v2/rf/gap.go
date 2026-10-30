@@ -148,7 +148,7 @@ func (r *engine) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi symR
 
 func (r *engine) run(g symRef, n int, rev bool, lo, hi symRef) {
 	m := r.model
-	d, sps := m.d, m.sps
+	d := m.d
 	n = min(n, r.maxRun)
 	if n <= 2*d+1 {
 		return
@@ -172,7 +172,7 @@ func (r *engine) run(g symRef, n int, rev bool, lo, hi symRef) {
 		r.symPrior(g.add(dir*i), r.slp[4*i:4*i+4])
 	}
 	scale := float32(2 * r.amp / r.noise)
-	if r.xt == nil {
+	if r.ex == nil {
 		r.runG, r.runDir, r.runSteps, r.runLo, r.runHi = g, dir, steps, lo, hi
 		if nk >= 2*d+2 {
 			r.fillRange(g, 0, nk, rev, r.buf)
@@ -189,12 +189,12 @@ func (r *engine) run(g symRef, n int, rev bool, lo, hi symRef) {
 	}
 	if nk >= 2*d+2 {
 		rot := m.anchor(r.buf, syms[:nk])
-		r.xt.run(r.buf[d*sps:], steps, rot, scale, anchorKappa, r.tapp)
+		r.ex.exec(steps, rot, scale, anchorKappa)
 	} else {
 		r.bankRun(steps, scale)
 	}
 	for k := range steps {
-		r.keepAPP(g, dir, k, steps, r.tapp[4*k:4*k+4], lo, hi)
+		r.keepAPP(g, dir, k, steps, r.ex.app[4*k:4*k+4], lo, hi)
 	}
 }
 
@@ -203,9 +203,8 @@ type discard struct{ *engine }
 func (discard) runKeep(int, []float32) {}
 
 func (r *engine) bankRun(steps int, scale float32) {
-	sps, d := r.model.sps, r.model.d
-	if r.xt != nil {
-		r.xt.run(r.buf[d*sps:], steps, 1, scale, 0, r.tapp)
+	if r.ex != nil {
+		r.ex.exec(steps, 1, scale, 0)
 		return
 	}
 	best := float32(negInf)

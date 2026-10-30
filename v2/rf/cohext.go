@@ -1164,9 +1164,9 @@ func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[l
 	clear(s.prior[:])
 	for k := range burstSymbols {
 		lp := &s.prior[cachSymbols+k]
-		for d := range 4 {
-			b0, b1 := dibitOfDigit(d)
-			lp[d] = (bitPrior(w*ext[2*k], b0) + bitPrior(w*ext[2*k+1], b1)) / s.llrK
+		extPrior(lp, ext[2*k], ext[2*k+1], w)
+		for d := range lp {
+			lp[d] /= s.llrK
 		}
 	}
 	s.hasPrior = true
@@ -1180,24 +1180,7 @@ func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[l
 func (s *cohStage) refine(fixed *layer2.RawBurst, known *[layer2.BurstBits]bool, llr *[layer2.BurstBits]int16) bool {
 	clear(s.prior[:])
 	for k := range burstSymbols {
-		lp := &s.prior[cachSymbols+k]
-		for b := range 2 {
-			i := 2*k + b
-			if !known[i] {
-				continue
-			}
-			bit := unpacked.Bit(fixed[i/8] >> (7 - i%8) & 1)
-			for d := range 4 {
-				b0, b1 := dibitOfDigit(d)
-				v := b0
-				if b == 1 {
-					v = b1
-				}
-				if v == bit {
-					lp[d] += cohRefinePrior
-				}
-			}
-		}
+		fixedPrior(&s.prior[cachSymbols+k], fixed, known, k, cohRefinePrior)
 	}
 	s.hasPrior = true
 	ok := s.runAll(llr)

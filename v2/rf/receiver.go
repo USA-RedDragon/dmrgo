@@ -132,12 +132,11 @@ type engine struct {
 	search             *syncSearch
 	model              *cpmModel
 	tr                 *trellis
-	xt                 *xtrellis
+	ex                 *exactStage
 	maxRun             int
 	lp                 []float32
 	slp                []float32
 	buf                []complex64
-	tapp               []float32
 	scr                []complex64
 	runG, runLo, runHi symRef
 	runDir, runSteps   int
@@ -229,22 +228,8 @@ func newEngine(cfg rxSetup, opt options) *engine {
 	r.maxRun = (maxGapSlots + 1) * slotSymbols
 	if r.opt.ExactPhase {
 		r.maxRun = exactGapSlots * slotSymbols
-		np := r.opt.PhaseStates
-		if np == 0 {
-			np = phaseStates
-		}
-		r.xt = newXTrellis(r.model, np, r.maxRun)
-		r.xt.logmap = r.opt.LogMAP
-		if r.opt.DriftPenalty > 0 {
-			r.xt.pen = r.opt.DriftPenalty
-		}
-		r.xt.jump, r.xt.fade, r.xt.below = r.opt.PhaseJump, r.opt.PhaseJumpFade, r.opt.PhaseJumpBelow
-		if r.opt.DriftSteps > 0 {
-			r.xt.drifts = int(r.opt.DriftSteps)
-		}
-		r.lp, r.slp = r.xt.lp, r.xt.slp
-		r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
-		r.tapp = make([]float32, 4*r.maxRun)
+		r.ex = newExactStage(r.model, &r.opt, r.maxRun)
+		r.lp, r.slp, r.buf = r.ex.xt.lp, r.ex.xt.slp, r.ex.buf
 	} else {
 		r.tr = newTrellis(r.model, r.maxRun, trellisWin, trellisLook)
 		r.slp = r.tr.slp
@@ -262,10 +247,10 @@ func newEngine(cfg rxSetup, opt options) *engine {
 		}
 	}
 	r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
-	r.syms.logmap = r.xt != nil && r.opt.LogMAP
+	r.syms.logmap = r.ex != nil && r.opt.LogMAP
 	if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
 		r.refined = newSymStore(maxGapSlots+1, r.llrScale)
-		r.refined.logmap = r.xt != nil && r.opt.LogMAP
+		r.refined.logmap = r.ex != nil && r.opt.LogMAP
 		r.prior = make([]float32, slotSymbols*4)
 		r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
 	}
@@ -537,8 +522,8 @@ func (r *engine) setH(h float64) {
 	if r.model != nil {
 		r.model.setH(h)
 	}
-	if r.xt != nil && r.opt.ExactH {
-		r.xt.setH(h)
+	if r.ex != nil && r.opt.ExactH {
+		r.ex.xt.setH(h)
 	}
 	r.devHz = 3 * deviationHz * h / 0.27
 }
@@ -1074,23 +1059,7 @@ func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	fixed := &e.out.fixed
 	clear(r.prior)
 	for k := range burstSymbols {
-		lp := r.prior[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
-		for b := range 2 {
-			i := 2*k + b
-			if !r.known[i] {
-				continue
-			}
-			for d := range 4 {
-				b0, b1 := dibitOfDigit(d)
-				v := b0
-				if b == 1 {
-					v = b1
-				}
-				if v == unpacked.Bit(fixed[i/8]>>(7-i%8)&1) {
-					lp[d] += r.opt.RefinePrior
-				}
-			}
-		}
+		fixedPrior((*[4]float32)(r.prior[4*(cachSymbols+k):]), fixed, r.known, k, r.opt.RefinePrior)
 	}
 	if r.opt.Comb {
 		e.out.side.flips, e.out.side.hasFlips = voiceFlips(&e.out.data, &e.out.fixed), true
@@ -1124,11 +1093,7 @@ func (r *engine) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		r.rep.soft.bptcExtrinsic(&dp.ch, &dp.ext)
 		clear(r.prior)
 		for k := range burstSymbols {
-			lp := r.prior[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
-			for d := range 4 {
-				b0, b1 := dibitOfDigit(d)
-				lp[d] = bitPrior(w*dp.ext[2*k], b0) + bitPrior(w*dp.ext[2*k+1], b1)
-			}
+			extPrior((*[4]float32)(r.prior[4*(cachSymbols+k):]), dp.ext[2*k], dp.ext[2*k+1], w)
 		}
 		if !r.redetect(j) {
 			return
