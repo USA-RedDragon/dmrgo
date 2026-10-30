@@ -905,37 +905,63 @@ func replayFlat(c *leanCore, base int64) bool {
 	return svv/n-(sv/n)*(sv/n) < lvl*lvl
 }
 
+const (
+	replayTimeVarBS = 0.01565
+	replayTimeVarMS = 0.01924
+)
+
 func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
 	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
 	var syms [2][syncSymbols]int8
 	syncSyms(voice, &syms[0])
 	syncSyms(data, &syms[1])
 	first := c.first - int64(n)*slotSymbols
-	for j := range int64(n) {
-		span := float32(last-first-j*slotSymbols-leanSyncEnd) * sps
-		if span <= 0 || !c.bs && (int64(n)-j)&1 != 0 {
-			continue
+	var sw, sx, sy, sxx, sxy float32
+	tv := float32(replayTimeVarMS)
+	if c.bs {
+		tv = replayTimeVarBS
+	}
+	m := 0
+	for j := int64(-1); j < int64(n); j++ {
+		span := float32(0)
+		if j >= 0 {
+			span = float32(last-first-j*slotSymbols-leanSyncEnd) * sps
+			if span <= 0 || !c.bs && (int64(n)-j)&1 != 0 {
+				continue
+			}
 		}
-		best, p := keptSyncPeak(c, &syms, at-span, sps)
-		if best < 0 {
+		best, p, r := keptSyncPeak(c, &syms, at-span, sps)
+		if best <= 0 || best >= 8 {
+			if j < 0 {
+				return 0
+			}
 			continue
 		}
 		var cv [9]float32
 		for i := range cv {
 			cv[i] = keptSyncCorr(c, &syms[p], at-span+float32(i-4)*sps/8, sps)
 		}
-		off := float32(best-4) + edgeVertex9(&cv, best)
-		if e := -off * sps / 8 / span; abs32(e) >= leanStretchMin && abs32(e) <= leanClockMax {
-			return e
-		}
+		off := (float32(best-4) + edgeVertex9(&cv, best)) * sps / 8
+		w := r / (max32(1-r, 1e-6) * tv * sps * sps)
+		sw, sx, sy, sxx, sxy = sw+w, sx+w*span, sy+w*off, sxx+w*span*span, sxy+w*span*off
+		m++
+	}
+	if m < 2 {
 		return 0
+	}
+	vx := sxx - sx*sx/sw
+	if vx <= 0 {
+		return 0
+	}
+	b := (sxy - sx*sy/sw) / vx
+	if e := -b; b*b*vx > leanClockSig*leanClockSig && abs32(e) <= leanClockMax {
+		return e
 	}
 	return 0
 }
 
-func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32) (best, pat int) {
+func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32) (best, pat int, top float32) {
 	best = -1
-	var top float32
 	for p := range syms {
 		for i := range 9 {
 			t := end + float32(i-4)*sps/8
@@ -958,7 +984,7 @@ func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32) (be
 			}
 		}
 	}
-	return best, pat
+	return best, pat, top
 }
 
 func keptSyncCorr(c *leanCore, syms *[syncSymbols]int8, t, sps float32) float32 {
