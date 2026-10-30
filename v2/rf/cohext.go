@@ -777,12 +777,21 @@ func (s *cohStage) freqFit(k0, k1 int) float64 {
 	return freqOf(s.freqAcc(k0, k1))
 }
 
-func freqOf(acc complex128) float64 {
-	if acc == 0 {
+func freqOf(a1, aL complex128) float64 {
+	if a1 == 0 {
 		return 0
 	}
-	return cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
+	f := cmplx.Phase(a1) * symbolRate / (2 * math.Pi)
+	if aL == 0 {
+		return f
+	}
+	lag := float64(cohFreqLag)
+	p := 2 * math.Pi * f * lag / symbolRate
+	d := cmplx.Phase(aL * cmplx.Rect(1, -p))
+	return (p + d) * symbolRate / (2 * math.Pi * lag)
 }
+
+const cohFreqLag = 8
 
 func (s *cohStage) refFixed(fixed *layer2.RawBurst, k0, k1 int) {
 	for k := k0; k < k1; k++ {
@@ -793,7 +802,7 @@ func (s *cohStage) refFixed(fixed *layer2.RawBurst, k0, k1 int) {
 	}
 }
 
-func (s *cohStage) freqAcc(k0, k1 int) complex128 {
+func (s *cohStage) freqAcc(k0, k1 int) (complex128, complex128) {
 	m := s.model
 	span := m.pp.span
 	lo, hi := max(k0-span, 0), min(k1+span, slotSymbols-1)
@@ -810,7 +819,8 @@ func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 	s.fill(0, n, x)
 	ref := s.refC[:n*m.sps]
 	s.refWave(syms, ref)
-	var prev, acc complex128
+	var prev, acc, w, wPrev, accL complex128
+	nw := 0
 	have := false
 	for k := k0 - lo; k <= k1-lo; k++ {
 		var c complex128
@@ -823,8 +833,15 @@ func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 			acc += c * cmplx.Conj(prev)
 		}
 		prev, have = c, c != 0
+		w += c
+		if nw++; nw == cohFreqLag {
+			if wPrev != 0 {
+				accL += w * cmplx.Conj(wPrev)
+			}
+			wPrev, w, nw = w, 0, 0
+		}
 	}
-	return acc
+	return acc, accL
 }
 
 func (s *cohStage) refNear(k int) bool {
@@ -882,11 +899,12 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 	}
 	clear(s.refK[:])
 	s.refFixed(fixed, cachSymbols, slotSymbols)
-	var acc complex128
+	var acc, accL complex128
 	var snr float64
 	n := 0
 	for k0 := cachSymbols; k0+syncSymbols <= slotSymbols; k0 += syncSymbols {
-		acc += s.freqAcc(k0, k0+syncSymbols-1)
+		a1, aL := s.freqAcc(k0, k0+syncSymbols-1)
+		acc, accL = acc+a1, accL+aL
 		if amp, noise := s.levels(k0, k0+syncSymbols-1); noise > 0 {
 			snr += amp * amp / noise
 			n++
@@ -896,7 +914,7 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 		return
 	}
 	snr /= float64(n)
-	fit := freqOf(acc)
+	fit := freqOf(acc, accL)
 	if math.Abs(fit) >= cohFreqSpan {
 		return
 	}
