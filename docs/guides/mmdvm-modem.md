@@ -24,18 +24,16 @@ go test -C v2 -run '^Example$' -v ./transport/mmdvm
 
 ### 1. Send a frame to the modem
 
-Every message on the port is a frame: a start octet, a length, a command and a payload. [mmdvm.AppendFrame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#AppendFrame) builds one around a payload. Write the frame to the serial port.
+Every message on the port is a frame: a start octet, a length, a command and a payload. [mmdvm.AppendFrame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#AppendFrame) builds one around a payload. Write the frame to the serial port. The example gives the frame to its simulated modem in place of the port.
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go lines=17-25 -->
+<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=toModem -->
 ```go
-var fromModem []byte
-toModem := func(c mmdvm.Command, payload []byte) {
+func toModem(fromModem []byte, c mmdvm.Command, payload []byte) ([]byte, error) {
 	frame, err := mmdvm.AppendFrame(nil, c, payload)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return fromModem, err
 	}
-	fromModem = modem(fromModem, frame)
+	return modem(fromModem, frame), nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -44,15 +42,27 @@ toModem := func(c mmdvm.Command, payload []byte) {
 
 Request the version first. The reply gives the protocol version of the firmware: 1 for MMDVM_HS and 2 for MMDVM. [mmdvm.DecodeVersion](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DecodeVersion) reads it, and `Capabilities.Has` shows whether the modem has DMR. Then send the config: [ConfigV2](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#ConfigV2) for protocol 2 and [ConfigV1](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#ConfigV1) for protocol 1. It enables the modes and sets the color code, the levels and the delays. [SetMode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#SetMode) switches the modem to DMR. The modem answers the config and the mode with an Ack, or with a Nak and a reason code.
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go lines=27-33 -->
+<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=openSession -->
 ```go
-toModem(mmdvm.CommandGetVersion, nil)
-cfg := mmdvm.ConfigV2{DMR: true, DMRColorCode: 7, State: mmdvm.ModeIdle, RXLevel: 50, DMRTXLevel: 50}
-payload, _ := cfg.AppendBinary(nil)
-toModem(mmdvm.CommandSetConfig, payload)
-mode := mmdvm.SetMode{Mode: mmdvm.ModeDMR}
-payload, _ = mode.AppendBinary(nil)
-toModem(mmdvm.CommandSetMode, payload)
+func openSession() ([]byte, error) {
+	fromModem, err := toModem(nil, mmdvm.CommandGetVersion, nil)
+	if err != nil {
+		return nil, err
+	}
+	cfg := mmdvm.ConfigV2{DMR: true, DMRColorCode: 7, State: mmdvm.ModeIdle, RXLevel: 50, DMRTXLevel: 50}
+	payload, err := cfg.AppendBinary(nil)
+	if err != nil {
+		return nil, err
+	}
+	if fromModem, err = toModem(fromModem, mmdvm.CommandSetConfig, payload); err != nil {
+		return nil, err
+	}
+	mode := mmdvm.SetMode{Mode: mmdvm.ModeDMR}
+	if payload, err = mode.AppendBinary(nil); err != nil {
+		return nil, err
+	}
+	return toModem(fromModem, mmdvm.CommandSetMode, payload)
+}
 ```
 <!-- /dmrgo:code -->
 
@@ -62,39 +72,41 @@ Append the octets that you read from the port to a buffer, and call [mmdvm.Next]
 
 A DMR burst comes as a `CommandDMRData1` or `CommandDMRData2` frame. [mmdvm.DecodeDMRData](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DecodeDMRData) decodes it, and [DMRData.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DMRData.Hint) gives the `layer2.Hint` for the voice and data machines. A `CommandDMRLost1` or `CommandDMRLost2` frame shows that the modem lost the signal of the slot.
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go lines=35-67 -->
+<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=printFrames -->
 ```go
-for len(fromModem) > 0 {
-	f, n, r := mmdvm.Next(fromModem)
-	if r == mmdvm.NextMore {
-		break
-	}
-	fromModem = fromModem[n:]
-	if r == mmdvm.NextSkip {
-		continue
-	}
-	switch f.Command {
-	case mmdvm.CommandGetVersion:
-		v, _ := mmdvm.DecodeVersion(f.Payload)
-		fmt.Printf("version: protocol %d, DMR %v, %s\n", v.Protocol, v.Capabilities.Has(mmdvm.CapDMR), v.Description)
-	case mmdvm.CommandAck:
-		a, _ := mmdvm.DecodeAck(f.Payload)
-		fmt.Println("ack:", a.Command)
-	case mmdvm.CommandDMRData1, mmdvm.CommandDMRData2:
-		d, err := mmdvm.DecodeDMRData(f)
-		if err != nil {
-			fmt.Println(err)
+func printFrames(fromModem []byte) {
+	for len(fromModem) > 0 {
+		f, n, r := mmdvm.Next(fromModem)
+		if r == mmdvm.NextMore {
+			break
+		}
+		fromModem = fromModem[n:]
+		if r == mmdvm.NextSkip {
 			continue
 		}
-		h := d.Hint()
-		b, err := layer2.NewBurstFromBytes(d.Burst)
-		if err != nil {
-			fmt.Println(err)
-			continue
+		switch f.Command {
+		case mmdvm.CommandGetVersion:
+			v, _ := mmdvm.DecodeVersion(f.Payload)
+			fmt.Printf("version: protocol %d, DMR %v, %s\n", v.Protocol, v.Capabilities.Has(mmdvm.CapDMR), v.Description)
+		case mmdvm.CommandAck:
+			a, _ := mmdvm.DecodeAck(f.Payload)
+			fmt.Println("ack:", a.Command)
+		case mmdvm.CommandDMRData1, mmdvm.CommandDMRData2:
+			d, err := mmdvm.DecodeDMRData(f)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			h := d.Hint()
+			b, err := layer2.NewBurstFromBytes(d.Burst)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			fmt.Println("burst:", h.Slot, h.Kind, h.DataType, "color code", b.SlotType.ColorCode)
+		default:
+			fmt.Println("frame:", f.Command)
 		}
-		fmt.Println("burst:", h.Slot, h.Kind, h.DataType, "color code", b.SlotType.ColorCode)
-	default:
-		fmt.Println("frame:", f.Command)
 	}
 }
 ```
@@ -106,25 +118,28 @@ Put each burst that a machine returns in a [DMRData](https://pkg.go.dev/github.c
 
 The simulated modem of the example builds its frames the same way:
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go lines=80-97 -->
+<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=reply -->
 ```go
-switch f.Command {
-case mmdvm.CommandGetVersion:
-	v := mmdvm.Version{Protocol: 2, Capabilities: mmdvm.CapDMR, CPU: mmdvm.CPUST, Description: []byte("MMDVM simulated")}
-	payload, _ := v.AppendBinary(nil)
-	out, _ = mmdvm.AppendFrame(out, mmdvm.CommandGetVersion, payload)
-case mmdvm.CommandSetConfig, mmdvm.CommandSetMode:
-	a := mmdvm.Ack{Command: f.Command}
-	payload, _ := a.AppendBinary(nil)
-	out, _ = mmdvm.AppendFrame(out, mmdvm.CommandAck, payload)
-	if f.Command == mmdvm.CommandSetMode {
-		raw, _ := hex.DecodeString("20580b4015ec0f6871000d005c4d5d7f77fd757361a416203d5235242181850277")
-		d := mmdvm.DMRData{Slot: enums.Slot2, Control: mmdvm.ControlDataSync | mmdvm.Control(enums.DataTypeVoiceLCHeader)}
-		copy(d.Burst[:], raw)
-		payload, _ = d.AppendBinary(nil)
-		out, _ = mmdvm.AppendFrame(out, d.Command(), payload)
+func reply(out []byte, f mmdvm.Frame) []byte {
+	switch f.Command {
+	case mmdvm.CommandGetVersion:
+		v := mmdvm.Version{Protocol: 2, Capabilities: mmdvm.CapDMR, CPU: mmdvm.CPUST, Description: []byte("MMDVM simulated")}
+		payload, _ := v.AppendBinary(nil)
+		out, _ = mmdvm.AppendFrame(out, mmdvm.CommandGetVersion, payload)
+	case mmdvm.CommandSetConfig, mmdvm.CommandSetMode:
+		a := mmdvm.Ack{Command: f.Command}
+		payload, _ := a.AppendBinary(nil)
+		out, _ = mmdvm.AppendFrame(out, mmdvm.CommandAck, payload)
+		if f.Command == mmdvm.CommandSetMode {
+			raw, _ := hex.DecodeString("20580b4015ec0f6871000d005c4d5d7f77fd757361a416203d5235242181850277")
+			d := mmdvm.DMRData{Slot: enums.Slot2, Control: mmdvm.ControlDataSync | mmdvm.Control(enums.DataTypeVoiceLCHeader)}
+			copy(d.Burst[:], raw)
+			payload, _ = d.AppendBinary(nil)
+			out, _ = mmdvm.AppendFrame(out, d.Command(), payload)
+		}
+	default:
 	}
-default:
+	return out
 }
 ```
 <!-- /dmrgo:code -->
