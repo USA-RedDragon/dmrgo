@@ -78,6 +78,10 @@ type cohStage struct {
 	refIn                       []int
 	refSym                      [slotSymbols]int8
 	refK                        [slotSymbols]bool
+	tfit                        [5]float64
+	tfitBase                    int64
+	tfitRef                     float64
+	slotFit                     bool
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -120,6 +124,9 @@ type cohRadio struct {
 	dt, freq, totalHz, fitVar float64
 	ampAvg, noiseAvg, symAvg  float64
 	hFit, hVar                float64
+	tfit                      [5]float64
+	tfitBase                  int64
+	tfitRef                   float64
 	amp, noise                [cohFitScales]float64
 	nFit                      int
 	scale                     float32
@@ -130,12 +137,14 @@ func (s *cohStage) saveRadio(r *cohRadio) {
 	r.dt, r.freq, r.totalHz, r.fitVar = s.dt, s.freq, s.totalHz, s.fitVar
 	r.ampAvg, r.noiseAvg, r.symAvg, r.hFit, r.hVar = s.ampAvg, s.noiseAvg, s.symAvg, s.hFit, s.hVar
 	r.amp, r.noise, r.nFit, r.scale, r.freqOK, r.hNew, r.ok = s.amp, s.noise, s.nFit, s.scale, s.freqOK, s.hNew, true
+	r.tfit, r.tfitBase, r.tfitRef = s.tfit, s.tfitBase, s.tfitRef
 }
 
 func (s *cohStage) loadRadio(r *cohRadio) {
 	s.dt, s.freq, s.totalHz, s.fitVar = r.dt, r.freq, r.totalHz, r.fitVar
 	s.ampAvg, s.noiseAvg, s.symAvg, s.hFit, s.hVar = r.ampAvg, r.noiseAvg, r.symAvg, r.hFit, r.hVar
 	s.amp, s.noise, s.nFit, s.scale, s.freqOK, s.hNew = r.amp, r.noise, r.nFit, r.scale, r.freqOK, r.hNew
+	s.tfit, s.tfitBase, s.tfitRef = r.tfit, r.tfitBase, r.tfitRef
 }
 
 func (s *cohStage) slotRadio(c *leanCore, slot int64) {
@@ -150,6 +159,7 @@ func (s *cohStage) slotRadio(c *leanCore, slot int64) {
 		s.loadRadio(&s.radios[p])
 	} else if s.radio >= 0 {
 		s.freqOK, s.nFit, s.hNew = false, 0, true
+		s.tfit = [5]float64{}
 		s.ampAvg, s.noiseAvg, s.symAvg = 0, 0, 0
 	}
 	s.radio = p
@@ -203,7 +213,7 @@ func newCohStageOf(opt *options) *cohStage {
 	}
 	m := newCPMModel(1, sps)
 	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -769,8 +779,59 @@ func (s *cohStage) lost(lo int64) bool {
 
 func (s *cohStage) lock() {
 	s.lastT0, s.lastSync, s.mineOK, s.relock, s.hNew = 0, 0, false, true, true
+	s.tfit = [5]float64{}
 	s.radio, s.radios[0].ok, s.radios[1].ok = -1, false, false
 	s.hVar += cohIndexWalk
+}
+
+const (
+	cohSlotForget = 0.97
+	cohSlotPrior  = 2.8
+	cohSlotSpan   = 1.5
+)
+
+func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
+	if pOK && math.Abs(s.t0-pt) > cohSlotSpan {
+		s.tfit = [5]float64{}
+	}
+	p := float64(slotSymbols) * s.sps
+	f := &s.tfit
+	if f[0] == 0 {
+		s.tfitBase, s.tfitRef = slot, s.t0
+	}
+	d := float64(slot - s.tfitBase)
+	f[1] -= d * f[0]
+	f[2] -= 2*d*f[1] + d*d*f[0]
+	f[4] -= d * f[3]
+	s.tfitBase, s.tfitRef = slot, s.tfitRef+d*p
+	y := s.t0 - s.tfitRef
+	f[0] = cohSlotForget*f[0] + 1
+	f[1] *= cohSlotForget
+	f[2] *= cohSlotForget
+	f[3] = cohSlotForget*f[3] + y
+	f[4] *= cohSlotForget
+	if t, ok := s.slotPredict(slot); ok {
+		s.t0 = t
+	}
+}
+
+func (s *cohStage) slotPredict(slot int64) (float64, bool) {
+	f := &s.tfit
+	if !s.slotFit || f[0] <= 1.5 {
+		return 0, false
+	}
+	s2 := f[2] + cohSlotPrior
+	det := f[0]*s2 - f[1]*f[1]
+	if det <= 1e-9 {
+		return 0, false
+	}
+	c := (f[0]*f[4] - f[1]*f[3]) / det
+	a := (f[3]*s2 - f[1]*f[4]) / det
+	if math.Abs(c) >= 1 {
+		return 0, false
+	}
+	k := float64(slot - s.tfitBase)
+	return s.tfitRef + k*float64(slotSymbols)*s.sps + a + c*k, true
 }
 
 func (s *cohStage) freqFit(k0, k1 int) float64 {
@@ -957,8 +1018,17 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if s.quiet(c, segs[0], nseg, b) {
 		return false
 	}
+	if nseg != 1 && s.slotFit {
+		if pt, ok := s.slotPredict(b.Slot); ok && math.Abs(pt-s.t0) <= cohSlotSpan {
+			s.t0 = pt
+		}
+	}
 	if nseg == 1 {
+		pt, pOK := s.slotPredict(b.Slot)
 		s.dt += s.syncTime(segs[0][0], segs[0][1])
+		if s.slotFit {
+			s.slotMeasure(b.Slot, pt, pOK)
+		}
 		a0, n0 := s.levels(segs[0][0], segs[0][1])
 		fit := s.freqFit(segs[0][0], segs[0][1])
 		f0 := s.freq

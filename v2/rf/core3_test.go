@@ -2,7 +2,11 @@
 
 package rf
 
-import "testing"
+import (
+	"math"
+	"math/rand/v2"
+	"testing"
+)
 
 func TestCoreTier3(t *testing.T) {
 	t.Parallel()
@@ -42,4 +46,39 @@ func coreAudio3(t testing.TB, cfg AudioRxConfig) *AudioReceiver {
 		r.bursts.out = make([]Burst, 0, n)
 	}
 	return r
+}
+
+func TestCohSlotFit(t *testing.T) {
+	t.Parallel()
+	opt := coreIQ3Options()
+	if !opt.CohSlotFit {
+		t.Fatal("core Tier 3 I/Q runs without the slot timing fit")
+	}
+	s := newCohStageOf(&opt)
+	rng := rand.New(rand.NewPCG(1, 2))
+	period := float64(slotSymbols) * s.sps * (1 + 500e-6)
+	var q float64
+	n := 0
+	for k := int64(0); k < 400; k += 2 {
+		truth := 1e6 + period*float64(k)
+		pt, ok := s.slotPredict(k)
+		s.t0 = truth + 0.2*rng.NormFloat64()
+		s.slotMeasure(k, pt, ok)
+		if k >= 100 {
+			q += (s.t0 - truth) * (s.t0 - truth)
+			n++
+		}
+	}
+	if rms := math.Sqrt(q / float64(n)); rms > 0.08 {
+		t.Errorf("slot fit timing rms %.3f samples from measurements of rms 0.2", rms)
+	}
+	pt, ok := s.slotPredict(400)
+	if !ok {
+		t.Fatal("no slot timing prediction after 200 measurements")
+	}
+	s.t0 = pt + 3
+	s.slotMeasure(400, pt, ok)
+	if math.Abs(s.t0-pt-3) > 1e-9 {
+		t.Errorf("a 3 sample timing jump moved the fit to %.3f instead of restarting it", s.t0-pt)
+	}
 }

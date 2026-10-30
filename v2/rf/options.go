@@ -76,6 +76,7 @@ type options struct {
 	CohNoNext, CohNoCross, CohCrossVoice bool
 	IQCutAuto                            bool
 	CohVoiceOnly                         bool
+	CohSlotFit                           bool
 	CohSignMiss                          uint8
 	CohSymNoise                          uint8
 	MidTiming                            bool
