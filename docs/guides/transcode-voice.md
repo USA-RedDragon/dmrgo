@@ -71,31 +71,34 @@ func receive(bursts []layer2.RawBurst) (call, error) {
 
 A vocoder slot holds one AMBE+2 frame with its FEC. [vocoder.DecodeAMBE72](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#DecodeAMBE72) corrects the slot and returns the frame and a [fec.Result](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#Result). [vocoder.EncodeAMBE72](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#EncodeAMBE72) writes the FEC again. A slot that had bit errors re-encodes to the corrected bits.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=114-136 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=checkFEC -->
 ```go
-corrected, bad, clean := 0, 0, 0
-for _, slot := range c.slots {
-	info, res := vocoder.DecodeAMBE72(slot)
-	corrected += res.ErrorsCorrected
-	if res.Uncorrectable {
-		bad++
+func checkFEC(w io.Writer, c call) error {
+	corrected, bad, clean := 0, 0, 0
+	for _, slot := range c.slots {
+		info, res := vocoder.DecodeAMBE72(slot)
+		corrected += res.ErrorsCorrected
+		if res.Uncorrectable {
+			bad++
+		}
+		if s, err := vocoder.EncodeAMBE72(info); err == nil && s == slot {
+			clean++
+		}
 	}
-	if s, err := vocoder.EncodeAMBE72(info); err == nil && s == slot {
-		clean++
-	}
-}
-_, _ = fmt.Fprintf(w, "AMBE72 FEC: %d bits corrected, %d uncorrectable frames, %d of %d frames re-encode unchanged\n",
-	corrected, bad, clean, len(c.slots))
+	_, _ = fmt.Fprintf(w, "AMBE72 FEC: %d bits corrected, %d uncorrectable frames, %d of %d frames re-encode unchanged\n",
+		corrected, bad, clean, len(c.slots))
 
-slot, err := vocoder.EncodeAMBE72(c.frames[0])
-if err != nil {
-	return nil, err
+	slot, err := vocoder.EncodeAMBE72(c.frames[0])
+	if err != nil {
+		return err
+	}
+	for _, k := range []int{0, 30, 60} {
+		slot[k/8] ^= 0x80 >> (k % 8)
+	}
+	info, res := vocoder.DecodeAMBE72(slot)
+	_, _ = fmt.Fprintf(w, "AMBE72 with 3 flipped bits: %d corrected, frame restored %t\n", res.ErrorsCorrected, info == c.frames[0])
+	return nil
 }
-for _, k := range []int{0, 30, 60} {
-	slot[k/8] ^= 0x80 >> (k % 8)
-}
-info, res := vocoder.DecodeAMBE72(slot)
-_, _ = fmt.Fprintf(w, "AMBE72 with 3 flipped bits: %d corrected, frame restored %t\n", res.ErrorsCorrected, info == c.frames[0])
 ```
 <!-- /dmrgo:code -->
 
@@ -124,49 +127,86 @@ func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource,
 ```
 <!-- /dmrgo:code -->
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=138-151 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=rebuild -->
 ```go
-rebuilt, err := transmit(*c.lc, c.cc, c.source, vocoder.AMBESilenceSlot(),
-	func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddFrames(c.frames...) })
-if err != nil {
-	return nil, err
+func rebuild(w io.Writer, c call) error {
+	rebuilt, err := transmit(*c.lc, c.cc, c.source, vocoder.AMBESilenceSlot(),
+		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddFrames(c.frames...) })
+	if err != nil {
+		return err
+	}
+	back, err := receive(rebuilt)
+	if err != nil {
+		return err
+	}
+	same := len(back.frames) >= len(c.frames)
+	for i := 0; same && i < len(c.frames); i++ {
+		same = back.frames[i] == c.frames[i]
+	}
+	_, _ = fmt.Fprintf(w, "rebuilt: %d bursts, %d embedded LCs, AMBE frames equal %t\n", len(rebuilt), back.embLCs, same)
+	return nil
 }
-back, err := receive(rebuilt)
-if err != nil {
-	return nil, err
-}
-same := len(back.frames) >= len(c.frames)
-for i := 0; same && i < len(c.frames); i++ {
-	same = back.frames[i] == c.frames[i]
-}
-_, _ = fmt.Fprintf(w, "rebuilt: %d bursts, %d embedded LCs, AMBE frames equal %t\n", len(rebuilt), back.embLCs, same)
 ```
 <!-- /dmrgo:code -->
 
 ### 4. Encode audio with Codec2
 
-[codec2.New](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#New) returns a [vocoder.Codec](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#Codec). It returns `codec2.ErrUnavailable` in a build without libcodec2, so check for it. `Encode` takes `FrameSamples` samples of 8 kHz audio and returns one vocoder slot.
+[codec2.New](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#New) returns a [vocoder.Codec](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#Codec). It returns `codec2.ErrUnavailable` in a build without libcodec2, so check for it. The `codec2Call` function opens the codec, calls the helpers of steps 4 to 6, and compares the received slots with the sent slots.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=174-192 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=codec2Call -->
 ```go
-enc, err := codec2.New(nil)
-if errors.Is(err, codec2.ErrUnavailable) {
-	_, _ = fmt.Fprintln(w, "codec2 unavailable, skipping")
-	return nil
-}
-if err != nil {
-	return err
-}
-defer func() { _ = enc.Close() }()
-
-pcm := sweep(50 * enc.FrameSamples())
-slots := make([][9]byte, 0, 50)
-for off := 0; off < len(pcm); off += enc.FrameSamples() {
-	s, err := enc.Encode(pcm[off : off+enc.FrameSamples()])
+func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
+	enc, err := codec2.New(nil)
+	if errors.Is(err, codec2.ErrUnavailable) {
+		_, _ = fmt.Fprintln(w, "codec2 unavailable, skipping")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	slots = append(slots, s)
+	defer func() { _ = enc.Close() }()
+
+	slots, err := encodeSweep(enc, 50)
+	if err != nil {
+		return err
+	}
+	bursts, err := sendSlots(enc, captured, slots)
+	if err != nil {
+		return err
+	}
+
+	c, err := receive(bursts)
+	if err != nil {
+		return err
+	}
+	same := len(c.slots) >= len(slots)
+	for i := 0; same && i < len(slots); i++ {
+		same = c.slots[i] == slots[i]
+	}
+	rdst, rsrc, _ := c.lc.Addresses()
+	_, _ = fmt.Fprintf(w, "codec2: %d frames -> %d bursts, rx FID %#x, %d -> %d, %d embedded LCs, slots equal %t\n",
+		len(slots), len(bursts), uint8(c.lc.FID), rsrc, rdst, c.embLCs, same)
+
+	return decodeSlots(w, c.slots)
+}
+```
+<!-- /dmrgo:code -->
+
+`Encode` takes `FrameSamples` samples of 8 kHz audio and returns one vocoder slot.
+
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=encodeSweep -->
+```go
+func encodeSweep(enc *codec2.Codec, frames int) ([][9]byte, error) {
+	pcm := sweep(frames * enc.FrameSamples())
+	slots := make([][9]byte, 0, frames)
+	for off := 0; off < len(pcm); off += enc.FrameSamples() {
+		s, err := enc.Encode(pcm[off : off+enc.FrameSamples()])
+		if err != nil {
+			return nil, err
+		}
+		slots = append(slots, s)
+	}
+	return slots, nil
 }
 ```
 <!-- /dmrgo:code -->
@@ -175,17 +215,16 @@ for off := 0; off < len(pcm); off += enc.FrameSamples() {
 
 A Codec2 call carries the FID of the codec in its Full LC, so a receiver can separate it from an AMBE+2 call. Set the FID from `FID()`, and use `Silence()` as the silence slot.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=194-203 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=sendSlots -->
 ```go
-dst, src, _ := captured.Addresses()
-lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: enc.FID()}
-if err := lc.SetAddresses(dst, src); err != nil {
-	return fmt.Errorf("cannot set addresses %d -> %d: %w", src, dst, err)
-}
-bursts, err := transmit(lc, 1, layer2.SyncSourceMS, enc.Silence(),
-	func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddSlots(slots...) })
-if err != nil {
-	return err
+func sendSlots(enc *codec2.Codec, captured *pdu.FullLinkControl, slots [][9]byte) ([]layer2.RawBurst, error) {
+	dst, src, _ := captured.Addresses()
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: enc.FID()}
+	if err := lc.SetAddresses(dst, src); err != nil {
+		return nil, fmt.Errorf("cannot set addresses %d -> %d: %w", src, dst, err)
+	}
+	return transmit(lc, 1, layer2.SyncSourceMS, enc.Silence(),
+		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddSlots(slots...) })
 }
 ```
 <!-- /dmrgo:code -->
@@ -194,25 +233,28 @@ if err != nil {
 
 `Decode` appends the samples of one slot and returns a [vocoder.FrameReport](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#FrameReport) for it.
 
-<!-- dmrgo:code file=v2/examples/transcoder/main.go lines=217-233 -->
+<!-- dmrgo:code file=v2/examples/transcoder/main.go symbol=decodeSlots -->
 ```go
-dec, err := codec2.New(nil)
-if err != nil {
-	return err
-}
-defer func() { _ = dec.Close() }()
-var out []int16
-good := 0
-for _, s := range c.slots {
-	var rep vocoder.FrameReport
-	if out, rep, err = dec.Decode(out, s); err != nil {
+func decodeSlots(w io.Writer, slots [][9]byte) error {
+	dec, err := codec2.New(nil)
+	if err != nil {
 		return err
 	}
-	if rep.Frame == vocoder.FrameGood {
-		good++
+	defer func() { _ = dec.Close() }()
+	var out []int16
+	good := 0
+	for _, s := range slots {
+		var rep vocoder.FrameReport
+		if out, rep, err = dec.Decode(out, s); err != nil {
+			return err
+		}
+		if rep.Frame == vocoder.FrameGood {
+			good++
+		}
 	}
+	_, _ = fmt.Fprintf(w, "codec2 decode: %d samples, %d good frames, audible %t\n", len(out), good, rms(out) > 500)
+	return nil
 }
-_, _ = fmt.Fprintf(w, "codec2 decode: %d samples, %d good frames, audible %t\n", len(out), good, rms(out) > 500)
 ```
 <!-- /dmrgo:code -->
 

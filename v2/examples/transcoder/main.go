@@ -111,6 +111,16 @@ func ambe(w io.Writer, dataDir string) (*pdu.FullLinkControl, error) {
 	_, _ = fmt.Fprintf(w, "capture: %d bursts, %d voice bursts, %d AMBE frames, %d embedded LCs, %d -> %d\n",
 		len(bursts), c.voice, len(c.frames), c.embLCs, src, dst)
 
+	if err := checkFEC(w, c); err != nil {
+		return nil, err
+	}
+	if err := rebuild(w, c); err != nil {
+		return nil, err
+	}
+	return c.lc, nil
+}
+
+func checkFEC(w io.Writer, c call) error {
 	corrected, bad, clean := 0, 0, 0
 	for _, slot := range c.slots {
 		info, res := vocoder.DecodeAMBE72(slot)
@@ -127,29 +137,32 @@ func ambe(w io.Writer, dataDir string) (*pdu.FullLinkControl, error) {
 
 	slot, err := vocoder.EncodeAMBE72(c.frames[0])
 	if err != nil {
-		return nil, err
+		return err
 	}
 	for _, k := range []int{0, 30, 60} {
 		slot[k/8] ^= 0x80 >> (k % 8)
 	}
 	info, res := vocoder.DecodeAMBE72(slot)
 	_, _ = fmt.Fprintf(w, "AMBE72 with 3 flipped bits: %d corrected, frame restored %t\n", res.ErrorsCorrected, info == c.frames[0])
+	return nil
+}
 
+func rebuild(w io.Writer, c call) error {
 	rebuilt, err := transmit(*c.lc, c.cc, c.source, vocoder.AMBESilenceSlot(),
 		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddFrames(c.frames...) })
 	if err != nil {
-		return nil, err
+		return err
 	}
 	back, err := receive(rebuilt)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	same := len(back.frames) >= len(c.frames)
 	for i := 0; same && i < len(c.frames); i++ {
 		same = back.frames[i] == c.frames[i]
 	}
 	_, _ = fmt.Fprintf(w, "rebuilt: %d bursts, %d embedded LCs, AMBE frames equal %t\n", len(rebuilt), back.embLCs, same)
-	return c.lc, nil
+	return nil
 }
 
 func sweep(n int) []int16 {
@@ -181,23 +194,11 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	}
 	defer func() { _ = enc.Close() }()
 
-	pcm := sweep(50 * enc.FrameSamples())
-	slots := make([][9]byte, 0, 50)
-	for off := 0; off < len(pcm); off += enc.FrameSamples() {
-		s, err := enc.Encode(pcm[off : off+enc.FrameSamples()])
-		if err != nil {
-			return err
-		}
-		slots = append(slots, s)
+	slots, err := encodeSweep(enc, 50)
+	if err != nil {
+		return err
 	}
-
-	dst, src, _ := captured.Addresses()
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: enc.FID()}
-	if err := lc.SetAddresses(dst, src); err != nil {
-		return fmt.Errorf("cannot set addresses %d -> %d: %w", src, dst, err)
-	}
-	bursts, err := transmit(lc, 1, layer2.SyncSourceMS, enc.Silence(),
-		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddSlots(slots...) })
+	bursts, err := sendSlots(enc, captured, slots)
 	if err != nil {
 		return err
 	}
@@ -214,6 +215,33 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	_, _ = fmt.Fprintf(w, "codec2: %d frames -> %d bursts, rx FID %#x, %d -> %d, %d embedded LCs, slots equal %t\n",
 		len(slots), len(bursts), uint8(c.lc.FID), rsrc, rdst, c.embLCs, same)
 
+	return decodeSlots(w, c.slots)
+}
+
+func encodeSweep(enc *codec2.Codec, frames int) ([][9]byte, error) {
+	pcm := sweep(frames * enc.FrameSamples())
+	slots := make([][9]byte, 0, frames)
+	for off := 0; off < len(pcm); off += enc.FrameSamples() {
+		s, err := enc.Encode(pcm[off : off+enc.FrameSamples()])
+		if err != nil {
+			return nil, err
+		}
+		slots = append(slots, s)
+	}
+	return slots, nil
+}
+
+func sendSlots(enc *codec2.Codec, captured *pdu.FullLinkControl, slots [][9]byte) ([]layer2.RawBurst, error) {
+	dst, src, _ := captured.Addresses()
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: enc.FID()}
+	if err := lc.SetAddresses(dst, src); err != nil {
+		return nil, fmt.Errorf("cannot set addresses %d -> %d: %w", src, dst, err)
+	}
+	return transmit(lc, 1, layer2.SyncSourceMS, enc.Silence(),
+		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddSlots(slots...) })
+}
+
+func decodeSlots(w io.Writer, slots [][9]byte) error {
 	dec, err := codec2.New(nil)
 	if err != nil {
 		return err
@@ -221,7 +249,7 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	defer func() { _ = dec.Close() }()
 	var out []int16
 	good := 0
-	for _, s := range c.slots {
+	for _, s := range slots {
 		var rep vocoder.FrameReport
 		if out, rep, err = dec.Decode(out, s); err != nil {
 			return err
