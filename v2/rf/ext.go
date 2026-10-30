@@ -21,6 +21,8 @@ type leanExt interface {
 	lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool)
 	weakAt(end int64)
 	anchorProves(end int64) bool
+	replayLock(j int32, b *Burst)
+	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
 }
 
 const extQueue = 8
@@ -70,6 +72,8 @@ type softExt struct {
 	lookback        int
 	ring            [leanRing]int8
 	lockSym         int64
+	replayN         int32
+	replayP         enums.SyncPattern
 	lockAt          float32
 	lockN           int64
 	stages          uint8
@@ -906,6 +910,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
 	clicks := c.clicks
 	c.replaying = true
+	x.replayN, x.replayP = int32(n), 0
 	for _, dry := range [2]bool{true, false} {
 		votes := c.votes
 		c.resetChans()
@@ -969,6 +974,24 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
 	x.lockHz(c)
 	x.vOK = false
+}
+
+func (x *softExt) replayLock(j int32, b *Burst) {
+	if j == x.replayN {
+		x.replayP = b.Sync
+	}
+}
+
+func (x *softExt) replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool {
+	if c.replayDry {
+		return true
+	}
+	d := x.replayN - j
+	if d&1 != 0 {
+		return true
+	}
+	voice, _, _ := sourceAt(int(c.src)).SyncPatterns()
+	return x.replayP == voice && d%int32(2*(enums.VoiceBurstF-enums.VoiceBurstA+1)) == 2*int32(enums.VoiceBurstF-pos+1)
 }
 
 func replayFlat(c *leanCore, base int64) bool {

@@ -2309,6 +2309,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		}
 		return
 	}
+	if r.isReplayDry() {
+		r.ext.replayLock(j, b)
+	}
 	if r.bs {
 		r.sink.noteLean(r, b)
 	}
@@ -2399,7 +2402,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		c.sf, c.data = j, false
 		return true
 	}
-	if pos, ok := r.embPosition(b); ok && !c.data {
+	if pos, ok := r.embPosition(b); ok && !c.data && (!r.isReplaying() || r.ext.replayFits(r, j, pos)) {
 		b.Voice = pos
 		c.sf = j - 2*int32(pos-enums.VoiceBurstA)
 		return true
