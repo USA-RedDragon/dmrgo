@@ -848,6 +848,23 @@ func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
 	}
 }
 
+func (s *cohStage) slotHold(slot int64) {
+	if !s.slotFit {
+		return
+	}
+	if pt, ok := s.slotPredict(slot); ok && math.Abs(pt-s.t0) <= cohSlotSpan {
+		s.t0 = pt
+	}
+}
+
+func (s *cohStage) slotSync(slot int64, seg [2]int) {
+	pt, pOK := s.slotPredict(slot)
+	s.dt += s.syncTime(seg[0], seg[1])
+	if s.slotFit {
+		s.slotMeasure(slot, pt, pOK)
+	}
+}
+
 func (s *cohStage) slotPredict(slot int64) (float64, bool) {
 	f := &s.tfit
 	if !s.slotFit || f[0] <= 1.5 {
@@ -1049,17 +1066,11 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if s.quiet(c, segs[0], nseg, b) {
 		return false
 	}
-	if nseg != 1 && s.slotFit {
-		if pt, ok := s.slotPredict(b.Slot); ok && math.Abs(pt-s.t0) <= cohSlotSpan {
-			s.t0 = pt
-		}
+	if nseg != 1 {
+		s.slotHold(b.Slot)
 	}
 	if nseg == 1 {
-		pt, pOK := s.slotPredict(b.Slot)
-		s.dt += s.syncTime(segs[0][0], segs[0][1])
-		if s.slotFit {
-			s.slotMeasure(b.Slot, pt, pOK)
-		}
+		s.slotSync(b.Slot, segs[0])
 		a0, n0 := s.levels(segs[0][0], segs[0][1])
 		fit := s.freqFit(segs[0][0], segs[0][1])
 		f0 := s.freq
