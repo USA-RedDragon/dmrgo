@@ -62,6 +62,7 @@ const (
 	leanClockDead       = 0.000075
 	leanClockBlock      = 64
 	leanClockSig        = 4
+	leanClockSpan       = 4
 	leanMidGate         = 0
 	leanSyncUnroll      = true
 	leanRawFuse         = true
@@ -95,6 +96,9 @@ type leanTiming struct {
 	drift, corr    float32
 	corr2          float32
 	nc, nall       int32
+	acorr, acorr2  float32
+	anc, anall     int32
+	aweak          float32
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -124,6 +128,17 @@ func (tm *leanTiming) settle() {
 	step := tm.rateK * tm.corr
 	if v := tm.corr2/n - tm.corr*tm.corr/(n*n); tm.rateK > 0 && tm.corr*tm.corr > leanClockSig*leanClockSig*n*v {
 		step = tm.corr / float32(tm.nall)
+		tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
+	} else if tm.rateK > 0 {
+		tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = tm.acorr+tm.corr, tm.acorr2+tm.corr2, tm.anc+tm.nc, tm.anall+tm.nall, tm.aweak+step
+		an := float32(tm.anc)
+		switch v := tm.acorr2/an - tm.acorr*tm.acorr/(an*an); {
+		case tm.acorr*tm.acorr > leanClockSig*leanClockSig*an*v:
+			step = tm.acorr/float32(tm.anall) - (tm.aweak - step)
+			tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
+		case tm.anc >= leanClockSpan*slotSymbols:
+			tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
+		}
 	}
 	lim := leanClockMax * 2 * tm.step
 	tm.rate = max32(min32(tm.rate+step, lim), -lim)
@@ -1634,6 +1649,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift = false, r.trackGain, 0, leanClockGain, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
+	r.tm.acorr, r.tm.acorr2, r.tm.anc, r.tm.anall, r.tm.aweak = 0, 0, 0, 0, 0
 	if r.mmOK && !r.tm.mm {
 		r.tm.mm, r.tm.mid = true, false
 		r.tm.t += r.tm.step
@@ -2092,6 +2108,7 @@ func (r *leanCore) unlock() {
 	r.rebuildSigns()
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift = false, r.acqGain, 0, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
+	r.tm.acorr, r.tm.acorr2, r.tm.anc, r.tm.anall, r.tm.aweak = 0, 0, 0, 0, 0
 	if r.tm.mm {
 		r.tm.mm, r.tm.mid = false, true
 		r.tm.t -= r.tm.step
