@@ -1454,8 +1454,6 @@ func (r *leanCore) searchSym(strict bool) {
 			d = r.shiftSync(t * 2 * r.tm.step)
 		}
 		r.fitLevels(r.ns-1, p, true, false)
-	} else if !strict && r.hasExt() {
-		r.ext.lockFit(r, p)
 	}
 	r.lockStream(src, d, 0)
 }

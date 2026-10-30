@@ -19,7 +19,6 @@ type leanExt interface {
 	verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool
 	scan(c *leanCore) (src int, data bool, back int64, ok bool)
 	lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool)
-	lockFit(c *leanCore, p enums.SyncPattern)
 }
 
 const extQueue = 8
@@ -741,15 +740,6 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool {
 	return 4*n <= syncSymbols && x.coh.verify(c, p, rho2)
 }
 
-func (x *softExt) lockFit(c *leanCore, p enums.SyncPattern) {
-	if x.coh == nil {
-		return
-	}
-	x.coh.vHz, _ = x.coh.src.cohLockHz()
-	x.coh.vOK = true
-	x.lockShift(c, p, 0)
-}
-
 func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool) {
 	if x.coh == nil {
 		return 0, false
@@ -768,9 +758,6 @@ func (x *softExt) locked(c *leanCore, d float32) {
 	if x.coh != nil {
 		x.vHz, x.vOK, x.coh.vOK, x.coh.vTauOK = x.coh.vHz, x.coh.vOK, false, false
 		x.lockHz(c)
-		if x.vOK {
-			x.coh.src.cohSettle()
-		}
 		x.coh.freqOK = false
 		x.coh.lock()
 	}
