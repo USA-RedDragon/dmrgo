@@ -24,17 +24,20 @@ go run -C v2 ./examples/scanner
 
 A BS outbound stream has a CACH in front of each burst, and the TC bit of the CACH gives the time slot of the burst. Set `CACH` in the [framer.Config](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/framer#Config). Give the decoder the color code of the channel in [DecodeOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#DecodeOptions), so that a burst of another color code returns an error.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go lines=57-65 -->
+<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=newScanner -->
 ```go
-r := xorshift(2)
-f, err := framer.New(&framer.Config{CACH: true})
-if err != nil {
-	return err
+func newScanner() (*scanner, error) {
+	f, err := framer.New(&framer.Config{CACH: true})
+	if err != nil {
+		return nil, err
+	}
+	cc := enums.ColorCode(colorCode)
+	return &scanner{
+		f:     f,
+		chans: [2]*channel{{name: "TS1"}, {name: "TS2"}},
+		opts:  layer2.DecodeOptions{ColorCode: &cc},
+	}, nil
 }
-chans := [2]*channel{{name: "TS1"}, {name: "TS2"}}
-cc := enums.ColorCode(colorCode)
-opts := layer2.DecodeOptions{ColorCode: &cc}
-var b layer2.Burst
 ```
 <!-- /dmrgo:code -->
 
@@ -42,27 +45,33 @@ var b layer2.Burst
 
 Give the stream to [Framer.Write](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/framer#Framer.Write) in pieces of any size, with the number of bits in each piece. Write returns the bursts that the piece completes, each with its bit offset and its slot. Decode each burst with `DecodeFromBytesWith` and pass it to the state of its slot. The example cuts the stream at random lengths to show that a burst can start at any bit.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go lines=68-87 -->
+<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=scanner.scan -->
 ```go
-for len(stream) > 0 {
-	chunk := min(len(stream), 1+int(r.next()%63))
-	k := min(8*chunk, left)
-	left -= k
-	for _, fb := range f.Write(stream[:chunk], k) {
-		if first < 0 {
-			first = fb.Offset
+func (s *scanner) scan(w io.Writer, stream []byte, bits int) (first int64, n int) {
+	r := xorshift(2)
+	left := bits
+	first = -1
+	for len(stream) > 0 {
+		chunk := min(len(stream), 1+int(r.next()%63))
+		k := min(8*chunk, left)
+		left -= k
+		for _, fb := range s.f.Write(stream[:chunk], k) {
+			if first < 0 {
+				first = fb.Offset
+			}
+			n++
+			if fb.Slot != enums.Slot1 && fb.Slot != enums.Slot2 {
+				continue
+			}
+			if err := s.b.DecodeFromBytesWith(fb.Data, &s.opts); err != nil {
+				fmt.Fprintf(w, "%v burst at bit %d: %v\n", fb.Slot, fb.Offset, err)
+				continue
+			}
+			s.chans[fb.Slot-1].receive(w, &s.b)
 		}
-		n++
-		if fb.Slot != enums.Slot1 && fb.Slot != enums.Slot2 {
-			continue
-		}
-		if err := b.DecodeFromBytesWith(fb.Data, &opts); err != nil {
-			fmt.Fprintf(w, "%v burst at bit %d: %v\n", fb.Slot, fb.Offset, err)
-			continue
-		}
-		chans[fb.Slot-1].receive(w, &b)
+		stream = stream[chunk:]
 	}
-	stream = stream[chunk:]
+	return first, n
 }
 ```
 <!-- /dmrgo:code -->

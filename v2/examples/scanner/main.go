@@ -54,22 +54,47 @@ func run(w io.Writer, dataDir string) error {
 	}
 	fmt.Fprintf(w, "stream: %d bits, %d junk bits, %d bits flipped\n", n, junkBits, flipped)
 
-	r := xorshift(2)
-	f, err := framer.New(&framer.Config{CACH: true})
+	sc, err := newScanner()
 	if err != nil {
 		return err
 	}
-	chans := [2]*channel{{name: "TS1"}, {name: "TS2"}}
+	first, bursts := sc.scan(w, stream, n)
+	fmt.Fprintf(w, "framer: first burst at bit %d, %d bursts\n", first, bursts)
+	for _, c := range sc.chans {
+		c.summary(w)
+	}
+	return nil
+}
+
+type scanner struct {
+	f     *framer.Framer
+	chans [2]*channel
+	opts  layer2.DecodeOptions
+	b     layer2.Burst
+}
+
+func newScanner() (*scanner, error) {
+	f, err := framer.New(&framer.Config{CACH: true})
+	if err != nil {
+		return nil, err
+	}
 	cc := enums.ColorCode(colorCode)
-	opts := layer2.DecodeOptions{ColorCode: &cc}
-	var b layer2.Burst
-	left := n
-	n, first := 0, int64(-1)
+	return &scanner{
+		f:     f,
+		chans: [2]*channel{{name: "TS1"}, {name: "TS2"}},
+		opts:  layer2.DecodeOptions{ColorCode: &cc},
+	}, nil
+}
+
+func (s *scanner) scan(w io.Writer, stream []byte, bits int) (first int64, n int) {
+	r := xorshift(2)
+	left := bits
+	first = -1
 	for len(stream) > 0 {
 		chunk := min(len(stream), 1+int(r.next()%63))
 		k := min(8*chunk, left)
 		left -= k
-		for _, fb := range f.Write(stream[:chunk], k) {
+		for _, fb := range s.f.Write(stream[:chunk], k) {
 			if first < 0 {
 				first = fb.Offset
 			}
@@ -77,19 +102,15 @@ func run(w io.Writer, dataDir string) error {
 			if fb.Slot != enums.Slot1 && fb.Slot != enums.Slot2 {
 				continue
 			}
-			if err := b.DecodeFromBytesWith(fb.Data, &opts); err != nil {
+			if err := s.b.DecodeFromBytesWith(fb.Data, &s.opts); err != nil {
 				fmt.Fprintf(w, "%v burst at bit %d: %v\n", fb.Slot, fb.Offset, err)
 				continue
 			}
-			chans[fb.Slot-1].receive(w, &b)
+			s.chans[fb.Slot-1].receive(w, &s.b)
 		}
 		stream = stream[chunk:]
 	}
-	fmt.Fprintf(w, "framer: first burst at bit %d, %d bursts\n", first, n)
-	for _, c := range chans {
-		c.summary(w)
-	}
-	return nil
+	return first, n
 }
 
 func loadBursts(path string) ([]layer2.RawBurst, error) {
