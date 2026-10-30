@@ -17,11 +17,24 @@ import (
 	"time"
 )
 
+type options struct {
+	addr   *string
+	build  *bool
+	tinygo *bool
+	files  *string
+}
+
+func defineFlags(fs *flag.FlagSet) options {
+	return options{
+		addr:   fs.String("addr", "localhost:8080", "listen address; WebUSB and the microphone need localhost or HTTPS"),
+		build:  fs.Bool("build", true, "build the decoder before serving"),
+		tinygo: fs.Bool("tinygo", false, "build and serve the decoder with TinyGo instead of Go"),
+		files:  fs.String("files", "", "a directory of recordings to serve under /files/, for the src parameter of the page"),
+	}
+}
+
 func main() {
-	addr := flag.String("addr", "localhost:8080", "listen address; WebUSB and the microphone need localhost or HTTPS")
-	build := flag.Bool("build", true, "build the decoder before serving")
-	tinygo := flag.Bool("tinygo", false, "build and serve the decoder with TinyGo instead of Go")
-	files := flag.String("files", "", "a directory of recordings to serve under /files/, for the src parameter of the page")
+	o := defineFlags(flag.CommandLine)
 	flag.Parse()
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
@@ -31,12 +44,12 @@ func main() {
 	wasm := filepath.Join(dir, "decoder.wasm")
 	compiler := "go"
 	args := []string{"build", "-trimpath", "-ldflags=-s -w", "-o", wasm, "."}
-	if *tinygo {
+	if *o.tinygo {
 		wasm = filepath.Join(dir, "decoder-tinygo.wasm")
 		compiler = "tinygo"
 		args = []string{"build", "-target", "wasm", "-opt=2", "-no-debug", "-o", wasm, "."}
 	}
-	if *build {
+	if *o.build {
 		cmd := exec.CommandContext(context.Background(), compiler, args...)
 		cmd.Dir, cmd.Stdout, cmd.Stderr = dir, os.Stdout, os.Stderr
 		cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm")
@@ -44,7 +57,7 @@ func main() {
 			log.Fatalf("serve: %s build: %v", compiler, err)
 		}
 	}
-	execJS, err := wasmExec(*tinygo)
+	execJS, err := wasmExec(*o.tinygo)
 	if err != nil {
 		log.Fatal("serve: ", err)
 	}
@@ -54,11 +67,11 @@ func main() {
 	mux.HandleFunc("/decoder.wasm", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, wasm) })
 	testdata := filepath.Join(dir, "..", "..", "..", "cmd", "dmrrf", "testdata")
 	mux.Handle("/testdata/", http.StripPrefix("/testdata/", http.FileServer(http.Dir(testdata))))
-	if *files != "" {
-		mux.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir(*files))))
+	if *o.files != "" {
+		mux.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir(*o.files))))
 	}
-	fmt.Printf("serving %s (%s) on http://%s/\n", dir, filepath.Base(wasm), *addr)
-	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	fmt.Printf("serving %s (%s) on http://%s/\n", dir, filepath.Base(wasm), *o.addr)
+	srv := &http.Server{Addr: *o.addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	log.Fatal(srv.ListenAndServe())
 }
 

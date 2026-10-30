@@ -32,12 +32,16 @@ go run ./examples/wasm/decoder/serve
 
 The command builds `decoder.wasm` and serves the page. Open http://localhost:8080/. Its flags:
 
-<!-- dmrgo:code file=v2/examples/wasm/decoder/serve/main.go lines=21-24 -->
+<!-- dmrgo:code file=v2/examples/wasm/decoder/serve/main.go symbol=defineFlags -->
 ```go
-addr := flag.String("addr", "localhost:8080", "listen address; WebUSB and the microphone need localhost or HTTPS")
-build := flag.Bool("build", true, "build the decoder before serving")
-tinygo := flag.Bool("tinygo", false, "build and serve the decoder with TinyGo instead of Go")
-files := flag.String("files", "", "a directory of recordings to serve under /files/, for the src parameter of the page")
+func defineFlags(fs *flag.FlagSet) options {
+	return options{
+		addr:   fs.String("addr", "localhost:8080", "listen address; WebUSB and the microphone need localhost or HTTPS"),
+		build:  fs.Bool("build", true, "build the decoder before serving"),
+		tinygo: fs.Bool("tinygo", false, "build and serve the decoder with TinyGo instead of Go"),
+		files:  fs.String("files", "", "a directory of recordings to serve under /files/, for the src parameter of the page"),
+	}
+}
 ```
 <!-- /dmrgo:code -->
 
