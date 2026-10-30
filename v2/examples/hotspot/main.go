@@ -83,46 +83,57 @@ func receive(captured []layer2.RawBurst) (rxStats, error) {
 	cc := enums.ColorCode(colorCode)
 	for _, clean := range captured {
 		p := clean
-		f, a := addRFErrors(&p)
-		s.injFEC += f
-		s.injAMBE += a
 		var b layer2.Burst
-		if err := b.DecodeFromBytesWith(p, &layer2.DecodeOptions{ColorCode: &cc}); err != nil {
+		if err := s.decodeBurst(&rx, cc, &p, &b); err != nil {
 			return s, err
 		}
-		s.fec = s.fec.Combine(b.FEC.Aggregate())
-		lc, ok, err := rx.Receive(&b, nil)
-		if err != nil {
-			return s, err
-		}
-		if ok {
-			s.embLCs++
-			if s.header != nil && sameCall(&lc, s.header) {
-				s.embMatch++
-			}
-		}
-		switch b.Kind {
-		case layer2.KindData:
-			s.data++
-			s.checked++
-			if _, ok := p.MMDVMHostPayload(b.SlotType.DataType); ok {
-				s.accepted++
-			}
-			if f, ok := b.Data.(*pdu.FullLinkControl); ok && b.SlotType.DataType == enums.DataTypeVoiceLCHeader {
-				s.header = f
-			}
-		case layer2.KindVoice:
-			s.voice++
-			frames, res := b.AMBEFrames()
-			s.ambe = s.ambe.Combine(res)
-			s.frames = append(s.frames, frames[:]...)
-		case layer2.KindUnknown, layer2.KindReverseChannel:
-		}
+		s.countBurst(&p, &b)
 	}
 	if s.header == nil {
 		return s, errors.New("no Voice LC Header in the capture")
 	}
 	return s, nil
+}
+
+func (s *rxStats) decodeBurst(rx *layer2.VoiceReceiver, cc enums.ColorCode, p *layer2.RawBurst, b *layer2.Burst) error {
+	f, a := addRFErrors(p)
+	s.injFEC += f
+	s.injAMBE += a
+	if err := b.DecodeFromBytesWith(*p, &layer2.DecodeOptions{ColorCode: &cc}); err != nil {
+		return err
+	}
+	s.fec = s.fec.Combine(b.FEC.Aggregate())
+	lc, ok, err := rx.Receive(b, nil)
+	if err != nil {
+		return err
+	}
+	if ok {
+		s.embLCs++
+		if s.header != nil && sameCall(&lc, s.header) {
+			s.embMatch++
+		}
+	}
+	return nil
+}
+
+func (s *rxStats) countBurst(p *layer2.RawBurst, b *layer2.Burst) {
+	switch b.Kind {
+	case layer2.KindData:
+		s.data++
+		s.checked++
+		if _, ok := p.MMDVMHostPayload(b.SlotType.DataType); ok {
+			s.accepted++
+		}
+		if f, ok := b.Data.(*pdu.FullLinkControl); ok && b.SlotType.DataType == enums.DataTypeVoiceLCHeader {
+			s.header = f
+		}
+	case layer2.KindVoice:
+		s.voice++
+		frames, res := b.AMBEFrames()
+		s.ambe = s.ambe.Combine(res)
+		s.frames = append(s.frames, frames[:]...)
+	case layer2.KindUnknown, layer2.KindReverseChannel:
+	}
 }
 
 func sameCall(a, b *pdu.FullLinkControl) bool {
