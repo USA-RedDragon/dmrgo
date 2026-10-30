@@ -1038,9 +1038,6 @@ func (x *softExt) end(c *leanCore) {
 	x.ch[0].accN, x.ch[1].accN = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.ch[0].raw, x.ch[1].raw = false, false
-	if x.coh != nil {
-		x.coh.freqOK = false
-	}
 	x.drain(c, false, 0)
 }
 
