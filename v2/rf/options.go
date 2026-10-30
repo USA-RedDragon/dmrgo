@@ -180,7 +180,9 @@ func tierOptions(t Tier) options {
 		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg, o.IQSpecHunt = iqHuntMaxHz, true, 5, true
 	case Tier3:
 		if coreTier3 {
-			return coreExactOptions(tierOptions(Tier2))
+			o = coreExactOptions(tierOptions(Tier2))
+			o.ExtLookback = 16
+			return o
 		}
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, true, 52, true, 7, 0.35

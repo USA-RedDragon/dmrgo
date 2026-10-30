@@ -48,7 +48,7 @@ func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, iq bool, _ error) 
 		return nil
 	}
 	o := &shortLCOut{on: on, cost: slcCostTenths}
-	if iq && t == Tier3 {
+	if iq && t == Tier3 && !coreTier3 {
 		o.cost = slcCostTenthsIQ3
 	}
 	if t != Tier0 {
