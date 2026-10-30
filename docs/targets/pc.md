@@ -4,14 +4,7 @@ This page shows how to build and run dmrgo with the standard Go toolchain on a P
 
 ## What you need
 
-- Go, at the version that the `go` line of the module gives, or later:
-
-<!-- dmrgo:code file=v2/go.mod lines=3-3 -->
-```
-go 1.24.0
-```
-<!-- /dmrgo:code -->
-
+- Go <!-- dmrgo:gomod field=go -->`1.24.0`<!-- /dmrgo:gomod --> or later, the version of the `go` line of `v2/go.mod`.
 - No C compiler. The `v2` module is pure Go, and its only cgo code is the optional system libcodec2 backend of [vocoder/codec2](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2).
 
 ## Build
@@ -52,37 +45,57 @@ all captures conform
 
 CI runs the tests of the module at the Go version of `v2/go.mod`, with cgo off:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=40-44 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.minimum-go-tests -->
 ```yaml
-  uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-  with:
-    go-version-file: v2/go.mod
+minimum-go-tests:
+  runs-on: ubuntu-24.04
 
-- run: CGO_ENABLED=0 go test -C v2 -timeout 60m ./...
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set up Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: v2/go.mod
+
+    - run: CGO_ENABLED=0 go test -C v2 -timeout 60m ./...
 ```
 <!-- /dmrgo:code -->
 
 It also builds and vets the module for 32-bit arm and 386, and tests the Codec2 engine on them:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml lines=76-92 -->
+<!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.arch-32bit -->
 ```yaml
-- name: Build and vet for arm
-  run: GOARCH=arm CGO_ENABLED=0 go vet -C v2 ./...
+arch-32bit:
+  runs-on: ubuntu-24.04
 
-- name: Build and vet for 386
-  run: GOARCH=386 CGO_ENABLED=0 go vet -C v2 ./...
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-- name: Codec2 tests on 386
-  run: GOARCH=386 CGO_ENABLED=0 go test -C v2 ./vocoder/codec2/...
+    - name: Set up Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: v2/go.mod
 
-- name: Codec2 tests on amd64 with the translated engine
-  run: CGO_ENABLED=0 go test -C v2 -tags codec2aot ./vocoder/codec2/...
+    - name: Build and vet for arm
+      run: GOARCH=arm CGO_ENABLED=0 go vet -C v2 ./...
 
-- name: Install qemu-user-static
-  run: sudo apt-get update && sudo apt-get install -y qemu-user-static
+    - name: Build and vet for 386
+      run: GOARCH=386 CGO_ENABLED=0 go vet -C v2 ./...
 
-- name: Codec2 allocation and engine tests on arm
-  run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm-static -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
+    - name: Codec2 tests on 386
+      run: GOARCH=386 CGO_ENABLED=0 go test -C v2 ./vocoder/codec2/...
+
+    - name: Codec2 tests on amd64 with the translated engine
+      run: CGO_ENABLED=0 go test -C v2 -tags codec2aot ./vocoder/codec2/...
+
+    - name: Install qemu-user-static
+      run: sudo apt-get update && sudo apt-get install -y qemu-user-static
+
+    - name: Codec2 allocation and engine tests on arm
+      run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm-static -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
 ```
 <!-- /dmrgo:code -->
 
