@@ -49,12 +49,12 @@ func TestIQLockOffsetDCSpur(t *testing.T) {
 	for _, off := range []float64{1400, -1400} {
 		for _, cn := range []float64{10, 20} {
 			iq := cu8Spur(noisyBaseband(slots, off, cn, 7), 32, -0.5)
-			for _, tier := range []Tier{Tier0, Tier3} {
+			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 				at, after, ok := lockNCO(t, iq, basebandRate, tier)
 				switch {
 				case !ok:
 					t.Errorf("tier %d at %.0f Hz, C/N %.0f dB, DC spur: no lock", tier-Tier0, off, cn)
-				case math.Abs(at-off) > iqAFCPullHz:
+				case (tier == Tier0 || tier == Tier3) && math.Abs(at-off) > iqAFCPullHz:
 					t.Errorf("tier %d at %.0f Hz, C/N %.0f dB, DC spur: oscillator at %.0f Hz at the lock, want within %d Hz", tier-Tier0, off, cn, at, iqAFCPullHz)
 				case math.Abs(after-off) > iqLockOffsetBound:
 					t.Errorf("tier %d at %.0f Hz, C/N %.0f dB, DC spur: oscillator at %.0f Hz %d0 ms after the lock, want within %d Hz", tier-Tier0, off, cn, after, iqAfterLock, iqLockOffsetBound)
