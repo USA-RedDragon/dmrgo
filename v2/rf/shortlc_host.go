@@ -44,12 +44,12 @@ type slcHook struct {
 	slc *shortLCOut
 }
 
-func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, iq bool, _ error) error {
+func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, engine bool, _ error) error {
 	if on == nil {
 		return nil
 	}
 	o := &shortLCOut{on: on, cost: slcCostTenths}
-	if iq && t == Tier3 && !coreTier3 {
+	if engine && t == Tier3 {
 		o.cost = slcCostTenthsIQ3
 	}
 	if t != Tier0 {
