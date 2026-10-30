@@ -218,3 +218,24 @@ func TestCSymbol(t *testing.T) {
 		t.Error("a missing symbol passed")
 	}
 }
+
+func TestRegion(t *testing.T) {
+	t.Parallel()
+	src := []byte("/*\n * a\n * docgen:region r\n * b\n *   c\n * docgen:end\n * d\n */\n")
+	got, err := regionExcerpt(src, "r")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "* b\n*   c"; got != want {
+		t.Errorf("region r = %q, want %q", got, want)
+	}
+	if _, err := regionExcerpt(src, "x"); err == nil {
+		t.Error("a missing region passed")
+	}
+	if _, err := regionExcerpt([]byte("docgen:region r\nx\n"), "r"); err == nil {
+		t.Error("a region without an end passed")
+	}
+	if got, want := dropRegionLines(string(src)), "/*\n * a\n * b\n *   c\n * d\n */\n"; got != want {
+		t.Errorf("dropRegionLines = %q, want %q", got, want)
+	}
+}

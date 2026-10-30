@@ -34,6 +34,10 @@
 //     with name A to the item with name B, and key[A] the one item A.
 //   - dmrgo:code file=<C file> symbol=<Name> writes the #define of Name or
 //     the definition of the function Name.
+//   - dmrgo:code file=<repo path> region=<name> writes the lines between
+//     the line that holds "docgen:region <name>" and the next line that
+//     holds "docgen:end", such as two lines of a C comment. Other excerpts
+//     of the file leave out those two lines.
 //   - dmrgo:code file=<repo path> writes the whole file.
 //   - dmrgo:code file=<repo path> lines=<a>-<b> writes those lines of the
 //     file. For a Go file the lines must hold whole declarations or

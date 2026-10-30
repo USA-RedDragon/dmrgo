@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -42,15 +43,22 @@ func (g *gen) fillCode(pg *page, m marker) (string, []outFile, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	if name := m.args["region"]; name != "" {
+		ex, err := regionExcerpt(src, name)
+		if err != nil {
+			return "", nil, fmt.Errorf("%s: %w", rel, err)
+		}
+		return fence(langOf(path), ex), nil, nil
+	}
 	if sym := m.args["symbol"]; sym != "" {
 		ex, err := symbolExcerpt(path, src, sym)
 		if err != nil {
 			return "", nil, err
 		}
-		return fence(langOf(path), ex), nil, nil
+		return fence(langOf(path), dropRegionLines(ex)), nil, nil
 	}
 	if m.args["lines"] == "" {
-		return fence(langOf(path), strings.TrimRight(string(src), "\n")), nil, nil
+		return fence(langOf(path), dropRegionLines(strings.TrimRight(string(src), "\n"))), nil, nil
 	}
 	fmt.Fprintf(g.log, "docgen: %s:%d: dmrgo:code uses lines=; symbol= does not break when the file changes\n", pg.rel, m.line)
 	a, b, err := parseRange(m.args["lines"])
@@ -447,4 +455,45 @@ func yamlBlockEnd(lines []string, from, end, indent int) int {
 		}
 	}
 	return end
+}
+
+var regionLine = regexp.MustCompile(`docgen:(?:region \S+|end)\b`)
+
+// regionExcerpt returns the lines between the line that holds
+// "docgen:region name" and the next line that holds "docgen:end".
+func regionExcerpt(src []byte, name string) (string, error) {
+	lines := strings.Split(string(src), "\n")
+	open := regexp.MustCompile(`docgen:region ` + regexp.QuoteMeta(name) + `(?:\s|\*/|$)`)
+	for i, l := range lines {
+		if !open.MatchString(l) {
+			continue
+		}
+		for j := i + 1; j < len(lines); j++ {
+			if strings.Contains(lines[j], "docgen:region ") {
+				break
+			}
+			if strings.Contains(lines[j], "docgen:end") {
+				if j == i+1 {
+					return "", fmt.Errorf("region %s is empty", name)
+				}
+				return dedent(lines[i+1 : j]), nil
+			}
+		}
+		return "", fmt.Errorf("region %s has no docgen:end", name)
+	}
+	return "", fmt.Errorf("no docgen:region %s", name)
+}
+
+func dropRegionLines(text string) string {
+	if !strings.Contains(text, "docgen:") {
+		return text
+	}
+	lines := strings.Split(text, "\n")
+	out := lines[:0]
+	for _, l := range lines {
+		if !regionLine.MatchString(l) {
+			out = append(out, l)
+		}
+	}
+	return strings.Join(out, "\n")
 }

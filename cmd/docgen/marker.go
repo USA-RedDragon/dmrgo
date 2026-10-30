@@ -156,12 +156,16 @@ func checkArgs(m marker, want []string) error {
 		allowed["run"] = true
 	}
 	if m.kind == kindCode {
-		_, l := m.args["lines"]
-		_, sy := m.args["symbol"]
-		if l && sy {
-			return fmt.Errorf("line %d: dmrgo:code takes lines= or symbol=, not both", m.line)
+		n := 0
+		for _, k := range []string{"lines", "symbol", "region"} {
+			if _, ok := m.args[k]; ok {
+				n++
+			}
 		}
-		allowed["lines"], allowed["symbol"] = true, true
+		if n > 1 {
+			return fmt.Errorf("line %d: dmrgo:code takes one of lines=, symbol= and region=", m.line)
+		}
+		allowed["lines"], allowed["symbol"], allowed["region"] = true, true, true
 	}
 	if m.kind == kindDoc {
 		allowed["name"], allowed["section"] = true, true
