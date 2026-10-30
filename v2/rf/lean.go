@@ -356,58 +356,6 @@ type leanSlots struct {
 	rate  float32
 }
 
-type leanRx struct {
-	leanCore
-	fe       *frontEnd
-	wide     []complex64
-	inChunk  int
-	dc       dcBlock
-	signed   bool
-	df       leanFront
-	bPow     float32
-	bLag     complex64
-	bN       int32
-	floor    float32
-	noiseCoh complex64
-}
-
-func (f *leanFront) retuneFront(hz, d float32) {
-	f.turn(2 * math.Pi * d / discRate)
-	f.tune(float64(hz))
-	f.shift(-d)
-}
-
-func (f *leanFront) turn(w float32) {
-	for r := range preTaps {
-		j := (f.preHead - 1 - r + preTaps) % preTaps
-		v := complex(float32(f.preHist[j][0]), float32(f.preHist[j][1])) * turnBy(w, r+1)
-		f.preHist[j] = [2]int8{sat8(real(v)), sat8(imag(v))}
-	}
-	f.prev *= turnBy(w, preTaps-preTaps/2)
-}
-
-func newLean(cfg rxSetup, opt options) *leanRx {
-	r := &leanRx{signed: cfg.Signed}
-	r.dc.init(float64(cfg.BasebandHz))
-	r.init(cfg.OnBurst, opt, float32(discSPS)/2)
-	r.sink = cfg.sink
-	if cfg.Rate != float64(cfg.BasebandHz) {
-		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
-		r.wide = make([]complex64, leanChunk)
-		r.inChunk = max(r.fe.size*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
-	}
-	r.df.init(cfg.BasebandHz == discRate)
-	r.iq, r.center = &r.df, r.df.center()
-	r.lagTicks = r.df.lagTicks()
-	if cfg.OffsetHz != 0 {
-		r.retune(float32(cfg.OffsetHz))
-	}
-	if opt.SoftExt {
-		r.ext = softExtOf(&opt, float32(discSPS)/2)
-	}
-	return r
-}
-
 func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.onBurst, r.lastAnch, r.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
@@ -438,67 +386,6 @@ func (r *leanCore) resetChans() {
 	}
 	r.dataAnch = [2]bool{}
 	r.votes = [16]uint8{}
-}
-
-func (r *leanRx) write(iq []byte) {
-	if r.fe == nil {
-		for i := 0; i+1 < len(iq); i += 2 {
-			r.sample(r.byteSample(iq[i], iq[i+1]))
-		}
-		return
-	}
-	for len(iq) > 0 {
-		n := min(len(iq), r.inChunk)
-		n -= n % r.fe.size
-		if n == 0 {
-			break
-		}
-		w := r.fe.process(iq[:n], r.wide)
-		iq = iq[n:]
-		for _, v := range r.wide[:w] {
-			r.sample(v)
-		}
-	}
-}
-
-func (r *leanRx) byteSample(i, q byte) complex64 {
-	var v complex64
-	if r.signed {
-		v = complex(float32(int8(i))/127.5, float32(int8(q))/127.5)
-	} else {
-		v = complex((float32(i)-127.5)/127.5, (float32(q)-127.5)/127.5)
-	}
-	return r.dc.remove(v)
-}
-
-func (r *leanRx) writeBaseband(x []complex64) {
-	for _, v := range x {
-		r.sample(v)
-	}
-}
-
-func (r *leanRx) flush() {
-	for range slotSamplesN {
-		r.sample(0)
-	}
-	if r.locked {
-		r.unlock()
-	}
-}
-
-func (r *leanRx) sample(v complex64) {
-	s, p, ok := r.df.push(v)
-	if !ok {
-		return
-	}
-	r.power(p)
-	if !r.locked {
-		r.block(p)
-	}
-	if !r.locked || r.hunt {
-		r.keep(s)
-	}
-	r.push(s)
 }
 
 func (r *leanCore) power(p float32) {
@@ -1191,31 +1078,6 @@ func (r *leanCore) fitScale() {
 	for i := range r.ms.lv {
 		l := &r.ms.lv[i]
 		l.devScale, l.dcHz, l.discVar = l.devScale*g, l.dcHz*g, l.discVar*g*g
-	}
-}
-
-func (r *leanRx) block(p float32) {
-	r.bPow += p
-	r.bLag += r.df.lag
-	if r.bN++; r.bN < leanBlock {
-		return
-	}
-	pw, lag := r.bPow/leanBlock, r.bLag/leanBlock
-	r.bPow, r.bLag, r.bN = 0, 0, 0
-	if r.floor == 0 || pw < r.floor {
-		r.floor = pw
-	} else {
-		r.floor *= leanFloorRise
-	}
-	if pw <= leanPresent*r.floor {
-		if pw > 0 {
-			r.noiseCoh = 0.9*r.noiseCoh + complex(0.1/pw, 0)*lag
-		}
-		return
-	}
-	lag -= r.noiseCoh * complex(r.floor, 0)
-	if hz := atan2f(imag(lag), real(lag)) * (discRate / (2 * math.Pi)); abs32(hz) > leanSearchHz {
-		r.retune(hz)
 	}
 }
 
