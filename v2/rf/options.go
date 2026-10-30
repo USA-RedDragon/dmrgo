@@ -33,7 +33,6 @@ type options struct {
 	IQFront                              int
 	IQPoly                               int
 	IQBuf                                int
-	CohSPS                               int
 	CohDataPasses                        int
 	CohWin                               int
 	DataPasses                           int
@@ -78,9 +77,8 @@ type options struct {
 	CohVoiceOnly                         bool
 	CohSlotFit                           bool
 	CohWarm                              bool
+	CohWide                              bool
 	IQSpecFine                           bool
-	CohTaps                              int
-	CohCutHz, CohKaiser                  float64
 	CohSignMiss                          uint8
 	CohSymNoise                          uint8
 	MidTiming                            bool

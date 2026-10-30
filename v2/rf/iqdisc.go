@@ -397,8 +397,8 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
 			r.yHist = make([]complex64, opt.cohRing())
-			if d := opt.CohTaps - len(r.conv.taps); opt.CohTaps > 0 && !r.conv.halfOn && r.conv.decim == 2 && d >= 0 && d%4 == 0 {
-				r.conv.coh = newIQCohFIR(opt.CohTaps, opt.CohKaiser, opt.CohCutHz)
+			if d := cohWideTaps - len(r.conv.taps); opt.CohWide && !r.conv.halfOn && r.conv.decim == 2 && d >= 0 && d%4 == 0 {
+				r.conv.coh = newIQCohFIR(cohWideTaps, cohWideKaiser, cohWideCutHz)
 				r.cHist, r.cLag = make([]complex64, opt.cohRing()), int64(d/4)
 			}
 			r.tunes = new([iqTunes]iqTune)

@@ -210,9 +210,6 @@ func (s *cohStage) ringTime(c *leanCore, k int64) float64 {
 
 func newCohStageOf(opt *options) *cohStage {
 	sps := cohSPS
-	if opt.CohSPS != 0 {
-		sps = opt.CohSPS
-	}
 	m := newCPMModel(1, sps)
 	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
 		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm}
@@ -1224,6 +1221,17 @@ const cohEasySNR = 6
 const cohShift = 3
 
 const slotTypeSymbols = 5
+
+const (
+	cohCarsonHz    = deviationHz*3 + (1+rrcAlpha)*symbolRate/2
+	cohWidePassHz  = cohCarsonHz + cohFreqSpan
+	cohWideStopHz  = cohChannelHz - cohCarsonHz - cohFreqSpan
+	cohWideCutHz   = (cohWidePassHz + cohWideStopHz) / 2
+	cohWideAttenDB = 60
+	cohWideKaiser  = 0.1102 * (cohWideAttenDB - 8.7)
+	cohWideTaps    = 71
+	cohChannelHz   = 12500
+)
 
 const cohMaxRun = slotSymbols + syncSymbols + cohShift + runMargin
 
