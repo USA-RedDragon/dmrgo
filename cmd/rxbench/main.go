@@ -39,12 +39,24 @@ const (
 	keyCSBK   = "csbk"
 )
 
+type options struct {
+	update  *bool
+	check   *bool
+	noSweep *bool
+}
+
+func defineFlags(fs *flag.FlagSet) options {
+	return options{
+		update:  fs.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs"),
+		check:   fs.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data"),
+		noSweep: fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
+	}
+}
+
 func main() {
-	update := flag.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs")
-	check := flag.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data")
-	noSweep := flag.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep")
+	o := defineFlags(flag.CommandLine)
 	flag.Parse()
-	if *update == *check {
+	if *o.update == *o.check {
 		fmt.Fprintln(os.Stderr, "rxbench: give -update-readme or -check-readme")
 		os.Exit(2)
 	}
@@ -54,7 +66,7 @@ func main() {
 		os.Exit(1)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := run(ctx, filepath.Join(filepath.Dir(thisFile), "..", ".."), *update, *update && !*noSweep)
+	err := run(ctx, filepath.Join(filepath.Dir(thisFile), "..", ".."), *o.update, *o.update && !*o.noSweep)
 	stop()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "rxbench:", err)

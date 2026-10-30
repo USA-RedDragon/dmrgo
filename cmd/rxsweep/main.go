@@ -59,44 +59,70 @@ func repoRoot() (string, error) {
 	return filepath.Join(filepath.Dir(file), "..", ".."), nil
 }
 
+type runOptions struct {
+	space  *string
+	out    *string
+	jobs   *int
+	only   *string
+	noCost *bool
+	m4     *string
+}
+
+func runFlags(fs *flag.FlagSet) runOptions {
+	return runOptions{
+		space:  fs.String("space", "", "space file of the variants"),
+		out:    fs.String("out", "", "output directory"),
+		jobs:   fs.Int("jobs", 2, "worker processes at once; each gets an equal share of the cores"),
+		only:   fs.String("only", "", "comma-separated variant names to run; all when empty"),
+		noCost: fs.Bool("no-cost", false, "skip the cost phase"),
+		m4:     fs.String("m4", "", "command that measures a variant on a Cortex-M4F: it gets the patched v2 directory and the variant JSON file, and prints one JSON object"),
+	}
+}
+
 func runCmd(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
-	space := fs.String("space", "", "space file of the variants")
-	out := fs.String("out", "", "output directory")
-	jobs := fs.Int("jobs", 2, "worker processes at once; each gets an equal share of the cores")
-	only := fs.String("only", "", "comma-separated variant names to run; all when empty")
-	noCost := fs.Bool("no-cost", false, "skip the cost phase")
-	m4 := fs.String("m4", "", "command that measures a variant on a Cortex-M4F: it gets the patched v2 directory and the variant JSON file, and prints one JSON object")
+	o := runFlags(fs)
 	_ = fs.Parse(args)
-	if *space == "" || *out == "" {
+	if *o.space == "" || *o.out == "" {
 		return fmt.Errorf("run needs -space and -out")
 	}
 	root, err := repoRoot()
 	if err != nil {
 		return err
 	}
-	sp, err := loadSpace(*space)
+	sp, err := loadSpace(*o.space)
 	if err != nil {
 		return err
 	}
-	r := &runner{root: root, out: *out, jobs: max(*jobs, 1), space: sp, m4: *m4, cost: !*noCost}
-	return r.run(ctx, splitList(*only))
+	r := &runner{root: root, out: *o.out, jobs: max(*o.jobs, 1), space: sp, m4: *o.m4, cost: !*o.noCost}
+	return r.run(ctx, splitList(*o.only))
+}
+
+type reportOptions struct {
+	out   *string
+	floor *string
+}
+
+func reportFlags(fs *flag.FlagSet) reportOptions {
+	return reportOptions{
+		out:   fs.String("out", "", "output directory of rxsweep run"),
+		floor: fs.String("floor", "", "floor file; default v2/rf/testdata/rxbench_floor.json of this checkout"),
+	}
 }
 
 func reportCmd(args []string) error {
 	fs := flag.NewFlagSet("report", flag.ExitOnError)
-	out := fs.String("out", "", "output directory of rxsweep run")
-	floor := fs.String("floor", "", "floor file; default v2/rf/testdata/rxbench_floor.json of this checkout")
+	o := reportFlags(fs)
 	_ = fs.Parse(args)
-	if *out == "" {
+	if *o.out == "" {
 		return fmt.Errorf("report needs -out")
 	}
-	if *floor == "" {
+	if *o.floor == "" {
 		root, err := repoRoot()
 		if err != nil {
 			return err
 		}
-		*floor = filepath.Join(root, "v2/rf/testdata/rxbench_floor.json")
+		*o.floor = filepath.Join(root, "v2/rf/testdata/rxbench_floor.json")
 	}
-	return report(*out, *floor)
+	return report(*o.out, *o.floor)
 }

@@ -101,9 +101,20 @@ func main() {
 	os.Exit(run())
 }
 
+type options struct {
+	updateReadme *bool
+	checkReadme  *bool
+}
+
+func defineFlags(fs *flag.FlagSet) options {
+	return options{
+		updateReadme: fs.Bool("update-readme", false, "Write the Markdown coverage report into docs/reference/etsi.md between the ETSI COVERAGE markers"),
+		checkReadme:  fs.Bool("check-readme", false, "Fail if the coverage section in docs/reference/etsi.md is not up to date or a relative link in README.md or docs/ is broken"),
+	}
+}
+
 func run() int {
-	updateReadme := flag.Bool("update-readme", false, "Write the Markdown coverage report into docs/reference/etsi.md between the ETSI COVERAGE markers")
-	checkReadme := flag.Bool("check-readme", false, "Fail if the coverage section in docs/reference/etsi.md is not up to date or a relative link in README.md or docs/ is broken")
+	o := defineFlags(flag.CommandLine)
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -148,14 +159,14 @@ func run() int {
 	md := generateMarkdown(matrix.Documents, sectionResults)
 	readmePath := filepath.Join(repoRoot, "docs", "reference", "etsi.md")
 
-	if *checkReadme {
+	if *o.checkReadme {
 		errCount += checkReadmeFresh(readmePath, md)
 		errCount += checkLinks(repoRoot)
 	}
 
 	printSummary(matrix.Documents, sectionResults, errCount)
 
-	if *updateReadme {
+	if *o.updateReadme {
 		if errCount > 0 {
 			fmt.Fprintf(os.Stderr, "error: not updating docs/reference/etsi.md because of %d error(s)\n", errCount)
 			return 1

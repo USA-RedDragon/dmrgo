@@ -90,103 +90,133 @@ func isSet(fs *flag.FlagSet, name string) bool {
 	return set
 }
 
-func runTX(args []string, std stdio) (err error) {
-	fs := flag.NewFlagSet("tx", flag.ContinueOnError)
-	out := fs.String("o", "", "output file, or - for standard output")
-	format := fs.String("format", "", formatUsage)
-	seq := fs.String("seq", "data12", strings.Join(rftx.Sequences(), ", "))
-	cw := fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead (I/Q only)")
-	rate := fs.Float64("rate", 0, "sample rate in Hz (default 48000 for audio; required for I/Q)")
-	tune := tuningFlags(fs, "carrier frequency in Hz, for -ppm and the example command", "frequency offset of the carrier from the tuned frequency in Hz (I/Q only)")
-	level := fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
-	slot := fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
-	cc := enums.ColorCode(1)
+type txOptions struct {
+	out         *string
+	format      *string
+	seq         *string
+	cw          *float64
+	rate        *float64
+	tune        tuning
+	level       *float64
+	slot        *int
+	src         *uint32
+	dst         *uint32
+	bs          *uint32
+	group       *bool
+	wakeups     *int
+	msg         *string
+	repeat      *float64
+	stretch     *float64
+	superframes *int
+	silence     *bool
+	lateEntry   *bool
+	preambles   *int
+	bsSourced   *bool
+	cc          enums.ColorCode
+	dd          uint8
+}
+
+func txFlags(fs *flag.FlagSet) *txOptions {
+	o := &txOptions{cc: enums.ColorCode(1), dd: uint8(enums.DDUTF16LE)}
+	o.out = fs.String("o", "", "output file, or - for standard output")
+	o.format = fs.String("format", "", formatUsage)
+	o.seq = fs.String("seq", "data12", strings.Join(rftx.Sequences(), ", "))
+	o.cw = fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead (I/Q only)")
+	o.rate = fs.Float64("rate", 0, "sample rate in Hz (default 48000 for audio; required for I/Q)")
+	o.tune = tuningFlags(fs, "carrier frequency in Hz, for -ppm and the example command", "frequency offset of the carrier from the tuned frequency in Hz (I/Q only)")
+	o.level = fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
+	o.slot = fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
 	fs.Func("cc", "color code, 0 to 15 (default 1)", func(s string) error {
 		v, err := strconv.ParseUint(s, 10, 8)
 		if err != nil {
 			return err
 		}
-		cc, err = enums.NewColorCode(uint8(v))
+		o.cc, err = enums.NewColorCode(uint8(v))
 		return err
 	})
-	src := idFlag(fs, "src", "source radio ID")
-	dst := idFlag(fs, "dst", "destination radio or talkgroup ID")
-	bs := idFlag(fs, "bs", "BS (repeater) address for the wakeup CSBK")
-	group := fs.Bool("group", false, "send to a talkgroup instead of a radio")
-	wakeups := fs.Int("wakeups", 3, "wakeup CSBKs before the sequence, or idle frames before a -bs-sourced stream")
-	msg := fs.String("msg", "DMRGO TEST", "message text")
-	repeat := fs.Float64("repeat", 0, "repeat the sequence, padded to whole 60 ms frames, for this many seconds")
-	stretch := fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
-	superframes := fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
-	silence := fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
-	lateEntry := fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
-	preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble and sms sequences")
-	dd := uint8(enums.DDUTF16LE)
+	o.src = idFlag(fs, "src", "source radio ID")
+	o.dst = idFlag(fs, "dst", "destination radio or talkgroup ID")
+	o.bs = idFlag(fs, "bs", "BS (repeater) address for the wakeup CSBK")
+	o.group = fs.Bool("group", false, "send to a talkgroup instead of a radio")
+	o.wakeups = fs.Int("wakeups", 3, "wakeup CSBKs before the sequence, or idle frames before a -bs-sourced stream")
+	o.msg = fs.String("msg", "DMRGO TEST", "message text")
+	o.repeat = fs.Float64("repeat", 0, "repeat the sequence, padded to whole 60 ms frames, for this many seconds")
+	o.stretch = fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
+	o.superframes = fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
+	o.silence = fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
+	o.lateEntry = fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
+	o.preambles = fs.Int("preambles", 4, "preamble CSBKs of the preamble and sms sequences")
 	fs.Func("dd", "Defined Data format of the sms sequence, 0 to 63; the text is always UTF-16LE (default 21, UTF-16LE)", func(s string) error {
 		v, err := strconv.ParseUint(s, 10, 6)
-		dd = uint8(v)
+		o.dd = uint8(v)
 		return err
 	})
-	bsSourced := fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
+	o.bsSourced = fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
+	return o
+}
+
+func runTX(args []string, std stdio) (err error) {
+	fs := flag.NewFlagSet("tx", flag.ContinueOnError)
+	o := txFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *out == "" {
+	if *o.out == "" {
 		return errors.New("tx needs -o <file>, or -o - for standard output")
 	}
-	f, err := formatFor(*format, *out)
+	f, err := formatFor(*o.format, *o.out)
 	if err != nil {
 		return err
 	}
 	w := std.out
-	if *out == "-" {
+	if *o.out == "-" {
 		w = std.msg
 	}
-	if *rate == 0 && !f.iq() {
-		*rate = 48000
+	if *o.rate == 0 && !f.iq() {
+		*o.rate = 48000
 	}
-	if *rate <= 0 {
+	if *o.rate <= 0 {
 		return errors.New("-rate is required for I/Q: give the sample rate of the transmitter")
 	}
-	errHz, err := tune.errorHz()
+	errHz, err := o.tune.errorHz()
 	if err != nil {
 		return err
 	}
-	if !f.iq() && (tune.set() || *cw > 0) {
+	if !f.iq() && (o.tune.set() || *o.cw > 0) {
 		return errors.New("-cw, -ppm and -offset-hz apply to I/Q only")
 	}
-	corr := *tune.offset - errHz
+	corr := *o.tune.offset - errHz
 	sink := &txSamples{f: f}
-	if *cw > 0 {
-		n := int(*cw * *rate)
+	if *o.cw > 0 {
+		n := int(*o.cw * *o.rate)
 		for i := range n {
-			p := 2 * math.Pi * corr * float64(i) / *rate
-			sink.emit(*level*math.Cos(p), *level*math.Sin(p))
+			p := 2 * math.Pi * corr * float64(i) / *o.rate
+			sink.emit(*o.level*math.Cos(p), *o.level*math.Sin(p))
 		}
-		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
+		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *o.cw, corr)
 	} else {
-		cfg := rftx.SeqConfig{ColorCode: cc, Source: *src, Dest: *dst, BS: *bs, Group: *group, Wakeups: *wakeups, Message: *msg,
-			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, DefinedData: dd, BSSourced: *bsSourced, Slot: *slot}
-		m := txModulation{seq: *seq, cfg: cfg, repeat: *repeat, corr: corr, rate: *rate * (1 + *stretch*1e-6), level: *level}
+		cfg := rftx.SeqConfig{ColorCode: o.cc, Source: *o.src, Dest: *o.dst, BS: *o.bs, Group: *o.group, Wakeups: *o.wakeups, Message: *o.msg,
+			Superframes: *o.superframes, AMBESilence: *o.silence, LateEntry: *o.lateEntry, Preambles: *o.preambles, DefinedData: o.dd, BSSourced: *o.bsSourced, Slot: *o.slot}
+		m := txModulation{seq: *o.seq, cfg: cfg, repeat: *o.repeat, corr: corr, rate: *o.rate * (1 + *o.stretch*1e-6), level: *o.level}
 		if err := m.run(w, sink); err != nil {
 			return err
 		}
 	}
 	reps := 1
-	if *repeat > 0 && !*bsSourced && sink.samples > 0 {
-		reps = max(1, int(*repeat**rate/float64(sink.samples)))
-		fmt.Fprintf(w, "repeated %d times (%.1f s), stretch %.0f ppm\n", reps, float64(reps*sink.samples) / *rate, *stretch)
+	if *o.repeat > 0 && !*o.bsSourced && sink.samples > 0 {
+		reps = max(1, int(*o.repeat**o.rate/float64(sink.samples)))
+		fmt.Fprintf(w, "repeated %d times (%.1f s), stretch %.0f ppm\n", reps, float64(reps*sink.samples) / *o.rate, *o.stretch)
 	}
-	written, err := sink.write(*out, std.out, *rate, reps)
+	written, err := sink.write(*o.out, std.out, *o.rate, reps)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "wrote %s: %s, %d samples at %.0f Hz (%d bytes)\n", *out, f.name, reps*sink.samples, *rate, written)
+	fmt.Fprintf(w, "wrote %s: %s, %d samples at %.0f Hz (%d bytes)\n", *o.out, f.name, reps*sink.samples, *o.rate, written)
 	freq := "<freq>"
-	if *tune.freq > 0 {
-		freq = fmt.Sprintf("%.0f", *tune.freq)
+	if *o.tune.freq > 0 {
+		freq = fmt.Sprintf("%.0f", *o.tune.freq)
 	}
-	if h := txHint(f, *out, freq, *rate); h != "" {
+	if h := txHint(f, *o.out, freq, *o.rate); h != "" {
 		fmt.Fprintf(w, "for example: %s\n", h)
 	}
 	fmt.Fprintln(w, "transmit only as your license allows; start at the lowest gain, and use an attenuator or dummy load for loopback tests")
@@ -501,44 +531,60 @@ func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev flo
 	return float64(rx.Offset()), float64(rx.Level()), nil
 }
 
+type rxOptions struct {
+	in       *string
+	format   *string
+	rate     *float64
+	tune     tuning
+	tier     *int
+	ambeSpec *string
+	pcmPath  *string
+}
+
+func rxFlags(fs *flag.FlagSet) rxOptions {
+	return rxOptions{
+		in:       fs.String("i", "", "input file, or - for standard input"),
+		format:   fs.String("format", "", formatUsage),
+		rate:     fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)"),
+		tune:     tuningFlags(fs, "tuned frequency in Hz, for -ppm and the ppm figure", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune (I/Q only)"),
+		tier:     fs.Int("tier", 3, "receiver tier 0 to 3: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state; audio defaults to the rf default"),
+		ambeSpec: fs.String("ambe", "", ambeUsage),
+		pcmPath:  fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit little-endian PCM to this file, or - for standard output (needs -ambe)"),
+	}
+}
+
 func runRX(args []string, std stdio) (err error) {
 	fs := flag.NewFlagSet("rx", flag.ContinueOnError)
-	in := fs.String("i", "", "input file, or - for standard input")
-	format := fs.String("format", "", formatUsage)
-	rate := fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)")
-	tune := tuningFlags(fs, "tuned frequency in Hz, for -ppm and the ppm figure", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune (I/Q only)")
-	tier := fs.Int("tier", 3, "receiver tier 0 to 3: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state; audio defaults to the rf default")
-	ambeSpec := fs.String("ambe", "", ambeUsage)
-	pcmPath := fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit little-endian PCM to this file, or - for standard output (needs -ambe)")
+	o := rxFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *pcmPath != "" && *ambeSpec == "" {
+	if *o.pcmPath != "" && *o.ambeSpec == "" {
 		return errors.New("-pcm needs -ambe")
 	}
-	if *tier < 0 || *tier > 3 {
-		return fmt.Errorf("-tier %d, expected 0 to 3", *tier)
+	if *o.tier < 0 || *o.tier > 3 {
+		return fmt.Errorf("-tier %d, expected 0 to 3", *o.tier)
 	}
 	w := std.out
-	if *pcmPath == "-" {
+	if *o.pcmPath == "-" {
 		w = std.msg
 	}
 	var audio *audioOut
-	if *ambeSpec != "" {
-		a, err := openAMBE(*ambeSpec, std.software)
+	if *o.ambeSpec != "" {
+		a, err := openAMBE(*o.ambeSpec, std.software)
 		if err != nil {
 			return err
 		}
 		defer func() { err = errors.Join(err, a.close()) }()
 		out := io.Discard
-		switch *pcmPath {
+		switch *o.pcmPath {
 		case "":
 		case "-":
 			bw := bufio.NewWriter(std.out)
 			defer func() { err = errors.Join(err, bw.Flush()) }()
 			out = bw
 		default:
-			f, err := os.Create(*pcmPath)
+			f, err := os.Create(*o.pcmPath)
 			if err != nil {
 				return err
 			}
@@ -548,12 +594,12 @@ func runRX(args []string, std stdio) (err error) {
 		audio = &audioOut{codec: a.codec, w: out}
 		fmt.Fprintf(w, "ambe: %s\n", a.desc)
 	}
-	src, closeIn, err := openInput(*in, *format, *rate, std)
+	src, closeIn, err := openInput(*o.in, *o.format, *o.rate, std)
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Join(err, closeIn()) }()
-	errHz, err := tune.errorHz()
+	errHz, err := o.tune.errorHz()
 	if err != nil {
 		return err
 	}
@@ -565,23 +611,23 @@ func runRX(args []string, std stdio) (err error) {
 		rep.Burst(b)
 	}
 	if src.f.iq() {
-		off, dev, err := receiveIQ(src, rf.Tier0+rf.Tier(*tier), *tune.offset-errHz, burst)
+		off, dev, err := receiveIQ(src, rf.Tier0+rf.Tier(*o.tier), *o.tune.offset-errHz, burst)
 		if err != nil {
 			return err
 		}
-		off -= *tune.offset - errHz
+		off -= *o.tune.offset - errHz
 		ppm := ""
-		if *tune.freq > 0 {
-			ppm = fmt.Sprintf(" (%+.2f ppm)", round(off / *tune.freq * 1e6, 2))
+		if *o.tune.freq > 0 {
+			ppm = fmt.Sprintf(" (%+.2f ppm)", round(off / *o.tune.freq * 1e6, 2))
 		}
 		fmt.Fprintf(w, "carrier offset %+.0f Hz%s, outer deviation %.0f Hz, %d bursts\n", round(off, 0), ppm, dev, n)
 	} else {
-		if tune.set() {
+		if o.tune.set() {
 			return errors.New("-ppm and -offset-hz apply to I/Q only")
 		}
 		t := rf.TierDefault
 		if isSet(fs, "tier") {
-			t = rf.Tier0 + rf.Tier(*tier)
+			t = rf.Tier0 + rf.Tier(*o.tier)
 		}
 		dc, dev, err := receiveAudio(src, t, burst)
 		if err != nil {
@@ -598,16 +644,29 @@ func runRX(args []string, std stdio) (err error) {
 	return nil
 }
 
+type calOptions struct {
+	in     *string
+	format *string
+	rate   *float64
+	tune   tuning
+}
+
+func calFlags(fs *flag.FlagSet) calOptions {
+	return calOptions{
+		in:     fs.String("i", "", "input file of I/Q, or - for standard input"),
+		format: fs.String("format", "", formatUsage),
+		rate:   fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)"),
+		tune:   tuningFlags(fs, "frequency the carrier should be on, in Hz", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune"),
+	}
+}
+
 func runCal(args []string, std stdio) (err error) {
 	fs := flag.NewFlagSet("cal", flag.ContinueOnError)
-	in := fs.String("i", "", "input file of I/Q, or - for standard input")
-	format := fs.String("format", "", formatUsage)
-	rate := fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)")
-	tune := tuningFlags(fs, "frequency the carrier should be on, in Hz", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune")
+	o := calFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	src, closeIn, err := openInput(*in, *format, *rate, std)
+	src, closeIn, err := openInput(*o.in, *o.format, *o.rate, std)
 	if err != nil {
 		return err
 	}
@@ -615,11 +674,11 @@ func runCal(args []string, std stdio) (err error) {
 	if !src.f.iq() {
 		return errors.New("cal needs I/Q input")
 	}
-	errHz, err := tune.errorHz()
+	errHz, err := o.tune.errorHz()
 	if err != nil {
 		return err
 	}
-	rs := newResampler(src.rate, basebandRate, errHz-*tune.offset, false)
+	rs := newResampler(src.rate, basebandRate, errHz-*o.tune.offset, false)
 	var x []complex128
 	if err := src.each(func(b []byte) error {
 		src.complexSamples(b, func(v complex128) { x = rs.push(v, x) })
@@ -629,8 +688,8 @@ func runCal(args []string, std stdio) (err error) {
 	}
 	off := carrierOffset(x)
 	fmt.Fprintf(std.out, "carrier offset %+.1f Hz", round(off, 1))
-	if *tune.freq > 0 {
-		fmt.Fprintf(std.out, " (%+.2f ppm)", round(off / *tune.freq * 1e6, 2))
+	if *o.tune.freq > 0 {
+		fmt.Fprintf(std.out, " (%+.2f ppm)", round(off / *o.tune.freq * 1e6, 2))
 	}
 	fmt.Fprintln(std.out)
 	return nil
