@@ -63,6 +63,7 @@ const (
 	leanClockBlock      = 64
 	leanClockSig        = 4
 	leanClockSpan       = 4
+	leanClockLag        = 120
 	leanMidGate         = 0
 	leanSyncUnroll      = true
 	leanRawFuse         = true
@@ -96,6 +97,7 @@ type leanTiming struct {
 	drift, corr    float32
 	corr2          float32
 	nc, nall       int32
+	lastStep       float32
 	acorr, acorr2  float32
 	anc, anall     int32
 	aweak          float32
@@ -127,7 +129,7 @@ func (tm *leanTiming) settle() {
 	n := float32(tm.nc)
 	step := tm.rateK * tm.corr
 	if v := tm.corr2/n - tm.corr*tm.corr/(n*n); tm.rateK > 0 && tm.corr*tm.corr > leanClockSig*leanClockSig*n*v {
-		step = tm.corr / float32(tm.nall)
+		step = (tm.corr - tm.lastStep*leanClockLag) / float32(tm.nall)
 		tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = 0, 0, 0, 0, 0
 	} else if tm.rateK > 0 {
 		tm.acorr, tm.acorr2, tm.anc, tm.anall, tm.aweak = tm.acorr+tm.corr, tm.acorr2+tm.corr2, tm.anc+tm.nc, tm.anall+tm.nall, tm.aweak+step
@@ -141,7 +143,9 @@ func (tm *leanTiming) settle() {
 		}
 	}
 	lim := leanClockMax * 2 * tm.step
+	old := tm.rate
 	tm.rate = max32(min32(tm.rate+step, lim), -lim)
+	tm.lastStep = tm.rate - old
 	tm.corr, tm.corr2, tm.nc, tm.nall, tm.drift = 0, 0, 0, 0, tm.rate
 	if abs32(tm.rate) < leanClockDead*2*tm.step {
 		tm.drift = 0
@@ -1647,7 +1651,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
 	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift = false, r.trackGain, 0, leanClockGain, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.lastStep = false, r.trackGain, 0, leanClockGain, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.acorr, r.tm.acorr2, r.tm.anc, r.tm.anall, r.tm.aweak = 0, 0, 0, 0, 0
 	if r.mmOK && !r.tm.mm {
@@ -2106,7 +2110,7 @@ func (r *leanCore) unlock() {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
 	r.rebuildSigns()
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift = false, r.acqGain, 0, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.lastStep = false, r.acqGain, 0, 0, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.acorr, r.tm.acorr2, r.tm.anc, r.tm.anall, r.tm.aweak = 0, 0, 0, 0, 0
 	if r.tm.mm {

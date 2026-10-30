@@ -127,10 +127,10 @@ func tierDigests(t testing.TB) map[string]string {
 }
 
 var tierWantDigests = map[string]string{
-	"audio48000/tier0": "793093f996b0d01cf3613b6fbbcaab126a9aaa97395c7f09eb425287efcb8c66",
-	"audio48000/tier1": "8d7fd4b498f2693c080fc552d2817934127dbc9af44862835b91acc6b3b269aa",
-	"audio48000/tier2": "516f29a411e4a0b9a489fc084cd73d2e77d849d11de23075844f4c3e2404eeac",
-	"audio48000/tier3": "516f29a411e4a0b9a489fc084cd73d2e77d849d11de23075844f4c3e2404eeac",
+	"audio48000/tier0": "825dd8f2e7674c26f0286af79f38c26af024c39b05bda85ec957bcefd913717f",
+	"audio48000/tier1": "71bd191dcc951716b9211a4e2af861f0146b9cbd167ab10e905f3ead8b7c1457",
+	"audio48000/tier2": "18950137d664a128da0cc143756161cd86c6cacd892bed85b57a5c7384c7931a",
+	"audio48000/tier3": "18950137d664a128da0cc143756161cd86c6cacd892bed85b57a5c7384c7931a",
 	"audio9600/tier0":  "f3ea669632acc70c691760246a1a33ab317466ce834f584a1a267aa5d617d161",
 	"audio9600/tier1":  "b8e10e65b217aef6230366b406e221e19ee96b1a8cf4187b0332bb425b42c606",
 	"audio9600/tier2":  "be8d90fe3253ebaef34c288f9dd808fab7d58433f049875b7741bf1fe1d2ba47",
@@ -149,13 +149,13 @@ var tierWantDigests = map[string]string{
 	"cs16/tier3":       "599d18016df8a4936c3a9b703332e1efb03257498815ef9cf1219252ee6e8573",
 	"cs8/tier0":        "9412c5f8332e5d36b26585040eab737a11f63cacee834f4eaf56b837270ce072",
 	"cs8/tier1":        "d8556d978f0ad134bb335bae07ad245083f1676ebaf572cf33beba1043b1478b",
-	"cs8/tier2":        "b546c461c43af3525efbbd8c5fff1546f0c08ada80e84d5a3d630552534e83fc",
+	"cs8/tier2":        "ca51cabf2ce40aabdc6a74419cf41c7bce80aed61af9f1b4363164228dceccc3",
 	"cs8/tier3":        "1ff1777bce0c90d9b40baf62945a0e9b38e005e8f34eceac7597231e2229a16c",
 	"cu8/tier0":        "4e74fc806f30eae7e2dc6ca98fd3fc7f539c711ade71e7e79d6268028fb10407",
 	"cu8/tier1":        "3c9fc437681c3c795f1eedabf6cc0be7521823d0e39998a118a9e9e4ce407bc7",
-	"cu8/tier2":        "95db6f8cbd30792eceff2e316afa6d3bae2867a057616e051ae4772f59d4a6cb",
+	"cu8/tier2":        "bb076b49ec686025ef6571fa11c7d17505af08aa1fc7f8463b30e0ab8da6d228",
 	"cu8/tier3":        "85270287279d5bfda8f69b00d057373a6f1608b7b419b4f29b743238eae2f716",
-	"cu8low/tier0":     "a5df7c7062e2e25688facccf1003165683bd4b36eb9afb3786288e0180bbcaaa",
+	"cu8low/tier0":     "17e3c8f85e1b81f71f1e6ad803940af7b05cfd5df51e1f52991b2b31fd986f5a",
 }
 
 func TestTierDigests(t *testing.T) {
