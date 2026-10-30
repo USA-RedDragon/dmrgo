@@ -86,6 +86,7 @@ type cohStage struct {
 	acq                         bool
 	vHz                         float64
 	vOK                         bool
+	frontCut                    float64
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -239,6 +240,10 @@ func newCohStageOf(opt *options) *cohStage {
 	s.symAt = make([]uint32, cohSymN)
 	for i := range s.runs {
 		s.runs[i].corr = make([]complex64, cohMaxRun*m.windows)
+	}
+	s.frontCut = discCutHz
+	if opt.IQCutHz > 0 {
+		s.frontCut = opt.IQCutHz
 	}
 	return s
 }
@@ -1404,6 +1409,15 @@ func noiseShare(x []complex64) float64 {
 	p /= float64(len(x))
 	p2 /= float64(len(x))
 	return 1 - math.Sqrt(max(2*p*p-p2, 0))/p
+}
+
+func (s *cohStage) leanInBand() bool {
+	if !s.src.cohResidual() {
+		return true
+	}
+	hz, _ := s.src.cohLockHz()
+	_, nco, _ := s.src.cohKey()
+	return math.Abs(hz-nco)+3*deviationHz <= s.frontCut
 }
 
 func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {

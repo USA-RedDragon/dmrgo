@@ -154,7 +154,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	out := &b.Fixed
 	if x.coh != nil {
 		s := x.coh
-		s.fitOnly = (s.budget > 0 || s.ex != nil) && x.checked(b) || s.voiceOnly && !isVoiceBurst(b)
+		s.fitOnly = (s.budget > 0 || s.ex != nil) && x.checked(b) && s.leanInBand() || s.voiceOnly && !isVoiceBurst(b)
 		x.work0 = s.work + x.work
 		done := x.cohBurst(c, b, ch, cc, ccOK)
 		if s.budget > 0 && done {
