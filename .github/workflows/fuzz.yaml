@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   list:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       fuzzers: ${{ steps.list.outputs.fuzzers }}
 
@@ -51,7 +51,7 @@ jobs:
   fuzz:
     name: fuzz (${{ matrix.id }})
     needs: list
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -97,7 +97,7 @@ jobs:
   fuzzed:
     if: always()
     needs: fuzz
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Check fuzz results
         run: test "${{ needs.fuzz.result }}" = success

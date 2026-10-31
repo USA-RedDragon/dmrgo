@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   benchmark-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -30,7 +30,7 @@ jobs:
       - run: CGO_ENABLED=0 go test -C v2 -run ^$ -benchmem -bench=. ./...
 
   minimum-go-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -44,7 +44,7 @@ jobs:
       - run: CGO_ENABLED=0 go test -C v2 -timeout 60m ./...
 
   js-wasm:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -62,7 +62,7 @@ jobs:
         run: GOOS=js GOARCH=wasm go test -C v2 -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./vocoder/codec2/
 
   arch-32bit:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -92,7 +92,7 @@ jobs:
         run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm-static -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
 
   xcrypto-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -107,7 +107,7 @@ jobs:
         run: CGO_ENABLED=0 go test -C v2/internal/digest/xcrypto ./...
 
   examples-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -125,7 +125,7 @@ jobs:
         run: go test -C v2/examples/tcp ./...
 
   race-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -148,7 +148,7 @@ jobs:
         run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
 
   codec2-backends:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -178,7 +178,7 @@ jobs:
           CGO_ENABLED=1 go test -C v2 -tags codec2native -race ./vocoder/codec2/... ./examples/transcoder/...
 
   abi-release:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -192,7 +192,7 @@ jobs:
         run: bash .github/scripts/abi-release.sh "$GITHUB_REF_NAME" v2/capi/abi.txt
 
   capi:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
@@ -221,7 +221,7 @@ jobs:
         run: go build -C v2/capi -tags nocodec2 -buildmode=c-shared -o build/libdmrgo-nocodec2.so .
 
   tinygo:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container:
       image: tinygo/tinygo:0.44.0@sha256:98126534a0653966913b803d26805ea79250a244217d921d74044cfedc1d24a2
       options: --user root
