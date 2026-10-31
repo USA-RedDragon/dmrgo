@@ -388,3 +388,10 @@ func TestCoreTier3ReplayTime(t *testing.T) {
 		}
 	}
 }
+
+func TestCoreTier3BurstContinuity(t *testing.T) {
+	t.Parallel()
+	if o := coreIQ3Options(); o.CohNoCross || o.CohNoNext {
+		t.Error("core Tier 3 I/Q detects each burst without the trellis of the burst before and after it")
+	}
+}

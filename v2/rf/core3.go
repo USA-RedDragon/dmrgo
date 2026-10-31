@@ -6,6 +6,7 @@ func coreIQ3Options() options {
 	o := coreExactOptions(tierOptions(Tier2))
 	o.ExtLookback, o.CohSlotFit, o.CohWarm, o.CohRing, o.IQSpecFine = 16, true, true, 14, true
 	o.CohWide = true
+	o.CohNoCross, o.CohNoNext = false, false
 	return o
 }
 
