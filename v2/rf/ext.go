@@ -78,7 +78,6 @@ type softExt struct {
 	replayP         enums.SyncPattern
 	lockAt          float32
 	stretch         float32
-	retime          bool
 	lockN           int64
 	stages          uint8
 	coh             *cohStage
@@ -130,7 +129,6 @@ func softExtOf(opt *options, sps float32) *softExt {
 	if opt.CohDataPasses != 0 {
 		x.passes = max(opt.CohDataPasses, 0)
 	}
-	x.retime = opt.ReplayRetime
 	return x
 }
 
@@ -962,7 +960,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 }
 
 func (x *softExt) replayTime(c *leanCore, b *Burst) {
-	if x.retime && c.isReplaying() {
+	if c.isReplaying() {
 		b.Seconds -= float64(x.lockSym-c.base-cachSymbols) * float64(x.stretch) / symbolRate
 	}
 }

@@ -117,7 +117,6 @@ type options struct {
 	CohSlotFit            bool
 	CohWarm               bool
 	CohWide               bool
-	ReplayRetime          bool
 	IQSpecFine            bool
 	CohSymNoise           uint8
 	MidTiming             bool
