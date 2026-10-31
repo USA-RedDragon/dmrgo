@@ -820,32 +820,29 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 	syncSyms(voice, &syms[0])
 	syncSyms(data, &syms[1])
 	steps := int(math.Ceil(cohWarmSpanHz / cohWarmStepHz))
-	best, bestHz, bestTau := 0.0, hz0, 0.0
+	best, bestHz := 0.0, hz0
 	t0, hz := s.t0, s.totalHz
-	for tau := -cohWarmSpanSym; tau <= cohWarmSpanSym; tau += cohWarmStepSym {
-		for k := -steps; k <= steps; k++ {
-			f := hz0 + float64(k)*cohWarmStepHz
-			var sum float64
-			for j := 0; j <= n; j++ {
-				s.t0 = s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt + tau*s.sps
-				if s.t0-s.sps < float64(lo) {
-					continue
-				}
-				s.totalHz = f
-				sum += s.syncRho(&syms)
+	for k := -steps; k <= steps; k++ {
+		f := hz0 + float64(k)*cohWarmStepHz
+		var sum float64
+		for j := 0; j <= n; j++ {
+			s.t0 = s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt
+			if s.t0-s.sps < float64(lo) {
+				continue
 			}
-			if sum > best {
-				best, bestHz, bestTau = sum, f, tau
-			}
+			s.totalHz = f
+			sum += s.syncRho(&syms)
+		}
+		if sum > best {
+			best, bestHz = sum, f
 		}
 	}
-	s.t0 = s.ringTime(c, first) + s.dt + bestTau*s.sps
+	s.t0 = s.ringTime(c, first) + s.dt
 	s.totalHz = bestHz
 	if s.syncRho(&syms) < cohPlaceRho {
 		s.t0, s.totalHz = t0, hz
 		return
 	}
-	s.dt += bestTau * s.sps
 	s.t0, s.totalHz = t0, hz
 	s.freq, s.freqOK, s.nFit, s.fitVar = bestHz, true, 1, cohWarmStepHz*cohWarmStepHz
 }

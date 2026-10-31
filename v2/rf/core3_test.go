@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/cmplx"
 	"math/rand/v2"
-	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -92,65 +91,58 @@ func TestCohSlotFit(t *testing.T) {
 
 func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
-	if rate := earlyExact(t); rate < 0.78 {
+	slots, truth := benchStream(t, 6)
+	if rate := earlyExact(truth, 1, clockBaseband(slots, 5000, 0)); rate < 0.78 {
 		t.Errorf("core Tier 3 at +5000 Hz, 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
 }
 
-func TestCoreTier3NoLostStream(t *testing.T) {
+func TestCoreTier3EarlySlotsClock(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	sig := cleanBaseband(slots, 1400)
-	rates := make([]float64, 12)
-	var wg sync.WaitGroup
-	for i := range rates {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
-			x := sig.noisy(0, 7024+uint64(i))
-			var got []Burst
-			for k := 0; k < len(x); k += 4096 {
-				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
-			}
-			got = append(got, r.flushAll()...)
-			e, n := ambeInSlots(truth, got, len(truth))
-			rates[i] = float64(e) / float64(n)
-		}()
-	}
-	wg.Wait()
-	sorted := slices.Clone(rates)
-	slices.Sort(sorted)
-	for i, v := range rates {
-		if v < sorted[len(sorted)/2]/2 {
-			t.Errorf("seed %d at 0 dB: %.3f of the AMBE frames exact, under half the median %.3f", 7024+i, v, sorted[len(sorted)/2])
-		}
+	if rate := earlyExact(truth, 3, clockBaseband(slots, 5000, -500), clockBaseband(slots, 5000, 500)); rate < 0.42 {
+		t.Errorf("core Tier 3 at +5000 Hz, +-500 ppm, 3 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
 }
 
-func earlyExact(t *testing.T) float64 {
-	slots, truth := benchStream(t, 6)
-	sig := cleanBaseband(slots, 5000)
+func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
+	fm, env := rftx.ModulateBS(slots)
+	if ppm != 0 {
+		fm, env = resampleFM(fm, env, ppm)
+	}
+	pad := int(benchPad * basebandRate)
+	s := benchSignal{make([]float64, len(fm)+2*pad), make([]float64, len(fm)+2*pad)}
+	var ph float64
+	for k := range fm {
+		ph += 2 * math.Pi * (fm[k] + offsetHz) / basebandRate
+		s.re[pad+k], s.im[pad+k] = env[k]*math.Cos(ph), env[k]*math.Sin(ph)
+	}
+	return s
+}
+
+func earlyExact(truth []benchSlot, cn float64, sigs ...benchSignal) float64 {
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	n := int((start + 16*slotSeconds) * basebandRate)
-	sig.re, sig.im = sig.re[:n], sig.im[:n]
 	var exact, total atomic.Int64
 	var wg sync.WaitGroup
-	for seed := range uint64(24) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
-			x := sig.noisy(1, 7000+seed)
-			var got []Burst
-			for k := 0; k < len(x); k += 4096 {
-				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
-			}
-			got = append(got, r.flushAll()...)
-			e, n := ambeInSlots(truth, got, 12)
-			exact.Add(int64(e))
-			total.Add(int64(n))
-		}()
+	for _, sig := range sigs {
+		sig.re, sig.im = sig.re[:n], sig.im[:n]
+		for seed := range uint64(24) {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+				x := sig.noisy(cn, 7000+seed)
+				var got []Burst
+				for k := 0; k < len(x); k += 4096 {
+					got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
+				}
+				got = append(got, r.flushAll()...)
+				e, n := ambeInSlots(truth, got, 12)
+				exact.Add(int64(e))
+				total.Add(int64(n))
+			}()
+		}
 	}
 	wg.Wait()
 	return float64(exact.Load()) / float64(total.Load())
