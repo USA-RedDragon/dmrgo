@@ -9994,15 +9994,15 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 49
+       "exact": 47
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 106
+       "exact": 105
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2616
+       "exact": 2614
       },
       "csbk": {
        "truth": 6,
@@ -10034,7 +10034,7 @@
       },
       "rate1_bit": {
        "truth": 576,
-       "exact": 556
+       "exact": 559
       },
       "rate34": {
        "truth": 6,
@@ -12035,7 +12035,7 @@
       },
       "rate34": {
        "truth": 6,
-       "exact": 5
+       "exact": 4
       },
       "slottype": {
        "truth": 44,
@@ -13987,15 +13987,15 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 40
+       "exact": 41
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 77
+       "exact": 81
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2438
+       "exact": 2445
       },
       "csbk": {
        "truth": 6,
@@ -14011,7 +14011,7 @@
       },
       "header": {
        "truth": 13,
-       "exact": 6
+       "exact": 8
       },
       "lc": {
        "truth": 2,
@@ -14023,11 +14023,11 @@
       },
       "rate12": {
        "truth": 14,
-       "exact": 6
+       "exact": 7
       },
       "rate1_bit": {
        "truth": 576,
-       "exact": 496
+       "exact": 510
       },
       "rate34": {
        "truth": 6,
@@ -14035,7 +14035,7 @@
       },
       "slottype": {
        "truth": 44,
-       "exact": 44
+       "exact": 43
       },
       "sync": {
        "truth": 50,
@@ -14049,7 +14049,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 92
+       "exact": 87
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -14057,7 +14057,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2674
+       "exact": 2665
       },
       "csbk": {
        "truth": 6,
@@ -14151,7 +14151,7 @@
       },
       "rate1_bit": {
        "truth": 576,
-       "exact": 570
+       "exact": 568
       },
       "rate34": {
        "truth": 6,

@@ -30,6 +30,26 @@ func sameHalved(a, b Burst) bool {
 	return a == b && math.Abs(d) < 1e-9
 }
 
+func halvedWrites(n, chunk int) []int {
+	var out []int
+	odd := false
+	for k := 0; k < n; k += chunk {
+		m := 0
+		for range min(chunk, n-k) {
+			if odd = !odd; odd {
+				continue
+			}
+			if m++; m == disc48Out {
+				out, m = append(out, m), 0
+			}
+		}
+		if m > 0 {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
 func TestDisc48MatchesHalved(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
@@ -50,7 +70,11 @@ func TestDisc48MatchesHalved(t *testing.T) {
 			must(r48.writeAll(a48[k:min(k+999, len(a48))]))
 		}
 		r48.flushAll()
-		must(r24.writeAll(a24))
+		k := 0
+		for _, n := range halvedWrites(len(a48), 999) {
+			must(r24.writeAll(a24[k : k+n]))
+			k += n
+		}
 		r24.flushAll()
 		if len(got) == 0 || len(got) != len(want) {
 			t.Fatalf("tier %d: %d bursts at 48 kHz, %d at 24 kHz halved by hand", tier, len(got), len(want))
