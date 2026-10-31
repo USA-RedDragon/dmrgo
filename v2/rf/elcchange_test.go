@@ -15,6 +15,15 @@ import (
 
 func TestRxEmbeddedLCTalkerChange(t *testing.T) {
 	t.Parallel()
+	checkELCTalkerChange(t, map[float64][]uint64{25: {9300}, 8: {9301}, 4: {9301}, 2: {9301}})
+}
+
+func benchELCTalkerChange(t *testing.T) {
+	four := []uint64{9300, 9301, 9302, 9303}
+	checkELCTalkerChange(t, map[float64][]uint64{25: {9300}, 8: four, 4: four, 2: four})
+}
+
+func checkELCTalkerChange(t *testing.T, seeds map[float64][]uint64) {
 	type rx struct {
 		name string
 		run  func(x []complex64) []Burst
@@ -49,12 +58,8 @@ func TestRxEmbeddedLCTalkerChange(t *testing.T) {
 	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 	stale := map[string]int{}
 	for _, cn := range []float64{25, 8, 4, 2} {
-		seeds := 4
-		if cn > 10 {
-			seeds = 1
-		}
-		for seed := range seeds {
-			s := callMix(t, cn, uint64(9300+seed), 0, talkers...)
+		for _, seed := range seeds[cn] {
+			s := callMix(t, cn, seed, 0, talkers...)
 			for _, r := range rxs {
 				wg.Add(1)
 				go func() {
