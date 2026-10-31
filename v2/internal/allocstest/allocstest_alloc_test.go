@@ -167,6 +167,9 @@ func TestAllocsGoroutineStart(t *testing.T) {
 	if !strings.Contains(tb.msg, "goroutines started") {
 		t.Errorf("a call that starts a goroutine passes: %q", tb.msg)
 	}
+	if n := Mallocs(t, nil, func() { sink = new([64]byte) }); n != 1 {
+		t.Errorf("Mallocs after a failed measurement = %d, want 1", n)
+	}
 }
 
 var (

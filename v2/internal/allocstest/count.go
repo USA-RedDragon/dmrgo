@@ -26,6 +26,7 @@ var state struct {
 	tiny           []metrics.Sample
 	nested         uint64
 	skipped        uint64
+	stale          bool
 	nestedStacks   map[string]bool
 }
 
@@ -72,6 +73,10 @@ func measure(tb testing.TB, f func(), runs int, setup func(), wantBytes bool) (o
 		state.tiny = []metrics.Sample{{Name: "/gc/heap/tiny/allocs:objects"}}
 	}
 	state.skipped = 0
+	if state.stale {
+		state.objects, state.bytes, state.nested = settle(tb)
+	}
+	state.stale = true
 	rate := runtime.MemProfileRate
 	mallocs, total, tiny, started := window(f, runs, setup, wantBytes)
 	runtime.MemProfileRate = rate
@@ -81,9 +86,11 @@ func measure(tb testing.TB, f func(), runs int, setup func(), wantBytes bool) (o
 		}
 	}
 	if mallocs == 0 && total == 0 {
+		state.stale = false
 		return 0, 0
 	}
 	o, b, n := settle(tb)
+	state.stale = false
 	state.skipped, state.nested = n-state.nested, n
 	objects, allocated = o-state.objects+tiny, b-state.bytes
 	state.objects, state.bytes = o, b

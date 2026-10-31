@@ -31,6 +31,11 @@
 // passes through runtime.mallocgc of the outer allocation, so the functions
 // do not count it. The allocation that started it still counts.
 //
+// When a measurement stops before it reads the heap profile, for example
+// because the call panics or starts a goroutine, the next measurement reads
+// the heap profile first, so the allocations of the stopped call do not
+// count against the next call.
+//
 // The allocations of a goroutine that the call starts have no stack through
 // the call, so the functions fail the test when a user goroutine starts
 // during the measurement (from Go 1.26, which has the
