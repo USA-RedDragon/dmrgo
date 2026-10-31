@@ -297,7 +297,7 @@ v2/rf/iqformat.go	15	15
 v2/rf/iqlow.go	139	137
 v2/rf/iqrefill.go	94	90
 v2/rf/lagtab.go	3	3
-v2/rf/lean.go	1283	1265
+v2/rf/lean.go	1283	1264
 v2/rf/leanfec.go	260	258
 v2/rf/leanfront.go	153	136
 v2/rf/monitor.go	71	70
