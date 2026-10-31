@@ -21,20 +21,7 @@ libdmrgo has a C ABI number of its own, `DMRGO_ABI_VERSION`. The generated heade
 ```
 <!-- /dmrgo:code -->
 
-The soname is `libdmrgo.so.N`, with N the ABI number. `dmrgo.h` gives the rules of the number:
-
-<!-- dmrgo:code file=v2/capi/dmrgo.h region=abi -->
-```c
-* The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
-* independent of the version of the Go module and changes only when a
-* declaration changes in a way that breaks a program built against the
-* older header, such as a removed function or a changed layout of a
-* struct that is not sized. The soname of the library follows it:
-* libdmrgo.so.1 for ABI version 1, and the symbols have the version node
-* DMRGO_1. New functions, codes and members at the end of a sized struct
-* keep the ABI version.
-```
-<!-- /dmrgo:code -->
+The soname is `libdmrgo.so.N`, with N the ABI number. `dmrgo.h` gives the rules of the number.
 
 [Versioning](../project/versioning.md) gives the ABI number of each release. [v2.1 breaking changes](../project/breaking-v2.1.md) lists the C declarations that ABI 4 changed.
 
@@ -123,23 +110,6 @@ Each function returns `DMRGO_OK` or a negative status. [C header](../reference/c
 
 ## Limits
 
-These rules of `dmrgo.h` apply to threads, callback storage and processes:
-
-<!-- dmrgo:code file=v2/capi/dmrgo.h region=threads -->
-```c
-* - Use a handle from one thread at a time. A handle that a call takes,
-*   such as the port of dmrgo_dvsi_new or the authenticator of a config,
-*   stays in use by the handle that the call makes: freeing the handle
-*   that was taken does not stop that use. The user value of a vtable or
-*   callback must stay valid until the handle made from it and every
-*   handle that took that handle or callback are freed.
-* - A callback that gets an array, such as the bursts of
-*   dmrgo_rf_rx_config_t.on_bursts or the samples of
-*   dmrgo_rf_tx_config_t.on_samples, gets it in storage of the library
-*   that is valid only during the call: copy what it keeps.
-* - libdmrgo runs the Go runtime, whose threads a child of fork() does not
-*   have, so a child process calls libdmrgo only after an exec.
-```
-<!-- /dmrgo:code -->
+`dmrgo.h` gives the rules for threads, callback storage and processes.
 
 - `dmrgo_version` gives the `v2` tag that the library was built from. The capi module has no tags of its own.
