@@ -24,7 +24,11 @@ jobs:
           go-version-file: go.mod
 
       - name: Check the generated parts of the docs
-        run: go -C v2 mod download && go run -C cmd/docgen . -check
+        run: |
+          for mod in $(find v2 -name go.mod -not -path '*/testdata/*'); do
+            go -C "$(dirname "$mod")" mod download
+          done
+          go run -C cmd/docgen . -check
 
       - name: Install pandoc
         run: |
