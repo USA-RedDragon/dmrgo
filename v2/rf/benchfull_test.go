@@ -6,4 +6,5 @@ import "testing"
 
 func benchFullChecks(t *testing.T) {
 	benchLeanClockRateNull(t)
+	benchLockErrors(t)
 }

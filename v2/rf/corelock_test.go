@@ -14,14 +14,14 @@ type lockErr struct {
 	seed    uint64
 }
 
-func lockErrors(t *testing.T, cn float64, newRx func() *Receiver) []lockErr {
+func lockErrors(t *testing.T, cn float64, seeds []uint64, newRx func() *Receiver) []lockErr {
 	slots, truth := benchStream(t, 6)
 	sig := cleanBaseband(slots, 1400)
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	var mu sync.Mutex
 	var out []lockErr
 	var wg sync.WaitGroup
-	for seed := uint64(7000); seed < 7048; seed++ {
+	for _, seed := range seeds {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -67,6 +67,18 @@ func lockErrors(t *testing.T, cn float64, newRx func() *Receiver) []lockErr {
 
 func TestTier2LockError(t *testing.T) {
 	t.Parallel()
+	checkLockErrors(t, map[float64][]uint64{0: {7014, 7029, 7041}, 1: {7014, 7016}, 2: {7014, 7021}})
+}
+
+func benchLockErrors(t *testing.T) {
+	seeds := make([]uint64, 48)
+	for i := range seeds {
+		seeds[i] = 7000 + uint64(i)
+	}
+	checkLockErrors(t, map[float64][]uint64{0: seeds, 1: seeds, 2: seeds})
+}
+
+func checkLockErrors(t *testing.T, seeds map[float64][]uint64) {
 	for _, rx := range []struct {
 		name string
 		new  func() *Receiver
@@ -77,7 +89,7 @@ func TestTier2LockError(t *testing.T) {
 		}},
 	} {
 		for _, cn := range []float64{0, 1, 2} {
-			for _, e := range lockErrors(t, cn, rx.new) {
+			for _, e := range lockErrors(t, cn, seeds[cn], rx.new) {
 				if math.Abs(e.hz) > cohFreqSpan {
 					t.Errorf("%s at %v dB seed %d: lock %.0f Hz off", rx.name, cn, e.seed, e.hz)
 				}
