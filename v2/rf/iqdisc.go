@@ -411,6 +411,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
 		r.inChunk = max(r.fe.size*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
+		r.d.lagTicks += r.fe.lag
 	}
 	return r
 }

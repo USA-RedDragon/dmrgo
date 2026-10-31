@@ -199,6 +199,9 @@ func newLean(cfg rxSetup, opt options) *leanRx {
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
 	r.lagTicks = r.df.lagTicks()
+	if r.fe != nil {
+		r.lagTicks += r.fe.lag
+	}
 	if cfg.OffsetHz != 0 {
 		r.retune(float32(cfg.OffsetHz))
 	}

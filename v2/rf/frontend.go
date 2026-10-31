@@ -67,6 +67,7 @@ type frontEnd struct {
 	format IQFormat
 	size   int
 	dec    int
+	lag    int32
 	gain   float32
 	integ  [cicOrder][2]int64
 	comb   [cicOrder][2]int64
@@ -79,6 +80,7 @@ func newFrontEnd(rate float64, format IQFormat, out float64) *frontEnd {
 	dec := max(int(rate/(4*out)), 1)
 	mid := rate / float64(dec)
 	f := &frontEnd{format: format, size: format.bytes(), dec: dec}
+	f.lag = int32(math.Round(float64(dec-1) / 2 / rate * basebandRate * 256))
 	f.gain = float32(1 / (frontScale(format) * math.Pow(float64(dec), cicOrder)))
 	f.dc.init(mid)
 	if step := mid / out; step != 1 {
