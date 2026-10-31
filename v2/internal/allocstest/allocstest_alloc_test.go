@@ -68,7 +68,7 @@ func TestAllocsOtherGoroutine(t *testing.T) {
 	rate := runtime.MemProfileRate
 	state.created = []metrics.Sample{{Name: "/sched/goroutines-created:goroutines"}, {Name: "/sched/goroutines:goroutines"}}
 	state.tiny = []metrics.Sample{{Name: "/gc/heap/tiny/allocs:objects"}}
-	_, total, _, _ := window(other, 1, other, true)
+	_, total, _, _, _ := window(other, 1, other, true)
 	runtime.MemProfileRate = rate
 	if total < 1<<20 {
 		t.Fatalf("the process-wide counter shows %d bytes, not the 1 MiB of the other goroutine", total)
@@ -205,4 +205,62 @@ func TestAllocsNestedRuntime(t *testing.T) {
 		t.Errorf("Bytes = %d with %d allocations that the runtime made inside the allocation of the call, want %d", b, state.skipped, 16<<20)
 	}
 	big = nil
+}
+
+func exiting(n int) chan struct{} {
+	stop, ready := make(chan struct{}), make(chan struct{})
+	for range n {
+		go func() {
+			ready <- struct{}{}
+			<-stop
+		}()
+	}
+	for range n {
+		<-ready
+	}
+	return stop
+}
+
+func TestAllocsGoroutineExits(t *testing.T) {
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(max(4, runtime.GOMAXPROCS(0))))
+	for i := range 10 {
+		procs = max(procs, runtime.GOMAXPROCS(0)) + 1
+		n := procs
+		stop := exiting(1000)
+		close(stop)
+		got := Mallocs(t, func() {
+			big = nil
+			runtime.GC()
+			runtime.GOMAXPROCS(n)
+		}, func() { big = make([]byte, 16<<20) })
+		if got != 1 {
+			t.Fatalf("round %d: Mallocs = %d while other goroutines exit, want 1", i, got)
+		}
+	}
+	big = nil
+}
+
+func TestAllocsGoroutineStartAmongExits(t *testing.T) {
+	probe := []metrics.Sample{{Name: "/sched/goroutines-created:goroutines"}}
+	if metrics.Read(probe); probe[0].Value.Kind() != metrics.KindUint64 {
+		t.Skip("this Go has no /sched/goroutines-created:goroutines metric")
+	}
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(max(4, runtime.GOMAXPROCS(0))))
+	for i := range 10 {
+		stop := exiting(1000)
+		done, finished := make(chan struct{}), make(chan struct{})
+		tb := &fatalTB{TB: t}
+		go func() {
+			defer close(finished)
+			Mallocs(tb, nil, func() {
+				close(stop)
+				go close(done)
+			})
+		}()
+		<-finished
+		<-done
+		if !strings.HasPrefix(tb.msg, "allocstest: 1 goroutines started") {
+			t.Fatalf("round %d: a call that starts 1 goroutine while other goroutines exit: %q", i, tb.msg)
+		}
+	}
 }

@@ -78,8 +78,11 @@ func measure(tb testing.TB, f func(), runs int, setup func(), wantBytes bool) (o
 	}
 	state.stale = true
 	rate := runtime.MemProfileRate
-	mallocs, total, tiny, started := window(f, runs, setup, wantBytes)
+	mallocs, total, tiny, started, ok := window(f, runs, setup, wantBytes)
 	runtime.MemProfileRate = rate
+	if !ok {
+		tb.Fatal("allocstest: goroutines started or exited during each of the reads of the goroutine counts")
+	}
 	if started != 0 {
 		if n := labeled(tb); n != 0 || !fuzzing() {
 			tb.Fatalf("allocstest: %d goroutines started during the measurement (%d still running with the label of the measured call); their allocations have no stack through the measured call", started, n)
@@ -140,8 +143,8 @@ func labeled(tb testing.TB) int {
 //go:noinline
 func mark() { state.mark = new([16]byte) }
 
-func window(f func(), runs int, setup func(), wantBytes bool) (mallocs, total, tiny, started uint64) {
-	created, system := goroutines()
+func window(f func(), runs int, setup func(), wantBytes bool) (mallocs, total, tiny, started uint64, ok bool) {
+	created, system, ok := goroutines()
 	var tiny0 uint64
 	warm := true
 	run := func() {
@@ -166,8 +169,8 @@ func window(f func(), runs int, setup func(), wantBytes bool) (mallocs, total, t
 	}
 	pprof.SetGoroutineLabels(context.Background())
 	tiny = tinyAllocs() - tiny0
-	created2, system2 := goroutines()
-	return mallocs, total, tiny, created2 - created - min(created2-created, max(system2, system)-system)
+	created2, system2, ok2 := goroutines()
+	return mallocs, total, tiny, created2 - created - min(created2-created, max(system2, system)-system), ok && ok2
 }
 
 func tinyAllocs() uint64 {
@@ -188,17 +191,25 @@ func bracket(run func()) (mallocs, total uint64) {
 	return b.Mallocs - a.Mallocs, b.TotalAlloc - a.TotalAlloc
 }
 
-func goroutines() (created, system uint64) {
-	metrics.Read(state.created)
-	if state.created[0].Value.Kind() != metrics.KindUint64 {
-		return 0, 0
+func goroutines() (created, system uint64, ok bool) {
+	for range 1 << 16 {
+		metrics.Read(state.created)
+		if state.created[0].Value.Kind() != metrics.KindUint64 {
+			return 0, 0, true
+		}
+		c, all := state.created[0].Value.Uint64(), state.created[1].Value.Uint64()
+		n := runtime.NumGoroutine()
+		metrics.Read(state.created)
+		if c != state.created[0].Value.Uint64() || all != state.created[1].Value.Uint64() || n != runtime.NumGoroutine() {
+			continue
+		}
+		var user uint64
+		if n > 0 {
+			user = uint64(n)
+		}
+		return c, all - min(all, user), true
 	}
-	all := state.created[1].Value.Uint64()
-	var user uint64
-	if n := runtime.NumGoroutine(); n > 0 {
-		user = uint64(n)
-	}
-	return state.created[0].Value.Uint64(), all - min(all, user)
+	return 0, 0, false
 }
 
 //go:noinline

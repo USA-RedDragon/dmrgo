@@ -39,10 +39,15 @@
 // The allocations of a goroutine that the call starts have no stack through
 // the call, so the functions fail the test when a user goroutine starts
 // during the measurement (from Go 1.26, which has the
-// /sched/goroutines-created:goroutines metric). While fuzzing, the fuzzing
-// engine starts goroutines of its own, so then they fail the test only for a
-// goroutine that still runs with the pprof label that they set on the
-// measured goroutine.
+// /sched/goroutines-created:goroutines metric). They do not count the system
+// goroutines that the runtime starts during the measurement, such as the GC
+// mark workers. They read the number of goroutines created, of all
+// goroutines and of user goroutines two times, and read them again until the
+// two reads agree, so a goroutine that starts or exits between the reads
+// does not change the number of started goroutines. While fuzzing, the
+// fuzzing engine starts goroutines of its own, so then they fail the test
+// only for a goroutine that still runs with the pprof label that they set on
+// the measured goroutine.
 //
 // The forbidigo rule in .golangci.yaml rejects testing.AllocsPerRun and
 // runtime.ReadMemStats outside this package.
