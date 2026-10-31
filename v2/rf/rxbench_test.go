@@ -774,6 +774,7 @@ func TestRxBench(t *testing.T) {
 		}
 		deep = sh.run(cs)
 		sh.deepen(deep)
+		benchFullChecks(t)
 	}
 	wg.Wait()
 	for j, e := range es {
