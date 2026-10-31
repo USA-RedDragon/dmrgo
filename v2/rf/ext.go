@@ -882,7 +882,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	if x.coh != nil {
 		x.coh.warmFreq(c, c.first, n)
 	}
-	stretch := x.replayStretch(c, n, last, at, sps)
+	stretch := x.clockStretch(c, n, last, at, sps)
 	x.stretch = stretch
 	if stretch != 0 {
 		c.tm.rate, c.tm.drift = stretch*sps, stretch*sps
@@ -999,6 +999,13 @@ const (
 	replayTimeVarBS = 0.01565
 	replayTimeVarMS = 0.01924
 )
+
+func (x *softExt) clockStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
+	if e := x.replayStretch(c, n, last, at, sps); e != 0 || x.coh == nil {
+		return e
+	}
+	return float32(x.coh.warmStretch)
+}
 
 func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
 	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()

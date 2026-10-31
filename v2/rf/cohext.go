@@ -19,6 +19,7 @@ type cohStage struct {
 	src             cohRing
 	ph              *discPhase
 	trial           float64
+	warmStretch     float64
 	trialing        bool
 	amp, noise      [cohFitScales]float64
 	easySNR         float64
@@ -358,7 +359,11 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 }
 
 func symTime(c *leanCore, k int64) float64 {
-	t := float64(c.mfStep*(c.n-1)+c.center-(c.ns-1-k)*samplesPerSy) + float64(c.mfStep)*float64(c.lastAt)
+	per := float64(samplesPerSy)
+	if c.replaying && c.tm.step > 0 {
+		per *= 1 + float64(c.tm.rate)/(2*float64(c.tm.step))
+	}
+	t := float64(c.mfStep*(c.n-1)+c.center) - float64(c.ns-1-k)*per + float64(c.mfStep)*float64(c.lastAt)
 	return t / 2
 }
 
@@ -803,13 +808,15 @@ func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
 }
 
 const (
-	cohWarmSpanHz  = cohFreqFirst
-	cohWarmStepHz  = 0.26 * symbolRate / syncSymbols
-	cohWarmSpanSym = 0.5
-	cohWarmStepSym = 0.25
+	cohWarmSpanHz     = cohFreqFirst
+	cohWarmStepHz     = 0.26 * symbolRate / syncSymbols
+	cohWarmSpanSym    = 0.5
+	cohWarmStepSym    = 0.25
+	cohWarmStretchSig = 0.25
 )
 
 func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
+	s.warmStretch = 0
 	if !s.warm || n <= 0 || s.src.cohScale() <= 0 {
 		return
 	}
@@ -842,6 +849,30 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 	if s.syncRho(&syms) < cohPlaceRho {
 		s.t0, s.totalHz = t0, hz
 		return
+	}
+	s.totalHz = bestHz
+	var std, sdd float64
+	for j := 0; j < n; j++ {
+		at := s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt
+		if at-s.sps*(1+cohWarmSpanSym) < float64(lo) {
+			continue
+		}
+		top, tau := 0.0, 0.0
+		for u := -cohWarmSpanSym; u <= cohWarmSpanSym+1e-9; u += cohWarmStepSym / 2 {
+			s.t0 = at + u*s.sps
+			if r := s.syncRho(&syms); r > top {
+				top, tau = r, u
+			}
+		}
+		if top >= cohPlaceRho {
+			d := float64(n-j) * slotSymbols
+			std, sdd = std+tau*d, sdd+d*d
+		}
+	}
+	if sdd > 0 {
+		if e := -std / sdd; e*e*sdd >= cohWarmStretchSig && math.Abs(e) <= leanClockMax {
+			s.warmStretch = e
+		}
 	}
 	s.t0, s.totalHz = t0, hz
 	s.freq, s.freqOK, s.nFit, s.fitVar = bestHz, true, 1, cohWarmStepHz*cohWarmStepHz

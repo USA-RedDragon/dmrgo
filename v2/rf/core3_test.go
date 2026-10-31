@@ -92,7 +92,7 @@ func TestCohSlotFit(t *testing.T) {
 func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	if rate := earlyExact(truth, 1, clockBaseband(slots, 5000, 0)); rate < 0.78 {
+	if rate, _ := earlyExact(truth, 1, clockSignal{clockBaseband(slots, 5000, 0), 0}); rate < 0.78 {
 		t.Errorf("core Tier 3 at +5000 Hz, 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
 }
@@ -100,9 +100,18 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 func TestCoreTier3EarlySlotsClock(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	if rate := earlyExact(truth, 3, clockBaseband(slots, 5000, -500), clockBaseband(slots, 5000, 500)); rate < 0.42 {
+	rate, miss := earlyExact(truth, 3, clockSignal{clockBaseband(slots, 5000, -500), -500}, clockSignal{clockBaseband(slots, 5000, 500), 500})
+	if rate < 0.9 {
 		t.Errorf("core Tier 3 at +5000 Hz, +-500 ppm, 3 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
+	if miss > 0.6 {
+		t.Errorf("core Tier 3 at +-500 ppm: the oldest replayed slot sits up to %.2f symbols off", miss)
+	}
+}
+
+type clockSignal struct {
+	sig benchSignal
+	ppm float64
 }
 
 func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
@@ -120,12 +129,15 @@ func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
 	return s
 }
 
-func earlyExact(truth []benchSlot, cn float64, sigs ...benchSignal) float64 {
+func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss float64) {
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	n := int((start + 16*slotSeconds) * basebandRate)
+	lookback := float64(coreIQ3Options().ExtLookback * slotSymbols)
 	var exact, total atomic.Int64
+	var mu sync.Mutex
 	var wg sync.WaitGroup
-	for _, sig := range sigs {
+	for _, c := range sigs {
+		sig := c.sig
 		sig.re, sig.im = sig.re[:n], sig.im[:n]
 		for seed := range uint64(24) {
 			wg.Add(1)
@@ -141,11 +153,20 @@ func earlyExact(truth []benchSlot, cn float64, sigs ...benchSignal) float64 {
 				e, n := ambeInSlots(truth, got, 12)
 				exact.Add(int64(e))
 				total.Add(int64(n))
+				var stretch float64
+				if h, ok := r.full.(*rxHost); ok && h.iqd != nil {
+					if x, ok := h.iqd.d.ext.(*softExt); ok {
+						stretch = float64(x.stretch)
+					}
+				}
+				mu.Lock()
+				miss = max(miss, math.Abs(stretch+c.ppm*1e-6)*lookback)
+				mu.Unlock()
 			}()
 		}
 	}
 	wg.Wait()
-	return float64(exact.Load()) / float64(total.Load())
+	return float64(exact.Load()) / float64(total.Load()), miss
 }
 
 func ambeInSlots(truth []benchSlot, got []Burst, n int) (exact, total int) {
