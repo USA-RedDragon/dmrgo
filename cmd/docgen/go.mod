@@ -1,6 +1,6 @@
 module github.com/USA-RedDragon/dmrgo/cmd/docgen
 
-go 1.24.0
+go 1.27.3
 
 require (
 	golang.org/x/mod v0.29.0
