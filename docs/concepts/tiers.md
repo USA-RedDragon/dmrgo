@@ -8,7 +8,7 @@ A tier sets how a receiver of [package rf](https://pkg.go.dev/github.com/USA-Red
 
 The tiers are the constants of [rf.Tier](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Tier). Their doc comments give what each tier adds:
 
-<!-- dmrgo:code file=v2/rf/receiver.go symbol=TierDefault -->
+<!-- dmrgo:code file=v2/rf/options.go symbol=TierDefault -->
 ```go
 const (
 	// TierDefault is the zero value: Tier1 for NewReceiver and
