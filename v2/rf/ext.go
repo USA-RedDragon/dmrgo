@@ -77,6 +77,8 @@ type softExt struct {
 	replayN         int32
 	replayP         enums.SyncPattern
 	lockAt          float32
+	stretch         float32
+	retime          bool
 	lockN           int64
 	stages          uint8
 	coh             *cohStage
@@ -128,6 +130,7 @@ func softExtOf(opt *options, sps float32) *softExt {
 	if opt.CohDataPasses != 0 {
 		x.passes = max(opt.CohDataPasses, 0)
 	}
+	x.retime = opt.ReplayRetime
 	return x
 }
 
@@ -148,6 +151,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		x.warm(c, b)
 		return
 	}
+	x.replayTime(c, b)
 	if c.unproven {
 		x.prove(c, b)
 	}
@@ -653,6 +657,7 @@ func (x *softExt) drain(c *leanCore, one bool, keep int) {
 func (x *softExt) kept() []int16 { return x.acq }
 
 func (x *softExt) unplaced(c *leanCore, b *Burst) {
+	x.replayTime(c, b)
 	ch := &x.ch[b.Slot&1]
 	if ch.lateN == extLate {
 		copy(ch.late[:], ch.late[1:])
@@ -880,6 +885,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 		x.coh.warmFreq(c, c.first, n)
 	}
 	stretch := x.replayStretch(c, n, last, at, sps)
+	x.stretch = stretch
 	if stretch != 0 {
 		c.tm.rate, c.tm.drift = stretch*sps, stretch*sps
 	}
@@ -953,6 +959,12 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
 	x.lockHz(c)
 	x.vOK = false
+}
+
+func (x *softExt) replayTime(c *leanCore, b *Burst) {
+	if x.retime && c.isReplaying() {
+		b.Seconds -= float64(x.lockSym-c.base-cachSymbols) * float64(x.stretch) / symbolRate
+	}
 }
 
 func (x *softExt) replayLock(j int32, b *Burst) {

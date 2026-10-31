@@ -17,5 +17,6 @@ func coreAudio3Options() options {
 
 func coreExactOptions(o options) options {
 	o.CohExact, o.PhaseStates, o.LogMAP, o.CohBudget = true, 52, true, 0
+	o.ReplayRetime = true
 	return o
 }

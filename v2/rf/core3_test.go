@@ -7,6 +7,7 @@ import (
 	"math/cmplx"
 	"math/rand/v2"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -343,6 +344,47 @@ func TestCoreTier3SlowClock(t *testing.T) {
 					t.Errorf("%.1f s lead %+.0f Hz %+.0f ppm: raw bits differ in %d of %d bursts", lead, off, ppm, bad, len(got))
 				}
 			}
+		}
+	}
+}
+
+func mxReceiveCore(t testing.TB, in mxInput) []Burst {
+	t.Helper()
+	if in.audio != nil {
+		r := coreAudio3(t, AudioRxConfig{Rate: in.hz, Tier: Tier3})
+		var got []Burst
+		for k := 0; k < len(in.audio); k += 1024 {
+			got = r.AppendBursts(got, in.audio[k:min(k+1024, len(in.audio))])
+		}
+		return r.AppendFlush(got)
+	}
+	r, err := newReceiver(RxConfig{Rate: in.rate, Tier: Tier3, Format: in.iqFmt}, ptr(coreIQ3Options()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []Burst
+	for k := 0; k < len(in.iq); k += 8192 {
+		got = r.AppendBursts(got, in.iq[k:min(k+8192, len(in.iq))])
+	}
+	return r.AppendFlush(got)
+}
+
+func TestCoreTier3ReplayTime(t *testing.T) {
+	t.Parallel()
+	for _, name := range []string{
+		"agc.noise.+4000.ms.data12.+500ppm.low.cu8-2048k.40dB",
+		"gap.none.-4000.ms2.data1.+500ppm.nom.cs16-48k.inf",
+	} {
+		row := mxRowOf(t, name)
+		s, err := mxBuild(row)
+		if err != nil {
+			t.Fatal(err)
+		}
+		in := mxInputOf(s, row)
+		res := &mxResult{}
+		mxScore(s, in, Tier3, mxReceiveCore(t, in), mxOuterHz, row.val(mxCN) != "inf", res)
+		if res.fail["seconds"] || res.fail["missing"] {
+			t.Errorf("%s: %s", name, strings.Join(res.detail, " | "))
 		}
 	}
 }
