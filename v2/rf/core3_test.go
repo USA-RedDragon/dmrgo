@@ -92,8 +92,8 @@ func TestCohSlotFit(t *testing.T) {
 
 func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
-	if rate := earlyExact(t); rate < 0.6 {
-		t.Errorf("core Tier 3 at 0 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
+	if rate := earlyExact(t); rate < 0.78 {
+		t.Errorf("core Tier 3 at +5000 Hz, 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
 }
 
@@ -130,9 +130,9 @@ func TestCoreTier3NoLostStream(t *testing.T) {
 
 func earlyExact(t *testing.T) float64 {
 	slots, truth := benchStream(t, 6)
-	sig := cleanBaseband(slots, 1400)
+	sig := cleanBaseband(slots, 5000)
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
-	n := int((start + 20*slotSeconds) * basebandRate)
+	n := int((start + 16*slotSeconds) * basebandRate)
 	sig.re, sig.im = sig.re[:n], sig.im[:n]
 	var exact, total atomic.Int64
 	var wg sync.WaitGroup
@@ -141,7 +141,7 @@ func earlyExact(t *testing.T) float64 {
 		go func() {
 			defer wg.Done()
 			r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
-			x := sig.noisy(0, 7000+seed)
+			x := sig.noisy(1, 7000+seed)
 			var got []Burst
 			for k := 0; k < len(x); k += 4096 {
 				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
