@@ -18,9 +18,9 @@ Pass a [BridgeConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trans
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Key` | `[]byte` | zero value | Key is the passphrase of the OpenBridge link (see dmrdauth.NewBridgeKey). |
-| `Enhanced` | `bool` | zero value | Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive. Without it OpenBridge has no keepalive, and the Bridge sends nothing of its own. |
+| `Enhanced` | `bool` | zero value | Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive and takes the peer as down after Timeout without a packet with a good signature. Without it OpenBridge has no keepalive, and the Bridge only checks signatures. |
 | `Keepalive` | `time.Duration` | not machine-readable; see the description | Keepalive is the BCKA period. 0 means KeepaliveDefault. |
-| `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet with a good signature after which the Bridge reports OutputDown. 0 means TimeoutDefault, the time after which FreeDMR stops sending to a peer. |
+| `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet with a good signature after which an enhanced Bridge reports OutputDown. 0 means TimeoutDefault, the time after which FreeDMR stops sending to a peer. |
 <!-- /dmrgo:config -->
 
 ## States and transitions
@@ -32,13 +32,13 @@ States of [`Bridge`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 | State | Meaning | Seen in tests |
 |---|---|---|
-| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateIdle) | StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge, enhanced or not, before the first packet with a good signature and after Timeout without one. | yes, first state |
+| [`StateIdle`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateIdle) | StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge that has not heard its peer within Timeout. | yes, first state |
 | [`StateWait`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateWait) | StateWait is a Peer that waits to log in again. | no |
 | [`StateLogin`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateLogin) | StateLogin is a Peer that sent RPTL, or a Master that waits for Admit or Refuse. | no |
 | [`StateAuth`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateAuth) | StateAuth is a Peer that sent RPTK, or a Master that sent the salt. | no |
 | [`StateConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateConfig) | StateConfig is a Peer that sent RPTC, or a Master that waits for it or for Accept or Refuse. | no |
 | [`StateOptions`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateOptions) | StateOptions is a Peer that sent RPTO. | no |
-| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateRunning) | StateRunning is a logged-in session, or a Bridge, enhanced or not, whose peer sent a packet with a good signature within Timeout. | yes |
+| [`StateRunning`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#StateRunning) | StateRunning is a logged-in session, or a Bridge that heard its peer within Timeout. | yes |
 
 Transitions seen in tests:
 
@@ -64,8 +64,8 @@ Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 ## Timers
 
-- Keepalive: the BCKA period of an enhanced Bridge. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=KeepaliveDefault --><!-- /dmrgo:const -->, the BCKA period of FreeDMR. The first BCKA goes out at the first Tick.
-- Timeout: the time without a packet with a good signature after which an enhanced Bridge reports the link down. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault --><!-- /dmrgo:const -->, the time after which FreeDMR stops sending to a peer.
+- Keepalive: the BCKA period of an enhanced Bridge. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=KeepaliveDefault -->`10s`<!-- /dmrgo:const -->, the BCKA period of FreeDMR. The first BCKA goes out at the first Tick.
+- Timeout: the time without a packet with a good signature after which an enhanced Bridge reports the link down. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->, the time after which FreeDMR stops sending to a peer.
 
 ## Worked example
 

@@ -18,7 +18,7 @@
 <path d="M265.9 131.0C265.9 7.0 635.6 7.0 635.6 131.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
 <text x="450.8" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Lost, Tick</text>
 <path d="M635.6 165.0C635.6 259.0 86.7 259.0 86.7 165.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
-<text x="361.1" y="249.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Decoded, Reset, Tick</text>
+<text x="361.1" y="249.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Burst, Reset, Tick</text>
 <rect x="16.0" y="131.0" width="125.4" height="34" rx="5" fill="#e3ecf8" stroke="#1f2633" stroke-width="3"/>
 <text x="78.7" y="152.5" font-size="13" text-anchor="middle" fill="#1f2633">RequesterIdle</text>
 <rect x="187.4" y="131.0" width="141.0" height="34" rx="5" fill="#f3f5f9" stroke="#1f2633" stroke-width="1.5"/>

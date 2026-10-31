@@ -208,7 +208,7 @@ The configs of the Requester and the Responder:
 <!-- dmrgo:config pkg=csbk type=RequesterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as WakeupConfig.ColorCode does; 0 accepts every color code. |
+| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. |
 | `Source` | `layer2.SyncSource` | zero value | Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. |
 | `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
 | `AckWait` | `time.Duration` | `constants.TAckWait` (360ms) or `DefaultMotorolaAckWait` (2s) | AckWait is T_AckWait, the wait for the answer after each try. 0 means constants.TAckWait (360 ms), and DefaultMotorolaAckWait for the Motorola radio check and call alert. A negative value waits until an answer or Cancel. (ETSI TS 102 361-2 clause A.1) |
@@ -224,7 +224,7 @@ The configs of the Requester and the Responder:
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Address` | `uint32` | zero value | Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. |
-| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as WakeupConfig.ColorCode does; 0 accepts every color code. |
+| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. |
 | `Source` | `layer2.SyncSource` | zero value | Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. |
 | `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
 | `Access` | `enums.Access` | zero value | Access is the channel access policy of the answers. The zero value is polite to own color code. |

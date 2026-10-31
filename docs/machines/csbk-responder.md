@@ -24,7 +24,7 @@ Use a [csbk.Requester](csbk-requester.md) to send the requests. Do not use a Res
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Address` | `uint32` | zero value | Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. |
-| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as WakeupConfig.ColorCode does; 0 accepts every color code. |
+| `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. |
 | `Source` | `layer2.SyncSource` | zero value | Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. |
 | `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
 | `Access` | `enums.Access` | zero value | Access is the channel access policy of the answers. The zero value is polite to own color code. |
@@ -58,7 +58,7 @@ Transitions seen in tests:
 | From | Method call | To |
 |---|---|---|
 | ResponderIdle | `Burst` | ResponderAccess |
-| ResponderIdle | `Burst`, `Decoded` | ResponderSending |
+| ResponderIdle | `Burst` | ResponderSending |
 | ResponderAccess | `Tick` | ResponderIdle |
 | ResponderAccess | `Channel`, `Lost`, `Tick` | ResponderSending |
 | ResponderSending | `Reset`, `Tick` | ResponderIdle |
@@ -89,7 +89,7 @@ Every method that takes `dst` appends at most [`csbk.MaxOutputs`](https://pkg.go
 | [`Lost`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.Lost) | the time now | `dst`; the channel counts as idle |
 | [`State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.State), [`Reset`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.Reset) | nothing | the state, or nothing |
 
-Feed every burst of the logical channel to `Burst`, or to `Decoded` when you decode the burst once for several machines. Pass `now` as the start of the received burst, because the answer grid starts there. The Responder takes a CSBK whose target is its `Address` and whose source is another radio, and drops a CSBK whose CRC fails. `ColorCode` sets the color code of the answers. A `ColorCode` other than 0 also drops received CSBKs with another color code, in `Burst` and in `Decoded`; 0 accepts every color code.
+Feed every burst of the logical channel to `Burst`, or to `Decoded` when you decode the burst once for several machines. Pass `now` as the start of the received burst, because the answer grid starts there. The Responder takes a CSBK whose target is its `Address` and whose source is another radio, and drops a CSBK whose CRC fails. It does not check the color code of the bursts it receives; `ColorCode` sets only the color code of the answers.
 
 Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Output) is one of:
 

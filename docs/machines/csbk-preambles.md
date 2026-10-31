@@ -4,7 +4,7 @@ This page describes the Pre_CSBK state machine of package csbk: it follows the P
 
 ## What it does
 
-[`csbk.Preambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles) follows the Pre_CSBKs of one logical channel. A Pre_CSBK with CSBK Blocks to Follow n announces n more blocks: more Pre_CSBKs, then a CSBK or a data message, and it carries the target and source addresses of that message. The Preambles reports the first Pre_CSBK of a transfer. It then joins the CSBK, MBC header or data header that follows when that burst has the same target and source addresses, or it reports that the announced transfer did not come. A repeater can send more Pre_CSBKs than the radio did, each with CSBK Blocks to Follow 1, and each one moves the end of the transfer later. (ETSI TS 102 361-2 clause 7.1.2.5, Table 7.7, and clause 7.2.7)
+[`csbk.Preambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles) follows the Pre_CSBKs of one logical channel. A Pre_CSBK with CSBK Blocks to Follow n announces n more blocks: more Pre_CSBKs, then a CSBK or a data message. The Preambles reports the first Pre_CSBK of a transfer. It then reports the CSBK, MBC header or data header that follows, joined with the addresses of the Pre_CSBKs, or it reports that nothing followed by the end of the announced blocks. A repeater can send more Pre_CSBKs than the radio did, each with CSBK Blocks to Follow 1, and each one moves the end of the transfer later. (ETSI TS 102 361-2 clauses 7.1.2.5 and 7.2.7)
 
 The Preambles does no I/O. Each method takes the time `now` on a monotonic clock that the caller picks, and appends outputs to a slice of the caller.
 
@@ -48,7 +48,7 @@ These inputs move the state:
 
 - In idle, a Pre_CSBK starts a transfer and appends `OutputAnnounced`.
 - While a transfer is announced, a Pre_CSBK with the same target, source, group flag and data flag moves the end of the transfer later and appends nothing. A Pre_CSBK with other parties appends `OutputExpired` for the old transfer and `OutputAnnounced` for the new one.
-- While a transfer is announced, the next CSBK that is not a Pre_CSBK, MBC header or data header ends the transfer and returns to idle. When the burst has the target and source addresses of the Pre_CSBKs, the Preambles appends `OutputJoined`. When it has other addresses, or does not carry both, the Preambles appends `OutputExpired` for the transfer and gives no output for the burst itself; feed the burst to your other machines as usual. An MBC header gives its addresses only for the grant payloads.
+- While a transfer is announced, the next CSBK that is not a Pre_CSBK, MBC header or data header appends `OutputJoined` and returns to idle. The Preambles does not compare the addresses of that burst with the addresses of the Pre_CSBKs: it reports the burst with the addresses of the Pre_CSBKs.
 - When one burst interval has passed after the last announced block, `Tick` appends `OutputExpired` and returns to idle.
 - `Reset` returns to idle without an output.
 
@@ -73,7 +73,7 @@ Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#O
 
 - `OutputAnnounced`: the first Pre_CSBK of a transfer. `Data` reports that data follows, and `Until` is the time of the last announced block.
 - `OutputJoined`: the CSBK, MBC header or data header after the Pre_CSBKs. `Data` reports a data header, and `CSBK` holds the CSBK when one came.
-- `OutputExpired`: a transfer that did not come by `Until`, that a Pre_CSBK of other parties replaced, or that a CSBK, MBC header or data header of other parties followed.
+- `OutputExpired`: a transfer that did not come by `Until`, or that a Pre_CSBK of other parties replaced.
 
 ## Timers
 

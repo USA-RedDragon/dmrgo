@@ -14,7 +14,7 @@
 <path d="M488.0 120.0C488.0 184.0 72.0 184.0 72.0 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
 <text x="280.0" y="182.0" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Packet, Tick</text>
 <path d="M636.9 120.0C636.9 214.0 72.0 214.0 72.0 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
-<text x="354.4" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Accept, Refuse, Tick</text>
+<text x="354.4" y="204.5" font-size="12" text-anchor="middle" fill="#a0562a" stroke="#ffffff" stroke-width="4" paint-order="stroke">Accept, Refuse</text>
 <path d="M72.0 86.0C72.0 22.0 960.2 22.0 960.2 86.0" fill="none" stroke="#2b5fa8" stroke-width="1.5" marker-end="url(#f)"/>
 <text x="516.1" y="33.0" font-size="12" text-anchor="middle" fill="#2b5fa8" stroke="#ffffff" stroke-width="4" paint-order="stroke">Resume</text>
 <path d="M960.2 120.0C960.2 244.0 72.0 244.0 72.0 120.0" fill="none" stroke="#a0562a" stroke-width="1.5" marker-end="url(#b)"/>
