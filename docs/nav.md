@@ -53,7 +53,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [The layer model](concepts/layers.md)
   - [I/O-free services](concepts/services.md)
   - [Errors and never-panic](concepts/errors.md)
-  - [Allocation](concepts/allocation.md)
+  - [Allocation](allocation.md)
   - [Tiers](concepts/tiers.md)
 - Targets
   - [PC](targets/pc.md)
@@ -67,7 +67,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
 - Reference
   - [Go API](reference/go-api.md)
   - [C header](reference/c-api.md)
-  - [ETSI coverage](reference/etsi.md)
+  - [ETSI coverage](etsi.md)
   - [Features](reference/features.md)
   - [Examples](reference/examples.md)
   - [Tools](reference/tools.md)

@@ -96,7 +96,7 @@ true
 ```
 <!-- /dmrgo:output -->
 
-The constructor checks the config and returns a [*dmrgo.ConfigError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) for a field out of range. After the constructor, no method of the machine allocates when `dst` has room. See [Allocation](allocation.md).
+The constructor checks the config and returns a [*dmrgo.ConfigError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) for a field out of range. After the constructor, no method of the machine allocates when `dst` has room. See [Allocation](../allocation.md).
 
 ## Concurrency and ownership
 

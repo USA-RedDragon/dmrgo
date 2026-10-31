@@ -166,7 +166,7 @@ func main() {
 ```
 <!-- /dmrgo:code -->
 
-[Allocation](../concepts/allocation.md) lists each place where the library can allocate, and the tests that check it.
+[Allocation](../allocation.md) lists each place where the library can allocate, and the tests that check it.
 
 ## Other limits
 

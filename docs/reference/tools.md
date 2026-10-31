@@ -32,7 +32,7 @@ Build it from the `v2` directory with `go build -o dmrrf ./cmd/dmrrf`. It has th
 
 ## speccheck
 
-`cmd/speccheck` checks `spec_matrix.yaml` against the code. It runs the tests that the file lists for each clause of ETSI TS 102 361 and gives each clause a status: verified, failing, untested or unimplemented. It also checks that each Go file under `v2` that is not a test and not generated is in the file. With `-update-readme` it writes the table of [ETSI coverage](etsi.md). With `-check-readme` it fails when that table is out of date, or when a relative link in `README.md` or `docs/` names a file or heading that does not exist.
+`cmd/speccheck` checks `spec_matrix.yaml` against the code. It runs the tests that the file lists for each clause of ETSI TS 102 361 and gives each clause a status: verified, failing, untested or unimplemented. It also checks that each Go file under `v2` that is not a test and not generated is in the file. With `-update-readme` it writes the table of [ETSI coverage](../etsi.md). With `-check-readme` it fails when that table is out of date, or when a relative link in `README.md` or `docs/` names a file or heading that does not exist.
 
 ## tablegen
 

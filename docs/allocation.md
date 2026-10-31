@@ -4,13 +4,13 @@ This page states where dmrgo allocates heap memory, how to call it so that TinyG
 
 ## The rule
 
-After construction, the hot path makes no heap allocations, with gc and with TinyGo. The hot path is each call that decodes, encodes, builds, receives or assembles bursts and packets. Construction is the New function of a type, such as [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes), [voice.NewReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#NewReceiver) or [packet.NewAssembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#NewAssembler). Each error is a static value, so a call that fails does not allocate. See [Errors and the never-panic rule](errors.md).
+After construction, the hot path makes no heap allocations, with gc and with TinyGo. The hot path is each call that decodes, encodes, builds, receives or assembles bursts and packets. Construction is the New function of a type, such as [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes), [voice.NewReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#NewReceiver) or [packet.NewAssembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#NewAssembler). Each error is a static value, so a call that fails does not allocate. See [Errors and the never-panic rule](concepts/errors.md).
 
 The doc comment of each exported function states when that function allocates.
 
 ## Size the slices that you pass
 
-A state machine appends its outputs to a slice `dst` that you give it, and allocates only to grow `dst`. Make `dst` once, with the capacity that its package gives, and pass it again sliced to `[:0]` on each call. The [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) of [Follow a voice call](../start/03-follow-a-voice-call.md) does this. The example makes `events` once and passes `events[:0]` to each call of `Burst` and `Tick`:
+A state machine appends its outputs to a slice `dst` that you give it, and allocates only to grow `dst`. Make `dst` once, with the capacity that its package gives, and pass it again sliced to `[:0]` on each call. The [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) of [Follow a voice call](start/03-follow-a-voice-call.md) does this. The example makes `events` once and passes `events[:0]` to each call of `Burst` and `Tick`:
 
 <!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
 ```go
@@ -82,7 +82,7 @@ func buildHeader() (layer2.RawBurst, error) {
 ```
 <!-- /dmrgo:code -->
 
-Under TinyGo, the test `TestTinyGoCallerStorage` in [v2/internal/allocs](../../v2/internal/allocs) holds this rule. It logs the bytes per call that each of these calls allocates when its value is a local.
+Under TinyGo, the test `TestTinyGoCallerStorage` in [v2/internal/allocs](../v2/internal/allocs) holds this rule. It logs the bytes per call that each of these calls allocates when its value is a local.
 
 ## Do not copy machines and bursts
 
@@ -90,7 +90,7 @@ Do not copy a state machine or a [layer2.Burst](https://pkg.go.dev/github.com/US
 
 ## What may allocate
 
-The table lists every place where the library can allocate. [v2/internal/allocgate](../../v2/internal/allocgate) generates it, and fails when this page differs.
+The table lists every place where the library can allocate. [v2/internal/allocgate](../v2/internal/allocgate) generates it, and fails when this page differs.
 
 <!-- allocgate:begin -->
 
@@ -115,10 +115,10 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 
 Three checks hold the rule. None of them has a list of functions to keep up to date.
 
-- [v2/internal/allocgate](../../v2/internal/allocgate) follows the machine code of each exported function to the heap allocator of the runtime.
+- [v2/internal/allocgate](../v2/internal/allocgate) follows the machine code of each exported function to the heap allocator of the runtime.
 - The same package adds each allocation site that `tinygo build -print-allocs` reports for the pico and for `riscv-qemu`.
-- [v2/internal/allocs](../../v2/internal/allocs) counts the allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
+- [v2/internal/allocs](../v2/internal/allocs) counts the allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
 
-[Tooling](../project/tooling.md) gives the commands that write and check the table.
+[Tooling](project/tooling.md) gives the commands that write and check the table.
 
-Next: [Tiers](tiers.md).
+Next: [Tiers](concepts/tiers.md).

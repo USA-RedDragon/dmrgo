@@ -146,4 +146,4 @@ You pick what to do with a failed burst: drop it, count it, or use what it holds
 
 Some calls return an error together with what they decoded. [layer2.VoiceReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceReceiver) and [packet.Assembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Assembler) return [layer2.ErrEmbeddedLCUncorrectable](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#ErrEmbeddedLCUncorrectable), [packet.ErrMessageCRC](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#ErrMessageCRC) and [packet.ErrBlocksMissing](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#ErrBlocksMissing) with the decoded value. Each of these wraps `fec.ErrUncorrectable`, so one `errors.Is` check finds every FEC failure.
 
-Next: [Allocation](allocation.md).
+Next: [Allocation](../allocation.md).

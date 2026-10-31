@@ -73,7 +73,7 @@ SessionEnd at 3.9s
 
 - `voice.NewReceiver(nil)` makes a Receiver with the default config. [voice.ReceiverConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#ReceiverConfig) sets the color code, the timers and the other options.
 - `rx.Burst(now, &raw, layer2.Hint{}, events[:0])` takes one 33-byte burst. The `layer2.Hint` holds the data of a transport about the burst besides its bits, such as the slot, the burst kind and a sequence number. A capture of bare bursts has none of these, so the hint is empty.
-- `events` has the capacity `voice.MaxEvents`, so the slice never grows and the call does not allocate. See [Allocation](../concepts/allocation.md).
+- `events` has the capacity `voice.MaxEvents`, so the slice never grows and the call does not allocate. See [Allocation](../allocation.md).
 - `EventCallStart` carries the `Call`: the source, the target and the origin of the call identity. Here the origin is the Voice LC Header. On a late entry it is the embedded LC of the voice bursts.
 - `EventVoice` comes once for each voice burst, with its superframe position and its AMBE+2 frames. A codec, such as a DVSI chip or a software codec, turns the frames into speech. See the package [vocoder](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder).
 - `EventCallEnd` carries the reason and the statistics of the call.

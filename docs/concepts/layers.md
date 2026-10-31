@@ -42,6 +42,6 @@ So one service machine works with every source. A [voice.Receiver](../machines/v
 - Packet data and its applications follow ETSI TS 102 361-3. (ETSI TS 102 361-3 clauses 5 and 6)
 - Trunking follows ETSI TS 102 361-4. (ETSI TS 102 361-4 clauses 6.2 to 6.6)
 
-The networks, the MOTOTRBO and Hytera services, and the vocoders are not in ETSI TS 102 361. Each package doc gives the source that it follows. [ETSI coverage](../reference/etsi.md) gives the status of each clause.
+The networks, the MOTOTRBO and Hytera services, and the vocoders are not in ETSI TS 102 361. Each package doc gives the source that it follows. [ETSI coverage](../etsi.md) gives the status of each clause.
 
 Next: [I/O-free services](services.md).
