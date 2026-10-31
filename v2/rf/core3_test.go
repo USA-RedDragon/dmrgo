@@ -135,6 +135,9 @@ func TestCoreTier3NoLostStream(t *testing.T) {
 func earlyExact(t *testing.T, cn float64) float64 {
 	slots, truth := benchStream(t, 6)
 	sig := cleanBaseband(slots, 1400)
+	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
+	n := int((start + 28*slotSeconds) * basebandRate)
+	sig.re, sig.im = sig.re[:n], sig.im[:n]
 	var exact, total atomic.Int64
 	var wg sync.WaitGroup
 	for seed := range uint64(24) {
