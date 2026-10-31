@@ -272,4 +272,4 @@ Only `New` and `Reject` return errors. The burst methods drop what they cannot u
 - [data.Receiver](data-receiver.md) follows the data calls that a Repeater repeats, for a gateway or a monitor.
 - [csbk.Wakeup](csbk-wakeup.md) is the MS side of the BS_Dwn_Act wakeup that `ActivationWakeup` waits for.
 - [csbk.Preambles](csbk-preambles.md) follows Pre_CSBKs on the MS side.
-- The guides [Receive with an SDR or an FM radio](../guides/receive-sdr-fm.md), [Use an MMDVM modem](../guides/mmdvm-modem.md) and [Transmit within a region's limits](../guides/transmit-region-limits.md) pass the bursts of a radio or a modem to the service machines, such as a Repeater.
+- The guides [Receive with an SDR or an FM radio](../guides/receive-sdr-fm.md) and [Use an MMDVM modem](../guides/mmdvm-modem.md) pass the bursts of a radio or a modem to the service machines, such as a Repeater.

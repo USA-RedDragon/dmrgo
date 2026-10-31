@@ -1,6 +1,6 @@
 # Next steps
 
-This page lists where to go after the first five steps: the concepts behind the library, the task guides, the state machines, the build targets and the reference.
+This page lists where to go after the first four steps: the concepts behind the library, the task guides, the state machines, the build targets and the reference.
 
 ## What you did
 
@@ -8,7 +8,6 @@ This page lists where to go after the first five steps: the concepts behind the 
 - [Decode a burst](02-decode-a-burst.md): `layer2` turned 33 bytes into a burst, with its FEC result and its PDU.
 - [Follow a voice call](03-follow-a-voice-call.md): a [voice.Receiver](../machines/voice-receiver.md) turned bursts into call events.
 - [Send an SMS](04-send-an-sms.md): `sms` and `data` read a text and sent a confirmed reply.
-- [Receive on a radio](05-receive-on-a-radio.md): `rf` recovered the bursts from I/Q samples.
 
 ## Learn the concepts
 

@@ -154,5 +154,4 @@ The bursts go to and from the voice machines: [voice Transmitter](../machines/vo
 
 - [Rewrite and relay a voice call](relay-voice-call.md)
 - [Transcode voice: AMBE+2 FEC, Codec2, DVSI](transcode-voice.md)
-- [Transmit within a region's limits](transmit-region-limits.md)
 - [Receive with an SDR or an FM radio](receive-sdr-fm.md)

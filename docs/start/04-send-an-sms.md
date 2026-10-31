@@ -133,4 +133,4 @@ sender: Delivered after 1 tries (ACK)
 
 The example connects the Sender and the Receiver directly, without a channel between them. [data.Sender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender) also does the channel access of a radio, the retries, and the selective retry of the blocks that a SACK names.
 
-Next: [Receive on a radio](05-receive-on-a-radio.md).
+Next: [Next steps](05-next-steps.md).

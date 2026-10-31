@@ -8,8 +8,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Decode a burst](start/02-decode-a-burst.md)
   - [Follow a voice call](start/03-follow-a-voice-call.md)
   - [Send an SMS](start/04-send-an-sms.md)
-  - [Receive on a radio](start/05-receive-on-a-radio.md)
-  - [Next steps](start/06-next-steps.md)
+  - [Next steps](start/05-next-steps.md)
 - Guides
   - [Decode and re-encode captures](guides/decode-captures.md)
   - [Follow calls on both slots](guides/follow-both-slots.md)
@@ -28,7 +27,6 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Use an MMDVM modem](guides/mmdvm-modem.md)
   - [Use basic privacy](guides/basic-privacy.md)
   - [Receive with an SDR or an FM radio](guides/receive-sdr-fm.md)
-  - [Transmit within a region's limits](guides/transmit-region-limits.md)
 - State machines
   - [bs.Repeater](machines/bs-repeater.md)
   - [csbk.Preambles](machines/csbk-preambles.md)

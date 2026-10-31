@@ -64,7 +64,7 @@ The [Receiver datasheet](../rx/README.md) gives the measured sensitivity, CPU an
 - **Tier2** is for the best reception in real time on a PC. It adds coherent detection, holds each burst one slot longer, and needs more memory.
 - **Tier3** is for offline decoding of a recording on a PC. It gives the best sensitivity on I/Q, and needs much more CPU and memory than Tier2.
 
-Tier0 to Tier2 each run in real time on a PC. Step 5 of Get started, [Receive on a radio](../start/05-receive-on-a-radio.md), uses Tier1.
+Tier0 to Tier2 each run in real time on a PC.
 
 ## Configure the tier
 

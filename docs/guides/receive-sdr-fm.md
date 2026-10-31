@@ -186,7 +186,6 @@ The receiver gives bursts; the machines do the rest. The state machines: [voice 
 
 ## Related guides
 
-- [Transmit within a region's limits](transmit-region-limits.md)
 - [Follow calls on both slots of a bit stream](follow-both-slots.md)
 - [Build and decode trunking messages](trunking.md)
 - [Transcode voice: AMBE+2 FEC, Codec2, DVSI](transcode-voice.md)
