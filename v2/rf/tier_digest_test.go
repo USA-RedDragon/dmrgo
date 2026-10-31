@@ -1,11 +1,13 @@
 package rf
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"hash"
+	"io"
 	"math"
+	"runtime"
 	"slices"
 	"sync"
 	"testing"
@@ -51,20 +53,17 @@ func tierDigestConds() []rxCond {
 	return out
 }
 
-func tierDigestRun(in tierDigestInput, tier Tier, x []complex64) []Burst {
+type tierDigestFeed struct {
+	audio []int16
+	iq    []byte
+}
+
+func tierDigestPrep(in tierDigestInput, x []complex64) tierDigestFeed {
 	if in.audio {
-		r := mustAudio(AudioRxConfig{Rate: in.rate, Tier: tier})
-		var a []int16
 		if basebandRate%in.rate == 0 {
-			a = discAudio(x, in.rate)
-		} else {
-			a = sincResample(discAudio(x, discRate), discRate, in.rate)
+			return tierDigestFeed{audio: discAudio(x, in.rate)}
 		}
-		var out []Burst
-		for k := 0; k < len(a); k += 1500 {
-			out = r.AppendBursts(out, a[k:min(k+1500, len(a))])
-		}
-		return r.AppendFlush(out)
+		return tierDigestFeed{audio: sincResample(discAudio(x, discRate), discRate, in.rate)}
 	}
 	y := x
 	switch {
@@ -73,7 +72,20 @@ func tierDigestRun(in tierDigestInput, tier Tier, x []complex64) []Burst {
 	case in.rate != basebandRate:
 		y = dgUpsample(x, in.rate)
 	}
-	b := iqBytes(y, in.format)
+	return tierDigestFeed{iq: iqBytes(y, in.format)}
+}
+
+func tierDigestRun(in tierDigestInput, tier Tier, f tierDigestFeed) []Burst {
+	if in.audio {
+		r := mustAudio(AudioRxConfig{Rate: in.rate, Tier: tier})
+		a := f.audio
+		var out []Burst
+		for k := 0; k < len(a); k += 1500 {
+			out = r.AppendBursts(out, a[k:min(k+1500, len(a))])
+		}
+		return r.AppendFlush(out)
+	}
+	b := f.iq
 	r := mustNew(RxConfig{Tier: tier, Rate: in.rate, Format: in.format})
 	var out []Burst
 	for k := 0; k < len(b); k += 3001 {
@@ -82,7 +94,7 @@ func tierDigestRun(in tierDigestInput, tier Tier, x []complex64) []Burst {
 	return r.AppendFlush(out)
 }
 
-func tierDigestWrite(h hash.Hash, b *Burst) {
+func tierDigestWrite(h io.Writer, b *Burst) {
 	fmt.Fprintf(h, "%x %x %d %v %v %x %v %v %d %d %v %x %x\n", b.Data, b.Fixed, b.Distance, b.Sync, b.Voice,
 		b.CACH, b.HasCACH, b.BS, b.Stream, b.Slot, b.HasFixed, b.FixedCACH, math.Float64bits(b.Seconds))
 }
@@ -107,42 +119,46 @@ func tierDigests(t testing.TB) map[string]string {
 		return sigs
 	}
 	strong := sigsAt([]float64{40, 12, 6})
-	type job struct {
-		in   tierDigestInput
-		tier Tier
-		sigs []sig
-	}
-	var jobs []job
-	for _, in := range tierDigestInputs() {
+	ins := tierDigestInputs()
+	parts := make([][][][]byte, len(ins))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
+	for i, in := range ins {
 		sigs := strong
 		if in.cns != nil {
 			sigs = sigsAt(in.cns)
 		}
-		for _, tier := range in.tiers {
-			jobs = append(jobs, job{in, tier, sigs})
+		parts[i] = make([][][]byte, len(sigs))
+		for j, s := range sigs {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				sem <- struct{}{}
+				defer func() { <-sem }()
+				f := tierDigestPrep(in, s.x)
+				parts[i][j] = make([][]byte, len(in.tiers))
+				for k, tier := range in.tiers {
+					var b bytes.Buffer
+					bs := tierDigestRun(in, tier, f)
+					fmt.Fprintf(&b, "%s %d\n", s.key, len(bs))
+					for n := range bs {
+						tierDigestWrite(&b, &bs[n])
+					}
+					parts[i][j][k] = b.Bytes()
+				}
+			}()
 		}
 	}
-	out := make([]string, len(jobs))
-	var wg sync.WaitGroup
-	for i, j := range jobs {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			h := sha256.New()
-			for _, s := range j.sigs {
-				bs := tierDigestRun(j.in, j.tier, s.x)
-				fmt.Fprintf(h, "%s %d\n", s.key, len(bs))
-				for k := range bs {
-					tierDigestWrite(h, &bs[k])
-				}
-			}
-			out[i] = hex.EncodeToString(h.Sum(nil))
-		}()
-	}
 	wg.Wait()
-	m := make(map[string]string, len(jobs))
-	for i, j := range jobs {
-		m[fmt.Sprintf("%s/tier%d", j.in.name, j.tier-Tier0)] = out[i]
+	m := make(map[string]string)
+	for i, in := range ins {
+		for k, tier := range in.tiers {
+			h := sha256.New()
+			for j := range parts[i] {
+				h.Write(parts[i][j][k])
+			}
+			m[fmt.Sprintf("%s/tier%d", in.name, tier-Tier0)] = hex.EncodeToString(h.Sum(nil))
+		}
 	}
 	return m
 }
