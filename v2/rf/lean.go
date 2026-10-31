@@ -99,6 +99,7 @@ type leanTiming struct {
 	owed           float32
 	estS, estW     float32
 	estN           int32
+	lastC          float32
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -173,9 +174,11 @@ func (tm *leanTiming) strobe(x float32) bool {
 		tm.last, tm.half = x, d
 		tm.t += 2*tm.step + tm.drift
 		tm.nall++
+		tm.lastC = 0
 		if !tm.hold && tm.pow > 0 {
 			c := max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
 			tm.t += c
+			tm.lastC = c
 			tm.corr, tm.corr2, tm.nc = tm.corr+c, tm.corr2+c*c, tm.nc+1
 		}
 		return true
@@ -189,8 +192,10 @@ func (tm *leanTiming) strobe(x float32) bool {
 	e := tm.half * (tm.last - x)
 	tm.last, tm.mid = x, true
 	tm.t += tm.step
+	tm.lastC = 0
 	if !tm.hold && tm.pow > 0 {
-		tm.t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+		tm.lastC = max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+		tm.t += tm.lastC
 	}
 	return true
 }
@@ -737,7 +742,7 @@ func (r *leanCore) keptSymbols(n int) bool {
 func (r *leanCore) resampleStart(d float32) {
 	sps := 2 * r.tm.step
 	if !r.burstKept() {
-		r.tm.t += d
+		r.shiftStrobe(d)
 		return
 	}
 	n := leanAcqSymbols
@@ -752,7 +757,12 @@ func (r *leanCore) resampleStart(d float32) {
 			j = 0
 		}
 	}
-	r.tm.t += d
+	r.shiftStrobe(d)
+}
+
+func (r *leanCore) shiftStrobe(d float32) {
+	r.tm.t += d - r.tm.lastC
+	r.tm.lastC = 0
 }
 
 func (r *leanCore) push(s float32) {
@@ -1262,7 +1272,7 @@ func (r *leanCore) searchSym(strict bool) {
 		r.fitLevels(r.ns-1, p, true, false)
 		if t, ok := r.ext.lockShift(r, p, 0); ok {
 			d = t * 2 * r.tm.step
-			r.tm.t += d
+			r.shiftStrobe(d)
 		}
 		verified = true
 	}
@@ -1459,7 +1469,7 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 	d := float32(0)
 	if t, ok := r.ext.lockShift(r, p, back); ok {
 		d = t * 2 * r.tm.step
-		r.tm.t += d
+		r.shiftStrobe(d)
 	}
 	r.lockStream(src, d, back)
 	r.forced, r.hunt = true, true

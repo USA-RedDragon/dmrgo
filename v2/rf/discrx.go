@@ -405,9 +405,11 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				tm.last, tm.half = xv, d
 				t += 2*tm.step + tm.drift
 				tm.nall++
+				tm.lastC = 0
 				if !tm.hold && tm.pow > 0 {
 					c := max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
 					t += c
+					tm.lastC = c
 					tm.corr, tm.corr2, tm.nc = tm.corr+c, tm.corr2+c*c, tm.nc+1
 				}
 			case tm.mid:
@@ -419,8 +421,10 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				e := tm.half * (tm.last - xv)
 				tm.last, tm.mid = xv, true
 				t += tm.step
+				tm.lastC = 0
 				if !tm.hold && tm.pow > 0 {
-					t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+					tm.lastC = max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+					t += tm.lastC
 				}
 			}
 			if sym && st&st96Quiet != 0 {
