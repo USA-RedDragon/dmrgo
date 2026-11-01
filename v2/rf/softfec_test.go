@@ -226,7 +226,7 @@ func TestSoftBPTC(t *testing.T) {
 		var llr [softBurstBits]int16
 		newSoftChannel(0, math.Inf(1)).llrs(bits[:], llr[:])
 		for name, dec := range []func(*[softBurstBits]int16, func([12]byte) bool, *layer2.RawBurst) (softBPTCResult, fec.Result){
-			d.decodeBPTCOSD, d.decodeBPTCChase,
+			d.decodeBPTCOSD,
 		} {
 			var out layer2.RawBurst
 			got, res := dec(&llr, check, &out)
@@ -236,7 +236,7 @@ func TestSoftBPTC(t *testing.T) {
 		}
 	}
 	snrs := []float64{-1, 0, 1, 2}
-	cols := []string{"hard", "chase p=4", "chase p=6", "chase p=6 crc", "osd1", "osd2", "osd2 crc", "osd3 w24 crc", "ML bound", "osd2 cands"}
+	cols := []string{"hard", "osd1", "osd2", "osd2 crc", "osd3 w24 crc", "ML bound", "osd2 cands"}
 	counts := softFER(t, "BPTC(196,96)", snrs, 400, 1, cols, func(ch *softChannel) []int {
 		p := softBPTCPayload(t, ch.rng)
 		var r layer2.RawBurst
@@ -249,37 +249,28 @@ func TestSoftBPTC(t *testing.T) {
 		errs := make([]int, 0, len(cols))
 		errs = append(errs, softBool(hard != p))
 		for _, c := range []struct {
-			chase       bool
-			bits, order int
-			window      int
-			crc         bool
+			order, window int
+			crc           bool
 		}{
-			{true, 4, 0, 0, false}, {true, 6, 0, 0, false}, {true, 6, 0, 0, true},
-			{false, 0, 1, 0, false}, {false, 0, 2, 0, false}, {false, 0, 2, 0, true}, {false, 0, 3, 24, true},
+			{1, 0, false}, {2, 0, false}, {2, 0, true}, {3, 24, true},
 		} {
-			d.ChaseBits, d.OSDOrder, d.OSDWindow = c.bits, c.order, c.window
+			d.OSDOrder, d.OSDWindow = c.order, c.window
 			var ck func([12]byte) bool
 			if c.crc {
 				ck = check
 			}
-			var got softBPTCResult
-			if c.chase {
-				got, _ = d.decodeBPTCChase(&llr, ck, nil)
-			} else {
-				got, _ = d.decodeBPTCOSD(&llr, ck, nil)
-			}
+			got, _ := d.decodeBPTCOSD(&llr, ck, nil)
 			errs = append(errs, softBool(got.Payload != p))
 		}
-		d.ChaseBits, d.OSDOrder, d.OSDWindow = 6, 2, 0
+		d.OSDOrder, d.OSDWindow = 2, 0
 		out := hb
 		got, _ := d.decodeBPTCOSD(&llr, nil, &out)
 		pos := softBPTCCode.code().pos[:softBPTCCode.code().n]
 		errs = append(errs, softBool(got.Payload != p && softCost(&out, llr[:], pos) <= softCost(&r, llr[:], pos)), d.osd.list.scored)
 		return errs
 	})
-	softCheckFER(t, counts, 0, 2, 2, 0.7)
-	softCheckFER(t, counts, 0, 5, 2, 0.5)
-	softCheckFER(t, counts, 0, 6, 2, 0.5)
+	softCheckFER(t, counts, 0, 2, 2, 0.5)
+	softCheckFER(t, counts, 0, 3, 2, 0.5)
 }
 
 func TestSoftRate34(t *testing.T) {
@@ -697,8 +688,6 @@ func softBenchCases(d *softDecoder, in *softBenchInputs) []struct {
 	}{
 		{"AMBE K=1", func() { d.AMBECandidates = 1; d.decodeAMBE(&in.voice, &out) }},
 		{"AMBE K=4", func() { d.AMBECandidates = 4; d.decodeAMBE(&in.voice, &out) }},
-		{"BPTC chase p=4", func() { d.ChaseBits = 4; d.decodeBPTCChase(&in.bptc, check, &out) }},
-		{"BPTC chase p=6", func() { d.ChaseBits = 6; d.decodeBPTCChase(&in.bptc, check, &out) }},
 		{"BPTC osd2", func() { d.OSDOrder, d.OSDWindow = 2, 0; d.decodeBPTCOSD(&in.bptc, check, &out) }},
 		{"BPTC osd2 LC check", func() { d.OSDOrder, d.OSDWindow = 2, 0; d.decodeBPTCOSD(&in.bptc, lcCheck, &out) }},
 		{"BPTC osd2 no check", func() { d.OSDOrder, d.OSDWindow = 2, 0; d.decodeBPTCOSD(&in.bptc, nil, &out) }},
@@ -881,4 +870,29 @@ func (d *softDecoder) decodeEmbeddedLC(llr *[4][softBurstBits]int16, out *[4]lay
 		copy(frags[i][:], llr[i][embFirstBit:embFirstBit+embBits])
 	}
 	return d.decodeEmbeddedFrags(&frags, out)
+}
+
+func softTACT(info uint32) pdu.TACT {
+	return pdu.TACT{AccessType: info&8 != 0, TDMAChannel: info&4 != 0, LCSS: enums.LCSS(info & 3)}
+}
+
+func (d *softDecoder) decodeTACT(llr *[layer2.CACHBits]int16, out *[layer2.CACHBits]unpacked.Bit) (pdu.TACT, fec.Result) {
+	info, cw, errs := d.small.decode(softTACTCode, llr[:], 0, 0)
+	c := &softSmallCodes[softTACTCode]
+	if out != nil {
+		for j := range c.n {
+			out[c.pos[j]] = unpacked.Bit(cw >> j & 1)
+		}
+	}
+	t := softTACT(info)
+	t.FEC = softResult(c.n, errs, c.t)
+	return t, t.FEC
+}
+
+func cachBytes(b [layer2.CACHBits]unpacked.Bit) [3]byte {
+	var p [3]byte
+	for i, v := range b {
+		p[i>>3] |= byte(v&1) << (7 - i&7)
+	}
+	return p
 }

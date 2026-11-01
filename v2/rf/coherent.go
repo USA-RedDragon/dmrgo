@@ -72,8 +72,6 @@ func (m *cpmModel) setStep(h float64) {
 	m.h = h
 }
 
-const pulseLeadSamples = 0.5
-
 func (m *cpmModel) pulse(j int, h float64) float64 {
 	n := m.pp.n
 	i := j + n/2
@@ -256,14 +254,6 @@ func (t *trellis) backward(src trellisSource, b0, b1, e int) {
 		}
 	}
 	t.beta = beta
-}
-
-func (t *trellis) best() float32 {
-	b := negInf
-	for _, v := range t.last {
-		b = max(b, v)
-	}
-	return b
 }
 
 type phasePulse struct {

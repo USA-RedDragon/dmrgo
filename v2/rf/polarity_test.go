@@ -26,11 +26,6 @@ func (r *AudioReceiver) plain() {
 	r.f.polBits = 0
 	if e, _ := r.ext.(*softExt); e != nil {
 		e.ac = nil
-		if e.union != nil {
-			for _, w := range e.union.twins {
-				w.f.polBits = 0
-			}
-		}
 	}
 }
 

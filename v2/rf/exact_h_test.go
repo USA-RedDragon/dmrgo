@@ -2,24 +2,18 @@ package rf
 
 import "testing"
 
-func TestXTrellisSetH(t *testing.T) {
+func TestXTrellisStep(t *testing.T) {
 	t.Parallel()
 	m := newCPMModel(1, 10)
 	for _, c := range []struct {
 		np, def int
-		h       float64
-		step    int
-	}{{phaseStates, 27, 0.243, 24}, {phaseStates, 27, 0.297, 30}, {52, 7, 0.243, 6}, {52, 7, 0.27, 7}} {
+	}{{phaseStates, 27}, {52, 7}} {
 		x := newXTrellis(m, c.np, 8)
 		if x.step != c.def {
 			t.Errorf("np %d: default step %d, want %d", c.np, x.step, c.def)
 		}
-		x.setH(c.h)
-		if x.step != c.step {
-			t.Errorf("np %d h %v: step %d, want %d", c.np, c.h, x.step, c.step)
-		}
-		if got, want := x.off[3], 3*c.step%c.np; got != want {
-			t.Errorf("np %d h %v: off[3] %d, want %d", c.np, c.h, got, want)
+		if got, want := x.off[3], 3*c.def%c.np; got != want {
+			t.Errorf("np %d: off[3] %d, want %d", c.np, got, want)
 		}
 	}
 }

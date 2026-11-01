@@ -103,16 +103,10 @@ func (r *discRx) maxBursts(n int) int {
 }
 
 func (r *discRx) flushBursts() int {
-	return r.maxBursts(slotSymbols*discSPS) + r.unionBacklog()
+	return r.maxBursts(slotSymbols * discSPS)
 }
 
 func (r *discRx) flush() {
-	if !r.unionFlush() {
-		r.flushSolo()
-	}
-}
-
-func (r *discRx) flushSolo() {
 	var idle [16]int16
 	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
 	for i := range idle {
@@ -496,7 +490,7 @@ func (r *leanCore) lagSeconds() float64 {
 }
 
 func (r *discRx) lagSamples(rate int) int {
-	return int(math.Ceil((max(r.lagSeconds(), r.unionLag()) + r.fixLag()) * float64(rate)))
+	return int(math.Ceil((r.lagSeconds() + r.fixLag()) * float64(rate)))
 }
 
 func (r *discRx) offset() float64 {

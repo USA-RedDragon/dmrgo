@@ -68,13 +68,6 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 	return t
 }
 
-func (t *xtrellis) setH(h float64) {
-	t.step = int(math.Round(h / 2 * float64(t.np)))
-	for v := range t.off {
-		t.off[v] = t.phaseAfter(0, v)
-	}
-}
-
 type xlanes struct {
 	re, im, bonus [4]float32
 }

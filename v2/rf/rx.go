@@ -54,16 +54,15 @@ type RxConfig struct {
 }
 
 type rxSetup struct {
-	Rate          float64
-	Signed        bool
-	Format        IQFormat
-	Tier          Tier
-	BasebandHz    int
-	OffsetHz      float64
-	LookbackSlots int
-	OnBurst       func(*Burst)
-	sink          *burstSink
-	disc          *discRx
+	Rate       float64
+	Signed     bool
+	Format     IQFormat
+	Tier       Tier
+	BasebandHz int
+	OffsetHz   float64
+	OnBurst    func(*Burst)
+	sink       *burstSink
+	disc       *discRx
 }
 
 func (s *rxSetup) discOf() *discRx {
@@ -113,7 +112,6 @@ var (
 	errRxLookback = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.LookbackSlots"}
 	errRxOnBursts = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.OnBursts"}
 	errRxShortLC  = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.OnShortLC"}
-	errRxOpt      = &dmrgo.ConfigError{Type: "rf", Field: "RxConfig.opt"}
 )
 
 const defaultRxRate = 2400000

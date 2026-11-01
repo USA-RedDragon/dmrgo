@@ -220,7 +220,7 @@ func TestSoftRepairKeepsExact(t *testing.T) {
 				default:
 					check := softBPTCCheck(dt)
 					for name, dec := range map[string]func(*[softBurstBits]int16, func([12]byte) bool, *layer2.RawBurst) (softBPTCResult, fec.Result){
-						"OSD": d.decodeBPTCOSD, "Chase": d.decodeBPTCChase, "grid": d.decodeBPTCGrid,
+						"OSD": d.decodeBPTCOSD, "grid": d.decodeBPTCGrid,
 					} {
 						o := out
 						dec(&llr, check, &o)
@@ -232,12 +232,6 @@ func TestSoftRepairKeepsExact(t *testing.T) {
 			}
 			if out != raw {
 				t.Fatalf("kind %d, cc known %v: decode changed the burst\nout %x\nraw %x", i%exactKinds, ccOK, out, raw)
-			}
-			var tact [layer2.CACHBits]unpacked.Bit
-			copy(tact[:], cb[:])
-			d.decodeTACT(&cllr, &tact)
-			if tact != cb {
-				t.Fatalf("kind %d: TACT decode changed the CACH", i%exactKinds)
 			}
 		}
 	}

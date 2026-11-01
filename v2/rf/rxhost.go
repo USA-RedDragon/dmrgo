@@ -5,10 +5,8 @@ import "math"
 const rxBaseChunk = 1024
 
 type rxHost struct {
-	e      *engine
 	lean   *leanRx
 	iqd    *iqRx
-	cb     *combRx
 	bb     []complex64
 	rate   int
 	slot   int
@@ -34,9 +32,6 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	if o != nil {
 		opt = *o
 	}
-	if !opt.tabled() {
-		return nil, errRxOpt
-	}
 	r := &Receiver{}
 	if low && opt.IQLow > 0 {
 		r.setLow(cfg, o)
@@ -49,59 +44,34 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 			h.bb = make([]complex64, rxBaseChunk)
 		}
 		s := rxSetup{Rate: float64(cfg.Rate), Signed: cfg.Format == IQFormatCS8, Format: cfg.Format, Tier: cfg.Tier,
-			BasebandHz: hz, OffsetHz: cfg.OffsetHz, LookbackSlots: cfg.LookbackSlots, sink: &r.sink, disc: &r.low.d}
+			BasebandHz: hz, OffsetHz: cfg.OffsetHz, sink: &r.sink, disc: &r.low.d}
 		h.build(s, opt)
 		r.full = h
 	}
-	look := opt.ExtLookback
-	if opt.Coherent {
-		look = cfg.LookbackSlots
-		if look == 0 {
-			look = 16
-		}
-	}
-	if n := streamBursts(look); cfg.OnBursts != nil && n > 0 {
+	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.sink.out = make([]Burst, 0, n)
 	}
-	if err := r.sink.attachShortLC(cfg.OnShortLC, cfg.Tier, !opt.CohExact, errRxShortLC); err != nil {
+	if err := r.sink.attachShortLC(cfg.OnShortLC, cfg.Tier, errRxShortLC); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
 func (r *rxHost) build(s rxSetup, opt options) {
-	switch {
-	case !opt.Coherent:
-		switch {
-		case opt.IQDisc && s.BasebandHz == basebandRate:
-			r.iqd = newIQRx(s, opt)
-		default:
-			r.lean = newLean(s, opt)
-		}
-	default:
-		if s.LookbackSlots == 0 {
-			s.LookbackSlots = 16
-		}
-		if opt.Comb {
-			r.cb = newComb(s, opt)
-			r.e = r.cb.t3
-			return
-		}
-		r.e = newEngine(s, opt)
+	if opt.IQDisc && s.BasebandHz == basebandRate {
+		r.iqd = newIQRx(s, opt)
+		return
 	}
+	r.lean = newLean(s, opt)
 }
 
 func (r *rxHost) write(x []byte) {
 	if !r.base {
 		switch {
-		case r.cb != nil:
-			r.cb.write(x)
 		case r.iqd != nil:
 			r.iqd.write(x)
 		case r.lean != nil:
 			r.lean.write(x)
-		case r.e != nil:
-			r.e.write(x)
 		}
 		return
 	}
@@ -118,40 +88,28 @@ func (r *rxHost) write(x []byte) {
 
 func (r *rxHost) writeBaseband(x []complex64) {
 	switch {
-	case r.cb != nil:
-		r.cb.writeBaseband(x)
 	case r.iqd != nil:
 		r.iqd.writeBaseband(x)
 	case r.lean != nil:
 		r.lean.writeBaseband(x)
-	case r.e != nil:
-		r.e.writeBaseband(x)
 	}
 }
 
 func (r *rxHost) flush() {
 	switch {
-	case r.cb != nil:
-		r.cb.flush()
 	case r.iqd != nil:
 		r.iqd.flush()
 	case r.lean != nil:
 		r.lean.flush()
-	case r.e != nil:
-		r.e.flush()
 	}
 }
 
 func (r *rxHost) active() bool {
 	switch {
-	case r.cb != nil:
-		return r.cb.t3.locked || r.cb.t2.d.locked
 	case r.iqd != nil:
 		return r.iqd.d.locked
 	case r.lean != nil:
 		return r.lean.locked
-	case r.e != nil:
-		return r.e.locked
 	}
 	return false
 }
@@ -162,59 +120,36 @@ func (r *rxHost) offsetHz() float64 {
 		return float64(r.iqd.conv.hz) + r.iqd.d.offset()/iqUnitsPerHz
 	case r.lean != nil:
 		return float64(r.lean.offsetHz)
-	case r.e != nil:
-		return r.e.offsetHz
 	}
 	return 0
 }
 
 func (r *rxHost) deviationHz() float64 {
 	switch {
-	case r.cb != nil && r.e.devHz == 0:
-		return r.cb.t2.deviation() / iqUnitsPerHz
 	case r.iqd != nil:
 		return r.iqd.deviation() / iqUnitsPerHz
 	case r.lean != nil:
 		return float64(r.lean.devHz)
-	case r.e != nil:
-		return r.e.devHz
 	}
 	return 0
 }
 
 func (r *rxHost) maxOutput(n int) int {
-	held := 16
-	if r.e != nil {
-		held += 2 * len(r.e.slots)
-	}
-	m := 4*(n/r.slot+2) + held
-	if r.cb != nil {
-		m = 2*m + cap(r.cb.pend[0]) + cap(r.cb.pend[1])
-	}
-	return m
+	return 4*(n/r.slot+2) + 16
 }
 
 const (
 	frontLagSeconds = 0.005
 	blockLagSeconds = float64(iqAFCBlock) / basebandRate
-	t2LagSeconds    = 0.3
 )
 
 func (r *rxHost) lag() int {
 	var s float64
 	switch {
-	case r.cb != nil:
-		s = r.e.holdSeconds() + combT2Hold + t2LagSeconds
 	case r.iqd != nil:
 		s = r.iqd.d.lagSeconds() + blockLagSeconds
 	case r.lean != nil:
 		s = r.lean.lagSeconds()
-	case r.e != nil:
-		s = r.e.holdSeconds() + t2LagSeconds
 	}
 	return int(math.Ceil((s + frontLagSeconds) * float64(r.rate)))
-}
-
-func (r *engine) holdSeconds() float64 {
-	return float64(r.opt.passSlots()+r.cfg.LookbackSlots+maxGapSlots+16) * slotSeconds
 }

@@ -59,18 +59,11 @@ type options struct {
 	DiscOutlier           float64
 	ClickSpan             float64
 	CohBudget             float64
-	CombBudget            float64
-	HGate                 float64
 	IQKaiser              float64
 	IQCutHz               float64
 	IQTaps                int
-	CombMode              int
-	TrellisSPS            int
 	PhaseStates           int
-	HGateMin              int
 	PSPGain               float32
-	KnownPrior            float32
-	RefinePrior           float32
 	LLRScale              float32
 	Sources               int
 	ExtLookback           int
@@ -81,28 +74,10 @@ type options struct {
 	IQAFCAvg              int
 	IQBuf                 int
 	CohDataPasses         int
-	DataPasses            int
-	DataPrior             float32
 	IQHz                  int
-	TwoPassSlots          int
-	TwoPassSmooth         int
-	TwoPassLevels         int
-	TwoPass               bool
-	TwoPassKeepTiming     bool
-	TwoPassKeepCarrier    bool
-	Coherent              bool
-	Comb                  bool
-	ExactPhase            bool
 	LogMAP                bool
 	SoftFEC               bool
-	BPTCOSD               bool
-	GridBPTC              bool
 	OSDBytes              bool
-	WarmUp                bool
-	TrackCarrier          bool
-	TrackH                bool
-	ExactH                bool
-	CompactChannel        bool
 	SoftExt               bool
 	ExtAMBE               bool
 	ExtOSD                bool
@@ -115,7 +90,6 @@ type options struct {
 	CohExt                bool
 	CohExact              bool
 	CohNoNext, CohNoCross bool
-	IQCutAuto             bool
 	CohSlotFit            bool
 	CohWarm               bool
 	CohWide               bool
@@ -128,20 +102,16 @@ type options struct {
 	BSSuspectRun          uint8
 	LinearMid             bool
 	RawSearch             uint8
-	DataUnchecked         bool
 	IQDisc                bool
-	Window                uint8
-	ChanDecimation        uint8
 	IQLow                 uint8
 	LeanChase             uint8
 	IQHalf                bool
 	CohRing               uint8
-	UnionTwins            uint8
 }
 
 func discOptions() options {
-	o := options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscOutlier: 0.01, ClickSpan: 500, Sources: 2}
-	o.SoftFEC, o.GridBPTC = true, true
+	o := options{PSPGain: 0.02, DiscOutlier: 0.01, ClickSpan: 500, Sources: 2}
+	o.SoftFEC = true
 	return o
 }
 
@@ -236,16 +206,4 @@ func (o *options) cohRing() int64 {
 		return 1 << o.CohRing
 	}
 	return cohHist
-}
-
-func (o *options) tabled() bool {
-	switch {
-	case !o.Coherent:
-		return true
-	case o.ChanDecimation != 0 && o.ChanDecimation != 1 && o.ChanDecimation != 2:
-		return false
-	case o.TrellisSPS != 5 && o.TrellisSPS != 10:
-		return false
-	}
-	return !o.ExactPhase || o.PhaseStates == 0 || o.PhaseStates == 52 || o.PhaseStates == phaseStates
 }

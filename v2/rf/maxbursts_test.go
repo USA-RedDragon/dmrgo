@@ -57,22 +57,6 @@ func (c rxBoundCase) config() (RxConfig, *options, bool) {
 		hz = discRate
 	}
 	switch c.inner {
-	case 1:
-		if c.tier < Tier3 || c.half {
-			return cfg, nil, false
-		}
-		o := tierOptions(c.tier)
-		o.Comb = true
-		opt = &o
-	case 4:
-		if c.tier < Tier3 || c.half {
-			return cfg, nil, false
-		}
-		o := tierOptions(c.tier)
-		o.Comb, o.TwoPass, o.Window, o.PhaseStates = false, false, 2, 0
-		opt = &o
-	case 5, 6:
-		return cfg, nil, false
 	case 2, 3:
 		if c.half {
 			return cfg, nil, false
@@ -102,15 +86,12 @@ func rxEngine(r *Receiver) string {
 	switch {
 	case r.mode == rxModeLow:
 		return "iqlow"
-	case r.host().cb != nil:
-		return "comb"
 	case r.host().iqd != nil:
 		return "iqdisc"
 	case r.host().lean != nil:
 		return "lean"
-	default:
-		return "engine"
 	}
+	return ""
 }
 
 func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
@@ -229,7 +210,7 @@ func TestReceiverMaxBursts(t *testing.T) {
 		}
 	}
 	t.Cleanup(func() {
-		for _, e := range []string{"engine", "lean", "iqdisc", "comb", "iqlow"} {
+		for _, e := range []string{"lean", "iqdisc", "iqlow"} {
 			if _, ok := engines[e]; !ok {
 				t.Errorf("no case ran the %s receiver: %v", e, engines)
 			}
@@ -257,11 +238,10 @@ func TestReceiverMaxBursts(t *testing.T) {
 			})
 		}
 	}
-	for _, inner := range []int{1, 2, 3} {
+	for _, inner := range []int{3} {
 		for j, c := range []rxBoundCase{
 			{tier: Tier3, baseband: true, mult: 1, inner: inner},
 			{tier: Tier3, baseband: true, mult: 1, lookback: 2, cuts: []byte{1, 9, 30}, inner: inner},
-			{tier: Tier3, mult: 1, inner: 3 + inner, cuts: []byte{60}},
 			{tier: Tier3, mult: 2, maxWrite: 999, inner: inner, cuts: []byte{3, 50}},
 		} {
 			t.Run(fmt.Sprintf("inner%d/%d", inner, j), func(t *testing.T) {

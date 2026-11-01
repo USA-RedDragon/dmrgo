@@ -125,12 +125,12 @@ func TestIQDiscAdjacent(t *testing.T) {
 	}
 }
 
-func TestEngineAdjacent(t *testing.T) {
+func TestTier3Adjacent(t *testing.T) {
 	t.Parallel()
 	for _, held := range []bool{false, true} {
 		o := tierOptions(Tier3)
 		if !held {
-			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQCutAuto = 0, 0, 0, false
+			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser = 0, 0, 0
 		}
 		n, want, _ := adjacentReceive(t, Tier3, &o, 0)
 		switch {

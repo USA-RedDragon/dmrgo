@@ -1,9 +1,10 @@
 package rf
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"math"
-	"math/bits"
+	mbits "math/bits"
 	"os"
 	"reflect"
 	"runtime"
@@ -17,6 +18,9 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -220,7 +224,7 @@ func (s *benchScorer) data(ts benchSlot, r Burst, data layer2.RawBurst, have boo
 		s.sc["rate1_bit"].Truth += 8 * len(b)
 		if have {
 			for i := range b {
-				s.sc["rate1_bit"].Exact += 8 - bits.OnesCount8(a[i]^b[i])
+				s.sc["rate1_bit"].Exact += 8 - mbits.OnesCount8(a[i]^b[i])
 			}
 		}
 	default:
@@ -912,4 +916,20 @@ func checkBench(t *testing.T, e benchEntry, want, got []benchPoint) {
 			}
 		}
 	}
+}
+
+func strictEmbeddedLC(f [4][4]byte) ([9]byte, bool) {
+	var w [4]uint32
+	for i := range f {
+		w[i] = binary.BigEndian.Uint32(f[i][:])
+	}
+	info, res := bptc.DecodeEmbeddedStrict(w)
+	var lc [9]byte
+	var cs uint8
+	bits.SetField(lc[:], 0, 22, bits.Field(info[:], 0, 22))
+	for row := 2; row < 7; row++ {
+		bits.SetField(lc[:], 22+10*(row-2), 10, bits.Field(info[:], row*11, 10))
+		cs = cs<<1 | bits.Bit(info[:], row*11+10)
+	}
+	return lc, !res.Uncorrectable && crc.CheckChecksum5(lc, cs)
 }

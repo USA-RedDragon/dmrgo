@@ -56,8 +56,6 @@ func derivedTables() ([]genTable, error) {
 		return nil, err
 	}
 	return []genTable{
-		{"interpTaps", d.interp},
-		{"chanFilterTaps", d.chanTaps},
 		{"discHalfQ15", d.halfQ15},
 		{"discPreQ15", d.preQ15},
 		{"discRRCQ15", d.rrcQ15},
@@ -65,16 +63,10 @@ func derivedTables() ([]genTable, error) {
 		{"audio96RRCQ15", d.audio96},
 		{"fftTwiddles", d.twiddles},
 		{"specWindow", d.window},
-		{"syncDev", d.dev},
 		{"syncDevSq", d.devSq},
-		{"syncSigns", d.signs},
-		{"ones8", d.ones8},
 		{"syncSyms8", d.syms8},
 		{"syncMean", d.mean},
-		{"syncPatterns", d.patterns},
-		{"syncTemplates", d.templates},
 		{"pulseQ", d.pulse},
-		{"pulseQ32", d.pulse32},
 		{"phaseCos", d.cos},
 		{"phaseSin", d.sin},
 		{"audioUpQ15", d.audioUp},

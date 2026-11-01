@@ -74,14 +74,6 @@ func abs32(x float32) float32 {
 	return x
 }
 
-func pow2(e int32) float32 {
-	b := e + 127
-	if b <= 0 || b > 254 {
-		return 0
-	}
-	return math.Float32frombits(uint32(b) << 23)
-}
-
 func sat8(x float32) int8 {
 	switch {
 	case x >= math.MaxInt8:

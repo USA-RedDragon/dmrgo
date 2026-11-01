@@ -2,7 +2,6 @@ package rf
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -60,26 +59,4 @@ func (b *Burst) Timed() bool {
 		return false
 	}
 	return b.Distance < 0
-}
-
-type received struct {
-	data      layer2.RawBurst
-	seconds   float64
-	distance  int
-	sync      enums.SyncPattern
-	voice     enums.VoiceBurstType
-	cach      [layer2.CACHBits]unpacked.Bit
-	hasCACH   bool
-	bs        bool
-	stream    int
-	slot      int64
-	fixed     layer2.RawBurst
-	fixedCACH [layer2.CACHBits]unpacked.Bit
-	hasFixed  bool
-	side      combSide
-}
-
-func (x *received) put(b *Burst) {
-	*b = Burst{Data: x.data, Seconds: x.seconds, Distance: x.distance, Sync: x.sync, Voice: x.voice, CACH: cachBytes(x.cach), HasCACH: x.hasCACH,
-		BS: x.bs, Stream: x.stream, Slot: x.slot, Fixed: x.fixed, FixedCACH: cachBytes(x.fixedCACH), HasFixed: x.hasFixed}
 }

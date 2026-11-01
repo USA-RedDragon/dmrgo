@@ -26,7 +26,6 @@ const (
 	softOSDNibbles    = 49
 	softTabLen        = max(3*256, softOSDNibbles*16)
 	softListMax       = 8
-	softChaseMax      = 16
 	softBPTCData      = 96
 	softBPTCInfo      = 99
 	softTrellisBits   = 196
@@ -280,8 +279,6 @@ type softOSDScratch struct {
 	pmag        [softOSDMaxK]int32
 	pass, floor int32
 	nw          int
-	chase       [softChaseMax]int16
-	bits        [softTrellisBits]unpacked.Bit
 	btab        *[softParWords * 8 * 256]int32
 	par         [softOSDMaxN]int16
 	pm          [softOSDMaxN]int32
@@ -542,7 +539,6 @@ type softTrellis struct {
 
 type softDecoder struct {
 	AMBECandidates                   int
-	ChaseBits                        int
 	OSDOrder, OSDWindow              int
 	GridIters                        int
 	GridWeight                       float32
@@ -565,7 +561,7 @@ func (d *softDecoder) setBytes(opt *options) {
 }
 
 func newSoftDecoder() *softDecoder {
-	d := &softDecoder{AMBECandidates: 4, ChaseBits: 6, OSDOrder: 2, BPTCList: softListMax, ShortLCList: 4, EmbLCList: 2, GridIters: 4, GridWeight: 0.7}
+	d := &softDecoder{AMBECandidates: 4, OSDOrder: 2, BPTCList: softListMax, ShortLCList: 4, EmbLCList: 2, GridIters: 4, GridWeight: 0.7}
 	d.small.tab, d.osd.tab = &d.tab, &d.tab
 	d.acceptBPTC = func(cw *[softOSDWords]uint64) bool {
 		return d.check(softBPTCOf(cw).Payload)
@@ -579,10 +575,6 @@ func newSoftDecoder() *softDecoder {
 		return crc.CheckCRC8(data[:], softShortLCData, uint8(unpacked.Uint(info[softShortLCData:])&0xff))
 	}
 	return d
-}
-
-func softTACT(info uint32) pdu.TACT {
-	return pdu.TACT{AccessType: info&8 != 0, TDMAChannel: info&4 != 0, LCSS: enums.LCSS(info & 3)}
 }
 
 func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst) ([layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
@@ -682,19 +674,6 @@ func (d *softDecoder) decodeEMB(llr *[softBurstBits]int16, cc enums.ColorCode, c
 	}
 	c := &softSmallCodes[softEMBCode]
 	return pdu.EMBInfo(info << 1 & 0xfe), softResult(c.n, errs, c.t)
-}
-
-func (d *softDecoder) decodeTACT(llr *[layer2.CACHBits]int16, out *[layer2.CACHBits]unpacked.Bit) (pdu.TACT, fec.Result) {
-	info, cw, errs := d.small.decode(softTACTCode, llr[:], 0, 0)
-	c := &softSmallCodes[softTACTCode]
-	if out != nil {
-		for j := range c.n {
-			out[c.pos[j]] = unpacked.Bit(cw >> j & 1)
-		}
-	}
-	t := softTACT(info)
-	t.FEC = softResult(c.n, errs, c.t)
-	return t, t.FEC
 }
 
 func softRate34Payload(t *[softTrellisSteps]int) [18]byte {
@@ -854,68 +833,6 @@ func (d *softDecoder) decodeBPTCGrid(llr *[softBurstBits]int16, check func([12]b
 func (d *softDecoder) bptcExtrinsic(llr *[softBurstBits]int16, ext *[softBurstBits]float32) {
 	d.grid.decode(llr, d.GridIters, d.GridWeight)
 	d.grid.extrinsic(ext)
-}
-
-func (d *softDecoder) decodeBPTCChase(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
-	if d.bptcHard(llr, check) {
-		return d.bptcPick(check, out)
-	}
-	s, c := &d.osd, &softOSDCodes[softBPTCCode]
-	d.bptcLLRs(llr)
-	s.prepare(c.n)
-	p := min(max(d.ChaseBits, 0), softChaseMax)
-	for i := range p {
-		s.chase[i] = -1
-	}
-	for i, q := range &softInfoPos {
-		s.bits[i] = 0
-		if llr[q] < 0 {
-			s.bits[i] = 1
-		}
-	}
-	for j := range c.n {
-		for i := range p {
-			if s.chase[i] < 0 || s.mag[j] < s.mag[s.chase[i]] {
-				copy(s.chase[i+1:p], s.chase[i:p-1])
-				s.chase[i] = int16(j)
-				break
-			}
-		}
-	}
-	s.list.reset(d.bptcCheck(check))
-	var cw [softOSDWords]uint64
-	for g := 0; g < 1<<p; g++ {
-		if g > 0 {
-			s.bits[softBPTCInfoBit[s.chase[bits.TrailingZeros(uint(g))]]] ^= 1
-		}
-		var packed [25]byte
-		for i, v := range &s.bits {
-			packed[i/8] |= byte(v&1) << (7 - i%8)
-		}
-		data, reserved, _ := bptc.Decode196(packed)
-		cw = [softOSDWords]uint64{}
-		for i := range softBPTCData + 3 {
-			var b byte
-			if i < softBPTCData {
-				b = data[i/8] >> (7 - i%8) & 1
-			} else {
-				b = reserved >> (i - softBPTCData) & 1
-			}
-			if b != 0 {
-				for x := range cw {
-					cw[x] ^= c.rows[i][x]
-				}
-			}
-		}
-		var cost int32
-		for x := range cw {
-			for e := cw[x] ^ s.hard[x]; e != 0; e &= e - 1 {
-				cost += s.mag[x<<6|bits.TrailingZeros64(e)]
-			}
-		}
-		s.list.add(cost, &cw)
-	}
-	return d.bptcPick(check, out)
 }
 
 func softBPTCCheck(dt enums.DataType) func([12]byte) bool {

@@ -401,3 +401,42 @@ func TestCoreTier3BurstContinuity(t *testing.T) {
 		t.Error("core Tier 3 I/Q detects each burst without the trellis of the burst before and after it")
 	}
 }
+
+func TestDiscTier3WriteFlush(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	x := noisyBaseband(slots, 1400, 12, 7)
+	for _, hz := range []int{2 * symbolRate, discRate} {
+		a := discAudio(x, hz)
+		a = a[:len(a)*2/3]
+		var want []Burst
+		w, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: Tier3, OnBursts: each(func(b *Burst) { want = append(want, *b) })})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for k := 0; k < len(a); k += 4096 {
+			must(w.writeAll(a[k:min(k+4096, len(a))]))
+		}
+		w.flushAll()
+		r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: Tier3})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []Burst
+		for k := 0; k < len(a); k += 4096 {
+			got = append(got, must(r.writeAll(a[k:min(k+4096, len(a))]))...)
+		}
+		got = append(got, r.flushAll()...)
+		if len(got) != len(want) {
+			t.Fatalf("at %d Hz Write and Flush return %d bursts, OnBurst takes %d", hz, len(got), len(want))
+		}
+		for i := range got {
+			if got[i] != want[i] {
+				t.Fatalf("at %d Hz burst %d of Write and Flush differs from that of OnBurst", hz, i)
+			}
+		}
+		if n := r.flushBursts(); n > 1050 {
+			t.Errorf("at %d Hz Tier3 Flush has room for %d bursts, the docs say up to 1050", hz, n)
+		}
+	}
+}

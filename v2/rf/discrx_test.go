@@ -245,8 +245,8 @@ func TestRescaleSigns(t *testing.T) {
 	for _, s := range syms {
 		r.symbol(float32(s)*deviationHz, 0)
 	}
-	if got := r.signs & (1<<syncSymbols - 1); got != syncSigns[0] {
-		t.Errorf("signs %06x, want %06x", got, syncSigns[0])
+	if got := r.signs & (1<<syncSymbols - 1); got != testSyncSigns[0] {
+		t.Errorf("signs %06x, want %06x", got, testSyncSigns[0])
 	}
 }
 

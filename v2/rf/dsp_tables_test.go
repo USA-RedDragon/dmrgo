@@ -2,37 +2,27 @@ package rf
 
 import (
 	"math"
-	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
 type dspTables struct {
-	interp    [interpPhases + 1][sincTaps]float32
-	chanTaps  [chanTaps]float32
-	half      [halfTaps]float32
-	pre       [preTaps]float32
-	rrc       [rrcTaps]float32
-	halfQ15   [halfSide + 1]int16
-	preQ15    [preTaps/2 + 1]int16
-	rrcQ15    [rrcTaps/2 + 1]int16
-	audioQ15  [audio12Taps/2 + 1]int16
-	audio96   [audio96Taps/2 + 1]int16
-	twiddles  [fftSize / 2]complex64
-	window    [fftSize/2 + 1]float32
-	dev       [numSources][syncSymbols]float32
-	devSq     [numSources]float32
-	signs     [numSources]uint32
-	ones8     [256]uint8
-	syms8     [numSources][syncSymbols]int8
-	mean      [numSources]float32
-	patterns  [2*numSources + 1]enums.SyncPattern
-	templates [2][searchFreqs * numSources][syncSpan]complex64
-	pulse     [2][2*rrcSpan*samplesPerSy + 2]float64
-	pulse32   [2][2*rrcSpan*samplesPerSy + 2]float32
-	cos, sin  [2][phaseStates]float32
-	audioUp   [(audioUpPhases + 1) * audioUpTaps]int16
+	half     [halfTaps]float32
+	pre      [preTaps]float32
+	rrc      [rrcTaps]float32
+	halfQ15  [halfSide + 1]int16
+	preQ15   [preTaps/2 + 1]int16
+	rrcQ15   [rrcTaps/2 + 1]int16
+	audioQ15 [audio12Taps/2 + 1]int16
+	audio96  [audio96Taps/2 + 1]int16
+	twiddles [fftSize / 2]complex64
+	window   [fftSize/2 + 1]float32
+	devSq    [numSources]float32
+	syms8    [numSources][syncSymbols]int8
+	mean     [numSources]float32
+	pulse    [2][2*rrcSpan*samplesPerSy + 2]float64
+	cos, sin [2][phaseStates]float32
+	audioUp  [(audioUpPhases + 1) * audioUpTaps]int16
 }
 
 func deriveDSP() *dspTables {
@@ -42,21 +32,6 @@ func deriveDSP() *dspTables {
 	for i, v := range up {
 		t.audioUp[i] = int16(math.Round(float64(v) * 32768))
 	}
-	for i := range t.ones8 {
-		t.ones8[i] = uint8(bits.OnesCount8(uint8(i)))
-	}
-	for p := range interpPhases + 1 {
-		fr := float64(p) / interpPhases
-		for k := range sincTaps {
-			u := float64(k-sincTaps/2+1) - fr
-			w := 0.42 + 0.5*math.Cos(math.Pi*u/(sincTaps/2)) + 0.08*math.Cos(2*math.Pi*u/(sincTaps/2))
-			if u != 0 {
-				w *= math.Sin(math.Pi*u) / (math.Pi * u)
-			}
-			t.interp[p][k] = float32(w)
-		}
-	}
-	copy(t.chanTaps[:], kaiserLowpass(chanTaps, (chanPassHz+chanStopHz)/2/basebandRate, 7))
 	copy(t.half[:], kaiserLowpass(halfTaps, 0.25, halfBeta))
 	copy(t.pre[:], kaiserLowpass(preTaps, discCutHz/discRate, 5))
 	for i, v := range rrcTapsSpan(discSPS, discSpan) {
@@ -92,8 +67,7 @@ func deriveDSP() *dspTables {
 		t.window[i] = float32(0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/fftSize))
 	}
 	for i := range numSources {
-		v, d, _ := sourceAt(i).SyncPatterns()
-		t.patterns[2*i], t.patterns[2*i+1] = v, d
+		v, _, _ := sourceAt(i).SyncPatterns()
 		var voice [syncSymbols]int8
 		syncSyms(v, &voice)
 		var mp float32
@@ -102,24 +76,16 @@ func deriveDSP() *dspTables {
 		}
 		mp /= syncSymbols
 		t.syms8[i], t.mean[i] = voice, mp
-		for k, a := range voice {
-			t.dev[i][k] = float32(a) - mp
-			t.devSq[i] += t.dev[i][k] * t.dev[i][k]
-			if t.dev[i][k] > 0 {
-				t.signs[i] |= 1 << (syncSymbols - 1 - k)
-			}
-		}
-		for row, dec := range []int{1, 2} {
-			t.syncTemplates(row, dec, i, &voice)
+		for _, a := range voice {
+			d := float32(a) - mp
+			t.devSq[i] += d * d
 		}
 	}
-	t.patterns[2*numSources] = enums.SyncMSSourcedRC
 	for row := range 2 {
 		sps := samplesPerSy / (row + 1)
 		taps := rrcTapsAt(float64(sps))
 		for i, v := range taps {
 			t.pulse[row][i+1] = t.pulse[row][i] + v
-			t.pulse32[row][i+1] = float32(t.pulse[row][i+1])
 		}
 	}
 	for row, np := range []int{phaseStates, 52} {
@@ -129,27 +95,6 @@ func deriveDSP() *dspTables {
 		}
 	}
 	return t
-}
-
-func (t *dspTables) syncTemplates(row, dec, src int, voice *[syncSymbols]int8) {
-	sps, span := samplesPerSy/dec, syncSpan/dec
-	syms := make([]int, syncSymbols)
-	for k, a := range voice {
-		syms[k] = int(a)
-	}
-	ph := refPhase(syms, sps, 0.27)
-	tpl := make([]complex64, span)
-	for j := range span {
-		p := ph[syncEdge*sps+j]
-		tpl[j] = complex(float32(math.Cos(p)), float32(-math.Sin(p)))
-	}
-	for fi := range searchFreqs {
-		f := searchHzAt(fi)
-		for j := range span {
-			p := -2 * math.Pi * f * float64(j*dec) / basebandRate
-			t.templates[row][fi*numSources+src][j] = tpl[j] * complex(float32(math.Cos(p)), float32(math.Sin(p)))
-		}
-	}
 }
 
 func rrcTapsAt(sps float64) []float64 {
@@ -179,38 +124,6 @@ func rrcPulse(t float64) float64 {
 	}
 	return (math.Sin(math.Pi*t*(1-rrcAlpha)) + 4*rrcAlpha*t*math.Cos(math.Pi*t*(1+rrcAlpha))) /
 		(math.Pi * t * (1 - (4*rrcAlpha*t)*(4*rrcAlpha*t)))
-}
-
-func refPhase(syms []int, sps int, h float64) []float64 {
-	taps := rrcTapsAt(float64(sps))
-	half := len(taps) / 2
-	q := make([]float64, len(taps)+1)
-	for i, v := range taps {
-		q[i+1] = q[i] + v
-	}
-	span := half/sps + 1
-	out := make([]float64, len(syms)*sps)
-	var done float64
-	for k := range syms {
-		if i := k - span - 1; i >= 0 {
-			done += h * math.Pi * float64(syms[i])
-		}
-		for j := range sps {
-			t := k*sps + j - sps/2
-			ph := done
-			for i := max(k-span, 0); i <= min(k+span, len(syms)-1); i++ {
-				idx := t - i*sps + half
-				switch {
-				case idx >= len(taps):
-					ph += h * math.Pi * float64(syms[i])
-				case idx >= 0:
-					ph += h * math.Pi * float64(syms[i]) * q[idx+1]
-				}
-			}
-			out[k*sps+j] = ph
-		}
-	}
-	return out
 }
 
 func kaiserLowpass(n int, fc, beta float64) []float32 {

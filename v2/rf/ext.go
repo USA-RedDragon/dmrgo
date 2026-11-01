@@ -85,13 +85,10 @@ type softExt struct {
 	coh             *cohStage
 	saver           cohSaver
 	ph              *discPhase
-	union           *discUnion
 	ac              *acStage
 	np              *npml
 	qcoh            [extQueue]bool
 	qcore           [extQueue]layer2.RawBurst
-	cur, side       combSide
-	qside           [extQueue]combSide
 	errCore, errCoh float32
 	known           [layer2.BurstBits]bool
 	ext             [layer2.BurstBits]float32
@@ -325,7 +322,6 @@ func (x *softExt) back(c *leanCore, j int64) {
 		x.repairAll(c, b, cc, ccOK)
 		coh := b.Data
 		x.uncoded(b, &x.qcore[i], &coh, false)
-		x.qside[i], x.cur = x.cur, combSide{}
 		if ok && x.bptcRetry(b) {
 			b.Fixed, b.Data = lc, data
 		}
@@ -637,14 +633,12 @@ func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
 	}
 	i := (x.head + x.n) % extQueue
 	x.q[i], x.held[i], x.qcoh[i] = *b, hold, false
-	x.qside[i], x.cur = x.cur, combSide{}
 	x.n++
 	return i
 }
 
 func (x *softExt) drain(c *leanCore, one bool, keep int) {
 	for x.n > keep && !x.held[x.head] && !c.unproven {
-		x.side = x.qside[x.head]
 		c.emit(&x.q[x.head])
 		x.head = (x.head + 1) % extQueue
 		x.n--
@@ -1177,16 +1171,10 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 			x.errCoh += extErrGain * (float32(nCoh[i]) - x.errCoh)
 		}
 	}
-	x.cur.coreC2 = 0
 	for i := range layer2.VoiceSlotsPerBurst {
-		x.cur.coreN[i] = 255
-		if n := nCore[i]; n >= 0 && n < 255 {
-			x.cur.coreN[i] = uint8(n)
-		}
 		if !x.coreCleaner() || nCore[i] > nCoh[i] {
 			continue
 		}
-		x.cur.coreC2 |= 1 << i
 		for _, p := range &softAMBEC2Pos[i] {
 			q, m := p/8, byte(0x80)>>(p%8)
 			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m

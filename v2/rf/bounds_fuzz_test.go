@@ -56,7 +56,7 @@ func runDiscBounds(t *testing.T, audio map[int][]int16, sel, tier byte, cuts []b
 	if err := ro.Flush(); err != nil {
 		t.Fatal(err)
 	}
-	if len(dst) > most || seen-before > most || most > 26+r.unionBacklog() {
+	if len(dst) > most || seen-before > most || most > 26 {
 		t.Fatalf("%d Hz: flush gave %d and %d bursts, bound %d", hz, len(dst), seen-before, most)
 	}
 	if total += len(dst); seen != total {

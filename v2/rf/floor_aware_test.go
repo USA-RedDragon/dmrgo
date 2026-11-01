@@ -122,7 +122,7 @@ func (e *floorEval) awareAMBE(i, f int, pos ...[]int16) vocoder.AMBEFrame {
 	out := e.truth[i].burst
 	d.decodeAMBE(&e.llr, &out)
 	var pri, lapp [softBurstBits]float32
-	w := tierOptions(Tier3).RefinePrior
+	const w = 7
 	sl := softAMBESlot(f)
 	for _, ps := range [][]int16{sl.id0.bits(), sl.id1.bits()} {
 		for _, p := range ps {

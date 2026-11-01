@@ -11,7 +11,7 @@ func TestSignsMatch(t *testing.T) {
 	rng := rand.New(rand.NewPCG(5, 6))
 	match := func(r *leanCore, s uint32) (bool, int, bool) {
 		for i := range int(r.sources) {
-			m := bits.OnesCount32((s ^ syncSigns[i]) & (1<<syncSymbols - 1))
+			m := bits.OnesCount32((s ^ testSyncSigns[i]) & (1<<syncSymbols - 1))
 			switch {
 			case m <= int(r.signMiss):
 				return true, i, false
@@ -27,7 +27,7 @@ func TestSignsMatch(t *testing.T) {
 		for _, s := range []*uint32{&a, &b} {
 			*s = rng.Uint32() & (1<<syncSymbols - 1)
 			if r.sources > 0 && rng.IntN(2) == 0 {
-				*s = syncSigns[rng.IntN(int(r.sources))]
+				*s = testSyncSigns[rng.IntN(int(r.sources))]
 				if rng.IntN(2) == 0 {
 					*s = ^*s & (1<<syncSymbols - 1)
 				}
@@ -47,3 +47,14 @@ func TestSignsMatch(t *testing.T) {
 		}
 	}
 }
+
+var testSyncSigns = func() (s [numSources]uint32) {
+	for i := range s {
+		for k, a := range syncSyms8[i] {
+			if float32(a) > syncMean[i] {
+				s[i] |= 1 << (syncSymbols - 1 - k)
+			}
+		}
+	}
+	return s
+}()

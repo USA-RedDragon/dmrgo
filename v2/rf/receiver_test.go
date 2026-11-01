@@ -256,29 +256,6 @@ func BenchmarkReceiver(b *testing.B) {
 	}
 }
 
-func TestReceiverWithoutWarmUp(t *testing.T) {
-	t.Parallel()
-	cfg := testConfig()
-	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
-	built, err := rftx.Sequence("voice", cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	x := noisyBaseband(built.Slots, 1200, 20, 5)
-	o := tierOptions(Tier3)
-	o.WarmUp = false
-	r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
-	var got []Burst
-	for k := 0; k < len(x); k += 4096 {
-		got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
-	}
-	got = append(got, r.flushAll()...)
-	exact, total := exactFrames(built.Slots, got)
-	if exact < total*9/10 {
-		t.Errorf("%d of %d frames exact", exact, total)
-	}
-}
-
 func TestReceiverKeyUp(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
@@ -417,44 +394,6 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 				t.Errorf("%d of %d frames with C0 and C1 exact", exact, total)
 			}
 		})
-	}
-}
-
-func TestReceiverTwoPass(t *testing.T) {
-	t.Parallel()
-	d := directShared(t)
-	o := tierOptions(Tier3)
-	o.TwoPass = false
-	seeds := testmode.N(6, 6, 2)
-	ones, twos := make([]*benchScore, seeds), make([]*benchScore, seeds)
-	var wg sync.WaitGroup
-	for seed := range seeds {
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
-			x := d.inputAt200[seed]()
-			r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
-			var got []Burst
-			for k := 0; k < len(x); k += 4096 {
-				got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
-			}
-			ones[seed] = scoreMS(d.truth, append(got, r.flushAll()...))["ambe_c0c1"]
-		}()
-		go func() {
-			defer wg.Done()
-			twos[seed] = scoreMS(d.truth, slices.Clone(d.tier3At200[seed]()))["ambe_c0c1"]
-		}()
-	}
-	wg.Wait()
-	var one, two, total int
-	for seed := range seeds {
-		one += ones[seed].Exact
-		two += twos[seed].Exact
-		total += twos[seed].Truth
-	}
-	t.Logf("%d of %d frames with C0 and C1 exact, %d in one pass", two, total, one)
-	if two < total || two <= one {
-		t.Errorf("%d of %d frames with C0 and C1 exact, %d in one pass", two, total, one)
 	}
 }
 

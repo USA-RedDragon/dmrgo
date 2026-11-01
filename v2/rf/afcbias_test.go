@@ -26,10 +26,7 @@ func lockNCOOf(iq []byte, r *Receiver, rate int) (atLock, after float64, ok bool
 	h := r.host()
 	step := 2 * rate / 100
 	nco := func() (float64, bool) {
-		if h.iqd != nil {
-			return float64(h.iqd.conv.hz), h.iqd.d.locked
-		}
-		return h.e.chz.ncoHz, h.e.locked
+		return float64(h.iqd.conv.hz), h.iqd.d.locked
 	}
 	var bs []Burst
 	lockAt := -1
