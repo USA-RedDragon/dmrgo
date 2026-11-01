@@ -10,7 +10,8 @@
 // The block between the extcmp markers comes from v2/rf/testdata/extcmp.json,
 // which TestExtCompare writes with DMRRF_EXTCMP=full and the paths of dsd-fme
 // and of the host builds of the MMDVM DMO receiver in DMRRF_DSDFME,
-// DMRRF_MMDVM and DMRRF_MMDVMFIX.
+// DMRRF_MMDVM and DMRRF_MMDVMFIX, and extcmp_m4.json holds the Cortex-M4
+// cost of the MMDVM receiver from a QEMU run.
 package main
 
 import (
@@ -37,10 +38,16 @@ const (
 )
 
 const (
+	labelCSBK = "CSBK"
+	labelELC  = "Embedded LC"
+)
+
+const (
 	keyAMBE   = "ambe"
 	keyRate12 = "rate12"
 	keyRate34 = "rate34"
 	keyCSBK   = "csbk"
+	keyELC    = "elc"
 )
 
 type options struct {
@@ -229,7 +236,7 @@ type data struct {
 
 func load(dir string) (data, error) {
 	var d data
-	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings, "rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext} {
+	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings, "rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4} {
 		b, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			return d, err
@@ -250,10 +257,10 @@ func payloadNames() [][2]string {
 		{keyRate12, "Data block, rate 1/2"},
 		{keyRate34, "Data block, rate 3/4"},
 		{"rate1", "Data block, rate 1"},
-		{keyCSBK, "CSBK"},
+		{keyCSBK, labelCSBK},
 		{"lc", "Voice LC header and terminator"},
 		{"header", "Data header"},
-		{"elc", "Embedded LC"},
+		{keyELC, labelELC},
 		{"emb", "EMB"},
 		{"slottype", "Slot type"},
 		{"sync", "SYNC detection"},
@@ -556,7 +563,7 @@ func graphs() []graph {
 	const fer = "Frame error rate"
 	return []graph{
 		{keyAMBE, "Voice frame", fer}, {keyRate12, "Data rate 1/2", fer}, {keyRate34, "Data rate 3/4", fer},
-		{keyCSBK, "CSBK", fer}, {"elc", "Embedded LC", fer}, {"rate1_bit", "Data rate 1 payload bits", "Bit error rate"},
+		{keyCSBK, labelCSBK, fer}, {keyELC, labelELC, fer}, {"rate1_bit", "Data rate 1 payload bits", "Bit error rate"},
 	}
 }
 

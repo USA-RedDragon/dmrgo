@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const extDSDFME = "dsd-fme"
+
 const (
 	extBegin = "<!-- extcmp:begin -->"
 	extEnd   = "<!-- extcmp:end -->"
@@ -59,7 +61,19 @@ type extStream struct {
 	Pairs    []extPair    `json:"pairs"`
 }
 
+type extM4 struct {
+	Compiler    string    `json:"compiler"`
+	Machine     string    `json:"machine"`
+	WorstMHz    float64   `json:"worst_mhz"`
+	CN          []float64 `json:"cn"`
+	StateBytes  int       `json:"state_bytes"`
+	FilterBytes int       `json:"filter_bytes"`
+	StackBytes  int       `json:"stack_bytes"`
+	FlashBytes  int       `json:"flash_bytes"`
+}
+
 type extData struct {
+	m4       extM4
 	Machine  string            `json:"machine"`
 	Versions map[string]string `json:"versions"`
 	Seeds    int               `json:"seeds"`
@@ -70,15 +84,15 @@ type extData struct {
 func extPayloadNames() [][2]string {
 	return [][2]string{
 		{keyAMBE, "Voice"}, {"ambe_c0c1", "Voice C0 C1"}, {keyRate12, "Rate 1/2"}, {keyRate34, "Rate 3/4"},
-		{"rate1", "Rate 1"}, {keyCSBK, "CSBK"}, {"lc", "LC header"}, {"header", "Data header"},
-		{"elc", "Embedded LC"}, {"emb", "EMB"}, {"slottype", "Slot type"},
+		{"rate1", "Rate 1"}, {keyCSBK, labelCSBK}, {"lc", "LC header"}, {"header", "Data header"},
+		{keyELC, labelELC}, {"emb", "EMB"}, {"slottype", "Slot type"},
 	}
 }
 
 func extDecoderName(n string) string {
 	switch n {
-	case "dsd-fme":
-		return "dsd-fme"
+	case extDSDFME:
+		return extDSDFME
 	case "mmdvm":
 		return "MMDVM firmware"
 	case "mmdvm-fixed":
@@ -92,7 +106,7 @@ func extDecoderName(n string) string {
 	return n
 }
 
-func extExternal(n string) bool { return n == "dsd-fme" || strings.HasPrefix(n, "mmdvm") }
+func extExternal(n string) bool { return n == extDSDFME || strings.HasPrefix(n, "mmdvm") }
 
 func extStreamName(s extStream) string {
 	src := "BS outbound, both slots"
@@ -167,7 +181,7 @@ func renderExt(e extData) []byte {
 	}
 	b.WriteString("The tiers and other receivers decode the same noisy signals. Each cell is the Eb/N0 at which the receiver recovers 90% of the frames exactly. Lower is better.\n\n")
 	b.WriteString("- Receivers: ")
-	var vs []string
+	vs := make([]string, 0, len(exts))
 	for _, n := range exts {
 		v := e.Versions[strings.TrimSuffix(n, "-fixed")]
 		vs = append(vs, extDecoderName(n)+" (commit "+v+")")
@@ -176,7 +190,13 @@ func renderExt(e extData) []byte {
 	b.WriteString("- Each point decodes " + strconv.Itoa(e.Seeds) + " noise seeds at each C/N from 0 to 20 dB in steps of 1 dB. Every receiver gets the same seeds.\n")
 	b.WriteString("- The FM audio comes from the discriminator model of the sweep with a " + strconv.Itoa(e.IFTaps) + "-tap IF filter: a Kaiser-windowed sinc with its -6 dB point at 6 kHz and at least 84 dB of attenuation from 7.5 kHz, as the IF of a 12.5 kHz radio. The audio tiers get it at 9.6 kHz, dsd-fme at 48 kHz and the MMDVM firmware at 24 kHz, with the DC offset of the carrier and no other.\n")
 	b.WriteString("- dsd-fme decodes from `-fs -i - -o null -Z`. Its voice frames come from its AMBE+2 printout and its data blocks from one print line added after its FEC, which changes no decision. A frame counts when it equals the next frame of the truth in order. The MMDVM firmware is its DMO receiver (`DMRDMORX.cpp`) on the host with the 0.2 RRC filter of `IO.cpp`, and its burst bits go through the FEC of dmrgo. The tiers and the MMDVM firmware count a frame only at its own slot.\n")
-	b.WriteString("- The MMDVM DMO receiver takes each burst one sample before its last symbol arrives. `DMRDMORX.cpp` sets the end at `m_endPtr = m_dataPtr + DMR_SLOT_TYPE_LENGTH_SAMPLES / 2U + DMR_INFO_LENGTH_SAMPLES / 2U - 1U` (lines 327 and 358), 269 samples after the last SYNC symbol, but the last symbol of the burst is 270 samples after it, and `samplesToBits` reads it from `m_endPtr + DMO_BUFFER_LENGTH_SAMPLES - DMR_FRAME_LENGTH_SAMPLES + DMR_RADIO_SYMBOL_LENGTH + 1U` (line 126) on, which reaches the sample of 60 ms before. So the last two bits of every burst are random, and its voice and rate 3/4 cells do not reach 90% at any C/N. The second MMDVM row drops the `- 1U` and the `+ 1U`. Only MS bursts carry the SYNC patterns that the MMDVM DMO receiver looks for.\n\n")
+	b.WriteString("- The MMDVM DMO receiver takes each burst one sample before its last symbol arrives. `DMRDMORX.cpp` sets the end at `m_endPtr = m_dataPtr + DMR_SLOT_TYPE_LENGTH_SAMPLES / 2U + DMR_INFO_LENGTH_SAMPLES / 2U - 1U` (lines 327 and 358), 269 samples after the last SYNC symbol, but the last symbol of the burst is 270 samples after it, and `samplesToBits` reads it from `m_endPtr + DMO_BUFFER_LENGTH_SAMPLES - DMR_FRAME_LENGTH_SAMPLES + DMR_RADIO_SYMBOL_LENGTH + 1U` (line 126) on, which reaches the sample of 60 ms before. So the last two bits of every burst are random, and its voice and rate 3/4 cells do not reach 90% at any C/N. The second MMDVM row drops the `- 1U` and the `+ 1U`. Only MS bursts carry the SYNC patterns that the MMDVM DMO receiver looks for.\n")
+	m := e.m4
+	cns := make([]string, 0, len(m.CN))
+	for _, c := range m.CN {
+		cns = append(cns, f1(c))
+	}
+	b.WriteString("- On a Cortex-M4F the MMDVM DMO receiver with its RRC filter (`arm_fir_fast_q15` of CMSIS-DSP in blocks of 2 samples, as `IO.cpp` runs it), built with " + m.Compiler + " and run in " + m.Machine + " on the MS stream at C/N " + strings.Join(cns, " and ") + " dB, needs up to " + f1(m.WorstMHz) + " MHz by the cycle model of the Tier 0 numbers, " + grouped(int64(m.StateBytes+m.FilterBytes+m.StackBytes)) + " B of RAM (" + grouped(int64(m.StateBytes)) + " B of receiver state, " + strconv.Itoa(m.FilterBytes) + " B of filter state and " + strconv.Itoa(m.StackBytes) + " B of stack) and " + grouped(int64(m.FlashBytes)) + " B of flash.\n\n")
 	for _, s := range e.Streams {
 		b.WriteString("#### " + extStreamName(s) + "\n\n")
 		b.WriteString("| Receiver |")
