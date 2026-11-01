@@ -225,6 +225,8 @@ func renderTxDoc(t testing.TB, margins map[string]map[string]float64) string {
 		}
 		b.WriteString("\n")
 	}
+	writeMethods(&b)
+	writeUnmeasured(&b)
 	b.WriteString("## Measured margins\n\n")
 	b.WriteString("Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A positive value is inside the limit. A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, the far out rows of the FCC masks and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.\n\n")
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
@@ -340,4 +342,46 @@ func TestTxDoc(t *testing.T) {
 	if got := string(doc[i : j+len(txDocEnd)]); got != want {
 		t.Errorf("the tables of %s differ from minrate_gen.go and %s; run go test ./internal/fsktx -run TestTxDoc -update-txdoc in v2", txDocFile, txMarginsFile)
 	}
+}
+
+func writeMethods(b *strings.Builder) {
+	b.WriteString("## Methods of the limits\n\n")
+	var bands []string
+	for i, x := range enSpurBands {
+		from := khz(int(x.from)) + " kHz"
+		switch {
+		case i == 0:
+			bands = append(bands, fmt.Sprintf("in %s kHz from %s from the carrier (250%% of the 12.5 kHz channel separation)", khz(int(x.rbw)), from))
+		case math.IsInf(x.to, 1):
+			bands = append(bands, fmt.Sprintf("in %s kHz beyond %s", khz(int(x.rbw)), from))
+		default:
+			bands = append(bands, fmt.Sprintf("in %s kHz from %s", khz(int(x.rbw)), from))
+		}
+	}
+	fmt.Fprintf(b, "- Spurious emissions of EN 300 113 and EN 303 405: the power %s, the reference bandwidths of EN 300 113 V2.2.1 tables 6a and 6b and EN 303 405 V1.1.1 tables 5b and 5c. The other spurious domain rows take the mean power in 100 kHz.\n", strings.Join(bands, ", "))
+	fmt.Fprintf(b, "- Emission Mask H and the EA mask: 47 CFR 90.210 table note 6 puts digital emissions at 806-809/851-854 MHz under Mask H, and table note 3 puts 809-824/854-869 MHz under 90.691. Neither section states a method, so both take that of Mask D in 90.210(d)(4): a reference in 30 kHz, and each emission in a 100 Hz resolution bandwidth with peak hold, from %s kHz for Mask H and %s kHz for the EA mask out to %s kHz, then the mean power in 100 kHz, after 90.210(o). The 90.691(a)(1) limit holds out to %d kHz from the carrier: 37.5 kHz past the edge of the block, which is 12.5 kHz from the carrier of a 25 kHz channel, the stricter case.\n", khz(maskhFromHz), khz(eaFromHz), khz(maskNearHz), eaEdgeKHz)
+	us := Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsLandMobile, Power: PowerClass(30)}
+	lp := us
+	lp.InputLowpassHz = lowpass8k
+	fmt.Fprintf(b, "  With Mask H and the EA mask, US land mobile audio at 30 dBm needs an input low pass for 24 kHz: Tier 0 at 16 bits takes %s kHz with no `InputLowpassHz` and %s kHz with %d Hz.\n", khz(us.MinRate()), khz(lp.MinRate()), lowpass8k)
+	b.WriteString("\n")
+}
+
+func writeUnmeasured(b *strings.Builder) {
+	pw := powerBreakpoints()
+	b.WriteString("## Setups without a measurement\n\n")
+	b.WriteString("No measurement covers these setups, so the transmitter refuses them:\n\n")
+	fmt.Fprintf(b, "- Audio over %s kHz and I/Q over %s MHz, the tops of the measured grids.\n", khz(audioRateTop), strconv.FormatFloat(float64(iqRateTop)/1e6, 'f', -1, 64))
+	fmt.Fprintf(b, "- A `Power` over %d dBm, the top breakpoint.\n", pw[len(pw)-1])
+	b.WriteString("- `AudioTxConfig.PreEmphasis` at Tier 1 and Tier 2, and at Tier 0 at a rate other than 48 kHz. The grid measures pre-emphasis for Tier 0 at 48 kHz only.\n")
+	b.WriteString("- An `AudioTxConfig.Level` under the level that the grid measures for `Bits`.\n")
+	b.WriteString("- Tier 3, which has no modulator.\n\n")
+	join := func(v []int) string {
+		s := make([]string, len(v))
+		for i, x := range v {
+			s[i] = strconv.Itoa(x)
+		}
+		return strings.Join(s[:len(s)-1], ", ") + " and " + s[len(s)-1]
+	}
+	fmt.Fprintf(b, "A setup between measured ones takes the nearest measured setup that is not looser: a power takes the next breakpoint up, a depth of `Bits` between %s takes the next lower depth, and an input low pass between the cutoffs %s Hz takes the next looser cutoff, or none.\n\n", join(audioBitClasses), join(inputLowpassGrid[1:]))
 }

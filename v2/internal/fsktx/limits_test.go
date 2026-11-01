@@ -195,7 +195,12 @@ func maskhAttn(fd, pw float64) float64 {
 	return 43 + 10*math.Log10(pw)
 }
 
-const eaEdgeKHz = 50
+const (
+	maskNearHz  = 56250
+	maskhFromHz = 4000
+	eaFromHz    = 12500
+	eaEdgeKHz   = 50
+)
 
 // 47 CFR 90.691(a)
 func eaAttn(fd, pw float64) float64 {
@@ -295,12 +300,12 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 		}
 	}
 	out["maskd_ref_db"] = dbOf(ref / pc)
-	hi := min(56250, rate/2-200)
+	hi := min(maskNearHz, rate/2-200)
 	for _, pw := range limPowers {
 		md, mh, me := math.Inf(1), math.Inf(1), math.Inf(1)
 		for i, f := range s.f {
 			a := math.Abs(f)
-			if a < 4000 || a > hi {
+			if a < maskhFromHz || a > hi {
 				continue
 			}
 			r := dbOf(ref/pc) - dbOf(s.peak[i])
@@ -308,7 +313,7 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 			if a >= 5625 {
 				md = min(md, r-maskdAttn(f, wattsOf(pw)))
 			}
-			if a > 12500 {
+			if a > eaFromHz {
 				me = min(me, r-eaAttn(f, wattsOf(pw)))
 			}
 		}
@@ -406,7 +411,7 @@ func itoa(v int) string {
 var farLimits = []struct {
 	nm string
 	lo float64
-}{{"fcc", 56250}, {"erc", 62500}, {"us97", 19000}, {"sp", 28750}}
+}{{"fcc", maskNearHz}, {"erc", 62500}, {"us97", 19000}, {"sp", 28750}}
 
 // FCC 90.210(d)(3); ERC/REC 74-01 Annex 6; ETSI EN 300 113 clause 7.5; FCC 97.307(e); Japan Radio Equipment Regulations Appendix 3
 func limFar(x []complex128, rate float64) map[string]float64 {
@@ -467,16 +472,19 @@ func limFar(x []complex128, rate float64) map[string]float64 {
 	return out
 }
 
+const enSpurLoHz = 2.5 * 12500
+
 // ETSI EN 300 113 V2.2.1 clause 7.5.4 tables 6a and 6b; ETSI EN 303 405 V1.1.1 clause 7.5.3 tables 5b and 5c
+var enSpurBands = []struct{ from, to, rbw, step float64 }{
+	{enSpurLoHz, 100000, 1000, 250}, {100000, 500000, 10000, 2500}, {500000, math.Inf(1), 100000, 25000},
+}
+
 func enSpur(sum func(lo, hi float64) float64, rate float64) (float64, bool) {
-	const lo = 2.5 * 12500
-	if lo+500 > rate/2 {
+	if enSpurLoHz+500 > rate/2 {
 		return 0, false
 	}
 	var best float64
-	for _, b := range []struct{ from, to, rbw, step float64 }{
-		{lo, 100000, 1000, 250}, {100000, 500000, 10000, 2500}, {500000, math.Inf(1), 100000, 25000},
-	} {
+	for _, b := range enSpurBands {
 		for f := b.from; f < b.to && f+b.rbw/2 <= rate/2; f += b.step {
 			best = max(best, sum(f-b.rbw/2, f+b.rbw/2), sum(-f-b.rbw/2, -f+b.rbw/2))
 		}
