@@ -40,6 +40,9 @@ type Master struct {
 	tok       [32]byte
 	asked     bool
 	timeoutAt time.Duration
+	held      bool
+	heldN     int
+	heldText  [MaxPacket]byte
 	noCopy    noCopy
 }
 
@@ -91,7 +94,7 @@ func (m *Master) Reset() {
 		return
 	}
 
-	m.state, m.id, m.salt, m.tok, m.asked = StateIdle, 0, 0, [32]byte{}, false
+	m.state, m.id, m.salt, m.tok, m.asked, m.held = StateIdle, 0, 0, [32]byte{}, false, false
 }
 
 // Deadline returns the time at which the Master needs a Tick. ok is false
@@ -144,7 +147,7 @@ func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
 	if m.state != StateIdle {
 		dst = m.down(dst, ReasonLogin)
 	}
-	m.id, m.state, m.tok, m.asked, m.timeoutAt = id, StateRunning, [32]byte{}, false, after(now, m.timeout)
+	m.id, m.state, m.tok, m.asked, m.held, m.timeoutAt = id, StateRunning, [32]byte{}, false, false, after(now, m.timeout)
 	return append(dst, Output{Kind: OutputUp, ID: id})
 }
 
@@ -170,9 +173,12 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 }
 
 // Accept answers the RPTC of OutputConfig with an acknowledgement. In
-// StateConfig it completes the login with OutputUp and starts Timeout;
-// after LoginTimeout it ends the session with OutputDown and ReasonTimeout
-// instead, as Tick does. It does nothing when no RPTC waits for an answer.
+// StateConfig it completes the login with OutputUp and starts Timeout,
+// and reports the last RPTO that the repeater sent in StateConfig with
+// OutputOptions, whose packet points into the Master and is valid until
+// the next call of the Master; the one acknowledgement answers both
+// the RPTC and that RPTO. After LoginTimeout it ends the session with
+// OutputDown and ReasonTimeout instead, as Tick does. It does nothing when no RPTC waits for an answer.
 // It allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Accept(now time.Duration, dst []Output) []Output {
 	if m == nil {
@@ -190,6 +196,10 @@ func (m *Master) Accept(now time.Duration, dst []Output) []Output {
 	if m.state == StateConfig {
 		m.state, m.tok, m.timeoutAt = StateRunning, [32]byte{}, after(now, m.timeout)
 		dst = append(dst, Output{Kind: OutputUp, ID: m.id})
+		if m.held {
+			m.held = false
+			dst = append(dst, Output{Kind: OutputOptions, Packet: m.heldText[:m.heldN], ID: m.id})
+		}
 	}
 	return dst
 }
@@ -227,7 +237,7 @@ func (m *Master) Close(now time.Duration, dst []Output) []Output {
 
 func (m *Master) down(dst []Output, r Reason) []Output {
 	dst = append(dst, Output{Kind: OutputDown, ID: m.id, Reason: r, State: m.state})
-	m.state, m.tok, m.asked = StateIdle, [32]byte{}, false
+	m.state, m.tok, m.asked, m.held = StateIdle, [32]byte{}, false, false
 	return dst
 }
 
@@ -260,8 +270,16 @@ func (m *Master) nak(dst []Output, id uint32) []Output {
 // ping gets a pong and OutputPong, an RPTCL ends the session with ReasonClosed, and
 // DMRD, DMRA, DMRG, RPTG, RPTRSSI and RPTINTR are passed on. A packet of
 // a step that the session has not reached gets MSTNAK, as the HBRP
-// specification says for a repeater that is not logged in. Each packet
-// that the Master takes restarts Timeout. It allocates only when dst has
+// specification says for a repeater that is not logged in. The exception
+// is StateConfig: an acknowledgement does not name the step that it
+// acknowledges, so a repeater that sent its RPTK again, as MMDVMHost and
+// DMRGateway do when the acknowledgement is late, takes the second
+// acknowledgement of the RPTK as the one of its RPTC and goes on as
+// logged in. In StateConfig the Master therefore drops a ping, DMRD,
+// DMRA, DMRG, RPTG, RPTRSSI and RPTINTR of the ID without an answer, and
+// keeps the text of an RPTO of the ID for Accept. These packets do not
+// restart LoginTimeout. Each other packet that the Master takes restarts
+// Timeout. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
 	if m == nil {
@@ -284,6 +302,9 @@ func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
 			return dst
 		}
 		id, _ := dmrd.RepeaterID(b, m.dialect)
+		if m.state == StateConfig && id == m.id {
+			return dst
+		}
 		if m.state != StateRunning || id != m.id {
 			return m.nak(dst, id)
 		}
@@ -339,6 +360,12 @@ func (m *Master) token(b []byte, dst []Output) []Output {
 func (m *Master) running(now time.Duration, b []byte, c dmrd.Command, dst []Output) []Output {
 	k, err := dmrd.DecodeControl(b, m.dialect)
 	if err != nil {
+		return dst
+	}
+	if m.state == StateConfig && k.ID == m.id {
+		if c == dmrd.CommandRPTO {
+			m.held, m.heldN = true, copy(m.heldText[:], k.Text)
+		}
 		return dst
 	}
 	if m.state != StateRunning || k.ID != m.id {

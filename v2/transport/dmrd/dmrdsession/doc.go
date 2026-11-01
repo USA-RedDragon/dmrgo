@@ -14,7 +14,8 @@
 // is valid until the next call of the machine. The packet of OutputConfig,
 // OutputOptions, OutputData and OutputMessage is not a copy: it points
 // into the packet that the caller passed in, and is valid only until the
-// caller reuses that packet.
+// caller reuses that packet. The one exception is the OutputOptions of
+// Master.Accept, which points into the Master as an OutputSend does.
 //
 // The Peer follows DMRGateway: it sends RPTL, RPTK with the SHA-256 token
 // of the salt and the password, RPTC and, when it has options, RPTO, each
@@ -27,6 +28,15 @@
 // answers a packet from a repeater that is not logged in with MSTNAK, and
 // ends the session when the login does not finish within LoginTimeout of
 // the first RPTL, and after Timeout without a packet once it is logged in.
+//
+// An acknowledgement does not name the step that it acknowledges. A
+// repeater that sends its RPTK again because the acknowledgement is late
+// gets two, takes the second as the acknowledgement of its RPTC, and
+// sends its RPTO, pings and traffic before the consumer calls Accept.
+// The Peer, MMDVMHost and DMRGateway all do this. While it waits for
+// Accept, the Master drops those packets of the repeater without MSTNAK,
+// keeps the RPTO text, and reports it after OutputUp, so the login of the
+// repeater does not fail.
 //
 // (DMRGateway ee79d38 DMRNetwork.cpp clock; MMDVMHost 7008c62
 // DMRDirectNetwork.cpp clock; DL5DI, G4KLX and DG1HT, IPSC Protocol Specs

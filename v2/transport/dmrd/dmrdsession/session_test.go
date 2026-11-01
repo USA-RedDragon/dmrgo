@@ -409,7 +409,7 @@ func TestMasterLogin(t *testing.T) {
 			t.Fatalf("token %v", kinds(out))
 		}
 	}
-	if !nak(m.Packet(3*s, mmdvmConfig(6), nil)) || !nak(m.Packet(3*s, ctl(dmrd.CommandRPTPING, 5), nil)) {
+	if !nak(m.Packet(3*s, mmdvmConfig(6), nil)) || len(m.Packet(3*s, ctl(dmrd.CommandRPTPING, 5), nil)) != 0 {
 		t.Fatal("config of another ID or ping before config")
 	}
 	if out := m.Accept(4*s, nil); len(out) != 0 {

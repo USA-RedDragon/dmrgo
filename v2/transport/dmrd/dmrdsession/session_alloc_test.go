@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
 
@@ -60,5 +61,24 @@ func TestAllocsSession(t *testing.T) {
 	}
 	if n := allocstest.PerRun(t, 100, run); n != 0 {
 		t.Fatalf("%v allocations", n)
+	}
+	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 7, pass)
+	early := [][]byte{ctl(dmrd.CommandRPTL, 1234), rptk(1234, tok), rptk(1234, tok), mmdvmConfig(1234), ctl(dmrd.CommandRPTPING, 1234), append(ctl(dmrd.CommandRPTO, 1234), "X=1"...), data}
+	repeated := func() {
+		m.Reset()
+		for _, b := range early {
+			mo = m.Packet(now, b, mo[:0])
+			if m.State() == dmrdsession.StateLogin {
+				mo = m.Admit(now, 7, pass, mo[:0])
+			}
+		}
+		mo = m.Accept(now, mo[:0])
+	}
+	repeated()
+	if len(mo) != 3 || mo[2].Kind != dmrdsession.OutputOptions || m.State() != dmrdsession.StateRunning {
+		t.Fatalf("repeated RPTK %v %v", kinds(mo), m.State())
+	}
+	if n := allocstest.PerRun(t, 100, repeated); n != 0 {
+		t.Fatalf("%v allocations after a repeated RPTK", n)
 	}
 }

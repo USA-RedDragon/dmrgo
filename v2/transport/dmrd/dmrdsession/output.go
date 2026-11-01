@@ -60,7 +60,8 @@ const (
 	// Master.Refuse.
 	OutputConfig
 	// OutputOptions reports the RPTO options text that the Master
-	// accepted, in Output.Packet.
+	// accepted, in Output.Packet. Master.Accept reports the RPTO that
+	// the repeater sent before Accept, from a copy in the Master.
 	OutputOptions
 	// OutputData is a DMRD, DMRA or DMRG packet, or for a Bridge a DMRD or
 	// DMRE packet with a good signature, in Output.Packet, with its
