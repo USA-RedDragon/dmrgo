@@ -1,16 +1,22 @@
 # Transmitter
 
-Package `rf` turns DMR bursts into a signal for a radio. `Transmitter` makes I/Q for a software radio, and `AudioTransmitter` makes the deviation signal that drives the modulator input of an FM radio. Three tiers trade CPU and memory for the accuracy of the signal, from a microcontroller to a PC. Each transmitter checks its setup against the emission limits of the region, service and power that it states, and refuses a setup that no measurement shows to keep them with margin. The library makes no compliance claim. It only keeps its signal from being the cause of a failure of the limits that it measured. [v2/examples/txiq](../../v2/examples/txiq/main.go) and [v2/examples/txaudio](../../v2/examples/txaudio/main.go) are example programs for each.
+<!-- rfparams:tx-intro:begin -->
+Package rf recovers DMR bursts from the I/Q samples of a software radio and from the output of an FM discriminator: 4FSK detection, SYNC search and slot timing, soft-decision decoding of each FEC field, and the superframe position of voice bursts. It also turns bursts back into I/Q samples and into the deviation signal of an FM radio.
+
+The transmit side mirrors it. NewTransmitter makes a Transmitter from a TxConfig and NewAudioTransmitter an AudioTransmitter from an AudioTxConfig, with the same Tier, Rate, Format, Bits and Unsigned fields, Init for Tier0 in memory of the caller, and the same modes: OnSamples set for Write and Flush, nil for AppendSamples and AppendFlush. A transmitter takes bursts and gives samples. Its Region, Service and Power state the regulatory limits that the signal must keep, and a setup that no measurement shows to keep them with margin gets a *RegionError: the library makes no claim that a station complies, only that a setup it accepts does not make its signal the cause of a failure of the limits it measured.
+<!-- rfparams:tx-intro:end -->
 
 ## Features
 
-- Two outputs: I/Q in the formats CU8, CS8, CS16 and CF32 of the receiver, and audio as codes of a converter, signed or offset binary (`Unsigned`).
-- Three tiers. Tier 0 runs on a Cortex-M4F from tables in flash, with no heap. Tier 1 and Tier 2 shape the pulses in float32 and float64.
-- Root raised cosine pulse shaping and 4FSK at the deviation of ETSI TS 102 361-1.
-- BS and MS bursts on the TDMA slot grid, with the power ramps of an MS burst in its guard time.
-- Emission limit checks for land mobile service in the US, CEPT, China and Japan, and for amateur service in the US and CEPT, at the power classes of [Limits](#limits).
-- Settings for the low pass and the pre-emphasis of the modulator input of a radio.
-- Stream mode with a callback, or append mode into a slice of the caller. `Init` sets up Tier 0 in memory of the caller and does not allocate.
+<!-- rfparams:tx-features:begin -->
+- `Transmitter`: Transmitter turns DMR bursts into I/Q samples for a software radio: 4FSK on a carrier, with the power ramps of TDMA bursts. It reads the bits of each Burst from Decoded, with its CACH when HasCACH, and places it on the 30 ms slot grid by Stream and Slot. A BS-sourced burst keeps the carrier up into the next slot; any other burst is an MS burst, with the power ramps in its guard time. A gap of one slot within a Stream is an idle slot with the carrier down, as an MS on one TDMA channel sends. A new Stream, or a gap of more than one slot, keys down, and the next burst keys up at once: the time between transmissions is the caller's. The transmitter ignores Seconds, Distance, Sync and Voice. Make it with NewTransmitter, or set it up with Init in memory of the caller. A Transmitter is not safe for concurrent use, and it must not be copied after Init or NewTransmitter.
+- `AudioTransmitter`: AudioTransmitter turns DMR bursts into the deviation signal that drives the modulator input of an FM radio, as the radio chips of hotspots and MMDVM modems take it: codes of a converter, with the CACH of BS-sourced bursts and the guard time of MS bursts as a Transmitter places them. Active is the push-to-talk of the radio. Make it with NewAudioTransmitter, or set it up with Init in memory of the caller. An AudioTransmitter is not safe for concurrent use, and it must not be copied after Init or NewAudioTransmitter.
+- `PreEmphasis`: A PreEmphasis is the Tier0 modulator of an AudioTransmitter for a radio that pre-emphasizes its modulator input from 300 Hz to 3 kHz, which AudioTxConfig.PreEmphasis takes. The zero PreEmphasis is not set up: Init sets it up in memory of the caller, such as a package variable, and NewPreEmphasis allocates one. A program that sets up none links none of its code or tables. It holds the state of the modulator, so each AudioTransmitter takes a PreEmphasis of its own.
+- `RegionError`: RegionError is the error of a transmitter setup that the Region, Service and Power do not allow, or that no measurement shows to keep their limits. Each such error has one static RegionError, so a call that fails does not allocate. Match it with errors.As.
+- `ErrBurstOrder`: ErrBurstOrder is the error of Write on a transmitter for a burst whose Slot does not increase within its Stream.
+- `ErrBurstService`: ErrBurstService is the error of Write on a transmitter of the license-free service for a BS-sourced burst: the service allows no base station or repeater.
+- `ErrTxTimeout`: ErrTxTimeout is the error of Write on a transmitter of the license-free service for a burst that would carry one transmission past 179 s. The transmitter keys down, and returns ErrTxTimeout for the rest of the Stream; a new Stream starts a new transmission.
+<!-- rfparams:tx-features:end -->
 
 ## Key specifications
 
@@ -50,29 +56,58 @@ Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 ### Formats and rates
 
 <!-- rfparams:tx-formats:begin -->
-| Tier | Modulator | I/Q rates | Audio rates |
-| --- | --- | --- | --- |
-| Tier 0 | Fixed-point multiply and accumulate over tables in flash, for a microcontroller. The default of `Init` and of TinyGo builds. | 96 kHz | 24 and 48 kHz |
-| Tier 1 | Pulse shaping in float32, I/Q from an interpolated cosine table. The default of `NewTransmitter` and `NewAudioTransmitter`. | 48 kHz to 20 MHz, 2.4 MHz by default | 8 kHz to 96 kHz, 48 kHz by default |
-| Tier 2 | Pulse shaping in float64 over a longer span than Tier 1, I/Q from float64 sine and cosine. | as Tier 1 | as Tier 1 |
+| Tier | I/Q rates | Audio rates |
+| --- | --- | --- |
+| Tier 0 | 96 kHz | 24 and 48 kHz |
+| Tier 1, Tier 2 | 48 kHz to 20 MHz, 2.4 MHz by default | 8 kHz to 96 kHz, 48 kHz by default |
 
-Tier 3 has no modulator of its own, and both constructors return a `*dmrgo.ConfigError` for it.
+Under 62.5 kHz, I/Q puts the image of the main lobe within two channels of the carrier, and the limits do not accept it. Tier 1 and Tier 2 make audio at 8000, 11025, 16000, 22050, 32000, 44100, 48000 and 96000 Hz, among other rates. The deviation of a run of symbol +3 is 1944 Hz.
 
-- `TxConfig.Rate` 0 is 2.4 MHz. Tier 0 makes 96 kHz only, to stay in the CPU budget of the tier.
-- I/Q under 62.5 kHz puts the image of the main lobe within two channels of the carrier, where no limit can count on a filter of the radio. The limits do not accept it.
-- `TxConfig.OffsetHz` moves the carrier from the center of the I/Q. It must be under `Rate`/4 in size. Tier 0 rounds it to whole Hz.
-- `AudioTxConfig.Rate` 0 is 48 kHz. Tier 1 and Tier 2 make most rates from 8 kHz to 96 kHz, such as 8000, 11025, 16000, 22050, 32000, 44100, 48000 and 96000 Hz, and return a `*dmrgo.ConfigError` for a rate that their polyphase filter cannot make.
-- `AudioTxConfig.Bits` 0 is 16. Each sample holds one code in its low bits.
-- `AudioTxConfig.Level` is the code of a run of symbol +3 (1944 Hz of deviation) from the center, from 1 to 16000. 0 is the most that fits in `Bits` with `Offset` over every run of symbols. `Offset` moves the center code.
+| Field | Rule |
+|-------|------|
+| `TxConfig.Tier` | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `TxConfig.Rate` | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier1 and Tier2 make any Rate from 48000 to 20000000, and Tier0 makes 96000. Under 62500 the image of the main lobe falls within two channels of the carrier, where no limit can count on a filter of the radio, so it gives a *RegionError. |
+| `TxConfig.Format` | Format is the layout of the I/Q samples. 0 means IQFormatCS16. IQFormatCF32 values lie on the grid of IQFormatCS16. |
+| `TxConfig.OffsetHz` | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, under Rate/4 in size. Tier0 rounds it to whole Hz. |
+| `TxConfig.OnSamples` | OnSamples, when not nil, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When nil, the transmitter is in append mode, for AppendSamples and AppendFlush. |
+| `TxConfig.Region` | Region is the regulatory region whose limits the signal keeps. |
+| `TxConfig.Service` | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. A station of the license-free service must state it. |
+| `TxConfig.Power` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. |
+| `AudioTxConfig.Tier` | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `AudioTxConfig.Rate` | Rate is the sample rate of the converter, in Hz. 0 means 48000. Tier0 makes 24000 and 48000. Tier1 and Tier2 make any rate from 8000 whose ratio to 4800 has a numerator of at most 1024 in lowest terms, such as 8000, 22050 or 44100, and the limits are measured to 96000. |
+| `AudioTxConfig.Bits` | Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. |
+| `AudioTxConfig.Unsigned` | Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. |
+| `AudioTxConfig.OnSamples` | OnSamples, when not nil, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When nil, the transmitter is in append mode, for AppendSamples and AppendFlush. |
+| `AudioTxConfig.Level` | Level is the code of a run of symbol +3, 1944 Hz of deviation, less the center, from 1 to 16000. 0 means the most that fits in Bits with Offset over every run of symbols. The limits are measured at about half of full scale, 1040 codes at 12 bits. Under 16 bits, Tier1 and Tier2 at 24000 Hz and above reach 2.12 times Level, so there they are measured at the most that fits Bits at Offset 0, 965 to 981 codes at 12 bits. A Level under the measured level gives a *RegionError. |
+| `AudioTxConfig.Offset` | Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned. |
+| `AudioTxConfig.PreEmphasis` | PreEmphasis, when not nil, states that the radio pre-emphasizes its modulator input from 300 Hz to 3 kHz, so that the transmitter inverts it with the modulator that it holds: a PreEmphasis of this transmitter alone, set up by Init or NewPreEmphasis. Nil is a radio with no pre-emphasis. Only Tier0 at Rate 48000 takes it, and only in the regions, services and powers where the limits keep their margin with it; elsewhere it gives a *RegionError. |
+| `AudioTxConfig.InputLowpassHz` | InputLowpassHz states the cutoff in Hz of a low pass of at least two poles that the radio puts before its modulator input; 0 means none, a converter that drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these, so 6000 counts as 8000 and a cutoff above 8000 as none. A low pass lowers the least Rate that keeps the limits. A negative cutoff gives a *dmrgo.ConfigError. |
+| `AudioTxConfig.Region` | Region is the regulatory region whose limits the signal keeps. |
+| `AudioTxConfig.Service` | Service is the radio service of the station, as in TxConfig. |
+| `AudioTxConfig.Power` | Power is the most power of the station in dBm, as in TxConfig. |
 <!-- rfparams:tx-formats:end -->
 
 ### Limits
 
-`Region`, `Service` and `Power` state the limits that the signal must keep.
-
-- `Region`: `RegionUS` (47 CFR 90.210 Emission Mask D for land mobile, 47 CFR 97.307 for amateur), `RegionCEPT` (ETSI EN 300 113 for land mobile, ERC/REC 74-01 for amateur), `RegionChina` (the 2025 MIIT notice, land mobile), `RegionJapan` (the Radio Equipment Regulations, land mobile). The zero value `RegionWorld` keeps the strictest limit of each region at once. `RegionUS` does not cover the 800 MHz bands of FCC Mask H or the 90.691 EA mask.
-- `Service` is `dmrgo.Service`, the type that package `privacy` also takes. The zero value `ServiceUnknown` keeps the land mobile and amateur limits at once.
 <!-- rfparams:tx-limits:begin -->
+- `TxConfig`: TxConfig sets up a Transmitter. The zero TxConfig is the strictest setup: every region, every licensed service and the highest legal power of each, so that what it makes keeps the limits wherever it is accepted.
+- `AudioTxConfig`: AudioTxConfig sets up an AudioTransmitter. The zero AudioTxConfig is the strictest setup, as the zero TxConfig is.
+
+| `Region` | Name | Limits |
+| --- | --- | --- |
+| `RegionWorld` | World | RegionWorld keeps the limits of every other region at once, the strictest of each. |
+| `RegionUS` | US | RegionUS keeps 47 CFR 90.210 Emission Mask D for land mobile and 47 CFR 97.307 for amateur. It does not cover the 800 MHz bands of Mask H or the 90.691 EA mask. |
+| `RegionCEPT` | CEPT | RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01 for amateur. |
+| `RegionChina` | China | RegionChina keeps the land mobile limits of the 2025 MIIT notice. |
+| `RegionJapan` | Japan | RegionJapan keeps the land mobile limits of the Radio Equipment Regulations. |
+
+| `Service` | Meaning |
+| --- | --- |
+| `ServiceUnknown` | ServiceUnknown is a service that the caller did not state. |
+| `ServiceAmateur` | ServiceAmateur is the amateur or amateur-satellite service. |
+| `ServiceLandMobile` | ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. |
+| `ServiceLicenseFree` | ServiceLicenseFree is a licence-exempt service, such as PMR446. |
+
 - `Power` is the most power of the station in dBm, from 1 to 63. 0 is the highest legal power of the service in the region. The limits use the power classes 1 W (up to 30 dBm), 10 W (40 dBm), 100 W (50 dBm) and 1000 W (60 dBm).
 
 Each `RegionError` has one of these values of `Field`, after the name of the config, and `Reason`:
@@ -91,13 +126,13 @@ Each `RegionError` has one of these values of `Field`, after the name of the con
 | `Region` | unknown region |
 | `Service` | unknown service |
 | `PreEmphasis` | the limits with pre-emphasis are not measured |
-<!-- rfparams:tx-limits:end -->
 
-The zero config is the strictest setup: every region, every licensed service and the highest legal power of each. A setup that no measurement shows to keep its limits with margin gets a `*RegionError`, with the config field in `Field` and the cause in `Reason`. Each cause has one static `RegionError`, so a failed call does not allocate. Match it with `errors.As`.
+A field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: `AudioTxConfig.Bits`, `AudioTxConfig.Format`, `AudioTxConfig.InputLowpassHz`, `AudioTxConfig.Level`, `AudioTxConfig.Offset`, `AudioTxConfig.OffsetHz`, `AudioTxConfig.OnSamples`, `AudioTxConfig.Power`, `AudioTxConfig.PreEmphasis`, `AudioTxConfig.Rate`, `AudioTxConfig.Tier`, `TxConfig.Bits`, `TxConfig.Format`, `TxConfig.InputLowpassHz`, `TxConfig.Level`, `TxConfig.Offset`, `TxConfig.OffsetHz`, `TxConfig.OnSamples`, `TxConfig.Power`, `TxConfig.PreEmphasis`, `TxConfig.Rate`, `TxConfig.Tier`.
+<!-- rfparams:tx-limits:end -->
 
 ### Levels
 
-The limits are measured at these values of `Level`, by the bits of the converter. A depth between these takes the next lower one, with the level doubled for each bit over it. A `Level` under the measured level gets a `RegionError`. The peak is the most that the output of Tier 1 reaches from the center at 48 kHz over every run of symbols.
+The limits are measured at these values of `Level`, by the bits of the converter.
 
 <!-- txsheet:levels:begin -->
 
@@ -166,18 +201,18 @@ The FSK error of each tier and output.
 
 ### Bursts and keying
 
-- Each `Burst` goes on the slot grid by its `Stream` and `Slot`. The slot of a burst must increase within its stream, or `Write` returns `ErrBurstOrder`.
-- A BS-sourced burst keeps the carrier up into the next slot. Any other burst is an MS burst, with the power ramps in its guard time.
-- A gap of one slot within a `Stream` is an idle slot with the carrier down, as an MS sends on one TDMA channel.
-- A new `Stream`, or a gap of more than one slot, keys down. The next burst keys up at once, so the caller sets the time between transmissions.
-- `Active` is true from the key-up of the first burst to the key-down after the last. For `AudioTransmitter` it is the push-to-talk of the radio.
+<!-- rfparams:tx-keying:begin -->
+- `Transmitter.Write`: Write turns the bursts x into samples in stream mode and hands them to OnSamples. It returns len(x) and nil, dmrgo.ErrNilReceiver for a nil t, ErrNotSetUp before Init or NewTransmitter, a *dmrgo.ConfigError for OnSamples in append mode, and for a burst that it does not accept the count of bursts before it with ErrBurstOrder, ErrBurstService or ErrTxTimeout.
+- `Transmitter.Active`: Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last. The carrier ramps down in each idle slot within it.
+- `AudioTransmitter.Active`: Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last, the time that the radio must be keyed.
+<!-- rfparams:tx-keying:end -->
 
 ### Calibration of level, offset and deviation
 
-- An audio transmitter makes codes. The radio turns them into deviation. Set the gain of the radio, or `Level`, so that a run of symbol +3 deviates the carrier by the deviation that [Formats and rates](#formats-and-rates) gives for `Level`. Measure the deviation with a service monitor, or with a software radio and `Receiver.DeviationHz`, which gives the outer deviation of the last stream that the receiver locked to.
-- Set `Offset` to the code that gives no deviation, when the modulator input of the radio has a DC offset.
-- Keep `Level` at or above the measured level of [Levels](#levels), and turn down the gain of the radio to get the deviation. A lower `Level` gets a `RegionError`, as the quantization noise of the converter then rises toward the limits.
-- I/Q needs no level setting. Set the gain of the software radio for the power of the station, and state that power in `Power`.
+- An audio transmitter makes codes, and the radio turns them into deviation. Set the gain of the radio so that a run of symbol +3 gives the deviation of [Formats and rates](#formats-and-rates). A service monitor, or a software radio with `Receiver.DeviationHz`, measures it.
+- When the modulator input of the radio has a DC offset, set `Offset` to the code that gives no deviation.
+- Keep `Level` at or above the measured level of [Levels](#levels), and turn down the gain of the radio to get the deviation.
+- For I/Q, set the gain of the software radio for the power of the station, and state that power in `Power`.
 
 ### Input low pass
 
@@ -193,16 +228,13 @@ The microphone input of an FM radio usually pre-emphasizes the audio, with a zer
 
 ### Choosing a tier
 
-- Tier 0 is for a microcontroller. It needs no heap and fits a Cortex-M4F. It makes only the rates of [Formats and rates](#formats-and-rates).
-- Tier 1 is the default of `NewTransmitter` and `NewAudioTransmitter`, for a PC or a single-board computer. It takes any rate of its range.
-- Tier 2 shapes the pulses in float64 over a longer span, at more CPU than Tier 1.
-- [Key specifications](#key-specifications) and [Measured margins](#measured-margins) give the error and the margins of each tier.
+[Key specifications](#key-specifications) and [Measured margins](#measured-margins) give the error and the margins of each tier, and [Formats and rates](#formats-and-rates) the rates that each tier makes.
 
 ### Wiring to a radio
 
-- Drive the flat modulator input of the radio, with no pre-emphasis and no low pass, when it has one. State a low pass of the radio in `InputLowpassHz`.
+- Drive the flat modulator input of the radio when it has one, and state any low pass of the radio in `InputLowpassHz`.
 - With the microphone input, set `PreEmphasis` and state the low pass of the microphone path in `InputLowpassHz`.
-- Key the radio with `Active`: it is the push-to-talk of the radio.
+- Key the radio with `Active`.
 - Feed I/Q to a software radio at the stated `Rate` and `Format`.
 
 <!-- txdoc:begin -->

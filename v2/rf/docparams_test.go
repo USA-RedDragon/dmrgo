@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	docRxFile = "../../docs/rx/README.md"
 	docTxFile = "../../docs/tx/README.md"
 )
 
@@ -32,59 +31,47 @@ func hzText(hz float64) string {
 	return strconv.FormatFloat(hz, 'f', -1, 64) + " Hz"
 }
 
-func rxBitsSpan() (lo, hi int) {
-	lo, hi = -1, -1
-	for b := 1; b <= 32; b++ {
-		if _, err := NewAudioReceiver(&AudioRxConfig{Bits: b, Tier: Tier0}); err == nil {
-			if lo < 0 {
-				lo = b
+func docSources() (*goSource, *goSource, error) {
+	rf, err := loadGoSource(".")
+	if err != nil {
+		return nil, nil, err
+	}
+	root, err := loadGoSource("..")
+	return rf, root, err
+}
+
+func docBullet(b *strings.Builder, src *goSource, name, key string) {
+	if d := src.doc(key); d != "" {
+		fmt.Fprintf(b, "- `%s`: %s\n", name, d)
+	}
+}
+
+func docTable(b *strings.Builder, src *goSource, types ...string) {
+	b.WriteString("| Field | Rule |\n|-------|------|\n")
+	for _, t := range types {
+		for _, f := range src.fields[t] {
+			if d := src.doc(t + "." + f); d != "" {
+				fmt.Fprintf(b, "| `%s.%s` | %s |\n", t, f, d)
 			}
-			hi = b
 		}
 	}
-	return lo, hi
 }
 
-func renderRxLimits() string {
-	lo, hi := rxBitsSpan()
-	var b strings.Builder
-	b.WriteString("| Field | Accepted | Refused |\n|-------|----------|---------|\n")
-	b.WriteString("| `RxConfig.Tier`, `AudioRxConfig.Tier` | `TierDefault`, `Tier0` to `Tier3` | other values |\n")
-	b.WriteString("| `RxConfig.Format` | `IQFormatDefault` (CS16), `IQFormatCU8`, `IQFormatCS8`, `IQFormatCS16`, `IQFormatCF32` | other values |\n")
-	fmt.Fprintf(&b, "| `RxConfig.OffsetHz` | under %d Hz in size, or under `Rate`/2 for a `Rate` under %d | larger offsets |\n", basebandRate/2, basebandRate)
-	fmt.Fprintf(&b, "| `AudioRxConfig.Bits` | 0 (the default) and %d to %d | other values |\n", lo, hi)
-	b.WriteString("| `RxConfig.Rate`, `AudioRxConfig.Rate` | the rates of the table below | other rates |\n")
-	return b.String()
-}
-
-func renderRxConditions() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "- Carrier: the I/Q receiver searches %s around `RxConfig.OffsetHz` for the carrier. [Operating characteristics](#operating-characteristics) gives the offset range of each tier.\n", hzText(iqTuneMaxHz))
-	b.WriteString("- Sample clock: the rate of the samples must be the stated `Rate`. [Operating characteristics](#operating-characteristics) gives the clock error range of each tier.\n")
-	b.WriteString("- Audio level: the audio receiver measures the gain and the DC offset itself. The audio must not clip.\n")
-	b.WriteString("- Audio band: Tier 0 needs the audio of the discriminator with its low frequencies. Above Tier 0, `NewAudioReceiver` outside TinyGo also takes audio that a high-pass filter cut at its low end, as the speaker output of a scanner gives it.\n")
-	return b.String()
-}
-
-func renderRxEye() string {
-	return fmt.Sprintf("[Test conditions](#test-conditions) gives the method. Each eye diagram shows the receiver input after the DMR matched filter (root raised cosine, roll-off %s), at %s, folded on the symbol timing that the tier recovered for each burst. The dotted lines are the four symbol levels.\n",
-		strconv.FormatFloat(rrcAlpha, 'f', -1, 64), hzText(basebandRate))
-}
-
-func renderRxSweep() string {
-	var b strings.Builder
-	b.WriteString("- The test stream is a BS outbound stream: a voice call on one slot and data, CSBKs and headers on the other.\n")
-	fmt.Fprintf(&b, "- White Gaussian noise is added at each C/N in %s. Eb/N0 is C/N plus %.1f dB.\n", hzText(noiseBandHz), 10*math.Log10(float64(noiseBandHz)/(2*symbolRate)))
-	fmt.Fprintf(&b, "- The audio tiers get the audio of an FM discriminator at %s. The sweep makes it from the same noisy signal with the IF filter of a %s radio, so their Eb/N0 is that of the signal at the antenna.\n", hzText(benchAudioHz), hzText(2*audioIFHz))
-	fmt.Fprintf(&b, "- The I/Q tiers get the noisy samples at %s. Low-rate I/Q tier 0 gets them at %s, through the decimation filter of a radio chip: a %d-tap Kaiser-windowed sinc with its -6 dB point at %s.\n", hzText(basebandRate), hzText(iq0LowHz), lowIQTaps, hzText(lowIQCut*iq0LowHz))
-	return b.String()
+func pkgParas(src *goSource, tx bool) string {
+	var out []string
+	for i, p := range src.pkg {
+		if strings.Contains(p, "Transmitter") == tx || tx && i == 0 {
+			out = append(out, p)
+		}
+	}
+	return strings.Join(out, "\n\n") + "\n"
 }
 
 func txPowerClasses() []int {
 	var tops []int
-	prev := -1
-	for p := 1; p <= modeledDBm; p++ {
-		r := txRegs{region: RegionUS, service: ServiceLandMobile, power: p}
+	prev, last := -1, 0
+	for p := 1; p <= maxPowerDBm; p++ {
+		r := txRegs{region: RegionUS, service: ServiceAmateur, power: p}
 		c, err := r.check(&iqErrs, &txGate{noSpur: true})
 		if err != nil {
 			continue
@@ -92,9 +79,9 @@ func txPowerClasses() []int {
 		if c != prev && prev >= 0 {
 			tops = append(tops, p-1)
 		}
-		prev = c
+		prev, last = c, p
 	}
-	return append(tops, modeledDBm)
+	return append(tops, last)
 }
 
 func wattsOf(dbm int) string {
@@ -129,21 +116,25 @@ func commonAudioRates() string {
 	return strings.Join(ok[:len(ok)-1], ", ") + " and " + ok[len(ok)-1] + " Hz"
 }
 
-func renderTxFormats() string {
+func renderTxIntro(src, _ *goSource) string { return pkgParas(src, true) }
+
+func renderTxFeatures(src, _ *goSource) string {
 	var b strings.Builder
-	b.WriteString("| Tier | Modulator | I/Q rates | Audio rates |\n| --- | --- | --- | --- |\n")
-	fmt.Fprintf(&b, "| Tier 0 | Fixed-point multiply and accumulate over tables in flash, for a microcontroller. The default of `Init` and of TinyGo builds. | %s | %s |\n", hzText(tier0IQRate), joinRates(tier0AudioRates()))
-	fmt.Fprintf(&b, "| Tier 1 | Pulse shaping in float32, I/Q from an interpolated cosine table. The default of `NewTransmitter` and `NewAudioTransmitter`. | %s to %s, %s by default | %s to %s, %s by default |\n",
+	for _, n := range []string{"Transmitter", "AudioTransmitter", "PreEmphasis", "RegionError", "ErrBurstOrder", "ErrBurstService", "ErrTxTimeout"} {
+		docBullet(&b, src, n, n)
+	}
+	return b.String()
+}
+
+func renderTxFormats(src, _ *goSource) string {
+	var b strings.Builder
+	b.WriteString("| Tier | I/Q rates | Audio rates |\n| --- | --- | --- |\n")
+	fmt.Fprintf(&b, "| Tier 0 | %s | %s |\n", hzText(tier0IQRate), joinRates(tier0AudioRates()))
+	fmt.Fprintf(&b, "| Tier 1, Tier 2 | %s to %s, %s by default | %s to %s, %s by default |\n\n",
 		hzText(shaperIQRate), hzText(maxTxIQRate), hzText(defaultTxRate), hzText(minTxAudio), hzText(maxTxAudio), hzText(defaultTxAudio))
-	b.WriteString("| Tier 2 | Pulse shaping in float64 over a longer span than Tier 1, I/Q from float64 sine and cosine. | as Tier 1 | as Tier 1 |\n\n")
-	b.WriteString("Tier 3 has no modulator of its own, and both constructors return a `*dmrgo.ConfigError` for it.\n\n")
-	fmt.Fprintf(&b, "- `TxConfig.Rate` 0 is %s. Tier 0 makes %s only, to stay in the CPU budget of the tier.\n", hzText(defaultTxRate), hzText(tier0IQRate))
-	fmt.Fprintf(&b, "- I/Q under %s puts the image of the main lobe within two channels of the carrier, where no limit can count on a filter of the radio. The limits do not accept it.\n", hzText(minTxIQRate))
-	b.WriteString("- `TxConfig.OffsetHz` moves the carrier from the center of the I/Q. It must be under `Rate`/4 in size. Tier 0 rounds it to whole Hz.\n")
-	fmt.Fprintf(&b, "- `AudioTxConfig.Rate` 0 is %s. Tier 1 and Tier 2 make most rates from %s to %s, such as %s, and return a `*dmrgo.ConfigError` for a rate that their polyphase filter cannot make.\n",
-		hzText(defaultTxAudio), hzText(minTxAudio), hzText(maxTxAudio), commonAudioRates())
-	b.WriteString("- `AudioTxConfig.Bits` 0 is 16. Each sample holds one code in its low bits.\n")
-	fmt.Fprintf(&b, "- `AudioTxConfig.Level` is the code of a run of symbol +3 (%d Hz of deviation) from the center, from 1 to %d. 0 is the most that fits in `Bits` with `Offset` over every run of symbols. `Offset` moves the center code.\n", int(txDeviationHz), maxTxLevel)
+	fmt.Fprintf(&b, "Under %s, I/Q puts the image of the main lobe within two channels of the carrier, and the limits do not accept it. Tier 1 and Tier 2 make audio at %s, among other rates. The deviation of a run of symbol +3 is %d Hz.\n\n",
+		hzText(minTxIQRate), commonAudioRates(), int(txDeviationHz))
+	docTable(&b, src, "TxConfig", "AudioTxConfig")
 	return b.String()
 }
 
@@ -168,8 +159,21 @@ func txRegionErrors() []*RegionError {
 	return out
 }
 
-func renderTxLimits() string {
+func renderTxLimits(src, root *goSource) string {
 	var b strings.Builder
+	for _, k := range []string{"TxConfig", "AudioTxConfig"} {
+		docBullet(&b, src, k, k)
+	}
+	b.WriteString("\n")
+	b.WriteString("| `Region` | Name | Limits |\n| --- | --- | --- |\n")
+	for i, c := range src.consts["Region"] {
+		fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c, Region(i).String(), src.doc(c))
+	}
+	b.WriteString("\n| `Service` | Meaning |\n| --- | --- |\n")
+	for _, c := range root.consts["Service"] {
+		fmt.Fprintf(&b, "| `%s` | %s |\n", c, root.doc(c))
+	}
+	b.WriteString("\n")
 	tops := txPowerClasses()
 	classes := make([]string, 0, len(tops))
 	for i, top := range tops {
@@ -184,28 +188,40 @@ func renderTxLimits() string {
 	for _, e := range txRegionErrors() {
 		fmt.Fprintf(&b, "| `%s` | %s |\n", strings.TrimPrefix(strings.TrimPrefix(e.Field, "AudioTxConfig."), "TxConfig."), e.Reason)
 	}
+	fmt.Fprintf(&b, "\nA field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: %s.\n", "`"+strings.Join(src.configErrors("TxConfig.", "AudioTxConfig."), "`, `")+"`")
 	return b.String()
 }
 
 type docBlock struct {
 	file, name string
-	render     func() string
+	render     func(src, root *goSource) string
 }
 
 func docBlocks() []docBlock {
 	return []docBlock{
-		{docRxFile, "rx-limits", renderRxLimits},
-		{docRxFile, "rx-conditions", renderRxConditions},
-		{docRxFile, "rx-eye", renderRxEye},
-		{docRxFile, "rx-sweep", renderRxSweep},
+		{docTxFile, "tx-intro", renderTxIntro},
+		{docTxFile, "tx-features", renderTxFeatures},
 		{docTxFile, "tx-formats", renderTxFormats},
 		{docTxFile, "tx-limits", renderTxLimits},
+		{docTxFile, "tx-keying", renderTxKeying},
 	}
+}
+
+func renderTxKeying(src, _ *goSource) string {
+	var b strings.Builder
+	for _, k := range []string{"Transmitter.Write", "Transmitter.Active", "AudioTransmitter.Active"} {
+		docBullet(&b, src, k, k)
+	}
+	return b.String()
 }
 
 func TestDocParams(t *testing.T) {
 	t.Parallel()
 	write := os.Getenv("DMRGO_DOCPARAMS") == "write"
+	src, root, err := docSources()
+	if err != nil {
+		t.Fatal(err)
+	}
 	docs := map[string][]byte{}
 	for _, blk := range docBlocks() {
 		doc, ok := docs[blk.file]
@@ -224,7 +240,7 @@ func TestDocParams(t *testing.T) {
 		if i < 0 || j < i {
 			t.Fatalf("%s has no %s ... %s block", blk.file, begin, end)
 		}
-		want := begin + "\n" + blk.render() + end
+		want := begin + "\n" + blk.render(src, root) + end
 		if got := string(doc[i : j+len(end)]); got != want && !write {
 			t.Errorf("the %s block of %s differs from the code; run DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams in v2", blk.name, blk.file)
 		}
