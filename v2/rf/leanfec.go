@@ -164,7 +164,10 @@ func (r *leanCore) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 }
 
 func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want uint32) (info, cw uint32, errs int) {
-	hard := r.gather(f, id, cach)
+	return decodeGathered(f, id, r.gather(f, id, cach), fixed, want)
+}
+
+func decodeGathered(f *leanFEC, id softSmallID, hard, fixed, want uint32) (info, cw uint32, errs int) {
 	c := &softSmallCodes[id]
 	var hi uint32
 	hc := c.base
@@ -394,6 +397,10 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 
 func (r *leanCore) fixTACT(f *leanFEC, b *Burst) {
 	_, cw, _ := r.decodeSmall(f, softTACTCode, true, 0, 0)
+	putTACT(b, cw)
+}
+
+func putTACT(b *Burst, cw uint32) {
 	c := &softSmallCodes[softTACTCode]
 	for j := range c.n {
 		p := c.pos[j]

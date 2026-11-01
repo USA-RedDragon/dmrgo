@@ -173,7 +173,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 			return
 		}
 		if s.fitOnly && s.ex != nil && s.fitReady {
-			x.checkedData(b)
+			x.checkedData(c, b)
 		}
 	}
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
@@ -209,7 +209,33 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	}
 }
 
-func (x *softExt) checkedData(b *Burst) {
+func (x *softExt) cohCACH(c *leanCore, b *Burst) {
+	if !x.coh.cachLLR(&x.cachLLR) {
+		return
+	}
+	var hard [3]byte
+	sc := &softSmallCodes[softTACTCode]
+	f := &c.fec
+	var tact uint32
+	for p, v := range &x.cachLLR {
+		if v < 0 {
+			hard[p/8] |= 0x80 >> (p % 8)
+		}
+	}
+	for j := range sc.n {
+		v := x.cachLLR[sc.pos[j]]
+		f.l[j] = v
+		if v < 0 {
+			tact |= 1 << j
+		}
+	}
+	b.CACH, b.FixedCACH = hard, hard
+	_, cw, _ := decodeGathered(f, softTACTCode, tact, 0, 0)
+	putTACT(b, cw)
+	c.sink.noteCoh(b.Seconds, b.CACH, &x.cachLLR)
+}
+
+func (x *softExt) checkedData(c *leanCore, b *Burst) {
 	llr := x.llr
 	if !x.coh.runAll(&x.llr) {
 		x.llr = llr
@@ -225,6 +251,7 @@ func (x *softExt) checkedData(b *Burst) {
 	if burstDistance(&hard, &b.Fixed) < burstDistance(&b.Data, &b.Fixed) {
 		b.Data = hard
 	}
+	x.cohCACH(c, b)
 }
 
 func burstDistance(a, b *layer2.RawBurst) int {
@@ -262,9 +289,7 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	if x.bptcRetry(b) && x.affords(extCoreCredit) {
 		x.coreData(c, b, fixed, data)
 	}
-	if x.coh.cachLLR(&x.cachLLR) {
-		c.sink.noteCoh(b.Seconds, b.CACH, &x.cachLLR)
-	}
+	x.cohCACH(c, b)
 	x.coh.trackBurst(&b.Fixed)
 	if x.coh.ex != nil && burstDistance(&data, &b.Fixed) < burstDistance(&b.Data, &b.Fixed) {
 		b.Data = data

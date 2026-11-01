@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/bits"
 	"math/rand/v2"
 	"os"
 	"slices"
@@ -197,6 +198,27 @@ func TestShortLCSoft(t *testing.T) {
 				t.Errorf("OnShortLC %d right %d wrong, hard %d right %d wrong", good, bad, hGood, hBad)
 			}
 		})
+	}
+}
+
+func TestShortLCExactCACH(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	sig := cleanBaseband(slots, 1400)
+	var errs [2]int
+	for j, tier := range []Tier{Tier2, Tier3} {
+		for s := range uint64(2) {
+			for _, b := range benchReceive(t, sig.noisy(4, 40+s), benchEntry{benchIQ, tier}) {
+				if k := slcKey(b.Seconds); b.HasCACH && k >= 0 && k < int64(len(slots)) {
+					for i := range b.CACH {
+						errs[j] += bits.OnesCount8(b.CACH[i] ^ slots[k].CACH[i])
+					}
+				}
+			}
+		}
+	}
+	if 2*errs[1] > errs[0] {
+		t.Errorf("CACH bit errors: I/Q tier 3 %d, I/Q tier 2 %d", errs[1], errs[0])
 	}
 }
 
