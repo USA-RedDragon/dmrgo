@@ -3,6 +3,7 @@ package fsktx
 import (
 	"errors"
 	"math"
+	"math/cmplx"
 )
 
 // Tier selects a modulator and its cost. The zero value TierDefault is
@@ -248,8 +249,9 @@ type AudioConfig struct {
 	NoiseLowPoleR   float64
 	// PreEmphasisHz are the corners, zero then pole, of a first-order
 	// pre-emphasis (1+s/wz)/(1+s/wp) that the radio applies to the
-	// modulator input, such as 300 and 3000; Tier1 and Tier2 apply its
-	// inverse first. Zeros mean a flat radio.
+	// modulator input, such as 300 and 3000; Tier1 and Tier2 apply first a
+	// second-order filter fitted to its inverse up to 6 kHz. Zeros mean a
+	// flat radio.
 	PreEmphasisHz [2]float64
 	// CarrierHz is added to the deviation of every sample, in Hz, finer
 	// than a code step; it trims the carrier of the pulse.
@@ -387,8 +389,8 @@ type Audio struct {
 	cbp    []float64
 	cf, cc [512]float64
 	cn     int
-	de     [3]float64
-	dx, dy float64
+	de     [5]float64
+	dz     [4]float64
 	dr     droop
 	peak   float64
 	slack  float64
@@ -539,10 +541,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			if !(z > 0 && p > z && 2*p < float64(cfg.Hz)) {
 				return nil, errPreEmph
 			}
-			tz := math.Tan(math.Pi * z / float64(cfg.Hz))
-			tp := math.Tan(math.Pi * p / float64(cfg.Hz))
-			a0 := 1 + 1/tz
-			a.de = [3]float64{(1 + 1/tp) / a0, (1 - 1/tp) / a0, (1 - 1/tz) / a0}
+			a.de = fitPreInverse(z, p, float64(cfg.Hz))
 		}
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
@@ -624,9 +623,10 @@ func (a *Audio) Symbol(dst []int16, s int8) int {
 		}
 	}
 	if a.de[0] != 0 {
+		d, z := &a.de, &a.dz
 		for i, x := range a.buf[:n] {
-			y := a.de[0]*x + a.de[1]*a.dx - a.de[2]*a.dy
-			a.dx, a.dy = x, y
+			y := d[0]*x + d[1]*z[0] + d[2]*z[1] - d[3]*z[2] - d[4]*z[3]
+			z[1], z[0], z[3], z[2] = z[0], x, z[2], y
 			a.buf[i] = y
 		}
 	}
@@ -1356,4 +1356,86 @@ func (a *Audio) boosted(s int8) float64 {
 	}
 	a.bpar = 1 - p
 	return float64(s) + a.boost*float64(u)
+}
+
+const preFitBandHz = 6000
+
+func fitPreInverse(zHz, pHz, hz float64) [5]float64 {
+	band := min(preFitBandHz, 0.45*hz)
+	step := hz / 2 / 960
+	var c [5]float64
+	ap := [2]float64{}
+	for range 20 {
+		var m [5][6]float64
+		for f := step / 2; f < hz/2; f += step {
+			w := 1.0
+			if f > band {
+				w = 0.01
+			}
+			z := cmplx.Rect(1, -2*math.Pi*f/hz)
+			w /= cmplx.Abs(1 + complex(ap[0], 0)*z + complex(ap[1], 0)*z*z)
+			tg := complex(1, f/pHz) / complex(1, f/zHz)
+			row := [5]complex128{1, z, z * z, -tg * z, -tg * z * z}
+			for im := range 2 {
+				var r [6]float64
+				for k, v := range row {
+					r[k] = w * reIm(v, im)
+				}
+				r[5] = w * reIm(tg, im)
+				for i := range 5 {
+					for j := range 6 {
+						m[i][j] += r[i] * r[j]
+					}
+				}
+			}
+		}
+		x, ok := solve5(m)
+		if !ok {
+			break
+		}
+		c, ap = x, [2]float64{x[3], x[4]}
+	}
+	if !(math.Abs(c[4]) < 1 && math.Abs(c[3]) < 1+c[4]) {
+		tz, tp := math.Tan(math.Pi*zHz/hz), math.Tan(math.Pi*pHz/hz)
+		a0 := 1 + 1/tz
+		return [5]float64{(1 + 1/tp) / a0, (1 - 1/tp) / a0, 0, (1 - 1/tz) / a0, 0}
+	}
+	return c
+}
+
+func reIm(v complex128, im int) float64 {
+	if im == 1 {
+		return imag(v)
+	}
+	return real(v)
+}
+
+func solve5(m [5][6]float64) ([5]float64, bool) {
+	var x [5]float64
+	for c := range 5 {
+		p := c
+		for r := c + 1; r < 5; r++ {
+			if math.Abs(m[r][c]) > math.Abs(m[p][c]) {
+				p = r
+			}
+		}
+		if m[p][c] == 0 {
+			return x, false
+		}
+		m[c], m[p] = m[p], m[c]
+		for r := c + 1; r < 5; r++ {
+			f := m[r][c] / m[c][c]
+			for j := c; j < 6; j++ {
+				m[r][j] -= f * m[c][j]
+			}
+		}
+	}
+	for i := 4; i >= 0; i-- {
+		v := m[i][5]
+		for j := i + 1; j < 5; j++ {
+			v -= m[i][j] * x[j]
+		}
+		x[i] = v / m[i][i]
+	}
+	return x, true
 }
