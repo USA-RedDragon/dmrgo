@@ -144,6 +144,11 @@ func TestEngineAdjacent(t *testing.T) {
 
 func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, want int, off float32) {
 	t.Helper()
+	return adjacentReceiveSeed(t, tier, o, offsetHz, 7)
+}
+
+func adjacentReceiveSeed(t *testing.T, tier Tier, o *options, offsetHz float64, seed uint64) (n, want int, off float32) {
+	t.Helper()
 	cfg := testConfig()
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
@@ -171,7 +176,7 @@ func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, 
 		t.Fatal(err)
 	}
 	fi, _ := rftx.ModulateBS(ib.Slots)
-	x := msBaseband(fmAll, envAll, offsetHz, 20, 7)
+	x := msBaseband(fmAll, envAll, offsetHz, 20, seed)
 	var ph float64
 	for i := range x {
 		ph += 2 * math.Pi * (fi[i%len(fi)] + 12500) / basebandRate

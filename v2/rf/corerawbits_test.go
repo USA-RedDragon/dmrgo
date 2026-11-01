@@ -36,3 +36,42 @@ func TestCoreTier3RawBitsAtLock(t *testing.T) {
 		}
 	}
 }
+
+func TestCoreTier3LockRetune(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.noise.+1500.bs.pi.0ppm.high.cs16-48k.inf")
+	s, err := mxBuild(row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := mxInputOf(s, row)
+	r, err := newReceiver(RxConfig{Rate: in.rate, Tier: Tier3, Format: in.iqFmt}, ptr(coreIQ3Options()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := r.AppendFlush(r.AppendBursts(nil, in.iq))
+	n := 0
+	for i := range got {
+		j := mxNearest(s, got[i].Seconds+in.delay)
+		if j < 0 {
+			continue
+		}
+		n++
+		if got[i].Data != s.truth[j].data {
+			t.Errorf("burst %d: raw bits differ", j)
+		}
+	}
+	if n != len(s.truth) {
+		t.Errorf("%d of %d bursts", n, len(s.truth))
+	}
+}
+
+func TestCoreTier3Adjacent(t *testing.T) {
+	t.Parallel()
+	o := coreIQ3Options()
+	for _, seed := range []uint64{1, 36, 43} {
+		if n, want, _ := adjacentReceiveSeed(t, Tier3, &o, 0, seed); n < want {
+			t.Errorf("seed %d: C0 and C1 of %d of %d voice frames exact", seed, n, want)
+		}
+	}
+}

@@ -71,6 +71,8 @@ type softExt struct {
 	out             [4]layer2.RawBurst
 	acq             []int16
 	refill          func(*leanCore, int64)
+	refillCoh       func(float64)
+	settleCoh       func()
 	lookback        int
 	ring            [leanRing]int8
 	lockSym         int64
@@ -879,6 +881,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	if n == 0 {
 		return
 	}
+	x.refillLock(c)
 	if x.coh != nil {
 		x.coh.warmFreq(c, c.first, n)
 	}
@@ -955,8 +958,26 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.first = first - int64(n)*slotSymbols
 	c.slotEnd = slotEnd
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
+	x.settleLock()
 	x.lockHz(c)
 	x.vOK = false
+}
+
+func (x *softExt) refillLock(c *leanCore) {
+	if x.refillCoh == nil || c.forced {
+		return
+	}
+	hz := x.vHz
+	if !x.vOK {
+		hz, _ = x.coh.src.cohLockHz()
+	}
+	x.refillCoh(hz)
+}
+
+func (x *softExt) settleLock() {
+	if x.settleCoh != nil {
+		x.settleCoh()
+	}
 }
 
 func (x *softExt) replayTime(c *leanCore, b *Burst) {

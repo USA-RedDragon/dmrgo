@@ -422,7 +422,7 @@ func (r *iqRx) cohKey() (int, float64, float64) {
 func (r *iqRx) cohTrack() (float64, bool) {
 	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
 	if f := &r.d.f; r.d.locked {
-		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
+		hz = float64(r.conv.hz-r.unsettled()) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
 	}
 	return hz, r.d.locked
 }
@@ -430,7 +430,7 @@ func (r *iqRx) cohTrack() (float64, bool) {
 func (r *iqRx) cohLockHz() (float64, float64) {
 	f := &r.d.f
 	scale := float64(f.gain * iqUnitsPerHz)
-	return float64(r.conv.hz) + float64(f.dc+r.d.dcHz)/scale, scale
+	return float64(r.conv.hz-r.unsettled()) + float64(f.dc+r.d.dcHz)/scale, scale
 }
 
 func (r *iqRx) cohWeight(_, _ float64) float32 {
@@ -469,7 +469,7 @@ func (p *discPhase) cohTaps(bool) []float32 {
 
 func (r *iqRx) cohHz() float64 {
 	f := &r.d.f
-	return float64(r.conv.hz) + float64(f.dc/(f.gain*iqUnitsPerHz))
+	return float64(r.conv.hz-r.unsettled()) + float64(f.dc/(f.gain*iqUnitsPerHz))
 }
 
 func (p *discPhase) cohRing(size int64) ([]complex64, int64, int64) {

@@ -437,6 +437,7 @@ func (r *iqRx) sample(v complex64) {
 			r.cHist[(r.yN-r.cLag)&int64(len(r.cHist)-1)] = r.conv.coh.y
 		}
 		r.yN++
+		r.noteOut()
 	}
 	n := len(r.audio)
 	r.audio = r.audio[:n+1]
@@ -542,17 +543,25 @@ func (r *iqRx) tuneLimit() float32 {
 func (r *iqRx) tune(hz, dc float32) { r.tuneWith(hz, dc, r.tuneLimit()) }
 
 func (r *iqRx) tuneWith(hz, dc, lim float32) {
-	f := &r.d.f
-	scale := f.gain * iqUnitsPerHz
 	if lim > 0 && abs32(r.conv.hz+hz-r.center) > lim {
 		return
 	}
+	r.tuneConv(hz)
+	r.tuneLean(hz, dc)
+}
+
+func (r *iqRx) tuneConv(hz float32) {
 	r.conv.tune(r.conv.hz + hz)
 	r.noteTune(hz)
 	if r.tunes != nil {
 		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN - 1, hz: r.conv.hz}
 		r.nTunes++
 	}
+}
+
+func (r *iqRx) tuneLean(hz, dc float32) {
+	f := &r.d.f
+	scale := f.gain * iqUnitsPerHz
 	r.afcPull -= hz
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
 	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))

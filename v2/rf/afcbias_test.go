@@ -19,7 +19,10 @@ func cu8Spur(x []complex64, scale, dc float32) []byte {
 
 func lockNCO(t *testing.T, iq []byte, rate int, tier Tier) (atLock, after float64, ok bool) {
 	t.Helper()
-	r := mustNew(RxConfig{Rate: rate, Tier: tier, Format: IQFormatCU8})
+	return lockNCOOf(iq, mustNew(RxConfig{Rate: rate, Tier: tier, Format: IQFormatCU8}), rate)
+}
+
+func lockNCOOf(iq []byte, r *Receiver, rate int) (atLock, after float64, ok bool) {
 	h := r.host()
 	step := 2 * rate / 100
 	nco := func() (float64, bool) {
@@ -60,6 +63,19 @@ func TestIQLockOffsetDCSpur(t *testing.T) {
 					t.Errorf("tier %d at %.0f Hz, C/N %.0f dB, DC spur: oscillator at %.0f Hz %d0 ms after the lock, want within %d Hz", tier-Tier0, off, cn, after, iqAfterLock, iqLockOffsetBound)
 				}
 			}
+		}
+	}
+}
+
+func TestCoreTier3LockOffset(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 1)
+	for _, off := range []float64{1400, -1400} {
+		iq := cu8Spur(noisyBaseband(slots, off, 10, 7), 32, -0.5)
+		r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+		at, _, ok := lockNCOOf(iq, r, basebandRate)
+		if !ok || math.Abs(at-off) > iqAFCPullHz {
+			t.Errorf("core Tier 3 at %.0f Hz, C/N 10 dB: oscillator at %.0f Hz at the lock (locked %v), want within %d Hz", off, at, ok, iqAFCPullHz)
 		}
 	}
 }

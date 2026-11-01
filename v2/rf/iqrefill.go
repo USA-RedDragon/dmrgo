@@ -10,14 +10,19 @@ const (
 )
 
 type iqRefill struct {
-	raw   [][2]int16
-	head  int
-	n     int64
-	from  int64
-	tuned int64
-	hz0   float32
-	idle  bool
-	conv  iqDisc
+	raw      [][2]int16
+	head     int
+	n        int64
+	from     int64
+	tuned    int64
+	hz0      float32
+	idle     bool
+	out      int64
+	wide     []complex64
+	mixed    []complex128
+	settle   bool
+	settleHz float32
+	conv     iqDisc
 }
 
 func (r *iqRx) attachRefill(x *softExt) {
@@ -34,6 +39,80 @@ func (r *iqRx) attachRefill(x *softExt) {
 	f.conv.hist = make([]complex64, 2*len(r.conv.taps))
 	r.refill = f
 	x.refill = r.refillKept
+	if r.cHist != nil {
+		f.wide = make([]complex64, int64(r.conv.decim)*int64(len(r.cHist))+2*int64(len(r.conv.coh.taps)))
+		f.mixed = make([]complex128, len(f.wide)+2*max(len(r.conv.coh.taps), len(r.conv.taps)))
+		x.refillCoh, x.settleCoh = r.refillCoh, r.settleCoh
+	}
+}
+
+func (r *iqRx) settleCoh() {
+	f := r.refill
+	if f == nil || !f.settle {
+		return
+	}
+	f.settle = false
+	d := f.settleHz
+	r.tuneLean(d, r.d.f.dc-d*r.d.f.gain*iqUnitsPerHz)
+}
+
+func (r *iqRx) unsettled() float32 {
+	if f := r.refill; f != nil && f.settle {
+		return f.settleHz
+	}
+	return 0
+}
+
+func (r *iqRx) noteOut() {
+	if f := r.refill; f != nil {
+		f.out = f.n
+	}
+}
+
+func (r *iqRx) refillCoh(hz float64) {
+	f := r.refill
+	scale := r.d.f.gain * iqUnitsPerHz
+	if f == nil || f.wide == nil || r.yN == 0 || scale <= 0 {
+		return
+	}
+	d := float32(hz) - r.conv.hz
+	if abs32(d) < cohFreqSpan {
+		return
+	}
+	main, coh := r.conv.taps, r.conv.coh.taps
+	span := int64(max(len(main), len(coh)))
+	lo := max(0, f.n-int64(len(f.wide)))
+	per := int64(r.conv.decim)
+	k0 := max(r.yN-int64(len(r.yHist)), r.yN-int64(len(r.cHist))+r.cLag, r.yN-1-(f.out-lo-span)/per)
+	if k0 >= r.yN || f.out-per*(r.yN-k0)+per-span < lo {
+		return
+	}
+	r.tuneConv(d)
+	f.settle, f.settleHz = true, d
+	for r.nTunes > 0 && r.tunes[(r.nTunes-1)%iqTunes].n >= k0 {
+		r.nTunes--
+	}
+	r.tunes[r.nTunes%iqTunes] = iqTune{n: k0, hz: r.conv.hz}
+	r.nTunes++
+	w := 2 * math.Pi * float64(r.conv.hz) / basebandRate
+	rot := complex128(r.conv.ncoRot)
+	i0 := f.out - per*(r.yN-k0) + per - span
+	for i := i0; i < f.out; i++ {
+		s, c := math.Sincos(w * float64(f.n-i))
+		f.mixed[i-i0] = complex128(f.wide[i%int64(len(f.wide))]) * rot * complex(c, s)
+	}
+	fir := func(taps []float32, e int64) complex64 {
+		var y complex128
+		for j, t := range taps {
+			y += complex(float64(t), 0) * f.mixed[e-int64(len(taps)-1-j)-i0]
+		}
+		return complex64(y)
+	}
+	for k := k0; k < r.yN; k++ {
+		e := f.out - 1 - per*(r.yN-1-k)
+		r.yHist[k&int64(len(r.yHist)-1)] = fir(main, e)
+		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = fir(coh, e)
+	}
 }
 
 func (r *iqRx) keepRaw(v complex64) {
@@ -46,6 +125,9 @@ func (r *iqRx) keepRaw(v complex64) {
 		fallthrough
 	default:
 		f.raw[f.head] = [2]int16{refillQ(real(v)), refillQ(imag(v))}
+	}
+	if f.wide != nil {
+		f.wide[f.n%int64(len(f.wide))] = v
 	}
 	if f.head++; f.head == len(f.raw) {
 		f.head = 0
