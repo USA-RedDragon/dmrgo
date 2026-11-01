@@ -804,7 +804,10 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool {
 			n++
 		}
 	}
-	return 4*n <= syncSymbols && x.coh.verify(c, p, rho2)
+	if g, _, _ := c.fitSync(c.ns-1, p); 4*n > syncSymbols || g <= leanMinScale {
+		return false
+	}
+	return x.coh.verify(c, p, rho2)
 }
 
 func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool) {
