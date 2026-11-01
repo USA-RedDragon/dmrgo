@@ -281,13 +281,15 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 		if !ok {
 			continue
 		}
-		var fx, psd, md1, md100 []float64
+		var fx, psd, md1, md100, mh, ea []float64
 		for i, v := range s.PSD {
 			f := float64(-txSpecSpan + i*txSpecStep)
 			fx = append(fx, f/1000)
 			psd = append(psd, float64(v)/10)
 			md1 = append(md1, -maskdAttn(f, 1))
 			md100 = append(md100, -maskdAttn(f, 100))
+			mh = append(mh, -maskhAttn(f, 1000))
+			ea = append(ea, -eaAttn(f, 1000))
 		}
 		out[txFileTag(c)+"_spectrum.svg"] = linePlot(fmt.Sprintf("Tier %d, %s: spectrum, peak in 100 Hz", c.tier-Tier0, txOutputName(c)),
 			plotAxis{min: -40, max: 40, step: 10, label: "Offset from the carrier (kHz)"},
@@ -296,6 +298,8 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 				{name: "Signal", class: "s2", x: fx, y: psd},
 				{name: "Mask D, 1 W", class: "r1", dash: "6 4", x: fx, y: md1},
 				{name: "Mask D, 100 W", class: "r2", dash: "6 4", x: fx, y: md100},
+				{name: "Mask H, 1 kW", class: "r3", dash: "2 3", x: fx, y: mh},
+				{name: "EA mask, 1 kW", class: "r4", dash: "2 3", x: fx, y: ea},
 			})
 		var ox, acp []float64
 		for i, v := range s.ACP {
@@ -416,7 +420,7 @@ const (
 	plotPadR       = 190
 	plotPadT       = 40
 	plotPadB       = 56
-	plotStyle      = `text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}`
+	plotStyle      = `text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1a7f37}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#3fb950}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}`
 )
 
 type plotAxis struct {
@@ -801,7 +805,7 @@ func renderTxGraphList(graphs map[string][]byte) string {
 		}
 		b.WriteString("\n")
 	}
-	section("Spectrum", "The peak power in 100 Hz against the offset from the carrier, relative to the reference power of FCC Mask D, with Mask D for 1 W and 100 W. Audio goes through the hold converter and an FM modulator.", func(n string) bool { return strings.HasSuffix(n, "_spectrum.svg") })
+	section("Spectrum", "The peak power in 100 Hz against the offset from the carrier, relative to the reference power of FCC Mask D, with Mask D for 1 W and 100 W and Mask H and the EA mask for 1 kW. Audio goes through the hold converter and an FM modulator.", func(n string) bool { return strings.HasSuffix(n, "_spectrum.svg") })
 	section("Adjacent channel power", "The power that the receiver filter of EN 300 113 Annex C passes, against the offset of the filter from the carrier, relative to the total power. The dashed lines are the limit of EN 300 113 in the adjacent and alternate channels.", func(n string) bool { return strings.HasSuffix(n, "_acp.svg") })
 	section("Margins", "The margin to each limit in dB at 1 W, the worst over the measured points, from `testdata/txmargins.json`.", func(n string) bool { return strings.HasSuffix(n, "_margins.svg") })
 	section("Eye diagrams", "The deviation after the root raised cosine receive filter of the FSK error measurement, at 48 kHz, on the symbol timing that the measurement fits. Audio goes through an ideal converter, which interpolates the codes with no images, and through a hold converter, which keeps each code until the next sample.", func(n string) bool { return strings.HasSuffix(n, "_eye.svg") })
