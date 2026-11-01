@@ -296,7 +296,7 @@ v2/rf/hgate.go	56	53
 v2/rf/iqdisc.go	354	343
 v2/rf/iqdsp.go	13	13
 v2/rf/iqformat.go	15	15
-v2/rf/iqlow.go	139	138
+v2/rf/iqlow.go	139	137
 v2/rf/iqrefill.go	147	141
 v2/rf/lagtab.go	3	3
 v2/rf/lean.go	1289	1270
