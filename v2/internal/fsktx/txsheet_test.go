@@ -625,16 +625,20 @@ type barGroup struct {
 
 func barPlot(title string, xa plotAxis, rows []string, groups []barGroup, ref float64) []byte {
 	var b strings.Builder
-	const labelW = 300
+	labelW := 300.0
+	for _, name := range rows {
+		labelW = max(labelW, 7*float64(len(name))+24)
+	}
+	width := int(labelW) + sheetW - 300
 	rowH := 10.0*float64(len(groups)) + 8
 	h := rowH*float64(len(rows)) + 40
 	height := int(math.Ceil(plotPadT + h + plotPadB + 22*float64(len(groups))))
-	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="` + strconv.Itoa(sheetW) + `" height="` + strconv.Itoa(height) +
-		`" viewBox="0 0 ` + strconv.Itoa(sheetW) + ` ` + strconv.Itoa(height) + `">` + "\n")
+	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="` + strconv.Itoa(width) + `" height="` + strconv.Itoa(height) +
+		`" viewBox="0 0 ` + strconv.Itoa(width) + ` ` + strconv.Itoa(height) + `">` + "\n")
 	b.WriteString("<style>" + plotStyle + "</style>\n")
 	b.WriteString(`<rect class="bg" width="100%" height="100%"/>` + "\n")
 	b.WriteString(`<text x="16" y="24">` + title + `</text>` + "\n")
-	f := plotFrame{b: &b, x0: labelW, y0: plotPadT, w: sheetW - labelW - 24, h: h - 40, xa: xa, ya: plotAxis{min: 0, max: 1, step: 1}}
+	f := plotFrame{b: &b, x0: labelW, y0: plotPadT, w: sheetW - 300 - 24, h: h - 40, xa: xa, ya: plotAxis{min: 0, max: 1, step: 1}}
 	for _, v := range xa.ticks() {
 		x := f.sx(v)
 		b.WriteString(`<line class="gr" x1="` + plotPx(x) + `" y1="` + plotPx(f.y0+f.h) + `" x2="` + plotPx(x) + `" y2="` + plotPx(f.y0) + `"/>` + "\n")
