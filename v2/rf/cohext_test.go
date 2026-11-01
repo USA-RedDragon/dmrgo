@@ -1,6 +1,9 @@
 package rf
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestCohExtVoice(t *testing.T) {
 	t.Parallel()
@@ -43,4 +46,54 @@ func TestCohTier2VoiceAboveEasySNR(t *testing.T) {
 	if n6 >= n5 {
 		t.Errorf("Tier2 lost %d voice frames at C/N 6 dB, %d at 5 dB", n6, n5)
 	}
+}
+
+func TestCohPilotFromInterior(t *testing.T) {
+	t.Parallel()
+	o := tierOptions(Tier2)
+	o.CohExact, o.PhaseStates, o.LogMAP = true, 52, true
+	exact := pilotRuns(newCohStageOf(&o))
+	o = tierOptions(Tier2)
+	near := pilotRuns(newCohStageOf(&o))
+	lo, hi := syncFirstSym, syncFirstSym+syncSymbols-1
+	fwd, bwd := [4]float32{1, 0, 0, 0}, [4]float32{0, 0, 0, 1}
+	for _, c := range []struct {
+		j           int
+		exact, near [4]float32
+	}{
+		{lo + 2, bwd, fwd}, {lo + 3, bwd, fwd}, {hi - 3, fwd, bwd}, {hi - 2, fwd, bwd},
+		{lo + 5, fwd, fwd}, {hi - 5, bwd, bwd}, {lo - 1, bwd, bwd}, {hi + 1, fwd, fwd},
+	} {
+		if exact.app[c.j] != c.exact {
+			t.Errorf("exact stage, symbol %d: APP %v, want %v", c.j, exact.app[c.j], c.exact)
+		}
+		if near.app[c.j] != c.near {
+			t.Errorf("per-survivor stage, symbol %d: APP %v, want %v", c.j, near.app[c.j], c.near)
+		}
+	}
+}
+
+func pilotRuns(s *cohStage) *cohStage {
+	lo, hi := syncFirstSym, syncFirstSym+syncSymbols-1
+	s.nseg = 2
+	s.segs = [2][2]int{{lo, lo + 3}, {hi - 3, hi}}
+	for _, sg := range s.segs {
+		for j := sg[0]; j <= sg[1]; j++ {
+			s.isK[j] = true
+		}
+	}
+	for i := range s.dist {
+		s.dist[i] = math.MaxInt
+	}
+	d := s.model.d
+	fwd, bwd := []float32{1, 0, 0, 0}, []float32{0, 0, 0, 1}
+	s.g0, s.dir, s.steps = lo, 1, slotSymbols
+	for k := range slotSymbols - lo - 2*d {
+		s.runKeep(k, fwd)
+	}
+	s.g0, s.dir = hi, -1
+	for k := range hi - cachSymbols - 2*d {
+		s.runKeep(k, bwd)
+	}
+	return s
 }

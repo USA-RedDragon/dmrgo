@@ -693,8 +693,11 @@ func (s *cohStage) runKeep(k int, app []float32) {
 			s.app[j][i] = 0.5 * ((app[i] - ma) + (s.app[j][i] - mb))
 		}
 		return
-	} else if dist >= s.dist[j] {
-		return
+	}
+	if d := s.dist[j]; d != math.MaxInt {
+		if pilot := s.ex != nil && s.nseg == 2 && s.isK[j]; pilot && dist <= d || !pilot && dist >= d {
+			return
+		}
 	}
 	copy(s.app[j][:], app)
 	s.dist[j] = dist
