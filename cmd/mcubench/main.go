@@ -75,7 +75,7 @@ type tools struct {
 	tinygo, tinygoRoot, version, qemu, cc string
 }
 
-func findTools(ctx context.Context) (tools, error) {
+func findTools(ctx context.Context, root string) (tools, error) {
 	var t tools
 	var err error
 	for _, n := range []struct {
@@ -100,7 +100,31 @@ func findTools(ctx context.Context) (tools, error) {
 		return t, skipError{"tinygo env TINYGOROOT: " + err.Error()}
 	}
 	t.tinygoRoot = strings.TrimSpace(string(out))
+	want, err := goDirective(filepath.Join(root, "go.mod"))
+	if err != nil {
+		return t, err
+	}
+	out, err = exec.CommandContext(ctx, "go", "env", "GOVERSION").Output()
+	if err != nil {
+		return t, skipError{"go env GOVERSION: " + err.Error()}
+	}
+	if got := strings.TrimSpace(string(out)); got != "go"+want {
+		return t, skipError{"go on PATH is " + got + ", the data is measured with go" + want + ", the go directive of go.mod that CI sets up, as TinyGo compiles the standard library of that Go"}
+	}
 	return t, nil
+}
+
+func goDirective(path string) (string, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	for _, l := range strings.Split(string(b), "\n") {
+		if f := strings.Fields(l); len(f) == 2 && f[0] == "go" {
+			return f[1], nil
+		}
+	}
+	return "", errors.New(path + " has no go directive")
 }
 
 type txRow struct {
@@ -130,7 +154,7 @@ func txRows() []benchRow {
 }
 
 func run(ctx context.Context, root, work string, update bool) error {
-	t, err := findTools(ctx)
+	t, err := findTools(ctx, root)
 	if err != nil {
 		return err
 	}

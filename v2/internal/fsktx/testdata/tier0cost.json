@@ -5,7 +5,7 @@
 			"name": "I/Q at 96 kHz, CS16",
 			"mhz": 4.8,
 			"ram_bytes": 944,
-			"flash_kb": 33.6
+			"flash_kb": 33.7
 		},
 		{
 			"name": "Audio at 48 kHz, 12-bit",
