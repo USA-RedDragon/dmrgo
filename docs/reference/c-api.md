@@ -7824,7 +7824,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
 /* Go: rf.RegionJapan. RegionJapan keeps the Radio Equipment Regulations for land mobile and amateur. */
 #define DMRGO_RF_REGION_JAPAN ((dmrgo_rf_region_t)4)
-/* Go: rf.RegionUS. RegionUS keeps 47 CFR 90.210 Emission Mask D for land mobile and 47 CFR 97.307 for amateur. */
+/* Go: rf.RegionUS. RegionUS keeps 47 CFR 90.210 Emission Masks D and H and the 47 CFR 90.691 EA mask at once for land mobile, and 47 CFR 97.307 for amateur. */
 #define DMRGO_RF_REGION_US ((dmrgo_rf_region_t)1)
 /* Go: rf.RegionWorld. RegionWorld keeps the limits of every other region at once, the strictest of each. */
 #define DMRGO_RF_REGION_WORLD ((dmrgo_rf_region_t)0)

@@ -98,6 +98,10 @@ func txLimitRows() []txLimitRow {
 		power("Spurious emissions, dB (EN 300 113 7.5, EN 303 405 7.5)", "en_spur_"),
 		power("Emission Mask D, dB (47 CFR 90.210(d))", "fcc_maskd_"),
 		power("Emission Mask D far out, dB (47 CFR 90.210(d)(3))", "fcc_maskd_far_"),
+		power("Emission Mask H, dB (47 CFR 90.210(h))", "fcc_maskh_"),
+		power("Emission Mask H far out, dB (47 CFR 90.210(h)(5))", "fcc_maskh_far_"),
+		power("800 MHz EA mask, dB (47 CFR 90.691(a))", "fcc_ea_"),
+		power("800 MHz EA mask far out, dB (47 CFR 90.691(a)(2))", "fcc_ea_far_"),
 		power("Amateur spurious emissions, dB (47 CFR 97.307(e))", "am_us97e_"),
 		power("Amateur spurious emissions, dB (ERC/REC 74-01)", "am_erc_"),
 		fixed("Adjacent channel power, dB (EN 303 405 7.4)", "pmr_acp_db"),
@@ -209,7 +213,7 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 		b.WriteString("\n")
 	}
 	b.WriteString("## Measured margins\n\n")
-	b.WriteString("Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A positive value is inside the limit. A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, Emission Mask D far out and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.\n\n")
+	b.WriteString("Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A positive value is inside the limit. A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, the far out rows of the FCC masks and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.\n\n")
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		cs := txTierClasses(tier)
 		fmt.Fprintf(&b, "### Tier %d margins\n\n| Limit |", tier-Tier0)

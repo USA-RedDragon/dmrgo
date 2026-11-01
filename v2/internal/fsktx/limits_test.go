@@ -179,6 +179,36 @@ func maskdAttn(fd, pw float64) float64 {
 	return min(50+10*math.Log10(pw), 70)
 }
 
+// 47 CFR 90.210(h)
+func maskhAttn(fd, pw float64) float64 {
+	fd = math.Abs(fd) / 1000
+	switch {
+	case fd <= 4:
+		return 0
+	case fd <= 8.5:
+		return 107 * math.Log10(fd/4)
+	case fd <= 15:
+		return 40.5 * math.Log10(fd/1.16)
+	case fd <= 25:
+		return 116 * math.Log10(fd/6.1)
+	}
+	return 43 + 10*math.Log10(pw)
+}
+
+const eaEdgeKHz = 50
+
+// 47 CFR 90.691(a)
+func eaAttn(fd, pw float64) float64 {
+	fd = math.Abs(fd) / 1000
+	switch {
+	case fd <= 12.5:
+		return 0
+	case fd <= eaEdgeKHz:
+		return min(116*math.Log10(fd/6.1), 50+10*math.Log10(pw), 80)
+	}
+	return min(43+10*math.Log10(pw), 80)
+}
+
 var annexCurves = map[string][4][]float64{
 	"nominal": {{0, 3, 4.25, 5.5, 9.5}, {0, 2, 6, 26, 90}, {0, 3, 4.25, 5.5, 9.5}, {0, 2, 6, 26, 90}},
 	"wide":    {{0, 4.34, 4.35, 5.5, 9.5}, {0, 2, 6, 26, 90}, {0, 5, 6.25, 7.5, 11.5}, {0, 2, 6, 26, 90}},
@@ -243,7 +273,7 @@ func movingMean(x []float64, k int) []float64 {
 	return out
 }
 
-// ETSI EN 300 113 clauses 7.4 and 7.5; FCC 90.210(d); FCC 97.307(e); ERC/REC 74-01 Annex 6
+// ETSI EN 300 113 clauses 7.4 and 7.5; FCC 90.210(d) and (h); FCC 90.691; FCC 97.307(e); ERC/REC 74-01 Annex 6
 func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 	out := map[string]float64{}
 	s := limSpectra(x, rate, pc, 100, 2)
@@ -267,13 +297,24 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 	out["maskd_ref_db"] = dbOf(ref / pc)
 	hi := min(56250, rate/2-200)
 	for _, pw := range limPowers {
-		mg := math.Inf(1)
+		md, mh, me := math.Inf(1), math.Inf(1), math.Inf(1)
 		for i, f := range s.f {
-			if math.Abs(f) >= 5625 && math.Abs(f) <= hi {
-				mg = min(mg, dbOf(ref/pc)-dbOf(s.peak[i])-maskdAttn(f, wattsOf(pw)))
+			a := math.Abs(f)
+			if a < 4000 || a > hi {
+				continue
+			}
+			r := dbOf(ref/pc) - dbOf(s.peak[i])
+			mh = min(mh, r-maskhAttn(f, wattsOf(pw)))
+			if a >= 5625 {
+				md = min(md, r-maskdAttn(f, wattsOf(pw)))
+			}
+			if a > 12500 {
+				me = min(me, r-eaAttn(f, wattsOf(pw)))
 			}
 		}
-		out[powKey("maskd_", pw, "")] = mg
+		out[powKey("maskd_", pw, "")] = md
+		out[powKey("maskh_", pw, "")] = mh
+		out[powKey("ea_", pw, "")] = me
 	}
 	var tot float64
 	for _, v := range s.bin {
@@ -590,6 +631,12 @@ func reqUS97(dbm float64) float64 {
 // FCC 90.210(d)(3)
 func reqMaskD(dbm float64) float64 { return min(50+dbm-30, 70) }
 
+// 47 CFR 90.210(h)(5)
+func reqMaskHFar(dbm float64) float64 { return 43 + dbm - 30 }
+
+// 47 CFR 90.691(a)(2)
+func reqEAFar(dbm float64) float64 { return min(43+dbm-30, 80) }
+
 // ERC/REC 74-01 Annex 6 6.1.3; China Radio Frequency Allocation Regulations Annex 2 Table 2.3
 func reqERC(dbm float64) float64 { return min(43+dbm-30, 70) }
 
@@ -620,7 +667,7 @@ func reqJPAmateur(dbm float64) float64 {
 
 const cnPeakDB = 11.4
 
-// ETSI EN 300 113 clauses 7.4, 7.5 and 7.9; FCC 90.210(d); FCC 97.307(e); ERC/REC 74-01 Annex 6; ETSI TS 102 361-1 clause 10.2.2.3
+// ETSI EN 300 113 clauses 7.4, 7.5 and 7.9; FCC 90.210(d) and (h); FCC 90.691; FCC 97.307(e); ERC/REC 74-01 Annex 6; ETSI TS 102 361-1 clause 10.2.2.3
 func limMargins(m limMeasures) map[string]float64 {
 	g := map[string]float64{}
 	put := func(k string, v float64, ok bool) {
@@ -634,8 +681,10 @@ func limMargins(m limMeasures) map[string]float64 {
 		return v, ok
 	}
 	for _, pw := range limPowers {
-		v, ok := get(s, powKey("maskd_", pw, ""))
-		put(powKey("fcc_maskd_", pw, "_db"), v, ok)
+		for _, m := range []string{"maskd_", "maskh_", "ea_"} {
+			v, ok := get(s, powKey(m, pw, ""))
+			put(powKey("fcc_"+m, pw, "_db"), v, ok)
+		}
 	}
 	for _, nm := range []string{"acp", "alt"} {
 		for _, k := range []string{"nominal", "wide"} {
@@ -697,6 +746,8 @@ func limMargins(m limMeasures) map[string]float64 {
 	for _, pw := range limPowers {
 		if v, ok := get(w, "far_fcc_dbc"); ok {
 			g[powKey("fcc_maskd_far_", pw, "_db")] = s["maskd_ref_db"] - v - reqMaskD(pw)
+			g[powKey("fcc_maskh_far_", pw, "_db")] = s["maskd_ref_db"] - v - reqMaskHFar(pw)
+			g[powKey("fcc_ea_far_", pw, "_db")] = s["maskd_ref_db"] - v - reqEAFar(pw)
 		}
 		if v, ok := get(w, "far_erc_dbc"); ok {
 			low(g, powKey("am_erc_", pw, "_db"), -v-reqERC(pw))
@@ -732,7 +783,8 @@ func limNeed(key string) float64 {
 	case hasSuffix(key, "_db") && hasPrefix(key, "en_slope_"):
 		return -0.01
 	case hasPrefix(key, "en_spur_"), hasPrefix(key, "cn_spur_"), hasPrefix(key, "jp_spur_"), hasPrefix(key, "jp_am_spur_"),
-		hasPrefix(key, "am_cn_"), hasPrefix(key, "am_erc_"), hasPrefix(key, "am_us97e_"), hasPrefix(key, "fcc_maskd_far_"):
+		hasPrefix(key, "am_cn_"), hasPrefix(key, "am_erc_"), hasPrefix(key, "am_us97e_"), hasPrefix(key, "fcc_maskd_far_"),
+		hasPrefix(key, "fcc_maskh_far_"), hasPrefix(key, "fcc_ea_far_"):
 		return spurNeedDB
 	case hasSuffix(key, "_db"):
 		return 3

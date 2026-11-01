@@ -381,7 +381,8 @@ func regimeKeys(region, service int, pw float64) []string {
 		if service == limAmateur {
 			return []string{"ts_dev_pct", powKey("am_us97e_", pw, "_db")}
 		}
-		return []string{"ts_dev_pct", powKey("fcc_maskd_", pw, "_db"), powKey("fcc_maskd_far_", pw, "_db")}
+		return []string{"ts_dev_pct", powKey("fcc_maskd_", pw, "_db"), powKey("fcc_maskd_far_", pw, "_db"),
+			powKey("fcc_maskh_", pw, "_db"), powKey("fcc_maskh_far_", pw, "_db"), powKey("fcc_ea_", pw, "_db"), powKey("fcc_ea_far_", pw, "_db")}
 	case limCEPT:
 		switch service {
 		case limAmateur:
@@ -981,6 +982,9 @@ func TestPowerLimitsMonotone(t *testing.T) {
 	reqs := map[string]func(float64) float64{
 		"maskd": reqMaskD, "us97e": reqUS97, "erc": reqERC, "spur36": reqSpur36, "jp": reqJPLandMobile, "jp_am": reqJPAmateur,
 		"maskd_near": func(d float64) float64 { return maskdAttn(20000, wattsOf(d)) },
+		"maskh":      reqMaskHFar, "ea": reqEAFar,
+		"maskh_near": func(d float64) float64 { return maskhAttn(30000, wattsOf(d)) },
+		"ea_near":    func(d float64) float64 { return eaAttn(40000, wattsOf(d)) },
 	}
 	for nm, req := range reqs {
 		prev := math.Inf(-1)
@@ -1041,6 +1045,60 @@ func TestPowerLimitFormulas(t *testing.T) {
 	} {
 		if got := c.req(c.dbm); math.Abs(got-c.want) > 0.01 {
 			t.Errorf("%s: %.2f dBc, want %.2f", c.nm, got, c.want)
+		}
+	}
+}
+
+func TestFCC800Masks(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		nm      string
+		attn    func(fd, pw float64) float64
+		fd, dbm float64
+		want    float64
+	}{
+		{"90.210(h)(1) 4 kHz", maskhAttn, 4000, 50, 0},
+		{"90.210(h)(2) 5.625 kHz", maskhAttn, 5625, 50, 15.84},
+		{"90.210(h)(2) 8.5 kHz", maskhAttn, -8500, 50, 35.03},
+		{"90.210(h)(3) 12.5 kHz", maskhAttn, 12500, 50, 41.82},
+		{"90.210(h)(3) 15 kHz", maskhAttn, 15000, 50, 45.02},
+		{"90.210(h)(4) 20 kHz", maskhAttn, 20000, 50, 59.82},
+		{"90.210(h)(4) 25 kHz", maskhAttn, 25000, 50, 71.06},
+		{"90.210(h)(5) 30 kHz 0.5 W", maskhAttn, 30000, 27, 40},
+		{"90.210(h)(5) 30 kHz 1 kW", maskhAttn, 30000, 60, 73},
+		{"90.210(h)(5) 30 kHz 62 dBm", maskhAttn, -30000, 62, 75},
+		{"90.691(a)(1) 12.5 kHz", eaAttn, 12500, 50, 0},
+		{"90.691(a)(1) 20 kHz 100 W", eaAttn, 20000, 50, 59.82},
+		{"90.691(a)(1) 40 kHz 1 W", eaAttn, 40000, 30, 50},
+		{"90.691(a)(1) 40 kHz 100 W", eaAttn, 40000, 50, 70},
+		{"90.691(a)(1) 50 kHz 1 kW", eaAttn, -50000, 60, 80},
+		{"90.691(a)(2) 60 kHz 100 W", eaAttn, 60000, 50, 63},
+		{"90.691(a)(2) 60 kHz 62 dBm", eaAttn, 60000, 62, 75},
+	} {
+		if got := c.attn(c.fd, wattsOf(c.dbm)); math.Abs(got-c.want) > 0.01 {
+			t.Errorf("%s at %g dBm: %.2f dB, want %.2f", c.nm, c.dbm, got, c.want)
+		}
+	}
+	for _, c := range []struct {
+		nm        string
+		req       func(float64) float64
+		dbm, want float64
+	}{
+		{"90.210(h)(5) 100 W", reqMaskHFar, 50, 63},
+		{"90.210(h)(5) 62 dBm", reqMaskHFar, 62, 75},
+		{"90.691(a)(2) 100 W", reqEAFar, 50, 63},
+		{"90.691(a)(2) 1 kW", reqEAFar, 60, 73},
+	} {
+		if got := c.req(c.dbm); math.Abs(got-c.want) > 0.01 {
+			t.Errorf("%s: %.2f dBc, want %.2f", c.nm, got, c.want)
+		}
+	}
+	for _, r := range []int{limUS, limWorld} {
+		keys := regimeKeys(r, limLandMobile, 60)
+		for _, k := range []string{"fcc_maskh_60dbm_db", "fcc_maskh_far_60dbm_db", "fcc_ea_60dbm_db", "fcc_ea_far_60dbm_db"} {
+			if !slices.Contains(keys, k) {
+				t.Errorf("%s land mobile does not keep %s", limRegionNames[r], k)
+			}
 		}
 	}
 }

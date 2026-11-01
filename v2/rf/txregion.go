@@ -16,9 +16,9 @@ const (
 	// RegionCEPT and RegionChina, the regions with a license-free DMR
 	// service.
 	RegionWorld Region = iota
-	// RegionUS keeps 47 CFR 90.210 Emission Mask D for land mobile and 47
-	// CFR 97.307 for amateur. It does not cover the 800 MHz bands of Mask
-	// H or the 90.691 EA mask.
+	// RegionUS keeps 47 CFR 90.210 Emission Masks D and H and the 47 CFR
+	// 90.691 EA mask at once for land mobile, and 47 CFR 97.307 for
+	// amateur.
 	RegionUS
 	// RegionCEPT keeps ETSI EN 300 113 for land mobile, ERC/REC 74-01 for
 	// amateur, and ETSI EN 303 405 and EN 300 390 for PMR446, the
