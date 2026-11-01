@@ -218,9 +218,9 @@ func (c *TxConfig) plan(g *txGate) (txPlan, error) {
 	switch c.Tier {
 	case Tier0:
 		p.lag = tier0IQLag
-	case Tier2:
+	case Tier1, Tier2:
 		p.lag = 16
-	case TierDefault, Tier1, Tier3:
+	case TierDefault, Tier3:
 	}
 	return p, nil
 }
