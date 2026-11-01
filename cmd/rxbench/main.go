@@ -7,6 +7,10 @@
 // between the shortlc markers comes from v2/rf/testdata/rxbench_shortlc.json,
 // which TestShortLCBench writes with DMRRF_SLCBENCH set to the path of the
 // XPR 8400 idle capture; -update-readme runs it when DMRRF_SLCBENCH is set.
+// The block between the extcmp markers comes from v2/rf/testdata/extcmp.json,
+// which TestExtCompare writes with DMRRF_EXTCMP=full and the paths of dsd-fme
+// and of the host builds of the MMDVM DMO receiver in DMRRF_DSDFME,
+// DMRRF_MMDVM and DMRRF_MMDVMFIX.
 package main
 
 import (
@@ -113,6 +117,11 @@ func run(ctx context.Context, root string, update, sweep bool) error {
 		return errors.New("docs/rx/README.md has no shortlc markers")
 	}
 	next = append(append(append([]byte{}, next[:i+len(shortLCBegin)]...), renderShortLC(d.shortLC)...), next[j:]...)
+	i, j = bytes.Index(next, []byte(extBegin)), bytes.Index(next, []byte(extEnd))
+	if i < 0 || j < i {
+		return errors.New("docs/rx/README.md has no extcmp markers")
+	}
+	next = append(append(append([]byte{}, next[:i+len(extBegin)]...), renderExt(d.ext)...), next[j:]...)
 	stale := !bytes.Equal(next, readme)
 	for name, svg := range graphs {
 		p := filepath.Join(root, "docs/rx", name)
@@ -215,11 +224,12 @@ type data struct {
 	aware      curves
 	recordings []recording
 	shortLC    shortLCData
+	ext        extData
 }
 
 func load(dir string) (data, error) {
 	var d data
-	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings, "rxbench_shortlc.json": &d.shortLC} {
+	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings, "rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext} {
 		b, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			return d, err

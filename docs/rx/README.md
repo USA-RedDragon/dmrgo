@@ -115,6 +115,176 @@ Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with 
 
 `go run -C cmd/rxbench . -update-readme` runs the sweep and writes the tables and graphs above. `-check-readme` fails when they differ from the sweep data in `v2/rf/testdata`.
 
+## Other receivers
+
+<!-- extcmp:begin -->
+The tiers and other receivers decode the same noisy signals. Each cell is the Eb/N0 at which the receiver recovers 90% of the frames exactly. Lower is better.
+
+- Receivers: dsd-fme (commit 587181f4), MMDVM firmware (commit 046e1df1), MMDVM firmware, end of burst fixed (commit 046e1df1).
+- Each point decodes 192 noise seeds at each C/N from 0 to 20 dB in steps of 1 dB. Every receiver gets the same seeds.
+- The FM audio comes from the discriminator model of the sweep with a 95-tap IF filter: a Kaiser-windowed sinc with its -6 dB point at 6 kHz and at least 84 dB of attenuation from 7.5 kHz, as the IF of a 12.5 kHz radio. The audio tiers get it at 9.6 kHz, dsd-fme at 48 kHz and the MMDVM firmware at 24 kHz, with the DC offset of the carrier and no other.
+- dsd-fme decodes from `-fs -i - -o null -Z`. Its voice frames come from its AMBE+2 printout and its data blocks from one print line added after its FEC, which changes no decision. A frame counts when it equals the next frame of the truth in order. The MMDVM firmware is its DMO receiver (`DMRDMORX.cpp`) on the host with the 0.2 RRC filter of `IO.cpp`, and its burst bits go through the FEC of dmrgo. The tiers and the MMDVM firmware count a frame only at its own slot.
+- The MMDVM DMO receiver takes each burst one sample before its last symbol arrives. `DMRDMORX.cpp` sets the end at `m_endPtr = m_dataPtr + DMR_SLOT_TYPE_LENGTH_SAMPLES / 2U + DMR_INFO_LENGTH_SAMPLES / 2U - 1U` (lines 327 and 358), 269 samples after the last SYNC symbol, but the last symbol of the burst is 270 samples after it, and `samplesToBits` reads it from `m_endPtr + DMO_BUFFER_LENGTH_SAMPLES - DMR_FRAME_LENGTH_SAMPLES + DMR_RADIO_SYMBOL_LENGTH + 1U` (line 126) on, which reaches the sample of 60 ms before. So the last two bits of every burst are random, and its voice and rate 3/4 cells do not reach 90% at any C/N. The second MMDVM row drops the `- 1U` and the `+ 1U`. Only MS bursts carry the SYNC patterns that the MMDVM DMO receiver looks for.
+
+#### BS outbound, both slots, carrier 1400 Hz off
+
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Audio tier 0 | 9.6 dB | 6.0 dB | 6.6 dB | 8.2 dB | 11.6 dB | 6.5 dB | 6.7 dB | 6.6 dB | 9.6 dB | 4.4 dB | 4.8 dB | - |
+| Audio tier 1 | 8.3 dB | 5.3 dB | 6.6 dB | 8.0 dB | 11.6 dB | 5.4 dB | 5.8 dB | 5.4 dB | 5.8 dB | 4.1 dB | 4.5 dB | - |
+| Audio tier 2 | 5.0 dB | 4.0 dB | 4.4 dB | 6.2 dB | 8.5 dB | 3.9 dB | 4.1 dB | 4.0 dB | 3.8 dB | 2.3 dB | 2.2 dB | - |
+| Low-rate I/Q tier 0 | 10.3 dB | 5.5 dB | 6.7 dB | 8.2 dB | 12.7 dB | 6.6 dB | 6.6 dB | 6.9 dB | 9.7 dB | 4.0 dB | 4.4 dB | - |
+| I/Q tier 0 | 9.4 dB | 4.8 dB | 5.7 dB | 7.6 dB | 11.3 dB | 5.5 dB | 5.9 dB | 5.9 dB | 9.3 dB | 3.3 dB | 3.8 dB | - |
+| I/Q tier 1 | 8.0 dB | 3.9 dB | 5.5 dB | 7.1 dB | 11.4 dB | 3.9 dB | 4.1 dB | 4.0 dB | 4.1 dB | 3.0 dB | 3.2 dB | - |
+| I/Q tier 2 | 4.7 dB | 3.1 dB | 4.2 dB | 5.4 dB | 8.0 dB | 3.1 dB | 3.1 dB | 3.3 dB | 3.0 dB | < 1.1 dB | 1.3 dB | - |
+| dsd-fme | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | - | - | 30 ms |
+
+#### MS bursts, one slot, carrier 1400 Hz off
+
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Audio tier 0 | 9.7 dB | 6.1 dB | 6.5 dB | 8.7 dB | 11.6 dB | 6.5 dB | 7.1 dB | 6.4 dB | 9.6 dB | 5.8 dB | 4.7 dB | - |
+| Audio tier 1 | 9.7 dB | 5.9 dB | 6.5 dB | 8.6 dB | 11.6 dB | 5.4 dB | 6.1 dB | 5.1 dB | 6.1 dB | 5.7 dB | 4.6 dB | - |
+| Audio tier 2 | 5.9 dB | 5.4 dB | 4.1 dB | 6.4 dB | 8.5 dB | 3.9 dB | 5.9 dB | 3.9 dB | 5.7 dB | 5.3 dB | 3.6 dB | - |
+| Low-rate I/Q tier 0 | 10.4 dB | 6.1 dB | 6.5 dB | 8.7 dB | 12.6 dB | 6.6 dB | 10.8 dB | 6.3 dB | 9.8 dB | 5.7 dB | 4.1 dB | - |
+| I/Q tier 0 | 9.6 dB | 5.5 dB | 5.5 dB | 8.0 dB | 11.3 dB | 5.7 dB | 8.4 dB | 5.4 dB | 9.7 dB | 5.0 dB | 3.5 dB | - |
+| I/Q tier 1 | 9.1 dB | 4.9 dB | 5.4 dB | 7.4 dB | 11.4 dB | 3.8 dB | 5.5 dB | 3.8 dB | 5.1 dB | 4.7 dB | 3.1 dB | - |
+| I/Q tier 2 | 4.9 dB | 4.2 dB | 2.9 dB | 5.5 dB | 7.8 dB | 2.3 dB | 5.2 dB | 2.4 dB | 4.7 dB | 4.0 dB | < 1.1 dB | - |
+| dsd-fme | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | - | - | 28 ms |
+| MMDVM firmware | > 21.1 dB | 10.0 dB | 10.5 dB | > 21.1 dB | 11.4 dB | 10.3 dB | 10.4 dB | 10.3 dB | 10.1 dB | 10.0 dB | 10.3 dB | 1.5 ms |
+| MMDVM firmware, end of burst fixed | 9.9 dB | 9.0 dB | 10.0 dB | 10.1 dB | 11.4 dB | 9.8 dB | 9.9 dB | 9.7 dB | 9.5 dB | 9.0 dB | 9.8 dB | 1.5 ms |
+
+#### BS outbound, both slots, carrier 0 Hz off
+
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Audio tier 0 | 9.6 dB | 5.8 dB | 6.2 dB | 8.3 dB | 11.4 dB | 6.1 dB | 6.2 dB | 6.4 dB | 9.7 dB | 4.1 dB | 4.4 dB | - |
+| Audio tier 1 | 8.2 dB | 5.0 dB | 6.2 dB | 7.9 dB | 11.4 dB | 5.0 dB | 5.3 dB | 5.1 dB | 5.1 dB | 4.0 dB | 4.1 dB | - |
+| Audio tier 2 | 5.0 dB | 3.8 dB | 4.2 dB | 6.3 dB | 8.3 dB | 3.8 dB | 4.0 dB | 3.9 dB | 3.7 dB | 2.4 dB | 2.4 dB | - |
+| Low-rate I/Q tier 0 | 9.7 dB | 5.0 dB | 6.1 dB | 8.0 dB | 11.5 dB | 6.0 dB | 6.0 dB | 6.1 dB | 9.6 dB | 3.4 dB | 3.7 dB | - |
+| I/Q tier 0 | 9.3 dB | 4.8 dB | 5.6 dB | 7.9 dB | 11.4 dB | 5.4 dB | 5.6 dB | 5.7 dB | 9.3 dB | 3.1 dB | 3.3 dB | - |
+| I/Q tier 1 | 8.0 dB | 3.9 dB | 5.4 dB | 7.1 dB | 11.5 dB | 3.9 dB | 4.0 dB | 3.9 dB | 4.1 dB | 2.9 dB | 3.0 dB | - |
+| I/Q tier 2 | 4.7 dB | 3.1 dB | 4.2 dB | 5.5 dB | 7.9 dB | 3.1 dB | 3.1 dB | 3.3 dB | 3.0 dB | < 1.1 dB | 1.3 dB | - |
+| dsd-fme | 20.5 dB | 9.6 dB | 12.9 dB | 15.3 dB | > 21.1 dB | 11.3 dB | 11.7 dB | 15.6 dB | 19.0 dB | - | - | 37 ms |
+
+#### MS bursts, one slot, carrier 0 Hz off
+
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Audio tier 0 | 9.7 dB | 6.1 dB | 6.1 dB | 8.4 dB | 11.6 dB | 6.1 dB | 7.0 dB | 6.1 dB | 9.6 dB | 5.8 dB | 4.4 dB | - |
+| Audio tier 1 | 9.7 dB | 5.9 dB | 6.1 dB | 8.2 dB | 11.6 dB | 4.9 dB | 6.0 dB | 5.0 dB | 6.1 dB | 5.7 dB | 4.2 dB | - |
+| Audio tier 2 | 6.0 dB | 4.6 dB | 3.9 dB | 6.5 dB | 8.5 dB | 3.3 dB | 5.1 dB | 3.5 dB | 4.8 dB | 4.0 dB | 2.3 dB | - |
+| Low-rate I/Q tier 0 | 9.8 dB | 5.7 dB | 6.1 dB | 8.4 dB | 11.7 dB | 6.0 dB | 7.1 dB | 6.0 dB | 9.8 dB | 5.1 dB | 3.9 dB | - |
+| I/Q tier 0 | 9.5 dB | 5.2 dB | 5.5 dB | 7.9 dB | 11.1 dB | 5.4 dB | 6.2 dB | 5.5 dB | 9.3 dB | 4.8 dB | 3.3 dB | - |
+| I/Q tier 1 | 9.1 dB | 4.7 dB | 5.3 dB | 7.5 dB | 11.4 dB | 3.8 dB | 4.9 dB | 3.8 dB | 4.9 dB | 4.5 dB | 3.0 dB | - |
+| I/Q tier 2 | 4.1 dB | 3.0 dB | 2.9 dB | 5.4 dB | 7.9 dB | 2.3 dB | 3.4 dB | 2.4 dB | 3.1 dB | 2.5 dB | < 1.1 dB | - |
+| dsd-fme | 16.6 dB | 8.9 dB | 11.1 dB | 14.6 dB | 18.0 dB | 11.3 dB | > 21.1 dB | 11.3 dB | 14.8 dB | - | - | 35 ms |
+| MMDVM firmware | > 21.1 dB | 10.0 dB | 10.4 dB | > 21.1 dB | 11.4 dB | 10.4 dB | 10.2 dB | 10.2 dB | 10.1 dB | 10.0 dB | 10.3 dB | 1.5 ms |
+| MMDVM firmware, end of burst fixed | 10.0 dB | 9.1 dB | 10.0 dB | 10.1 dB | 11.4 dB | 10.0 dB | 9.8 dB | 9.8 dB | 9.7 dB | 9.1 dB | 9.9 dB | 1.5 ms |
+
+#### Cells won and lost
+
+A cell is one payload of one stream at one C/N. On each seed the tier and the other receiver decode the same signal, and the difference of their exact frames is taken. The tier wins the cell when the mean difference over the seeds is more than two standard errors above 0, and is behind when it is more than two standard errors below 0. The cells between are ties, which count as lost. Cells where both recover every frame, or both none, are left out.
+
+| Tier | dsd-fme: won, tied, behind | MMDVM firmware: won, tied, behind | MMDVM firmware, end of burst fixed: won, tied, behind |
+|---|---|---|---|
+| Audio tier 0 | 618, 32, 0 | 227, 35, 0 | 180, 46, 3 |
+| Audio tier 1 | 639, 32, 0 | 239, 31, 0 | 196, 39, 2 |
+| Audio tier 2 | 694, 28, 0 | 273, 25, 0 | 236, 27, 0 |
+| Low-rate I/Q tier 0 | 637, 35, 0 | 230, 47, 17 | 179, 54, 35 |
+| I/Q tier 0 | 654, 35, 0 | 246, 37, 1 | 201, 44, 7 |
+| I/Q tier 1 | 679, 33, 0 | 264, 32, 0 | 221, 36, 8 |
+| I/Q tier 2 | 707, 23, 0 | 284, 19, 0 | 247, 21, 0 |
+
+<details><summary>Cells where a tier is behind</summary>
+
+Frames recovered by the tier against the other receiver, and the mean difference a seed with its standard error.
+
+- Audio tier 0 against MMDVM firmware, end of burst fixed:
+  - MS bursts, one slot, carrier 1400 Hz off, Embedded LC, C/N 9.0 dB: 1093 against 1113 of 1152, -0.104 ± 0.042 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 11.0 dB: 20607 against 20647 of 20736, -0.208 ± 0.061 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 12.0 dB: 20708 against 20722 of 20736, -0.073 ± 0.028 a seed
+- Audio tier 1 against MMDVM firmware, end of burst fixed:
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 11.0 dB: 20605 against 20647 of 20736, -0.219 ± 0.060 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 12.0 dB: 20708 against 20722 of 20736, -0.073 ± 0.028 a seed
+- Low-rate I/Q tier 0 against MMDVM firmware:
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 9.0 dB: 196 against 233 of 384, -0.193 ± 0.062 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 10.0 dB: 281 against 335 of 384, -0.281 ± 0.048 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 10.0 dB: 353 against 371 of 384, -0.094 ± 0.032 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 11.0 dB: 337 against 370 of 384, -0.172 ± 0.035 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 11.0 dB: 366 against 379 of 384, -0.068 ± 0.025 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 12.0 dB: 358 against 381 of 384, -0.120 ± 0.027 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 12.0 dB: 372 against 383 of 384, -0.057 ± 0.018 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 12.0 dB: 5364 against 5372 of 5376, -0.042 ± 0.019 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 13.0 dB: 376 against 384 of 384, -0.042 ± 0.014 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 13.0 dB: 374 against 384 of 384, -0.052 ± 0.016 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 13.0 dB: 5366 against 5375 of 5376, -0.047 ± 0.017 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 14.0 dB: 380 against 384 of 384, -0.021 ± 0.010 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 14.0 dB: 377 against 384 of 384, -0.036 ± 0.014 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 14.0 dB: 5369 against 5376 of 5376, -0.036 ± 0.014 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 15.0 dB: 378 against 384 of 384, -0.031 ± 0.013 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 15.0 dB: 5370 against 5376 of 5376, -0.031 ± 0.013 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Rate 1, C/N 11.0 dB: 364 against 374 of 384, -0.052 ± 0.024 a seed
+- Low-rate I/Q tier 0 against MMDVM firmware, end of burst fixed:
+  - MS bursts, one slot, carrier 1400 Hz off, Embedded LC, C/N 8.0 dB: 961 against 999 of 1152, -0.198 ± 0.095 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 9.0 dB: 18383 against 19228 of 20736, -4.401 ± 0.301 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 9.0 dB: 196 against 249 of 384, -0.276 ± 0.059 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 9.0 dB: 330 against 355 of 384, -0.130 ± 0.039 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Embedded LC, C/N 9.0 dB: 1071 against 1113 of 1152, -0.219 ± 0.048 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 10.0 dB: 19651 against 20321 of 20736, -3.490 ± 0.195 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 10.0 dB: 281 against 335 of 384, -0.281 ± 0.048 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 10.0 dB: 353 against 371 of 384, -0.094 ± 0.032 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 11.0 dB: 20268 against 20647 of 20736, -1.974 ± 0.116 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 11.0 dB: 337 against 370 of 384, -0.172 ± 0.035 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 11.0 dB: 366 against 379 of 384, -0.068 ± 0.025 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 12.0 dB: 20547 against 20722 of 20736, -0.911 ± 0.069 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 12.0 dB: 358 against 381 of 384, -0.120 ± 0.027 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 12.0 dB: 372 against 383 of 384, -0.057 ± 0.018 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 12.0 dB: 5364 against 5372 of 5376, -0.042 ± 0.019 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 13.0 dB: 20659 against 20733 of 20736, -0.385 ± 0.042 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 13.0 dB: 376 against 384 of 384, -0.042 ± 0.014 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 13.0 dB: 374 against 384 of 384, -0.052 ± 0.016 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 13.0 dB: 5366 against 5375 of 5376, -0.047 ± 0.017 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 14.0 dB: 20694 against 20736 of 20736, -0.219 ± 0.033 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Rate 1, C/N 14.0 dB: 380 against 384 of 384, -0.021 ± 0.010 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 14.0 dB: 377 against 384 of 384, -0.036 ± 0.014 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 14.0 dB: 5369 against 5376 of 5376, -0.036 ± 0.014 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 15.0 dB: 20713 against 20736 of 20736, -0.120 ± 0.025 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, LC header, C/N 15.0 dB: 378 against 384 of 384, -0.031 ± 0.013 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Slot type, C/N 15.0 dB: 5370 against 5376 of 5376, -0.031 ± 0.013 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 16.0 dB: 20725 against 20736 of 20736, -0.057 ± 0.017 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 17.0 dB: 20731 against 20736 of 20736, -0.026 ± 0.012 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Embedded LC, C/N 9.0 dB: 1076 against 1099 of 1152, -0.120 ± 0.055 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Embedded LC, C/N 10.0 dB: 1126 against 1138 of 1152, -0.062 ± 0.029 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 11.0 dB: 20548 against 20606 of 20736, -0.302 ± 0.073 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Rate 1, C/N 11.0 dB: 364 against 374 of 384, -0.052 ± 0.024 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 12.0 dB: 20673 against 20713 of 20736, -0.208 ± 0.047 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 13.0 dB: 20720 against 20736 of 20736, -0.083 ± 0.020 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 14.0 dB: 20732 against 20736 of 20736, -0.021 ± 0.010 a seed
+- I/Q tier 0 against MMDVM firmware:
+  - MS bursts, one slot, carrier 1400 Hz off, Embedded LC, C/N 10.0 dB: 1126 against 1139 of 1152, -0.068 ± 0.026 a seed
+- I/Q tier 0 against MMDVM firmware, end of burst fixed:
+  - MS bursts, one slot, carrier 1400 Hz off, Embedded LC, C/N 9.0 dB: 1083 against 1113 of 1152, -0.156 ± 0.045 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 10.0 dB: 20250 against 20321 of 20736, -0.370 ± 0.133 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Embedded LC, C/N 10.0 dB: 1126 against 1139 of 1152, -0.068 ± 0.026 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 11.0 dB: 20583 against 20647 of 20736, -0.333 ± 0.066 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 12.0 dB: 20687 against 20722 of 20736, -0.182 ± 0.035 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 13.0 dB: 20723 against 20733 of 20736, -0.052 ± 0.018 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 13.0 dB: 20730 against 20736 of 20736, -0.031 ± 0.013 a seed
+- I/Q tier 1 against MMDVM firmware, end of burst fixed:
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 10.0 dB: 20263 against 20321 of 20736, -0.302 ± 0.147 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 11.0 dB: 20542 against 20647 of 20736, -0.547 ± 0.077 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 12.0 dB: 20667 against 20722 of 20736, -0.286 ± 0.044 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 13.0 dB: 20713 against 20733 of 20736, -0.104 ± 0.024 a seed
+  - MS bursts, one slot, carrier 1400 Hz off, Voice, C/N 14.0 dB: 20729 against 20736 of 20736, -0.036 ± 0.014 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 11.0 dB: 20576 against 20606 of 20736, -0.156 ± 0.077 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 12.0 dB: 20680 against 20713 of 20736, -0.172 ± 0.040 a seed
+  - MS bursts, one slot, carrier 0 Hz off, Voice, C/N 13.0 dB: 20724 against 20736 of 20736, -0.062 ± 0.018 a seed
+
+</details>
+
+<!-- extcmp:end -->
+
 ## The sweep
 
 - The test stream is a BS outbound stream: a voice call on one slot and data, CSBKs and headers on the other.
