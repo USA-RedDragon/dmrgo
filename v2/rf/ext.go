@@ -442,7 +442,7 @@ func (x *softExt) coreData(c *leanCore, b *Burst, fixed, data layer2.RawBurst) {
 	coh, cohFixed, cohData := x.llr, b.Fixed, b.Data
 	b.Fixed, b.Data = fixed, data
 	x.data(c, b)
-	if x.bptcRetry(b) {
+	if !x.checked(b) {
 		b.Fixed, b.Data = cohFixed, cohData
 	}
 	x.llr = coh

@@ -236,3 +236,29 @@ func TestSoftRepairKeepsExact(t *testing.T) {
 		}
 	}
 }
+
+func TestCoreDataKeepsUncheckedExact(t *testing.T) {
+	t.Parallel()
+	x := newSoftExtStages(0, 0, 10)
+	var p [12]byte
+	p[0] = 0x55
+	if err := pdu.Seal(&p, enums.DataTypeCSBK); err != nil {
+		t.Fatal(err)
+	}
+	p[3] ^= 0x10
+	var coh layer2.RawBurst
+	coh.SetBPTCPayload(p)
+	if err := coh.SetSlotType(pdu.SlotTypeInfo(1<<4 | byte(enums.DataTypeCSBK)).SlotType()); err != nil {
+		t.Fatal(err)
+	}
+	_ = coh.SetSync(enums.SyncBSSourcedData)
+	lean := coh
+	if err := lean.SetSlotType(pdu.SlotTypeInfo(1<<4 | byte(enums.DataTypeIdle)).SlotType()); err != nil {
+		t.Fatal(err)
+	}
+	b := &Burst{Sync: enums.SyncBSSourcedData, Fixed: coh, Data: coh, HasFixed: true}
+	x.coreData(&leanCore{}, b, lean, lean)
+	if b.Fixed != coh || b.Data != coh {
+		t.Errorf("slot type %v, want the exact %v", b.Fixed.SlotType().DataType, enums.DataTypeCSBK)
+	}
+}
