@@ -1,0 +1,116 @@
+name: Datasheets
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'v2/rf/**'
+      - 'v2/internal/fsktx/**'
+      - 'v2/go.mod'
+      - 'v2/go.sum'
+      - 'cmd/mcubench/**'
+      - '.github/workflows/datasheet.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: datasheet
+  cancel-in-progress: false
+
+env:
+  # renovate: datasource=github-releases depName=qemu/qemu
+  QEMU_VERSION: 11.1.2
+  QEMU_SHA256: 731b5681e4bb18be313231579b8efd0296c5b015fa36dc533874b639ba838016
+  TINYGO_IMAGE: tinygo/tinygo:0.43.0@sha256:3470986dbce0b43cc5c590d46b8770f656528bc3e9f29267214d464c0fbbe9c5
+
+jobs:
+  update:
+    if: github.actor != 'usa-reddragon-auto-commit-bot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.AUTO_COMMIT_APP_ID }}
+          private-key: ${{ secrets.AUTO_COMMIT_APP_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install TinyGo from the pinned image
+        run: |
+          cid=$(docker create "$TINYGO_IMAGE")
+          docker cp "$cid:/usr/local/tinygo" "$RUNNER_TEMP/tinygo"
+          docker rm "$cid"
+          echo "$RUNNER_TEMP/tinygo/bin" >> "$GITHUB_PATH"
+
+      - name: Cache QEMU
+        id: qemu-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/qemu
+          key: qemu-arm-plugins-${{ env.QEMU_VERSION }}-${{ env.QEMU_SHA256 }}
+
+      - name: Build QEMU with plugin support
+        if: steps.qemu-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libglib2.0-dev libpixman-1-dev python3-venv flex bison
+          curl -fsSLo qemu.tar.xz "https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz"
+          echo "${QEMU_SHA256}  qemu.tar.xz" | sha256sum -c -
+          mkdir qemu-src
+          tar -xf qemu.tar.xz -C qemu-src --strip-components=1
+          cd qemu-src
+          ./configure --prefix="$RUNNER_TEMP/qemu" --target-list=arm-softmmu --enable-plugins --disable-docs --disable-tools --disable-werror
+          make -j"$(nproc)"
+          make install
+
+      - name: Put QEMU on the path
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev libpixman-1-0 pkg-config
+          echo "$RUNNER_TEMP/qemu/bin" >> "$GITHUB_PATH"
+          echo "CPATH=$RUNNER_TEMP/qemu/include" >> "$GITHUB_ENV"
+
+      - name: Least sample rates
+        run: DMRGO_LONG=1 go test -C v2 -count=1 -run '^TestMinRatesGenerated$' -timeout 3h ./internal/fsktx -args -update-minrate
+
+      - name: Cortex-M4F cost
+        run: go run -C cmd/mcubench . -update
+
+      - name: Transmitter datasheet
+        run: go test -C v2 -count=1 -run '^TestTxDoc$' ./internal/fsktx -args -update-txdoc
+
+      - name: Datasheet facts from the code
+        run: DMRGO_DOCPARAMS=write go test -C v2 -count=1 -run '^TestDocParams$' ./rf
+
+      - name: Check the generated datasheets
+        run: go test -C v2 -count=1 -run '^(TestTxDoc|TestDocParams|TestMinRates.*)$' ./rf ./internal/fsktx
+
+      - name: Commit the datasheets
+        env:
+          GIT_AUTHOR_NAME: usa-reddragon-auto-commit-bot[bot]
+          GIT_AUTHOR_EMAIL: usa-reddragon-auto-commit-bot[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: usa-reddragon-auto-commit-bot[bot]
+          GIT_COMMITTER_EMAIL: usa-reddragon-auto-commit-bot[bot]@users.noreply.github.com
+        run: |
+          git add -A docs v2/internal/fsktx/testdata v2/internal/fsktx/minrate_gen.go
+          if git diff --cached --quiet; then
+            echo "The datasheets are up to date."
+            exit 0
+          fi
+          git commit -m "docs: regenerate the datasheets [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
