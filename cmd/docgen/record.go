@@ -46,6 +46,7 @@ func (g *gen) recordStates(ip string, want map[string]string) (*stateRun, error)
 	}
 	r.hook.WriteString(")\n\n" + hookCommon + body.String())
 	work := filepath.Join(g.root, "artifacts", "docgen", strings.ReplaceAll(shortPath(ip), "/", "-"))
+	defer func() { _ = os.RemoveAll(work) }()
 	ovPath, err := r.writeOverlay(work, filepath.Dir(pi.pkg.GoFiles[0]))
 	if err != nil {
 		return nil, err
