@@ -266,11 +266,11 @@ func txRadioName(r string) string {
 	return "I/Q"
 }
 
-func renderTxSheetGraphs(d txSheetData, margins map[string]map[string]float64) map[string][]byte {
+func renderTxSheetGraphs(t testing.TB, d txSheetData, margins map[string]map[string]float64) map[string][]byte {
 	out := map[string][]byte{}
 	txSpectrumGraphs(out, d)
 	txEyeGraphs(out, d)
-	txMarginGraphs(out, margins)
+	txMarginGraphs(t, out, margins)
 	txFSKGraph(out, d)
 	return out
 }
@@ -345,12 +345,12 @@ func txEyeGraphs(out map[string][]byte, d txSheetData) {
 	}
 }
 
-func txMarginGraphs(out map[string][]byte, margins map[string]map[string]float64) {
+func txMarginGraphs(t testing.TB, out map[string][]byte, margins map[string]map[string]float64) {
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		var rows []string
 		var keys [][]string
 		for _, r := range txLimitRows() {
-			k := r.keys(30)
+			k := r.at(t, 30)
 			if len(k) == 0 || !strings.HasSuffix(k[0], "_db") || strings.HasPrefix(k[0], "en_slope_") {
 				continue
 			}
@@ -668,9 +668,14 @@ func barPlot(title string, xa plotAxis, rows []string, groups []barGroup, ref fl
 	return []byte(b.String())
 }
 
-func txRegimeMargin(g map[string]float64, r txRegime) (float64, bool) {
+func txRegimeMargin(t testing.TB, g map[string]float64, r txRegime) (float64, bool) {
+	t.Helper()
+	keys, err := regimeKeys(r.region, r.service, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
 	worst, ok := math.Inf(1), false
-	for _, k := range regimeKeys(r.region, r.service, 30) {
+	for _, k := range keys {
 		if !strings.HasSuffix(k, "_db") || strings.HasPrefix(k, "en_slope_") {
 			continue
 		}
@@ -681,7 +686,7 @@ func txRegimeMargin(g map[string]float64, r txRegime) (float64, bool) {
 	return worst, ok
 }
 
-func renderTxSheet(d txSheetData, cost txSheetCostData, margins map[string]map[string]float64) string {
+func renderTxSheet(t testing.TB, d txSheetData, cost txSheetCostData, margins map[string]map[string]float64) string {
 	var b strings.Builder
 	b.WriteString(txSheetBegin + "\n\n")
 	cs := txSheetClasses()
@@ -738,7 +743,7 @@ func renderTxSheet(d txSheetData, cost txSheetCostData, margins map[string]map[s
 	})
 	for _, r := range txRegimes {
 		row("Margin over the need, "+r.name+", 1 W", func(c limClass) string {
-			if v, ok := txRegimeMargin(margins[c.String()], r); ok {
+			if v, ok := txRegimeMargin(t, margins[c.String()], r); ok {
 				return fmt.Sprintf("%+.1f dB", v)
 			}
 			return "-"
@@ -842,7 +847,7 @@ func txSheetDoc(t *testing.T, doc []byte, margins map[string]map[string]float64)
 	if err := readJSON(txCostFile, &cost); err != nil {
 		t.Fatal(err)
 	}
-	graphs := renderTxSheetGraphs(d, margins)
+	graphs := renderTxSheetGraphs(t, d, margins)
 	for _, name := range txGraphList(graphs) {
 		p := filepath.Join(txSheetDir, name)
 		old, err := os.ReadFile(p)
@@ -858,7 +863,7 @@ func txSheetDoc(t *testing.T, doc []byte, margins map[string]map[string]float64)
 		}
 	}
 	for _, blk := range []struct{ begin, end, want string }{
-		{txSheetBegin, txSheetEnd, renderTxSheet(d, cost, margins)},
+		{txSheetBegin, txSheetEnd, renderTxSheet(t, d, cost, margins)},
 		{txLevelBegin, txLevelEnd, renderTxLevels()},
 		{txGraphBegin, txGraphEnd, renderTxGraphList(graphs)},
 		{txLowBegin, txLowEnd, renderTxLowpass()},

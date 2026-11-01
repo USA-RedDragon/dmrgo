@@ -371,13 +371,27 @@ func cnKeys(pw float64) []string {
 		"en_tacp_annexc_unmod_db", "en_tacp_sa_unmod_db", "en_talt_annexc_unmod_db", "en_talt_sa_unmod_db", powKey("cn_spur_", pw, "_db")}
 }
 
-func regimeKeys(region, service int, pw float64) []string {
+func checkPower(pw float64) error {
+	if !slices.Contains(limPowers, pw) {
+		return fmt.Errorf("%g dBm is not a power class of the limits: %v", pw, limPowers)
+	}
+	return nil
+}
+
+func regimeKeys(region, service int, pw float64) ([]string, error) {
+	if err := checkPower(pw); err != nil {
+		return nil, err
+	}
+	return regimeKeysAt(region, service, pw), nil
+}
+
+func regimeKeysAt(region, service int, pw float64) []string {
 	switch region {
 	case limWorld:
 		var all []string
 		for r := limUS; r < limRegions; r++ {
 			if limHasService(r, service) {
-				all = append(all, regimeKeys(r, service, pw)...)
+				all = append(all, regimeKeysAt(r, service, pw)...)
 			}
 		}
 		slices.Sort(all)
@@ -408,9 +422,14 @@ func regimeKeys(region, service int, pw float64) []string {
 	return []string{"ts_dev_pct", "jp_acp_db", "obw_jp_khz", powKey("jp_spur_", pw, "_db")}
 }
 
-func regimeFails(g map[string]float64, region, service int, pw float64) []string {
+func regimeFails(t testing.TB, g map[string]float64, region, service int, pw float64) []string {
+	t.Helper()
+	keys, err := regimeKeys(region, service, pw)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var bad []string
-	for _, k := range regimeKeys(region, service, pw) {
+	for _, k := range keys {
 		v, ok := g[k]
 		if ok && v < limNeed(k) {
 			bad = append(bad, fmt.Sprintf("%s %+.2f", k, v))
@@ -744,7 +763,7 @@ func TestMinRatesGenerated(t *testing.T) {
 					for p, pw := range limPowerClasses {
 						pass := make([]bool, len(rates))
 						for i, g := range res {
-							pass[i] = g != nil && limHasService(reg, s) && len(regimeFails(g, reg, s, pw)) == 0
+							pass[i] = g != nil && limHasService(reg, s) && len(regimeFails(t, g, reg, s, pw)) == 0
 						}
 						cell[reg][s][p] = minRateOf(rates, pass, gridFloor(c.iq))
 					}
@@ -824,7 +843,7 @@ func checkAgainstTable(t *testing.T, c limClass, rate, lowpass int, g map[string
 		for s := range limServices {
 			for p, pw := range limPowerClasses {
 				su := c.setup(r, s, p, lowpass)
-				if bad := regimeFails(g, r, s, pw); su.Allows(rate) && len(bad) > 0 {
+				if bad := regimeFails(t, g, r, s, pw); su.Allows(rate) && len(bad) > 0 {
 					t.Errorf("%s lp%d at %d Hz, %s %s %g W: the table allows it from %d Hz, but %v", c, lowpass, rate, limRegionNames[r], limServiceNames[s], pw, su.MinRate(), bad)
 				}
 			}
@@ -1125,7 +1144,10 @@ func TestFCC800Masks(t *testing.T) {
 		}
 	}
 	for _, r := range []int{limUS, limWorld} {
-		keys := regimeKeys(r, limLandMobile, 60)
+		keys, err := regimeKeys(r, limLandMobile, 60)
+		if err != nil {
+			t.Fatal(err)
+		}
 		for _, k := range []string{"fcc_maskh_60dbm_db", "fcc_maskh_far_60dbm_db", "fcc_ea_60dbm_db", "fcc_ea_far_60dbm_db"} {
 			if !slices.Contains(keys, k) {
 				t.Errorf("%s land mobile does not keep %s", limRegionNames[r], k)
@@ -1150,6 +1172,23 @@ func TestSpurMatchedRBW(t *testing.T) {
 	}
 	if v := g["far_sp_dbc"]; v < want+15 {
 		t.Errorf("the 100 kHz reading %.2f dBc is not about 20 dB over the 1 kHz reading %.2f dBc", v, want)
+	}
+}
+
+func TestKeysTakeOnlyPowerClasses(t *testing.T) {
+	t.Parallel()
+	if _, err := regimeKeys(limUS, limLandMobile, 1); err == nil {
+		t.Error("regimeKeys takes 1 dBm, which no power class has")
+	}
+	for _, row := range txLimitRows() {
+		if _, err := row.keys(1); row.perPower && err == nil {
+			t.Errorf("row %q takes 1 dBm, which no power class has", row.name)
+		}
+	}
+	for _, pw := range limPowers {
+		if _, err := regimeKeys(limWorld, limLandMobile, pw); err != nil {
+			t.Error(err)
+		}
 	}
 }
 

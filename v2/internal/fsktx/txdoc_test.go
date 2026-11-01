@@ -69,20 +69,32 @@ func measureTxMargins(t *testing.T) map[string]map[string]float64 {
 type txLimitRow struct {
 	name     string
 	perPower bool
-	keys     func(pw float64) []string
+	keys     func(pw float64) ([]string, error)
+}
+
+func (r txLimitRow) at(t testing.TB, pw float64) []string {
+	t.Helper()
+	k, err := r.keys(pw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
 }
 
 func txLimitRows() []txLimitRow {
 	fixed := func(name string, keys ...string) txLimitRow {
-		return txLimitRow{name: name, keys: func(float64) []string { return keys }}
+		return txLimitRow{name: name, keys: func(float64) ([]string, error) { return keys, nil }}
 	}
 	power := func(name string, pre ...string) txLimitRow {
-		return txLimitRow{name: name, perPower: true, keys: func(pw float64) []string {
+		return txLimitRow{name: name, perPower: true, keys: func(pw float64) ([]string, error) {
+			if err := checkPower(pw); err != nil {
+				return nil, err
+			}
 			k := make([]string, 0, len(pre))
 			for _, p := range pre {
 				k = append(k, powKey(p, pw, "_db"))
 			}
-			return k
+			return k, nil
 		}}
 	}
 	return []txLimitRow{
@@ -175,7 +187,8 @@ var txRegimes = []txRegime{
 	{"Japan, amateur", limJapan, limAmateur},
 }
 
-func renderTxDoc(margins map[string]map[string]float64) string {
+func renderTxDoc(t testing.TB, margins map[string]map[string]float64) string {
+	t.Helper()
 	var b strings.Builder
 	b.WriteString(txDocBegin + "\n\n")
 	b.WriteString("## Least sample rate\n\n")
@@ -226,12 +239,12 @@ func renderTxDoc(margins map[string]map[string]float64) string {
 			for _, c := range cs {
 				g := margins[c.String()]
 				if !row.perPower {
-					b.WriteString(" " + txWorst(g, row.keys(0)) + " |")
+					b.WriteString(" " + txWorst(g, row.at(t, 0)) + " |")
 					continue
 				}
 				cells := make([]string, len(limPowers))
 				for i, pw := range limPowers {
-					cells[i] = txWorst(g, row.keys(pw))
+					cells[i] = txWorst(g, row.at(t, pw))
 				}
 				all := strings.Join(cells, " / ")
 				if strings.Trim(all, "-/ ") == "" {
@@ -252,7 +265,7 @@ func TestTxDocRowsCoverLimits(t *testing.T) {
 	shown := map[string]bool{}
 	for _, row := range txLimitRows() {
 		for _, pw := range limPowers {
-			for _, k := range row.keys(pw) {
+			for _, k := range row.at(t, pw) {
 				shown[k] = true
 			}
 		}
@@ -260,7 +273,11 @@ func TestTxDocRowsCoverLimits(t *testing.T) {
 	for r := range limRegions {
 		for s := range limServices {
 			for _, pw := range limPowers {
-				for _, k := range regimeKeys(r, s, pw) {
+				keys, err := regimeKeys(r, s, pw)
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, k := range keys {
 					if !shown[k] {
 						t.Errorf("limit %s of %s %s %g dBm has no row in docs/tx.md", k, limRegionNames[r], limServiceNames[s], pw)
 					}
@@ -312,7 +329,7 @@ func TestTxDoc(t *testing.T) {
 	if i < 0 || j < i {
 		t.Fatalf("%s has no %s ... %s block", txDocFile, txDocBegin, txDocEnd)
 	}
-	want := renderTxDoc(margins)
+	want := renderTxDoc(t, margins)
 	if *updateTxDoc {
 		out := append(append(append([]byte{}, doc[:i]...), want...), doc[j+len(txDocEnd):]...)
 		if err := os.WriteFile(txDocFile, out, 0o600); err != nil {
