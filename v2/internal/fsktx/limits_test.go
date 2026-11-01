@@ -96,8 +96,19 @@ func shiftHalf(x []float64) {
 }
 
 type limSpectrum struct {
-	f, peak, bin []float64
-	frames       int
+	f, peak, bin, mean, hold []float64
+	frames                   int
+}
+
+// 47 CFR 90.210(d)(4)
+const (
+	maskDHoldSec = 600
+	maskDSpanHz  = 2 * maskNearHz
+)
+
+func maskDHoldQuantile(rbw float64) float64 {
+	n := maskDHoldSec * rbw * rbw / maskDSpanHz
+	return n / (n + 1)
 }
 
 // ETSI EN 300 113 clause 7.4; FCC 90.210(d)
@@ -108,7 +119,8 @@ func limSpectra(x []complex128, rate, pc, rbw float64, pad int) limSpectrum {
 	hop := max(n/16, 1)
 	plan := newDFT(m)
 	buf := make([]complex128, m)
-	s := limSpectrum{peak: make([]float64, m), bin: make([]float64, m)}
+	s := limSpectrum{peak: make([]float64, m), bin: make([]float64, m), mean: make([]float64, m), hold: make([]float64, m)}
+	var frames []float32
 	var ws, ws2 float64
 	for _, v := range w {
 		ws += v
@@ -124,15 +136,29 @@ func limSpectra(x []complex128, rate, pc, rbw float64, pad int) limSpectrum {
 			p := real(v)*real(v) + imag(v)*imag(v)
 			s.peak[i] = max(s.peak[i], p)
 			s.bin[i] += p
+			frames = append(frames, float32(p))
 		}
 		s.frames++
 	}
+	q := maskDHoldQuantile(rbw)
+	col := make([]float32, s.frames)
+	k := min(max(int(math.Ceil(q*float64(s.frames)))-1, 0), s.frames-1)
 	for i := range s.peak {
+		s.mean[i] = s.bin[i] / (float64(s.frames) * ws * ws * pc)
+		for j := range col {
+			col[j] = frames[j*m+i]
+		}
+		if len(col) > 0 {
+			slices.Sort(col)
+			s.hold[i] = float64(col[k]) / (ws * ws * pc)
+		}
 		s.peak[i] /= ws * ws * pc
 		s.bin[i] /= float64(s.frames) * float64(m) * ws2 * pc
 	}
 	shiftHalf(s.peak)
 	shiftHalf(s.bin)
+	shiftHalf(s.mean)
+	shiftHalf(s.hold)
 	s.f = fftFreqs(m, rate)
 	return s
 }
@@ -308,13 +334,13 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 			if a < maskhFromHz || a > hi {
 				continue
 			}
-			r := dbOf(ref/pc) - dbOf(s.peak[i])
-			mh = min(mh, r-maskhAttn(f, wattsOf(pw)))
+			avg := -dbOf(s.mean[i])
+			mh = min(mh, avg-maskhAttn(f, wattsOf(pw)))
 			if a >= 5625 {
-				md = min(md, r-maskdAttn(f, wattsOf(pw)))
+				md = min(md, dbOf(ref/pc)-dbOf(s.hold[i])-maskdAttn(f, wattsOf(pw)))
 			}
 			if a > eaFromHz {
-				me = min(me, r-eaAttn(f, wattsOf(pw)))
+				me = min(me, avg-eaAttn(f, wattsOf(pw)))
 			}
 		}
 		out[powKey("maskd_", pw, "")] = md

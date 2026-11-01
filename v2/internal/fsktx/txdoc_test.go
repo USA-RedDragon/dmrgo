@@ -51,7 +51,7 @@ func measureTxMargins(t *testing.T) map[string]map[string]float64 {
 				if _, err := p.u.mod(); err != nil {
 					return
 				}
-				worstOf(g, p.measure(t, 1))
+				worstOf(g, p.measure(t, c.superframes()))
 			}
 			r := make(map[string]float64, len(g))
 			for k, v := range g {
@@ -354,7 +354,11 @@ func writeMethods(b *strings.Builder) {
 		}
 	}
 	fmt.Fprintf(b, "- Spurious emissions of EN 300 113: the power %s, the reference bandwidths of EN 300 113 V2.2.1 tables 6a and 6b. The other spurious domain rows take the mean power in 100 kHz.\n", strings.Join(bands, ", "))
-	fmt.Fprintf(b, "- Emission Mask H and the EA mask: 47 CFR 90.210 table note 6 puts digital emissions at 806-809/851-854 MHz under Mask H, and table note 3 puts 809-824/854-869 MHz under 90.691. Neither section states a method, so both take that of Mask D in 90.210(d)(4): a reference in 30 kHz, and each emission in a 100 Hz resolution bandwidth with peak hold, from %s kHz for Mask H and %s kHz for the EA mask out to %s kHz, then the mean power in 100 kHz, after 90.210(o). The 90.691(a)(1) limit holds out to %d kHz from the carrier: 37.5 kHz past the edge of the block, which is 12.5 kHz from the carrier of a 25 kHz channel, the stricter case.\n", khz(maskhFromHz), khz(eaFromHz), khz(maskNearHz), eaEdgeKHz)
+	n := maskDHoldSec * 100.0 * 100 / maskDSpanHz
+	fmt.Fprintf(b, "- Emission Mask D: 47 CFR 90.210(d)(4) takes a reference in a bandwidth wide enough for the true peak (30 kHz here) and the emissions within 50 kHz of the band edge in 100 Hz in peak hold, over sweeps enough to develop the profile. The peak hold is modeled as %d minutes of sweeps over %s kHz: each frequency gets %s independent 100 Hz looks (the hold time times the square of the bandwidth over the span), so the margin takes, at each frequency, the %s quantile of the 100 Hz power over the stream, the expected peak of those looks.\n", maskDHoldSec/60, khz(maskDSpanHz), strconv.FormatFloat(math.Round(n*10)/10, 'f', -1, 64), strconv.FormatFloat(math.Round(n/(n+1)*1e4)/1e4, 'f', -1, 64))
+	b.WriteString("- Emission Mask H and the EA mask: 47 CFR 90.210 table note 6 puts digital emissions at 806-809/851-854 MHz under Mask H, and table note 3 puts 809-824/854-869 MHz under 90.691. Neither section states a method, and the preamble of 90.210 allows average values with the carrier power in the same terms, so both take the mean power in 100 Hz, about 1% of the emission bandwidth (the practice of FCC KDB 971168 and ANSI C63.26), against the mean carrier power.\n")
+	b.WriteString("- Adjacent and alternate channel power and spurious emissions of EN 300 113 take the mean power (clauses 7.4.2 and 7.5.2). The transients of clause 7.9.3.3 key the carrier unmodulated; the modulated transients of the datasheet take the worst over the keying edges of a voice superframe with its data bursts and of bursts of ten fixed symbol patterns.\n")
+	b.WriteString("- Each class is measured over a stream long enough that doubling it moves no margin by more than " + strconv.FormatFloat(limTolDB, 'f', -1, 64) + " dB (`TestLimLengths`): 16 superframes for 8-bit I/Q and 8 for the others.\n")
 	us := Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsLandMobile, Power: PowerClass(30)}
 	lp := us
 	lp.InputLowpassHz = lowpass8k

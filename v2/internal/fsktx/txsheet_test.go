@@ -114,7 +114,7 @@ func txSheetSignal(t testing.TB, p limPoint, syms []int8) ([]complex128, float64
 
 func txSheetSpectrumOf(t testing.TB, c limClass) txSheetSpectrum {
 	p := txSheetUnit(c, radioPlain)
-	st := limStreamsOf(t, p.u, 1)
+	st := limStreamsOf(t, p.u, c.superframes())
 	x, ra := txSheetSignal(t, p, st.cont)
 	n := len(x)
 	x = x[n/8 : n*7/8]
@@ -126,7 +126,7 @@ func txSheetSpectrumOf(t testing.TB, c limClass) txSheetSpectrum {
 		v := math.Inf(-1)
 		for i, fr := range s.f {
 			if fr >= float64(f)-txSpecStep/2 && fr < float64(f)+txSpecStep/2 {
-				v = max(v, dbOf(s.peak[i]))
+				v = max(v, dbOf(s.hold[i]))
 			}
 		}
 		out.PSD = append(out.PSD, tenth(v-ref))
@@ -291,7 +291,7 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 			mh = append(mh, -maskhAttn(f, 1000))
 			ea = append(ea, -eaAttn(f, 1000))
 		}
-		out[txFileTag(c)+"_spectrum.svg"] = linePlot(fmt.Sprintf("Tier %d, %s: spectrum, peak in 100 Hz", c.tier-Tier0, txOutputName(c)),
+		out[txFileTag(c)+"_spectrum.svg"] = linePlot(fmt.Sprintf("Tier %d, %s: spectrum, 10-minute peak hold in 100 Hz", c.tier-Tier0, txOutputName(c)),
 			plotAxis{min: -40, max: 40, step: 10, label: "Offset from the carrier (kHz)"},
 			plotAxis{min: -120, max: 20, step: 20, label: "Power to the reference (dB)"},
 			[]plotSeries{
@@ -814,7 +814,7 @@ func renderTxGraphList(graphs map[string][]byte) string {
 		}
 		b.WriteString("\n")
 	}
-	section("Spectrum", "The peak power in 100 Hz against the offset from the carrier, relative to the reference power of FCC Mask D, with Mask D for 1 W and 100 W and Mask H and the EA mask for 1 kW. Audio goes through the hold converter and an FM modulator.", func(n string) bool { return strings.HasSuffix(n, "_spectrum.svg") })
+	section("Spectrum", "The power in 100 Hz in the 10-minute peak hold of Mask D (see the methods) against the offset from the carrier, relative to the reference power of FCC Mask D, with Mask D for 1 W and 100 W and Mask H and the EA mask for 1 kW. Audio goes through the hold converter and an FM modulator.", func(n string) bool { return strings.HasSuffix(n, "_spectrum.svg") })
 	section("Adjacent channel power", "The power that the receiver filter of EN 300 113 Annex C passes, against the offset of the filter from the carrier, relative to the total power. The dashed lines are the limit of EN 300 113 in the adjacent and alternate channels. The flat floor far out is the 90 dB stopband of the filter of Annex C, not the signal.", func(n string) bool { return strings.HasSuffix(n, "_acp.svg") })
 	section("Margins", "The margin to each limit in dB at 1 W, the worst over the measured points, from `testdata/txmargins.json`.", func(n string) bool { return strings.HasSuffix(n, "_margins.svg") })
 	section("Eye diagrams", "The deviation after the root raised cosine receive filter of the FSK error measurement, at 48 kHz, on the symbol timing that the measurement fits. Audio goes through an ideal converter, which interpolates the codes with no images, and through a hold converter, which keeps each code until the next sample.", func(n string) bool { return strings.HasSuffix(n, "_eye.svg") })

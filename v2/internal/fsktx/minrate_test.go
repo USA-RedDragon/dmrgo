@@ -258,6 +258,28 @@ func decimate(x []complex128, rate float64) ([]complex128, float64) {
 	return x, rate
 }
 
+func keyingPatterns() [][]int8 {
+	return [][]int8{{3}, {-3}, {1}, {-1}, {3, -3}, {1, -1}, {3, 3, -3, -3}, {3, 1, -1, -3}, {-3, -1, 1, 3}, {3, -1, 1, -3}}
+}
+
+func keyingCases(t testing.TB, u txUnit) (*testStream, []keying) {
+	const burst, gap = 132, 144
+	ts, keys := newMSStream(t, u, 1)
+	ps := keyingPatterns()
+	ts.syms = ts.syms[:len(ts.syms)-60]
+	for _, p := range ps {
+		ts.syms = append(ts.syms, make([]int8, 12)...)
+		start := len(ts.syms)
+		keys = append(keys, keying{at: start - 6 + u.lag(), on: true}, keying{at: start + burst + u.lag(), on: false})
+		for i := range burst {
+			ts.syms = append(ts.syms, p[i%len(p)])
+		}
+		ts.syms = append(ts.syms, make([]int8, gap)...)
+	}
+	ts.syms = append(ts.syms, make([]int8, 60)...)
+	return ts, keys
+}
+
 // ETSI TS 102 361-1 clause 10.2.2.3
 func limDeviation(x []complex128, rate float64) float64 {
 	return toneDeviation(discriminate(x, rate), rate)
@@ -280,7 +302,7 @@ func limStreamsOf(t testing.TB, u txUnit, superframes int) limStreams {
 	}
 	s := limStreams{cont: newTestStream(t, superframes, 40).syms}
 	if !u.audio() {
-		s.ms, s.keys = newMSStream(t, u, superframes)
+		s.ms, s.keys = keyingCases(t, u)
 	}
 	streamCache.Store(key, s)
 	return s
@@ -306,7 +328,7 @@ func (p limPoint) measure(t testing.TB, superframes int) map[string]float64 {
 	full := shift(iqComplex(p.u.run(t, st.cont, keyedOn())), rate, -float64(p.u.offHz))
 	n := len(full)
 	c := full[n/8 : n*7/8]
-	m.wide = limFar(c[:min(len(c), int(0.15*rate))], rate)
+	m.wide = limFar(c, rate)
 	pc := onPower(c)
 	m.wide["far_pc"] = pc
 	d, ra := decimate(c, rate)
@@ -540,6 +562,18 @@ func measureClassRate(t testing.TB, c limClass, rate, superframes, lowpass int) 
 	return g, nil
 }
 
+const limTolDB = 0.25
+
+func (c limClass) superframes() int {
+	switch {
+	case c.iq && c.format == fmtS8 && c.tier == Tier0:
+		return 32
+	case c.iq && c.format == fmtS8:
+		return 16
+	}
+	return 8
+}
+
 func (c limClass) lowpasses() []int {
 	if c.iq {
 		return inputLowpassGrid[:1]
@@ -731,7 +765,7 @@ func TestMinRatesGenerated(t *testing.T) {
 				sem <- struct{}{}
 				go func() {
 					defer func() { <-sem; wg.Done() }()
-					g, err := measureClassRate(t, c, r, 1, lp)
+					g, err := measureClassRate(t, c, r, c.superframes(), lp)
 					if err != nil {
 						return
 					}
@@ -862,7 +896,7 @@ func TestMinRatesSample(t *testing.T) {
 	for _, k := range cases {
 		t.Run(fmt.Sprint(k.c, "/", k.rate, "/lp", k.lowpass), func(t *testing.T) {
 			t.Parallel()
-			g, err := measureClassRate(t, k.c, k.rate, 1, k.lowpass)
+			g, err := measureClassRate(t, k.c, k.rate, k.c.superframes(), k.lowpass)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -909,7 +943,7 @@ func TestMinRatesOffGrid(t *testing.T) {
 	for _, k := range cases {
 		t.Run(fmt.Sprint(k.c, "/", k.rate), func(t *testing.T) {
 			t.Parallel()
-			g, err := measureClassRate(t, k.c, k.rate, 1, 0)
+			g, err := measureClassRate(t, k.c, k.rate, k.c.superframes(), 0)
 			if err != nil {
 				t.Skipf("structural: %v", err)
 			}
@@ -1190,4 +1224,39 @@ func TestMinRatesMonotoneInPower(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestLimLengths(t *testing.T) {
+	t.Parallel()
+	if !longRun() {
+		t.Skip("measures every class at twice its length; set DMRGO_LONG=1")
+	}
+	for _, c := range limClasses() {
+		t.Run(c.String(), func(t *testing.T) {
+			t.Parallel()
+			at := func(sf int) map[string]float64 {
+				g := map[string]float64{}
+				for _, p := range c.points(txDocRate(c), 0) {
+					if _, err := p.u.mod(); err != nil {
+						t.Skipf("structural: %v", err)
+					}
+					worstOf(g, p.measure(t, sf))
+				}
+				return g
+			}
+			a, b := at(c.superframes()), at(2*c.superframes())
+			for k, v := range b {
+				if limDatasheetOnly(k) {
+					continue
+				}
+				if w, ok := a[k]; ok && math.Abs(w-v) > limTolDB {
+					t.Errorf("%s: %.2f dB at %d superframes, %.2f at %d", k, w, c.superframes(), v, 2*c.superframes())
+				}
+			}
+		})
+	}
+}
+
+func limDatasheetOnly(k string) bool {
+	return strings.Contains(k, "_mod_") || strings.HasPrefix(k, "en_tp_mod") || strings.HasPrefix(k, "en_td_mod") || strings.HasPrefix(k, "en_slope_mod") || strings.HasPrefix(k, "en_df_mod")
 }
