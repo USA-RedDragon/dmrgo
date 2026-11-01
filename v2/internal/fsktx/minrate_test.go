@@ -354,7 +354,7 @@ var limRegionNames = [limRegions]string{"World", "US", "CEPT", "China", "Japan"}
 var limServiceNames = [limServices]string{"LandMobile", "Amateur", "LicenseFree"}
 
 func limHasService(region, service int) bool {
-	return service != limLicenseFree || region == limWorld || region == limCEPT || region == limChina
+	return service != limLicenseFree || region == limWorld || region == limChina
 }
 
 func enKeys(pw float64) []string {
@@ -403,11 +403,8 @@ func regimeKeysAt(region, service int, pw float64) []string {
 		return []string{"ts_dev_pct", powKey("fcc_maskd_", pw, "_db"), powKey("fcc_maskd_far_", pw, "_db"),
 			powKey("fcc_maskh_", pw, "_db"), powKey("fcc_maskh_far_", pw, "_db"), powKey("fcc_ea_", pw, "_db"), powKey("fcc_ea_far_", pw, "_db")}
 	case limCEPT:
-		switch service {
-		case limAmateur:
+		if service == limAmateur {
 			return []string{"ts_dev_pct", powKey("am_erc_", pw, "_db")}
-		case limLicenseFree:
-			return append(enKeys(pw), "pmr_acp_db", "pmr_alt_db", "en_talt_annexc_unmod_db", "en_talt_sa_unmod_db")
 		}
 		return enKeys(pw)
 	case limChina:
@@ -1084,7 +1081,7 @@ func TestPowerLimitFormulas(t *testing.T) {
 		{"ERC/REC 74-01 500 W", reqERC, 57, 70},
 		{"EN 300 113 7.5.4 100 W", reqSpur36, 50, 86},
 		{"EN 300 113 7.5.4 1.5 kW", reqSpur36, 62, 98},
-		{"EN 303 405 7.5 0.5 W", reqSpur36, 27, 63},
+		{"China 2025 notice Annex 3, 0.5 W", reqSpur36, 27, 63},
 		{"Japan Appendix 3 item 19, 1 W, 25 uW", reqJPLandMobile, 30, 46},
 		{"Japan Appendix 3 item 19, 10 W, 60 dB", reqJPLandMobile, 40, 60},
 		{"Japan Appendix 3 item 19, 100 W, 50 uW", reqJPLandMobile, 50, 63},

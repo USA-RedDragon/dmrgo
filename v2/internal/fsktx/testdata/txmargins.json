@@ -140,8 +140,6 @@
 		"jp_spur_62dbm_db": -9.608,
 		"obw_cn_kr_khz": 0.792,
 		"obw_jp_khz": 3.792,
-		"pmr_acp_db": 5.78,
-		"pmr_alt_db": 24.998,
 		"ts_dev_pct": 9.143
 	},
 	"Audio-T0-12bit": {
@@ -285,8 +283,6 @@
 		"jp_spur_62dbm_db": -9.608,
 		"obw_cn_kr_khz": 0.817,
 		"obw_jp_khz": 3.817,
-		"pmr_acp_db": 5.952,
-		"pmr_alt_db": 35.203,
 		"ts_dev_pct": 9.129
 	},
 	"Audio-T0-16bit": {
@@ -430,8 +426,6 @@
 		"jp_spur_62dbm_db": -9.608,
 		"obw_cn_kr_khz": 0.817,
 		"obw_jp_khz": 3.817,
-		"pmr_acp_db": 6.002,
-		"pmr_alt_db": 39.169,
 		"ts_dev_pct": 9.121
 	},
 	"Audio-T0-8bit": {
@@ -575,8 +569,6 @@
 		"jp_spur_62dbm_db": -9.622,
 		"obw_cn_kr_khz": 0.792,
 		"obw_jp_khz": 3.792,
-		"pmr_acp_db": 3.367,
-		"pmr_alt_db": 12.735,
 		"ts_dev_pct": 9.133
 	},
 	"Audio-T0-PE-10bit": {
@@ -720,8 +712,6 @@
 		"jp_spur_62dbm_db": -15.9,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": -1.955,
-		"pmr_alt_db": 4.405,
 		"ts_dev_pct": 7.774
 	},
 	"Audio-T0-PE-12bit": {
@@ -865,8 +855,6 @@
 		"jp_spur_62dbm_db": -15.891,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 3.577,
-		"pmr_alt_db": 14.746,
 		"ts_dev_pct": 7.727
 	},
 	"Audio-T0-PE-16bit": {
@@ -1010,8 +998,6 @@
 		"jp_spur_62dbm_db": -15.891,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 4.59,
-		"pmr_alt_db": 18.968,
 		"ts_dev_pct": 7.697
 	},
 	"Audio-T0-PE-8bit": {
@@ -1155,8 +1141,6 @@
 		"jp_spur_62dbm_db": -16.345,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": -13.205,
-		"pmr_alt_db": -6.906,
 		"ts_dev_pct": 7.549
 	},
 	"Audio-T1-10bit": {
@@ -1300,8 +1284,6 @@
 		"jp_spur_62dbm_db": -9.478,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 6.729,
-		"pmr_alt_db": 28.298,
 		"ts_dev_pct": 9.747
 	},
 	"Audio-T1-12bit": {
@@ -1445,8 +1427,6 @@
 		"jp_spur_62dbm_db": -9.478,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 7.233,
-		"pmr_alt_db": 38.903,
 		"ts_dev_pct": 9.945
 	},
 	"Audio-T1-16bit": {
@@ -1590,8 +1570,6 @@
 		"jp_spur_62dbm_db": -9.478,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 7.263,
-		"pmr_alt_db": 43.378,
 		"ts_dev_pct": 9.915
 	},
 	"Audio-T1-8bit": {
@@ -1735,8 +1713,6 @@
 		"jp_spur_62dbm_db": -9.507,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 2.325,
-		"pmr_alt_db": 16.478,
 		"ts_dev_pct": 9.164
 	},
 	"Audio-T2-10bit": {
@@ -1880,8 +1856,6 @@
 		"jp_spur_62dbm_db": -9.478,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 6.729,
-		"pmr_alt_db": 28.293,
 		"ts_dev_pct": 9.782
 	},
 	"Audio-T2-12bit": {
@@ -2025,8 +1999,6 @@
 		"jp_spur_62dbm_db": -9.478,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 7.232,
-		"pmr_alt_db": 38.904,
 		"ts_dev_pct": 9.93
 	},
 	"Audio-T2-16bit": {
@@ -2170,8 +2142,6 @@
 		"jp_spur_62dbm_db": -9.478,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 7.263,
-		"pmr_alt_db": 43.374,
 		"ts_dev_pct": 9.915
 	},
 	"Audio-T2-8bit": {
@@ -2315,8 +2285,6 @@
 		"jp_spur_62dbm_db": -9.507,
 		"obw_cn_kr_khz": 0.767,
 		"obw_jp_khz": 3.767,
-		"pmr_acp_db": 2.325,
-		"pmr_alt_db": 16.478,
 		"ts_dev_pct": 9.164
 	},
 	"IQ-T0-S16": {
@@ -2436,8 +2404,6 @@
 		"jp_spur_62dbm_db": 29.335,
 		"obw_cn_kr_khz": 0.791,
 		"obw_jp_khz": 3.791,
-		"pmr_acp_db": 5.27,
-		"pmr_alt_db": 35.033,
 		"ts_dev_pct": 8.801
 	},
 	"IQ-T0-S8": {
@@ -2557,8 +2523,6 @@
 		"jp_spur_62dbm_db": -13.17,
 		"obw_cn_kr_khz": 0.791,
 		"obw_jp_khz": 3.791,
-		"pmr_acp_db": -0.982,
-		"pmr_alt_db": -9.753,
 		"ts_dev_pct": 8.872
 	},
 	"IQ-T1-S16": {
@@ -2718,8 +2682,6 @@
 		"jp_spur_62dbm_db": 19.015,
 		"obw_cn_kr_khz": 0.718,
 		"obw_jp_khz": 3.718,
-		"pmr_acp_db": 5.285,
-		"pmr_alt_db": 48.897,
 		"ts_dev_pct": 9.935
 	},
 	"IQ-T1-S8": {
@@ -2879,8 +2841,6 @@
 		"jp_spur_62dbm_db": -8.455,
 		"obw_cn_kr_khz": 0.718,
 		"obw_jp_khz": 3.718,
-		"pmr_acp_db": 4.566,
-		"pmr_alt_db": 2.224,
 		"ts_dev_pct": 9.944
 	},
 	"IQ-T2-S16": {
@@ -3040,8 +3000,6 @@
 		"jp_spur_62dbm_db": 19.039,
 		"obw_cn_kr_khz": 0.743,
 		"obw_jp_khz": 3.743,
-		"pmr_acp_db": 5.485,
-		"pmr_alt_db": 48.883,
 		"ts_dev_pct": 9.567
 	},
 	"IQ-T2-S8": {
@@ -3201,8 +3159,6 @@
 		"jp_spur_62dbm_db": -8.488,
 		"obw_cn_kr_khz": 0.743,
 		"obw_jp_khz": 3.743,
-		"pmr_acp_db": 4.773,
-		"pmr_alt_db": 2.098,
 		"ts_dev_pct": 9.583
 	}
 }

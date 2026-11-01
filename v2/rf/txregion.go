@@ -13,16 +13,16 @@ type Region uint8
 const (
 	// RegionWorld keeps the limits of every other region at once, the
 	// strictest of each. For ServiceLicenseFree it keeps those of
-	// RegionCEPT and RegionChina, the regions with a license-free DMR
-	// service.
+	// RegionChina, the one region whose license-free service the
+	// transmitter supports.
 	RegionWorld Region = iota
 	// RegionUS keeps 47 CFR 90.210 Emission Masks D and H and the 47 CFR
 	// 90.691 EA mask at once for land mobile, and 47 CFR 97.307 for
 	// amateur.
 	RegionUS
-	// RegionCEPT keeps ETSI EN 300 113 for land mobile, ERC/REC 74-01 for
-	// amateur, and ETSI EN 303 405 and EN 300 390 for PMR446, the
-	// license-free service.
+	// RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01
+	// for amateur. The transmitter does not support its license-free
+	// service, PMR446.
 	RegionCEPT
 	// RegionChina keeps the 2025 MIIT notice for land mobile and the 409
 	// MHz license-free walkie-talkie, and the Radio Frequency Allocation
@@ -91,7 +91,7 @@ var ceilingDBm = [regions][2]int8{
 var spurGate10 = [regions][services]bool{
 	RegionWorld: {true, true, true},
 	RegionUS:    {true, true},
-	RegionCEPT:  {true, true, true},
+	RegionCEPT:  {true, true},
 	RegionChina: {true, true, true},
 	RegionJapan: {true, true},
 }
@@ -163,7 +163,7 @@ func (r *txRegs) check(e *txErrs, g *txGate) (class int, err error) {
 	var top int
 	switch r.service {
 	case ServiceLicenseFree:
-		if r.region == RegionUS || r.region == RegionJapan {
+		if r.region != RegionWorld && r.region != RegionChina {
 			return 0, e.service
 		}
 		top = licenseFreeDBm
@@ -211,7 +211,7 @@ func (r *txRegs) regionsOf() [regions]int {
 	case r.region != RegionWorld:
 		return [regions]int{int(r.region), -1, -1, -1, -1}
 	case r.service == ServiceLicenseFree:
-		return [regions]int{int(RegionCEPT), int(RegionChina), -1, -1, -1}
+		return [regions]int{int(RegionChina), -1, -1, -1, -1}
 	}
 	return [regions]int{1, 2, 3, 4, -1}
 }
@@ -281,6 +281,8 @@ const (
 	// ServiceLandMobile is a licensed land mobile service, such as private,
 	// business or public safety PMR.
 	ServiceLandMobile = dmrgo.ServiceLandMobile
-	// ServiceLicenseFree is a licence-exempt service, such as PMR446.
+	// ServiceLicenseFree is a licence-exempt service. The transmitter
+	// supports it in RegionChina, the 409 MHz public walkie-talkie, and
+	// refuses it in every other region.
 	ServiceLicenseFree = dmrgo.ServiceLicenseFree
 )

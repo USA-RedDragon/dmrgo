@@ -357,9 +357,6 @@ func limStatic(x []complex128, rate, pc float64) map[string]float64 {
 		if c.off+4250 <= rate/2 {
 			out[c.nm+"_bins_dbc"] = dbOf(max(band(c.off-4250, c.off+4250), band(-c.off-4250, -c.off+4250)) / tot)
 		}
-		if c.off+4375 <= rate/2 {
-			out[c.nm+"_pmr_dbc"] = dbOf(max(band(c.off-4375, c.off+4375), band(-c.off-4375, -c.off+4375)) / tot)
-		}
 	}
 	out["jp_acp_dbc"] = dbOf(max(band(10500, 14500), band(-14500, -10500)) / tot)
 	for _, c := range []struct {
@@ -474,7 +471,7 @@ func limFar(x []complex128, rate float64) map[string]float64 {
 
 const enSpurLoHz = 2.5 * 12500
 
-// ETSI EN 300 113 V2.2.1 clause 7.5.4 tables 6a and 6b; ETSI EN 303 405 V1.1.1 clause 7.5.3 tables 5b and 5c
+// ETSI EN 300 113 V2.2.1 clause 7.5.4 tables 6a and 6b
 var enSpurBands = []struct{ from, to, rbw, step float64 }{
 	{enSpurLoHz, 100000, 1000, 250}, {100000, 500000, 10000, 2500}, {500000, math.Inf(1), 100000, 25000},
 }
@@ -668,7 +665,7 @@ func reqEAFar(dbm float64) float64 { return min(43+dbm-30, 80) }
 // ERC/REC 74-01 Annex 6 6.1.3; China Radio Frequency Allocation Regulations Annex 2 Table 2.3
 func reqERC(dbm float64) float64 { return min(43+dbm-30, 70) }
 
-// ETSI EN 300 113 clause 7.5.4; ETSI EN 303 405 clause 7.5; China 2025 notice Annex 1 Table 1-4 and Annex 3
+// ETSI EN 300 113 clause 7.5.4; China 2025 notice Annex 1 Table 1-4 and Annex 3
 func reqSpur36(dbm float64) float64 { return dbm + 36 }
 
 // Japan Radio Equipment Regulations Appendix 3 item 19
@@ -724,12 +721,6 @@ func limMargins(m limMeasures) map[string]float64 {
 	}
 	if v, ok := get(s, "alt_bins_dbc"); ok {
 		g["cn_alt_db"] = -70 - v
-	}
-	if v, ok := get(s, "acp_pmr_dbc"); ok {
-		g["pmr_acp_db"] = -60 - v
-	}
-	if v, ok := get(s, "alt_pmr_dbc"); ok {
-		g["pmr_alt_db"] = -70 - v
 	}
 	if v, ok := get(s, "jp_acp_dbc"); ok {
 		g["jp_acp_db"] = -55 - v

@@ -6155,7 +6155,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_SERVICE_AMATEUR ((dmrgo_service_t)1)
 /* Go: dmrgo.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
 #define DMRGO_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
-/* Go: dmrgo.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
+/* Go: dmrgo.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as the 409 MHz public walkie-talkie of China. */
 #define DMRGO_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 /* Go: dmrgo.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
 #define DMRGO_SERVICE_UNKNOWN ((dmrgo_service_t)0)
@@ -7635,7 +7635,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_IQ_FORMAT_DEFAULT ((dmrgo_rf_iq_format_t)0)
 /* Go: rf.MaxLookbackSlots. MaxLookbackSlots is the largest dmrgo_rf_rx_config_t.lookback_slots, 7.68 s of signal. */
 #define DMRGO_RF_MAX_LOOKBACK_SLOTS 256
-/* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile, ERC/REC 74-01 for amateur, and ETSI EN 303 405 and EN 300 390 for PMR446, the license-free service. */
+/* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01 for amateur. */
 #define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
 /* Go: rf.RegionChina. RegionChina keeps the 2025 MIIT notice for land mobile and the 409 MHz license-free walkie-talkie, and the Radio Frequency Allocation Regulations for amateur. */
 #define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
@@ -7649,7 +7649,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_SERVICE_AMATEUR ((dmrgo_service_t)1)
 /* Go: rf.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
 #define DMRGO_RF_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
-/* Go: rf.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
+/* Go: rf.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service. */
 #define DMRGO_RF_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 /* Go: rf.ServiceUnknown. ServiceUnknown is a service that the caller did not state: the transmitter keeps the limits of the land mobile and amateur services at once. */
 #define DMRGO_RF_SERVICE_UNKNOWN ((dmrgo_service_t)0)

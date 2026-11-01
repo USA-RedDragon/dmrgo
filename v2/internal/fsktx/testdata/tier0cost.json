@@ -11,7 +11,7 @@
 			"name": "Audio at 48 kHz, 12-bit",
 			"mhz": 3.7,
 			"ram_bytes": 724,
-			"flash_kb": 28.7
+			"flash_kb": 28.6
 		},
 		{
 			"name": "Audio at 24 kHz, 12-bit",

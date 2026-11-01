@@ -107,7 +107,7 @@ func txLimitRows() []txLimitRow {
 		fixed("Release time t_d, ms over 0.1 ms (EN 300 113 7.9)", "en_td_unmod_ms"),
 		fixed("Transient power slope, dB (EN 300 113 7.9)", "en_slope_unmod_db"),
 		fixed("Transient frequency error, kHz (EN 300 113 7.9)", "en_df_unmod_khz"),
-		power("Spurious emissions, dB (EN 300 113 7.5, EN 303 405 7.5)", "en_spur_"),
+		power("Spurious emissions, dB (EN 300 113 7.5)", "en_spur_"),
 		power("Emission Mask D, dB (47 CFR 90.210(d))", "fcc_maskd_"),
 		power("Emission Mask D far out, dB (47 CFR 90.210(d)(3))", "fcc_maskd_far_"),
 		power("Emission Mask H, dB (47 CFR 90.210(h))", "fcc_maskh_"),
@@ -116,8 +116,6 @@ func txLimitRows() []txLimitRow {
 		power("800 MHz EA mask far out, dB (47 CFR 90.691(a)(2))", "fcc_ea_far_"),
 		power("Amateur spurious emissions, dB (47 CFR 97.307(e))", "am_us97e_"),
 		power("Amateur spurious emissions, dB (ERC/REC 74-01)", "am_erc_"),
-		fixed("Adjacent channel power, dB (EN 303 405 7.4)", "pmr_acp_db"),
-		fixed("Alternate channel power, dB (EN 303 405 7.4)", "pmr_alt_db"),
 		fixed("Alternate channel power, dB (China)", "cn_alt_db"),
 		fixed("Occupied bandwidth, kHz under 8.5 kHz (China)", "obw_cn_kr_khz"),
 		power("Spurious emissions, dB (China, positive peak)", "cn_spur_"),
@@ -179,7 +177,6 @@ var txRegimes = []txRegime{
 	{"US, amateur", limUS, limAmateur},
 	{"CEPT, land mobile", limCEPT, limLandMobile},
 	{"CEPT, amateur", limCEPT, limAmateur},
-	{"CEPT, PMR446", limCEPT, limLicenseFree},
 	{"China, land mobile", limChina, limLandMobile},
 	{"China, amateur", limChina, limAmateur},
 	{"China, 409 MHz license-free", limChina, limLicenseFree},
@@ -358,7 +355,7 @@ func writeMethods(b *strings.Builder) {
 			bands = append(bands, fmt.Sprintf("in %s kHz from %s", khz(int(x.rbw)), from))
 		}
 	}
-	fmt.Fprintf(b, "- Spurious emissions of EN 300 113 and EN 303 405: the power %s, the reference bandwidths of EN 300 113 V2.2.1 tables 6a and 6b and EN 303 405 V1.1.1 tables 5b and 5c. The other spurious domain rows take the mean power in 100 kHz.\n", strings.Join(bands, ", "))
+	fmt.Fprintf(b, "- Spurious emissions of EN 300 113: the power %s, the reference bandwidths of EN 300 113 V2.2.1 tables 6a and 6b. The other spurious domain rows take the mean power in 100 kHz.\n", strings.Join(bands, ", "))
 	fmt.Fprintf(b, "- Emission Mask H and the EA mask: 47 CFR 90.210 table note 6 puts digital emissions at 806-809/851-854 MHz under Mask H, and table note 3 puts 809-824/854-869 MHz under 90.691. Neither section states a method, so both take that of Mask D in 90.210(d)(4): a reference in 30 kHz, and each emission in a 100 Hz resolution bandwidth with peak hold, from %s kHz for Mask H and %s kHz for the EA mask out to %s kHz, then the mean power in 100 kHz, after 90.210(o). The 90.691(a)(1) limit holds out to %d kHz from the carrier: 37.5 kHz past the edge of the block, which is 12.5 kHz from the carrier of a 25 kHz channel, the stricter case.\n", khz(maskhFromHz), khz(eaFromHz), khz(maskNearHz), eaEdgeKHz)
 	us := Setup{Tier: Tier0, Bits: 16, Region: LimitsUS, Service: LimitsLandMobile, Power: PowerClass(30)}
 	lp := us
