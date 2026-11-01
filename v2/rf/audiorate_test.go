@@ -130,6 +130,7 @@ func TestAudio44kMatches48k(t *testing.T) {
 		tiers = append(tiers, Tier3)
 	}
 	const tol = 0.03
+	// Under -race 1 seed runs the code paths; the tolerance holds for 3 seeds or more only.
 	seeds := testmode.N(3, 6, 1)
 	for _, cn := range []float64{4, 6, 8, 10} {
 		in := make([][2][]int16, seeds)
@@ -157,7 +158,7 @@ func TestAudio44kMatches48k(t *testing.T) {
 			}
 			r48, r44 := float64(n48)/float64(total), float64(n44)/float64(total)
 			t.Logf("tier %d at C/N %v dB: %.3f recovered at 48 kHz, %.3f at 44.1 kHz", tier-Tier0, cn, r48, r44)
-			if total == 0 || math.Abs(r48-r44) > tol {
+			if total == 0 || !testmode.Race && math.Abs(r48-r44) > tol {
 				t.Errorf("tier %d at C/N %v dB: %.3f recovered at 48 kHz, %.3f at 44.1 kHz, more than %v apart", tier-Tier0, cn, r48, r44, tol)
 			}
 		}

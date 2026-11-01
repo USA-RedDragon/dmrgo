@@ -57,6 +57,7 @@ func TestTierImpaired(t *testing.T) {
 		{"dev+10", 0.1, 0, []float64{8, 12}},
 		{"fade50", 0, 50, []float64{18, 24, 30}},
 	}
+	// Under -race 2 seeds run the code paths; the bars hold for 8 seeds only.
 	seeds := testmode.N(8, 8, 2)
 	fm, env, truth := msStream(t, 3, 0.37)
 	tiers := []Tier{Tier0, Tier1, Tier2}
@@ -104,7 +105,7 @@ func TestTierImpaired(t *testing.T) {
 			}
 			for _, tier := range tiers[1:] {
 				hi := sum[key{sc.name, tier, p}]
-				if hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
+				if testmode.Race || hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
 					continue
 				}
 				t.Errorf("%s iq %s: Tier%d recovers %d of %d, Tier0 %d", sc.name, p, tier-Tier0, hi.Exact, hi.Truth, lo.Exact)

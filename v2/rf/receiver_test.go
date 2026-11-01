@@ -363,6 +363,7 @@ func directShared(t testing.TB) *directSet {
 func TestReceiverDirectModeTiming(t *testing.T) {
 	t.Parallel()
 	d := directShared(t)
+	// Under -race 2 seeds run the shared data on many goroutines; the bars hold for 6 seeds only.
 	seeds := testmode.N(6, 6, 2)
 	for _, c := range []struct{ ppm, share float64 }{{0, 0.995}, {200, 0.94}, {-200, 0.94}} {
 		t.Run(strconv.FormatFloat(c.ppm, 'f', -1, 64), func(t *testing.T) {
@@ -390,7 +391,7 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 				total += sc.Truth
 			}
 			t.Logf("%d of %d frames with C0 and C1 exact", exact, total)
-			if float64(exact) < c.share*float64(total) {
+			if !testmode.Race && float64(exact) < c.share*float64(total) {
 				t.Errorf("%d of %d frames with C0 and C1 exact", exact, total)
 			}
 		})

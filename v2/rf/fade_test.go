@@ -72,6 +72,7 @@ func TestReceiverFading(t *testing.T) {
 	switch {
 	case testmode.Long():
 	case testmode.Race:
+		// 1 seed runs the code paths; the 98% bar holds for 2 seeds or more only.
 		seeds = seeds[2:3]
 	default:
 		seeds = []uint64{10, 12}
@@ -106,7 +107,7 @@ func TestReceiverFading(t *testing.T) {
 				total := len(seeds) * len(c.want)
 				for _, tier := range []Tier{Tier2, Tier3} {
 					t.Logf("%s fade %g Hz tier %d: C0 and C1 of %d of %d frames exact", c.name, fd, int(tier-Tier0), exact[tier], total)
-					if float64(exact[tier]) < 0.98*float64(total) {
+					if !testmode.Race && float64(exact[tier]) < 0.98*float64(total) {
 						t.Errorf("%s fade %g Hz tier %d: C0 and C1 of %d of %d frames exact, want 98%%", c.name, fd, int(tier-Tier0), exact[tier], total)
 					}
 				}

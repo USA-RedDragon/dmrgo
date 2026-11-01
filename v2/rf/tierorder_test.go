@@ -126,6 +126,7 @@ func TestTierOrder(t *testing.T) {
 	var cases []tierOrderCase
 	for _, sc := range scenarios {
 		for _, cn := range sc.cns {
+			// Under -race 1 seed runs the code paths; the bars hold for the full seed count only.
 			for seed := range uint64(testmode.N(sc.seeds, sc.seeds, 1)) {
 				c := tierOrderCase{scenario: sc.name}
 				switch sc.name {
@@ -188,7 +189,7 @@ func TestTierOrder(t *testing.T) {
 					if lo.Truth == 0 {
 						t.Fatalf("%s: no %s in the stream", sc.name, p)
 					}
-					if hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
+					if testmode.Race || hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
 						continue
 					}
 					t.Errorf("%s %s %s: Tier%d recovers %d of %d, Tier%d %d", sc.name, mode, p, tier-Tier0, hi.Exact, hi.Truth, tier-1-Tier0, lo.Exact)
