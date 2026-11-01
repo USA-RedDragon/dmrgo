@@ -48,8 +48,7 @@ func TestLoopbackT3Site(t *testing.T) {
 		t.Fatalf("%d extra carriers, want 1", len(built.Carriers))
 	}
 	const rate = 2e6
-	fm, env := rftx.ModulateBS(built.Slots)
-	iq := rftx.MixIQ(built.Signals(fm, env, 0), rate, 0.9)
+	iq := transmitCS8(t, built, cfg, rate)
 
 	t.Run("control", func(t *testing.T) {
 		t.Parallel()

@@ -2,7 +2,7 @@
 
 `dmrrf` turns DMR bursts built with dmrgo into I/Q or FM modulator audio, and decodes DMR from I/Q or FM discriminator audio. It reads and writes files and pipes in the sample formats of common software radios. It does not drive a radio: a separate tool of your radio does the transmit or the capture.
 
-- `dmrrf tx`: writes a DMR transmission. DMR 4FSK at 4800 symbols/s, ±648/±1944 Hz deviation, RRC alpha 0.2 (ETSI TS 102 361-1 clause 10.2), one TDMA slot per 60 ms frame by default. As I/Q it is the FM signal at `-offset-hz` from the tuned frequency; as audio it is the deviation signal for the modulation input of an FM transmitter, with full scale at the peak deviation (the tool prints the scale).
+- `dmrrf tx`: writes a DMR transmission with the Tier 1 transmitter of package [rf](../../rf): `rf.Transmitter` for I/Q and `rf.AudioTransmitter` for audio. DMR 4FSK at 4800 symbols/s, ±648/±1944 Hz deviation (ETSI TS 102 361-1 clause 10.2), one TDMA slot per 60 ms frame by default. As I/Q it is the FM signal at `-offset-hz` from the tuned frequency; as audio it is the deviation signal for the modulation input of an FM transmitter (the tool prints the deviation at full scale). The transmitter keeps the emission limits of the station that `-region`, `-service` and `-power` give, and refuses a setup that no measurement shows to keep them (see [Station](#station)).
 - `dmrrf rx`: decodes every burst with the receiver of package [rf](../../rf), reassembles data packets and voice superframes, and reports the carrier offset and deviation. It is a streaming receiver: it estimates the carrier from the spectrum, locks to the first SYNC it finds, and then follows the slot timing and the carrier through the transmission. It prints each burst as it decodes it and a summary at the end, so it can read a live pipe. `-tier` selects the tier of package rf: 0 slices the FM discriminator output, 1 adds the soft decoders, 2 detects the bursts again coherently with a trellis over 3 symbols that carries the carrier phase with each survivor, 3 (the default for I/Q) carries one of 52 carrier phases in the trellis state, in two passes, and takes each voice frame from it or from tier 2 beside it, for offline decoding. Audio takes tiers 0 to 3 and uses the default of package rf when `-tier` is not given. Every tier decodes each FEC field with soft decisions. A voice superframe starts at a burst A, at a slot near the voice SYNC where the call timing expects a burst A, or before a burst B or E with a clean EMB, when the SYNC of its burst A is within 16 bits of the voice SYNC.
 - `dmrrf rx -ambe <backend> -pcm <file>` also decodes the AMBE+2 voice and writes it as 8 kHz 16-bit little-endian PCM (`-pcm -` writes it to standard output, and the text then goes to standard error). The backend is one of:
   - `software`: the software codec of the build. The stock build has none; a build that adds one replaces `software.go` with a file whose `newSoftware` returns its `vocoder.Codec`.
@@ -23,7 +23,19 @@
 | `s16le` | FM discriminator or modulator audio, signed 16-bit little-endian, mono | the discriminator tap or modulation input of a radio through a sound card (`arecord -f S16_LE`, `sox -t raw`) | none |
 | `wav` | WAV: tx writes 16-bit mono audio; rx reads 8-bit or 16-bit PCM or 32-bit float, 1 channel (audio) or 2 channels (I/Q) | sound cards, SDR recorders | `.wav` |
 
-Any sample rate works. rx and cal resample to the rate of the receiver internally. tx writes at `-rate`: required for I/Q, 48000 by default for audio.
+rx and cal take any sample rate and resample to the rate of the receiver internally. tx writes at `-rate`: required for I/Q, 48000 by default for audio. tx takes the rates that the transmitter accepts for the station: I/Q from 62500 Hz, audio from 8000 Hz, and 8-bit I/Q and low audio rates only for some stations. A `-rate` that is not a whole number, and `-stretch`, resample the output of the transmitter.
+
+`-level` is the peak amplitude from 0 to 1. Without it, I/Q has the amplitude of the transmitter, a peak of 0.9, and audio the largest level of the transmitter that fits 16 bits. With it, cf32 and the sum of the carriers of `t3site` scale to it; cu8, cs8 and cs16 are then scaled and quantized again by dmrrf, without the noise shaping of the transmitter; audio sets the level of the transmitter to that part of the largest level, and the transmitter refuses a level under the one that its limits are measured at.
+
+## Station
+
+tx keeps the emission limits of the station, as package rf does:
+
+- `-region`: `world` (the default: the strictest limit of every region), `us`, `cept`, `china` or `japan`.
+- `-service`: `unknown` (the default: the limits of land mobile and amateur at once), `amateur`, `landmobile` or `licensefree`.
+- `-power`: the most power of the station in dBm, 1 to 63. 0, the default, is the highest legal power of the service in the region.
+
+The defaults are the strictest setup, and tx refuses it at every rate today, so give the station. tx prints the error of the transmitter with the station that it used. For example, `-region us -service amateur -power 30` takes cs16 and cf32 from 62500 Hz, cu8 and cs8 from 500000 Hz, and audio from 38400 Hz.
 
 Frequency correction: `-freq` is the tuned frequency in Hz, `-ppm` the frequency error of the radio in ppm (positive when it runs high), and `-offset-hz` the offset of the DMR carrier from the tuned frequency, as with an offset tune that keeps the carrier away from the DC spike of a zero-IF radio. tx moves the carrier to `-offset-hz` minus the error; rx and cal move it back to 0 Hz before the receiver. They apply to I/Q only.
 
@@ -46,10 +58,10 @@ Receive:
 
 Transmit (into a dummy load or an attenuator first):
 
-- HackRF: `./dmrrf tx -seq voice -slot 0 -rate 2000000 -freq <F> -o voice.cs8`, then `hackrf_transfer -t voice.cs8 -f <F> -s 2000000 -x 0`.
-- Any SoapySDR radio: `./dmrrf tx -seq data12 -rate 1000000 -o - -format cs16le | tx_sdr -f <F> -s 1000000 -F CS16 -`.
-- GNU Radio: `./dmrrf tx -seq sms -rate 1000000 -o sms.cfile`, read with a File Source of complex samples.
-- FM transmitter with a flat modulation input (a 9600 baud data port): `./dmrrf tx -seq data12 -o data.wav -rate 48000`, then play `data.wav` into the input.
+- HackRF: `./dmrrf tx -region us -service amateur -power 30 -seq voice -slot 0 -rate 2000000 -freq <F> -o voice.cs8`, then `hackrf_transfer -t voice.cs8 -f <F> -s 2000000 -x 0`.
+- Any SoapySDR radio: `./dmrrf tx -region us -service amateur -power 30 -seq data12 -rate 1000000 -o - -format cs16le | tx_sdr -f <F> -s 1000000 -F CS16 -`.
+- GNU Radio: `./dmrrf tx -region us -service amateur -power 30 -seq sms -rate 1000000 -o sms.cfile`, read with a File Source of complex samples.
+- FM transmitter with a flat modulation input (a 9600 baud data port): `./dmrrf tx -region us -service amateur -power 30 -seq data12 -o data.wav -rate 48000`, then play `data.wav` into the input.
 - A radio with a frequency error: measure it with `tx -cw 5 -o cw.cs8 -rate 2000000`, a capture with a radio you trust and `./dmrrf cal -i cw.cu8 -rate 2048000 -freq <F>`, then give the ppm figure to `-ppm` with `-freq`.
 
 

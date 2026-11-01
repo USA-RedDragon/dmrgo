@@ -24,6 +24,7 @@ ignore_files:
   - v2/cmd/dmrrf/serial_linux.go
   - v2/cmd/dmrrf/serial_other.go
   - v2/cmd/dmrrf/software.go
+  - v2/cmd/dmrrf/tx.go
   - v2/internal/fsktx/audioopt.go
   - v2/internal/fsktx/endian_be.go
   - v2/internal/fsktx/endian_le.go

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
@@ -35,20 +37,32 @@ func runLoopStretch(t *testing.T, seq string, cfg rftx.SeqConfig, ppm float64) l
 	return runBuilt(t, seq, built, cfg, ppm)
 }
 
+func transmitCS8(t *testing.T, built rftx.Built, cfg rftx.SeqConfig, rate float64) []byte {
+	t.Helper()
+	region, service, power := rf.RegionUS, rf.ServiceAmateur, 30
+	m := txModulation{cfg: cfg, level: 0.9, rate: rate, clock: rate, station: station{&region, &service, &power}}
+	f, err := formatByName(nameCS8)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink := &txSamples{f: f}
+	if err := m.write(io.Discard, built, sink); err != nil {
+		t.Fatal(err)
+	}
+	return sink.enc
+}
+
 func runBuilt(t *testing.T, seq string, built rftx.Built, cfg rftx.SeqConfig, ppm float64) loop {
 	t.Helper()
-	var fm, env []float64
 	want := built.Bursts
 	if cfg.BSSourced {
-		fm, env = rftx.ModulateBS(built.Slots)
 		want = nil
 		for _, s := range built.Slots {
 			want = append(want, s.Burst)
 		}
-	} else {
-		fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 	}
-	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
+	cfg.Slot = 0
+	iq := transmitCS8(t, built, cfg, 2e6)
 	rx := 2.048e6
 	if cfg.BSSourced {
 		rx = 2.4e6

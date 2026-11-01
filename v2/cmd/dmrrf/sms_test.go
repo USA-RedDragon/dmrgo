@@ -15,12 +15,12 @@ import (
 func TestSMSSequenceDecodes(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "sms.cu8")
-	runText(t, stdio{}, "tx", "-seq", "sms", "-msg", "Grüße 73", "-o", path, "-rate", "256000")
+	runText(t, stdio{}, txArgs("-seq", "sms", "-msg", "Grüße 73", "-o", path, "-rate", "1000000")...)
 	iq, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := DemodulateBytes(iq, 256e3, false, rf.Tier3)
+	d, err := DemodulateBytes(iq, 1e6, false, rf.Tier3)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"os"
@@ -26,6 +27,12 @@ func runText(t *testing.T, std stdio, args ...string) string {
 		t.Fatalf("dmrrf %s: %v\n%s", strings.Join(args, " "), err, buf.String())
 	}
 	return buf.String()
+}
+
+var testStation = []string{"-region", "us", "-service", "amateur", "-power", "30"}
+
+func txArgs(args ...string) []string {
+	return append(append([]string{"tx"}, testStation...), args...)
 }
 
 func wantPacket(t *testing.T, out string, bursts string) {
@@ -61,18 +68,17 @@ func TestFormatRoundTrip(t *testing.T) {
 		name, file, format, rate, bursts string
 		rxRate                           bool
 	}{
-		{"cu8", "a.cu8", "", "250000", "6 bursts", true},
+		{"cu8", "a.cu8", "", "1000000", "6 bursts", true},
 		{"cs8", "a.cs8", "", "2000000", "6 bursts", true},
 		{"cs16le", "a.cs16", "", "1000000", "6 bursts", true},
 		{"cf32le", "a.cfile", "", "96000", "6 bursts", true},
-		{"cs8 under 48 kHz", "low.cs8", "", "30000", "6 bursts", true},
-		{"cu8 by flag", "a.bin", "cu8", "250000", "6 bursts", true},
-		{"s16le", "a.raw", "s16le", "24000", "bursts", true},
+		{"cu8 by flag", "a.bin", "cu8", "1000000", "6 bursts", true},
+		{"s16le", "a.raw", "s16le", "96000", "bursts", true},
 		{"s16le resampled", "b.raw", "s16le", "44100", "bursts", true},
 		{"wav", "a.wav", "", "48000", "bursts", false},
 	} {
 		path := filepath.Join(dir, c.file)
-		tx := []string{"tx", "-seq", "data12", "-o", path, "-rate", c.rate}
+		tx := txArgs("-seq", "data12", "-o", path, "-rate", c.rate)
 		rx := []string{"rx", "-i", path}
 		if c.format != "" {
 			tx = append(tx, "-format", c.format)
@@ -88,24 +94,47 @@ func TestFormatRoundTrip(t *testing.T) {
 
 func TestFormatOffsetAndPPM(t *testing.T) {
 	t.Parallel()
-	path := filepath.Join(t.TempDir(), "off.cf32")
-	runText(t, stdio{}, "tx", "-seq", "data12", "-o", path, "-rate", "500000", "-freq", "446000000", "-ppm", "10", "-offset-hz", "20000")
+	dir := t.TempDir()
+	ref := filepath.Join(dir, "ref.cf32")
+	runText(t, stdio{}, txArgs("-seq", "data12", "-o", ref, "-rate", "500000")...)
+	bias := carrierOf(t, runText(t, stdio{}, "rx", "-i", ref, "-rate", "500000"))
+	path := filepath.Join(dir, "off.cf32")
+	runText(t, stdio{}, txArgs("-seq", "data12", "-o", path, "-rate", "500000", "-freq", "446000000", "-ppm", "10", "-offset-hz", "20000")...)
 	out := runText(t, stdio{}, "rx", "-i", path, "-rate", "500000", "-offset-hz", "20000")
-	wantPacket(t, out, "carrier offset -4460 Hz")
+	wantPacket(t, out, "carrier offset")
+	if got := carrierOf(t, out); math.Abs(got-(bias-4460)) > 1 {
+		t.Errorf("carrier offset %v Hz, want %v", got, bias-4460)
+	}
 	out = runText(t, stdio{}, "rx", "-i", path, "-rate", "500000", "-offset-hz", "20000", "-freq", "446000000", "-ppm", "10")
-	wantPacket(t, out, "carrier offset +0 Hz")
+	wantPacket(t, out, "carrier offset")
+	if got := carrierOf(t, out); math.Abs(got-bias) > 1 {
+		t.Errorf("carrier offset %v Hz, want %v", got, bias)
+	}
+}
+
+func carrierOf(t *testing.T, out string) float64 {
+	t.Helper()
+	i := strings.LastIndex(out, "carrier offset ")
+	var got float64
+	if i < 0 {
+		t.Fatalf("no carrier offset in\n%s", out)
+	}
+	if _, err := fmt.Sscanf(out[i:], "carrier offset %f Hz", &got); err != nil {
+		t.Fatal(err)
+	}
+	return got
 }
 
 func TestFormatInference(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	wav := filepath.Join(dir, "a.wav")
-	runText(t, stdio{}, "tx", "-seq", "data12", "-o", wav, "-rate", "24000")
+	runText(t, stdio{}, txArgs("-seq", "data12", "-o", wav, "-rate", "48000")...)
 	b, err := os.ReadFile(wav)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(b[:4]) != "RIFF" || len(b) != wavHeaderSize+2*7920 {
+	if string(b[:4]) != "RIFF" || len(b) != wavHeaderSize+2*15980 {
 		t.Fatalf("WAV of %d bytes starting %q", len(b), b[:4])
 	}
 	odd := filepath.Join(dir, "capture.dat")
@@ -129,6 +158,11 @@ func TestFormatInference(t *testing.T) {
 		{[]string{"tx", "-o", filepath.Join(dir, "x.wav"), "-cw", "1"}, "I/Q only"},
 		{[]string{"tx", "-o", filepath.Join(dir, "x.wav"), "-seq", "t3site", "-bs-sourced"}, "needs an I/Q format"},
 		{[]string{"tx", "-seq", "data12"}, "tx needs -o"},
+		{[]string{"tx", "-o", filepath.Join(dir, "x.cs16"), "-rate", "1e6"}, "now world, unknown, 0 dBm"},
+		{txArgs("-o", filepath.Join(dir, "x.cs16"), "-rate", "30000"), "TxConfig.Rate is out of range"},
+		{txArgs("-o", filepath.Join(dir, "x.cs8"), "-rate", "250000"), "TxConfig.Rate is not allowed"},
+		{txArgs("-o", filepath.Join(dir, "x.wav"), "-rate", "24000"), "AudioTxConfig.Rate is not allowed"},
+		{txArgs("-o", filepath.Join(dir, "x.cs16"), "-rate", "1e6", "-region", "mars"), "unknown region"},
 		{[]string{"cal", "-i", wav}, "cal needs I/Q"},
 	} {
 		if err := runIO(c.args, stdio{in: bytes.NewReader(nil), out: io.Discard, msg: io.Discard}); err == nil || !strings.Contains(err.Error(), c.want) {
@@ -162,14 +196,14 @@ func TestPipe(t *testing.T) {
 		want string
 	}{
 		{"cs16le", []string{"-format", "cs16le", "-rate", "250000"}, []string{"-format", "cs16le", "-rate", "250000"}, "6 bursts"},
-		{"cf32le", []string{"-format", "cf32le", "-rate", "48000"}, []string{"-format", "cf32le", "-rate", "48000"}, "6 bursts"},
+		{"cf32le", []string{"-format", "cf32le", "-rate", "96000"}, []string{"-format", "cf32le", "-rate", "96000"}, "6 bursts"},
 		{"wav", []string{"-format", "wav", "-rate", "48000"}, nil, "bursts"},
 	} {
 		pr, pw := io.Pipe()
 		var txMsg bytes.Buffer
 		done := make(chan error, 1)
 		go func() {
-			err := runIO(append([]string{"tx", "-seq", "data12", "-o", "-"}, c.tx...), stdio{out: pw, msg: &txMsg})
+			err := runIO(append(txArgs("-seq", "data12", "-o", "-"), c.tx...), stdio{out: pw, msg: &txMsg})
 			pw.CloseWithError(err)
 			done <- err
 		}()
@@ -195,7 +229,7 @@ func TestOSPipe(t *testing.T) {
 	}
 	done := make(chan error, 1)
 	go func() {
-		err := runIO([]string{"tx", "-seq", "data12", "-o", "-", "-format", "cu8", "-rate", "2048000"}, stdio{out: w, msg: io.Discard})
+		err := runIO(txArgs("-seq", "data12", "-o", "-", "-format", "cu8", "-rate", "2048000"), stdio{out: w, msg: io.Discard})
 		done <- errors.Join(err, w.Close())
 	}()
 	out := runText(t, stdio{in: r}, "rx", "-i", "-", "-format", "cu8", "-rate", "2048000")

@@ -112,6 +112,7 @@ type txOptions struct {
 	lateEntry   *bool
 	preambles   *int
 	bsSourced   *bool
+	station     station
 	cc          enums.ColorCode
 	dd          uint8
 }
@@ -124,7 +125,7 @@ func txFlags(fs *flag.FlagSet) *txOptions {
 	o.cw = fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead (I/Q only)")
 	o.rate = fs.Float64("rate", 0, "sample rate in Hz (default 48000 for audio; required for I/Q)")
 	o.tune = tuningFlags(fs, "carrier frequency in Hz, for -ppm and the example command", "frequency offset of the carrier from the tuned frequency in Hz (I/Q only)")
-	o.level = fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
+	o.level = fs.Float64("level", 0.9, "peak amplitude, 0 to 1; I/Q in cu8, cs8 and cs16 keeps the 0.9 of the transmitter unless this is given, and then dmrrf scales and quantizes it again; audio sets the transmitter level to this part of the most that fits")
 	o.slot = fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
 	fs.Func("cc", "color code, 0 to 15 (default 1)", func(s string) error {
 		v, err := strconv.ParseUint(s, 10, 8)
@@ -152,6 +153,7 @@ func txFlags(fs *flag.FlagSet) *txOptions {
 		return err
 	})
 	o.bsSourced = fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
+	o.station = stationFlags(fs)
 	return o
 }
 
@@ -197,7 +199,7 @@ func runTX(args []string, std stdio) (err error) {
 	} else {
 		cfg := rftx.SeqConfig{ColorCode: o.cc, Source: *o.src, Dest: *o.dst, BS: *o.bs, Group: *o.group, Wakeups: *o.wakeups, Message: *o.msg,
 			Superframes: *o.superframes, AMBESilence: *o.silence, LateEntry: *o.lateEntry, Preambles: *o.preambles, DefinedData: o.dd, BSSourced: *o.bsSourced, Slot: *o.slot}
-		m := txModulation{seq: *o.seq, cfg: cfg, repeat: *o.repeat, corr: corr, rate: *o.rate * (1 + *o.stretch*1e-6), level: *o.level}
+		m := txModulation{seq: *o.seq, cfg: cfg, repeat: *o.repeat, corr: corr, rate: *o.rate, clock: *o.rate * (1 + *o.stretch*1e-6), level: *o.level, scale: isSet(fs, "level"), station: o.station}
 		if err := m.run(w, sink); err != nil {
 			return err
 		}
@@ -262,74 +264,6 @@ func (t *txSamples) write(path string, stdout io.Writer, rate float64, reps int)
 		}
 	}
 	return len(hdr) + reps*len(t.enc), bw.Flush()
-}
-
-type txModulation struct {
-	seq                       string
-	cfg                       rftx.SeqConfig
-	repeat, corr, rate, level float64
-}
-
-func (m txModulation) run(w io.Writer, sink *txSamples) error {
-	built, err := rftx.Sequence(m.seq, m.cfg)
-	if err != nil {
-		return err
-	}
-	if !sink.f.iq() && len(built.Carriers) > 0 {
-		return fmt.Errorf("the sequence %s has %d carriers; audio carries one, so it needs an I/Q format", m.seq, len(built.Carriers)+1)
-	}
-	if m.repeat > 0 && len(built.Carriers) > 0 {
-		return fmt.Errorf("-repeat does not apply to the multi-channel sequence %s", m.seq)
-	}
-	for _, l := range built.Info {
-		fmt.Fprintln(w, l)
-	}
-	cfg := m.cfg
-	var fm, env []float64
-	if cfg.BSSourced {
-		slots := built.Slots
-		if m.repeat > 0 {
-			n := max(1, int(m.repeat/(float64(len(slots))*rftx.SlotSeconds)))
-			for range n - 1 {
-				slots = append(slots, built.Slots...)
-			}
-			fmt.Fprintf(w, "repeated %d times in one continuous stream\n", n)
-		}
-		fm, env = rftx.ModulateBS(slots)
-		fmt.Fprintf(w, "sequence %s (BS-sourced): %d bursts on slot %d in %d slots, %.2f s, cc %d, %d -> %d, offset %+.0f Hz\n",
-			m.seq, len(built.Bursts), cfg.Slot, len(slots), float64(len(fm))/basebandRate, cfg.ColorCode, cfg.Source, cfg.Dest, m.corr)
-	} else {
-		fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: cfg.Slot})
-		if m.repeat > 0 {
-			fm, env = rftx.PadToFrames(fm, env)
-		}
-		fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
-			m.seq, len(built.Bursts), float64(len(fm))/basebandRate, cfg.Slot, cfg.ColorCode, cfg.Source, cfg.Dest, m.corr)
-	}
-	for _, c := range built.Carriers {
-		fmt.Fprintf(w, "carrier at %+.0f Hz: %d slots from %.2f s\n", c.OffsetHz, len(c.Slots), float64(c.LeadFrames)*2*rftx.SlotSeconds)
-	}
-	if sink.f.iq() {
-		rftx.Mix(built.Signals(fm, env, m.corr), m.rate, m.level, func(re, im float64) { sink.emit(re, im) })
-		return nil
-	}
-	peak := 0.0
-	for _, v := range fm {
-		peak = math.Max(peak, math.Abs(v))
-	}
-	scale := m.level / math.Max(peak, 1)
-	n := int(float64(len(fm)) * m.rate / basebandRate)
-	for i := range n {
-		pos := float64(i) * basebandRate / m.rate
-		k := int(pos)
-		v := fm[k]
-		if k+1 < len(fm) {
-			v += (fm[k+1] - fm[k]) * (pos - float64(k))
-		}
-		sink.emit(v * scale)
-	}
-	fmt.Fprintf(w, "audio: full scale is %.0f Hz of deviation, peak %.0f Hz\n", 1/scale, peak)
-	return nil
 }
 
 type input struct {
