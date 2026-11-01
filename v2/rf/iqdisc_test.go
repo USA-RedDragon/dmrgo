@@ -2,7 +2,9 @@ package rf
 
 import (
 	"math"
+	"slices"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -393,4 +395,73 @@ func TestReceiverOffsetHzTransmitters(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestReceiverStartLevels(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	built, err := rftx.Sequence("data12", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	slots, _ := benchStream(t, 1)
+	bs := make([]layer2.RawBurst, len(slots))
+	for i, s := range slots {
+		bs[i] = s.Burst
+	}
+	devs := map[Tier][]float64{Tier0: {0.7, 0.85, 1, 1.15, 1.3}, Tier1: {1, 1.15, 1.3}, Tier2: {1}, Tier3: {1}}
+	type job struct {
+		ms   bool
+		dev  float64
+		lead float64
+	}
+	var jobs []job
+	for _, ms := range []bool{true, false} {
+		for _, d := range devs[Tier0] {
+			for _, lead := range []float64{0, 0.1} {
+				jobs = append(jobs, job{ms, d, lead})
+			}
+		}
+	}
+	var wg sync.WaitGroup
+	for _, j := range jobs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var fm, env []float64
+			want := built.Bursts
+			if j.ms {
+				fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+			} else {
+				want = bs
+				fm, env = rftx.ModulateBS(slots)
+			}
+			n := int(j.lead * 2e6)
+			f, e := make([]float64, n+len(fm)), make([]float64, n+len(fm))
+			for i := range fm {
+				f[n+i], e[n+i] = fm[i]*j.dev, env[i]
+			}
+			iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
+			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+				if !slices.Contains(devs[tier], j.dev) {
+					continue
+				}
+				r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: tier})
+				var got []Burst
+				for k := 0; k < len(iq); k += 1 << 16 {
+					got = r.AppendBursts(got, iq[k:min(k+1<<16, len(iq))])
+				}
+				got = r.AppendFlush(got)
+				for i, w := range want {
+					if !slices.ContainsFunc(got, func(b Burst) bool { return b.Data == w }) {
+						t.Errorf("Tier%d ms %v deviation %.2f lead %.1f s: burst %d missing or wrong", tier-Tier0, j.ms, j.dev, j.lead, i)
+					}
+				}
+				if d := r.DeviationHz() / (3 * deviationHz * j.dev); math.Abs(d-1) > 0.05 {
+					t.Errorf("Tier%d ms %v deviation %.2f lead %.1f s: DeviationHz %.3f of the true value", tier-Tier0, j.ms, j.dev, j.lead, d)
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }

@@ -71,6 +71,9 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	if cfg.iq || cfg.lowIQ {
 		r.f.maxGain = discIQMaxGain
 	}
+	if cfg.iq && opt.CohExt {
+		r.f.gain = float32(discInputRMSHz / (iqUnitsPerHz * deviationHz * math.Sqrt(5)))
+	}
 	if cfg.pol {
 		r.f.polBits = polOn
 	}
