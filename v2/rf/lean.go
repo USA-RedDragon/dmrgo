@@ -359,6 +359,9 @@ type leanSlots struct {
 	out   uint8
 	fresh [2]uint8
 	rate  float32
+	rs    float32
+	rs2   float32
+	rk    int32
 }
 
 func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
@@ -1422,7 +1425,8 @@ func (r *leanCore) gridMiss() int32 {
 const (
 	leanSeekSyms     = 4
 	leanReplayErrors = 1
-	leanRateGain     = 0.5
+	leanRateMin      = 3
+	leanRateSig      = 3
 	leanSeekRho      = 0.5
 	leanRateMax      = 2e-3
 )
@@ -1488,6 +1492,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
 	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
+	r.ms.rs, r.ms.rs2, r.ms.rk = 0, 0, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed = false, r.trackGain, 0, leanClockGain, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
@@ -1755,12 +1760,17 @@ func (r *leanCore) slotRate(p int32, sps float32) {
 		return
 	}
 	e := r.symWait() - m.t[p] - float32(int16(m.n[p]-uint16(r.n))) - float32(n)*sps
+	res := e/float32(n) - m.rate
 	if m.in&(1<<p) != 0 {
-		m.rate += leanRateGain * e / float32(2*n)
-	} else {
-		m.rate += leanRateGain * (e/float32(n) - m.rate)
+		res = e / float32(2*n)
 	}
-	m.rate = max32(min32(m.rate, leanRateMax*sps), -leanRateMax*sps)
+	m.rs, m.rs2, m.rk = m.rs+res, m.rs2+res*res, m.rk+1
+	k := float32(m.rk)
+	mean := m.rs / k
+	if v := m.rs2/k - mean*mean; m.rk >= leanRateMin && mean*mean*k > leanRateSig*leanRateSig*v {
+		m.rate = max32(min32(m.rate+mean, leanRateMax*sps), -leanRateMax*sps)
+		m.rs, m.rs2, m.rk = 0, 0, 0
+	}
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
