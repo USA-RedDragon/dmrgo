@@ -5,19 +5,19 @@
 			"name": "I/Q at 96 kHz, CS16",
 			"mhz": 4.8,
 			"ram_bytes": 968,
-			"flash_kb": 33.9
+			"flash_kb": 33.8
 		},
 		{
 			"name": "Audio at 48 kHz, 12-bit",
 			"mhz": 3.7,
 			"ram_bytes": 724,
-			"flash_kb": 31
+			"flash_kb": 28.7
 		},
 		{
 			"name": "Audio at 24 kHz, 12-bit",
 			"mhz": 3.6,
 			"ram_bytes": 764,
-			"flash_kb": 30.8
+			"flash_kb": 28.5
 		}
 	]
 }
