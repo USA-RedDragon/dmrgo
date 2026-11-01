@@ -36,13 +36,47 @@ type txPairCells struct {
 
 type txPairs struct {
 	Ours, RRC txPairCells
-	Streams   int     `json:"streams"`
-	OursMean  float64 `json:"ours_mean"`
-	RRCMean   float64 `json:"rrc_mean"`
-	DiffMean  float64 `json:"diff_mean"`
-	DiffSE    float64 `json:"diff_se"`
-	OursWins  int     `json:"ours_wins"`
-	RRCWins   int     `json:"rrc_wins"`
+	Streams   int         `json:"streams"`
+	OursMean  float64     `json:"ours_mean"`
+	RRCMean   float64     `json:"rrc_mean"`
+	DiffMean  float64     `json:"diff_mean"`
+	DiffSE    float64     `json:"diff_se"`
+	OursWins  int         `json:"ours_wins"`
+	RRCWins   int         `json:"rrc_wins"`
+	ALT       []txPairALT `json:"alt"`
+}
+
+type txPairALT struct {
+	Name     string  `json:"name"`
+	Hz       int     `json:"hz"`
+	HoldDBc  float64 `json:"hold_dbc"`
+	IdealDBc float64 `json:"ideal_dbc"`
+}
+
+func measureTxPairALT(t testing.TB) []txPairALT {
+	syms := newTestStream(t, 6, 40).syms
+	cases := []struct {
+		name string
+		hz   int
+		rrc  bool
+	}{{"Tier 1", 24000, false}, {"Root raised cosine", 24000, true}, {"Root raised cosine", 48000, true}, {"Root raised cosine", 96000, true}}
+	out := make([]txPairALT, 0, len(cases))
+	for _, c := range cases {
+		cfg, rrc := pairConfigs(c.hz)
+		if c.rrc {
+			cfg = rrc
+		}
+		r := txPairALT{Name: c.name, Hz: c.hz}
+		for _, x := range []struct {
+			dst *float64
+			r   radio
+		}{{&r.HoldDBc, radio{}}, {&r.IdealDBc, radio{ideal: true}}} {
+			fm := pairSignal(t, cfg, syms, x.r)
+			*x.dst = newSpectrum(fm[len(fm)/8:len(fm)*7/8], dacRate).acp(25000)
+		}
+		out = append(out, r)
+	}
+	return out
 }
 
 func pairConfigs(hz int) (ours, rrc AudioConfig) {
@@ -118,6 +152,7 @@ func measureTxPairs(t *testing.T) txPairs {
 			p.RRCWins++
 		}
 	}
+	p.ALT = measureTxPairALT(t)
 	p.DiffMean = s / n
 	p.DiffSE = math.Sqrt((s2/n - p.DiffMean*p.DiffMean) / (n - 1))
 	return p
@@ -151,6 +186,13 @@ func renderTxPairs(p txPairs) string {
 		verdict = "Tier 1 is lower by more than two standard errors"
 	}
 	fmt.Fprintf(&b, "- AC-coupled eye against the 96 kHz eye: %s On the test stream, without the fit of gain and offset, the AC-coupled eye error is the wander of the data through the 10 Hz high pass and differs by %.5f between the two; with the fit, the rest is the intersymbol error of the one symbol where the wander peaks. Over %d random streams of the same length, each sent by both, the paired difference of Tier 1 less the root raised cosine is %+.5f with a standard error of %.5f, and they win %d and %d streams: %s.\n\n", eye96, math.Abs(p.Ours.EyeACRaw-p.RRC.EyeACRaw), p.Streams, p.DiffMean, p.DiffSE, p.OursWins, p.RRCWins, verdict)
+	if len(p.ALT) > 0 {
+		b.WriteString("The alternate channel power of the comparison with the MMDVM firmware ties for every transmitter at 24 kHz. The same signals through the hold converter of that comparison and through an ideal converter, which interpolates the codes with no images:\n\n| Signal | Rate | Hold converter | Ideal converter |\n| --- | ---: | ---: | ---: |\n")
+		for _, a := range p.ALT {
+			fmt.Fprintf(&b, "| %s | %s kHz | %.2f dBc | %.2f dBc |\n", a.Name, khz(a.Hz), a.HoldDBc, a.IdealDBc)
+		}
+		b.WriteString("\n- Alternate channel power at 24 kHz: through the hold converter every waveform reads the same, and through an ideal converter or at a higher rate it is far lower. The tie is the image of the converter at 24 kHz, which no waveform at that rate changes.\n\n")
+	}
 	b.WriteString("`go test ./internal/fsktx -run TestTxPairs -update-txpairs` in v2 measures them into `v2/internal/fsktx/testdata/txpairs.json` and writes this block, and `DMRGO_LONG=1` measures them again.\n\n")
 	b.WriteString(txPairsEnd)
 	return b.String()

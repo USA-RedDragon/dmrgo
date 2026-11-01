@@ -272,6 +272,17 @@ Two pairs of cells of the comparison of the transmit tiers with external transmi
 - Adjacent channel power against deviation error: Tier 1 is lower on both cells at once.
 - AC-coupled eye against the 96 kHz eye: Tier 1 has the lower 96 kHz eye. On the test stream, without the fit of gain and offset, the AC-coupled eye error is the wander of the data through the 10 Hz high pass and differs by 0.00052 between the two; with the fit, the rest is the intersymbol error of the one symbol where the wander peaks. Over 64 random streams of the same length, each sent by both, the paired difference of Tier 1 less the root raised cosine is -0.00015 with a standard error of 0.00018, and they win 33 and 31 streams: a tie within two standard errors, so the one-stream cell is an artifact of one symbol pattern.
 
+The alternate channel power of the comparison with the MMDVM firmware ties for every transmitter at 24 kHz. The same signals through the hold converter of that comparison and through an ideal converter, which interpolates the codes with no images:
+
+| Signal | Rate | Hold converter | Ideal converter |
+| --- | ---: | ---: | ---: |
+| Tier 1 | 24 kHz | -70.03 dBc | -97.11 dBc |
+| Root raised cosine | 24 kHz | -70.03 dBc | -97.44 dBc |
+| Root raised cosine | 48 kHz | -121.19 dBc | -112.75 dBc |
+| Root raised cosine | 96 kHz | -121.17 dBc | -114.73 dBc |
+
+- Alternate channel power at 24 kHz: through the hold converter every waveform reads the same, and through an ideal converter or at a higher rate it is far lower. The tie is the image of the converter at 24 kHz, which no waveform at that rate changes.
+
 `go test ./internal/fsktx -run TestTxPairs -update-txpairs` in v2 measures them into `v2/internal/fsktx/testdata/txpairs.json` and writes this block, and `DMRGO_LONG=1` measures them again.
 
 <!-- txpairs:end -->

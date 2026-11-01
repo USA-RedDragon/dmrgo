@@ -19,5 +19,31 @@
 	"diff_mean": -0.00014845690636200145,
 	"diff_se": 0.0001835775209935562,
 	"ours_wins": 33,
-	"rrc_wins": 31
+	"rrc_wins": 31,
+	"alt": [
+		{
+			"name": "Tier 1",
+			"hz": 24000,
+			"hold_dbc": -70.03446594131138,
+			"ideal_dbc": -97.10634537717034
+		},
+		{
+			"name": "Root raised cosine",
+			"hz": 24000,
+			"hold_dbc": -70.03350559951103,
+			"ideal_dbc": -97.44243516965031
+		},
+		{
+			"name": "Root raised cosine",
+			"hz": 48000,
+			"hold_dbc": -121.19199467331163,
+			"ideal_dbc": -112.75476365077864
+		},
+		{
+			"name": "Root raised cosine",
+			"hz": 96000,
+			"hold_dbc": -121.17499703613264,
+			"ideal_dbc": -114.73481563745099
+		}
+	]
 }
