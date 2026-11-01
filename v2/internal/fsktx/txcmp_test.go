@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/fs"
 	"math"
-	"math/cmplx"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -98,11 +97,7 @@ func mmdvmLevel(t testing.TB, bin string) int {
 }
 
 func txCmpEye(x48 []complex128, delay float64) [][]float64 {
-	f := make([]float64, len(x48))
-	for i := 1; i < len(x48); i++ {
-		d := x48[i] * cmplx.Conj(x48[i-1])
-		f[i] = math.Atan2(imag(d), real(d)) * rxRate / (2 * math.Pi)
-	}
+	f := demod(x48)
 	sps := rxRate / SymbolRate
 	lp := butter2(2400, rxRate)
 	g := make([]float64, len(f))
@@ -284,7 +279,7 @@ func renderTxCmp(d txCmpData) string {
 	}
 	b.WriteString("\n- Adjacent and alternate channel power is the power within 4.25 kHz of 12.5 and 25 kHz off, relative to the carrier, the larger side (EN 300 113 clause 7.4). Lower is better.\n")
 	b.WriteString("- The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz. Higher is better.\n")
-	b.WriteString("- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3.\n")
+	b.WriteString("- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3. The frequency is the phase step of the FM signal between samples at 48 kHz, divided by the sinc response of that step. The symbol centers come through a root-raised-cosine receive filter 128 symbols to each side, with the timing, gain and offset fitted over the stream. The ETSI pattern deviation is the peak of a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods.\n")
 	b.WriteString("- The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over " + strconv.Itoa(d.Seeds) + " noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.\n\n")
 	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](" + txImgDir + "compare_spectrum.svg)\n\n")
 	b.WriteString("<details><summary>Eye diagrams</summary>\n\nThe frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.\n\n")

@@ -312,9 +312,24 @@ func (s spectrum) maskMargin() float64 {
 }
 
 func demod(x []complex128) []float64 {
-	f := make([]float64, len(x))
+	return discriminate(x, rxRate)
+}
+
+var discInv = [3]float64{1067.0 / 960, -29.0 / 480, 3.0 / 640}
+
+func discriminate(x []complex128, rate float64) []float64 {
+	if len(x) < 2 {
+		return make([]float64, len(x))
+	}
+	r := make([]float64, len(x))
 	for i := 1; i < len(x); i++ {
-		f[i] = cmplx.Phase(x[i]*cmplx.Conj(x[i-1])) * rxRate / (2 * math.Pi)
+		r[i] = cmplx.Phase(x[i]*cmplx.Conj(x[i-1])) * rate / (2 * math.Pi)
+	}
+	r[0] = r[1]
+	at := func(i int) float64 { return r[max(0, min(i, len(r)-1))] }
+	f := make([]float64, len(x))
+	for i := range f {
+		f[i] = discInv[0]*r[i] + discInv[1]*(at(i-1)+at(i+1)) + discInv[2]*(at(i-2)+at(i+2))
 	}
 	return f
 }
@@ -326,13 +341,20 @@ type fskResult struct {
 	OffsetHz float64
 }
 
-const rxSpan = 16
+const (
+	rxSpan    = 16
+	rxFitSpan = 128
+)
 
 func fskAt(f []float64, delay float64, lo, hi int) []float64 {
+	return fskAtSpan(f, delay, lo, hi, rxSpan)
+}
+
+func fskAtSpan(f []float64, delay float64, lo, hi, span int) []float64 {
 	sps := rxRate / SymbolRate
 	d0 := math.Floor(delay)
 	frac := delay - d0
-	half := rxSpan * sps
+	half := span * sps
 	g := make([]float64, 2*half+1)
 	var sum float64
 	for j := -half; j <= half; j++ {
@@ -410,8 +432,12 @@ func fsk(x []complex128, syms []int8) fskResult {
 		}
 	}
 	delay := (a + b) / 2
-	hi = len(syms) - 40
-	fe, gain, off := fit(fskAt(f, delay, lo, hi), syms[lo:hi])
+	span := rxFitSpan
+	lo, hi = span+8, len(syms)-span-8
+	if hi-lo < 200 {
+		span, lo, hi = rxSpan, 40, len(syms)-40
+	}
+	fe, gain, off := fit(fskAtSpan(f, delay, lo, hi, span), syms[lo:hi])
 	return fskResult{Delay: delay, FSKError: fe, DevError: 100 * (gain - 1), OffsetHz: off}
 }
 
@@ -496,16 +522,37 @@ func receiveDisc(x []complex64) []RxBurst {
 
 // ETSI TS 102 361-1 clause 10.2.2.3
 func etsiDeviation(x []complex128) float64 {
-	f := demod(x)
-	lp := butter2(4000, rxRate)
-	var hi, lo float64
-	for i, v := range f {
-		y := lp.step(v)
-		if i > len(f)/4 && i < 3*len(f)/4 {
-			hi, lo = max(hi, y), min(lo, y)
+	return toneDeviation(demod(x), rxRate)
+}
+
+func toneDeviation(f []float64, rate float64) float64 {
+	p := rate / etsiHz
+	n := int(math.Round(math.Floor(float64(len(f)/2)/p) * p))
+	if n < 1 {
+		return math.NaN()
+	}
+	x := f[len(f)/4 : len(f)/4+n]
+	var dc float64
+	var c, s [3]float64
+	for i, v := range x {
+		dc += v
+		for k := range c {
+			sn, cs := math.Sincos(2 * math.Pi * float64(k+1) * float64(i) / p)
+			c[k] += v * cs
+			s[k] += v * sn
 		}
 	}
-	return 100 * (max(hi, -lo)/2749 - 1)
+	dc /= float64(n)
+	var peak float64
+	for j := range 720 {
+		y := dc
+		for k := range c {
+			sn, cs := math.Sincos(2 * math.Pi * float64(k+1) * float64(j) / 720)
+			y += 2 / float64(n) * (c[k]*cs + s[k]*sn)
+		}
+		peak = max(peak, math.Abs(y))
+	}
+	return 100 * (peak/2749 - 1)
 }
 
 func probit(cns []float64, ok, n []int) float64 {

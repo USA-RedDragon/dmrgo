@@ -754,7 +754,7 @@ func renderTxSheet(t testing.TB, d txSheetData, cost txSheetCostData, margins ma
 		})
 	}
 	b.WriteString("\n- FSK error is the RMS error of the symbol deviations after the receive filter, as a percent of the deviation of symbol +3, over a random stream. A hold converter keeps each code until the next sample; an ideal converter interpolates it with no images. I/Q has no converter model.\n")
-	b.WriteString("- Deviation error is the error of the peak deviation of the ETSI test pattern from 2749 Hz. TS 102 361-1 clause 10.2.2.3 sets a limit of 10%.\n")
+	b.WriteString("- Deviation error is the error of the peak deviation of the ETSI test pattern from 2749 Hz. TS 102 361-1 clause 10.2.2.3 sets a limit of 10%. The measurement takes the frequency from the phase step of the FM signal between samples, divided by the sinc response of that step to the frequency, fits a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods of the middle half of the pattern, and takes the peak of that fit.\n")
 	b.WriteString("- Each margin is the least, over the limits of the region and service at 1 W (30 dBm) with no input low pass, of the margin in dB less the margin that a setup needs on that limit: 10 dB on a spurious domain limit and 3 dB on the others. A setup is accepted from 0. [Measured margins](#measured-margins) gives each limit and power class.\n\n")
 	if len(cost.Rows) > 0 {
 		b.WriteString("| Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |\n| --- | ---: | ---: | ---: |\n")

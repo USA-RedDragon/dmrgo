@@ -260,15 +260,7 @@ func decimate(x []complex128, rate float64) ([]complex128, float64) {
 
 // ETSI TS 102 361-1 clause 10.2.2.3
 func limDeviation(x []complex128, rate float64) float64 {
-	lp := butter2(4000, rate)
-	var hi, lo float64
-	for i := 1; i < len(x); i++ {
-		y := lp.step(cmplx.Phase(x[i]*cmplx.Conj(x[i-1])) * rate / (2 * math.Pi))
-		if i > len(x)/4 && i < 3*len(x)/4 {
-			hi, lo = max(hi, y), min(lo, y)
-		}
-	}
-	return 100 * (max(hi, -lo)/2749 - 1)
+	return toneDeviation(discriminate(x, rate), rate)
 }
 
 type limStreams struct {
