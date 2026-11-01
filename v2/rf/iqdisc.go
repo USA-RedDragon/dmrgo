@@ -552,6 +552,7 @@ func (r *iqRx) tuneWith(hz, dc, lim float32) {
 
 func (r *iqRx) tuneConv(hz float32) {
 	r.conv.tune(r.conv.hz + hz)
+	r.d.offsetHz = sat16(float32(r.d.offsetHz) - hz*r.d.f.gain*iqUnitsPerHz)
 	r.noteTune(hz)
 	if r.tunes != nil {
 		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN - 1, hz: r.conv.hz}

@@ -576,7 +576,7 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 	}
 	var wg sync.WaitGroup
 	for _, ms := range []bool{true, false} {
-		for _, tail := range []string{"no carrier", "unmodulated carrier"} {
+		for _, tail := range []string{"no carrier", "unmodulated carrier", "carrier 2 kHz away"} {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -589,9 +589,14 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 				n := len(fm)
 				head := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
 				fm, env = append(fm, make([]float64, 4*n)...), append(env, make([]float64, 4*n)...)
-				if tail == "unmodulated carrier" {
+				if tail != "no carrier" {
 					for i := n; i < len(env); i++ {
 						env[i] = 1
+					}
+				}
+				if tail == "carrier 2 kHz away" {
+					for i := n; i < len(fm); i++ {
+						fm[i] = 2000
 					}
 				}
 				iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
