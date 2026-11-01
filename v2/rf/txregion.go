@@ -83,7 +83,7 @@ var ceilingDBm = [regions][2]int8{
 	RegionUS:    {60, 62},
 	RegionCEPT:  {60, 62},
 	RegionChina: {44, 43},
-	RegionJapan: {60, 60},
+	RegionJapan: {60, 61},
 }
 
 var spurGate10 = [regions][services]bool{
