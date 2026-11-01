@@ -34,8 +34,8 @@ const (
 	txSpecSpan   = 40000
 	txSpecStep   = 100
 	txACPStep    = 250
-	txEyeSteps   = 10
-	txEyeTraces  = 64
+	txEyeSteps   = 20
+	txEyeTraces  = 128
 )
 
 type txSheetSpectrum struct {
@@ -415,7 +415,7 @@ const (
 	plotPadR       = 190
 	plotPadT       = 40
 	plotPadB       = 56
-	plotStyle      = `text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.35}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}`
+	plotStyle      = `text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}`
 )
 
 type plotAxis struct {
@@ -583,29 +583,25 @@ func eyePlot(title string, steps int, panels []eyePanel) []byte {
 		f := plotFrame{b: &b, x0: plotPadL + float64(i)*(w+gap), y0: plotPadT + 18, w: w, h: sheetH - plotPadT - 18 - plotPadB, xa: xa, ya: ya}
 		f.grid(true, i == 0)
 		b.WriteString(`<text x="` + plotPx(f.x0+w/2) + `" y="` + plotPx(f.y0-6) + `" text-anchor="middle">` + p.title + `</text>` + "\n")
+		id := "eye" + strconv.Itoa(i)
+		b.WriteString(`<clipPath id="` + id + `"><rect x="` + plotPx(f.x0) + `" y="` + plotPx(f.y0) + `" width="` + plotPx(w) + `" height="` + plotPx(f.h) + `"/></clipPath>` + "\n")
+		b.WriteString(`<g class="e s2" clip-path="url(#` + id + `)">` + "\n")
+		for _, tr := range p.traces {
+			var path strings.Builder
+			for k, v := range tr {
+				op := "L"
+				if k == 0 {
+					op = "M"
+				}
+				x := float64(k-steps) / float64(steps)
+				path.WriteString(op + strconv.Itoa(int(math.Round(f.sx(x)))) + "," + strconv.Itoa(int(math.Round(f.sy(v)))))
+			}
+			b.WriteString(`<path d="` + path.String() + `"/>` + "\n")
+		}
+		b.WriteString("</g>\n")
 		for _, lv := range []float64{-3, -1, 1, 3} {
 			y := plotPx(f.sy(lv))
 			b.WriteString(`<line class="l r0" stroke-dasharray="2 4" x1="` + plotPx(f.x0) + `" y1="` + y + `" x2="` + plotPx(f.x0+w) + `" y2="` + y + `"/>` + "\n")
-		}
-		for _, tr := range p.traces {
-			var path strings.Builder
-			pen := false
-			for k, v := range tr {
-				x := float64(k-steps) / float64(steps)
-				if !f.in(x, v) {
-					pen = false
-					continue
-				}
-				op := "L"
-				if !pen {
-					op = "M"
-				}
-				pen = true
-				path.WriteString(op + plotPx(f.sx(x)) + "," + plotPx(f.sy(v)) + " ")
-			}
-			if path.Len() > 0 {
-				b.WriteString(`<path class="e s2" d="` + strings.TrimSpace(path.String()) + `"/>` + "\n")
-			}
 		}
 		if i == 0 {
 			cy := f.y0 + f.h/2
