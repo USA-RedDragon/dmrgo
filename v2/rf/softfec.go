@@ -149,18 +149,8 @@ func (id softSmallID) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
 
 func (id softSmallID) search(tab *[softTabLen]int32, off, fixed, want uint32, top *softTop) {
 	c := smallCode(id)
-	var free [16]int
-	nf := 0
-	info := want & fixed
-	cw := c.base ^ off
-	for i := range c.k {
-		if fixed>>i&1 == 0 {
-			free[nf] = i
-			nf++
-		} else if info>>i&1 != 0 {
-			cw ^= c.rows[i]
-		}
-	}
+	var free [16]uint8
+	nf, info, cw := smallFree(c, off, fixed, want, &free)
 	top.add(tab[cw&0xff]+tab[256+cw>>8&0xff]+tab[512+cw>>16&0xff], info, cw)
 	worst := top.worst()
 	for g := uint32(1); g < uint32(1)<<nf; g++ {

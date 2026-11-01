@@ -106,12 +106,8 @@ func nibbleCost[_ any](tab []int16, cw uint32, n int) int32 {
 	return c
 }
 
-func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *leanBest) {
-	c := &softSmallCodes[id]
-	var free [16]uint8
-	nf := 0
-	info := want & fixed
-	cw := c.base ^ off
+func smallFree(c *softSmallCode, off, fixed, want uint32, free *[16]uint8) (nf int, info, cw uint32) {
+	info, cw = want&fixed, c.base^off
 	for i := range c.k {
 		if fixed>>i&1 == 0 {
 			free[nf] = uint8(i)
@@ -120,6 +116,13 @@ func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *lea
 			cw ^= c.rows[i]
 		}
 	}
+	return nf, info, cw
+}
+
+func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *leanBest) {
+	c := &softSmallCodes[id]
+	var free [16]uint8
+	nf, info, cw := smallFree(c, off, fixed, want, &free)
 	top.add(nibbleCost[site1](tab, cw, c.n), info, cw)
 	worst := top.worst()
 	for g := uint32(1); g < uint32(1)<<nf; g++ {
