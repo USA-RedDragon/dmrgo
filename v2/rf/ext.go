@@ -860,12 +860,15 @@ func (x *softExt) firstSlot(c *leanCore) {
 		at -= float32(c.n - x.lockN)
 	}
 	room := float32(c.acqKept()-4) - at
+	_, an := c.acqBuf()
+	fresh := c.acqFrom == 0 && c.acqKept() < an
 	n := 0
 	for n < x.lookback {
 		oldest := c.first - int64(n+1)*slotSymbols - 1
 		start := oldest + 1
-		if !c.bs {
+		if !c.bs || fresh && start < 0 {
 			start += cachSymbols
+			oldest = max(oldest, start-1)
 		}
 		if start < 0 || float32(last-oldest)*sps > room {
 			break
