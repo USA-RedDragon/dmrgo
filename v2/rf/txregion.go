@@ -29,7 +29,9 @@ const (
 	// Regulations for amateur.
 	RegionChina
 	// RegionJapan keeps the Radio Equipment Regulations for land mobile and
-	// amateur. It has no license-free DMR service.
+	// amateur. It has no license-free DMR service. An amateur station takes
+	// up to 1.2 kW: Japan licenses at most 1 kW, and Article 14 lets an
+	// amateur transmitter emit 20% over its licensed power.
 	RegionJapan
 )
 
