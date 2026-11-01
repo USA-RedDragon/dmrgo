@@ -387,3 +387,57 @@ func TestCodecDeviceErrors(t *testing.T) {
 	}
 	checkSim(t, d)
 }
+
+type starvedPort struct {
+	dvsi.Port
+	sent    <-chan struct{}
+	timeout time.Duration
+	wrote   bool
+}
+
+func (p *starvedPort) Write(b []byte) (int, error) {
+	n, err := p.Port.Write(b)
+	if p.sent != nil && err == nil && len(b) > 0 && b[len(b)-1] != 0 {
+		<-p.sent
+	}
+	p.wrote = true
+	return n, err
+}
+
+func (p *starvedPort) SetReadDeadline(t time.Time) error {
+	if d, ok := p.Port.(interface{ SetReadDeadline(time.Time) error }); ok {
+		return d.SetReadDeadline(t)
+	}
+	return nil
+}
+
+func (p *starvedPort) now() time.Time {
+	if p.wrote {
+		p.wrote = false
+		return time.Now().Add(-2 * p.timeout)
+	}
+	return time.Now()
+}
+
+func starvedNew(t *testing.T, p *starvedPort, cfg dvsi.Config) *dvsi.Codec {
+	t.Helper()
+	p.timeout = cfg.Timeout
+	dvsi.SetClock(&cfg, p.now)
+	c, err := dvsi.New(p, &cfg)
+	if err != nil {
+		t.Fatalf("New with the replies waiting = %v", err)
+	}
+	return c
+}
+
+func TestCodecStarvedClient(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(3)
+	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
+		d := dvsisim.New(pairs, opt)
+		c := starvedNew(t, &starvedPort{Port: d}, dvsi.Config{Timeout: 20 * time.Millisecond})
+		roundTrip(t, c, pairs)
+		checkSim(t, d)
+	}
+}

@@ -294,13 +294,18 @@ func (c *Codec) later(parity bool, want PacketType) int {
 	return 0
 }
 
+const lateRead = time.Millisecond
+
 func (c *Codec) fill(start time.Time) error {
 	for {
-		if c.clock.Now().Sub(start) >= c.timeout {
-			return ErrTimeout
-		}
+		now := c.clock.Now()
+		late := now.Sub(start) >= c.timeout
 		if c.dl != nil {
-			if err := c.dl.SetReadDeadline(start.Add(c.timeout)); err != nil {
+			at := start.Add(c.timeout)
+			if late {
+				at = now.Add(lateRead)
+			}
+			if err := c.dl.SetReadDeadline(at); err != nil {
 				return err
 			}
 		}
@@ -316,6 +321,9 @@ func (c *Codec) fill(start time.Time) error {
 			if t, ok := err.(timeouter); !ok || !t.Timeout() {
 				return err
 			}
+		}
+		if late {
+			return ErrTimeout
 		}
 	}
 }
