@@ -1286,7 +1286,10 @@ func (s *cohStage) prevAt(j int) (int8, bool) {
 	return s.prevSyms[i], true
 }
 
-const cohPlaceRho = 0.3
+const (
+	cohPlaceRho = 0.3
+	cohSlotRho  = 0.2
+)
 
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	s.slotRadio(c, int64(j))
@@ -1314,7 +1317,7 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 			best, bestP, bestD = rho, p, d
 		}
 	}
-	if best < cohPlaceRho {
+	if best < cohSlotRho {
 		return false
 	}
 	s.dt += cohDTGain * bestD

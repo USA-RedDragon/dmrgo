@@ -440,3 +440,32 @@ func TestDiscTier3WriteFlush(t *testing.T) {
 		}
 	}
 }
+
+func TestCoreTier3WeakDataPlaced(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 6)
+	sig := cleanBaseband(slots, 1400)
+	first := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
+	drops, n := 0, 0
+	for _, cn := range []float64{-3, -2.5} {
+		for s := range uint64(3) {
+			have := map[int]bool{}
+			for _, b := range benchReceive(t, sig.noisy(cn, 60+s), benchEntry{benchIQ, Tier3}) {
+				if i := int(math.Round((b.Seconds - first) / slotSeconds)); math.Abs(b.Seconds-first-float64(i)*slotSeconds) < 0.002 {
+					have[i] = true
+				}
+			}
+			for i, ts := range truth {
+				if ts.kind == "data" && have[i-2] && have[i-1] {
+					n++
+					if !have[i] {
+						drops++
+					}
+				}
+			}
+		}
+	}
+	if 20*drops > n {
+		t.Errorf("%d of %d data bursts inside a stream not placed", drops, n)
+	}
+}
