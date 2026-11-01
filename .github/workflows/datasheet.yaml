@@ -29,7 +29,7 @@ env:
 jobs:
   update:
     if: github.actor != 'usa-reddragon-auto-commit-bot[bot]'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 180
 
     steps:
