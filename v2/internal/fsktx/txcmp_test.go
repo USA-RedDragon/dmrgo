@@ -43,6 +43,8 @@ type txCmpRow struct {
 	DataCN90      float64   `json:"data_cn90"`
 	DiscVoiceCN90 float64   `json:"disc_voice_cn90"`
 	DiscDataCN90  float64   `json:"disc_data_cn90"`
+	Paired        []float64 `json:"paired_db,omitempty"`
+	PairedSE      []float64 `json:"paired_se_db,omitempty"`
 	Spectrum      []float64 `json:"spectrum_db"`
 	Eye           [][]float64
 }
@@ -122,9 +124,58 @@ func txCmpEye(x48 []complex128, delay float64) [][]float64 {
 
 const txCmpSeeds = 64
 
-func txCmpCurve(x48 []complex128, shift int, ts *testStream, disc bool) []point {
+type txCmpCurve struct {
+	cn []float64
+	sc [][]score
+}
+
+func (c txCmpCurve) points(skip int) []point {
+	pts := make([]point, len(c.cn))
+	for k, cn := range c.cn {
+		p := point{CN: cn}
+		for i, s := range c.sc[k] {
+			if i == skip {
+				continue
+			}
+			p.Voice += s.voice
+			p.VoiceOK += s.voiceOK
+			p.Data += s.data
+			p.DataOK += s.dataOK
+		}
+		pts[k] = p
+	}
+	return pts
+}
+
+func (c txCmpCurve) cn90(skip int) [2]float64 {
+	v, d := cn90(c.points(skip))
+	return [2]float64{v, d}
+}
+
+func txCmpPaired(a, b [2]txCmpCurve) (diff, se []float64) {
+	for r := range a {
+		for m := range 2 {
+			d := a[r].cn90(-1)[m] - b[r].cn90(-1)[m]
+			jk := make([]float64, txCmpSeeds)
+			var mean float64
+			for i := range jk {
+				jk[i] = a[r].cn90(i)[m] - b[r].cn90(i)[m]
+				mean += jk[i] / txCmpSeeds
+			}
+			var ss float64
+			for _, v := range jk {
+				ss += (v - mean) * (v - mean)
+			}
+			diff = append(diff, math.Round(d*1000)/1000)
+			se = append(se, math.Round(math.Sqrt(ss*(txCmpSeeds-1)/txCmpSeeds)*1000)/1000)
+		}
+	}
+	return diff, se
+}
+
+func txCmpScores(x48 []complex128, shift int, ts *testStream, disc bool) txCmpCurve {
 	n := int((2*rxPad + float64(len(ts.syms))/SymbolRate) * rxRate)
-	var pts []point
+	var c txCmpCurve
 	for cn := -1.0; cn <= 16; cn += 0.5 {
 		sc := make([]score, txCmpSeeds)
 		var wg sync.WaitGroup
@@ -143,22 +194,19 @@ func txCmpCurve(x48 []complex128, shift int, ts *testStream, disc bool) []point 
 			}()
 		}
 		wg.Wait()
-		p := point{CN: cn}
+		c.cn, c.sc = append(c.cn, cn), append(c.sc, sc)
+		var miss int
 		for _, s := range sc {
-			p.Voice += s.voice
-			p.VoiceOK += s.voiceOK
-			p.Data += s.data
-			p.DataOK += s.dataOK
+			miss += s.voice - s.voiceOK + s.data - s.dataOK
 		}
-		pts = append(pts, p)
-		if p.VoiceOK == p.Voice && p.DataOK == p.Data {
+		if miss == 0 {
 			break
 		}
 	}
-	return pts
+	return c
 }
 
-func txCmpMeasure(t *testing.T, name string, level int, x []complex128, rate float64, etsi []complex128, ts *testStream) txCmpRow {
+func txCmpMeasure(t *testing.T, name string, level int, x []complex128, rate float64, etsi []complex128, ts *testStream) (txCmpRow, [2]txCmpCurve) {
 	r := txCmpRow{Name: name, Level: level}
 	sp := newSpectrum(x[len(x)/8:len(x)*7/8], rate)
 	r.ACP, r.ALT, r.Mask = sp.acp(12500), sp.acp(25000), sp.maskMargin()
@@ -172,26 +220,33 @@ func txCmpMeasure(t *testing.T, name string, level int, x []complex128, rate flo
 	r.ETSIDev = etsiDeviation(etsi)
 	r.Eye = txCmpEye(x48, fr.Delay)
 	shift := int(math.Round(fr.Delay))
-	r.VoiceCN90, r.DataCN90 = cn90(txCmpCurve(x48, shift, ts, false))
-	r.DiscVoiceCN90, r.DiscDataCN90 = cn90(txCmpCurve(x48, shift, ts, true))
+	cs := [2]txCmpCurve{txCmpScores(x48, shift, ts, false), txCmpScores(x48, shift, ts, true)}
+	iq, disc := cs[0].cn90(-1), cs[1].cn90(-1)
+	r.VoiceCN90, r.DataCN90, r.DiscVoiceCN90, r.DiscDataCN90 = iq[0], iq[1], disc[0], disc[1]
 	t.Logf("%s: %+v", name, r)
-	return r
+	return r, cs
 }
 
 func measureTxCmp(t *testing.T, bin string) txCmpData {
 	ts := newTestStream(t, 6, 40)
 	d := txCmpData{MMDVM: os.Getenv("DMRGO_MMDVMTX_VERSION"), Seeds: txCmpSeeds, BinHz: 250, EyeSPS: rxRate / SymbolRate}
+	curves := make([][2]txCmpCurve, 0, 3)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		u := txUnit{tier: tier, format: fmtAudio, rate: txCmpHz, level: txCmpLevel}
 		x := u.audioFM(u.run(t, ts.syms, nil), radio{})
 		etsi := resample(u.audioFM(u.run(t, etsiSymbols(), nil), radio{}), dacRate, rxRate)
-		d.Rows = append(d.Rows, txCmpMeasure(t, fmt.Sprintf("dmrgo audio tier %d", tier-Tier0), txCmpLevel, x, dacRate, etsi, ts))
+		r, cs := txCmpMeasure(t, fmt.Sprintf("dmrgo audio tier %d", tier-Tier0), txCmpLevel, x, dacRate, etsi, ts)
+		d.Rows, curves = append(d.Rows, r), append(curves, cs)
 	}
 	lv := mmdvmLevel(t, bin)
 	u := txUnit{format: fmtAudio, rate: txCmpHz, level: lv, offset: 2048}
 	x := u.audioFM(mmdvmTX(t, bin, ts.syms), radio{})
 	etsi := resample(u.audioFM(mmdvmTX(t, bin, etsiSymbols()), radio{}), dacRate, rxRate)
-	d.Rows = append(d.Rows, txCmpMeasure(t, "MMDVM firmware", -lv, x, dacRate, etsi, ts))
+	r, ref := txCmpMeasure(t, "MMDVM firmware", -lv, x, dacRate, etsi, ts)
+	for k, cs := range curves {
+		d.Rows[k].Paired, d.Rows[k].PairedSE = txCmpPaired(cs, ref)
+	}
+	d.Rows = append(d.Rows, r)
 	return d
 }
 
@@ -267,6 +322,24 @@ func f1s(v float64) string {
 
 func f2s(v float64) string { return strconv.FormatFloat(math.Round(v*100)/100+0, 'f', 2, 64) }
 
+func writeTxCmpPaired(b *strings.Builder, d txCmpData) {
+	ref := d.Rows[len(d.Rows)-1].Name
+	b.WriteString("Each receiver column less that of the " + ref + ", over the same noise seeds, with one standard error from leaving out one seed at a time. A negative difference favors dmrgo.\n\n")
+	b.WriteString("| Transmitter | Voice at I/Q receiver | Data at I/Q receiver | Voice at FM receiver | Data at FM receiver |\n")
+	b.WriteString("| --- | --- | --- | --- | --- |\n")
+	for _, r := range d.Rows {
+		if len(r.Paired) != 4 || len(r.PairedSE) != 4 {
+			continue
+		}
+		b.WriteString("| " + r.Name)
+		for m, v := range r.Paired {
+			b.WriteString(" | " + f2s(v) + " ± " + f2s(r.PairedSE[m]) + " dB")
+		}
+		b.WriteString(" |\n")
+	}
+	b.WriteString("\n")
+}
+
 func renderTxCmp(d txCmpData) string {
 	var b strings.Builder
 	b.WriteString(txCmpBegin + "\n\n")
@@ -281,6 +354,7 @@ func renderTxCmp(d txCmpData) string {
 	b.WriteString("- The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz. Higher is better.\n")
 	b.WriteString("- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3. The frequency is the phase step of the FM signal between samples at 48 kHz, divided by the sinc response of that step. The symbol centers come through a root-raised-cosine receive filter 128 symbols to each side, with the timing, gain and offset fitted over the stream. The ETSI pattern deviation is the peak of a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods.\n")
 	b.WriteString("- The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over " + strconv.Itoa(d.Seeds) + " noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.\n\n")
+	writeTxCmpPaired(&b, d)
 	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](" + txImgDir + "compare_spectrum.svg)\n\n")
 	b.WriteString("<details><summary>Eye diagrams</summary>\n\nThe frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.\n\n")
 	for k, r := range d.Rows {
