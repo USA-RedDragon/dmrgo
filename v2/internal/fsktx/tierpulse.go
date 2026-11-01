@@ -15,7 +15,7 @@ const tierDesignHz = 24000
 
 func (c *AudioConfig) tierDesign() {
 	c.Exact, c.ExactPow = true, 0.5
-	c.Pulse = PulseConfig{Span: 8, PerSymbol: 40, Gain: 1.0004, Shape: tierShape()}
+	c.Pulse = PulseConfig{Span: 8, PerSymbol: 40, Gain: 1, Shape: tierShape()}
 	c.Shape, c.NoiseZerosHz = 2, [4]float64{7000, 21000}
 	c.Corr, c.CorrHiHz, c.Corr48k, c.ShapeSync = 6, 12000, true, 3
 	c.Boost, c.BoostPairs = 0.009, 48
@@ -30,12 +30,8 @@ func (c *IQConfig) designZero() bool {
 }
 
 func (c *IQConfig) tierDesign() {
-	g := 1.0095
-	if c.Tier == Tier2 {
-		g = 1.0058
-	}
 	c.Exact = true
-	c.Pulse = PulseConfig{Span: predPulse.Span, Window: predPulse.Window, Beta: predPulse.Beta, Flat: predPulse.Flat, Gain: g}
+	c.Pulse = PulseConfig{Span: predPulse.Span, Window: predPulse.Window, Beta: predPulse.Beta, Flat: predPulse.Flat, Gain: 1}
 	c.ShapePred, c.PredKern, c.Rotate = true, 3, true
 }
 

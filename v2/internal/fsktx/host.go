@@ -48,11 +48,16 @@ type poly struct {
 	peak   float64
 }
 
+func polyRate(hz int) bool {
+	l, _ := ratio(hz)
+	return l <= polyMaxPhases && hz >= 8000
+}
+
 func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
-	l, m := ratio(hz)
-	if l > polyMaxPhases || hz < 8000 {
+	if !polyRate(hz) {
 		return nil, errHz
 	}
+	l, m := ratio(hz)
 	k := &poly{n: 2 * pu.span, l: l, m: m}
 	h := pu.taps(l, m)
 	g := pu.gain
@@ -197,7 +202,8 @@ type AudioConfig struct {
 	// Hz, which the pulse inverts.
 	Exact bool
 	// ExactPow, from 0 to 1, makes Exact invert only the response of the
-	// hold raised to ExactPow; 0 inverts all of it.
+	// hold raised to ExactPow; 0 inverts all of it. The gain at the symbol
+	// times stays that of a run of one symbol through the whole hold.
 	ExactPow float64
 	// Pulse sets the pulse of Tier1 and Tier2; its zero value is the
 	// pulse of the tier.
@@ -483,11 +489,14 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		if cfg.Exact {
 			pu.nyquist()
 			chain := holdChain(float64(cfg.Hz))
+			inv := chain
 			if g := cfg.ExactPow; g > 0 && g < 1 {
-				h := chain
-				chain = func(f float64) float64 { return math.Pow(h(f), g) }
+				inv = func(f float64) float64 { return math.Pow(chain(f), g) }
 			}
-			pu.invert(float64(cfg.Hz), chain)
+			pu.invert(float64(cfg.Hz), inv)
+			if polyRate(cfg.Hz) {
+				pu.normalize(cfg.Hz, chain)
+			}
 		}
 		k, err := newPoly(pu, cfg.Hz, cfg.Tier != Tier2)
 		if err != nil {
@@ -1056,7 +1065,9 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	pu := pulseOf(cfg.Tier, cfg.Pulse)
 	if cfg.Exact {
 		pu.nyquist()
-		pu.invert(iqShaperHz, interpChain(iqShaperHz, float64(cfg.Rate)))
+		chain := interpChain(iqShaperHz, float64(cfg.Rate))
+		pu.invert(iqShaperHz, chain)
+		pu.normalize(iqShaperHz, chain)
 	}
 	k, err := newPoly(pu, iqShaperHz, cfg.Tier != Tier2)
 	if err != nil {

@@ -198,6 +198,36 @@ func sinc(x float64) float64 {
 	return math.Sin(math.Pi*x) / (math.Pi * x)
 }
 
+func (p *pulse) normalize(hz int, chain func(f float64) float64) {
+	if g := p.centerGain(hz, chain); g > 0 {
+		if p.gain == 0 {
+			p.gain = 1
+		}
+		p.gain /= g
+	}
+}
+
+func (p pulse) centerGain(hz int, chain func(f float64) float64) float64 {
+	l, m := ratio(hz)
+	h := p.taps(l, m)
+	n := 2 * p.span
+	const nf = 512
+	top := (1 + rrcAlpha) / 2
+	var g float64
+	for j := range nf {
+		f := (float64(j) + 0.5) / nf * top
+		ds, dc := math.Sincos(2 * math.Pi * f / float64(l))
+		zi, zr := math.Sincos(-2 * math.Pi * f * float64(p.span))
+		var a float64
+		for k := range l * n {
+			a += h[k%l*n+k/l] * zr
+			zr, zi = zr*dc-zi*ds, zr*ds+zi*dc
+		}
+		g += a / float64(l) * math.Sqrt(rcSpectrum(f)) * chain(f*SymbolRate)
+	}
+	return 2 * g * top / nf
+}
+
 func holdChain(hz float64) func(f float64) float64 {
 	return func(f float64) float64 { return sinc(f / hz) }
 }
