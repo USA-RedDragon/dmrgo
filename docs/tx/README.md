@@ -260,3 +260,38 @@ Each cell is the margin of the signal to the limit, the worst over the measured 
 | Amateur spurious emissions, dB (Japan) | +20.6 / +17.6 / +0.6 / +0.6 / +0.6 / -2.4 / -6.4 / -9.4 / -9.4 / -9.4 | +20.6 / +17.6 / +0.6 / +0.6 / +0.6 / -2.4 / -6.4 / -9.4 / -9.4 / -9.4 | +20.6 / +17.6 / +0.6 / +0.6 / +0.6 / -2.4 / -6.4 / -9.4 / -9.4 / -9.4 | +20.6 / +17.6 / +0.6 / +0.6 / +0.6 / -2.4 / -6.4 / -9.4 / -9.4 / -9.4 | +49.0 / +46.0 / +29.0 / +29.0 / +29.0 / +26.0 / +22.0 / +19.0 / +19.0 / +19.0 | +21.7 / +18.7 / +1.7 / +1.7 / +1.7 / -1.3 / -5.3 / -8.3 / -8.3 / -8.3 |
 
 <!-- txdoc:end -->
+
+<!-- txcmp:begin -->
+
+## Other transmitters
+
+The audio tiers and the DMR DMO modulator of the MMDVM firmware (commit 046e1df1, `DMRDMOTX.cpp` on the host) make the same BS-sourced symbol stream at 24 kHz into a 12-bit converter. The tiers run at a Level of 960 codes, and the MMDVM firmware at a DMRTXLevel of 50, which gives 249 codes for a run of symbol +3. Each output goes through the same radio: a sample-and-hold converter, an 8 kHz two-pole low pass and an FM modulator set to 1944 Hz for a run of +3.
+
+| Transmitter | Adjacent channel | Alternate channel | Mask D margin | FSK error | Deviation error | ETSI pattern deviation error | Voice at I/Q receiver | Data at I/Q receiver | Voice at FM receiver | Data at FM receiver |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| dmrgo audio tier 0 | -64.9 dBc | -70.1 dBc | 16.1 dB | 0.16% | -0.24% | -0.88% | 6.1 dB | 4.7 dB | 9.5 dB | 6.4 dB |
+| dmrgo audio tier 1 | -67.6 dBc | -70.0 dBc | 15.1 dB | 0.34% | -0.49% | -0.18% | 6.2 dB | 4.7 dB | 9.5 dB | 6.4 dB |
+| dmrgo audio tier 2 | -67.6 dBc | -70.0 dBc | 15.1 dB | 0.34% | -0.49% | -0.18% | 6.2 dB | 4.7 dB | 9.5 dB | 6.4 dB |
+| MMDVM firmware | -58.6 dBc | -70.0 dBc | 13.9 dB | 1.29% | 0.33% | -1.82% | 6.1 dB | 4.7 dB | 9.5 dB | 6.4 dB |
+
+- Adjacent and alternate channel power is the power within 4.25 kHz of 12.5 and 25 kHz off, relative to the carrier, the larger side (EN 300 113 clause 7.4). Lower is better.
+- The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz. Higher is better.
+- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3.
+- The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over 64 noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.
+
+![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](compare_spectrum.svg)
+
+<details><summary>Eye diagrams</summary>
+
+The frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.
+
+![Eye diagram of dmrgo audio tier 0](compare_eye_0.svg)
+![Eye diagram of dmrgo audio tier 1](compare_eye_1.svg)
+![Eye diagram of dmrgo audio tier 2](compare_eye_2.svg)
+![Eye diagram of MMDVM firmware](compare_eye_3.svg)
+
+</details>
+
+`DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes this block and its graphs.
+
+<!-- txcmp:end -->
