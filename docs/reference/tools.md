@@ -26,7 +26,7 @@ func txFlags(fs *flag.FlagSet) *txOptions {
 	o.cw = fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead (I/Q only)")
 	o.rate = fs.Float64("rate", 0, "sample rate in Hz (default 48000 for audio; required for I/Q)")
 	o.tune = tuningFlags(fs, "carrier frequency in Hz, for -ppm and the example command", "frequency offset of the carrier from the tuned frequency in Hz (I/Q only)")
-	o.level = fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
+	o.level = fs.Float64("level", 0.9, "peak amplitude, 0 to 1; I/Q in cu8, cs8 and cs16 keeps the 0.9 of the transmitter unless this is given, and then dmrrf scales and quantizes it again; audio sets the transmitter level to this part of the most that fits")
 	o.slot = fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
 	fs.Func("cc", "color code, 0 to 15 (default 1)", func(s string) error {
 		v, err := strconv.ParseUint(s, 10, 8)
@@ -54,6 +54,7 @@ func txFlags(fs *flag.FlagSet) *txOptions {
 		return err
 	})
 	o.bsSourced = fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
+	o.station = stationFlags(fs)
 	return o
 }
 ```
