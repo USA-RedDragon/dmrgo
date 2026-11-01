@@ -4,11 +4,11 @@ Package `rf` turns DMR bursts into a signal for a radio. `Transmitter` makes I/Q
 
 ## Features
 
-- Two outputs: I/Q in the formats CU8, CS8, CS16 and CF32 of the receiver, and audio as codes of a converter of 8 to 16 bits, signed or offset binary (`Unsigned`).
+- Two outputs: I/Q in the formats CU8, CS8, CS16 and CF32 of the receiver, and audio as codes of a converter, signed or offset binary (`Unsigned`).
 - Three tiers. Tier 0 runs on a Cortex-M4F from tables in flash, with no heap. Tier 1 and Tier 2 shape the pulses in float32 and float64.
 - Root raised cosine pulse shaping and 4FSK at the deviation of ETSI TS 102 361-1.
-- BS and MS bursts on the 30 ms slot grid, with the power ramps of an MS burst in its guard time.
-- Emission limit checks for land mobile service in the US, CEPT, China and Japan, and for amateur service in the US and CEPT, at the power classes 1 W, 10 W, 100 W and 1000 W.
+- BS and MS bursts on the TDMA slot grid, with the power ramps of an MS burst in its guard time.
+- Emission limit checks for land mobile service in the US, CEPT, China and Japan, and for amateur service in the US and CEPT, at the power classes of [Limits](#limits).
 - Settings for the low pass and the pre-emphasis of the modulator input of a radio.
 - Stream mode with a callback, or append mode into a slice of the caller. `Init` sets up Tier 0 in memory of the caller and does not allocate.
 
@@ -49,20 +49,22 @@ Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 ### Formats and rates
 
+<!-- rfparams:tx-formats:begin -->
 | Tier | Modulator | I/Q rates | Audio rates |
 | --- | --- | --- | --- |
 | Tier 0 | Fixed-point multiply and accumulate over tables in flash, for a microcontroller. The default of `Init` and of TinyGo builds. | 96 kHz | 24 and 48 kHz |
-| Tier 1 | Pulse shaping in float32 over eight symbols on each side, I/Q from an interpolated cosine table. The default of `NewTransmitter` and `NewAudioTransmitter`. | 48 kHz to 20 MHz, 2.4 MHz by default | 8 to 96 kHz, 48 kHz by default |
-| Tier 2 | Pulse shaping in float64 over sixteen symbols on each side, I/Q from float64 sine and cosine. | as Tier 1 | as Tier 1 |
+| Tier 1 | Pulse shaping in float32, I/Q from an interpolated cosine table. The default of `NewTransmitter` and `NewAudioTransmitter`. | 48 kHz to 20 MHz, 2.4 MHz by default | 8 kHz to 96 kHz, 48 kHz by default |
+| Tier 2 | Pulse shaping in float64 over a longer span than Tier 1, I/Q from float64 sine and cosine. | as Tier 1 | as Tier 1 |
 
 Tier 3 has no modulator of its own, and both constructors return a `*dmrgo.ConfigError` for it.
 
 - `TxConfig.Rate` 0 is 2.4 MHz. Tier 0 makes 96 kHz only, to stay in the CPU budget of the tier.
 - I/Q under 62.5 kHz puts the image of the main lobe within two channels of the carrier, where no limit can count on a filter of the radio. The limits do not accept it.
 - `TxConfig.OffsetHz` moves the carrier from the center of the I/Q. It must be under `Rate`/4 in size. Tier 0 rounds it to whole Hz.
-- `AudioTxConfig.Rate` 0 is 48 kHz. Tier 1 and Tier 2 make a rate from 8 kHz whose ratio to 4800 Hz has a numerator of at most 1024 in lowest terms, such as 8000, 22050 or 44100 Hz. The limits are measured up to 96 kHz.
+- `AudioTxConfig.Rate` 0 is 48 kHz. Tier 1 and Tier 2 make most rates from 8 kHz to 96 kHz, such as 8000, 11025, 16000, 22050, 32000, 44100, 48000 and 96000 Hz, and return a `*dmrgo.ConfigError` for a rate that their polyphase filter cannot make.
 - `AudioTxConfig.Bits` 0 is 16. Each sample holds one code in its low bits.
 - `AudioTxConfig.Level` is the code of a run of symbol +3 (1944 Hz of deviation) from the center, from 1 to 16000. 0 is the most that fits in `Bits` with `Offset` over every run of symbols. `Offset` moves the center code.
+<!-- rfparams:tx-formats:end -->
 
 ### Limits
 
@@ -70,25 +72,28 @@ Tier 3 has no modulator of its own, and both constructors return a `*dmrgo.Confi
 
 - `Region`: `RegionUS` (47 CFR 90.210 Emission Mask D for land mobile, 47 CFR 97.307 for amateur), `RegionCEPT` (ETSI EN 300 113 for land mobile, ERC/REC 74-01 for amateur), `RegionChina` (the 2025 MIIT notice, land mobile), `RegionJapan` (the Radio Equipment Regulations, land mobile). The zero value `RegionWorld` keeps the strictest limit of each region at once. `RegionUS` does not cover the 800 MHz bands of FCC Mask H or the 90.691 EA mask.
 - `Service` is `dmrgo.Service`, the type that package `privacy` also takes. The zero value `ServiceUnknown` keeps the land mobile and amateur limits at once.
+<!-- rfparams:tx-limits:begin -->
 - `Power` is the most power of the station in dBm, from 1 to 63. 0 is the highest legal power of the service in the region. The limits use the power classes 1 W (up to 30 dBm), 10 W (40 dBm), 100 W (50 dBm) and 1000 W (60 dBm).
 
-The zero config is the strictest setup: every region, every licensed service and the highest legal power of each. A setup that no measurement shows to keep its limits with margin gets a `*RegionError`, with the config field in `Field` and the cause in `Reason`. Each cause has one static `RegionError`, so a failed call does not allocate. Match it with `errors.As`.
+Each `RegionError` has one of these values of `Field`, after the name of the config, and `Reason`:
 
-These setups get a `RegionError`:
-
-| Setup | `Reason` |
+| Field | `Reason` |
 | --- | --- |
-| Every setup, until the signal is measured 10 dB under the spurious domain limits of its region | the signal is not measured 10 dB under the spurious domain limits |
-| A rate under the least rate of the tables below | no measurement keeps the limits at this rate |
-| `Power` above 60 dBm | the limits above 60 dBm are not measured |
-| `Power` above the highest legal power of the service in the region | above the highest legal power of the service in the region |
-| `ServiceLicenseFree` (PMR446, the China 409 MHz walkie-talkie with -70 dBc in the alternate channel) | the limits of the license-free service are not measured |
-| `ServiceLicenseFree` in the US or Japan | the region has no license-free DMR service |
-| `ServiceAmateur` or `ServiceUnknown` in China or Japan | the amateur limits of the region are not measured |
-| `AudioTxConfig.PreEmphasis` outside Tier 0 at 48 kHz, or in a setup that the tables with pre-emphasis do not keep | with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power |
-| `AudioTxConfig.Level` under the measured level | under the level that the limits are measured at for Bits |
+| `Rate` | no measurement keeps the limits at this rate |
+| `Power` | the limits above 60 dBm are not measured |
+| `Power` | above the highest legal power of the service in the region |
+| `Service` | the region has no license-free DMR service |
+| `Service` | the limits of the license-free service are not measured |
+| `Service` | the amateur limits of the region are not measured |
+| `Region` | the signal is not measured 10 dB under the spurious domain limits |
+| `PreEmphasis` | with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power |
+| `Level` | under the level that the limits are measured at for Bits |
+| `Region` | unknown region |
+| `Service` | unknown service |
+| `PreEmphasis` | the limits with pre-emphasis are not measured |
+<!-- rfparams:tx-limits:end -->
 
-The spurious domain margin is not measured yet, so today no setup is accepted. The tables below give what the other checks accept.
+The zero config is the strictest setup: every region, every licensed service and the highest legal power of each. A setup that no measurement shows to keep its limits with margin gets a `*RegionError`, with the config field in `Field` and the cause in `Reason`. Each cause has one static `RegionError`, so a failed call does not allocate. Match it with `errors.As`.
 
 ### Levels
 
@@ -161,7 +166,7 @@ The FSK error of each tier and output.
 
 ### Bursts and keying
 
-- Each `Burst` goes on the 30 ms slot grid by its `Stream` and `Slot`. The slot of a burst must increase within its stream, or `Write` returns `ErrBurstOrder`.
+- Each `Burst` goes on the slot grid by its `Stream` and `Slot`. The slot of a burst must increase within its stream, or `Write` returns `ErrBurstOrder`.
 - A BS-sourced burst keeps the carrier up into the next slot. Any other burst is an MS burst, with the power ramps in its guard time.
 - A gap of one slot within a `Stream` is an idle slot with the carrier down, as an MS sends on one TDMA channel.
 - A new `Stream`, or a gap of more than one slot, keys down. The next burst keys up at once, so the caller sets the time between transmissions.
@@ -169,22 +174,26 @@ The FSK error of each tier and output.
 
 ### Calibration of level, offset and deviation
 
-- An audio transmitter makes codes. The radio turns them into deviation. Set the gain of the radio, or `Level`, so that a run of symbol +3 deviates the carrier by 1944 Hz. Measure the deviation with a service monitor, or with a software radio and `Receiver.DeviationHz`, which gives the outer deviation of the last stream that the receiver locked to.
+- An audio transmitter makes codes. The radio turns them into deviation. Set the gain of the radio, or `Level`, so that a run of symbol +3 deviates the carrier by the deviation that [Formats and rates](#formats-and-rates) gives for `Level`. Measure the deviation with a service monitor, or with a software radio and `Receiver.DeviationHz`, which gives the outer deviation of the last stream that the receiver locked to.
 - Set `Offset` to the code that gives no deviation, when the modulator input of the radio has a DC offset.
 - Keep `Level` at or above the measured level of [Levels](#levels), and turn down the gain of the radio to get the deviation. A lower `Level` gets a `RegionError`, as the quantization noise of the converter then rises toward the limits.
 - I/Q needs no level setting. Set the gain of the software radio for the power of the station, and state that power in `Power`.
 
 ### Input low pass
 
+<!-- txsheet:lowpass:begin -->
 `AudioTxConfig.InputLowpassHz` states the cutoff of a low pass of at least two poles that the radio puts before its modulator input. 0 is none: the converter drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these. Thus 6000 Hz counts as 8000 Hz, and a cutoff above 8000 Hz counts as none. A low pass lowers the least rate that keeps the limits. A negative cutoff gets a `*dmrgo.ConfigError`.
+<!-- txsheet:lowpass:end -->
 
 ### Pre-emphasis
 
-The microphone input of an FM radio usually pre-emphasizes the audio from 300 Hz to 3 kHz. A DMR signal through it has the wrong pulse shape and spreads into the adjacent channel. Use the flat modulator input of the radio (often called the 9600 baud or data port) when it has one. When it does not, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis`: the transmitter then shapes its output so that the radio's pre-emphasis gives the right signal. It is opt-in: nil is a radio with no pre-emphasis. Set one up with `Init` in memory of the caller, or with `NewPreEmphasis`, one for each transmitter. Only Tier 0 at 48 kHz takes it, and only where its limits are measured to keep their margin: the Tier 0 table of [Least sample rate](#least-sample-rate) gives these setups. Elsewhere it gets a `RegionError`. A program that sets up no `PreEmphasis` links none of its code or tables.
+<!-- txsheet:preemph:begin -->
+The microphone input of an FM radio usually pre-emphasizes the audio, with a zero near 300 Hz and a pole near 3000 Hz, as the limits model it. A DMR signal through it has the wrong pulse shape and spreads into the adjacent channel. Use the flat modulator input of the radio (its data port) when it has one. When it does not, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis`: the transmitter then shapes its output so that the pre-emphasis of the radio gives the right signal. It is opt-in: nil is a radio with no pre-emphasis. Set one up with `Init` in memory of the caller, or with `NewPreEmphasis`, one for each transmitter. Only Tier 0 at 48 kHz takes it, and only where its limits are measured to keep their margin: the Tier 0 table of [Least sample rate](#least-sample-rate) gives these setups. Elsewhere it gets a `RegionError`. A program that sets up no `PreEmphasis` links none of its code or tables.
+<!-- txsheet:preemph:end -->
 
 ### Choosing a tier
 
-- Tier 0 is for a microcontroller. It needs no heap and fits a Cortex-M4F. It makes audio at 24 and 48 kHz and I/Q at 96 kHz.
+- Tier 0 is for a microcontroller. It needs no heap and fits a Cortex-M4F. It makes only the rates of [Formats and rates](#formats-and-rates).
 - Tier 1 is the default of `NewTransmitter` and `NewAudioTransmitter`, for a PC or a single-board computer. It takes any rate of its range.
 - Tier 2 shapes the pulses in float64 over a longer span, at more CPU than Tier 1.
 - [Key specifications](#key-specifications) and [Measured margins](#measured-margins) give the error and the margins of each tier.
@@ -396,4 +405,4 @@ The frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 
 
 ## Generating this page
 
-`go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the margins into `v2/internal/fsktx/testdata/txmargins.json` and the spectra, eye diagrams and FSK error into `v2/internal/fsktx/testdata/txsheet.json`, and writes the tables and graphs of this page. Without `-update-txdoc` the tests fail when the page or a graph differs from the data. The Tier 0 cost comes from `v2/internal/fsktx/testdata/tier0cost.json`.
+`go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the margins into `v2/internal/fsktx/testdata/txmargins.json` and the spectra, eye diagrams and FSK error into `v2/internal/fsktx/testdata/txsheet.json`, and writes the tables and graphs of this page. Without `-update-txdoc` the tests fail when the page or a graph differs from the data. `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the formats, rates and limits of this page from the code of `rf`. `go run -C cmd/mcubench . -update` measures the Tier 0 cost into `v2/internal/fsktx/testdata/tier0cost.json`.

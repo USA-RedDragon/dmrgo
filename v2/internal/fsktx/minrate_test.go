@@ -170,6 +170,11 @@ func (p limPoint) audioSignal(raw []int16) ([]complex128, float64) {
 	return fmOf(f, ra), ra
 }
 
+const (
+	preZeroHz = 300
+	prePoleHz = 3000
+)
+
 func preEmph(f []float64, rate float64) []float64 {
 	x := make([]complex128, len(f))
 	for i, v := range f {
@@ -183,7 +188,7 @@ func preEmph(f []float64, rate float64) []float64 {
 			k -= m
 		}
 		fr := float64(k) * rate / float64(m)
-		xf[i] *= (1 + complex(0, fr/300)) / (1 + complex(0, fr/3000))
+		xf[i] *= (1 + complex(0, fr/preZeroHz)) / (1 + complex(0, fr/prePoleHz))
 	}
 	ifft(xf)
 	out := make([]float64, len(f))

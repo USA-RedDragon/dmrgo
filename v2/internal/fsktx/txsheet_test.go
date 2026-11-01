@@ -27,6 +27,10 @@ const (
 	txGraphBegin = "<!-- txsheet:graphs:begin -->"
 	txGraphEnd   = "<!-- txsheet:graphs:end -->"
 	txImgDir     = ""
+	txLowBegin   = "<!-- txsheet:lowpass:begin -->"
+	txLowEnd     = "<!-- txsheet:lowpass:end -->"
+	txPEBegin    = "<!-- txsheet:preemph:begin -->"
+	txPEEnd      = "<!-- txsheet:preemph:end -->"
 	txSpecSpan   = 40000
 	txSpecStep   = 100
 	txACPStep    = 250
@@ -768,6 +772,24 @@ func renderTxLevels() string {
 	return b.String()
 }
 
+func renderTxLowpass() string {
+	grid := make([]string, 0, len(inputLowpassGrid)-1)
+	for _, hz := range inputLowpassGrid[1:] {
+		grid = append(grid, strconv.Itoa(hz))
+	}
+	example := inputLowpassGrid[2] + 1000
+	counts := inputLowpassGrid[lowpassClass(example)]
+	return txLowBegin + "\n`AudioTxConfig.InputLowpassHz` states the cutoff of a low pass of at least two poles that the radio puts before its modulator input. 0 is none: the converter drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at " +
+		strings.Join(grid[:len(grid)-1], ", ") + " and " + grid[len(grid)-1] + " Hz, and a stated cutoff takes the next looser of these. Thus " + strconv.Itoa(example) + " Hz counts as " + strconv.Itoa(counts) +
+		" Hz, and a cutoff above " + grid[0] + " Hz counts as none. A low pass lowers the least rate that keeps the limits. A negative cutoff gets a `*dmrgo.ConfigError`.\n" + txLowEnd
+}
+
+func renderTxPreEmph() string {
+	return txPEBegin + "\nThe microphone input of an FM radio usually pre-emphasizes the audio, with a zero near " + strconv.Itoa(preZeroHz) + " Hz and a pole near " + strconv.Itoa(prePoleHz) +
+		" Hz, as the limits model it. A DMR signal through it has the wrong pulse shape and spreads into the adjacent channel. Use the flat modulator input of the radio (its data port) when it has one. When it does not, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis`: the transmitter then shapes its output so that the pre-emphasis of the radio gives the right signal. It is opt-in: nil is a radio with no pre-emphasis. Set one up with `Init` in memory of the caller, or with `NewPreEmphasis`, one for each transmitter. Only Tier 0 at " +
+		khz(peSamples*SymbolRate) + " kHz takes it, and only where its limits are measured to keep their margin: the Tier 0 table of [Least sample rate](#least-sample-rate) gives these setups. Elsewhere it gets a `RegionError`. A program that sets up no `PreEmphasis` links none of its code or tables.\n" + txPEEnd
+}
+
 func renderTxGraphList(graphs map[string][]byte) string {
 	var b strings.Builder
 	b.WriteString(txGraphBegin + "\n\n")
@@ -836,6 +858,8 @@ func txSheetDoc(t *testing.T, doc []byte, margins map[string]map[string]float64)
 		{txSheetBegin, txSheetEnd, renderTxSheet(d, cost, margins)},
 		{txLevelBegin, txLevelEnd, renderTxLevels()},
 		{txGraphBegin, txGraphEnd, renderTxGraphList(graphs)},
+		{txLowBegin, txLowEnd, renderTxLowpass()},
+		{txPEBegin, txPEEnd, renderTxPreEmph()},
 	} {
 		i, j := bytes.Index(doc, []byte(blk.begin)), bytes.Index(doc, []byte(blk.end))
 		if i < 0 || j < i {
