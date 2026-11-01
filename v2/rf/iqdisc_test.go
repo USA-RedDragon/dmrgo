@@ -470,3 +470,59 @@ func TestReceiverStartLevels(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestReceiverClockStart(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 2}
+	type job struct {
+		bs   bool
+		ppm  float64
+		lead float64
+	}
+	var jobs []job
+	for _, bs := range []bool{false, true} {
+		for _, ppm := range []float64{-500, -250, 250, 500} {
+			for _, lead := range []float64{0, 0.1} {
+				jobs = append(jobs, job{bs, ppm, lead})
+			}
+		}
+	}
+	var wg sync.WaitGroup
+	for _, j := range jobs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c := cfg
+			c.BSSourced = j.bs
+			built, err := rftx.Sequence("voice", c)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			want := built.Bursts
+			var fm, env []float64
+			if j.bs {
+				want = want[:0:0]
+				for _, s := range built.Slots {
+					want = append(want, s.Burst)
+				}
+				fm, env = rftx.ModulateBS(built.Slots)
+			} else {
+				fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+			}
+			n := int(j.lead * 2e6)
+			f, e := make([]float64, n+len(fm)), make([]float64, n+len(fm))
+			copy(f[n:], fm)
+			copy(e[n:], env)
+			iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6/(1+j.ppm*1e-6), 2.048e6, 3000, 25, 5)
+			r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: Tier3})
+			got := r.AppendFlush(r.AppendBursts(nil, iq))
+			for i, w := range want {
+				if !slices.ContainsFunc(got, func(b Burst) bool { return b.Data == w }) {
+					t.Errorf("Tier3 bs %v %+g ppm lead %.1f s: burst %d missing or wrong", j.bs, j.ppm, j.lead, i)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+}

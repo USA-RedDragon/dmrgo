@@ -51,6 +51,7 @@ type cohStage struct {
 	budgetSlot      int64
 	work            int64
 	fitOnly         bool
+	fitReady        bool
 	noNext, noCross bool
 	totalHz         float64
 	freq            float64
@@ -1095,7 +1096,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if s.carryOK {
 		s.carry = s.mine
 	}
-	s.mineOK, s.mineSlot = false, b.Slot
+	s.mineOK, s.mineSlot, s.fitReady = false, b.Slot, false
 	s.slotRadio(c, b.Slot)
 	s.t0 = s.ringTime(c, c.base) + s.dt
 	s.slotDrift = float64(c.tm.rate) * slotSymbols * 2 / s.div
@@ -1163,6 +1164,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if nseg == 1 {
 		s.lastSync = b.Sync
 	}
+	s.fitReady = true
 	return !s.fitOnly && s.runAll(llr)
 }
 

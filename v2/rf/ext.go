@@ -2,6 +2,7 @@ package rf
 
 import (
 	"math"
+	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -171,6 +172,9 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		if done {
 			return
 		}
+		if s.fitOnly && s.ex != nil && s.fitReady {
+			x.checkedData(b)
+		}
 	}
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	hold := false
@@ -203,6 +207,32 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	if x.coh != nil && x.coh.budget > 0 {
 		x.coh.credit -= float64(x.coh.work + x.work - x.work0)
 	}
+}
+
+func (x *softExt) checkedData(b *Burst) {
+	llr := x.llr
+	if !x.coh.runAll(&x.llr) {
+		x.llr = llr
+		return
+	}
+	var hard layer2.RawBurst
+	for p, v := range &x.llr {
+		if v < 0 {
+			hard[p/8] |= 0x80 >> (p % 8)
+		}
+	}
+	x.llr = llr
+	if burstDistance(&hard, &b.Fixed) < burstDistance(&b.Data, &b.Fixed) {
+		b.Data = hard
+	}
+}
+
+func burstDistance(a, b *layer2.RawBurst) int {
+	n := 0
+	for i := range a {
+		n += bits.OnesCount8(a[i] ^ b[i])
+	}
+	return n
 }
 
 func (x *softExt) warm(c *leanCore, b *Burst) {
