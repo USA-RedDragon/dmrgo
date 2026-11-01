@@ -37,11 +37,11 @@ Package `rf` turns DMR bursts into a signal for a radio. `Transmitter` makes I/Q
 
 | Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |
 | --- | ---: | ---: | ---: |
-| I/Q at 96 kHz, CS16 | 4.8 MHz | 968 B | 34.1 KB |
-| Audio at 48 kHz, 12-bit | 3.7 MHz | 724 B | 30.7 KB |
-| Audio at 24 kHz, 12-bit | 3.7 MHz | 764 B | 30.5 KB |
+| I/Q at 96 kHz, CS16 | 4.8 MHz | 968 B | 33.9 KB |
+| Audio at 48 kHz, 12-bit | 3.7 MHz | 724 B | 31.0 KB |
+| Audio at 24 kHz, 12-bit | 3.6 MHz | 764 B | 30.8 KB |
 
-Measured from TinyGo 0.43 `-opt z -gc=none` builds in QEMU (`mps2-an386`, Cortex-M4), with BS-sourced bursts on every slot and the spurious domain check open for the measurement. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it.
+Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program.
 
 <!-- txsheet:end -->
 

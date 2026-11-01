@@ -228,9 +228,11 @@ linters:
         linters:
           - gochecknoglobals
         text: ^(crcAlgorithms|fecCodecs|CRCWidths) is a global variable
-      # speccheck runs go test with test names from spec_matrix.yaml, and
-      # rxbench runs the dmrrf sweep and writes docs/rx under the root.
-      - path: cmd/(speccheck|rxbench)/main\.go$
+      # speccheck runs go test with test names from spec_matrix.yaml,
+      # rxbench runs the dmrrf sweep and writes docs/rx under the root, and
+      # mcubench runs tinygo, cc and qemu-system-arm from PATH on a copy of
+      # the v2 tree in its work directory.
+      - path: cmd/(speccheck|rxbench|mcubench)/main\.go$
         linters:
           - gosec
         text: G204|G703

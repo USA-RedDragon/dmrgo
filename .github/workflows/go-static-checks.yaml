@@ -22,6 +22,7 @@ jobs:
           - v2/internal/digest/xcrypto
           - cmd/docgen
           - cmd/dmrgen
+          - cmd/mcubench
           - cmd/rxbench
           - cmd/rxsweep
           - cmd/speccheck

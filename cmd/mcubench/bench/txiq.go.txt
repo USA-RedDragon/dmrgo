@@ -1,0 +1,31 @@
+package main
+
+import "github.com/USA-RedDragon/dmrgo/v2/rf"
+
+var (
+	mod rf.Transmitter
+	one [1]rf.Burst
+)
+
+func toDAC(b []byte) { sink += int32(b[len(b)-1]) }
+
+//go:noinline
+func step(i int) {
+	for j := range one[0].Data {
+		one[0].Data[j] = byte(uint32(i*33+j) * 2654435761 >> 13)
+	}
+	one[0].Slot = int64(i)
+	_, _ = mod.Write(one[:])
+}
+
+func run() bool {
+	if mod.Init(rf.TxConfig{Rate: atoi(rateS), OnSamples: toDAC, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30}) != nil {
+		return false
+	}
+	one[0].BS, one[0].HasCACH, one[0].Stream = true, true, 1
+	for i := range txBursts {
+		step(i)
+	}
+	_ = mod.Flush()
+	return true
+}
