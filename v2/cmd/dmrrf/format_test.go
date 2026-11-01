@@ -110,6 +110,15 @@ func TestFormatOffsetAndPPM(t *testing.T) {
 	if got := carrierOf(t, out); math.Abs(got-bias) > 1 {
 		t.Errorf("carrier offset %v Hz, want %v", got, bias)
 	}
+	for _, f := range []string{"cf32", "cu8"} {
+		edge := filepath.Join(dir, "edge."+f)
+		runText(t, stdio{}, txArgs("-seq", "data12", "-o", edge, "-rate", "500000", "-offset-hz", "20000")...)
+		out = runText(t, stdio{}, "rx", "-i", edge, "-rate", "500000", "-offset-hz", "20000")
+		wantPacket(t, out, "carrier offset")
+		if got := carrierOf(t, out); math.Abs(got-bias) > 1 {
+			t.Errorf("%s carrier at +20000 Hz: offset %v Hz, want %v", f, got, bias)
+		}
+	}
 }
 
 func carrierOf(t *testing.T, out string) float64 {

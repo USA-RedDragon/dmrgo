@@ -355,8 +355,8 @@ func (in input) complexSamples(b []byte, fn func(complex128)) {
 const basebandChunk = 1 << 14
 
 func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (offset, dev float64, err error) {
-	raw := (in.f.enc == encU8 || in.f.enc == encS8) && in.rate >= basebandRate && in.rate == math.Trunc(in.rate)
-	cfg := rf.RxConfig{Tier: tier, OffsetHz: offsetHz, Rate: basebandRate, Format: rf.IQFormatCF32, OnBursts: emitAll(burst)}
+	raw := (in.f.enc == encU8 || in.f.enc == encS8) && in.rate >= basebandRate && in.rate == math.Trunc(in.rate) && offsetHz == 0
+	cfg := rf.RxConfig{Tier: tier, Rate: basebandRate, Format: rf.IQFormatCF32, OnBursts: emitAll(burst)}
 	if raw {
 		cfg.Rate, cfg.Format = int(in.rate), rf.IQFormatCU8
 		if in.f.enc == encS8 {
@@ -373,7 +373,7 @@ func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (
 			return err
 		})
 	} else {
-		rs := newResampler(in.rate, basebandRate, 0, true)
+		rs := newResampler(in.rate, basebandRate, -offsetHz, true)
 		var wide []complex128
 		x := make([]byte, 0, 8*basebandChunk)
 		flush := func() error {
@@ -401,7 +401,7 @@ func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (
 	if err := rx.Flush(); err != nil {
 		return 0, 0, err
 	}
-	return rx.OffsetHz(), rx.DeviationHz(), nil
+	return rx.OffsetHz() + offsetHz, rx.DeviationHz(), nil
 }
 
 func emitAll(burst func(rf.Burst)) func([]rf.Burst) {
