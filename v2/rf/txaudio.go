@@ -36,7 +36,7 @@ type AudioTxConfig struct {
 	// Offset over every run of symbols. The limits are measured at about
 	// half of full scale, 1040 codes at 12 bits. Under 16 bits, Tier1 and
 	// Tier2 at 24000 Hz and above reach 2.12 times Level, so there they are
-	// measured at the most that fits Bits at Offset 0, 965 to 981 codes at
+	// measured at the most that fits Bits at Offset 0, 969 to 984 codes at
 	// 12 bits. A Level under the measured level gives a
 	// *RegionError.
 	Level int

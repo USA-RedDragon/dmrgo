@@ -4142,7 +4142,7 @@ struct dmrgo_rf_audio_tx_config_t {
 	bool unsigned_;
 	/* OnSamples, when not NULL, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When NULL, the transmitter is in append mode, for AppendSamples and AppendFlush. */
 	dmrgo_rf_audio_tx_config_on_samples_fn_t on_samples;
-	/* Level is the code of a run of symbol +3, 1944 Hz of deviation, less the center, from 1 to 16000. 0 means the most that fits in Bits with Offset over every run of symbols. The limits are measured at about half of full scale, 1040 codes at 12 bits. Under 16 bits, DMRGO_RF_TIER1 and DMRGO_RF_TIER2 at 24000 Hz and above reach 2.12 times Level, so there they are measured at the most that fits Bits at Offset 0, 965 to 981 codes at 12 bits. A Level under the measured level gives a *RegionError. */
+	/* Level is the code of a run of symbol +3, 1944 Hz of deviation, less the center, from 1 to 16000. 0 means the most that fits in Bits with Offset over every run of symbols. The limits are measured at about half of full scale, 1040 codes at 12 bits. Under 16 bits, DMRGO_RF_TIER1 and DMRGO_RF_TIER2 at 24000 Hz and above reach 2.12 times Level, so there they are measured at the most that fits Bits at Offset 0, 969 to 984 codes at 12 bits. A Level under the measured level gives a *RegionError. */
 	int64_t level;
 	/* Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned. */
 	int64_t offset;
