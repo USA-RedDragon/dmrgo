@@ -853,6 +853,22 @@ func (c limClass) setup(region, service, power, lowpass int) Setup {
 	return Setup{Tier: c.tier, IQ: c.iq, Bits: bits, Region: region, Service: service, Power: power, InputLowpassHz: lowpass, PreEmphasis: c.pe}
 }
 
+func classBuilds(c limClass, rate, lowpass int) error {
+	for _, p := range c.points(rate, lowpass) {
+		if _, err := p.u.mod(); err != nil {
+			return err
+		}
+	}
+	for r := range limRegions {
+		for s := range limServices {
+			for p := range limPowerClasses {
+				_ = c.setup(r, s, p, lowpass).Allows(rate)
+			}
+		}
+	}
+	return nil
+}
+
 func checkAgainstTable(t *testing.T, c limClass, rate, lowpass int, g map[string]float64) {
 	t.Helper()
 	for r := range limRegions {
@@ -896,6 +912,12 @@ func TestMinRatesSample(t *testing.T) {
 	for _, k := range cases {
 		t.Run(fmt.Sprint(k.c, "/", k.rate, "/lp", k.lowpass), func(t *testing.T) {
 			t.Parallel()
+			if !longRun() {
+				if err := classBuilds(k.c, k.rate, k.lowpass); err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
 			g, err := measureClassRate(t, k.c, k.rate, k.c.superframes(), k.lowpass)
 			if err != nil {
 				t.Fatal(err)
@@ -943,6 +965,12 @@ func TestMinRatesOffGrid(t *testing.T) {
 	for _, k := range cases {
 		t.Run(fmt.Sprint(k.c, "/", k.rate), func(t *testing.T) {
 			t.Parallel()
+			if !longRun() {
+				if err := classBuilds(k.c, k.rate, 0); err != nil {
+					t.Skipf("structural: %v", err)
+				}
+				return
+			}
 			g, err := measureClassRate(t, k.c, k.rate, k.c.superframes(), 0)
 			if err != nil {
 				t.Skipf("structural: %v", err)
