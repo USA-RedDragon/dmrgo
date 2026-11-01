@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand/v2"
 	"time"
 	"unsafe"
@@ -534,6 +535,57 @@ func codec2ABI(seed uint64) error {
 		if got := in_vocoder_FrameReport(crep); gerr == nil && got != grep {
 			return fmt.Errorf("codec2.Codec.Decode: report %+v, want %+v", got, grep)
 		}
+		if err := codec2Mode(cc, gc.DecodeMode()); err != nil {
+			return err
+		}
+	}
+	enc, err := codec2.New(&codec2.Config{Mode: codec2.Mode3200})
+	if err != nil {
+		return err
+	}
+	defer enc.Close()
+	gc.Reset()
+	if rc := C.dmrgo_codec2_codec_reset(cc); rc != C.DMRGO_OK {
+		return fmt.Errorf("codec2.Codec.Reset: %d", rc)
+	}
+	var pcm [codec2.FrameSamples]int16
+	out := make([]int16, codec2.FrameSamples)
+	for i := range 12 {
+		for k := range pcm {
+			pcm[k] = int16(8000 * math.Sin(2*math.Pi*float64(160*i+k)*(200+float64(seed)*10)/8000))
+		}
+		slot, err := enc.Encode(pcm[:])
+		if err != nil {
+			return err
+		}
+		if _, _, err := gc.Decode(nil, slot); err != nil {
+			return err
+		}
+		var n, need C.size_t
+		rep := new(C.dmrgo_vocoder_frame_report_t)
+		if rc := C.dmrgo_codec2_codec_decode(cc, (*C.int16_t)(unsafe.Pointer(&out[0])), C.size_t(len(out)), &n, &need, (*C.uint8_t)(unsafe.Pointer(&slot[0])), rep); rc != C.DMRGO_OK {
+			return fmt.Errorf("codec2.Codec.Decode of a %d frame: %d", codec2.Mode3200, rc)
+		}
+		if err := codec2Mode(cc, gc.DecodeMode()); err != nil {
+			return err
+		}
+	}
+	if err := codec2Mode(cc, codec2.Mode3200); err != nil {
+		return err
+	}
+	if rc := C.dmrgo_codec2_codec_reset(cc); rc != C.DMRGO_OK {
+		return fmt.Errorf("codec2.Codec.Reset: %d", rc)
+	}
+	if err := codec2Mode(cc, codec2.ModeAuto); err != nil {
+		return err
 	}
 	return h.recheck()
+}
+
+func codec2Mode(cc *C.dmrgo_codec2_codec_t, want codec2.Mode) error {
+	var m C.dmrgo_codec2_mode_t
+	if rc := C.dmrgo_codec2_codec_decode_mode(cc, &m); rc != C.DMRGO_OK || codec2.Mode(m) != want {
+		return fmt.Errorf("codec2.Codec.DecodeMode: %d (%d), want %d", m, rc, want)
+	}
+	return nil
 }
