@@ -66,7 +66,8 @@ func refusals() []refusal {
 		{"service 9", nil, &TxConfig{Service: 9}, nil, "TxConfig.Service", true},
 		{"license-free US", nil, &TxConfig{Region: RegionUS, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
 		{"license-free Japan", nil, &TxConfig{Region: RegionJapan, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
-		{"license-free 28 dBm", openGate, &TxConfig{Region: RegionChina, Service: ServiceLicenseFree, Power: 28}, nil, "TxConfig.Power", true},
+		{"license-free China", nil, &TxConfig{Region: RegionChina, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
+		{"license-free World", nil, &TxConfig{Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
 		{"China land mobile 45 dBm", openGate, &TxConfig{Region: RegionChina, Service: ServiceLandMobile, Power: 45}, nil, "TxConfig.Power", true},
 		{"US land mobile 61 dBm", openGate, &TxConfig{Region: RegionUS, Service: ServiceLandMobile, Power: 61}, nil, "TxConfig.Power", true},
 		{"CEPT amateur 63 dBm", openGate, &TxConfig{Region: RegionCEPT, Service: ServiceAmateur, Power: 63}, nil, "TxConfig.Power", true},
@@ -174,8 +175,6 @@ func TestTxAccepts(t *testing.T) {
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Format: IQFormatCU8, Rate: 1800000},
 		{Region: RegionUS, Service: ServiceAmateur},
 		{Region: RegionUS},
-		{Region: RegionChina, Service: ServiceLicenseFree},
-		{Service: ServiceLicenseFree},
 		{Region: RegionChina, Service: ServiceAmateur},
 		{Region: RegionJapan, Service: ServiceAmateur},
 		{Region: RegionJapan, Service: ServiceAmateur, Power: 61},
@@ -207,7 +206,6 @@ func TestTxAccepts(t *testing.T) {
 	for _, c := range []AudioTxConfig{
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40},
 		{Service: ServiceLandMobile, Power: 30, InputLowpassHz: 8000},
-		{Service: ServiceLicenseFree, InputLowpassHz: 5000},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 30, Bits: 13, Rate: 22500, InputLowpassHz: 8000},
 		{Region: RegionUS, Service: ServiceAmateur, Power: 50, Rate: 96000, Tier: Tier2},
 		{Region: RegionUS, Service: ServiceLandMobile, Power: 40, Tier: Tier0},
@@ -385,68 +383,32 @@ func TestTxBurstOrder(t *testing.T) {
 	}
 }
 
-func TestTxLicenseFreeCEPTRefused(t *testing.T) {
+func TestTxLicenseFreeRefused(t *testing.T) {
 	t.Parallel()
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
-		iq := TxConfig{Tier: tier, Region: RegionCEPT, Service: ServiceLicenseFree}
-		audio := AudioTxConfig{Tier: tier, Region: RegionCEPT, Service: ServiceLicenseFree}
-		if tier == Tier0 {
-			iq.Rate, audio.Rate = 96000, 48000
-		}
-		_, err := newTransmitter(iq, openGate)
-		if f, region := errField(err); f != "TxConfig.Service" || !region {
-			t.Errorf("Tier %d I/Q license-free in CEPT: %v", tier-Tier0, err)
-		}
-		_, err = newAudioTransmitter(audio, openGate)
-		if f, region := errField(err); f != "AudioTxConfig.Service" || !region {
-			t.Errorf("Tier %d audio license-free in CEPT: %v", tier-Tier0, err)
-		}
-		iq.Region, audio.Region, audio.InputLowpassHz = RegionChina, RegionChina, 5000
-		if _, err := newTransmitter(iq, openGate); err != nil {
-			t.Errorf("Tier %d I/Q license-free in China: %v", tier-Tier0, err)
-		}
-		if _, err := newAudioTransmitter(audio, openGate); err != nil {
-			t.Errorf("Tier %d audio license-free in China: %v", tier-Tier0, err)
+		for _, region := range []Region{RegionWorld, RegionUS, RegionCEPT, RegionChina, RegionJapan} {
+			iq := TxConfig{Tier: tier, Region: region, Service: ServiceLicenseFree, Power: 27}
+			audio := AudioTxConfig{Tier: tier, Region: region, Service: ServiceLicenseFree, Power: 27, InputLowpassHz: 5000}
+			if tier == Tier0 {
+				iq.Rate, audio.Rate = 96000, 48000
+			}
+			if _, err := newTransmitter(iq, openGate); !isServiceErr(err, "TxConfig.Service") {
+				t.Errorf("Tier %d I/Q license-free in %v: %v", tier-Tier0, region, err)
+			}
+			if _, err := newAudioTransmitter(audio, openGate); !isServiceErr(err, "AudioTxConfig.Service") {
+				t.Errorf("Tier %d audio license-free in %v: %v", tier-Tier0, region, err)
+			}
+			var tx Transmitter
+			if err := tx.init(iq, openGate); err == nil {
+				t.Errorf("Tier %d Init license-free in %v", tier-Tier0, region)
+			}
 		}
 	}
 }
 
-func TestTxLicenseFree(t *testing.T) {
-	t.Parallel()
-	c := TxConfig{Tier: Tier0, Rate: 96000, Region: RegionChina, Service: ServiceLicenseFree}
-	var tx Transmitter
-	if err := tx.init(c, nil); err != nil {
-		t.Fatal(err)
-	}
-	if !tx.core.lf {
-		t.Fatal("license-free setup without the license-free rules")
-	}
-	tx.on = func([]byte) {}
-	tx.chunk = tx.small[:int(tx.sps)*4]
-	b := []Burst{{BS: true, Stream: 1}}
-	if n, err := tx.Write(b); n != 0 || !errors.Is(err, ErrBurstService) {
-		t.Errorf("BS burst: %d, %v", n, err)
-	}
-	one := make([]Burst, 1)
-	one[0].Stream = 1
-	for i := range txLFSlots {
-		one[0].Slot = int64(i)
-		if _, err := tx.Write(one); err != nil {
-			t.Fatalf("slot %d: %v", i, err)
-		}
-	}
-	one[0].Slot = txLFSlots
-	if _, err := tx.Write(one); !errors.Is(err, ErrTxTimeout) || tx.Active() {
-		t.Fatalf("timeout: %v, active %v", err, tx.Active())
-	}
-	one[0].Slot++
-	if _, err := tx.Write(one); !errors.Is(err, ErrTxTimeout) {
-		t.Fatalf("rest of the stream: %v", err)
-	}
-	one[0].Stream = 2
-	if _, err := tx.Write(one); err != nil || !tx.Active() {
-		t.Fatalf("new stream: %v", err)
-	}
+func isServiceErr(err error, field string) bool {
+	f, region := errField(err)
+	return f == field && region
 }
 
 func envelope(b []byte, sps int) []float64 {

@@ -254,7 +254,7 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level, measured int) error
 	if least == 0 || c.Rate < least || c.Rate > maxTxAudio {
 		return e.rateLimit
 	}
-	p.txPlan = txPlan{tier: c.Tier, rate: c.Rate, lag: 8, lf: c.Service == ServiceLicenseFree, sb: 2, class: class}
+	p.txPlan = txPlan{tier: c.Tier, rate: c.Rate, lag: 8, sb: 2, class: class}
 	p.level, p.bits = level, c.Bits
 	switch c.Tier {
 	case Tier0:
@@ -330,7 +330,7 @@ func hostFits(ps audioPeaks, level, avail int) bool {
 func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {
 	h := t.host
 	*t = AudioTransmitter{}
-	t.core.reset(p.lag, p.lf)
+	t.core.reset(p.lag)
 	t.level, t.offset, t.rate, t.tier, t.on, t.set = int16(p.level), int16(c.Offset), int32(p.rate), p.tier, c.OnSamples, true
 	if c.Unsigned {
 		t.bias = 1 << (p.bits - 1)

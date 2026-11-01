@@ -21,7 +21,7 @@ type station struct {
 
 func stationFlags(fs *flag.FlagSet) station {
 	s := station{region: new(rf.Region), service: new(rf.Service)}
-	services := [...]rf.Service{rf.ServiceUnknown, rf.ServiceAmateur, rf.ServiceLandMobile, rf.ServiceLicenseFree}
+	services := [...]rf.Service{rf.ServiceUnknown, rf.ServiceAmateur, rf.ServiceLandMobile}
 	var regions []string
 	for r := rf.RegionWorld; r <= rf.RegionJapan; r++ {
 		regions = append(regions, strings.ToLower(r.String()))

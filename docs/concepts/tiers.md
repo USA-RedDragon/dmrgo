@@ -97,7 +97,7 @@ The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.
 | `OffsetHz` | `float64` | zero value | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, under Rate/4 in size. Tier0 rounds it to whole Hz. |
 | `OnSamples` | `func([]byte)` | zero value | OnSamples, when not nil, selects stream mode: Write and Flush hand the samples to it in chunks of at most MaxOutput(0) samples, in storage of the transmitter that is valid only during the call. When nil, the transmitter is in append mode, for AppendSamples and AppendFlush. |
 | `Region` | `Region` | zero value | Region is the regulatory region whose limits the signal keeps. |
-| `Service` | `Service` | zero value | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. A station of the license-free service must state it. |
+| `Service` | `Service` | zero value | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. The transmitter refuses ServiceLicenseFree. |
 | `Power` | `int` | `top` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. |
 <!-- /dmrgo:config -->
 

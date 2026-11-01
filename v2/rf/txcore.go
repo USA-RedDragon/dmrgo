@@ -10,15 +10,15 @@ import (
 // Slot does not increase within its Stream.
 var ErrBurstOrder = errors.New("rf: burst slot does not increase within its stream")
 
-// ErrBurstService is the error of Write on a transmitter of the
-// license-free service for a BS-sourced burst: the service allows no base
-// station or repeater.
+// ErrBurstService was the error of Write on a transmitter of the
+// license-free service for a BS-sourced burst. The transmitters support no
+// license-free service, so none returns it; it stays for compatibility.
 var ErrBurstService = errors.New("rf: BS-sourced burst in the license-free service")
 
-// ErrTxTimeout is the error of Write on a transmitter of the license-free
+// ErrTxTimeout was the error of Write on a transmitter of the license-free
 // service for a burst that would carry one transmission past 179 s. The
-// transmitter keys down, and returns ErrTxTimeout for the rest of the
-// Stream; a new Stream starts a new transmission.
+// transmitters support no license-free service, so none returns it; it
+// stays for compatibility.
 var ErrTxTimeout = errors.New("rf: transmission past 179 s in the license-free service")
 
 const (
@@ -27,7 +27,6 @@ const (
 	txTail      = 6
 	txSlotSyms  = slotSymbols
 	txIdleSlots = 1
-	txLFSlots   = 179 * 1000 / 30
 	txRampSec   = 1e-3
 	txQueue     = 8
 )
@@ -43,24 +42,20 @@ type txKey struct {
 }
 
 type txCore struct {
-	syms     [burstSymbols]int8
-	q        [txQueue]txKey
-	n        int64
-	slot     int64
-	stream   int
-	dead     int
-	lag      int32
-	keyed    int32
-	qn       uint8
-	open     bool
-	carrier  bool
-	lf       bool
-	timedOut bool
+	syms    [burstSymbols]int8
+	q       [txQueue]txKey
+	n       int64
+	slot    int64
+	stream  int
+	lag     int32
+	qn      uint8
+	open    bool
+	carrier bool
 }
 
-func (c *txCore) reset(lag int, lf bool) {
+func (c *txCore) reset(lag int) {
 	*c = txCore{}
-	c.lag, c.lf = int32(lag), lf
+	c.lag = int32(lag)
 }
 
 func (c *txCore) feed(o txSymbols, s int8) {
@@ -109,13 +104,6 @@ func (c *txCore) down(o txSymbols) {
 }
 
 func (c *txCore) put(o txSymbols, b *Burst) error {
-	if c.lf && b.BS {
-		return ErrBurstService
-	}
-	if c.timedOut && b.Stream == c.dead {
-		return ErrTxTimeout
-	}
-	c.timedOut = false
 	gap := int64(0)
 	if c.open && b.Stream == c.stream {
 		if b.Slot <= c.slot {
@@ -127,12 +115,6 @@ func (c *txCore) put(o txSymbols, b *Burst) error {
 		c.down(o)
 	}
 	if c.open {
-		if c.lf && int64(c.keyed)+gap+1 > txLFSlots {
-			c.down(o)
-			c.timedOut, c.dead = true, b.Stream
-			return ErrTxTimeout
-		}
-		c.keyed += int32(gap) + 1
 		if gap == 0 && b.BS {
 			c.slotBody(o, b)
 			c.slot = b.Slot
@@ -149,7 +131,7 @@ func (c *txCore) put(o txSymbols, b *Burst) error {
 			}
 		}
 	} else {
-		c.open, c.stream, c.keyed = true, b.Stream, 1
+		c.open, c.stream = true, b.Stream
 		if b.BS {
 			c.setKey(o, true)
 			c.zeros(o, txLead)

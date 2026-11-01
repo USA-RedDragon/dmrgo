@@ -12,24 +12,20 @@ type Region uint8
 // The regions.
 const (
 	// RegionWorld keeps the limits of every other region at once, the
-	// strictest of each. For ServiceLicenseFree it keeps those of
-	// RegionChina, the one region whose license-free service the
-	// transmitter supports.
+	// strictest of each.
 	RegionWorld Region = iota
 	// RegionUS keeps 47 CFR 90.210 Emission Masks D and H and the 47 CFR
 	// 90.691 EA mask at once for land mobile, and 47 CFR 97.307 for
 	// amateur.
 	RegionUS
 	// RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01
-	// for amateur. The transmitter does not support its license-free
-	// service, PMR446.
+	// for amateur.
 	RegionCEPT
-	// RegionChina keeps the 2025 MIIT notice for land mobile and the 409
-	// MHz license-free walkie-talkie, and the Radio Frequency Allocation
-	// Regulations for amateur.
+	// RegionChina keeps the 2025 MIIT notice for land mobile and the Radio
+	// Frequency Allocation Regulations for amateur.
 	RegionChina
 	// RegionJapan keeps the Radio Equipment Regulations for land mobile and
-	// amateur. It has no license-free DMR service. An amateur station takes
+	// amateur. An amateur station takes
 	// up to 1.2 kW: Japan licenses at most 1 kW, and Article 14 lets an
 	// amateur transmitter emit 20% over its licensed power.
 	RegionJapan
@@ -74,10 +70,9 @@ func (e *RegionError) Error() string {
 }
 
 const (
-	regions        = int(RegionJapan) + 1
-	services       = int(ServiceLicenseFree)
-	licenseFreeDBm = 27
-	maxPowerDBm    = 63
+	regions     = int(RegionJapan) + 1
+	services    = fsktx.LimitsServices
+	maxPowerDBm = 63
 )
 
 var ceilingDBm = [regions][2]int8{
@@ -89,10 +84,10 @@ var ceilingDBm = [regions][2]int8{
 }
 
 var spurGate10 = [regions][services]bool{
-	RegionWorld: {true, true, true},
+	RegionWorld: {true, true},
 	RegionUS:    {true, true},
 	RegionCEPT:  {true, true},
-	RegionChina: {true, true, true},
+	RegionChina: {true, true},
 	RegionJapan: {true, true},
 }
 
@@ -115,7 +110,7 @@ var iqErrs = txErrs{
 	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "TxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "TxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
 	powerCeil:   &RegionError{Type: "rf", Field: "TxConfig.Power", Reason: "above the highest legal power of the service in the region"},
-	service:     &RegionError{Type: "rf", Field: "TxConfig.Service", Reason: "the region has no license-free DMR service"},
+	service:     &RegionError{Type: "rf", Field: "TxConfig.Service", Reason: "the transmitter supports no license-free service"},
 	spur:        &RegionError{Type: "rf", Field: "TxConfig.Region", Reason: "the signal is not measured 10 dB under the spurious domain limits"},
 	preEmph:     &RegionError{Type: "rf", Field: "TxConfig.PreEmphasis", Reason: "the limits with pre-emphasis are not measured"},
 	levelLow:    &RegionError{Type: "rf", Field: "TxConfig.Level", Reason: "under the level that the limits are measured at for Bits"},
@@ -137,7 +132,7 @@ var audioErrs = txErrs{
 	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "AudioTxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
 	powerCeil:   &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "above the highest legal power of the service in the region"},
-	service:     &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the region has no license-free DMR service"},
+	service:     &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the transmitter supports no license-free service"},
 	spur:        &RegionError{Type: "rf", Field: "AudioTxConfig.Region", Reason: "the signal is not measured 10 dB under the spurious domain limits"},
 	preEmph:     &RegionError{Type: "rf", Field: "AudioTxConfig.PreEmphasis", Reason: "with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power"},
 	levelLow:    &RegionError{Type: "rf", Field: "AudioTxConfig.Level", Reason: "under the level that the limits are measured at for Bits"},
@@ -163,10 +158,7 @@ func (r *txRegs) check(e *txErrs, g *txGate) (class int, err error) {
 	var top int
 	switch r.service {
 	case ServiceLicenseFree:
-		if r.region != RegionWorld && r.region != RegionChina {
-			return 0, e.service
-		}
-		top = licenseFreeDBm
+		return 0, e.service
 	case ServiceUnknown:
 		top = int(max(ceilingDBm[r.region][0], ceilingDBm[r.region][1]))
 	case ServiceLandMobile:
@@ -207,11 +199,8 @@ func (r *txRegs) spurMeasured() bool {
 }
 
 func (r *txRegs) regionsOf() [regions]int {
-	switch {
-	case r.region != RegionWorld:
+	if r.region != RegionWorld {
 		return [regions]int{int(r.region), -1, -1, -1, -1}
-	case r.service == ServiceLicenseFree:
-		return [regions]int{int(RegionChina), -1, -1, -1, -1}
 	}
 	return [regions]int{1, 2, 3, 4, -1}
 }
@@ -222,9 +211,7 @@ func (r *txRegs) services() [2]int {
 		return [2]int{fsktx.LimitsLandMobile, -1}
 	case ServiceAmateur:
 		return [2]int{fsktx.LimitsAmateur, -1}
-	case ServiceLicenseFree:
-		return [2]int{fsktx.LimitsLicenseFree, -1}
-	case ServiceUnknown:
+	case ServiceUnknown, ServiceLicenseFree:
 	}
 	return [2]int{fsktx.LimitsLandMobile, fsktx.LimitsAmateur}
 }
@@ -281,8 +268,7 @@ const (
 	// ServiceLandMobile is a licensed land mobile service, such as private,
 	// business or public safety PMR.
 	ServiceLandMobile = dmrgo.ServiceLandMobile
-	// ServiceLicenseFree is a licence-exempt service. The transmitter
-	// supports it in RegionChina, the 409 MHz public walkie-talkie, and
-	// refuses it in every other region.
+	// ServiceLicenseFree is a licence-exempt service. The transmitters
+	// support no license-free service and refuse it in every region.
 	ServiceLicenseFree = dmrgo.ServiceLicenseFree
 )

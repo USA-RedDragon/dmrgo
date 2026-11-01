@@ -40,8 +40,8 @@ type TxConfig struct {
 	// Region is the regulatory region whose limits the signal keeps.
 	Region Region
 	// Service is the radio service of the station. ServiceUnknown keeps
-	// the limits of the land mobile and amateur services at once. A station
-	// of the license-free service must state it.
+	// the limits of the land mobile and amateur services at once. The
+	// transmitter refuses ServiceLicenseFree.
 	Service Service
 	// Power is the most power of the station, in dBm, from 1 to 63. 0
 	// means the highest legal power of the Service in the Region. The
@@ -95,7 +95,6 @@ type txPlan struct {
 	tier  Tier
 	rate  int
 	lag   int
-	lf    bool
 	sb    int
 	class int
 }
@@ -214,7 +213,7 @@ func (c *TxConfig) plan(g *txGate) (txPlan, error) {
 	if least := r.minRate(c.Tier, true, bits, class, 0, false); image || least == 0 || c.Rate < least {
 		return txPlan{}, e.rateLimit
 	}
-	p := txPlan{tier: c.Tier, rate: c.Rate, lag: 8, lf: c.Service == ServiceLicenseFree, sb: c.Format.bytes(), class: class}
+	p := txPlan{tier: c.Tier, rate: c.Rate, lag: 8, sb: c.Format.bytes(), class: class}
 	switch c.Tier {
 	case Tier0:
 		p.lag = tier0IQLag
@@ -235,7 +234,7 @@ func (t *Transmitter) setup(c *TxConfig, p *txPlan) {
 	} else {
 		t.host, t.offHz = h, c.OffsetHz
 	}
-	t.core.reset(p.lag, p.lf)
+	t.core.reset(p.lag)
 	t.rate, t.format, t.tier, t.on, t.set = int32(p.rate), c.Format, p.tier, c.OnSamples, true
 	if t.on != nil && p.tier == Tier0 {
 		t.chunk = t.small[:int(t.sps)*p.sb]
@@ -246,7 +245,7 @@ func (t *Transmitter) setup(c *TxConfig, p *txPlan) {
 // OnSamples. It returns len(x) and nil, dmrgo.ErrNilReceiver for a nil t,
 // ErrNotSetUp before Init or NewTransmitter, a *dmrgo.ConfigError for
 // OnSamples in append mode, and for a burst that it does not accept the count
-// of bursts before it with ErrBurstOrder, ErrBurstService or ErrTxTimeout.
+// of bursts before it with ErrBurstOrder.
 func (t *Transmitter) Write(x []Burst) (int, error) {
 	if t == nil {
 		return 0, dmrgo.ErrNilReceiver

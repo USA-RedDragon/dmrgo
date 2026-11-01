@@ -336,18 +336,13 @@ const (
 )
 
 const (
-	limLandMobile  = LimitsLandMobile
-	limAmateur     = LimitsAmateur
-	limLicenseFree = LimitsLicenseFree
-	limServices    = LimitsLicenseFree + 1
+	limLandMobile = LimitsLandMobile
+	limAmateur    = LimitsAmateur
+	limServices   = LimitsServices
 )
 
 var limRegionNames = [limRegions]string{"World", "US", "CEPT", "China", "Japan"}
-var limServiceNames = [limServices]string{"LandMobile", "Amateur", "LicenseFree"}
-
-func limHasService(region, service int) bool {
-	return service != limLicenseFree || region == limWorld || region == limChina
-}
+var limServiceNames = [limServices]string{"LandMobile", "Amateur"}
 
 func enKeys(pw float64) []string {
 	k := []string{"ts_dev_pct"}
@@ -382,9 +377,7 @@ func regimeKeysAt(region, service int, pw float64) []string {
 	case limWorld:
 		var all []string
 		for r := limUS; r < limRegions; r++ {
-			if limHasService(r, service) {
-				all = append(all, regimeKeysAt(r, service, pw)...)
-			}
+			all = append(all, regimeKeysAt(r, service, pw)...)
 		}
 		slices.Sort(all)
 		return slices.Compact(all)
@@ -752,7 +745,7 @@ func TestMinRatesGenerated(t *testing.T) {
 					for p, pw := range limPowerClasses {
 						pass := make([]bool, len(rates))
 						for i, g := range res {
-							pass[i] = g != nil && limHasService(reg, s) && len(regimeFails(t, g, reg, s, pw)) == 0
+							pass[i] = g != nil && len(regimeFails(t, g, reg, s, pw)) == 0
 						}
 						cell[reg][s][p] = minRateOf(rates, pass, gridFloor(c.iq))
 					}

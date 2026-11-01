@@ -172,14 +172,12 @@ type txRegime struct {
 var txRegimes = []txRegime{
 	{"World, land mobile", limWorld, limLandMobile},
 	{"World, amateur", limWorld, limAmateur},
-	{"World, license-free", limWorld, limLicenseFree},
 	{"US, land mobile", limUS, limLandMobile},
 	{"US, amateur", limUS, limAmateur},
 	{"CEPT, land mobile", limCEPT, limLandMobile},
 	{"CEPT, amateur", limCEPT, limAmateur},
 	{"China, land mobile", limChina, limLandMobile},
 	{"China, amateur", limChina, limAmateur},
-	{"China, 409 MHz license-free", limChina, limLicenseFree},
 	{"Japan, land mobile", limJapan, limLandMobile},
 	{"Japan, amateur", limJapan, limAmateur},
 }

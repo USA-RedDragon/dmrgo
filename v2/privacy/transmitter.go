@@ -28,7 +28,7 @@ const (
 	// ServiceLandMobile is a licensed land mobile service, such as private,
 	// business or public safety PMR.
 	ServiceLandMobile = dmrgo.ServiceLandMobile
-	// ServiceLicenseFree is a licence-exempt service, such as PMR446.
+	// ServiceLicenseFree is a licence-exempt service.
 	ServiceLicenseFree = dmrgo.ServiceLicenseFree
 )
 

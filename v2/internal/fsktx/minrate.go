@@ -9,11 +9,11 @@ const (
 	LimitsJapan
 )
 
-// The services of MinRate.
+// The services of MinRate, and LimitsServices, their number.
 const (
 	LimitsLandMobile = iota
 	LimitsAmateur
-	LimitsLicenseFree
+	LimitsServices
 )
 
 func powerBreakpoints() [10]int8 { return [...]int8{27, 30, 40, 44, 47, 50, 54, 57, 60, 62} }

@@ -188,13 +188,9 @@ func renderTxLimits(src, root *goSource) string {
 		classes = append(classes, c)
 	}
 	b.WriteString("- `Power` is the most power of the station in dBm, from 1 to " + strconv.Itoa(maxPowerDBm) + ". 0 is the highest legal power of the service in the region. The limits use the power classes " + strings.Join(classes[:len(classes)-1], ", ") + " and " + classes[len(classes)-1] + ".\n\n")
-	b.WriteString("Highest legal power, the `Power` of 0, in dBm:\n\n| `Region` | Land mobile | Amateur | License-free |\n| --- | ---: | ---: | ---: |\n")
+	b.WriteString("Highest legal power, the `Power` of 0, in dBm:\n\n| `Region` | Land mobile | Amateur |\n| --- | ---: | ---: |\n")
 	for g := RegionUS; g <= RegionJapan; g++ {
-		lf := "-"
-		if _, err := (&txRegs{region: g, service: ServiceLicenseFree}).check(&iqErrs, &txGate{noSpur: true}); err == nil {
-			lf = strconv.Itoa(licenseFreeDBm)
-		}
-		fmt.Fprintf(&b, "| `Region%s` | %d | %d | %s |\n", g, ceilingDBm[g][0], ceilingDBm[g][1], lf)
+		fmt.Fprintf(&b, "| `Region%s` | %d | %d |\n", g, ceilingDBm[g][0], ceilingDBm[g][1])
 	}
 	b.WriteString("\n")
 	b.WriteString("Each `RegionError` has one of these values of `Field`, after the name of the config, and `Reason`:\n\n| Field | `Reason` |\n| --- | --- |\n")

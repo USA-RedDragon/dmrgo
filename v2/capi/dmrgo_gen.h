@@ -4210,7 +4210,7 @@ struct dmrgo_rf_tx_config_t {
 	dmrgo_rf_tx_config_on_samples_fn_t on_samples;
 	/* Region is the regulatory region whose limits the signal keeps. */
 	dmrgo_rf_region_t region;
-	/* Service is the radio service of the station. DMRGO_RF_SERVICE_UNKNOWN keeps the limits of the land mobile and amateur services at once. A station of the license-free service must state it. */
+	/* Service is the radio service of the station. DMRGO_RF_SERVICE_UNKNOWN keeps the limits of the land mobile and amateur services at once. The transmitter refuses DMRGO_RF_SERVICE_LICENSE_FREE. */
 	dmrgo_service_t service;
 	/* Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. */
 	int64_t power;
@@ -6155,7 +6155,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_SERVICE_AMATEUR ((dmrgo_service_t)1)
 /* Go: dmrgo.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
 #define DMRGO_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
-/* Go: dmrgo.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as the 409 MHz public walkie-talkie of China. */
+/* Go: dmrgo.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service. */
 #define DMRGO_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 /* Go: dmrgo.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
 #define DMRGO_SERVICE_UNKNOWN ((dmrgo_service_t)0)
@@ -7619,7 +7619,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_PRIVACY_SERVICE_AMATEUR ((dmrgo_service_t)1)
 /* Go: privacy.ServiceLandMobile. ServiceLandMobile is a licensed land mobile service, such as private, business or public safety PMR. */
 #define DMRGO_PRIVACY_SERVICE_LAND_MOBILE ((dmrgo_service_t)2)
-/* Go: privacy.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service, such as PMR446. */
+/* Go: privacy.ServiceLicenseFree. ServiceLicenseFree is a licence-exempt service. */
 #define DMRGO_PRIVACY_SERVICE_LICENSE_FREE ((dmrgo_service_t)3)
 /* Go: privacy.ServiceUnknown. ServiceUnknown is a service that the caller did not state. */
 #define DMRGO_PRIVACY_SERVICE_UNKNOWN ((dmrgo_service_t)0)
@@ -7637,7 +7637,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_MAX_LOOKBACK_SLOTS 256
 /* Go: rf.RegionCEPT. RegionCEPT keeps ETSI EN 300 113 for land mobile and ERC/REC 74-01 for amateur. */
 #define DMRGO_RF_REGION_CEPT ((dmrgo_rf_region_t)2)
-/* Go: rf.RegionChina. RegionChina keeps the 2025 MIIT notice for land mobile and the 409 MHz license-free walkie-talkie, and the Radio Frequency Allocation Regulations for amateur. */
+/* Go: rf.RegionChina. RegionChina keeps the 2025 MIIT notice for land mobile and the Radio Frequency Allocation Regulations for amateur. */
 #define DMRGO_RF_REGION_CHINA ((dmrgo_rf_region_t)3)
 /* Go: rf.RegionJapan. RegionJapan keeps the Radio Equipment Regulations for land mobile and amateur. */
 #define DMRGO_RF_REGION_JAPAN ((dmrgo_rf_region_t)4)
@@ -10964,7 +10964,7 @@ int dmrgo_rf_transmitter_max_output(dmrgo_rf_transmitter_t *self, int64_t n, int
 int dmrgo_rf_transmitter_offset_hz(dmrgo_rf_transmitter_t *self, double *out);
 /* Go: rf.Transmitter.SampleBytes. SampleBytes returns the bytes of one I/Q sample in the Format of t. */
 int dmrgo_rf_transmitter_sample_bytes(dmrgo_rf_transmitter_t *self, int64_t *out);
-/* Go: rf.Transmitter.Write. Write turns the bursts x into samples in stream mode and hands them to OnSamples. It returns len(x) and NULL, DMRGO_ERR_HANDLE for a NULL self, DMRGO_ERR_RF_NOT_SET_UP before Init or NewTransmitter, a DMRGO_ERR_CONFIG for OnSamples in append mode, and for a burst that it does not accept the count of bursts before it with DMRGO_ERR_RF_BURST_ORDER, DMRGO_ERR_RF_BURST_SERVICE or DMRGO_ERR_RF_TX_TIMEOUT. */
+/* Go: rf.Transmitter.Write. Write turns the bursts x into samples in stream mode and hands them to OnSamples. It returns len(x) and NULL, DMRGO_ERR_HANDLE for a NULL self, DMRGO_ERR_RF_NOT_SET_UP before Init or NewTransmitter, a DMRGO_ERR_CONFIG for OnSamples in append mode, and for a burst that it does not accept the count of bursts before it with DMRGO_ERR_RF_BURST_ORDER. */
 int dmrgo_rf_transmitter_write(dmrgo_rf_transmitter_t *self, const dmrgo_rf_burst_t *x, size_t x_len, int64_t *out);
 /* Go: shortdata.AppendText. AppendText appends the UTF-8 text to dst, coded as format selects, and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format, or DMRGO_ERR_SHORTDATA_CHARACTER for a character that BCD, 7-bit text or the ISO/IEC 8859 part cannot hold. Invalid UTF-8 gives U+FFFD, or DMRGO_ERR_SHORTDATA_CHARACTER for BCD, 7-bit text and ISO/IEC 8859. */
 int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
