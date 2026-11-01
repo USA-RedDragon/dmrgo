@@ -46,6 +46,8 @@ func refusals() []refusal {
 		{"zero I/Q", nil, &TxConfig{}, nil, "TxConfig.Rate", true},
 		{"zero audio", nil, nil, &AudioTxConfig{}, "AudioTxConfig.Rate", true},
 		{"CEPT land mobile 60 dBm", nil, &TxConfig{Region: RegionCEPT, Service: ServiceLandMobile, Power: 60}, nil, "TxConfig.Rate", true},
+		{"US land mobile 60 dBm cs8 Tier1", nil, &TxConfig{Tier: Tier1, Format: IQFormatCS8, Rate: 2400000, Region: RegionUS, Service: ServiceLandMobile, Power: 60}, nil, "TxConfig.Rate", true},
+		{"US land mobile 60 dBm cs8 Tier2", nil, &TxConfig{Tier: Tier2, Format: IQFormatCS8, Rate: 2400000, Region: RegionUS, Service: ServiceLandMobile, Power: 60}, nil, "TxConfig.Rate", true},
 		{"license-free CEPT", nil, &TxConfig{Region: RegionCEPT, Service: ServiceLicenseFree}, nil, "TxConfig.Service", true},
 		{"Tier3", nil, &TxConfig{Tier: Tier3}, nil, "TxConfig.Tier", false},
 		{"Tier 9", nil, &TxConfig{Tier: 9}, nil, "TxConfig.Tier", false},

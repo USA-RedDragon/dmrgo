@@ -382,3 +382,27 @@ func writeUnmeasured(b *strings.Builder) {
 	}
 	fmt.Fprintf(b, "A setup between measured ones takes the nearest measured setup that is not looser: a power takes the next breakpoint up, a depth of `Bits` between %s takes the next lower depth, and an input low pass between the cutoffs %s Hz takes the next looser cutoff, or none.\n\n", join(audioBitClasses), join(inputLowpassGrid[1:]))
 }
+
+func TestTxMarginsAllowed(t *testing.T) {
+	t.Parallel()
+	js, err := os.ReadFile(txMarginsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m map[string]map[string]float64
+	if err := json.Unmarshal(js, &m); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	for _, c := range limClasses() {
+		g, ok := m[c.String()]
+		if !ok {
+			continue
+		}
+		n++
+		checkAgainstTable(t, c, txDocRate(c), 0, g)
+	}
+	if n != len(m) {
+		t.Fatalf("%d of the %d classes of %s are classes of the grid", n, len(m), txMarginsFile)
+	}
+}
