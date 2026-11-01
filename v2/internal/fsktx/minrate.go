@@ -97,7 +97,7 @@ func (s Setup) MinRate() int {
 	}
 	ti := int(t - Tier0)
 	if ti < 0 || ti >= len(minRateAudio) || s.Region < 0 || s.Region >= len(minRateIQ[0][0]) ||
-		s.Service < 0 || s.Service >= len(minRateIQ[0][0][0]) || s.Power < 0 || s.Power >= len(minRateIQ[0][0][0][0]) {
+		s.Service < 0 || s.Service >= len(minRateIQ[0][0][0]) || s.Power < 0 || s.Power >= len(minRateRows[0]) {
 		return 0
 	}
 	if s.PreEmphasis && (s.IQ || t != Tier0) {
@@ -107,9 +107,9 @@ func (s Setup) MinRate() int {
 		var i uint8
 		switch s.Bits {
 		case 16:
-			i = minRateIQ[ti][0][s.Region][s.Service][s.Power]
+			i = minRateAt(minRateIQ[ti][0][s.Region][s.Service], s.Power)
 		case 8:
-			i = minRateIQ[ti][1][s.Region][s.Service][s.Power]
+			i = minRateAt(minRateIQ[ti][1][s.Region][s.Service], s.Power)
 		}
 		if i == 0 || int(i) > len(minRateIQRates) {
 			return 0
@@ -130,9 +130,16 @@ func (s Setup) MinRate() int {
 		return 0
 	}
 	if s.PreEmphasis {
-		return int(minRatePE[c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service][s.Power]) * minRateUnit
+		return int(minRateAt(minRatePE[c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service], s.Power)) * minRateUnit
 	}
-	return int(minRateAudio[ti][c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service][s.Power]) * minRateUnit
+	return int(minRateAt(minRateAudio[ti][c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service], s.Power)) * minRateUnit
+}
+
+func minRateAt(row uint8, power int) uint8 {
+	if int(row) >= len(minRateRows) {
+		return 0
+	}
+	return minRateRows[row][power]
 }
 
 // Allows reports whether the modulator of s may run at hz: a rate that

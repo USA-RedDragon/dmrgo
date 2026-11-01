@@ -600,11 +600,13 @@ func renderMinRates(tb *minRateTable) ([]byte, error) {
 	if len(iqRates) > 255 {
 		return nil, fmt.Errorf("%d I/Q rates do not fit a byte", len(iqRates))
 	}
+	var rows [][len(limPowerClasses)]uint8
+	var idx bytes.Buffer
 	cell := func(x *limCell, unit int32, iq bool) error {
 		for r := range limRegions {
-			b.WriteString("{")
+			idx.WriteString("{")
 			for s := range limServices {
-				b.WriteString("{")
+				var row [len(limPowerClasses)]uint8
 				for p := range limPowerClasses {
 					v := x[r][s][p]
 					switch {
@@ -615,58 +617,77 @@ func renderMinRates(tb *minRateTable) ([]byte, error) {
 					default:
 						v /= unit
 					}
-					fmt.Fprintf(&b, "%d,", v)
+					row[p] = uint8(v)
 				}
-				b.WriteString("},")
+				k := slices.Index(rows, row)
+				if k < 0 {
+					k = len(rows)
+					rows = append(rows, row)
+				}
+				if k > 255 {
+					return fmt.Errorf("%d rows of rates do not fit a byte", k+1)
+				}
+				fmt.Fprintf(&idx, "%d,", k)
 			}
-			b.WriteString("},\n")
+			idx.WriteString("},\n")
 		}
 		return nil
 	}
-	dims := fmt.Sprintf("[%d][%d][%d]", limRegions, limServices, len(limPowerClasses))
-	fmt.Fprintf(&b, "var minRateAudio = [3][4][%d]%suint8{\n", len(inputLowpassGrid), dims)
+	dims := fmt.Sprintf("[%d][%d]", limRegions, limServices)
+	fmt.Fprintf(&idx, "var minRateAudio = [3][4][%d]%suint8{\n", len(inputLowpassGrid), dims)
 	for t := range 3 {
-		b.WriteString("{\n")
+		idx.WriteString("{\n")
 		for c := range 4 {
-			b.WriteString("{\n")
+			idx.WriteString("{\n")
 			for lp := range inputLowpassGrid {
-				b.WriteString("{\n")
+				idx.WriteString("{\n")
 				if err := cell(&tb.audio[t][c][lp], minRateUnit, false); err != nil {
 					return nil, err
 				}
-				b.WriteString("},\n")
+				idx.WriteString("},\n")
 			}
-			b.WriteString("},\n")
+			idx.WriteString("},\n")
 		}
-		b.WriteString("},\n")
+		idx.WriteString("},\n")
 	}
-	b.WriteString("}\n\n")
-	fmt.Fprintf(&b, "var minRatePE = [4][%d]%suint8{\n", len(inputLowpassGrid), dims)
+	idx.WriteString("}\n\n")
+	fmt.Fprintf(&idx, "var minRatePE = [4][%d]%suint8{\n", len(inputLowpassGrid), dims)
 	for c := range 4 {
-		b.WriteString("{\n")
+		idx.WriteString("{\n")
 		for lp := range inputLowpassGrid {
-			b.WriteString("{\n")
+			idx.WriteString("{\n")
 			if err := cell(&tb.pe[c][lp], minRateUnit, false); err != nil {
 				return nil, err
 			}
-			b.WriteString("},\n")
+			idx.WriteString("},\n")
+		}
+		idx.WriteString("},\n")
+	}
+	idx.WriteString("}\n\n")
+	fmt.Fprintf(&idx, "var minRateIQ = [3][2]%suint8{\n", dims)
+	for t := range 3 {
+		idx.WriteString("{\n")
+		for c := range 2 {
+			idx.WriteString("{\n")
+			if err := cell(&tb.iq[t][c], 1, true); err != nil {
+				return nil, err
+			}
+			idx.WriteString("},\n")
+		}
+		idx.WriteString("},\n")
+	}
+	idx.WriteString("}\n")
+	fmt.Fprintf(&b, "var minRateRows = [%d][%d]uint8{\n", len(rows), len(limPowerClasses))
+	for _, row := range rows {
+		b.WriteString("{")
+		for _, v := range row {
+			fmt.Fprintf(&b, "%d,", v)
 		}
 		b.WriteString("},\n")
 	}
 	b.WriteString("}\n\n")
-	fmt.Fprintf(&b, "var minRateIQ = [3][2]%suint8{\n", dims)
-	for t := range 3 {
-		b.WriteString("{\n")
-		for c := range 2 {
-			b.WriteString("{\n")
-			if err := cell(&tb.iq[t][c], 1, true); err != nil {
-				return nil, err
-			}
-			b.WriteString("},\n")
-		}
-		b.WriteString("},\n")
-	}
-	b.WriteString("}\n\nvar minRateIQRates = [...]int32{")
+	b.Write(idx.Bytes())
+	b.WriteString("\nvar minRateIQRates = [...]int32{")
 	for _, v := range iqRates {
 		fmt.Fprintf(&b, "%d,", v)
 	}

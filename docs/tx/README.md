@@ -75,11 +75,11 @@ The limits are measured at a `Level` of about half of full scale: 15000 codes at
 
 | Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |
 | --- | --- | --- | --- |
-| I/Q at 96 kHz, CS16 | 4.8 MHz | 968 B | 34.3 KB |
-| Audio at 48 kHz, 12-bit | 3.7 MHz | 724 B | 34.3 KB |
-| Audio at 24 kHz, 12-bit | 3.7 MHz | 764 B | 34.1 KB |
+| I/Q at 96 kHz, CS16 | 4.8 MHz | 968 B | 33.9 KB |
+| Audio at 48 kHz, 12-bit | 3.7 MHz | 724 B | 28.7 KB |
+| Audio at 24 kHz, 12-bit | 3.6 MHz | 764 B | 28.6 KB |
 
-Measured from TinyGo 0.43 `-opt z -gc=none` builds in QEMU (`mps2-an386`, Cortex-M4), with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it.
+Measured from TinyGo 0.43 `-opt z -gc=none` builds in QEMU (`mps2-an386`, Cortex-M4), with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. The audio rows run with `InputLowpassHz` 8000, US land mobile at 30 dBm.
 
 <!-- txdoc:begin -->
 
