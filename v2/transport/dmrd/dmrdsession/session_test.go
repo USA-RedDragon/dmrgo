@@ -400,8 +400,8 @@ func TestMasterLogin(t *testing.T) {
 	if again := sends(m.Packet(2*s, ctl(dmrd.CommandRPTL, 5), nil)); len(again) != 1 || !bytes.Equal(again[0], salt[0]) {
 		t.Fatal("RPTL again does not get the same salt")
 	}
-	if !nak(m.Packet(2*s, mmdvmConfig(5), nil)) || !nak(m.Packet(2*s, rptk(6, tok), nil)) {
-		t.Fatal("RPTC before RPTK or RPTK of another ID")
+	if !nak(m.Packet(2*s, mmdvmConfig(6), nil)) || !nak(m.Packet(2*s, rptk(6, tok), nil)) {
+		t.Fatal("RPTC or RPTK of another ID")
 	}
 	for range 2 {
 		out := m.Packet(3*s, rptk(5, tok), nil)

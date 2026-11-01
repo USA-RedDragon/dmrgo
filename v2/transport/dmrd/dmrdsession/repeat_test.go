@@ -174,3 +174,106 @@ func TestMasterEarlyStepsAfterRepeatedRPTK(t *testing.T) {
 	m.Packet(0, mmdvmConfig(5), nil)
 	sameKinds(t, kinds(m.Accept(0, nil)), dmrdsession.OutputSend, dmrdsession.OutputUp)
 }
+
+func TestMasterRPTCBeforeRPTK(t *testing.T) {
+	t.Parallel()
+
+	for _, d := range []dmrd.Dialect{dmrd.DialectMMDVM, dmrd.DialectHBRP} {
+		const id = 3129100
+		pk := func(c dmrd.Command, id uint32) []byte {
+			b, _ := (&dmrd.Control{Command: c, ID: id}).AppendBinary(nil, d)
+			return b
+		}
+		tok, _ := dmrdauth.Token(d, 7, []byte("pw"))
+		bad, _ := dmrdauth.Token(d, 7, []byte("px"))
+		key := func(tk [32]byte) []byte {
+			b, _ := (&dmrd.Control{Command: dmrd.CommandRPTK, ID: id, Token: tk}).AppendBinary(nil, d)
+			return b
+		}
+		rptc := mmdvmConfig(id)
+		other := mmdvmConfig(id)
+		ping := pk(dmrd.CommandRPTPING, id)
+		if d == dmrd.DialectHBRP {
+			rptc, other, ping = hbrpConfig(id), hbrpConfig(id), pk(dmrd.CommandMSTPING, id)
+		}
+		other[len(other)-1] ^= 1
+		m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: d})
+		nak := func(out []dmrdsession.Output) bool {
+			return len(out) == 1 && command(t, out[0].Packet, d) == dmrd.CommandMSTNAK
+		}
+		login := func() {
+			for range 2 {
+				m.Packet(0, pk(dmrd.CommandRPTL, id), nil)
+				m.Admit(0, 7, []byte("pw"), nil)
+			}
+			if m.State() != dmrdsession.StateAuth {
+				t.Fatalf("%v: state %v", d, m.State())
+			}
+		}
+
+		login()
+		for _, c := range [][]byte{rptc, other} {
+			if out := m.Packet(0, c, nil); len(out) != 0 {
+				t.Fatalf("%v: RPTC before RPTK %v", d, kinds(out))
+			}
+		}
+		var wrongID []byte
+		if d == dmrd.DialectHBRP {
+			wrongID = hbrpConfig(id + 1)
+		} else {
+			wrongID = mmdvmConfig(id + 1)
+		}
+		if !nak(m.Packet(0, wrongID, nil)) {
+			t.Fatalf("%v: RPTC of another ID in StateAuth", d)
+		}
+		out := m.Packet(0, key(tok), nil)
+		sameKinds(t, kinds(out), dmrdsession.OutputSend, dmrdsession.OutputConfig)
+		if c := command(t, out[0].Packet, d); c != dmrd.CommandRPTACK && c != dmrd.CommandMSTACK {
+			t.Fatalf("%v: answer to the RPTK %v", d, c)
+		}
+		if !bytes.Equal(out[1].Packet, other) || out[1].ID != id || m.State() != dmrdsession.StateConfig {
+			t.Fatalf("%v: held RPTC %v %v", d, out[1].ID, m.State())
+		}
+		for _, b := range [][]byte{ping, ping} {
+			if out := m.Packet(0, b, nil); len(out) != 0 {
+				t.Fatalf("%v: ping before Accept %v", d, kinds(out))
+			}
+		}
+		if d == dmrd.DialectMMDVM {
+			m.Packet(0, append(pk(dmrd.CommandRPTO, id), "TS2=91;"...), nil)
+		}
+		acc := m.Accept(0, nil)
+		want := []dmrdsession.OutputKind{dmrdsession.OutputSend, dmrdsession.OutputUp}
+		if d == dmrd.DialectMMDVM {
+			want = append(want, dmrdsession.OutputOptions)
+		}
+		sameKinds(t, kinds(acc), want...)
+		if out := m.Packet(0, ping, nil); count(out, dmrdsession.OutputPong) != 1 {
+			t.Fatalf("%v: ping after Accept %v", d, kinds(out))
+		}
+
+		m.Reset()
+		login()
+		m.Packet(0, rptc, nil)
+		out = m.Packet(0, key(bad), nil)
+		if len(out) != 2 || !nak(out[:1]) || out[1].Reason != dmrdsession.ReasonRefused || m.State() != dmrdsession.StateIdle {
+			t.Fatalf("%v: bad RPTK after a held RPTC %v", d, kinds(out))
+		}
+		login()
+		if out := m.Packet(0, key(tok), nil); len(out) != 1 || m.State() != dmrdsession.StateConfig {
+			t.Fatalf("%v: RPTC kept after a bad RPTK %v", d, kinds(out))
+		}
+
+		m.Reset()
+		login()
+		m.Packet(0, rptc, nil)
+		at, _ := m.Deadline()
+		if out := m.Tick(at, nil); len(out) != 1 || out[0].Reason != dmrdsession.ReasonTimeout {
+			t.Fatalf("%v: login timeout with a held RPTC %v", d, kinds(out))
+		}
+		login()
+		if out := m.Packet(at, key(tok), nil); len(out) != 1 {
+			t.Fatalf("%v: RPTC kept after the login timeout %v", d, kinds(out))
+		}
+	}
+}

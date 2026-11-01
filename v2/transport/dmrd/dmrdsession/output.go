@@ -57,7 +57,8 @@ const (
 	OutputLogin
 	// OutputConfig reports the RPTC of the repeater in Output.ID at a
 	// Master, in Output.Packet. Check it, and call Master.Accept or
-	// Master.Refuse.
+	// Master.Refuse. Master.Packet reports it for the RPTC, or for the
+	// RPTK when the RPTC came first, from a copy in the Master.
 	OutputConfig
 	// OutputOptions reports the RPTO options text that the Master
 	// accepted, in Output.Packet. Master.Accept reports the RPTO that

@@ -265,7 +265,15 @@ func (m *Master) nak(dst []Output, id uint32) []Output {
 // for the RPTK. An RPTK with the token of the salt and the password gets
 // an acknowledgement, and another token MSTNAK. An RPTC for the ID, in
 // StateConfig or StateRunning, reports OutputConfig and waits for Accept
-// or Refuse; in StateConfig LoginTimeout still runs.
+// or Refuse; in StateConfig LoginTimeout still runs. An RPTC for the ID
+// in StateAuth, which MMDVMHost and DMRGateway send when they take a
+// second salt for the acknowledgement of their RPTK and the RPTC
+// arrives before the RPTK, gets no answer: the Master keeps a copy of
+// the last one, and the good RPTK reports it with OutputConfig after its
+// acknowledgement, with a packet that points into the Master and is valid
+// until the next call of the Master. A wrong RPTK, the end of the session
+// and LoginTimeout discard the copy. The Master checks only the ID; the
+// consumer passes it only the packets of the address of the session.
 // In StateRunning an RPTO gets an acknowledgement and OutputOptions, a
 // ping gets a pong and OutputPong, an RPTCL ends the session with ReasonClosed, and
 // DMRD, DMRA, DMRG, RPTG, RPTRSSI and RPTINTR are passed on. A packet of
@@ -353,8 +361,14 @@ func (m *Master) token(b []byte, dst []Output) []Output {
 		dst = m.nak(dst, k.ID)
 		return m.down(dst, ReasonRefused)
 	}
+	auth := m.state == StateAuth
 	m.state = StateConfig
-	return m.acked(dst)
+	dst = m.acked(dst)
+	if auth && m.held {
+		m.held, m.asked = false, true
+		dst = append(dst, Output{Kind: OutputConfig, Packet: m.heldText[:m.heldN], ID: m.id})
+	}
+	return dst
 }
 
 func (m *Master) running(now time.Duration, b []byte, c dmrd.Command, dst []Output) []Output {
@@ -403,6 +417,10 @@ func (m *Master) config(now time.Duration, b []byte, dst []Output) []Output {
 		}
 	}
 	if err != nil {
+		return dst
+	}
+	if m.state == StateAuth && id == m.id {
+		m.held, m.heldN = true, copy(m.heldText[:], b)
 		return dst
 	}
 	if (m.state != StateConfig && m.state != StateRunning) || id != m.id {
