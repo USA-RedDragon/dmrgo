@@ -85,7 +85,11 @@ func txPowerClasses() []int {
 }
 
 func wattsOf(dbm int) string {
-	return strconv.FormatFloat(math.Pow(10, float64(dbm-30)/10), 'f', -1, 64) + " W"
+	w := math.Pow(10, float64(dbm-30)/10)
+	if w < 10 {
+		return strconv.FormatFloat(math.Round(w*10)/10, 'f', -1, 64) + " W"
+	}
+	return strconv.FormatFloat(math.Round(w), 'f', -1, 64) + " W"
 }
 
 func tier0AudioRates() []int {

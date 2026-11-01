@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -162,7 +163,7 @@ func (s *goSource) configErrors(prefixes ...string) []string {
 	var out []string
 	for _, e := range s.errs {
 		for _, p := range prefixes {
-			if strings.HasPrefix(e, p) && !seen[e] {
+			if strings.HasPrefix(e, p) && !seen[e] && slices.Contains(s.fields[strings.TrimSuffix(p, ".")], strings.TrimPrefix(e, p)) {
 				seen[e] = true
 				out = append(out, e)
 			}
