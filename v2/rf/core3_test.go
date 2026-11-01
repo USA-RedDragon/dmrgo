@@ -469,3 +469,26 @@ func TestCoreTier3WeakDataPlaced(t *testing.T) {
 		t.Errorf("%d of %d data bursts inside a stream not placed", drops, n)
 	}
 }
+
+func TestCoreTier3WeakProof(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 30)
+	sig := cleanBaseband(slots, 1400)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var sc benchScore
+	for s := range uint64(4) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r := scoreBench(truth, benchReceive(t, sig.noisy(-2.5, 70+s), benchEntry{benchIQ, Tier3}))["sync"]
+			mu.Lock()
+			sc.Exact, sc.Truth = sc.Exact+r.Exact, sc.Truth+r.Truth
+			mu.Unlock()
+		}()
+	}
+	wg.Wait()
+	if 100*sc.Exact < 93*sc.Truth {
+		t.Errorf("%d of %d SYNCs at C/N -2.5 dB", sc.Exact, sc.Truth)
+	}
+}
