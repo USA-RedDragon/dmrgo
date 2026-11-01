@@ -126,7 +126,7 @@ Init sets up t for c, in place of any state it holds, in Tier0 at a Rate of 9600
 Init sets up t for c, in place of any state it holds, in Tier0 at a Rate of 24000 or 48000. It does not allocate, so that t can live in memory of the caller. It returns the errors of Transmitter.Init.
 <!-- /dmrgo:doc -->
 
-The [Receiver](../rx/README.md) datasheet gives the sensitivity of each tier, and the [Transmitter](../tx/README.md#tier-0-cost) datasheet gives the CPU, RAM and flash of the Tier 0 modulators on a Cortex-M4F.
+The [Receiver](../rx/README.md) datasheet gives the sensitivity of each tier, and the [Transmitter](../tx.md#key-specifications) datasheet gives the CPU, RAM and flash of the Tier 0 modulators on a Cortex-M4F.
 
 ## Heap rules
 

@@ -26,7 +26,7 @@ const (
 	txLevelEnd   = "<!-- txsheet:levels:end -->"
 	txGraphBegin = "<!-- txsheet:graphs:begin -->"
 	txGraphEnd   = "<!-- txsheet:graphs:end -->"
-	txImgDir     = ""
+	txImgDir     = "tx/"
 	txLowBegin   = "<!-- txsheet:lowpass:begin -->"
 	txLowEnd     = "<!-- txsheet:lowpass:end -->"
 	txPEBegin    = "<!-- txsheet:preemph:begin -->"

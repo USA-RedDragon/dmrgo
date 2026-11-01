@@ -17,10 +17,10 @@ import (
 	"testing"
 )
 
-var updateTxDoc = flag.Bool("update-txdoc", false, "measure the margins into testdata/txmargins.json and rewrite the tables of docs/tx/README.md")
+var updateTxDoc = flag.Bool("update-txdoc", false, "measure the margins into testdata/txmargins.json and rewrite the tables of docs/tx.md")
 
 const (
-	txDocFile     = "../../../docs/tx/README.md"
+	txDocFile     = "../../../docs/tx.md"
 	txMarginsFile = "testdata/txmargins.json"
 	txDocBegin    = "<!-- txdoc:begin -->"
 	txDocEnd      = "<!-- txdoc:end -->"
@@ -262,7 +262,7 @@ func TestTxDocRowsCoverLimits(t *testing.T) {
 			for _, pw := range limPowers {
 				for _, k := range regimeKeys(r, s, pw) {
 					if !shown[k] {
-						t.Errorf("limit %s of %s %s %g dBm has no row in docs/tx/README.md", k, limRegionNames[r], limServiceNames[s], pw)
+						t.Errorf("limit %s of %s %s %g dBm has no row in docs/tx.md", k, limRegionNames[r], limServiceNames[s], pw)
 					}
 				}
 			}
@@ -274,7 +274,7 @@ func TestTxDoc(t *testing.T) {
 	t.Parallel()
 	doc, err := os.ReadFile(txDocFile)
 	if errors.Is(err, fs.ErrNotExist) && !*updateTxDoc {
-		t.Skip("docs/tx/README.md is not in this tree")
+		t.Skip("docs/tx.md is not in this tree")
 	}
 	if err != nil {
 		t.Fatal(err)

@@ -71,7 +71,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - Calls ([`voice`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice), [`csbk`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk), [`privacy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy)): voice call receive and transmit with late entry, channel access and hang time; CSBK services and TDMA direct mode timing; ARC4, AES and Basic Privacy, opt in.
 - Base station and trunking ([`bs`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/bs), [`trunk`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk)): a two-slot repeater or hotspot, and Tier III trunking for the MS, a scanner and a single-site TSCC.
 - Network protocols (`transport/...`: [`dmrd`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd), [`ipsc`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc), [`hytera`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera), [`mmdvm`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm)): the MMDVM network protocol, HBRP, OpenBridge, Motorola IPSC, Hytera IPMSC and the MMDVM serial protocol, with session machines and their authentication.
-- Radio ([`rf`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf)): a receiver of I/Q and FM discriminator audio in four tiers, from a microcontroller to a PC ([Receiver](docs/rx/README.md)), and a transmitter of I/Q and modulator audio that accepts only setups measured to keep the limits of a stated region and service ([Transmitter](docs/tx/README.md)).
+- Radio ([`rf`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf)): a receiver of I/Q and FM discriminator audio in four tiers, from a microcontroller to a PC ([Receiver](docs/rx/README.md)), and a transmitter of I/Q and modulator audio that accepts only setups measured to keep the limits of a stated region and service ([Transmitter](docs/tx.md)).
 - Vocoders ([`vocoder`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder)): the AMBE+2 frame FEC, Codec2, and AMBE+2 on a DVSI chip ([Transcode voice](docs/guides/transcode-voice.md)).
 - FEC: every DMR code and CRC, each with one result type.
 - C API (`v2/capi`, [C header](docs/reference/c-api.md)): libdmrgo, a shared or static library with the whole API in C.
@@ -83,7 +83,7 @@ The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 - [Features](docs/reference/features.md): every feature, by package.
 - [Examples](docs/reference/examples.md): the example programs.
 - [Receiver](docs/rx/README.md): the tiers of `rf`, their sensitivity and cost, and how they are measured.
-- [Transmitter](docs/tx/README.md): the tiers, formats and rates, the regional limits and the measured margins.
+- [Transmitter](docs/tx.md): the tiers, formats and rates, the regional limits and the measured margins.
 - [Transcode voice](docs/guides/transcode-voice.md): AMBE+2 FEC, the Codec2 backends and DVSI chips.
 - [Allocation](docs/concepts/allocation.md): where the library can allocate, and the checks.
 - Targets: [PC](docs/targets/pc.md), [Browser](docs/targets/browser.md), [Microcontrollers](docs/targets/mcu.md), [C API](docs/targets/c.md) and [GNU Radio](docs/targets/gnuradio.md).

@@ -47,7 +47,7 @@
 // repeater or a duplex hotspot with a radio on each slot. The constructors
 // allocate every buffer of the receiver, and Write and Flush allocate
 // nothing. docs/rx/README.md gives the sensitivity, compute and RAM of each
-// tier, and docs/tx/README.md the limits and cost of the transmitter.
+// tier, and docs/tx.md the limits and cost of the transmitter.
 //
 // The transmit side mirrors it. NewTransmitter makes a Transmitter from a
 // TxConfig and NewAudioTransmitter an AudioTransmitter from an

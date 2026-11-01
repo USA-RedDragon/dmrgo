@@ -418,16 +418,16 @@ The audio tiers and the DMR DMO modulator of the MMDVM firmware (commit 046e1df1
 - FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3.
 - The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over 64 noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.
 
-![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](compare_spectrum.svg)
+![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](tx/compare_spectrum.svg)
 
 <details><summary>Eye diagrams</summary>
 
 The frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.
 
-![Eye diagram of dmrgo audio tier 0](compare_eye_0.svg)
-![Eye diagram of dmrgo audio tier 1](compare_eye_1.svg)
-![Eye diagram of dmrgo audio tier 2](compare_eye_2.svg)
-![Eye diagram of MMDVM firmware](compare_eye_3.svg)
+![Eye diagram of dmrgo audio tier 0](tx/compare_eye_0.svg)
+![Eye diagram of dmrgo audio tier 1](tx/compare_eye_1.svg)
+![Eye diagram of dmrgo audio tier 2](tx/compare_eye_2.svg)
+![Eye diagram of MMDVM firmware](tx/compare_eye_3.svg)
 
 </details>
 

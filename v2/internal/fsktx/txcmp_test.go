@@ -204,7 +204,7 @@ func TestTxCompare(t *testing.T) {
 	t.Parallel()
 	doc, err := os.ReadFile(txDocFile)
 	if errors.Is(err, fs.ErrNotExist) && !*updateTxCmp {
-		t.Skip("docs/tx/README.md is not in this tree")
+		t.Skip("docs/tx.md is not in this tree")
 	}
 	if err != nil {
 		t.Fatal(err)
@@ -286,10 +286,10 @@ func renderTxCmp(d txCmpData) string {
 	b.WriteString("- The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz. Higher is better.\n")
 	b.WriteString("- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3.\n")
 	b.WriteString("- The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over " + strconv.Itoa(d.Seeds) + " noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.\n\n")
-	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](compare_spectrum.svg)\n\n")
+	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](" + txImgDir + "compare_spectrum.svg)\n\n")
 	b.WriteString("<details><summary>Eye diagrams</summary>\n\nThe frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.\n\n")
 	for k, r := range d.Rows {
-		b.WriteString("![Eye diagram of " + r.Name + "](compare_eye_" + strconv.Itoa(k) + ".svg)\n")
+		b.WriteString("![Eye diagram of " + r.Name + "](" + txImgDir + "compare_eye_" + strconv.Itoa(k) + ".svg)\n")
 	}
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("`DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes this block and its graphs.\n\n")

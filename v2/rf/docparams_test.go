@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	docTxFile = "../../docs/tx/README.md"
+	docTxFile = "../../docs/tx.md"
 )
 
 func hzText(hz float64) string {

@@ -63,7 +63,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [GNU Radio](targets/gnuradio.md)
 - Datasheets
   - [Receiver](rx/README.md)
-  - [Transmitter](tx/README.md)
+  - [Transmitter](tx.md)
 - Reference
   - [Go API](reference/go-api.md)
   - [C header](reference/c-api.md)

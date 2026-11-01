@@ -101,6 +101,6 @@ The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.
 | `Power` | `int` | `top` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. |
 <!-- /dmrgo:config -->
 
-The [Transmitter datasheet](../tx/README.md) gives the limits, the formats, the rates and the measured margins of each transmit tier.
+The [Transmitter datasheet](../tx.md) gives the limits, the formats, the rates and the measured margins of each transmit tier.
 
 Next: [Get started](../start/01-install.md), if you have not done it yet.
