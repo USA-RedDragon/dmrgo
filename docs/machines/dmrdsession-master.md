@@ -49,9 +49,10 @@ Transitions seen in tests:
 | StateLogin | `Admit` | StateAuth |
 | StateAuth | `Packet`, `Tick` | StateIdle |
 | StateAuth | `Packet` | StateConfig |
-| StateConfig | `Accept`, `Refuse`, `Tick` | StateIdle |
+| StateConfig | `Accept`, `Refuse`, `Reset`, `Tick` | StateIdle |
 | StateConfig | `Accept` | StateRunning |
 | StateRunning | `Close`, `Packet`, `Reset`, `Tick` | StateIdle |
+| StateRunning | `Packet` | StateLogin |
 
 ![Transitions of Master](states/transport-dmrd-dmrdsession-master.svg)
 <!-- /dmrgo:states -->
