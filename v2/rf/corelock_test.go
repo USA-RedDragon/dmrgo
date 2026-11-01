@@ -85,7 +85,7 @@ func checkLockErrors(t *testing.T, seeds map[float64][]uint64) {
 	}{
 		{"Tier 2", func() *Receiver { return mustNew(RxConfig{Rate: basebandRate, Tier: Tier2, Format: IQFormatCU8}) }},
 		{"core Tier 3", func() *Receiver {
-			return mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+			return mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 		}},
 	} {
 		for _, cn := range []float64{0, 1, 2} {

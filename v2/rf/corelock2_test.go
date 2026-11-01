@@ -49,7 +49,7 @@ func TestCoreFirstLock(t *testing.T) {
 	}{
 		{"Tier 2", func() *Receiver { return mustNew(RxConfig{Rate: basebandRate, Tier: Tier2, Format: IQFormatCU8}) }},
 		{"core Tier 3", func() *Receiver {
-			return mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+			return mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 		}},
 	} {
 		for i, s := range firstLockSlots(t, 0, seeds, rx.new) {

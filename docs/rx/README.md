@@ -408,7 +408,7 @@ First burst after a noise lead, I/Q tier 0 at 2.048 Msps, 30 starts per offset (
 
 ## The deviation reading
 
-`Receiver.DeviationHz` gives the outer deviation of the last locked stream. The spec value is 1944 Hz. Tier 3 reads it from the fitted modulation index. The lower tiers read it from the sync symbol levels. Two parts of the receiver make those levels low:
+`Receiver.DeviationHz` gives the outer deviation of the last locked stream. The spec value is 1944 Hz. Every tier reads it from the sync symbol levels. Two parts of the receiver make those levels low:
 
 - The discriminator measures the phase step over one sample, so it averages the frequency over that sample. At 12 kHz this takes 2.6% off the levels, at 24 kHz 0.9%.
 - The channel filter cuts the edges of the FM spectrum. On the tuned frequency this takes 2.3 to 3.2% more off the levels, and more when the carrier is off the tuned frequency.

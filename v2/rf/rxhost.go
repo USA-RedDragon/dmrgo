@@ -28,7 +28,7 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	switch {
 	case low:
 		opt = iqLowOptions()
-	case (cfg.Tier == Tier1 || cfg.Tier == Tier2) && cfg.LookbackSlots > 0:
+	case cfg.Tier != Tier0 && cfg.LookbackSlots > 0:
 		opt.ExtLookback = cfg.LookbackSlots
 	}
 	if o != nil {

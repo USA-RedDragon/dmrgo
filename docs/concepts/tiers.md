@@ -43,13 +43,15 @@ const (
 	// It holds each burst one slot longer and keeps about 550 KB on audio
 	// and 565 KB on I/Q, 75 KB of that for the input samples.
 	Tier2
-	// Tier3 on I/Q detects over a window of three symbols with one of 52
-	// carrier phases in the trellis state, in two passes, detects each
-	// voice burst again with the bits that its FEC fixed, and takes each
-	// voice frame from it or from a Tier2 receiver beside it. It needs
-	// about 70 times the compute of Tier2 and about 36 MB, for offline
-	// decoding on a PC. On audio it is Tier2 with four passes over each
-	// data burst, at about twice the compute of Tier2.
+	// Tier3 detects the bursts of Tier2 again by log-MAP over a window of
+	// three symbols with one of 52 carrier phases in the trellis state and
+	// no compute budget, and detects each voice burst once more with the
+	// bits that its FEC fixed. On I/Q it also filters the samples of the
+	// trellis to the channel width, fits the burst timing over slots and
+	// keeps 16 lookback slots; on audio it makes four passes over each data
+	// burst. It needs about 20 times the compute of Tier2 on I/Q and 10
+	// times on audio, and keeps about 2.3 MB on I/Q and 1.3 MB on audio, for
+	// decoding on a PC.
 	Tier3
 )
 ```
@@ -78,7 +80,7 @@ The `Tier` field of [rf.RxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dm
 | `Format` | `IQFormat` | `IQFormatCS16` (3) | Format is the layout of the I/Q samples. 0 means IQFormatCS16. |
 | `OffsetHz` | `float64` | not machine-readable; see the description | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. |
 | `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
-| `LookbackSlots` | `int` | `16` | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
+| `LookbackSlots` | `int` | not machine-readable; see the description | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
 | `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo.ConfigError for it. |
 <!-- /dmrgo:config -->
 

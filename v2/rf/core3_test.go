@@ -18,7 +18,7 @@ func TestCoreTier3(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 4)
 	x := noisyBaseband(slots, 1400, 12, 1)
-	iq := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+	iq := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 	var got []Burst
 	for k := 0; k < len(x); k += 4096 {
 		got = append(got, must(iq.writeBB(x[k:min(k+4096, len(x))]))...)
@@ -40,23 +40,17 @@ func TestCoreTier3(t *testing.T) {
 
 func coreAudio3(t testing.TB, cfg AudioRxConfig) *AudioReceiver {
 	t.Helper()
-	opt := coreAudio3Options()
-	r := &AudioReceiver{}
-	r.configure(cfg, &opt)
-	r.designResample(cfg.Tier)
-	if err := r.addSoft(&opt); err != nil {
+	cfg.Tier = Tier3
+	r, err := NewAudioReceiver(&cfg)
+	if err != nil {
 		t.Fatal(err)
-	}
-	r.attachFix(true)
-	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
-		r.bursts.out = make([]Burst, 0, n)
 	}
 	return r
 }
 
 func TestCohSlotFit(t *testing.T) {
 	t.Parallel()
-	opt := coreIQ3Options()
+	opt := tierOptions(Tier3)
 	if !opt.CohSlotFit {
 		t.Fatal("core Tier 3 I/Q runs without the slot timing fit")
 	}
@@ -136,7 +130,7 @@ func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
 func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss float64) {
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	n := int((start + 16*slotSeconds) * basebandRate)
-	lookback := float64(coreIQ3Options().ExtLookback * slotSymbols)
+	lookback := float64(tierOptions(Tier3).ExtLookback * slotSymbols)
 	var exact, total atomic.Int64
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -147,7 +141,7 @@ func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss 
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+				r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 				x := sig.noisy(cn, 7000+seed)
 				var got []Burst
 				for k := 0; k < len(x); k += 4096 {
@@ -202,7 +196,7 @@ func ambeInSlots(truth []benchSlot, got []Burst, n int) (exact, total int) {
 func TestCoreTier3Ring(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 	x := noisyBaseband(slots, 1400, 40, 1)
 	for k := 0; k < len(x); k += 4096 {
 		must(r.writeBB(x[k:min(k+4096, len(x))]))
@@ -262,11 +256,11 @@ func TestCoreTier3Lag(t *testing.T) {
 	const rate = 48000
 	in := cf32(dgUpsample(x, rate))
 	fed, worst, n := 0, 0.0, 0
-	r := mustNewOpt(RxConfig{Rate: rate, Tier: Tier3, Format: IQFormatCF32, OnBursts: func(bs []Burst) {
+	r := mustNew(RxConfig{Rate: rate, Tier: Tier3, Format: IQFormatCF32, OnBursts: func(bs []Burst) {
 		for _, b := range bs {
 			worst, n = max(worst, float64(fed/8)-(b.Seconds+burstSeconds)*float64(rate)), n+1
 		}
-	}}, coreIQ3Options())
+	}})
 	step := 8 * max(chunk, rate/3000)
 	for k := 0; k < len(in); k += step {
 		fed = min(k+step, len(in))
@@ -314,7 +308,7 @@ func TestCoreTier3Codec2Call(t *testing.T) {
 	t.Parallel()
 	for _, late := range []bool{false, true} {
 		x, want, start := codec2Call(t, 4, late, 30)
-		r := mustNewOpt(RxConfig{Tier: Tier3, Rate: basebandRate, Format: IQFormatCU8}, coreIQ3Options())
+		r := mustNew(RxConfig{Tier: Tier3, Rate: basebandRate, Format: IQFormatCU8})
 		var got []Burst
 		for k := 0; k < len(x); k += 4096 {
 			got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
@@ -340,7 +334,7 @@ func TestCoreTier3SlowClock(t *testing.T) {
 		for _, off := range []float64{0, 3000} {
 			for _, ppm := range []float64{500, -500} {
 				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
-				r := mustNewOpt(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+				r := mustNew(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8})
 				got := r.AppendFlush(r.AppendBursts(nil, iq))
 				if len(got) != len(built.Bursts) {
 					t.Errorf("%.1f s lead %+.0f Hz %+.0f ppm: %d bursts, want %d", lead, off, ppm, len(got), len(built.Bursts))
@@ -370,7 +364,7 @@ func mxReceiveCore(t testing.TB, in mxInput) []Burst {
 		}
 		return r.AppendFlush(got)
 	}
-	r, err := newReceiver(RxConfig{Rate: in.rate, Tier: Tier3, Format: in.iqFmt}, ptr(coreIQ3Options()))
+	r, err := newReceiver(RxConfig{Rate: in.rate, Tier: Tier3, Format: in.iqFmt}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -403,7 +397,7 @@ func TestCoreTier3ReplayTime(t *testing.T) {
 
 func TestCoreTier3BurstContinuity(t *testing.T) {
 	t.Parallel()
-	if o := coreIQ3Options(); o.CohNoCross || o.CohNoNext {
+	if o := tierOptions(Tier3); o.CohNoCross || o.CohNoNext {
 		t.Error("core Tier 3 I/Q detects each burst without the trellis of the burst before and after it")
 	}
 }

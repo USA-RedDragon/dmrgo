@@ -19,7 +19,7 @@ func TestCoreTier3RawBitsAtLock(t *testing.T) {
 		fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 		for _, off := range []float64{1500, 3000, -3000, 4000} {
 			iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
-			r, err := newReceiver(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8}, ptr(coreIQ3Options()))
+			r, err := newReceiver(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8}, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -45,7 +45,7 @@ func TestCoreTier3LockRetune(t *testing.T) {
 		t.Fatal(err)
 	}
 	in := mxInputOf(s, row)
-	r, err := newReceiver(RxConfig{Rate: in.rate, Tier: Tier3, Format: in.iqFmt}, ptr(coreIQ3Options()))
+	r, err := newReceiver(RxConfig{Rate: in.rate, Tier: Tier3, Format: in.iqFmt}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestCoreTier3LockRetune(t *testing.T) {
 
 func TestCoreTier3Adjacent(t *testing.T) {
 	t.Parallel()
-	o := coreIQ3Options()
+	o := tierOptions(Tier3)
 	for _, seed := range []uint64{1, 36, 43} {
 		if n, want, _ := adjacentReceiveSeed(t, Tier3, &o, 0, seed); n < want {
 			t.Errorf("seed %d: C0 and C1 of %d of %d voice frames exact", seed, n, want)

@@ -22,13 +22,13 @@ func TestCoreTier3CarrierLead(t *testing.T) {
 				t.Parallel()
 				in := rxBuild(streams["bs"], c, cn, false, rxSeed("bs"+c.name))
 				engine := rxMatch(rxEligible(in), rxReceive(t, in, rxRecv{benchEntry: benchEntry{benchIQ, Tier3}}))
-				r, err := newReceiver(RxConfig{Tier: Tier3, Rate: basebandRate, Format: IQFormatCU8}, ptr(coreIQ3Options()))
+				r, err := newReceiver(RxConfig{Tier: Tier3, Rate: basebandRate, Format: IQFormatCU8}, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				var got []Burst
 				if in.iq != nil {
-					r, err = newReceiver(RxConfig{Tier: Tier3, Rate: rxByteRate, Format: IQFormatCU8}, ptr(coreIQ3Options()))
+					r, err = newReceiver(RxConfig{Tier: Tier3, Rate: rxByteRate, Format: IQFormatCU8}, nil)
 					if err != nil {
 						t.Fatal(err)
 					}

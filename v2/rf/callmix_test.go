@@ -97,7 +97,7 @@ func callMix(t testing.TB, cn float64, seed uint64, tail float64, talkers ...cal
 
 func receiveCore3(t testing.TB, x []complex64) []Burst {
 	t.Helper()
-	r, err := newReceiver(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, ptr(coreIQ3Options()))
+	r, err := newReceiver(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -72,7 +72,7 @@ func TestCoreTier3LockOffset(t *testing.T) {
 	slots, _ := benchStream(t, 1)
 	for _, off := range []float64{1400, -1400} {
 		iq := cu8Spur(noisyBaseband(slots, off, 10, 7), 32, -0.5)
-		r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8}, coreIQ3Options())
+		r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 		at, _, ok := lockNCOOf(iq, r, basebandRate)
 		if !ok || math.Abs(at-off) > iqAFCPullHz {
 			t.Errorf("core Tier 3 at %.0f Hz, C/N 10 dB: oscillator at %.0f Hz at the lock (locked %v), want within %d Hz", off, at, ok, iqAFCPullHz)

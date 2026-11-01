@@ -404,11 +404,10 @@ func (r *Receiver) OffsetHz() float64 {
 }
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
-// Tier3 reads it from the fitted modulation index, or from its Tier2 side
-// when its trellis has not locked. The lower tiers read it from the sync
-// symbol levels and divide out the response of their channel filter and
-// discriminator at the carrier offset from the tuned frequency. For a clean
-// 1944 Hz signal the reading is 1 to 1.5% low and within 3% at every offset.
+// Every tier reads it from the sync symbol levels and divides out the
+// response of its channel filter and discriminator at the carrier offset
+// from the tuned frequency. For a clean 1944 Hz signal the reading is 1 to
+// 1.5% low and within 3% at every offset.
 // The lookup uses the carrier offset of the samples of each sync fit, so a
 // retune after a fit does not change it. A sync fit made before the timing
 // settles can move the reading by a few percent more. At a Rate of 9600 the

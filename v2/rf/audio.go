@@ -18,12 +18,10 @@ type AudioRxConfig struct {
 	// allocate the stages of the higher tiers, and under TinyGo, which has
 	// neither. Tier2 detects the bursts again coherently, on the carrier
 	// phase that it rebuilds from the samples, at about 5 times the CPU
-	// time of Tier1. Tier3 runs Tier2 and, beside it, a receiver with more
-	// coherent CPU time and four passes over each data burst. It keeps
-	// every burst of Tier2 and adds the bursts that Tier2 misses, the data
-	// bursts that pass a CRC where those of Tier2 fail, and the embedded
-	// LCs that pass where those of Tier2 fail, at about twice the CPU time
-	// and memory of Tier2, and 3 s of delay.
+	// time of Tier1. Tier3 detects the bursts of Tier2 again over 52
+	// carrier phases with no compute budget and makes four passes over
+	// each data burst, at about 10 times the CPU time of Tier2, 1.3 MB and
+	// the delay of Tier2.
 	Tier Tier
 	// Rate is the sample rate of the discriminator samples, in Hz, from
 	// 8000 to 1000000, and for Tier0 to 48000. 0 means 48000. The
