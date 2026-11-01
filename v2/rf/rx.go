@@ -387,6 +387,8 @@ func (r *Receiver) SampleBytes() int {
 }
 
 // OffsetHz returns the carrier offset of the last stream that ended, in Hz.
+// Tier2 and Tier3 return the carrier of their coherent fit, which also
+// follows the stream in progress.
 func (r *Receiver) OffsetHz() float64 {
 	if r == nil {
 		return 0

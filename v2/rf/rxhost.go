@@ -117,6 +117,9 @@ func (r *rxHost) active() bool {
 func (r *rxHost) offsetHz() float64 {
 	switch {
 	case r.iqd != nil:
+		if x, _ := r.iqd.d.ext.(*softExt); x != nil && x.coh != nil && x.coh.freqOK {
+			return x.coh.totalHz
+		}
 		return float64(r.iqd.conv.hz) + r.iqd.d.offset()/iqUnitsPerHz
 	case r.lean != nil:
 		return float64(r.lean.offsetHz)

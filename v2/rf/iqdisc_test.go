@@ -327,3 +327,70 @@ func TestIQAFCAvgChunks(t *testing.T) {
 		}
 	}
 }
+
+func TestReceiverOffsetHzTransmitters(t *testing.T) {
+	t.Parallel()
+	const rate = 2400000
+	bound := 1 / (8 * burstSeconds)
+	slots, _ := benchStream(t, 2)
+	bs := make([]Burst, len(slots))
+	for i, s := range slots {
+		bs[i] = Burst{Data: s.Burst, CACH: s.CACH, HasCACH: true, BS: true, Stream: 1, Slot: int64(i)}
+	}
+	cfg := testConfig()
+	cfg.BSSourced = false
+	built, err := rftx.Sequence("data12", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ms := make([]Burst, len(built.Bursts))
+	for i, raw := range built.Bursts {
+		ms[i] = Burst{Data: raw, Stream: 1, Slot: 2 * int64(i)}
+	}
+	signal := func(src string, base bool, hz float64) []byte {
+		if src == "rrc" {
+			x := cleanBaseband(slots, hz).noisy(60, 1)
+			if !base {
+				f, e := rftx.Modulate(built.Bursts, rftx.Schedule{})
+				x = noisyFM(f, e, hz, 60, 1)
+			}
+			return iqBytes(dgUpsample(x, rate), IQFormatCF32)
+		}
+		var out []byte
+		c := usIQ(Tier1, rate, IQFormatCF32)
+		if src == "tx2" {
+			c.Tier = Tier2
+		}
+		c.OffsetHz, c.OnSamples = hz, func(b []byte) { out = append(out, b...) }
+		tx, err := NewTransmitter(&c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		in := ms
+		if base {
+			in = bs
+		}
+		if _, err := tx.Write(in); err != nil {
+			t.Fatal(err)
+		}
+		_ = tx.Flush()
+		pad := make([]byte, 8*rate/10)
+		return append(append(pad, out...), pad...)
+	}
+	for _, src := range []string{"rrc", "tx1", "tx2"} {
+		for _, base := range []bool{false, true} {
+			for _, hz := range []float64{0, -4460, 3000} {
+				b := signal(src, base, hz)
+				r := mustNew(RxConfig{Tier: Tier3, Rate: rate, Format: IQFormatCF32})
+				n := 0
+				for k := 0; k < len(b); k += 1 << 16 {
+					n += len(must(r.writeIQ(b[k:min(k+1<<16, len(b))])))
+				}
+				n += len(r.flushAll())
+				if e := r.OffsetHz() - hz; n == 0 || math.Abs(e) > bound {
+					t.Errorf("%s BS %v at %+g Hz: OffsetHz %+.1f Hz off with %d bursts, bound %.1f Hz", src, base, hz, e, n, bound)
+				}
+			}
+		}
+	}
+}
