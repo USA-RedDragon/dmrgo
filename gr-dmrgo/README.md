@@ -46,7 +46,7 @@ A Codec2 call in direct mode, with its audio on the audio output:
 
 ## Build
 
-The build needs Go, a C compiler, libcodec2 and GNU Radio 3.10. It builds libdmrgo from `../v2/capi`; set `-DDMRGO_LIBRARY=<path>` to use a library that is already built.
+The build needs Go, a C compiler, CMake and GNU Radio 3.10. It builds libdmrgo with the Makefile of `../v2/capi`, and `libgrdmrgo_rx.so`, the receiver of the block, from `lib`; set `-DDMRGO_LIBRARY=<path>` to use a libdmrgo that is already built.
 
 ```sh
 cmake -S . -B build
