@@ -1725,6 +1725,7 @@ func (s *cohStage) runExact(rot complex64, scale float32) {
 	for k := range s.steps {
 		s.runPrior(k, e.xt.lp[4*k:4*k+4])
 	}
+	e.setIndex(s.hFit)
 	app := e.exec(s.steps, rot, scale, anchorKappa)
 	for k := range s.steps {
 		s.runKeep(k, app[4*k:4*k+4])

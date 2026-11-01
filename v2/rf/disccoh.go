@@ -514,6 +514,9 @@ func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 		s.hVar *= 1 - g
 		s.hFit *= math.Exp(g * e)
 		s.hNew = false
+		if s.ex != nil && math.Abs(e) >= span-discFitStep/2 {
+			s.hNew, s.hVar = true, max(s.hVar, cohIndexStart)
+		}
 		f := s.hFit / cohSyncIndex
 		if math.Abs(f/cohIndex-1) < cohIndexNear {
 			f = cohIndex

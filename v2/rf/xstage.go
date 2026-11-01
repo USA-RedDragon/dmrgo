@@ -1,6 +1,8 @@
 package rf
 
 import (
+	"math"
+
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -19,6 +21,16 @@ func newExactStage(m *cpmModel, opt *options, maxRun int) *exactStage {
 	xt := newXTrellis(m, np, maxRun)
 	xt.logmap = opt.LogMAP
 	return &exactStage{xt: xt, buf: make([]complex64, maxRun*m.sps), app: make([]float32, 4*maxRun)}
+}
+
+func (e *exactStage) setIndex(h float64) {
+	t := e.xt
+	if s := int(math.Round(h / 2 * float64(t.np))); s != t.step && s > 0 {
+		t.step = s
+		for v := range t.off {
+			t.off[v] = t.phaseAfter(0, v)
+		}
+	}
 }
 
 func (e *exactStage) exec(steps int, rot complex64, scale, kappa float32) []float32 {

@@ -409,15 +409,20 @@ func TestReceiverStartLevels(t *testing.T) {
 	for i, s := range slots {
 		bs[i] = s.Burst
 	}
-	devs := map[Tier][]float64{Tier0: {0.7, 0.85, 1, 1.15, 1.3}, Tier1: {1, 1.15, 1.3}, Tier2: {1}, Tier3: {1}}
+	devs := map[Tier][]float64{Tier0: {0.7, 0.85, 1, 1.15, 1.3}, Tier1: {1, 1.15, 1.3}, Tier2: {1}, Tier3: {0.85, 0.9, 0.925, 0.95, 1, 1.05, 1.1}}
 	type job struct {
 		ms   bool
 		dev  float64
 		lead float64
 	}
 	var jobs []job
+	var all []float64
+	for _, d := range devs {
+		all = append(all, d...)
+	}
+	slices.Sort(all)
 	for _, ms := range []bool{true, false} {
-		for _, d := range devs[Tier0] {
+		for _, d := range slices.Compact(all) {
 			for _, lead := range []float64{0, 0.1} {
 				jobs = append(jobs, job{ms, d, lead})
 			}
