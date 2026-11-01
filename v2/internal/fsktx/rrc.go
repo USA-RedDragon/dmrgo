@@ -166,6 +166,8 @@ func (p *pulse) invert(hz float64, chain func(f float64) float64) {
 // etsiHz is the tone of the deviation test pattern +3 +3 -3 -3 (ETSI TS
 const etsiHz = SymbolRate / 4.0
 
+const etsiDeviationHz = math.Sqrt2 * 3 * DeviationHz
+
 func (p pulse) baseGain(f float64) float64 {
 	const grid = 64
 	var a, b float64

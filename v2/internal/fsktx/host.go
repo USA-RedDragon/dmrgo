@@ -194,7 +194,9 @@ type AudioConfig struct {
 	// take the measured design of the tier at Hz from 24000: Exact with
 	// ExactPow 0.5 over a fitted pulse of eight symbols on each side,
 	// Shape 2 with zeros at 7 and 21 kHz, Corr 6 with CorrHiHz 12000 and
-	// Corr48k, ShapeSync 3 and Boost 0.009 over 48 pairs.
+	// Corr48k, ShapeSync 3, and Boost over 48 pairs set so that the peak
+	// deviation of the test pattern +3 +3 -3 -3 through the hold of the
+	// DAC is that of a run of +3 times the square root of 2.
 	Tier Tier
 	// Exact makes the pulse of Tier1 and Tier2 a Nyquist pulse after a
 	// receive root-raised-cosine filter, with the gain of a run of one
@@ -475,6 +477,11 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 	case TierDefault, Tier1, Tier2:
 		if cfg.Hz >= tierDesignHz && cfg.designZero() {
 			cfg.tierDesign()
+			if b, ok := tierBoost(cfg.Hz); ok {
+				cfg.Boost = b
+			} else if b, ok := cfg.toneBoost(); ok {
+				cfg.Boost = b
+			}
 		}
 		var extra []float64
 		for _, r := range cfg.Rates {

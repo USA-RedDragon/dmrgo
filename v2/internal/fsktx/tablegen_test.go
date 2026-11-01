@@ -5,11 +5,16 @@ package fsktx
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"go/format"
+	"io/fs"
 	"math"
 	"os"
+	"os/exec"
+	"slices"
+	"strconv"
 	"testing"
 )
 
@@ -76,9 +81,7 @@ func TestTablesGenerated(t *testing.T) {
 		t.Fatal(err)
 	}
 	if *updateTables {
-		if err := os.WriteFile(tablesFile, src, 0o600); err != nil {
-			t.Fatal(err)
-		}
+		updateTablesPass(t, src)
 		return
 	}
 	got, err := os.ReadFile(tablesFile)
@@ -87,6 +90,30 @@ func TestTablesGenerated(t *testing.T) {
 	}
 	if !bytes.Equal(got, src) {
 		t.Errorf("%s is out of date; run go generate ./... in the root module", tablesFile)
+	}
+}
+
+const tablePassCap = 4
+
+func updateTablesPass(t *testing.T, src []byte) {
+	old, err := os.ReadFile(tablesFile)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		t.Fatal(err)
+	}
+	if bytes.Equal(old, src) {
+		return
+	}
+	if err := os.WriteFile(tablesFile, src, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	pass, _ := strconv.Atoi(os.Getenv("DMRGO_TABLEGEN_PASS"))
+	if pass+1 >= tablePassCap {
+		t.Fatalf("%s is not at a fixed point after %d passes", tablesFile, tablePassCap)
+	}
+	cmd := exec.CommandContext(t.Context(), "go", "test", ".", "-run", "^TestTablesGenerated$", "-update", "-count=1")
+	cmd.Env = append(os.Environ(), "DMRGO_TABLEGEN_PASS="+strconv.Itoa(pass+1))
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("pass %d: %v\n%s", pass+1, err, out)
 	}
 }
 
@@ -255,6 +282,9 @@ func renderTables() ([]byte, error) {
 	}
 	renderPreEmph(&b)
 	renderNyquist(&b, *updateTables)
+	if err := renderTierBoost(&b); err != nil {
+		return nil, err
+	}
 	if err := renderMCUCorr(&b, mcuCorrPEFile, "mcuCorrPE"); err != nil {
 		return nil, err
 	}
@@ -549,4 +579,30 @@ var tierShapeSrc = []float64{
 	0.001666498, 0.001688013, 0.0016940477, 0.0016857916, 0.0016636751, 0.0016290745,
 	0.0015825815, 0.0015257078, 0.001459154, 0.0013845143, 0.0013025461, 0.0012148748,
 	0.0011222641, 0.0010263221, 0.0009277724, 0.0008281617, 0.0007281326,
+}
+
+func tierBoostRates() []int {
+	var r []int
+	for hz := tierDesignHz; hz <= 48000; hz += 500 {
+		r = append(r, hz)
+	}
+	r = append(r, 44100, 88200, 96000, 176400, 192000)
+	slices.Sort(r)
+	return r
+}
+
+func renderTierBoost(b *bytes.Buffer) error {
+	rates := tierBoostRates()
+	fmt.Fprintf(b, "var tierBoostTab = [%d]struct {\n\thz    int32\n\tboost float64\n}{\n", len(rates))
+	for _, hz := range rates {
+		c := AudioConfig{Hz: hz, Tier: Tier1}
+		c.tierDesign()
+		v, ok := c.toneBoost()
+		if !ok {
+			return fmt.Errorf("no Boost at %d Hz", hz)
+		}
+		fmt.Fprintf(b, "{%d, %s},\n", hz, strconv.FormatFloat(v, 'f', 6, 64))
+	}
+	b.WriteString("}\n\n")
+	return nil
 }
