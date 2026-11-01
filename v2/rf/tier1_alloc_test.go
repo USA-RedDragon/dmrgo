@@ -12,8 +12,10 @@ func TestAllocsTier1Weak(t *testing.T) {
 	const chunk = 1 << 12
 	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier1, Format: IQFormatCU8})
 	pos, bursts := 0, 0
+	var out []Burst
 	n := allocstest.PerRun(t, len(x)/chunk-2, func() {
-		bursts += len(must(r.writeBB(x[pos : pos+chunk])))
+		out = r.appendBB(out[:0], x[pos:pos+chunk])
+		bursts += len(out)
 		pos += chunk
 	})
 	if n != 0 || bursts == 0 {

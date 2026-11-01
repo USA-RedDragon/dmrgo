@@ -688,11 +688,11 @@ func steadyAllocs(t *testing.T, x []complex64, e benchEntry) float64 {
 		cfg = RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8}
 	}
 	r := mustNew(cfg)
-	must(r.writeBB(x[:chunk]))
+	dst := r.appendBB(nil, x[:chunk])
 	n := len(x)/chunk - 1
 	m := allocstest.Mallocs(t, nil, func() {
 		for i := 1; i <= n; i++ {
-			must(r.writeBB(x[i*chunk : (i+1)*chunk]))
+			dst = r.appendBB(dst[:0], x[i*chunk:(i+1)*chunk])
 		}
 	})
 	return float64(m) / float64(n)

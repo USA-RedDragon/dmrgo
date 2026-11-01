@@ -14,10 +14,10 @@ func TestAllocsIQDisc(t *testing.T) {
 		o.IQDisc, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC, o.ExtLookback = true, true, true, true, true, 8
 		r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier0, OnBursts: each(on), Format: IQFormatCU8}, o)
 		const chunk = 4096
-		must(r.writeBB(x[:chunk]))
+		dst := r.appendBB(nil, x[:chunk])
 		i := chunk
 		if n := allocstest.PerRun(t, 20, func() {
-			must(r.writeBB(x[i : i+chunk]))
+			dst = r.appendBB(dst[:0], x[i:i+chunk])
 			i += chunk
 		}); n != 0 {
 			t.Errorf("OnBurst %v: %v allocations per WriteBaseband", on != nil, n)

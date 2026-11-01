@@ -3,7 +3,6 @@ package rf
 import (
 	"encoding/binary"
 	"math"
-	"sync"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -45,57 +44,50 @@ func cf32(x []complex64) []byte {
 	return b
 }
 
-func (r *Receiver) collect(n int, run func()) []Burst {
+func (r *Receiver) collect(dst []Burst, n int, run func()) []Burst {
 	if r.mode == rxModeNone {
-		return nil
+		return dst
 	}
 	if r.sink.on != nil {
 		run()
 		r.sink.deliver()
-		return nil
+		return dst
 	}
-	r.sink.out = scratch(r, r.MaxOutput(n))
+	dst = growBursts(dst, r.MaxOutput(n))
+	k := len(dst)
+	r.sink.out = dst[k:k]
 	run()
-	out := r.sink.out
+	m := len(r.sink.out)
 	r.sink.out = nil
-	return out
+	return dst[:k+m]
 }
 
-var scratches sync.Map
-
-func scratch(key any, n int) []Burst {
-	if v, ok := scratches.Load(key); ok {
-		if b, ok := v.(*[]Burst); ok && cap(*b) >= n {
-			return (*b)[:0]
+func (r *Receiver) appendBB(dst []Burst, x []complex64) []Burst {
+	return r.collect(dst, len(x), func() {
+		if r.mode == rxModeLow {
+			r.low.writeBaseband(x)
+			return
 		}
-	}
-	b := make([]Burst, 0, n)
-	scratches.Store(key, &b)
-	return b
+		r.full.writeBaseband(x)
+	})
 }
 
 func (r *Receiver) writeBB(x []complex64) ([]Burst, error) {
 	if r.mode == rxModeNone {
 		return nil, ErrNotSetUp
 	}
-	return r.collect(len(x), func() {
-		if r.mode == rxModeLow {
-			r.low.writeBaseband(x)
-			return
-		}
-		r.full.writeBaseband(x)
-	}), nil
+	return r.appendBB(nil, x), nil
 }
 
 func (r *Receiver) writeIQ(x []byte) ([]Burst, error) {
 	if r.mode == rxModeNone {
 		return nil, ErrNotSetUp
 	}
-	return r.collect(len(x)/r.format.bytes()+1, func() { r.input(x) }), nil
+	return r.collect(nil, len(x)/r.format.bytes()+1, func() { r.input(x) }), nil
 }
 
 func (r *Receiver) flushAll() []Burst {
-	return r.collect(0, r.end)
+	return r.collect(nil, 0, r.end)
 }
 
 func mustAudio(cfg AudioRxConfig) *AudioReceiver {
@@ -123,7 +115,7 @@ func (r *AudioReceiver) collect(n int, run func()) []Burst {
 		r.bursts.deliver()
 		return nil
 	}
-	r.bursts.out = scratch(r, r.MaxOutput(n))
+	r.bursts.out = make([]Burst, 0, r.MaxOutput(n))
 	run()
 	out := r.bursts.out
 	r.bursts.out = nil
