@@ -237,6 +237,34 @@ The microphone input of an FM radio usually pre-emphasizes the audio, with a zer
 - Key the radio with `Active`.
 - Feed I/Q to a software radio at the stated `Rate` and `Format`.
 
+## Comparison notes
+
+### Audio correction on a flat radio
+
+The `Corr` correction of Tier 1 and Tier 2 audio is fitted through the radio model of the audio optimizer: a hold converter and a two-pole low pass at 8 kHz. Applied as fitted, it drives the band from 9 to 12.5 kHz too hard by 1/h, where h is the response of that model (-8.7 dB at 12 kHz), and on a radio with a flat response there the content lands on the steep part of Emission Mask D. That was the cause of the 2.3 dB loss of Mask D on the ideal radio model against the external transmitters in the comparison of October 2026. The band pass of `Corr` now scales the correction by 2h/(1+h), which leaves the same error on a flat radio as on the hold radio. `TestCorrFlatRadio` in `v2/internal/fsktx` measures the Mask D margin from 5.625 to 12.5 kHz on both radios with and without `Corr`, and fails unless `Corr` raises it by at least 0.5 dB on each.
+
+### Transmitter pairs
+
+<!-- txpairs:begin -->
+
+Two pairs of cells of the comparison of the transmit tiers with external transmitters (October 2026) took each half of the bar from a different transmitter. The external captures of that comparison are gone, so `TestTxPairs` compares Tier 1 audio with a stand-in for the GNU Radio transmitter: a plain root raised cosine of 16 symbols each side, through the same measurements, with 16-bit audio and a hold converter.
+
+| Cell | Tier 1 | Root raised cosine |
+| --- | ---: | ---: |
+| Adjacent channel power at 48 kHz, dBc | -67.79 | -58.81 |
+| Deviation error at 48 kHz, % | 0.2629 | 0.3975 |
+| Eye error at 96 kHz | 0.00959 | 0.01038 |
+| Eye error at 48 kHz, 10 Hz AC-coupled radio | 0.24560 | 0.24363 |
+| The same, without the fit of gain and offset | 0.35335 | 0.35283 |
+| Mean eye error, 10 Hz AC-coupled radio, 64 random streams | 0.29107 | 0.29122 |
+
+- Adjacent channel power against deviation error: Tier 1 is lower on both cells at once.
+- AC-coupled eye against the 96 kHz eye: Tier 1 has the lower 96 kHz eye. On the test stream, without the fit of gain and offset, the AC-coupled eye error is the wander of the data through the 10 Hz high pass and differs by 0.00052 between the two; with the fit, the rest is the intersymbol error of the one symbol where the wander peaks. Over 64 random streams of the same length, each sent by both, the paired difference of Tier 1 less the root raised cosine is -0.00015 with a standard error of 0.00018, and they win 33 and 31 streams: a tie within two standard errors, so the one-stream cell is an artifact of one symbol pattern.
+
+`go test ./internal/fsktx -run TestTxPairs -update-txpairs` in v2 measures them into `v2/internal/fsktx/testdata/txpairs.json` and writes this block, and `DMRGO_LONG=1` measures them again.
+
+<!-- txpairs:end -->
+
 <!-- txdoc:begin -->
 
 ## Least sample rate
