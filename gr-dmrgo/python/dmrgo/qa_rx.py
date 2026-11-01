@@ -21,7 +21,8 @@ except ImportError:
 
 TESTDATA = os.environ.get("DMRGO_TESTDATA", os.path.join(os.path.dirname(__file__), "..", "..", "..", "v2"))
 WEAK = os.path.join(TESTDATA, "cmd", "dmrrf", "testdata", "xpr8400_bs_voice_weak.cu8")
-CODEC2 = os.path.join(TESTDATA, "capi", "testdata", "codec2_call.cu8")
+OWN = os.environ.get("GRDMRGO_TESTDATA", os.path.join(os.path.dirname(__file__), "..", "..", "testdata"))
+CODEC2 = os.path.join(OWN, "codec2_call.cu8")
 
 
 def cu8_source(tb, path):
@@ -98,7 +99,11 @@ class FakeChip:
             if f[1:13] != bytes.fromhex("043107542400000000006f48"):
                 self.errors.append("rate")
             return self._packet(0, b"\x0a\x00\x0b\x00")
-        if typ == 1 and f[:2] == b"\x01\x48" and len(f) == 11:
+        if typ == 0 and f == b"\x16\x00\x01":
+            return self._packet(0, b"\x16\x00")
+        if typ == 0 and f[:1] == b"\x06" and len(f) == 3:
+            return self._packet(0, b"\x06\x00")
+        if typ == 1 and f[:2] == b"\x01\x48" and len(f) >= 11 and f[11:] in (b"", b"\x02\x00\x00"):
             self.slots.append(f[2:])
             pcm = b"".join(int(v).to_bytes(2, "big", signed=True) for v in self.echo(f[2:]))
             return self._packet(2, b"\x00\xa0" + pcm)

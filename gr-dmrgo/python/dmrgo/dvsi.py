@@ -24,20 +24,20 @@ POLL_SECONDS = 0.1
 BAUDS = {57600: termios.B57600, 115200: termios.B115200, 230400: termios.B230400,
          460800: termios.B460800, 921600: termios.B921600}
 
-READ_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t,
+READ_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t,
                            ctypes.POINTER(ctypes.c_int64))
 WRITE_FN = READ_FN
 
 
 class PortVtable(ctypes.Structure):
 
-    _fields_ = [("user", ctypes.c_size_t), ("read", READ_FN), ("write", WRITE_FN)]
+    _fields_ = [("size", ctypes.c_size_t), ("user", ctypes.c_void_p), ("read", READ_FN), ("write", WRITE_FN)]
 
 
 class Config(ctypes.Structure):
 
-    _fields_ = [("channel", ctypes.c_int64), ("timeout", ctypes.c_int64), ("no_reset", ctypes.c_bool),
-                ("no_parity", ctypes.c_bool)]
+    _fields_ = [("size", ctypes.c_size_t), ("channel", ctypes.c_int64), ("timeout", ctypes.c_int64),
+                ("no_reset", ctypes.c_bool), ("no_parity", ctypes.c_bool)]
 
 
 class Error(Exception):
@@ -49,10 +49,11 @@ def _bind(lib):
     lib.dmrgo_dvsi_port_from_vtable.argtypes = [ctypes.POINTER(PortVtable), ctypes.POINTER(p)]
     lib.dmrgo_dvsi_port_free.argtypes = [p]
     lib.dmrgo_dvsi_new.argtypes = [p, ctypes.POINTER(Config), ctypes.POINTER(p)]
-    lib.dmrgo_dvsi_codec_decode.argtypes = [p, ctypes.POINTER(ctypes.c_uint8 * 9), ctypes.POINTER(ctypes.c_int16),
-                                            ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.c_void_p]
+    lib.dmrgo_dvsi_codec_decode.argtypes = [p, ctypes.POINTER(ctypes.c_int16), ctypes.c_size_t,
+                                            ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_size_t),
+                                            ctypes.POINTER(ctypes.c_uint8 * 9), ctypes.c_void_p]
     lib.dmrgo_dvsi_codec_product.argtypes = [p, ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t),
-                                             ctypes.c_void_p]
+                                             ctypes.POINTER(ctypes.c_size_t)]
     lib.dmrgo_dvsi_codec_free.argtypes = [p]
     lib.dmrgo_layer2_raw_burst_voice_slots.argtypes = [ctypes.POINTER(ctypes.c_uint8 * 33),
                                                        ctypes.POINTER((ctypes.c_uint8 * 9) * 3)]
@@ -121,14 +122,15 @@ class Device:
         self._io = port
         self._read = READ_FN(self._on_read)
         self._write = WRITE_FN(self._on_write)
-        self._vt = PortVtable(0, self._read, self._write)
+        self._vt = PortVtable(ctypes.sizeof(PortVtable), None, self._read, self._write)
         self._port = ctypes.c_void_p()
         self._check(lib.dmrgo_dvsi_port_from_vtable(ctypes.byref(self._vt), ctypes.byref(self._port)))
         self._codecs = {}
         self._codec(0)
         name = ctypes.create_string_buffer(17)
         n = ctypes.c_size_t()
-        self._check(lib.dmrgo_dvsi_codec_product(self._codecs[0], name, len(name), ctypes.byref(n), None))
+        need = ctypes.c_size_t()
+        self._check(lib.dmrgo_dvsi_codec_product(self._codecs[0], name, len(name), ctypes.byref(n), ctypes.byref(need)))
         self.product = name.value.decode()
         self.channels = 3 if self.product.startswith("AMBE3003") else 1
         self._pcm = (ctypes.c_int16 * FRAME_SAMPLES)()
@@ -157,7 +159,7 @@ class Device:
     def _codec(self, channel):
         if channel not in self._codecs:
             c = ctypes.c_void_p()
-            cfg = Config(channel=channel, timeout=TIMEOUT_NS, no_reset=bool(self._codecs))
+            cfg = Config(size=ctypes.sizeof(Config), channel=channel, timeout=TIMEOUT_NS, no_reset=bool(self._codecs))
             self._check(self._lib.dmrgo_dvsi_new(self._port, ctypes.byref(cfg), ctypes.byref(c)))
             self._codecs[channel] = c
         return self._codecs[channel]
@@ -167,9 +169,9 @@ class Device:
         samples, or return None when the chip fails."""
         c = self._codec(channel % self.channels)
         ctypes.memmove(self._slot, bytes(slot), 9)
-        n = ctypes.c_size_t()
-        if self._lib.dmrgo_dvsi_codec_decode(c, ctypes.byref(self._slot), self._pcm, FRAME_SAMPLES,
-                                             ctypes.byref(n), None) < 0 or n.value != FRAME_SAMPLES:
+        n, need = ctypes.c_size_t(), ctypes.c_size_t()
+        if self._lib.dmrgo_dvsi_codec_decode(c, self._pcm, FRAME_SAMPLES, ctypes.byref(n), ctypes.byref(need),
+                                             ctypes.byref(self._slot), None) < 0 or n.value != FRAME_SAMPLES:
             return None
         return self._pcm
 

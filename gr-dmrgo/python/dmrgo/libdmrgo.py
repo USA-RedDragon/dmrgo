@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Jacob McSwain
 
-"""ctypes binding of libdmrgo, the C API of dmrgo (dmrgo.h)."""
+"""ctypes binding of the gr-dmrgo receiver (lib/grdmrgo_rx.h) and libdmrgo,
+the C API of dmrgo (dmrgo.h)."""
 
 import ctypes
 import ctypes.util
@@ -84,27 +85,38 @@ def find_library(path=""):
     return "libdmrgo.so"
 
 
+def find_rx_library():
+    p = os.environ.get("DMRGO_RX_LIB", "")
+    if p:
+        return p
+    here = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libgrdmrgo_rx.so")
+    return here if os.path.exists(here) else "libgrdmrgo_rx.so"
+
+
 def load(path=""):
-    lib = ctypes.CDLL(find_library(path))
+    ctypes.CDLL(find_library(path), mode=ctypes.RTLD_GLOBAL)
+    lib = ctypes.CDLL(find_rx_library())
     rx = ctypes.c_void_p
-    lib.dmrgo_abi_version.restype = ctypes.c_int
-    lib.dmrgo_burst_size.restype = ctypes.c_size_t
+    lib.grdmrgo_abi_version.restype = ctypes.c_int
+    lib.grdmrgo_burst_size.restype = ctypes.c_size_t
+    lib.grdmrgo_strerror.restype = ctypes.c_char_p
+    lib.grdmrgo_strerror.argtypes = [ctypes.c_int]
     lib.dmrgo_strerror.restype = ctypes.c_char_p
     lib.dmrgo_strerror.argtypes = [ctypes.c_int]
-    lib.dmrgo_rx_new.argtypes = [ctypes.POINTER(RxConfig), ctypes.POINTER(rx)]
-    lib.dmrgo_rx_write_cf32.argtypes = [rx, ctypes.c_void_p, ctypes.c_size_t]
-    lib.dmrgo_rx_write_f32.argtypes = [rx, ctypes.c_void_p, ctypes.c_size_t]
-    lib.dmrgo_rx_flush.argtypes = [rx]
-    lib.dmrgo_rx_poll.argtypes = [rx, ctypes.POINTER(Burst)]
-    lib.dmrgo_rx_dropped.argtypes = [rx]
-    lib.dmrgo_rx_dropped.restype = ctypes.c_uint64
-    lib.dmrgo_rx_has_codec2.argtypes = [rx]
-    lib.dmrgo_rx_free.argtypes = [rx]
-    lib.dmrgo_rx_free.restype = None
-    if lib.dmrgo_abi_version() != ABI_VERSION:
-        raise Error(f"libdmrgo ABI {lib.dmrgo_abi_version()}, want {ABI_VERSION}")
-    if lib.dmrgo_burst_size() != ctypes.sizeof(Burst):
-        raise Error(f"libdmrgo burst size {lib.dmrgo_burst_size()}, want {ctypes.sizeof(Burst)}")
+    lib.grdmrgo_rx_new.argtypes = [ctypes.POINTER(RxConfig), ctypes.POINTER(rx)]
+    lib.grdmrgo_rx_write_cf32.argtypes = [rx, ctypes.c_void_p, ctypes.c_size_t]
+    lib.grdmrgo_rx_write_f32.argtypes = [rx, ctypes.c_void_p, ctypes.c_size_t]
+    lib.grdmrgo_rx_flush.argtypes = [rx]
+    lib.grdmrgo_rx_poll.argtypes = [rx, ctypes.POINTER(Burst)]
+    lib.grdmrgo_rx_dropped.argtypes = [rx]
+    lib.grdmrgo_rx_dropped.restype = ctypes.c_uint64
+    lib.grdmrgo_rx_has_codec2.argtypes = [rx]
+    lib.grdmrgo_rx_free.argtypes = [rx]
+    lib.grdmrgo_rx_free.restype = None
+    if lib.grdmrgo_abi_version() != ABI_VERSION:
+        raise Error(f"gr-dmrgo receiver ABI {lib.grdmrgo_abi_version()}, want {ABI_VERSION}")
+    if lib.grdmrgo_burst_size() != ctypes.sizeof(Burst):
+        raise Error(f"gr-dmrgo burst size {lib.grdmrgo_burst_size()}, want {ctypes.sizeof(Burst)}")
     return lib
 
 
@@ -115,34 +127,34 @@ class Receiver:
         self._rx = ctypes.c_void_p()
         self._burst = Burst()
         cfg = RxConfig(tier=tier, input=input_kind, rate=rate, codec2_mode=codec2_mode, queue=queue)
-        self._check(lib.dmrgo_rx_new(ctypes.byref(cfg), ctypes.byref(self._rx)))
-        self._write = lib.dmrgo_rx_write_cf32 if input_kind == INPUT_IQ else lib.dmrgo_rx_write_f32
+        self._check(lib.grdmrgo_rx_new(ctypes.byref(cfg), ctypes.byref(self._rx)))
+        self._write = lib.grdmrgo_rx_write_cf32 if input_kind == INPUT_IQ else lib.grdmrgo_rx_write_f32
 
     def _check(self, status):
         if status < 0:
-            raise Error(self._lib.dmrgo_strerror(status).decode())
+            raise Error(self._lib.grdmrgo_strerror(status).decode())
         return status
 
     def write(self, samples):
         self._check(self._write(self._rx, samples.ctypes.data, len(samples)))
 
     def flush(self):
-        self._check(self._lib.dmrgo_rx_flush(self._rx))
+        self._check(self._lib.grdmrgo_rx_flush(self._rx))
 
     def poll(self):
-        if self._check(self._lib.dmrgo_rx_poll(self._rx, ctypes.byref(self._burst))) == 0:
+        if self._check(self._lib.grdmrgo_rx_poll(self._rx, ctypes.byref(self._burst))) == 0:
             return None
         return self._burst
 
     def dropped(self):
-        return self._lib.dmrgo_rx_dropped(self._rx)
+        return self._lib.grdmrgo_rx_dropped(self._rx)
 
     def has_codec2(self):
-        return self._lib.dmrgo_rx_has_codec2(self._rx) == 1
+        return self._lib.grdmrgo_rx_has_codec2(self._rx) == 1
 
     def close(self):
         if self._rx:
-            self._lib.dmrgo_rx_free(self._rx)
+            self._lib.grdmrgo_rx_free(self._rx)
             self._rx = ctypes.c_void_p()
 
     def __del__(self):

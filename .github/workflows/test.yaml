@@ -225,15 +225,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
 
-      - name: Install GNU Radio and libcodec2
-        run: sudo apt-get update && sudo apt-get install -y gnuradio-dev libcodec2-dev pkg-config cmake
+      - name: Install GNU Radio
+        run: sudo apt-get update && sudo apt-get install -y gnuradio-dev pkg-config cmake
 
       - run: go generate ./...
 
@@ -244,8 +244,12 @@ jobs:
           ctest --test-dir gr-dmrgo/build --output-on-failure
           cmake --install gr-dmrgo/build
 
-      - name: Compile the example flowgraph
-        run: GRC_BLOCKS_PATH=gr-dmrgo/build/prefix/share/gnuradio/grc/blocks grcc -o gr-dmrgo/build gr-dmrgo/examples/dmrgo_rx_file.grc
+      - name: Compile and run the example flowgraph
+        run: |
+          GRC_BLOCKS_PATH=gr-dmrgo/build/prefix/share/gnuradio/grc/blocks grcc -o gr-dmrgo/build gr-dmrgo/examples/dmrgo_rx_file.grc
+          pkg=$(dirname "$(dirname "$(find gr-dmrgo/build/prefix -path '*/gnuradio/dmrgo/__init__.py')")")
+          PYTHONPATH="$(dirname "$pkg")" LD_LIBRARY_PATH="$PWD/gr-dmrgo/build/prefix/lib" timeout 300 python3 gr-dmrgo/build/dmrgo_rx_file.py -i v2/cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8 -o gr-dmrgo/build/audio.wav > gr-dmrgo/build/example.log
+          grep -c "src . 3191868" gr-dmrgo/build/example.log
 
   tinygo:
     runs-on: ubuntu-24.04
