@@ -410,7 +410,7 @@ var farLimits = []struct {
 
 // FCC 90.210(d)(3); ERC/REC 74-01 Annex 6; ETSI EN 300 113 clause 7.5; FCC 97.307(e); Japan Radio Equipment Regulations Appendix 3
 func limFar(x []complex128, rate float64) map[string]float64 {
-	n := int(rate / 1000)
+	n := int(rate / 250)
 	w := blackmanHarris(n)
 	hop := n / 2
 	plan := newDFT(n)
@@ -461,7 +461,27 @@ func limFar(x []complex128, rate float64) map[string]float64 {
 		}
 		out["far_"+l.nm+"_dbc"] = dbOf(best / tot)
 	}
+	if v, ok := enSpur(sum, rate); ok {
+		out["far_en_dbc"] = dbOf(v / tot)
+	}
 	return out
+}
+
+// ETSI EN 300 113 V2.2.1 clause 7.5.4 tables 6a and 6b; ETSI EN 303 405 V1.1.1 clause 7.5.3 tables 5b and 5c
+func enSpur(sum func(lo, hi float64) float64, rate float64) (float64, bool) {
+	const lo = 2.5 * 12500
+	if lo+500 > rate/2 {
+		return 0, false
+	}
+	var best float64
+	for _, b := range []struct{ from, to, rbw, step float64 }{
+		{lo, 100000, 1000, 250}, {100000, 500000, 10000, 2500}, {500000, math.Inf(1), 100000, 25000},
+	} {
+		for f := b.from; f < b.to && f+b.rbw/2 <= rate/2; f += b.step {
+			best = max(best, sum(f-b.rbw/2, f+b.rbw/2), sum(-f-b.rbw/2, -f+b.rbw/2))
+		}
+	}
+	return best, true
 }
 
 func limEdges(p []float64, lo, hi float64) (att, rel [][2]int) {
@@ -755,8 +775,10 @@ func limMargins(m limMeasures) map[string]float64 {
 		if v, ok := get(w, "far_us97_dbc"); ok {
 			low(g, powKey("am_us97e_", pw, "_db"), -v-reqUS97(pw))
 		}
-		if v, ok := get(w, "far_sp_dbc"); ok {
+		if v, ok := get(w, "far_en_dbc"); ok {
 			g[powKey("en_spur_", pw, "_db")] = -v - reqSpur36(pw)
+		}
+		if v, ok := get(w, "far_sp_dbc"); ok {
 			g[powKey("cn_spur_", pw, "_db")] = -v - cnPeakDB - reqSpur36(pw)
 			g[powKey("am_cn_", pw, "_db")] = -v - reqERC(pw)
 			g[powKey("jp_spur_", pw, "_db")] = -v - reqJPLandMobile(pw)

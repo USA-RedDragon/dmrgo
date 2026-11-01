@@ -1124,6 +1124,25 @@ func TestFCC800Masks(t *testing.T) {
 	}
 }
 
+func TestSpurMatchedRBW(t *testing.T) {
+	t.Parallel()
+	const rate, n0 = 192000.0, 1e-9
+	rng := rand.New(rand.NewPCG(7, 8))
+	x := make([]complex128, int(0.3*rate))
+	sd := math.Sqrt(n0 * rate / 2)
+	for i := range x {
+		x[i] = complex(1+rng.NormFloat64()*sd, rng.NormFloat64()*sd)
+	}
+	g := limFar(x, rate)
+	want := dbOf(n0 * 1000)
+	if v := g["far_en_dbc"]; math.Abs(v-want) > 1.5 {
+		t.Errorf("white noise of %.1f dBc/Hz reads %.2f dBc in the EN 300 113 Table 6b bandwidth, want %.2f", dbOf(n0), v, want)
+	}
+	if v := g["far_sp_dbc"]; v < want+15 {
+		t.Errorf("the 100 kHz reading %.2f dBc is not about 20 dB over the 1 kHz reading %.2f dBc", v, want)
+	}
+}
+
 func TestMinRatesMonotoneInPower(t *testing.T) {
 	t.Parallel()
 	for _, c := range limClasses() {
