@@ -547,6 +547,9 @@ func TestReceiverDeviationAfterSilence(t *testing.T) {
 		iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, c.seed)
 		r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: Tier3})
 		got := r.AppendFlush(r.AppendBursts(nil, iq))
+		if len(got) != len(built.Bursts) {
+			t.Errorf("deviation %.2f seed %d: %d bursts out of a call of %d", c.dev, c.seed, len(got), len(built.Bursts))
+		}
 		for i, w := range built.Bursts {
 			if !slices.ContainsFunc(got, func(b Burst) bool { return b.Data == w }) {
 				t.Errorf("deviation %.2f seed %d: burst %d missing or wrong", c.dev, c.seed, i)

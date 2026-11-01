@@ -327,7 +327,7 @@ type leanCore struct {
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
 	mid96                              uint8
-	replaying, replayDry               bool
+	replaying, replayDry, replayDeep   bool
 	iqLow, linHunt                     bool
 	mmOK                               bool
 	chase                              uint8
@@ -1425,6 +1425,8 @@ func (r *leanCore) gridMiss() int32 {
 const (
 	leanSeekSyms     = 4
 	leanReplayErrors = 1
+	leanReplayFalse  = 4
+	leanReplayNear   = 8
 	leanRateMin      = 3
 	leanRateSig      = 3
 	leanSeekRho      = 0.5
@@ -1651,8 +1653,10 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 	if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
 		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
 	}
-	if seek && isAnchor && r.isReplaying() && r.syncErrors(base+leanSyncEnd+shift, anchor) > leanReplayErrors {
-		isAnchor = false
+	if isAnchor && r.isReplaying() {
+		if e := r.syncErrors(base+leanSyncEnd+shift, anchor); r.replayDeep && e > leanReplayFalse || seek && e > leanReplayErrors {
+			isAnchor = false
+		}
 	}
 	return isAnchor, shift, anchor
 }

@@ -956,6 +956,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 				}
 			}
 			c.eAcc, c.eSyms = 0, 0
+			c.replayDeep = n-j > leanReplayNear
 			if j < n && replayFlat(c, c.first+int64(j)*slotSymbols) {
 				noise := c.noise
 				c.noise = max(noise, 1)
@@ -966,7 +967,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 			}
 		}
 	}
-	c.replaying, c.replayDry = false, false
+	c.replaying, c.replayDry, c.replayDeep = false, false, false
 	if c.lastAnch == int32(n) {
 		c.lastAnch = leanNoSlot
 	}
