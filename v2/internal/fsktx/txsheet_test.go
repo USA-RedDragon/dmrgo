@@ -346,7 +346,7 @@ func txMarginGraphs(out map[string][]byte, margins map[string]map[string]float64
 		var rows []string
 		var keys [][]string
 		for _, r := range txLimitRows() {
-			k := r.keys(1)
+			k := r.keys(30)
 			if len(k) == 0 || !strings.HasSuffix(k[0], "_db") || strings.HasPrefix(k[0], "en_slope_") {
 				continue
 			}
@@ -362,6 +362,7 @@ func txMarginGraphs(out map[string][]byte, margins map[string]map[string]float64
 				v := math.NaN()
 				for _, key := range k {
 					if m, ok := margins[c.String()][key]; ok {
+						m -= limNeed(key)
 						if math.IsNaN(v) {
 							v = m
 						}
@@ -372,8 +373,8 @@ func txMarginGraphs(out map[string][]byte, margins map[string]map[string]float64
 			}
 			groups = append(groups, g)
 		}
-		out[fmt.Sprintf("tier%d_margins.svg", tier-Tier0)] = barPlot(fmt.Sprintf("Tier %d: margin to each limit at 1 W, dashed at the 3 dB that a setup needs", tier-Tier0),
-			plotAxis{min: -20, max: 60, step: 10, label: "Margin (dB), positive inside the limit"}, rows, groups, 3)
+		out[fmt.Sprintf("tier%d_margins.svg", tier-Tier0)] = barPlot(fmt.Sprintf("Tier %d: margin to each limit at 1 W over the margin that a setup needs", tier-Tier0),
+			plotAxis{min: -30, max: 60, step: 10, label: "Margin over the need (dB), accepted from 0"}, rows, groups, 0)
 	}
 }
 
@@ -665,12 +666,12 @@ func barPlot(title string, xa plotAxis, rows []string, groups []barGroup, ref fl
 
 func txRegimeMargin(g map[string]float64, r txRegime) (float64, bool) {
 	worst, ok := math.Inf(1), false
-	for _, k := range regimeKeys(r.region, r.service, 1) {
+	for _, k := range regimeKeys(r.region, r.service, 30) {
 		if !strings.HasSuffix(k, "_db") || strings.HasPrefix(k, "en_slope_") {
 			continue
 		}
 		if v, has := g[k]; has {
-			worst, ok = min(worst, v), true
+			worst, ok = min(worst, v-limNeed(k)), true
 		}
 	}
 	return worst, ok
@@ -732,7 +733,7 @@ func renderTxSheet(d txSheetData, cost txSheetCostData, margins map[string]map[s
 		return "-"
 	})
 	for _, r := range txRegimes {
-		row("Least margin, "+r.name+", 1 W", func(c limClass) string {
+		row("Margin over the need, "+r.name+", 1 W", func(c limClass) string {
 			if v, ok := txRegimeMargin(margins[c.String()], r); ok {
 				return fmt.Sprintf("%+.1f dB", v)
 			}
@@ -741,7 +742,7 @@ func renderTxSheet(d txSheetData, cost txSheetCostData, margins map[string]map[s
 	}
 	b.WriteString("\n- FSK error is the RMS error of the symbol deviations after the receive filter, as a percent of the deviation of symbol +3, over a random stream. A hold converter keeps each code until the next sample; an ideal converter interpolates it with no images. I/Q has no converter model.\n")
 	b.WriteString("- Deviation error is the error of the peak deviation of the ETSI test pattern from 2749 Hz. TS 102 361-1 clause 10.2.2.3 sets a limit of 10%.\n")
-	b.WriteString("- Each margin is the least margin in dB over the limits of the region and service at 1 W, with no input low pass. A setup needs at least 3 dB on each limit. [Measured margins](#measured-margins) gives each limit and power class.\n\n")
+	b.WriteString("- Each margin is the least, over the limits of the region and service at 1 W (30 dBm) with no input low pass, of the margin in dB less the margin that a setup needs on that limit: 10 dB on a spurious domain limit and 3 dB on the others. A setup is accepted from 0. [Measured margins](#measured-margins) gives each limit and power class.\n\n")
 	if len(cost.Rows) > 0 {
 		b.WriteString("| Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |\n| --- | ---: | ---: | ---: |\n")
 		for _, r := range cost.Rows {
