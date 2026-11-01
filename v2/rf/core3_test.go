@@ -92,8 +92,12 @@ func TestCohSlotFit(t *testing.T) {
 func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	if rate, _ := earlyExact(truth, 1, clockSignal{clockBaseband(slots, 5000, 0), 0}); rate < 0.78 {
+	sig := clockSignal{clockBaseband(slots, 5000, 0), 0}
+	if rate, _ := earlyExact(truth, 1, sig); rate < 0.78 {
 		t.Errorf("core Tier 3 at +5000 Hz, 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
+	}
+	if rate, _ := earlyExact(truth, 0, sig); rate < 0.6 {
+		t.Errorf("core Tier 3 at +5000 Hz, 0 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
 }
 

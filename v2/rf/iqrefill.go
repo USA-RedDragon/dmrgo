@@ -77,7 +77,7 @@ func (r *iqRx) refillCoh(hz float64) {
 	}
 	d := float32(hz) - r.conv.hz
 	if abs32(d) < cohFreqSpan {
-		return
+		d = 0
 	}
 	main, coh := r.conv.taps, r.conv.coh.taps
 	span := int64(max(len(main), len(coh)))
@@ -87,8 +87,10 @@ func (r *iqRx) refillCoh(hz float64) {
 	if k0 >= r.yN || f.out-per*(r.yN-k0)+per-span < lo {
 		return
 	}
-	r.tuneConv(d)
-	f.settle, f.settleHz = true, d
+	if d != 0 {
+		r.tuneConv(d)
+		f.settle, f.settleHz = true, d
+	}
 	for r.nTunes > 0 && r.tunes[(r.nTunes-1)%iqTunes].n >= k0 {
 		r.nTunes--
 	}
