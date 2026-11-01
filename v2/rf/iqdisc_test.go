@@ -526,3 +526,31 @@ func TestReceiverClockStart(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestReceiverDeviationAfterSilence(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	built, err := rftx.Sequence("data12", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	for _, c := range []struct {
+		dev  float64
+		seed uint64
+	}{{1.10, 24}, {1.15, 5}} {
+		n := int(0.1 * 2e6)
+		f, e := make([]float64, n+len(fm)), make([]float64, n+len(fm))
+		for i := range fm {
+			f[n+i], e[n+i] = fm[i]*c.dev, env[i]
+		}
+		iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, c.seed)
+		r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: Tier3})
+		got := r.AppendFlush(r.AppendBursts(nil, iq))
+		for i, w := range built.Bursts {
+			if !slices.ContainsFunc(got, func(b Burst) bool { return b.Data == w }) {
+				t.Errorf("deviation %.2f seed %d: burst %d missing or wrong", c.dev, c.seed, i)
+			}
+		}
+	}
+}

@@ -7,7 +7,9 @@ import (
 
 // Burst is one burst that a Receiver recovered.
 type Burst struct {
-	// Data is the 264 burst bits as detected, in transmit order.
+	// Data is the 264 burst bits as detected, in transmit order. Tier3
+	// detects a burst twice, with the discriminator and coherently, and
+	// gives the detection nearer to Fixed.
 	Data layer2.RawBurst
 	// Seconds is the time of the first burst bit from the first sample,
 	// within 2 µs on a clean signal at every tier, input and rate.

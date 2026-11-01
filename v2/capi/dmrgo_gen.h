@@ -4060,7 +4060,7 @@ struct dmrgo_voice_output_t {
 };
 
 struct dmrgo_rf_burst_t {
-	/* Data is the 264 burst bits as detected, in transmit order. */
+	/* Data is the 264 burst bits as detected, in transmit order. DMRGO_RF_TIER3 detects a burst twice, with the discriminator and coherently, and gives the detection nearer to Fixed. */
 	dmrgo_layer2_raw_burst_t data;
 	/* Seconds is the time of the first burst bit from the first sample, within 2 µs on a clean signal at every tier, input and rate. */
 	double seconds;

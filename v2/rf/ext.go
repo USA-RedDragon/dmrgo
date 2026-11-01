@@ -266,6 +266,9 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 		c.sink.noteCoh(b.Seconds, b.CACH, &x.cachLLR)
 	}
 	x.coh.trackBurst(&b.Fixed)
+	if x.coh.ex != nil && burstDistance(&data, &b.Fixed) < burstDistance(&b.Data, &b.Fixed) {
+		b.Data = data
+	}
 	hold := false
 	if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
 		hold = x.fragment(ch, b)
