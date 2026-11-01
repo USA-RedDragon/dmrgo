@@ -1987,9 +1987,13 @@ func (r *leanCore) unlock() {
 		r.tm.mm, r.tm.mid = false, true
 		r.tm.t -= r.tm.step
 	}
-	r.offsetHz = int16(max32(min32(roundf(r.tuneHz+r.dcHz), math.MaxInt16), math.MinInt16))
-	r.devHz = int16(max32(min32(roundf(3*deviationHz*r.devScale), math.MaxInt16), math.MinInt16))
-	r.devAtHz = int16(max32(min32(roundf(r.fitHz), math.MaxInt16), math.MinInt16))
+	r.offsetHz = sat16(r.tuneHz + r.dcHz)
+	r.devHz = sat16(3 * deviationHz * r.devScale)
+	r.devAtHz = sat16(r.fitHz)
+}
+
+func sat16(x float32) int16 {
+	return int16(max32(min32(roundf(x), math.MaxInt16), math.MinInt16))
 }
 
 func (r *leanCore) rebuildSigns() {

@@ -557,3 +557,61 @@ func TestReceiverDeviationAfterSilence(t *testing.T) {
 		}
 	}
 }
+
+func TestReceiverReadingsAfterLevelStep(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	built, err := rftx.Sequence("data12", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	slots, _ := benchStream(t, 1)
+	receive := func(tier Tier, iq []byte) (*Receiver, int) {
+		r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: tier})
+		var got []Burst
+		for k := 0; k < len(iq); k += 1 << 16 {
+			got = r.AppendBursts(got, iq[k:min(k+1<<16, len(iq))])
+		}
+		return r, len(r.AppendFlush(got))
+	}
+	var wg sync.WaitGroup
+	for _, ms := range []bool{true, false} {
+		for _, tail := range []string{"no carrier", "unmodulated carrier"} {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				var fm, env []float64
+				if ms {
+					fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+				} else {
+					fm, env = rftx.ModulateBS(slots)
+				}
+				n := len(fm)
+				head := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
+				fm, env = append(fm, make([]float64, 4*n)...), append(env, make([]float64, 4*n)...)
+				if tail == "unmodulated carrier" {
+					for i := n; i < len(env); i++ {
+						env[i] = 1
+					}
+				}
+				iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
+				for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+					c, cn := receive(tier, head)
+					r, rn := receive(tier, iq)
+					if cn == 0 || rn != cn {
+						t.Errorf("Tier%d ms %v, then %s: %d bursts, %d without the tail", tier-Tier0, ms, tail, rn, cn)
+						continue
+					}
+					if d := r.DeviationHz() / (3 * deviationHz); math.Abs(d-1) > 0.05 {
+						t.Errorf("Tier%d ms %v, then %s: DeviationHz %.3f of the true value", tier-Tier0, ms, tail, d)
+					}
+					bound := 0.5 / (iqUnitsPerHz * float64(r.full.(*rxHost).iqd.d.f.gain))
+					if e := r.OffsetHz() - c.OffsetHz(); math.Abs(e) > bound {
+						t.Errorf("Tier%d ms %v, then %s: OffsetHz moved %+.1f Hz, bound %.2f Hz", tier-Tier0, ms, tail, e, bound)
+					}
+				}
+			}()
+		}
+	}
+	wg.Wait()
+}

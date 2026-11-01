@@ -557,6 +557,8 @@ func (r *leanCore) scaleAudio(g float32) {
 	f.dc *= g
 	r.tuneHz *= g
 	r.off *= g
+	r.offsetHz = sat16(float32(r.offsetHz) * g)
+	r.devHz = sat16(float32(r.devHz) * g)
 	f.scale(g)
 	f.refresh()
 	r.rescale(g)
