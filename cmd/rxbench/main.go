@@ -1,9 +1,12 @@
-// Command rxbench writes the receiver sensitivity block of docs/rx.md
-// and its graphs from the sweep data of the receiver in v2/rf. With
-// -update-readme it first runs the long sweep (DMRRF_RXBENCH=full go test
-// -run TestRxBench in v2/rf), then rewrites the block between the rxbench
-// markers and the SVG files. With -check-readme it renders the committed
-// data and fails when the block or a graph differs. The Short LC block
+// Command rxbench writes the generated blocks of the receiver datasheet,
+// docs/rx.md, and its graphs from the data of the receiver in
+// v2/rf/testdata. With -update-readme it first runs the long sweep
+// (DMRRF_RXBENCH=full go test -run TestRxBench in v2/rf) and the tests of
+// the eye diagrams, carrier offset, clock error and late entry
+// (DMRRF_RXSHEET=1 go test -run TestRxSheet), then rewrites the blocks
+// between the rxbench markers and the SVG files. -sheet runs only the
+// second set, and -no-sweep runs neither. With -check-readme it renders
+// the committed data and fails when a block or a graph differs. The Short LC block
 // between the shortlc markers comes from v2/rf/testdata/rxbench_shortlc.json,
 // which TestShortLCBench writes with DMRRF_SLCBENCH set to the path of the
 // XPR 8400 idle capture; -update-readme runs it when DMRRF_SLCBENCH is set.
@@ -17,17 +20,16 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -35,6 +37,10 @@ import (
 const (
 	beginMarker = "<!-- rxbench:begin -->"
 	endMarker   = "<!-- rxbench:end -->"
+	specsBegin  = "<!-- rxbench:specs:begin -->"
+	specsEnd    = "<!-- rxbench:specs:end -->"
+	limitsBegin = "<!-- rxbench:limits:begin -->"
+	limitsEnd   = "<!-- rxbench:limits:end -->"
 	docName     = "docs/rx.md"
 	graphDir    = "docs/rx"
 	imgDir      = "rx/"
@@ -54,16 +60,18 @@ const (
 )
 
 type options struct {
-	update  *bool
-	check   *bool
-	noSweep *bool
+	update    *bool
+	check     *bool
+	noSweep   *bool
+	sheetOnly *bool
 }
 
 func defineFlags(fs *flag.FlagSet) options {
 	return options{
-		update:  fs.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx.md and the graphs"),
-		check:   fs.Bool("check-readme", false, "fail when the block of docs/rx.md or a graph differs from the committed data"),
-		noSweep: fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
+		update:    fs.Bool("update-readme", false, "run the long sweep and the datasheet tests, then rewrite the blocks of docs/rx.md and the graphs"),
+		check:     fs.Bool("check-readme", false, "fail when a block of docs/rx.md or a graph differs from the committed data"),
+		noSweep:   fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
+		sheetOnly: fs.Bool("sheet", false, "with -update-readme, measure only the eye diagrams, offset, clock and late entry data (TestRxSheet), then render"),
 	}
 }
 
@@ -80,7 +88,14 @@ func main() {
 		os.Exit(1)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := run(ctx, filepath.Join(filepath.Dir(thisFile), "..", ".."), *o.update, *o.update && !*o.noSweep)
+	sweep := sweepNone
+	switch {
+	case *o.update && *o.sheetOnly:
+		sweep = sweepSheet
+	case *o.update && !*o.noSweep:
+		sweep = sweepFull
+	}
+	err := run(ctx, filepath.Join(filepath.Dir(thisFile), "..", ".."), *o.update, sweep)
 	stop()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "rxbench:", err)
@@ -90,48 +105,71 @@ func main() {
 
 var errStale = errors.New("out of date: run go run -C cmd/rxbench . -update-readme")
 
-func run(ctx context.Context, root string, update, sweep bool) error {
-	if sweep {
-		cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-run", "^TestRxBench$", "-timeout", "6h", "./rf")
-		cmd.Env = append(os.Environ(), "DMRRF_RXBENCH=full")
-		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("sweep: %w", err)
+const (
+	sweepNone = iota
+	sweepSheet
+	sweepFull
+)
+
+func goTest(ctx context.Context, root, test, env string) error {
+	cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-count=1", "-run", "^"+test+"$", "-timeout", "6h", "./rf")
+	if env != "" {
+		cmd.Env = append(os.Environ(), env)
+	}
+	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: %w", test, err)
+	}
+	return nil
+}
+
+func replaceBlock(doc []byte, begin, end string, block []byte) ([]byte, error) {
+	i, j := bytes.Index(doc, []byte(begin)), bytes.Index(doc, []byte(end))
+	if i < 0 || j < i {
+		return nil, fmt.Errorf("%s has no %s ... %s block", docName, begin, end)
+	}
+	return append(append(append([]byte{}, doc[:i+len(begin)]...), block...), doc[j:]...), nil
+}
+
+func run(ctx context.Context, root string, update bool, sweep int) error {
+	if sweep == sweepFull {
+		if err := goTest(ctx, root, "TestRxBench", "DMRRF_RXBENCH=full"); err != nil {
+			return err
 		}
 		if os.Getenv("DMRRF_SLCBENCH") != "" {
-			cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-run", "^TestShortLCBench$", "-timeout", "6h", "./rf")
-			cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("short LC sweep: %w", err)
+			if err := goTest(ctx, root, "TestShortLCBench", ""); err != nil {
+				return err
 			}
+		}
+	}
+	if sweep >= sweepSheet {
+		if err := goTest(ctx, root, "TestRxSheet", "DMRRF_RXSHEET=1"); err != nil {
+			return err
 		}
 	}
 	d, err := load(filepath.Join(root, "v2/rf/testdata"))
 	if err != nil {
 		return err
 	}
-	block := renderBlock(d)
 	graphs := renderGraphs(d)
+	maps.Copy(graphs, sheetGraphs(d))
 	readmePath := filepath.Join(root, docName)
 	readme, err := os.ReadFile(readmePath)
 	if err != nil {
 		return err
 	}
-	i, j := bytes.Index(readme, []byte(beginMarker)), bytes.Index(readme, []byte(endMarker))
-	if i < 0 || j < i {
-		return errors.New("docs/rx.md has no rxbench markers")
+	next := readme
+	for _, blk := range []struct {
+		begin, end string
+		body       []byte
+	}{
+		{specsBegin, specsEnd, renderSpecs(d)}, {limitsBegin, limitsEnd, renderLimits(d)}, {beginMarker, endMarker, renderBlock(d)},
+		{shortLCBegin, shortLCEnd, renderShortLC(d.shortLC)}, {extBegin, extEnd, renderExt(d.ext)},
+	} {
+		if next, err = replaceBlock(next, blk.begin, blk.end, blk.body); err != nil {
+			return err
+		}
 	}
-	next := append(append(append([]byte{}, readme[:i+len(beginMarker)]...), block...), readme[j:]...)
-	i, j = bytes.Index(next, []byte(shortLCBegin)), bytes.Index(next, []byte(shortLCEnd))
-	if i < 0 || j < i {
-		return errors.New("docs/rx.md has no shortlc markers")
-	}
-	next = append(append(append([]byte{}, next[:i+len(shortLCBegin)]...), renderShortLC(d.shortLC)...), next[j:]...)
-	i, j = bytes.Index(next, []byte(extBegin)), bytes.Index(next, []byte(extEnd))
-	if i < 0 || j < i {
-		return errors.New("docs/rx.md has no extcmp markers")
-	}
-	next = append(append(append([]byte{}, next[:i+len(extBegin)]...), renderExt(d.ext)...), next[j:]...)
 	stale := !bytes.Equal(next, readme)
 	for name, svg := range graphs {
 		p := filepath.Join(root, graphDir, name)
@@ -235,23 +273,32 @@ type data struct {
 	recordings []recording
 	shortLC    shortLCData
 	ext        extData
+	sheet      sheet
 }
 
 func load(dir string) (data, error) {
 	var d data
-	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings, "rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4} {
-		b, err := os.ReadFile(filepath.Join(dir, name))
-		if err != nil {
+	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings,
+		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet} {
+		if err := loadJSON(filepath.Join(dir, name), v); err != nil {
 			return d, err
-		}
-		if err := json.Unmarshal(b, v); err != nil {
-			return d, fmt.Errorf("%s: %w", name, err)
 		}
 	}
 	return d, nil
 }
 
-func cnToEbN0(cn float64) float64 { return cn + 10*math.Log10(12500.0/9600) }
+const (
+	noiseBandHz = 12500.0
+	symbolRate  = 4800
+	bitRate     = 2 * symbolRate
+	recoverMin  = 0.9
+)
+
+func pct(v float64) string { return strconv.FormatFloat(math.Round(v*100), 'f', -1, 64) + "%" }
+
+func bandText() string { return strconv.FormatFloat(noiseBandHz/1000, 'f', -1, 64) + " kHz" }
+
+func cnToEbN0(cn float64) float64 { return cn + 10*math.Log10(noiseBandHz/bitRate) }
 
 func payloadNames() [][2]string {
 	return [][2]string{
@@ -318,12 +365,12 @@ type crossing struct {
 }
 
 func at90(x, y []float64) crossing {
-	if len(y) > 0 && y[0] >= 0.9 {
+	if len(y) > 0 && y[0] >= recoverMin {
 		return crossing{x[0], true, true}
 	}
 	for i := 1; i < len(x); i++ {
-		if y[i-1] < 0.9 && y[i] >= 0.9 {
-			return crossing{x[i-1] + (0.9-y[i-1])/(y[i]-y[i-1])*(x[i]-x[i-1]), true, false}
+		if y[i-1] < recoverMin && y[i] >= recoverMin {
+			return crossing{x[i-1] + (recoverMin-y[i-1])/(y[i]-y[i-1])*(x[i]-x[i-1]), true, false}
 		}
 	}
 	return crossing{}
@@ -361,36 +408,16 @@ func f1(v float64) string { return strconv.FormatFloat(math.Round(v*10)/10+0, 'f
 
 func renderBlock(d data) []byte {
 	var b strings.Builder
-	b.WriteString("\n| Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU at C/N 6 dB | Worst-case CPU | RAM |\n")
-	b.WriteString("|------|-------|-------|---------------|------|---------------|-----------------|----------------|-----|\n")
-	keys := []string{keyAMBE, keyRate12, keyCSBK, keyRate34}
-	row := make([]string, 0, 2+len(keys)+3)
-	row = append(row, "Best possible (4FSK floor)", "-")
-	for _, k := range keys {
-		cell := "-"
-		if f, ok := d.floor.Payloads[k]; ok {
-			cell = dbCell(at90(f.Any.EbN0, f.Any.recovery()))
-		}
-		row = append(row, cell)
-	}
-	b.WriteString("| " + strings.Join(append(row, "-", "-", "-"), " | ") + " |\n")
-	for _, t := range d.bench.Tiers {
-		row := make([]string, 0, 2+len(keys)+3)
-		row = append(row, shortName(t), inputName(t))
-		for _, k := range keys {
-			row = append(row, dbCell(at90(tierCurve(t, k))))
-		}
-		row = append(row, msCell(t.NsPerSecond), msCell(t.WorstNs), ramCell(t.RAMBytes))
-		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
-	}
-	b.WriteString("\n- Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.\n")
-	b.WriteString("- CPU is per second of signal, measured on an " + d.bench.Machine + ". Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs " + mcuAudio + " and low-rate I/Q tier 0 " + mcuIQLow + ".")
-	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
-		b.WriteString(" No tier allocates after it starts.")
-	}
 	b.WriteString("\n")
-	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. They also take inverted audio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel. Its carrier must be less than 2.5 kHz from the center: the 9.6 kHz I/Q holds 4.8 kHz on each side, and at 2.5 kHz off 9.8 dB of the signal power, at 4 kHz 3.7 dB, falls outside the channel filter of the chip. On carriers 2.4 to 5 kHz off, tier 0 loses 28 cells of the comparison with the external receivers. 6 of them no receiver can win: a genie that knows every parameter and decodes C0 and C1 jointly gets at most 0.85 to 0.894 of the AMBE frames exact (upper 95% bound, against the bar of 0.90) at 4.8, +5 and -5 kHz, MS and BS. The other 22 need a coherent receiver. One that was measured needed about 5 KB of RAM, 42 KB of flash and 27 to 114 MHz on the Cortex-M4F and still won only 5 of the 12 cells at 2.4 and ±3 kHz, so tier 0 does not take that cost and these 22 cells are accepted as lost: 16 at carriers 2.4 to 4.8 kHz off, and 6 that an exact genie wins with 0.996 to 1.000 of the frames: the frames with C0 and C1 right at +5 and -5 kHz, and the exact frames at 4 kHz, MS and BS.\n")
-	b.WriteString("- [The sweep](#the-sweep) gives the method and [The floors](#the-floors) the bounds.\n\n")
+	for _, m := range modes() {
+		b.WriteString("### Error rate, " + m[1] + "\n\n")
+		b.WriteString("Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.\n\n")
+		for _, g := range graphs() {
+			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](" + imgDir + m[0] + "/" + g.key + ".svg)\n")
+		}
+		b.WriteString("\n")
+	}
+	renderSheetGraphs(&b, d)
 	renderSensitivity(&b, d)
 	var rec []tier
 	var cols []int
@@ -402,7 +429,7 @@ func renderBlock(d data) []byte {
 			}
 		}
 	}
-	b.WriteString("<details><summary>Real recordings</summary>\n\n")
+	b.WriteString("### Real recordings\n\n")
 	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR.\n\n")
 	b.WriteString("| Recording | C/N | Frames |")
 	for _, t := range rec {
@@ -420,23 +447,13 @@ func renderBlock(d data) []byte {
 		}
 		b.WriteString("\n")
 	}
-	b.WriteString("\n</details>\n\n")
-	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
-	b.WriteString("Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.\n\n")
-	for _, m := range modes() {
-		b.WriteString("#### " + m[1] + "\n\n")
-		for _, g := range graphs() {
-			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](" + imgDir + m[0] + "/" + g.key + ".svg)\n")
-		}
-		b.WriteString("\n")
-	}
-	b.WriteString("</details>\n\n")
+	b.WriteString("\n")
 	return []byte(b.String())
 }
 
 func renderSensitivity(b *strings.Builder, d data) {
-	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery. [The floors](#the-floors) defines each floor.\n\n")
+	b.WriteString("### Sensitivity per payload type\n\n")
+	b.WriteString("Eb/N0 in dB for " + pct(recoverMin) + " recovery. [The floors](#the-floors) defines each floor.\n\n")
 	b.WriteString("| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |\n")
 	b.WriteString("|---------|------------|-----------|-----------|------------|\n")
 	for _, p := range payloadNames() {
@@ -468,7 +485,7 @@ func renderSensitivity(b *strings.Builder, d data) {
 		}
 		b.WriteString("| " + strings.Join(cells, " | ") + " |\n")
 	}
-	b.WriteString("\n</details>\n\n")
+	b.WriteString("\n")
 }
 
 func dmrCell(f floorPair) string {

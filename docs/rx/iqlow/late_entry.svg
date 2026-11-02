@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420">
+<style>text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1a7f37}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#3fb950}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}</style>
+<rect class="bg" width="100%" height="100%"/>
+<text x="76.0" y="24">Low-rate I/Q: late entry, median time to the first exact burst</text>
+<line class="gr" x1="76.0" y1="364.0" x2="76.0" y2="40.0"/>
+<text x="76.0" y="382.0" text-anchor="middle">4</text>
+<line class="gr" x1="130.2" y1="364.0" x2="130.2" y2="40.0"/>
+<text x="130.2" y="382.0" text-anchor="middle">6</text>
+<line class="gr" x1="184.5" y1="364.0" x2="184.5" y2="40.0"/>
+<text x="184.5" y="382.0" text-anchor="middle">8</text>
+<line class="gr" x1="238.8" y1="364.0" x2="238.8" y2="40.0"/>
+<text x="238.8" y="382.0" text-anchor="middle">10</text>
+<line class="gr" x1="293.0" y1="364.0" x2="293.0" y2="40.0"/>
+<text x="293.0" y="382.0" text-anchor="middle">12</text>
+<line class="gr" x1="347.2" y1="364.0" x2="347.2" y2="40.0"/>
+<text x="347.2" y="382.0" text-anchor="middle">14</text>
+<line class="gr" x1="401.5" y1="364.0" x2="401.5" y2="40.0"/>
+<text x="401.5" y="382.0" text-anchor="middle">16</text>
+<line class="gr" x1="455.8" y1="364.0" x2="455.8" y2="40.0"/>
+<text x="455.8" y="382.0" text-anchor="middle">18</text>
+<line class="gr" x1="510.0" y1="364.0" x2="510.0" y2="40.0"/>
+<text x="510.0" y="382.0" text-anchor="middle">20</text>
+<line class="gr" x1="76.0" y1="364.0" x2="510.0" y2="364.0"/>
+<text x="68.0" y="368.0" text-anchor="end">0</text>
+<line class="gr" x1="76.0" y1="310.0" x2="510.0" y2="310.0"/>
+<text x="68.0" y="314.0" text-anchor="end">25</text>
+<line class="gr" x1="76.0" y1="256.0" x2="510.0" y2="256.0"/>
+<text x="68.0" y="260.0" text-anchor="end">50</text>
+<line class="gr" x1="76.0" y1="202.0" x2="510.0" y2="202.0"/>
+<text x="68.0" y="206.0" text-anchor="end">75</text>
+<line class="gr" x1="76.0" y1="148.0" x2="510.0" y2="148.0"/>
+<text x="68.0" y="152.0" text-anchor="end">100</text>
+<line class="gr" x1="76.0" y1="94.0" x2="510.0" y2="94.0"/>
+<text x="68.0" y="98.0" text-anchor="end">125</text>
+<line class="gr" x1="76.0" y1="40.0" x2="510.0" y2="40.0"/>
+<text x="68.0" y="44.0" text-anchor="end">150</text>
+<rect class="ax" x="76.0" y="40.0" width="434.0" height="324.0"/>
+<text x="293.0" y="408.0" text-anchor="middle">C/N in 12.5 kHz (dB)</text>
+<text x="18" y="202.0" text-anchor="middle" transform="rotate(-90 18 202.0)">Time (ms)</text>
+<path class="l s1" d="M76.0,135.5 L130.2,233.5 L184.5,235.0 L238.8,220.5 L293.0,259.6 L347.2,216.0 L401.5,248.8 L455.8,250.7 L510.0,233.3"/>
+<circle class="p s1" cx="76.0" cy="135.5" r="2"/><circle class="p s1" cx="130.2" cy="233.5" r="2"/><circle class="p s1" cx="184.5" cy="235.0" r="2"/><circle class="p s1" cx="238.8" cy="220.5" r="2"/><circle class="p s1" cx="293.0" cy="259.6" r="2"/><circle class="p s1" cx="347.2" cy="216.0" r="2"/><circle class="p s1" cx="401.5" cy="248.8" r="2"/><circle class="p s1" cx="455.8" cy="250.7" r="2"/><circle class="p s1" cx="510.0" cy="233.3" r="2"/>
+<line class="l s1" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
+<text x="556.0" y="54.0">Tier 0</text>
+</svg>

@@ -198,7 +198,7 @@ func renderExt(e extData) []byte {
 	}
 	b.WriteString("- On a Cortex-M4F the MMDVM DMO receiver with its RRC filter (`arm_fir_fast_q15` of CMSIS-DSP in blocks of 2 samples, as `IO.cpp` runs it), built with " + m.Compiler + " and run in " + m.Machine + " on the MS stream at C/N " + strings.Join(cns, " and ") + " dB, needs up to " + f1(m.WorstMHz) + " MHz by the cycle model of the Tier 0 numbers, " + grouped(int64(m.StateBytes+m.FilterBytes+m.StackBytes)) + " B of RAM (" + grouped(int64(m.StateBytes)) + " B of receiver state, " + strconv.Itoa(m.FilterBytes) + " B of filter state and " + strconv.Itoa(m.StackBytes) + " B of stack) and " + grouped(int64(m.FlashBytes)) + " B of flash.\n\n")
 	for _, s := range e.Streams {
-		b.WriteString("#### " + extStreamName(s) + "\n\n")
+		b.WriteString("### " + extStreamName(s) + "\n\n")
 		b.WriteString("| Receiver |")
 		for _, p := range extPayloadNames() {
 			b.WriteString(" " + p[1] + " |")
@@ -252,7 +252,7 @@ func renderExtCells(b *strings.Builder, e extData) {
 			}
 		}
 	}
-	b.WriteString("#### Cells won and lost\n\n")
+	b.WriteString("### Cells won and lost\n\n")
 	b.WriteString("A cell is one payload of one stream at one C/N. On each seed the tier and the other receiver decode the same signal, and the difference of their exact frames is taken. The tier wins the cell when the mean difference over the seeds is more than two standard errors above 0, and is behind when it is more than two standard errors below 0. The cells between are ties, which count as lost. Cells where both recover every frame, or both none, are left out.\n\n")
 	b.WriteString("| Tier |")
 	for _, x := range exts {

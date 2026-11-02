@@ -95,15 +95,16 @@ func calFlags(fs *flag.FlagSet) calOptions {
 
 ## rxbench
 
-`cmd/rxbench` writes the sensitivity tables and graphs of the [Receiver](../rx.md) datasheet from the sweep data of `v2/rf`. With `-update-readme` it first runs the long sweep, then writes the tables and graphs. With `-check-readme` it renders the committed data and fails when the page or a graph differs. Give one of the two.
+`cmd/rxbench` writes the tables and graphs of the [Receiver](../rx.md) datasheet from the data of `v2/rf`. With `-update-readme` it first runs the long sweep and `TestRxSheet`, then writes the tables and graphs; `-sheet` runs only `TestRxSheet`, and `-no-sweep` neither. With `-check-readme` it renders the committed data and fails when the page or a graph differs. Give one of the two.
 
 <!-- dmrgo:code file=cmd/rxbench/main.go symbol=defineFlags -->
 ```go
 func defineFlags(fs *flag.FlagSet) options {
 	return options{
-		update:  fs.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx.md and the graphs"),
-		check:   fs.Bool("check-readme", false, "fail when the block of docs/rx.md or a graph differs from the committed data"),
-		noSweep: fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
+		update:    fs.Bool("update-readme", false, "run the long sweep and the datasheet tests, then rewrite the blocks of docs/rx.md and the graphs"),
+		check:     fs.Bool("check-readme", false, "fail when a block of docs/rx.md or a graph differs from the committed data"),
+		noSweep:   fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
+		sheetOnly: fs.Bool("sheet", false, "with -update-readme, measure only the eye diagrams, offset, clock and late entry data (TestRxSheet), then render"),
 	}
 }
 ```
