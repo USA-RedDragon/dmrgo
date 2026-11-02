@@ -906,6 +906,26 @@ func (x *softExt) refitScale(c *leanCore) {
 	}
 }
 
+func (x *softExt) replaySlots(c *leanCore, last int64, at, sps float32) int32 {
+	room := float32(c.acqKept()-4) - at
+	_, an := c.acqBuf()
+	fresh := c.acqFrom == 0 && c.acqKept() < an
+	n := int32(0)
+	for int(n) < x.lookback {
+		oldest := c.first - int64(n+1)*slotSymbols - 1
+		start := oldest + 1
+		if !c.bs || fresh && start < 0 {
+			start += cachSymbols
+			oldest = max(oldest, start-1)
+		}
+		if start < 0 || float32(last-oldest)*sps > room {
+			break
+		}
+		n++
+	}
+	return n
+}
+
 func (x *softExt) firstSlot(c *leanCore) {
 	if x.lookback == 0 || c.forced && c.devScale <= leanMinScale {
 		return
@@ -923,22 +943,8 @@ func (x *softExt) firstSlot(c *leanCore) {
 	if c.hunt && c.acqFrom <= x.lockN {
 		at -= float32(c.n - x.lockN)
 	}
-	room := float32(c.acqKept()-4) - at
-	_, an := c.acqBuf()
-	fresh := c.acqFrom == 0 && c.acqKept() < an
-	n := 0
-	for n < x.lookback {
-		oldest := c.first - int64(n+1)*slotSymbols - 1
-		start := oldest + 1
-		if !c.bs || fresh && start < 0 {
-			start += cachSymbols
-			oldest = max(oldest, start-1)
-		}
-		if start < 0 || float32(last-oldest)*sps > room {
-			break
-		}
-		n++
-	}
+	n32 := x.replaySlots(c, last, at, sps)
+	n := int(n32)
 	if n == 0 {
 		return
 	}
@@ -957,7 +963,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
 	clicks := c.clicks
 	c.replaying = true
-	x.replayN, x.replayP = int32(n), 0
+	x.replayN, x.replayP = n32, 0
 	for _, dry := range [2]bool{true, false} {
 		votes := c.votes
 		c.resetChans()
@@ -966,8 +972,8 @@ func (x *softExt) firstSlot(c *leanCore) {
 		c.next, c.lastAnch, c.lost = 0, leanNoSlot, 0
 		c.ms.anch, c.ms.off = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}
 		if !c.bs {
-			c.lastAnch = int32(n)
-			c.ms.anch[n&1] = int32(n)
+			c.lastAnch = n32
+			c.ms.anch[n&1] = n32
 		}
 		c.first = first - int64(n)*slotSymbols
 		c.slotEnd = c.first + slotSymbols
@@ -999,14 +1005,14 @@ func (x *softExt) firstSlot(c *leanCore) {
 		}
 	}
 	c.replaying, c.replayDry, c.replayDeep = false, false, false
-	if c.lastAnch == int32(n) {
+	if c.lastAnch == n32 {
 		c.lastAnch = leanNoSlot
 	}
 	c.clicks = clicks
 	rs := &c.ms
 	ms.anch[0], ms.anch[1] = leanNoSlot, leanNoSlot
 	for i := range rs.anch {
-		if a := rs.anch[i]; a != leanNoSlot && a != int32(n) {
+		if a := rs.anch[i]; a != leanNoSlot && a != n32 {
 			ms.anch[i], ms.lv[i] = a, rs.lv[i]
 		}
 	}

@@ -376,8 +376,8 @@ func TestReceiverOffsetHzTransmitters(t *testing.T) {
 			t.Fatal(err)
 		}
 		_ = tx.Flush()
-		pad := make([]byte, 8*rate/10)
-		return append(append(pad, out...), pad...)
+		pad := make([]byte, 8*rate/10, 2*(8*rate/10)+len(out))
+		return append(append(pad, out...), make([]byte, 8*rate/10)...)
 	}
 	for _, src := range []string{"rrc", "tx1", "tx2"} {
 		for _, base := range []bool{false, true} {
@@ -415,14 +415,15 @@ func TestReceiverStartLevels(t *testing.T) {
 		dev  float64
 		lead float64
 	}
-	var jobs []job
 	var all []float64
 	for _, d := range devs {
 		all = append(all, d...)
 	}
 	slices.Sort(all)
+	all = slices.Compact(all)
+	jobs := make([]job, 0, 2*2*len(all))
 	for _, ms := range []bool{true, false} {
-		for _, d := range slices.Compact(all) {
+		for _, d := range all {
 			for _, lead := range []float64{0, 0.1} {
 				jobs = append(jobs, job{ms, d, lead})
 			}
@@ -479,7 +480,7 @@ func TestReceiverClockStart(t *testing.T) {
 		ppm  float64
 		lead float64
 	}
-	var jobs []job
+	jobs := make([]job, 0, 16)
 	for _, bs := range []bool{false, true} {
 		for _, ppm := range []float64{-500, -250, 250, 500} {
 			for _, lead := range []float64{0, 0.1} {
@@ -580,11 +581,9 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				var fm, env []float64
+				fm, env := rftx.ModulateBS(slots)
 				if ms {
 					fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
-				} else {
-					fm, env = rftx.ModulateBS(slots)
 				}
 				n := len(fm)
 				head := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
@@ -610,7 +609,12 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 					if d := r.DeviationHz() / (3 * deviationHz); math.Abs(d-1) > 0.05 {
 						t.Errorf("Tier%d ms %v, then %s: DeviationHz %.3f of the true value", tier-Tier0, ms, tail, d)
 					}
-					bound := 0.5 / (iqUnitsPerHz * float64(r.full.(*rxHost).iqd.d.f.gain))
+					h, ok := r.full.(*rxHost)
+					if !ok {
+						t.Errorf("Tier%d: no I/Q host", tier-Tier0)
+						continue
+					}
+					bound := 0.5 / (iqUnitsPerHz * float64(h.iqd.d.f.gain))
 					if e := r.OffsetHz() - c.OffsetHz(); math.Abs(e) > bound {
 						t.Errorf("Tier%d ms %v, then %s: OffsetHz moved %+.1f Hz, bound %.2f Hz", tier-Tier0, ms, tail, e, bound)
 					}

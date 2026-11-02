@@ -15,8 +15,6 @@ func (s *burstSink) attachShortLC(on func([]ShortLC), _ Tier, err error) error {
 
 func (s *burstSink) noteLean(*leanCore, *Burst) {}
 
-func (s *burstSink) noteLLR(float64, [3]byte, *[layer2.CACHBits]int16) {}
-
 func (s *burstSink) noteCoh(float64, [3]byte, *[layer2.CACHBits]int16) {}
 
 func (s *burstSink) seeShortLC(*Burst) { _ = s.slcHook }
