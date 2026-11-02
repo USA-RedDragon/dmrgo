@@ -13,7 +13,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 	"unsafe"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -826,7 +825,7 @@ func TestRxBench(t *testing.T) {
 
 var benchCPUGrid = []float64{0, 2, 4, 6, 8, 12, 20, 40}
 
-const benchCPURuns = 3
+const benchCPURuns = 5
 
 func benchCPU(t *testing.T, sig benchSignal, e benchEntry) (at6, worst, worstCN float64) {
 	t.Helper()
@@ -843,13 +842,12 @@ func benchCPU(t *testing.T, sig benchSignal, e benchEntry) (at6, worst, worstCN 
 		default:
 			f = func() { receiveBaseband(x, e.tier) }
 		}
-		best := time.Duration(math.MaxInt64)
-		for range benchCPURuns {
-			start := time.Now()
-			f()
-			best = min(best, time.Since(start))
+		var runs [benchCPURuns]float64
+		for i := range runs {
+			runs[i] = threadCPUSeconds(f)
 		}
-		ns := float64(best) / (float64(len(x)) / basebandRate)
+		slices.Sort(runs[:])
+		ns := runs[benchCPURuns/2] * 1e9 / (float64(len(x)) / basebandRate)
 		if cn == 6 {
 			at6 = ns
 		}
