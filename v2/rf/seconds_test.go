@@ -219,3 +219,32 @@ func TestSecondsLockBurstExact(t *testing.T) {
 		}
 	}
 }
+
+// TestSecondsLockBurstOffset checks that the lock burst Seconds of a BS
+// stream, whose sync starts and ends on different symbols, does not move
+// with the carrier offset: the mean over the seeds at +-2000 Hz must stay
+// within 2 us of the mean at 0 Hz.
+func TestSecondsLockBurstOffset(t *testing.T) {
+	t.Parallel()
+	const seeds = 8
+	slots, _ := benchStream(t, 2)
+	for tier := Tier0; tier <= Tier2; tier++ {
+		var at [3]float64
+		for i, off := range []float64{0, 2000, -2000} {
+			sig := cleanBaseband(slots, off)
+			d := make([]float64, seeds)
+			forSeeds(seeds, func(k int) {
+				got := receiveBaseband(sig.noisy(30, uint64(k+1)), tier)
+				if len(got) == 0 {
+					d[k] = math.NaN()
+					return
+				}
+				d[k] = math.Remainder(got[0].Seconds, slotSeconds)
+			})
+			at[i], _ = meanSE(d)
+			if i > 0 && !(math.Abs(at[i]-at[0]) <= 2e-6) {
+				t.Errorf("Tier%d %+.0f Hz: the lock burst Seconds moves %+.2f us from 0 Hz", tier-Tier0, off, (at[i]-at[0])*1e6)
+			}
+		}
+	}
+}

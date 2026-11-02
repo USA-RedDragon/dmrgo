@@ -752,12 +752,14 @@ func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) floa
 func (win *syncWindow) mmSum(syms *[syncSymbols]int8, end, sps float32) float32 {
 	var e float32
 	prev := win.at(end - float32(syncSymbols-1)*sps)
+	m := prev
 	for k := 1; k < syncSymbols; k++ {
 		y := win.at(end - float32(syncSymbols-1-k)*sps)
 		e += float32(syms[k-1])*y - float32(syms[k])*prev
+		m += y
 		prev = y
 	}
-	return e
+	return e - m/syncSymbols*float32(syms[0]-syms[syncSymbols-1])
 }
 
 func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols]int8) {
