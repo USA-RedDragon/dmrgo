@@ -45,8 +45,8 @@
 <circle class="p s3" cx="76.0" cy="137.2" r="2"/><circle class="p s3" cx="130.2" cy="188.2" r="2"/><circle class="p s3" cx="184.5" cy="222.6" r="2"/><circle class="p s3" cx="238.8" cy="210.6" r="2"/><circle class="p s3" cx="293.0" cy="221.4" r="2"/><circle class="p s3" cx="347.2" cy="164.6" r="2"/><circle class="p s3" cx="401.5" cy="218.8" r="2"/><circle class="p s3" cx="455.8" cy="211.2" r="2"/><circle class="p s3" cx="510.0" cy="221.8" r="2"/>
 <line class="l s3" x1="526.0" y1="94.0" x2="550.0" y2="94.0"/>
 <text x="556.0" y="98.0">Tier 2</text>
-<path class="l s4" d="M76.0,194.4 L130.2,223.5 L184.5,213.3 L238.8,210.6 L293.0,221.4 L347.2,164.6 L401.5,218.8 L455.8,211.2 L510.0,221.8"/>
-<circle class="p s4" cx="76.0" cy="194.4" r="2"/><circle class="p s4" cx="130.2" cy="223.5" r="2"/><circle class="p s4" cx="184.5" cy="213.3" r="2"/><circle class="p s4" cx="238.8" cy="210.6" r="2"/><circle class="p s4" cx="293.0" cy="221.4" r="2"/><circle class="p s4" cx="347.2" cy="164.6" r="2"/><circle class="p s4" cx="401.5" cy="218.8" r="2"/><circle class="p s4" cx="455.8" cy="211.2" r="2"/><circle class="p s4" cx="510.0" cy="221.8" r="2"/>
+<path class="l s4" d="M76.0,171.2 L130.2,223.5 L184.5,213.3 L238.8,210.6 L293.0,221.4 L347.2,164.6 L401.5,218.8 L455.8,211.2 L510.0,221.8"/>
+<circle class="p s4" cx="76.0" cy="171.2" r="2"/><circle class="p s4" cx="130.2" cy="223.5" r="2"/><circle class="p s4" cx="184.5" cy="213.3" r="2"/><circle class="p s4" cx="238.8" cy="210.6" r="2"/><circle class="p s4" cx="293.0" cy="221.4" r="2"/><circle class="p s4" cx="347.2" cy="164.6" r="2"/><circle class="p s4" cx="401.5" cy="218.8" r="2"/><circle class="p s4" cx="455.8" cy="211.2" r="2"/><circle class="p s4" cx="510.0" cy="221.8" r="2"/>
 <line class="l s4" x1="526.0" y1="116.0" x2="550.0" y2="116.0"/>
 <text x="556.0" y="120.0">Tier 3</text>
 </svg>

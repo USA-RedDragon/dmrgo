@@ -62,15 +62,15 @@ Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N
 |------|-------|----------------|--------------------|------|------|------|------|-----|
 | Audio tier 0 | FM audio, 9.6 kHz, core | -4.5 to 4 kHz | ±2,000 ppm | 59 ms | 62 ms | 0.34 ms | 0.41 ms | 1,696 B |
 | Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | -4.5 to 4 kHz | ±2,000 ppm | 47 ms | 45 ms | 0.93 ms | 2.5 ms | 48 KiB |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | ±5 kHz | -3,000 to 2,000 ppm | 46 ms | 45 ms | 8.6 ms | 13 ms | 589 KiB |
-| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | ±4.5 kHz | -3,000 to 2,000 ppm | 46 ms | 45 ms | 168 ms | 320 ms | 1.3 MiB |
+| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | ±4.5 kHz | ±2,000 ppm | 47 ms | 45 ms | 8.6 ms | 13 ms | 589 KiB |
+| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | ±4.5 kHz | ±2,000 ppm | 46 ms | 45 ms | 168 ms | 320 ms | 1.3 MiB |
 | Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | ±2 kHz | ±2,000 ppm | 60 ms | 61 ms | 0.39 ms | 0.44 ms | 1,672 B |
 | I/Q tier 0 | I/Q, discriminator core | ±6 kHz | ±2,000 ppm | 53 ms | 61 ms | 1.3 ms | 1.5 ms | 19 KiB |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | ±6 kHz | -2,000 to 3,000 ppm | 44 ms | 44 ms | 1.7 ms | 3.5 ms | 106 KiB |
-| I/Q tier 2 | I/Q, coherent detection | ±6 kHz | -3,000 to 2,000 ppm | 44 ms | 44 ms | 8.4 ms | 11 ms | 603 KiB |
-| I/Q tier 3 | I/Q, exact phase trellis | ±6 kHz | ±3,000 ppm | 47 ms | 44 ms | 284 ms | 386 ms | 2.3 MiB |
+| I/Q tier 1 | I/Q, soft decoding, noise prediction | ±6 kHz | ±2,000 ppm | 44 ms | 44 ms | 1.7 ms | 3.5 ms | 106 KiB |
+| I/Q tier 2 | I/Q, coherent detection | ±6 kHz | ±2,000 ppm | 44 ms | 44 ms | 8.4 ms | 11 ms | 603 KiB |
+| I/Q tier 3 | I/Q, exact phase trellis | ±6 kHz | ±2,000 ppm | 47 ms | 44 ms | 284 ms | 386 ms | 2.3 MiB |
 
-- Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least 90% of the voice frames at C/N 15.0 dB. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N 15.0 dB. "At least" marks a range that reaches the ends of the grid.
+- Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least 90% of the voice frames at C/N 15.0 dB, counted over the frames of 8 noise draws. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N 15.0 dB. "At least" marks a range that reaches the ends of the grid.
 - Late entry is the median time from the first sample to the end of the first burst that the tier recovers exactly, when the input starts at a random point of a call. A count gives the runs that recovered a burst within 1500 ms, when some did not.
 - CPU is per second of signal, measured on an AMD Ryzen 9 7950X 16-Core Processor. Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver. No tier allocates after it starts.
 
