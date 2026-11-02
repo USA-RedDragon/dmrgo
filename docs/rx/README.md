@@ -7,15 +7,15 @@ Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a
 | Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU at C/N 6 dB | Worst-case CPU | RAM |
 |------|-------|-------|---------------|------|---------------|-----------------|----------------|-----|
 | Best possible (4FSK floor) | - | -1.0 dB | -3.0 dB | -4.1 dB | 0.3 dB | - | - | - |
-| Audio tier 0 | FM audio, 9.6 kHz, core | 9.6 dB | 6.4 dB | 6.3 dB | 8.2 dB | 0.38 ms | 0.48 ms | 1,552 B |
-| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 8.2 dB | 6.4 dB | 5.3 dB | 7.9 dB | 1.1 ms | 2.7 ms | 50 KiB |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 5.0 dB | 4.4 dB | 3.9 dB | 6.3 dB | 9.5 ms | 15 ms | 550 KiB |
-| Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 5.0 dB | 3.9 dB | 3.2 dB | 6.3 dB | 19 ms | 38 ms | 1.2 MiB |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.5 dB | 6.4 dB | 8.2 dB | 0.42 ms | 0.57 ms | 1,528 B |
-| I/Q tier 0 | I/Q, discriminator core | 9.4 dB | 5.5 dB | 5.4 dB | 7.7 dB | 1.6 ms | 1.8 ms | 18 KiB |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | 8.0 dB | 5.4 dB | 3.7 dB | 7.1 dB | 1.8 ms | 3.7 ms | 108 KiB |
-| I/Q tier 2 | I/Q, coherent detection | 4.9 dB | 4.4 dB | 3.2 dB | 5.5 dB | 7.4 ms | 9.7 ms | 565 KiB |
-| I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 2.6 dB | 1.8 dB | 1.7 dB | 4.9 dB | 516 ms | 643 ms | 35.6 MiB |
+| Audio tier 0 | FM audio, 9.6 kHz, core | 9.6 dB | 6.5 dB | 6.4 dB | 8.3 dB | 0.35 ms | 0.61 ms | 1,696 B |
+| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 8.2 dB | 6.4 dB | 5.4 dB | 7.9 dB | 1.3 ms | 3.0 ms | 48 KiB |
+| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 4.9 dB | 4.4 dB | 3.8 dB | 6.2 dB | 10 ms | 21 ms | 589 KiB |
+| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | 4.4 dB | 3.5 dB | 2.7 dB | 5.7 dB | 188 ms | 346 ms | 1.3 MiB |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 10.3 dB | 6.6 dB | 6.5 dB | 8.3 dB | 0.46 ms | 0.52 ms | 1,672 B |
+| I/Q tier 0 | I/Q, discriminator core | 9.3 dB | 5.4 dB | 5.4 dB | 7.6 dB | 1.5 ms | 2.1 ms | 19 KiB |
+| I/Q tier 1 | I/Q, soft decoding, noise prediction | 8.0 dB | 5.4 dB | 3.6 dB | 7.0 dB | 1.9 ms | 4.2 ms | 106 KiB |
+| I/Q tier 2 | I/Q, coherent detection | 4.9 dB | 4.4 dB | 3.2 dB | 5.5 dB | 9.2 ms | 12 ms | 603 KiB |
+| I/Q tier 3 | I/Q, exact phase trellis | 2.5 dB | 1.8 dB | 1.1 dB | 4.8 dB | 306 ms | 449 ms | 2.3 MiB |
 
 - Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.
 - CPU is per second of signal, measured on an AMD Ryzen 9 7950X 16-Core Processor. Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs 2,232 B of RAM with its stack and up to 4.9 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,248 B and up to 5.0 MHz. Both are over the 2 KB line: the detection of standalone RC bursts adds 40 B of stack, 320 B of flash and up to 0.03 MHz on an MS stream, and the MS bursts of both TDMA slots, each with its own timing and levels, add 88 B of RAM, 1,504 B of flash and up to 0.85 MHz on an MS stream, which raises the worst case of low-rate I/Q tier 0 from 4.6 to 4.8 MHz. These costs are accepted. The burst-edge gain hold, the CACH replay, the clock rate tracking, the I/Q gain cap and the lookback replay checks add 88 B of RAM, 1,272 B of flash and up to 3.4% of the cycles of a locked stream, and this cost is accepted too. No tier allocates after it starts.
@@ -43,18 +43,18 @@ Eb/N0 in dB for 90% recovery. [The floors](#the-floors) defines each floor.
 
 | Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |---------|------|------|------|------|------|------|------|------|------|
-| Voice frame (AMBE+2, 49 bits) | 9.6 dB | 8.2 dB | 5.0 dB | 5.0 dB | 10.3 dB | 9.4 dB | 8.0 dB | 4.9 dB | 2.6 dB |
-| Voice frame, protected bits (C0 and C1) | 5.9 dB | 5.2 dB | 4.0 dB | 3.8 dB | 5.4 dB | 4.6 dB | 3.7 dB | 3.1 dB | 1.6 dB |
-| Data block, rate 1/2 | 6.4 dB | 6.4 dB | 4.4 dB | 3.9 dB | 6.5 dB | 5.5 dB | 5.4 dB | 4.4 dB | 1.8 dB |
-| Data block, rate 3/4 | 8.2 dB | 7.9 dB | 6.3 dB | 6.3 dB | 8.2 dB | 7.7 dB | 7.1 dB | 5.5 dB | 4.9 dB |
-| Data block, rate 1 | 11.3 dB | 11.3 dB | 8.3 dB | 8.3 dB | 12.4 dB | 11.2 dB | 11.4 dB | 7.9 dB | 7.7 dB |
-| CSBK | 6.3 dB | 5.3 dB | 3.9 dB | 3.2 dB | 6.4 dB | 5.4 dB | 3.7 dB | 3.2 dB | 1.7 dB |
-| Voice LC header and terminator | 6.4 dB | 5.5 dB | 4.4 dB | 3.6 dB | 6.4 dB | 6.3 dB | 4.1 dB | 3.5 dB | 1.8 dB |
-| Data header | 6.4 dB | 5.3 dB | 4.1 dB | 3.3 dB | 6.4 dB | 5.5 dB | 3.8 dB | 3.4 dB | 1.9 dB |
-| Embedded LC | 9.5 dB | 4.4 dB | 2.6 dB | 2.3 dB | 9.6 dB | 9.3 dB | 2.6 dB | 2.1 dB | 0.4 dB |
-| EMB | 3.9 dB | 3.8 dB | 2.2 dB | 1.9 dB | 2.7 dB | 2.4 dB | 1.9 dB | 1.2 dB | -0.1 dB |
-| Slot type | 4.0 dB | 4.1 dB | 2.0 dB | 2.0 dB | 3.1 dB | 2.7 dB | 2.6 dB | 1.0 dB | -0.4 dB |
-| SYNC detection | 3.7 dB | 3.6 dB | 1.1 dB | 1.1 dB | 2.6 dB | 2.2 dB | 2.0 dB | -0.6 dB | < -0.9 dB |
+| Voice frame (AMBE+2, 49 bits) | 9.6 dB | 8.2 dB | 4.9 dB | 4.4 dB | 10.3 dB | 9.3 dB | 8.0 dB | 4.9 dB | 2.5 dB |
+| Voice frame, protected bits (C0 and C1) | 5.9 dB | 5.2 dB | 3.9 dB | 3.2 dB | 5.4 dB | 4.6 dB | 3.7 dB | 3.1 dB | 1.6 dB |
+| Data block, rate 1/2 | 6.5 dB | 6.4 dB | 4.4 dB | 3.5 dB | 6.6 dB | 5.4 dB | 5.4 dB | 4.4 dB | 1.8 dB |
+| Data block, rate 3/4 | 8.3 dB | 7.9 dB | 6.2 dB | 5.7 dB | 8.3 dB | 7.6 dB | 7.0 dB | 5.5 dB | 4.8 dB |
+| Data block, rate 1 | 11.3 dB | 11.3 dB | 8.3 dB | 8.0 dB | 12.4 dB | 11.1 dB | 11.3 dB | 7.8 dB | 7.6 dB |
+| CSBK | 6.4 dB | 5.4 dB | 3.8 dB | 2.7 dB | 6.5 dB | 5.4 dB | 3.6 dB | 3.2 dB | 1.1 dB |
+| Voice LC header and terminator | 6.4 dB | 5.5 dB | 4.3 dB | 3.3 dB | 6.5 dB | 5.7 dB | 4.1 dB | 3.4 dB | 1.1 dB |
+| Data header | 6.4 dB | 5.1 dB | 3.9 dB | 2.8 dB | 6.5 dB | 5.5 dB | 3.8 dB | 3.3 dB | 1.1 dB |
+| Embedded LC | 9.5 dB | 4.3 dB | 2.4 dB | 2.4 dB | 9.6 dB | 9.2 dB | 2.5 dB | 2.0 dB | 0.1 dB |
+| EMB | 3.9 dB | 3.8 dB | 2.0 dB | 1.4 dB | 2.7 dB | 2.4 dB | 1.9 dB | 1.0 dB | -0.1 dB |
+| Slot type | 4.0 dB | 4.0 dB | 1.3 dB | 1.5 dB | 3.1 dB | 2.7 dB | 2.5 dB | 0.7 dB | -0.2 dB |
+| SYNC detection | 3.7 dB | 3.6 dB | 0.8 dB | 0.9 dB | 2.6 dB | 2.2 dB | 2.0 dB | -0.7 dB | -1.5 dB |
 
 </details>
 
@@ -64,17 +64,17 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 | Recording | C/N | Frames | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |-----------|-----|--------|------|------|------|------|
-| MS voice relayed, HackRF on the uplink | 9.3 dB | 2013 | 1470 | 1519 | 1821 | 1861 |
-| Late entry voice relayed, HackRF on the uplink | 11.1 dB | 1890 | 1467 | 1501 | 1618 | 1630 |
+| MS voice relayed, HackRF on the uplink | 9.3 dB | 2013 | 1474 | 1520 | 1828 | 1865 |
+| Late entry voice relayed, HackRF on the uplink | 11.1 dB | 1890 | 1463 | 1499 | 1622 | 1632 |
 | Voice with PI header relayed, HackRF on the uplink | 17.3 dB | 1818 | 1818 | 1818 | 1818 | 1818 |
-| Mixed voice and data, network to air, run 1 | 9.7 dB | 144 | 114 | 117 | 122 | 123 |
-| Mixed voice and data, network to air, run 2 | 10.6 dB | 144 | 118 | 121 | 125 | 125 |
+| Mixed voice and data, network to air, run 1 | 9.7 dB | 144 | 114 | 119 | 122 | 126 |
+| Mixed voice and data, network to air, run 2 | 10.6 dB | 144 | 117 | 121 | 125 | 126 |
 | Voice, network to air | 10.0 dB | 90 | 88 | 90 | 90 | 90 |
-| Voice, network to air | 11.6 dB | 90 | 84 | 84 | 90 | 90 |
-| Gain sweep, RTL gain 0 dB | 9.9 dB | 51 | 42 | 46 | 50 | 50 |
-| Gain sweep, RTL gain 9.7 dB | 7.3 dB | 54 | 31 | 41 | 44 | 49 |
+| Voice, network to air | 11.6 dB | 90 | 82 | 82 | 90 | 90 |
+| Gain sweep, RTL gain 0 dB | 9.9 dB | 51 | 41 | 47 | 50 | 50 |
+| Gain sweep, RTL gain 9.7 dB | 7.3 dB | 51 | 33 | 44 | 48 | 48 |
 | Gain sweep, RTL gain 19.7 dB | 10.4 dB | 51 | 50 | 51 | 51 | 51 |
-| Gain sweep, RTL gain 29.7 dB | 11.2 dB | 54 | 44 | 49 | 50 | 50 |
+| Gain sweep, RTL gain 29.7 dB | 11.2 dB | 51 | 44 | 50 | 50 | 50 |
 
 </details>
 
@@ -340,14 +340,14 @@ The CACH of BS-sourced bursts carries the Short LC in four fragments. `OnShortLC
 | Tier | Input | Hard decode | `OnShortLC` | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode | On noise, `OnShortLC` |
 |------|-------|-------------|-------------|--------------------|--------------------|-----------------------|-----------------------|
 | Audio tier 0 | FM audio, 9.6 kHz, core | 7.6 dB | 7.6 dB | 0 of 3,249 | 0 of 3,249 | 0.0 per hour | 0.0 per hour |
-| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,880 | 0 of 3,623 | 0.0 per hour | 0.0 per hour |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.4 dB | 6.3 dB | 2 of 2,634 | 2 of 3,374 | 0.0 per hour | 0.0 per hour |
-| Audio tier 3 | FM audio, 9.6 kHz, coherent detection, data passes | 7.4 dB | 6.3 dB | 3 of 2,635 | 3 of 3,375 | 0.0 per hour | 0.0 per hour |
+| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,880 | 0 of 3,624 | 0.0 per hour | 0.0 per hour |
+| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.4 dB | 6.3 dB | 1 of 2,642 | 1 of 3,388 | 0.0 per hour | 0.0 per hour |
+| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | 5.5 dB | 4.2 dB | 0 of 2,966 | 0 of 3,681 | 0.0 per hour | 0.0 per hour |
 | Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 7.8 dB | 7.8 dB | 2 of 5,980 | 2 of 5,980 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 0 | I/Q, discriminator core | 7.1 dB | 7.1 dB | 4 of 5,698 | 4 of 5,698 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | 7.0 dB | 5.2 dB | 4 of 3,914 | 4 of 5,034 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 2 | I/Q, coherent detection | 7.1 dB | 5.3 dB | 7 of 3,195 | 7 of 4,279 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 3 | I/Q, phase trellis with Tier 2 beside it | 4.2 dB | 2.8 dB | 0 of 4,417 | 0 of 5,195 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 0 | I/Q, discriminator core | 7.0 dB | 7.0 dB | 3 of 5,747 | 3 of 5,747 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 1 | I/Q, soft decoding, noise prediction | 6.9 dB | 5.2 dB | 4 of 3,557 | 4 of 4,664 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 2 | I/Q, coherent detection | 7.0 dB | 5.3 dB | 4 of 3,221 | 4 of 4,308 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 3 | I/Q, exact phase trellis | 4.1 dB | 2.7 dB | 0 of 3,718 | 2 of 4,611 | 0.0 per hour | 0.0 per hour |
 
 - Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
 - Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
@@ -357,9 +357,9 @@ The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`)
 | Noise sigma | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |-------------|------|------|------|------|
 | 0 | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) |
-| 16 | 18 / 18 (0) | 18 / 37 (19) | 21 / 42 (21) | 45 / 46 (1) |
-| 20 | 0 / 0 (0) | 1 / 10 (9) | 2 / 6 (4) | 23 / 38 (15) |
-| 24 | 0 / 0 (0) | 1 / 1 (0) | 1 / 1 (0) | 4 / 13 (9) |
+| 16 | 18 / 18 (0) | 18 / 38 (20) | 21 / 42 (21) | 44 / 46 (2) |
+| 20 | 0 / 0 (0) | 1 / 9 (8) | 0 / 2 (2) | 25 / 42 (17) |
+| 24 | 0 / 0 (0) | 1 / 1 (0) | 0 / 0 (0) | 7 / 24 (17) |
 
 <!-- shortlc:end -->
 

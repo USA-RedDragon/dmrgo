@@ -474,7 +474,7 @@ func fastCases(e benchEntry) []benchCase {
 
 func fullCases() []benchCase {
 	var out []benchCase
-	for cn := -2.0; cn <= 12; cn += 0.5 {
+	for cn := -4.0; cn <= 12; cn += 0.5 {
 		for seed := range uint64(4) {
 			out = append(out, benchCase{cn, 100 + seed})
 		}
