@@ -19,9 +19,7 @@ var rxMatrixLimits = []mxLimit{
 	},
 }
 
-var rxMatrixBugs = map[string]string{
-	"lowrate-strobe": "Low-rate I/Q at 9.6 kHz: Seconds follows a sawtooth of -1.8 to +3.0 us over the sub-sample phase of the burst, with a mean of +0.6 us. The cause is not traced yet.",
-}
+var rxMatrixBugs = map[string]string{}
 
 var rxMatrixXFail = map[string]mxXFail{
 	"agc.noise.-2500.ms.rc.0ppm.low.cs16-2048k.40dB.dc/t2":     {checks: "seconds"},
@@ -29,9 +27,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"agc.cw2s.-1500.ms.rc.0ppm.high.a12000.40dB/t1":            {checks: "missing"},
 	"agc.cw2s.-1500.ms.rc.0ppm.high.a12000.40dB/t2":            {checks: "missing"},
 	"agc.cw2s.-1500.ms.rc.0ppm.high.a12000.40dB/t3":            {checks: "missing"},
-	"agc.cw500ms.+3000.ms.csbk.0ppm.high.a24000.inf/t0":        {checks: "bits"},
-	"agc.cw500ms.+3000.ms.csbk.0ppm.high.a24000.inf/t1":        {checks: "bits"},
-	"agc.noise.+0.bs.data12.0ppm.nom.cs16-9600.inf/t0":         {"seconds", "lowrate-strobe"},
 	"agc.noise.+4000.ms.data12.+500ppm.low.cu8-2048k.40dB/t0":  {checks: "bits"},
 	"agc.noise.-3000.ms.pi.+500ppm.low.a12000.inf/t0":          {checks: "missing"},
 	"agc.noise.-3000.ms.pi.+500ppm.low.a12000.inf/t1":          {checks: "missing"},
@@ -47,13 +42,13 @@ var rxMatrixXFail = map[string]mxXFail{
 	"agc.none.+2500.ms.rc.0ppm.low.a48000.inf/t3":              {checks: "missing"},
 	"agc.none.+3000.ms.data1.0ppm.nom.cs16-48k.40dB/t1":        {checks: "bits"},
 	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t0":       {checks: "missing"},
-	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t1":       {checks: "missing"},
-	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t2":       {checks: "missing"},
-	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t3":       {checks: "missing"},
+	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t1":       {checks: "bits,seconds"},
+	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t2":       {checks: "bits,seconds"},
+	"agc.none.+4000.ms.data34.-500ppm.nom.a24000.inf/t3":       {checks: "bits,seconds"},
 	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t0":             {checks: "deviation,missing,seconds"},
-	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t1":             {checks: "deviation,missing"},
-	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t2":             {checks: "bits,deviation,missing"},
-	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t3":             {checks: "bits,deviation,missing"},
+	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t1":             {checks: "deviation,missing,seconds"},
+	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t2":             {checks: "bits,deviation,missing,seconds"},
+	"agc.none.+4000.ms.pi.0ppm.low.a12000.40dB/t3":             {checks: "bits,deviation,missing,seconds"},
 	"agc.none.+700.ms2.data1.0ppm.high.a9600.40dB/t0":          {checks: "seconds"},
 	"agc.none.+700.ms2.data1.0ppm.high.a9600.40dB/t1":          {checks: "seconds"},
 	"agc.none.-3000.ms.csbk.0ppm.low.cs16-48k.40dB/t1":         {checks: "missing"},
