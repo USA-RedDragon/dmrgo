@@ -19,6 +19,7 @@ const (
 	discEdgeHot    = 0.5
 	audioMaxK      = 1<<15 - 1
 	audioMaxOff    = 1<<30 - 1<<16
+	audioStartGain = math.MaxInt8 * rrcStepHz / -float32(math.MinInt16)
 )
 
 type discSetup struct {
@@ -67,9 +68,9 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	if r.front96 && opt.StrobeTab {
 		r.mid96 |= mid96Tab
 	}
-	r.f.gain, r.f.up = 1, opt.LevelUp
+	r.f.gain, r.f.up = audioStartGain, opt.LevelUp
 	if cfg.iq || cfg.lowIQ {
-		r.f.maxGain = discIQMaxGain
+		r.f.gain, r.f.maxGain, r.f.leveled = 1, discIQMaxGain, true
 	}
 	if cfg.iq && opt.CohExt {
 		r.f.gain = float32(discInputRMSHz / (iqUnitsPerHz * deviationHz * math.Sqrt(5)))
@@ -528,6 +529,12 @@ func (r *discRx) levels() {
 	if rms := sqrtf(max(v, 0)); rms > 0 {
 		g := discInputRMSHz / rms
 		switch {
+		case !edge && !f.leveled:
+			f.leveled = true
+			if u := g * f.gain; u >= 0.5 && u <= 2 && (!f.up || u <= discLevelUp) {
+				g = 1 / f.gain
+			}
+			r.scaleAudio(g)
 		case !edge && (g > 2 || g < 0.5 || f.up && g > discLevelUp):
 			if f.maxGain > 0 {
 				g = min(g, f.maxGain/f.gain)
@@ -587,6 +594,7 @@ type audioFront struct {
 	odd     bool
 	up      bool
 	dec     bool
+	leveled bool
 	polSum  int8
 	polBits uint8
 	pol     discPol

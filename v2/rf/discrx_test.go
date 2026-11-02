@@ -316,16 +316,22 @@ func TestDiscReceiverRingWrap(t *testing.T) {
 
 func TestLevelUp(t *testing.T) {
 	t.Parallel()
-	x := make([]int16, 8*frontBlock)
+	x := make([]int16, 10*frontBlock)
 	for i := range x {
-		x[i] = int16(math.Round(1200 * math.Sqrt2 * math.Sin(float64(i)*0.7)))
+		a := 2000.0
+		if i >= 2*frontBlock {
+			a = 1200
+		}
+		x[i] = int16(math.Round(a * math.Sqrt2 * math.Sin(float64(i)*0.7)))
 	}
 	for _, up := range []bool{false, true} {
 		opt := discOptions()
 		opt.LevelUp = up
 		r := mustAudioOpt(AudioRxConfig{Rate: discRate / 2}, opt)
-		_ = r.AppendBursts(nil, x)
-		if g := r.f.gain; up != (g > 1.5) {
+		_ = r.AppendBursts(nil, x[:2*frontBlock])
+		g0 := r.f.gain
+		_ = r.AppendBursts(nil, x[2*frontBlock:])
+		if g := r.f.gain / g0; up != (g > 1.5) {
 			t.Errorf("LevelUp %v: gain %.3f", up, g)
 		}
 	}
