@@ -8,7 +8,8 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Decode a burst](start/02-decode-a-burst.md)
   - [Follow a voice call](start/03-follow-a-voice-call.md)
   - [Send an SMS](start/04-send-an-sms.md)
-  - [Next steps](start/05-next-steps.md)
+  - [Receive on a radio](start/05-receive-on-a-radio.md)
+  - [Next steps](start/06-next-steps.md)
 - Guides
   - [Decode and re-encode captures](guides/decode-captures.md)
   - [Follow calls on both slots](guides/follow-both-slots.md)
