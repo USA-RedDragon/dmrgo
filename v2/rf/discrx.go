@@ -69,8 +69,9 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 		r.mid96 |= mid96Tab
 	}
 	r.f.gain, r.f.up = audioStartGain, opt.LevelUp
+	r.f.idleHold = uint8((2*slotSymbols-burstSymbols)*r.hz()/(symbolRate*frontBlock) + 1)
 	if cfg.iq || cfg.lowIQ {
-		r.f.gain, r.f.maxGain, r.f.leveled = 1, discIQMaxGain, true
+		r.f.gain, r.f.maxGain, r.f.idleHold, r.f.leveled = 1, discIQMaxGain, 1, true
 	}
 	if cfg.iq && opt.CohExt {
 		r.f.gain = float32(discInputRMSHz / (iqUnitsPerHz * deviationHz * math.Sqrt(5)))
@@ -526,16 +527,23 @@ func (r *discRx) levels() {
 	m *= f.gain
 	v *= f.gain * f.gain
 	f.mean += discMeanGain * (m - f.mean)
+	f.idle = min(f.idle+1, f.idleHold)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
 		g := discInputRMSHz / rms
+		quiet := !edge && g*g > discEdgeRatio
+		if !quiet {
+			f.idle = 0
+		}
 		switch {
+		case quiet && f.leveled && f.idle < f.idleHold:
 		case !edge && !f.leveled:
-			f.leveled = true
+			f.idle, f.leveled = 0, true
 			if u := g * f.gain; u >= 0.5 && u <= 2 && (!f.up || u <= discLevelUp) {
 				g = 1 / f.gain
 			}
 			r.scaleAudio(g)
 		case !edge && (g > 2 || g < 0.5 || f.up && g > discLevelUp):
+			f.idle = 0
 			if f.maxGain > 0 {
 				g = min(g, f.maxGain/f.gain)
 			}
@@ -572,32 +580,34 @@ func (r *leanCore) scaleAudio(g float32) {
 }
 
 type audioFront struct {
-	sq      int64
-	qsq     int64
-	qsum    int32
-	qmin    float32
-	qmax    float32
-	gain    float32
-	maxGain float32
-	dc      float32
-	k       int32
-	off     int32
-	sum     int32
-	n       int
-	mean    float32
-	rrcHead int
-	hbHead  int
-	rrcHist [2 * audio12Taps]int8
-	hbHist  [halfTaps]int8
-	half    bool
-	slow    bool
-	odd     bool
-	up      bool
-	dec     bool
-	leveled bool
-	polSum  int8
-	polBits uint8
-	pol     discPol
+	sq       int64
+	qsq      int64
+	qsum     int32
+	qmin     float32
+	qmax     float32
+	gain     float32
+	maxGain  float32
+	dc       float32
+	k        int32
+	off      int32
+	sum      int32
+	n        int
+	mean     float32
+	rrcHead  int
+	hbHead   int
+	rrcHist  [2 * audio12Taps]int8
+	hbHist   [halfTaps]int8
+	half     bool
+	slow     bool
+	odd      bool
+	up       bool
+	dec      bool
+	leveled  bool
+	idle     uint8
+	idleHold uint8
+	polSum   int8
+	polBits  uint8
+	pol      discPol
 }
 
 func (f *audioFront) refresh() {

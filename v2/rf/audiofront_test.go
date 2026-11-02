@@ -43,3 +43,22 @@ func TestAudioFullScaleStart(t *testing.T) {
 		}
 	}
 }
+
+func TestAudioMSIdleNoise(t *testing.T) {
+	t.Parallel()
+	b, x := audioMSVoice(t)
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+		for lead := 0; lead <= 56; lead += 8 {
+			y := append(make([]int16, lead), x...)
+			y = append(y, make([]int16, 4800)...)
+			s := uint64(12345)
+			for i := range y {
+				s = s*6364136223846793005 + 1442695040888963407
+				y[i] += int16(int64(s>>33)%301 - 150)
+			}
+			if n := audioExact(t, tier, y, b); n < len(b)-1 {
+				t.Errorf("Tier%d, lead %d samples, noise +-150: %d of %d bursts exact", tier-Tier0, lead, n, len(b))
+			}
+		}
+	}
+}
