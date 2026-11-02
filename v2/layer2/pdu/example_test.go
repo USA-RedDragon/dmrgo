@@ -33,7 +33,7 @@ func ExampleLCBytes_Codeword() {
 // ExampleDecodeCSBK encodes a preamble CSBK and decodes it back.
 func ExampleDecodeCSBK() {
 	in := pdu.CSBK{LastBlock: true}
-	err := in.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2, TargetAddress: 91, SourceAddress: 3120000})
+	err := in.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2, TargetAddress: 91, SourceAddress: 3002700})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -47,7 +47,7 @@ func ExampleDecodeCSBK() {
 	pre, _ := out.AsPreamble()
 	fmt.Println(out.FEC.Uncorrectable, pre.Group, pre.TargetAddress, pre.SourceAddress)
 	// Output:
-	// false true 91 3120000
+	// false true 91 3002700
 }
 
 // ExampleBroadcastPDU_AsLocalTime reads the local time that a TSCC

@@ -29,7 +29,7 @@ func ExampleNewText() {
 }
 
 // ExampleDecodeMessage reads a text message that an AnyTone radio sent to
-// radio 3140598 in its M-SMS mode, as an IPv4 packet of a DMR data message.
+// radio 3002198 in its M-SMS mode, as an IPv4 packet of a DMR data message.
 // The radio requests no acknowledgement; when a text requests one, the
 // receiver sends it back in an IPv4 packet to the port it came from.
 func ExampleDecodeMessage() {

@@ -21,7 +21,7 @@ func ExampleDecoder_Decode() {
 	data, _ := hex.DecodeString(appcapture.GPS)
 	m := packet.Message{Data: data}
 	if err := m.Header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: 3140598, LLIDSource: 3191868,
+		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: 3002198, LLIDSource: 3002068,
 	}); err != nil {
 		fmt.Println(err)
 		return
@@ -33,7 +33,7 @@ func ExampleDecoder_Decode() {
 	}
 	fmt.Printf("%s from %d: %.5f %.5f %.0f deg\n", f.Format, f.Source, f.Latitude, f.Longitude, f.Course)
 	// Output:
-	// NMEA from 3191868: 34.21217 108.83333 121 deg
+	// NMEA from 3002068: 34.21217 108.83333 121 deg
 }
 
 // ExampleDecoder_Decode_hytera reads the condition report of a Hytera
@@ -76,7 +76,7 @@ var header location.Header
 // it back.
 func ExampleAppendPacket() {
 	f := location.Fix{
-		Format: location.FormatNMEA, Source: 3191868, Destination: 3140598, Valid: true,
+		Format: location.FormatNMEA, Source: 3002068, Destination: 3002198, Valid: true,
 		Latitude: 34.212166, Longitude: 108.833333, Course: 121, HasCourse: true, HasSpeed: true,
 		Year: 2025, Month: 12, Day: 2, Hour: 20, Minute: 0, Second: 37, HasTime: true,
 	}
@@ -94,7 +94,7 @@ func ExampleAppendPacket() {
 	fmt.Printf("%d blocks: %q\n%s from %d: %.5f %.5f %v\n", len(p.Blocks), data[9:], got.Format, got.Source, got.Latitude, got.Longitude, err)
 	// Output:
 	// 8 blocks: "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"
-	// NMEA from 3191868: 34.21217 108.83333 <nil>
+	// NMEA from 3002068: 34.21217 108.83333 <nil>
 }
 
 var request, report lrrp.Message
@@ -102,7 +102,7 @@ var request, report lrrp.Message
 // ExampleDecoder_Decode_lrrp requests the position of a radio with an LRRP
 // immediate request, answers it as the radio does, and reads the answer.
 func ExampleDecoder_Decode_lrrp() {
-	const server, radio = 3140598, 3191868
+	const server, radio = 3002198, 3002068
 	d, data, err := requestLRRP(server, radio)
 	if err != nil {
 		fmt.Println(err)
@@ -114,7 +114,7 @@ func ExampleDecoder_Decode_lrrp() {
 	}
 	// Output:
 	// request: location: packet carries no position
-	// LRRP from 3191868: 34.21217 108.83333, 5 m, request 2468ace0, result 0
+	// LRRP from 3002068: 34.21217 108.83333, 5 m, request 2468ace0, result 0
 }
 
 func requestLRRP(server, radio uint32) (ip.Datagram, []byte, error) {

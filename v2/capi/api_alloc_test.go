@@ -39,7 +39,7 @@ func TestAllocsAPIPDU(t *testing.T) {
 }
 
 func TestAllocsAPIDecodeAsGo(t *testing.T) {
-	c, err := pdu.NewBSOutboundActivation(0x123456, 3191868)
+	c, err := pdu.NewBSOutboundActivation(0x123456, 3002068)
 	if err != nil {
 		t.Fatal(err)
 	}

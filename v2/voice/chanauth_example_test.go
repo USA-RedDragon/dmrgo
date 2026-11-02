@@ -22,13 +22,13 @@ func ExampleTransmitter_Burst() {
 		fmt.Println(err)
 		return
 	}
-	call := voice.Call{Group: true, Target: 9, Source: 3120005}
+	call := voice.Call{Group: true, Target: 9, Source: 3002705}
 	_ = tx.Start(0, call, &voice.CallOptions{HangTime: true})
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	for _, o := range tx.Tick(0, out[:0]) {
 		fmt.Println(o.Kind, o.Hint.DataType, tx.State())
 	}
-	lc, _ := pdu.NewVoiceLC(true, 9, 3120005, layer3.ServiceOptions{})
+	lc, _ := pdu.NewVoiceLC(true, 9, 3002705, layer3.ServiceOptions{})
 	bs, _ := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: vocoder.AMBESilenceSlot()})
 	repeated := bs.Header()
 	tx.Burst(90*time.Millisecond, &repeated, layer2.Hint{}, out[:0])

@@ -11,7 +11,7 @@ import (
 // ExampleDecodeMessage reads the registration of a radio and answers it
 // with a refresh time of 30 minutes.
 func ExampleDecodeMessage() {
-	m, err := ars.DecodeMessage([]byte{0x00, 0x0c, 0xf0, 0x20, 0x07, '3', '1', '9', '1', '8', '6', '8', 0x00, 0x00})
+	m, err := ars.DecodeMessage([]byte{0x00, 0x0c, 0xf0, 0x20, 0x07, '3', '0', '0', '2', '0', '6', '8', 0x00, 0x00})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -21,21 +21,21 @@ func ExampleDecodeMessage() {
 	out, _ := ack.AppendBinary(nil)
 	fmt.Printf("%s %s %d, answer %x\n", m.Header.Type, m.Registration.Event, id, out)
 	// Output:
-	// Device Registration Initial 3191868, answer 0002bf01
+	// Device Registration Initial 3002068, answer 0002bf01
 }
 
-// ExampleNewAck takes the registration of radio 3191868 out of the IPv4
-// packet of a DMR data message to the server at radio ID 3140598, and
+// ExampleNewAck takes the registration of radio 3002068 out of the IPv4
+// packet of a DMR data message to the server at radio ID 3002198, and
 // builds the IPv4 packet of the answer.
 func ExampleNewAck() {
 	reg := ars.NewRegistration(ars.EventInitial)
-	if _, err := reg.SetDeviceID(nil, 3191868); err != nil {
+	if _, err := reg.SetDeviceID(nil, 3002068); err != nil {
 		fmt.Println(err)
 		return
 	}
 	payload, _ := reg.AppendBinary(nil)
-	radio := ip.RadioAddress(ip.DefaultNetwork, 3191868)
-	server := ip.RadioAddress(ip.DefaultNetwork, 3140598)
+	radio := ip.RadioAddress(ip.DefaultNetwork, 3002068)
+	server := ip.RadioAddress(ip.DefaultNetwork, 3002198)
 	packet, _ := ip.AppendIPv4(nil, &ip.Datagram{Source: radio, Destination: server, SourcePort: ip.PortARS, DestinationPort: ip.PortARS, Payload: payload})
 
 	d, err := ip.Decode(enums.SAPIPBasedPacketData, packet)
@@ -56,6 +56,6 @@ func ExampleNewAck() {
 	reply, _ := ip.AppendIPv4(nil, &ip.Datagram{Source: d.Destination, Destination: d.Source, SourcePort: d.DestinationPort, DestinationPort: d.SourcePort, Payload: answer})
 	fmt.Printf("answer %x in %d octets to %d\n", answer, len(reply), ip.RadioID(d.Source))
 	// Output:
-	// Device Registration Initial from 3191868 at 3191868
-	// answer 0002bf01 in 32 octets to 3191868
+	// Device Registration Initial from 3002068 at 3002068
+	// answer 0002bf01 in 32 octets to 3002068
 }

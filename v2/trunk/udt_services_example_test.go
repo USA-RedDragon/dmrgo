@@ -19,7 +19,7 @@ type exampleSite struct {
 }
 
 func newExampleSite(cfg trunk.MSConfig) *exampleSite {
-	cfg.Address, cfg.NoRegistration = 3120001, true
+	cfg.Address, cfg.NoRegistration = 3002701, true
 	ms, _ := trunk.NewMS(&cfg)
 	s := &exampleSite{ms: ms, out: make([]trunk.Output, 0, trunk.MaxOutputs)}
 	code, _ := pdu.SysCode{Model: pdu.NetworkModelSmall, Net: 1, Site: 2}.Pack()
@@ -88,22 +88,22 @@ func (s *exampleSite) udt(h pdu.UDTHeader, a *trunk.Appended) {
 }
 
 func ackd(r enums.AckReason) *pdu.CSBK {
-	return exampleCSBK((*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{ReasonCode: byte(r), TargetAddress: 3120001})
+	return exampleCSBK((*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{ReasonCode: byte(r), TargetAddress: 3002701})
 }
 
 func ahoyFor(kind enums.ServiceKind, src uint32, als bool) *pdu.CSBK {
-	return exampleCSBK((*pdu.CSBK).SetAhoy, pdu.AhoyPDU{ALS: als, ServiceKind: uint8(kind), TargetAddress: 3120001, SourceAddress: src})
+	return exampleCSBK((*pdu.CSBK).SetAhoy, pdu.AhoyPDU{ALS: als, ServiceKind: uint8(kind), TargetAddress: 3002701, SourceAddress: src})
 }
 
 // ExampleMS_PollShortData polls another MS for its NMEA position: the TSCC
 // delivers the polled data in a UDT, and the MS acknowledges it.
 func ExampleMS_PollShortData() {
 	s := newExampleSite(trunk.MSConfig{})
-	_ = s.ms.PollShortData(s.now, 3120002, enums.UDTNMEA, 1)
+	_ = s.ms.PollShortData(s.now, 3002702, enums.UDTNMEA, 1)
 	s.send(exampleCSBK((*pdu.CSBK).SetAloha, pdu.AlohaPDU{}))
 	var a trunk.Appended
 	_ = a.SetNMEAShort(&trunk.NMEAShort{North: true, Fix: true, LatDegrees: 41, LonDegrees: 87, Speed: 3})
-	s.udt(pdu.UDTHeader{LLIDDestination: 3120001, LLIDSource: 3120002}, &a)
+	s.udt(pdu.UDTHeader{LLIDDestination: 3002701, LLIDSource: 3002702}, &a)
 	u, _ := s.ms.UDT()
 	got := u.Appended()
 	n, _ := got.NMEAShort()
@@ -123,15 +123,15 @@ func ExampleMS_SetPollResponse() {
 	var a trunk.Appended
 	_ = a.SetText(enums.UDTISO8, []byte("status 7"))
 	s.ms.SetPollResponse(&a)
-	s.send(ahoyFor(enums.ServiceKindShortDataPolling, 3120002, false))
+	s.send(ahoyFor(enums.ServiceKindShortDataPolling, 3002702, false))
 	lip := trunk.USBDLIPResponse{Latitude: 45, Longitude: -90}
 	p, _ := lip.Encode()
 	s.ms.SetUSBDResponse(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP, Payload: p})
-	req := trunk.USBDPollRequest{Target: 3120001}
+	req := trunk.USBDPollRequest{Target: 3002701}
 	q, _ := req.Encode()
 	s.send(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP, Payload: q})
 	// Output:
-	// Polled from 3120002
+	// Polled from 3002702
 	// send Data Header
 	// send Rate 1/2
 	// Polled from 0
@@ -143,7 +143,7 @@ func ExampleMS_SetPollResponse() {
 func ExampleMS_Divert() {
 	s := newExampleSite(trunk.MSConfig{})
 	var a trunk.Appended
-	_ = a.SetAddresses(false, []uint32{3120005})
+	_ = a.SetAddresses(false, []uint32{3002705})
 	_ = s.ms.Divert(s.now, constants.GatewayMSI, layer3.DiversionServiceOptions{Set: true, Voice: true}, &a)
 	s.send(exampleCSBK((*pdu.CSBK).SetAloha, pdu.AlohaPDU{}))
 	s.send(ahoyFor(enums.ServiceKindCallDiversion, constants.GatewayDIVERTI, false))
@@ -161,13 +161,13 @@ func ExampleMS_Groups() {
 	s := newExampleSite(trunk.MSConfig{})
 	var a trunk.Appended
 	_ = a.SetAddresses(true, []uint32{501, 502})
-	s.udt(pdu.UDTHeader{LLIDDestination: 3120001, LLIDSource: 3120002, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &a)
+	s.udt(pdu.UDTHeader{LLIDDestination: 3002701, LLIDSource: 3002702, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &a)
 	_ = a.SetMixed(false, 502, []byte("Fire Ops"))
-	s.udt(pdu.UDTHeader{LLIDDestination: 3120001, LLIDSource: 3120002, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &a)
+	s.udt(pdu.UDTHeader{LLIDDestination: 3002701, LLIDSource: 3002702, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &a)
 	g := s.ms.Groups()
 	fmt.Println(g.Groups[0], g.Groups[1], "one key", g.OneKey, "alias", string(s.ms.GroupAlias(nil, 502)))
 	s.send(exampleCSBK((*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: 4, TargetAddress: 502, SourceAddress: 3120002}))
+		PhysicalChannel: 4, TargetAddress: 502, SourceAddress: 3002702}))
 	// Output:
 	// UDT
 	// Groups
@@ -176,7 +176,7 @@ func ExampleMS_Groups() {
 	// Groups
 	// send CSBK
 	// 501 502 one key 501 alias Fire Ops
-	// Grant from 3120002
+	// Grant from 3002702
 	// Tune
 }
 
@@ -184,18 +184,18 @@ func ExampleMS_Groups() {
 // PV_GRANT_DX that names it as the target.
 func ExampleMS_CallDuplex() {
 	s := newExampleSite(trunk.MSConfig{})
-	_ = s.ms.CallDuplex(s.now, 3120002, layer3.VoiceServiceOptions{})
+	_ = s.ms.CallDuplex(s.now, 3002702, layer3.VoiceServiceOptions{})
 	s.send(exampleCSBK((*pdu.CSBK).SetAloha, pdu.AlohaPDU{}))
-	for _, target := range []uint32{3120002, 3120001} {
-		other := 3120001 + 3120002 - target
+	for _, target := range []uint32{3002702, 3002701} {
+		other := 3002701 + 3002702 - target
 		s.send(exampleCSBK((*pdu.CSBK).SetDuplexPrivateVoiceGrant, pdu.DuplexPrivateVoiceGrantPDU{
 			PhysicalChannel: 9, TargetAddress: target, SourceAddress: other}))
 	}
 	fmt.Println(s.ms.State())
 	// Output:
 	// send CSBK
-	// Grant from 3120001
-	// Grant from 3120002
+	// Grant from 3002701
+	// Grant from 3002702
 	// Tune
 	// Payload
 }
@@ -205,13 +205,13 @@ func ExampleMS_CallDuplex() {
 // OutputAmbient when it joins the call.
 func ExampleMS_CallAmbient() {
 	s := newExampleSite(trunk.MSConfig{Ambient: true})
-	s.send(ahoyFor(enums.ServiceKindIndividualVoice, 3120002, true))
+	s.send(ahoyFor(enums.ServiceKindIndividualVoice, 3002702, true))
 	s.send(exampleCSBK((*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 9, TargetAddress: 3120001, SourceAddress: 3120002}))
+		PhysicalChannel: 9, TargetAddress: 3002701, SourceAddress: 3002702}))
 	// Output:
-	// Ahoy from 3120002
+	// Ahoy from 3002702
 	// send CSBK
-	// Grant from 3120002
+	// Grant from 3002702
 	// Tune
-	// Ambient from 3120002
+	// Ambient from 3002702
 }

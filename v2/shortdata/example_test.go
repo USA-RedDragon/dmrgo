@@ -40,7 +40,7 @@ func ExampleAppendText_codings() {
 		text   string
 	}{
 		{enums.DDBCD, "0123*#9"},
-		{enums.DD7Bit, "KI5VMF"},
+		{enums.DD7Bit, "N0CALL"},
 		{enums.DDISO8859Part7, "Γειά"},
 	} {
 		data, err := shortdata.AppendText(nil, c.format, []byte(c.text))
@@ -53,6 +53,6 @@ func ExampleAppendText_codings() {
 	}
 	// Output:
 	// BCD: 01 23 ab 9f 0123*#9 <nil>
-	// 7-bit: 97 25 ad 69 b1 bf KI5VMF <nil>
+	// 7-bit: 9c c2 1c 19 93 3f N0CALL <nil>
 	// ISO 8859-7: c3 e5 e9 dc Γειά <nil>
 }

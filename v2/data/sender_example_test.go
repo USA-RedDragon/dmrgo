@@ -20,14 +20,14 @@ func ExampleSender() {
 		fmt.Println(err)
 		return
 	}
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3120002, Respond: true})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002702, Respond: true})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("a confirmed message of a few blocks")}
 	if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702, LLIDSource: 3002701,
 	}); err != nil {
 		fmt.Println(err)
 		return
@@ -81,7 +81,7 @@ func ExampleSender_window() {
 		fmt.Println(err)
 		return
 	}
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3120002, Respond: true})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002702, Respond: true})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -89,7 +89,7 @@ func ExampleSender_window() {
 	for _, text := range []string{"one", "two", "three"} {
 		m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte(text)}
 		if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
-			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702, LLIDSource: 3002701,
 		}); err != nil {
 			fmt.Println(err)
 			return
@@ -141,7 +141,7 @@ func ExampleOutput_ICMP() {
 	}
 	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("no one hears this")}
 	if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702, LLIDSource: 3002701,
 	}); err != nil {
 		fmt.Println(err)
 		return

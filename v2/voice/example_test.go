@@ -76,7 +76,7 @@ func ExampleJitter() {
 	for _, a := range arrivals {
 		var raw layer2.RawBurst
 		h := layer2.Hint{Slot: enums.Slot1, Kind: layer2.KindVoice, Seq: a.seq, HasSeq: true, SeqBits: 8}
-		fmt.Println("push", a.seq, "at", a.at, j.Push(a.at, &raw, h, 3120001))
+		fmt.Println("push", a.seq, "at", a.at, j.Push(a.at, &raw, h, 3002701))
 	}
 	var p voice.JitterPacket
 	for {
@@ -111,7 +111,7 @@ func ExampleTransmitter() {
 		fmt.Println(err)
 		return
 	}
-	if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3120001}, nil); err != nil {
+	if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3002701}, nil); err != nil {
 		fmt.Println(err)
 		return
 	}

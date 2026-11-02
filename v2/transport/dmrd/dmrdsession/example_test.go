@@ -14,9 +14,9 @@ import (
 func Example() {
 	var rptc dmrd.MMDVMConfig
 	copy(rptc[:], "RPTC")
-	rptc.SetID(3129100)
+	rptc.SetID(3002900)
 	peer, _ := dmrdsession.NewPeer(&dmrdsession.PeerConfig{
-		Dialect: dmrd.DialectMMDVM, ID: 3129100, Password: []byte("passw0rd"), Config: rptc[:], Options: []byte("TS2=91;"),
+		Dialect: dmrd.DialectMMDVM, ID: 3002900, Password: []byte("passw0rd"), Config: rptc[:], Options: []byte("TS2=91;"),
 	})
 	master, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM})
 
@@ -87,9 +87,9 @@ func Example() {
 func ExamplePeer() {
 	var rptc dmrd.HBRPConfig
 	copy(rptc[:], "RPTC")
-	rptc.SetID(2620001)
+	rptc.SetID(3002401)
 	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{
-		Dialect: dmrd.DialectHBRP, ID: 2620001, Password: []byte("passw0rd"), Config: rptc[:],
+		Dialect: dmrd.DialectHBRP, ID: 3002401, Password: []byte("passw0rd"), Config: rptc[:],
 		Retry: 5 * time.Second, Timeout: 15 * time.Second,
 	})
 	if err != nil {
@@ -133,20 +133,20 @@ func ExampleMaster() {
 		return
 	}
 	out := make([]dmrdsession.Output, 0, dmrdsession.MaxOutputs)
-	for _, o := range master.Resume(0, 3129100, out[:0]) {
+	for _, o := range master.Resume(0, 3002900, out[:0]) {
 		fmt.Println(o.Kind, o.ID)
 	}
 	at, _ := master.Deadline()
 	for _, o := range master.Tick(at, out[:0]) {
 		fmt.Println(at, o.Kind, o.Reason, "in", o.State)
 	}
-	ping := dmrd.Control{Command: dmrd.CommandRPTPING, ID: 3129100}
+	ping := dmrd.Control{Command: dmrd.CommandRPTPING, ID: 3002900}
 	p, _ := ping.AppendBinary(nil, dmrd.DialectMMDVM)
 	for _, o := range master.Packet(at, p, out[:0]) {
 		fmt.Println("answer", dmrd.Classify(o.Packet, dmrd.DialectMMDVM))
 	}
 	// Output:
-	// Up 3129100
+	// Up 3002900
 	// 1m0s Down Timeout in Running
 	// answer MSTNAK
 }

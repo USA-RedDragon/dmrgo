@@ -84,7 +84,7 @@ func basicReceiver(key *privacy.Key) (*privacy.Receiver, error) {
 }
 
 func sendPrivateCall(ptx *privacy.Transmitter, tx *voice.Transmitter) ([]vocoder.AMBEFrame, error) {
-	call := voice.Call{Group: true, Target: 9, Source: 3191868, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
+	call := voice.Call{Group: true, Target: 9, Source: 3002068, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
 	ptx.Start(0)
 	if err := tx.Start(0, call, nil); err != nil {
 		return nil, err

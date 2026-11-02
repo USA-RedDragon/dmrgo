@@ -189,7 +189,7 @@ func voiceABI(seed uint64) error {
 		return fmt.Errorf("new transmitter %d", rc)
 	}
 	defer C.dmrgo_voice_transmitter_free(ctx)
-	call := voice.Call{Group: true, Target: 9990, Source: 3191868}
+	call := voice.Call{Group: true, Target: 9990, Source: 3002068}
 	opts := voice.CallOptions{TalkerAlias: "dmrgo abi alias"}
 	if err := gtx.Start(0, call, &opts); err != nil {
 		return err
@@ -283,7 +283,7 @@ func voiceABI(seed uint64) error {
 func layer2txABI(seed uint64) error {
 	h := newHarness(seed)
 	defer h.free()
-	lc, err := pdu.NewVoiceLC(true, 9990, 3191868, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9990, 3002068, layer3.ServiceOptions{})
 	if err != nil {
 		return err
 	}

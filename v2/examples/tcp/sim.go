@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	unitTerm = 3120001
-	unitHost = 3120002
+	unitTerm = 3002701
+	unitHost = 3002702
 	port     = 23
 	server   = 1
 	client   = 0

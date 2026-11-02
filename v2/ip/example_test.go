@@ -31,8 +31,8 @@ func ExampleDecode() {
 func ExampleAppendICMPPacket() {
 	tms, _ := hex.DecodeString(appcapture.TMS)
 	c := ip.ICMPPacket{
-		Source:      ip.RadioAddress(ip.DefaultNetwork, 3140598),
-		Destination: ip.RadioAddress(ip.DefaultNetwork, 3191868),
+		Source:      ip.RadioAddress(ip.DefaultNetwork, 3002198),
+		Destination: ip.RadioAddress(ip.DefaultNetwork, 3002068),
 		Message:     ip.ICMPHostUnreachable,
 		Original:    tms,
 	}
@@ -48,6 +48,6 @@ func ExampleAppendICMPPacket() {
 	fmt.Println(m, pointer, ok)
 	// Output:
 	// 56 octets
-	// Host Unreachable to 3191868 about 28 octets
+	// Host Unreachable to 3002068 about 28 octets
 	// ICMPMessage(type 0, code 0) 0 false
 }

@@ -22,8 +22,8 @@ import (
 
 const (
 	colorCode = 1
-	src       = 3120001
-	dst       = 3120002
+	src       = 3002701
+	dst       = 3002702
 )
 
 func main() {

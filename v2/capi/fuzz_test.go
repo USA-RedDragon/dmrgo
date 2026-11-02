@@ -22,7 +22,7 @@ func goOutputs(t *testing.T, frames int) ([]string, [][33]byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := tx.Start(0, voice.Call{Group: true, Target: 9990, Source: 3191868}, &voice.CallOptions{TalkerAlias: fuzzAlias}); err != nil {
+	if err := tx.Start(0, voice.Call{Group: true, Target: 9990, Source: 3002068}, &voice.CallOptions{TalkerAlias: fuzzAlias}); err != nil {
 		t.Fatal(err)
 	}
 	for i := range frames {

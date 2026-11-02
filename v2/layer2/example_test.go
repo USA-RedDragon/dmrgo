@@ -93,7 +93,7 @@ func ExampleBuildDataBurst() {
 // call: the header, one superframe of silence and the terminator.
 func ExampleVoiceTransmitter() {
 	var lc pdu.FullLinkControl
-	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000}); err != nil {
+	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3002700}); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -203,7 +203,7 @@ func buildHeader() (layer2.RawBurst, error) {
 // decodes it back.
 func ExampleBuildBurst() {
 	headerLC.BurstDataType = enums.DataTypeVoiceLCHeader
-	if err := headerLC.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000}); err != nil {
+	if err := headerLC.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3002700}); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -221,5 +221,5 @@ func ExampleBuildBurst() {
 	target, source, _ := lc.Addresses()
 	fmt.Println(b.SlotType.DataType, source, target)
 	// Output:
-	// Voice LC Header 3120000 91
+	// Voice LC Header 3002700 91
 }

@@ -19,7 +19,7 @@ func TestRun(t *testing.T) {
 		"outbound CSBKs: 7 round trips ok",
 		"C_ALOHA SYScode 0x6acd: model 1 net 85 site 19 par 1",
 		"Burst.Encode matches BuildBurst",
-		"TD_GRANT_MI ch 77 tg 9 src 3120001",
+		"TD_GRANT_MI ch 77 tg 9 src 3002701",
 		"inbound C_RAND PDU ok, sync MS-sourced data",
 		"ch 0xFFF tg 9: TX 451.1250 MHz RX 456.1250 MHz",
 		"CACH Short LC: 8 C_SYS_Parms/P_SYS_Parms round trips ok",

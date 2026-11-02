@@ -21,7 +21,7 @@ var header sms.Header
 // Example builds a MOTOTRBO text message as an unconfirmed packet, segments
 // it into rate 1/2 blocks and reads the text back.
 func Example() {
-	t := sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Body: []byte("Hello")}
+	t := sms.Text{Format: sms.FormatTMS, Source: 3002068, Destination: 3002198, Body: []byte("Hello")}
 	data, err := sms.AppendPacket(nil, &t, &header)
 	if err != nil {
 		fmt.Println(err)
@@ -36,12 +36,12 @@ func Example() {
 	_, got, err := sms.Decode(nil, &m.Header, m.Data)
 	fmt.Printf("%d blocks, %s from %d: %s %v\n", len(p.Blocks), got.Format, got.Source, got.Body, err)
 	// Output:
-	// 5 blocks, TMS from 3191868: Hello <nil>
+	// 5 blocks, TMS from 3002068: Hello <nil>
 }
 
 // ExampleAppendAck answers a TMS text that requests an acknowledgement.
 func ExampleAppendAck() {
-	in := sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Sequence: 3, AckRequired: true, Body: []byte("Hi")}
+	in := sms.Text{Format: sms.FormatTMS, Source: 3002068, Destination: 3002198, Sequence: 3, AckRequired: true, Body: []byte("Hi")}
 	data, err := sms.AppendPacket(nil, &in, &header)
 	if err != nil {
 		fmt.Println(err)
@@ -61,7 +61,7 @@ func ExampleAppendAck() {
 	u, _ := ackHeader.Data.AsUnconfirmed()
 	fmt.Printf("%d octets from %d to %d\n", len(ack), u.LLIDSource, u.LLIDDestination)
 	// Output:
-	// 33 octets from 3140598 to 3191868
+	// 33 octets from 3002198 to 3002068
 }
 
 // Example_reply reads a confirmed text from a capture of a radio, then

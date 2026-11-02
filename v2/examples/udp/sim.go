@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	unitA    = 3120001
-	unitB    = 3120002
+	unitA    = 3002701
+	unitB    = 3002702
 	dictID   = 1
 	dictSize = 4096
 	dictSeed = 1000

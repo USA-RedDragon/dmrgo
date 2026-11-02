@@ -28,7 +28,7 @@ func ExampleFollower() {
 	alohaCSBK := pdu.CSBK{LastBlock: true}
 	_ = alohaCSBK.SetAloha(pdu.AlohaPDU{SysIdentCode: code})
 	grantCSBK := pdu.CSBK{LastBlock: true}
-	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001})
+	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3002701})
 	aloha, _ := layer2.BuildBurst(&alohaCSBK, 1, layer2.SyncSourceBS)
 	grant, _ := layer2.BuildBurst(&grantCSBK, 1, layer2.SyncSourceBS)
 
@@ -51,7 +51,7 @@ func ExampleFollower() {
 	}
 	// Output:
 	// site 1 2
-	// grant to talkgroup 9 from 3120001
+	// grant to talkgroup 9 from 3002701
 	// tune to channel 17 TS2 451200000 Hz
 }
 
@@ -59,13 +59,13 @@ func ExampleFollower() {
 // with the key of the MS, as in ETSI TS 102 361-4 V1.12.1 Table 6.15.
 func ExampleMS_AuthResponse() {
 	key := [trunkauth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
+	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3002701, NoRegistration: true})
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 
 	alohaCSBK := pdu.CSBK{LastBlock: true}
 	_ = alohaCSBK.SetAloha(pdu.AlohaPDU{})
 	ahoyCSBK := pdu.CSBK{LastBlock: true}
-	_ = ahoyCSBK.SetAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: 3120001, SourceAddress: 0x7A17C0})
+	_ = ahoyCSBK.SetAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: 3002701, SourceAddress: 0x7A17C0})
 	aloha, _ := layer2.BuildBurst(&alohaCSBK, 1, layer2.SyncSourceBS)
 	ahoy, _ := layer2.BuildBurst(&ahoyCSBK, 1, layer2.SyncSourceBS)
 
@@ -92,7 +92,7 @@ func ExampleMS_AuthResponse() {
 		now += 60 * time.Millisecond
 	}
 	// Output:
-	// challenge 7A17C0, response E8CA1D from 3120001
+	// challenge 7A17C0, response E8CA1D from 3002701
 }
 
 // ExampleMS registers an MS on a TSCC, makes a talkgroup voice call by
@@ -100,7 +100,7 @@ func ExampleMS_AuthResponse() {
 // call. newServiceSite and run, in example_services_test.go, carry the
 // bursts between the TSCC and the MS on a 30 ms slot clock.
 func ExampleMS() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	s.onMS = func(_ int, o *trunk.Output) {
 		switch o.Kind {
 		case trunk.OutputRegistered:
@@ -128,7 +128,7 @@ func ExampleMS() {
 	// Output:
 	// Registered
 	// Control registered true
-	// Grant talkgroup 9 from 3120001
+	// Grant talkgroup 9 from 3002701
 	// Tune channel 10 TS1
 	// Payload
 	// CallEnd Maintenance
@@ -139,7 +139,7 @@ func ExampleMS() {
 // ExampleTSCC runs a single site with one payload channel, and reports
 // the registration of an MS and the start and end of its call.
 func ExampleTSCC() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	s.onTSCC = func(o *trunk.TSCCOutput) {
 		switch o.Kind {
 		case trunk.TSCCRegistered:
@@ -156,10 +156,10 @@ func ExampleTSCC() {
 	s.run(time.Second)
 	s.take(0, s.ms[0].EndCall(s.now, s.mout[:0]))
 	s.run(time.Second)
-	fmt.Println("registered", s.tscc.Registered(3120001))
+	fmt.Println("registered", s.tscc.Registered(3002701))
 	// Output:
-	// Registered 3120001
-	// CallStart talkgroup 9 from 3120001 on channel 10 TS1
+	// Registered 3002701
+	// CallStart talkgroup 9 from 3002701 on channel 10 TS1
 	// CallEnd Maintenance
 	// registered true
 }

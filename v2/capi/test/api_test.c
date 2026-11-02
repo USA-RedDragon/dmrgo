@@ -11,9 +11,9 @@ static int failures;
 
 #define RF_SLOTS 48
 #define RF_TX_BYTES 554560
-#define RF_TX_FNV UINT64_C(0xe137476937007a31)
+#define RF_TX_FNV UINT64_C(0x84d81bd9ed89e5f2)
 #define RF_AUDIO_SAMPLES 69300
-#define RF_AUDIO_FNV UINT64_C(0x76b95157255f6d87)
+#define RF_AUDIO_FNV UINT64_C(0xf3ef28821ceba6c7)
 
 #define CHECK(cond)                                                            \
 	do {                                                                   \
@@ -91,7 +91,7 @@ static void test_errors(void) {
 
 static void test_pdu(void) {
 	dmrgo_pdu_csbk_t c;
-	OK(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, &c));
+	OK(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, &c));
 	uint8_t bits[12];
 	OK(dmrgo_pdu_csbk_encode(&c, bits));
 	dmrgo_pdu_csbk_t d;
@@ -101,7 +101,7 @@ static void test_pdu(void) {
 	uint32_t target = 0, source = 0;
 	bool ok = false;
 	OK(dmrgo_pdu_csbk_addresses(&d, &target, &source, &ok));
-	CHECK(ok && target == 0x123456 && source == 3191868);
+	CHECK(ok && target == 0x123456 && source == 3002068);
 	char s[512];
 	size_t n = 0;
 	OK(dmrgo_pdu_csbk_string(&d, s, sizeof s, &n, NULL));
@@ -113,7 +113,7 @@ static void test_pdu(void) {
 
 	dmrgo_layer3_service_options_t so = {0};
 	dmrgo_pdu_full_link_control_t lc;
-	OK(dmrgo_pdu_new_voice_lc(true, 91, 3191868, &so, &lc));
+	OK(dmrgo_pdu_new_voice_lc(true, 91, 3002068, &so, &lc));
 	dmrgo_pdu_flc_group_voice_t gv;
 	dmrgo_pdu_flc_unit_to_unit_t uu;
 	bool isgv, isuu;
@@ -127,7 +127,7 @@ static void test_pdu(void) {
 	OK(dmrgo_pdu_decode_full_link_control(lcbits, DMRGO_ENUMS_DATA_TYPE_VOICE_LC_HEADER, &lc2));
 	OK(dmrgo_pdu_full_link_control_addresses(&lc2, &target, &source, &ok));
 	OK(dmrgo_pdu_full_link_control_as_group_voice(&lc2, &gv, &isgv));
-	CHECK(ok && target == 91 && source == 3191868 && isgv && !lc2.fec.uncorrectable);
+	CHECK(ok && target == 91 && source == 3002068 && isgv && !lc2.fec.uncorrectable);
 	printf("pdu: CSBK and Full LC round trips\n");
 }
 
@@ -475,7 +475,7 @@ static void test_in_out(void) {
 static void test_layer2(void) {
 	dmrgo_layer2_data_t data = {0};
 	data.tag = DMRGO_LAYER2_DATA_PDU_CSBK;
-	OK(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, &data.v.pdu_csbk));
+	OK(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, &data.v.pdu_csbk));
 	dmrgo_layer2_raw_burst_t raw;
 	OK(dmrgo_layer2_build_burst(&data, 5, DMRGO_LAYER2_SYNC_SOURCE_BS, &raw));
 	dmrgo_pdu_slot_type_t st;
@@ -494,19 +494,19 @@ static void test_layer2(void) {
 	uint32_t target = 0, source = 0;
 	bool ok = false;
 	OK(dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok));
-	CHECK(ok && target == 0x123456 && source == 3191868);
+	CHECK(ok && target == 0x123456 && source == 3002068);
 	dmrgo_layer2_raw_burst_t again;
 	OK(dmrgo_layer2_burst_encode(b, &again));
 	CHECK(memcmp(again.v, raw.v, sizeof raw.v) == 0);
 
-	OK(dmrgo_pdu_csbk_set_addresses(&got.v.pdu_csbk, 0x654321, 3191868));
+	OK(dmrgo_pdu_csbk_set_addresses(&got.v.pdu_csbk, 0x654321, 3002068));
 	OK(dmrgo_layer2_burst_set_data(b, &got));
 	OK(dmrgo_layer2_burst_encode(b, &again));
 	CHECK(memcmp(again.v, raw.v, sizeof raw.v) != 0);
 	OK(dmrgo_layer2_burst_decode_from_bytes(b, &again));
 	OK(dmrgo_layer2_burst_get_data(b, &got));
 	OK(dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok));
-	CHECK(got.tag == DMRGO_LAYER2_DATA_PDU_CSBK && ok && target == 0x654321 && source == 3191868);
+	CHECK(got.tag == DMRGO_LAYER2_DATA_PDU_CSBK && ok && target == 0x654321 && source == 3002068);
 	OK(dmrgo_layer2_burst_free(b));
 	printf("layer2: build, decode, set and encode a CSBK burst\n");
 }
@@ -516,7 +516,7 @@ static void test_tx(void) {
 	memset(&opts, 0, sizeof opts);
 	opts.size = sizeof opts;
 	dmrgo_layer3_service_options_t so = {0};
-	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
+	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3002068, &so, &opts.lc));
 	opts.color_code = 1;
 	opts.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	dmrgo_layer2_voice_transmitter_t *tx = NULL;
@@ -565,7 +565,7 @@ static void test_tx(void) {
 		for (size_t j = 0; j < m; j++) {
 			if (ev[j].kind == DMRGO_VOICE_EVENT_CALL_START) {
 				starts++;
-				CHECK(ev[j].call.group && ev[j].call.target == 9990 && ev[j].call.source == 3191868);
+				CHECK(ev[j].call.group && ev[j].call.target == 9990 && ev[j].call.source == 3002068);
 			}
 			if (ev[j].kind == DMRGO_VOICE_EVENT_VOICE)
 				voice++;
@@ -592,7 +592,7 @@ static void test_tx(void) {
 	memset(&call, 0, sizeof call);
 	call.group = true;
 	call.target = 9990;
-	call.source = 3191868;
+	call.source = 3002068;
 	OK(dmrgo_voice_transmitter_start(vt, 0, &call, NULL));
 	OK(dmrgo_voice_transmitter_frames(vt, frames, 18));
 	OK(dmrgo_voice_transmitter_stop(vt, 0));
@@ -976,7 +976,7 @@ static void test_partial(void) {
 	memset(&opts, 0, sizeof opts);
 	opts.size = sizeof opts;
 	dmrgo_layer3_service_options_t so = {0};
-	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
+	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3002068, &so, &opts.lc));
 	opts.color_code = 1;
 	opts.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	dmrgo_layer2_voice_transmitter_t *tx = NULL;
@@ -1012,7 +1012,7 @@ static void test_small_user(void) {
 	memset(&opts, 0, sizeof opts);
 	opts.size = sizeof opts;
 	dmrgo_layer3_service_options_t so = {0};
-	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
+	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3002068, &so, &opts.lc));
 	opts.color_code = 1;
 	opts.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	opts.embedded_lc.fn = small_lc;
@@ -1239,7 +1239,7 @@ static void test_port_counts(void) {
 static int rf_bursts(dmrgo_rf_burst_t *b, int n) {
 	dmrgo_layer2_data_t data = {0};
 	data.tag = DMRGO_LAYER2_DATA_PDU_CSBK;
-	if (dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, &data.v.pdu_csbk) != DMRGO_OK)
+	if (dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, &data.v.pdu_csbk) != DMRGO_OK)
 		return -1;
 	dmrgo_layer2_raw_burst_t raw;
 	if (dmrgo_layer2_build_burst(&data, 5, DMRGO_LAYER2_SYNC_SOURCE_BS, &raw) != DMRGO_OK)
@@ -1328,7 +1328,7 @@ static void rf_csbk_check(const dmrgo_rf_burst_t *b, size_t n, int *csbks, int *
 		uint32_t target = 0, source = 0;
 		bool ok = false;
 		if (dmrgo_layer2_burst_get_data(lb, &got) == DMRGO_OK && got.tag == DMRGO_LAYER2_DATA_PDU_CSBK &&
-		    dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok) == DMRGO_OK && ok && target == 0x123456 && source == 3191868)
+		    dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok) == DMRGO_OK && ok && target == 0x123456 && source == 3002068)
 			(*csbks)++;
 		if (mb.hint.slot == DMRGO_ENUMS_SLOT1 || mb.hint.slot == DMRGO_ENUMS_SLOT2)
 			(*slots)++;

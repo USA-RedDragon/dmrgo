@@ -20,7 +20,7 @@ import (
 
 func rfBursts(t *testing.T, n int) []rf.Burst {
 	t.Helper()
-	csbk, err := pdu.NewBSOutboundActivation(0x123456, 3191868)
+	csbk, err := pdu.NewBSOutboundActivation(0x123456, 3002068)
 	if err != nil {
 		t.Fatal(err)
 	}

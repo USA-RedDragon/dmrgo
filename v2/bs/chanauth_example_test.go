@@ -22,7 +22,7 @@ func ExampleConfig_channelAuth() {
 		return
 	}
 	wake, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBSOutboundActivation, RawPayload: [8]byte{4: 1, 5: 0x30, 6: 0xB4, 7: 0x3C}}, 1, layer2.SyncSourceMS)
-	lc, _ := pdu.NewVoiceLC(true, 9, 3120005, layer3.ServiceOptions{})
+	lc, _ := pdu.NewVoiceLC(true, 9, 3002705, layer3.ServiceOptions{})
 	tx, _ := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot()})
 	vh := tx.AppendHeaders(nil)[0]
 	out := make([]bs.Output, 0, bs.MaxOutputs)

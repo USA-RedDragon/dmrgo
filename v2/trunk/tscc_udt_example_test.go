@@ -18,7 +18,7 @@ func ExampleTSCC_SendShortData() {
 		Payload: [trunk.MaxPayloadChannels]uint16{2}, PayloadLen: 1})
 	var a trunk.Appended
 	_ = a.SetText(enums.UDTISO8, []byte("gate 4"))
-	_ = ts.SendShortData(0, false, 3120001, &a)
+	_ = ts.SendShortData(0, false, 3002701, &a)
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	for i := range 4 {
 		out = ts.Tick(time.Duration(i)*30*time.Millisecond, out[:0])

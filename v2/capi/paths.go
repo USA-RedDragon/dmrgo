@@ -52,8 +52,8 @@ func pduPath() (func() error, error) {
 	lc2 := new(C.dmrgo_pdu_full_link_control_t)
 	so := new(C.dmrgo_layer3_service_options_t)
 	bits := new([12]C.uint8_t)
-	if err := check(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, c),
-		dmrgo_pdu_new_voice_lc(true, 91, 3191868, so, lc)); err != nil {
+	if err := check(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, c),
+		dmrgo_pdu_new_voice_lc(true, 91, 3002068, so, lc)); err != nil {
 		return nil, err
 	}
 	lc.burst_data_type = 1
@@ -70,7 +70,7 @@ func decodePath() (func() error, error) {
 	c := new(C.dmrgo_pdu_csbk_t)
 	d := new(C.dmrgo_pdu_csbk_t)
 	bits := new([12]C.uint8_t)
-	if err := check(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, c), dmrgo_pdu_csbk_encode(c, &bits[0])); err != nil {
+	if err := check(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, c), dmrgo_pdu_csbk_encode(c, &bits[0])); err != nil {
 		return nil, err
 	}
 	return func() error {
@@ -81,7 +81,7 @@ func decodePath() (func() error, error) {
 func layer2Path() (func() error, error) {
 	data := new(C.dmrgo_layer2_data_t)
 	data.tag = C.DMRGO_LAYER2_DATA_PDU_CSBK
-	if err := check(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, (*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&data.v)))); err != nil {
+	if err := check(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, (*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&data.v)))); err != nil {
 		return nil, err
 	}
 	raw := new(C.dmrgo_layer2_raw_burst_t)
@@ -103,7 +103,7 @@ func layer2Path() (func() error, error) {
 func txPath() (func() error, error) {
 	opts := sized(new(C.dmrgo_layer2_voice_transmitter_options_t))
 	so := new(C.dmrgo_layer3_service_options_t)
-	if err := check(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, so, &opts.lc)); err != nil {
+	if err := check(dmrgo_pdu_new_voice_lc(true, 9990, 3002068, so, &opts.lc)); err != nil {
 		return nil, err
 	}
 	opts.color_code = 1
@@ -153,7 +153,7 @@ func voicePath(capture []byte) (func() error, error) {
 func partialC() (int, int, error) {
 	opts := sized(new(C.dmrgo_layer2_voice_transmitter_options_t))
 	so := new(C.dmrgo_layer3_service_options_t)
-	if err := check(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, so, &opts.lc)); err != nil {
+	if err := check(dmrgo_pdu_new_voice_lc(true, 9990, 3002068, so, &opts.lc)); err != nil {
 		return 0, 0, err
 	}
 	opts.color_code = 1
@@ -262,7 +262,7 @@ func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, err
 	}
 	defer dmrgo_voice_transmitter_free(tx)
 	call := new(C.dmrgo_voice_call_t)
-	call.group, call.target, call.source = true, 9990, 3191868
+	call.group, call.target, call.source = true, 9990, 3002068
 	opts := sized(new(C.dmrgo_voice_call_options_t))
 	ab := C.CBytes([]byte(alias))
 	defer C.free(ab)

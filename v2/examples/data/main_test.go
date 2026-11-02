@@ -21,7 +21,7 @@ func TestRun(t *testing.T) {
 		`m-sms.bin: Unconfirmed 3191868 -> 9990, Rate 1/2, 62 octets, CRC 0b8c211b, text "TEST KI5VMF"`,
 		`unconfirmed: 6 bursts, BF=5 POC=9, port 5016, text "Hello from dmrgo, unconfirmed SMS test": ok`,
 		"confirmed: 4 bursts, missing [1], SACK requests [1]",
-		`confirmed: retry done, "LIP: 41.878,-87.629,hdg=90,v=12", ACK 3120002 -> 3120001: ok`,
+		`confirmed: retry done, "LIP: 41.878,-87.629,hdg=90,v=12", ACK 3002702 -> 3002701: ok`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)

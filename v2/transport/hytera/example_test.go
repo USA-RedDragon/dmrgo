@@ -8,7 +8,7 @@ import (
 )
 
 // ExampleDecodeFrame decodes the DMR frame of a voice LC header on slot 1
-// from 3191868 to talkgroup 91, and the hint of its burst for the service
+// from 3002068 to talkgroup 91, and the hint of its burst for the service
 // machines.
 func ExampleDecodeFrame() {
 	p, _ := hex.DecodeString("c35200502a0300000100050101000000111111111111000040b87900820b4015700f207560056d4457ff5dd7def50031781670382037012f829f0073000000005b0000003cb43000")

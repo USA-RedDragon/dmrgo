@@ -30,7 +30,7 @@ func ExampleDecodeUser() {
 }
 
 // ExampleDecodeControl decodes the registration request of an XPR 8400 and
-// builds the keepalive request of peer 3149999.
+// builds the keepalive request of peer 3003299.
 func ExampleDecodeControl() {
 	p, _ := hex.DecodeString("900004ce2e6a0000805c04080400")
 	c, err := ipsc.DecodeControl(p)

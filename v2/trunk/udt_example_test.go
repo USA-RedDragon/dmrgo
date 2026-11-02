@@ -38,13 +38,13 @@ func ExampleMS_SendShortData() {
 	}
 	aloha := bs(exampleCSBK((*pdu.CSBK).SetAloha, pdu.AlohaPDU{SysIdentCode: code}))
 	ahoy := bs(exampleCSBK((*pdu.CSBK).SetAhoy, pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindIndividualShortData),
-		TargetAddress: 3120001, SourceAddress: constants.GatewaySDMI}))
+		TargetAddress: 3002701, SourceAddress: constants.GatewaySDMI}))
 	done := bs(exampleCSBK((*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{
-		ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001}))
+		ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3002701}))
 
 	idle, _ := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
 
-	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
+	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3002701, NoRegistration: true})
 	out := make([]trunk.Output, 0, 2*trunk.MaxOutputs)
 	free := [3]byte{}
 	now := time.Duration(0)
@@ -52,7 +52,7 @@ func ExampleMS_SendShortData() {
 	_ = a.SetText(enums.UDTISO8, []byte("meet at gate 4"))
 	for i, raw := range []layer2.RawBurst{aloha, aloha, ahoy, done} {
 		if i == 1 {
-			_ = ms.SendShortData(now, false, 3120002, &a, layer3.ShortDataServiceOptions{})
+			_ = ms.SendShortData(now, false, 3002702, &a, layer3.ShortDataServiceOptions{})
 		}
 		out = ms.Burst(now, &raw, layer2.Hint{Slot: enums.Slot1}, &free, out[:0])
 		out = ms.Burst(now+30*time.Millisecond, &idle, layer2.Hint{Slot: enums.Slot2}, &free, out)

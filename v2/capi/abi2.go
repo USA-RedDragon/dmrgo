@@ -87,7 +87,7 @@ func packetABI(seed uint64) error {
 	for i := range 12 {
 		var header pdu.DataHeader
 		if err := header.SetConfirmed(pdu.ConfirmedDataHeader{
-			ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+			ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702, LLIDSource: 3002701,
 			FullMessageFlag: true, SendSequenceNumber: uint8(i % 8)}); err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func packetABI(seed uint64) error {
 }
 
 func voiceBursts(n int) ([]layer2.RawBurst, error) {
-	lc, err := pdu.NewVoiceLC(true, 9990, 3191868, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9990, 3002068, layer3.ServiceOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func csbkABI(seed uint64) error {
 	h := newHarness(seed)
 	defer h.free()
 	qcfg := csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, HoldoffMax: 200 * time.Millisecond}
-	rcfg := csbk.ResponderConfig{Slot: enums.Slot1, Address: 3120002, ColorCode: 7}
+	rcfg := csbk.ResponderConfig{Slot: enums.Slot1, Address: 3002702, ColorCode: 7}
 	wcfg := csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7}
 	gq, err := csbk.NewRequester(&qcfg)
 	if err != nil {
@@ -320,12 +320,12 @@ func csbkABI(seed uint64) error {
 		C.dmrgo_csbk_wakeup_free(*cw)
 		C.dmrgo_csbk_preambles_free(*cp)
 	}()
-	gerr := gq.RequestRadioCheck(0, 3120002, 3120001, nil)
-	if rc := C.dmrgo_csbk_requester_request_radio_check(*cq, 0, 3120002, 3120001, nil); rc != goCode(gerr) {
+	gerr := gq.RequestRadioCheck(0, 3002702, 3002701, nil)
+	if rc := C.dmrgo_csbk_requester_request_radio_check(*cq, 0, 3002702, 3002701, nil); rc != goCode(gerr) {
 		return fmt.Errorf("request radio check %d, Go %w", rc, gerr)
 	}
-	gerr = gw.Wake(0, 310123, 3120001)
-	if rc := C.dmrgo_csbk_wakeup_wake(*cw, 0, 310123, 3120001); rc != goCode(gerr) {
+	gerr = gw.Wake(0, 990023, 3002701)
+	if rc := C.dmrgo_csbk_wakeup_wake(*cw, 0, 990023, 3002701); rc != goCode(gerr) {
 		return fmt.Errorf("wake %d, Go %w", rc, gerr)
 	}
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
@@ -489,7 +489,7 @@ func abiFollow(h *harness, gf *trunk.Follower, cf *C.dmrgo_trunk_follower_t, now
 }
 
 func newABIMS(h *harness, i int) (*abiMS, error) {
-	mc := trunk.MSConfig{Address: uint32(3120001 + i), TalkgroupsLen: 1, Seed: uint64(i + 1)}
+	mc := trunk.MSConfig{Address: uint32(3002701 + i), TalkgroupsLen: 1, Seed: uint64(i + 1)}
 	mc.Talkgroups[0] = uint32(100 + i)
 	g, err := trunk.NewMS(&mc)
 	if err != nil {

@@ -18,7 +18,7 @@ func ExampleNewPacket() {
 	err := header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP:             enums.SAPShortData,
 		LLIDDestination: 91,
-		LLIDSource:      3120000,
+		LLIDSource:      3002700,
 		FullMessageFlag: true,
 	})
 	if err != nil {
@@ -66,8 +66,8 @@ func ExampleMessage_UDPIPv4() {
 	var header pdu.DataHeader
 	err = header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP:             enums.SAPUDPIPHeaderCompression,
-		LLIDDestination: 3140598,
-		LLIDSource:      3191868,
+		LLIDDestination: 3002198,
+		LLIDSource:      3002068,
 		FullMessageFlag: true,
 	})
 	if err != nil {

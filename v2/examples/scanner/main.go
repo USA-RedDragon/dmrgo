@@ -137,7 +137,7 @@ func generatedCall() ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	lc, err := pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3141592}.FullLinkControl()
+	lc, err := pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3003192}.FullLinkControl()
 	if err != nil {
 		return nil, err
 	}

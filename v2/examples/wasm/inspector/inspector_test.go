@@ -216,9 +216,9 @@ func TestHBRP(t *testing.T) {
 	t.Parallel()
 	lines := make([]string, 0, 4)
 	for _, c := range []dmrd.Control{
-		{Command: dmrd.CommandRPTL, ID: 3149999},
-		{Command: dmrd.CommandMSTACK, ID: 3149999, Salt: 0x1234ABCD, HasSalt: true},
-		{Command: dmrd.CommandMSTPING, ID: 3149999},
+		{Command: dmrd.CommandRPTL, ID: 3003299},
+		{Command: dmrd.CommandMSTACK, ID: 3003299, Salt: 0x1234ABCD, HasSalt: true},
+		{Command: dmrd.CommandMSTPING, ID: 3003299},
 	} {
 		p, err := c.AppendBinary(nil, dmrd.DialectHBRP)
 		if err != nil {
@@ -228,18 +228,18 @@ func TestHBRP(t *testing.T) {
 	}
 	var cfg dmrd.HBRPConfig
 	cfg.Reset()
-	cfg.SetID(3149999)
-	if err := cfg.SetCallsign([]byte("KI5VMF")); err != nil {
+	cfg.SetID(3003299)
+	if err := cfg.SetCallsign([]byte("N0CALL")); err != nil {
 		t.Fatal(err)
 	}
 	lines = append(lines, hex.EncodeToString(cfg[:]))
 	r := inspect(t, []byte(strings.Join(lines, "\n")), Options{})
 	protocols(t, r, "HomeBrew Repeater Protocol", 4)
 	noErrors(t, r)
-	wantOctets(t, wantValue(t, r.Packets[0], "RPTL.ID", "3149999"), 4, 12)
+	wantOctets(t, wantValue(t, r.Packets[0], "RPTL.ID", "3003299"), 4, 12)
 	wantValue(t, r.Packets[1], "MSTACK.Salt", "0x1234ABCD")
-	wantOctets(t, wantValue(t, r.Packets[3], "RPTC.ID", "3149999"), 12, 20)
-	wantValue(t, r.Packets[3], "RPTC.Callsign", `"KI5VMF"`)
+	wantOctets(t, wantValue(t, r.Packets[3], "RPTC.ID", "3003299"), 12, 20)
+	wantValue(t, r.Packets[3], "RPTC.Callsign", `"N0CALL"`)
 }
 
 func TestHytera(t *testing.T) {
@@ -248,9 +248,9 @@ func TestHytera(t *testing.T) {
 	protocols(t, r, "Hytera IPSC", 16)
 	noErrors(t, r)
 	h := r.Packets[0]
-	wantOctets(t, wantValue(t, h, "Hytera IPSC.Source", "3191868"), 68, 71)
+	wantOctets(t, wantValue(t, h, "Hytera IPSC.Source", "3002068"), 68, 71)
 	wantValue(t, h, "Hytera IPSC.SlotType", "Voice LC Header")
-	wantValue(t, h, "Hytera IPSC.Burst.DMR burst.FullLinkControl.GroupVoice.SourceAddress", "3191868")
+	wantValue(t, h, "Hytera IPSC.Burst.DMR burst.FullLinkControl.GroupVoice.SourceAddress", "3002068")
 	for _, b := range h.Buffers {
 		if strings.HasPrefix(b.Name, "burst") && (b.Map[0] != 27 || b.Map[1] != 26) {
 			t.Errorf("burst buffer map %v, want the octet pairs swapped", b.Map[:2])
@@ -341,7 +341,7 @@ func TestHDAP(t *testing.T) {
 	t.Parallel()
 	var tm hdap.TMPMessage
 	tm.RequestID = 7
-	tm.Destination = [4]byte{10, 0x30, 0xB4, 0x3C}
+	tm.Destination = [4]byte{10, 0x2D, 0xCE, 0xD4}
 	tm.Source = [4]byte{10, 0, 0, 1}
 	tm.SetTextUTF8(nil, []byte("hello dmrgo"))
 	payload, err := tm.AppendBinary(nil)

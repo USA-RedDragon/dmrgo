@@ -48,11 +48,11 @@ func buildCSBKs(sc pdu.SysCode) (uint16, []*pdu.CSBK, error) {
 	builds := []func() (pdu.CSBK, error){
 		pdu.AlohaPDU{TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}.CSBK,
 		pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}.CSBK,
-		pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}.CSBK,
-		pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
-		pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
-		pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}.CSBK,
-		pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}.CSBK,
+		pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3002701}.CSBK,
+		pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3002702, SourceAddress: 3002701}.CSBK,
+		pdu.AhoyPDU{TargetAddress: 3002702, SourceAddress: 3002701}.CSBK,
+		pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3002702}.CSBK,
+		pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3002702}.CSBK,
 	}
 	csbks := make([]*pdu.CSBK, len(builds))
 	for i, build := range builds {
@@ -135,7 +135,7 @@ func encodeMatchesBuild(w io.Writer, c *pdu.CSBK) error {
 }
 
 func opcode0x38(w io.Writer) error {
-	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, TargetAddress: 9, SourceAddress: 3120001}
+	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, TargetAddress: 9, SourceAddress: 3002701}
 	c, err := mi.CSBK()
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func opcode0x38(w io.Writer) error {
 }
 
 func randomAccess(w io.Writer) error {
-	ra := pdu.RandomAccessPDU{TargetAddress: 9, SourceAddress: 3120001}
+	ra := pdu.RandomAccessPDU{TargetAddress: 9, SourceAddress: 3002701}
 	c, err := ra.CSBK()
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func randomAccess(w io.Writer) error {
 }
 
 func mbcGrant(w io.Writer) error {
-	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
+	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3002701}
 	hdr, err := grant.MBCHeader()
 	if err != nil {
 		return err
