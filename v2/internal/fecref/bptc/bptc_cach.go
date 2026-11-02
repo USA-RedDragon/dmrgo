@@ -67,6 +67,8 @@ func DecodeCACH(fragments [4][17]unpacked.Bit) ([36]unpacked.Bit, fec.Result) {
 	return info, result
 }
 
+const cachParityFix = 2
+
 func correctCACHMatrix(matrix *[4][17]unpacked.Bit) {
 	for pass := 0; pass < 3; pass++ {
 		var syndromes [4]int
@@ -81,8 +83,14 @@ func correctCACHMatrix(matrix *[4][17]unpacked.Bit) {
 
 		fixing := false
 		if badRows == 1 {
+			var bad []int
 			for col := 0; col < 17; col++ {
 				if cachColumnParity(matrix, col) != 0 {
+					bad = append(bad, col)
+				}
+			}
+			if len(bad) <= cachParityFix {
+				for _, col := range bad {
 					matrix[badRow][col] ^= 1
 					fixing = true
 				}

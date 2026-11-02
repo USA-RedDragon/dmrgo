@@ -19,6 +19,8 @@ const (
 
 const cachRowMask = 1<<17 - 1
 
+const cachParityFix = 2
+
 const (
 	h1712PosLo  = 0x05008b0040af0ed0
 	h1712PosHi  = 0x20061000390c0071
@@ -76,7 +78,7 @@ func correctCACHMatrix(rows *[4]uint32) {
 
 		fixing := false
 		if badRows == 1 {
-			if parity := cachColumnParity(rows); parity != 0 {
+			if parity := cachColumnParity(rows); parity != 0 && bits.OnesCount32(parity) <= cachParityFix {
 				rows[badRow] ^= parity
 				fixing = true
 			}
