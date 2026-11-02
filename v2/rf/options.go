@@ -97,7 +97,6 @@ type options struct {
 	CohSymNoise           uint8
 	MidTiming             bool
 	HuntLinMid            bool
-	StrobeTab             bool
 	Front96               bool
 	BSSuspectRun          uint8
 	LinearMid             bool
@@ -141,7 +140,7 @@ func disc0Options() options {
 
 func iqLowOptions() options {
 	o := disc0Options()
-	o.HuntLinMid, o.StrobeTab = true, true
+	o.HuntLinMid = true
 	o.IQDisc, o.IQHz, o.IQLow, o.IQBuf = true, iq0LowHz, 1, 32
 	o.LeanChase = 1
 	return o

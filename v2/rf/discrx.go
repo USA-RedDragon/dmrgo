@@ -65,9 +65,6 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	case r.front96 && opt.LinearMid:
 		r.mid96 = mid96Linear
 	}
-	if r.front96 && opt.StrobeTab {
-		r.mid96 |= mid96Tab
-	}
 	r.f.gain, r.f.up = audioStartGain, opt.LevelUp
 	r.f.idleHold = uint8((2*slotSymbols-burstSymbols)*r.hz()/(symbolRate*frontBlock) + 1)
 	if cfg.iq || cfg.lowIQ {
@@ -233,15 +230,11 @@ const (
 	st96Lock
 	st96Quiet
 	st96LinMid
-	st96Tab
 )
 
 func (r *discRx) state96() uint8 {
 	var st uint8
-	if r.mid96&mid96Tab != 0 {
-		st |= st96Tab
-	}
-	mode := r.mid96 &^ mid96Tab
+	mode := r.mid96
 	if mode == mid96Linear {
 		st |= st96LinMid
 	}
@@ -382,8 +375,6 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				c2 := 0.5*(s0+s2) - s1
 				c3 := (1.0/6)*(s3-s0) + 0.5*(s1-s2)
 				xv = s1 + mu*(c1+mu*(c2+mu*c3))
-			case st&st96Tab != 0:
-				xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
 			default:
 				xv = lagrange6[site0](sa, sb, s0, s1, s2, s3, mu)
 			}

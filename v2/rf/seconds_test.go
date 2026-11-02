@@ -145,3 +145,47 @@ func TestSecondsFirstBit(t *testing.T) {
 		})
 	}
 }
+
+func fracResampleIQ(x []complex64, to int, d float64) []complex64 {
+	const half = 32
+	k := newSincKernel(basebandRate, to, half, 0.45*float64(to)/basebandRate)
+	step := float64(basebandRate) / float64(to)
+	out := make([]complex64, int(float64(len(x))/step))
+	taps := make([]float64, 2*half)
+	for n := range out {
+		pos := float64(n)*step - d
+		c := math.Floor(pos)
+		k.fill(taps, pos-c)
+		var re, im float64
+		for i, v := range taps {
+			if j := int(c) - half + 1 + i; j >= 0 && j < len(x) {
+				re += float64(real(x[j])) * v
+				im += float64(imag(x[j])) * v
+			}
+		}
+		out[n] = complex(float32(re), float32(im))
+	}
+	return out
+}
+
+func TestSecondsLowRatePhase(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 2)
+	x := exactBaseband(slots).noisy(math.Inf(1), 3)
+	const phases = 20
+	span := float64(basebandRate) / iq0LowHz
+	for k := range phases {
+		d := span * float64(k) / phases
+		errs := secondsErrors(receiveIQAt(t, fracResampleIQ(x, iq0LowHz, d), iq0LowHz, Tier0), -d/basebandRate)
+		if len(errs) < 20 {
+			t.Fatalf("shift %.2f sample: %d bursts", d/span, len(errs))
+		}
+		var m float64
+		for _, e := range errs {
+			m += e / symbolRate
+		}
+		if m /= float64(len(errs)); math.Abs(m) > mxSecondsMean {
+			t.Errorf("shift %.2f sample: Seconds is %+.2f us off on average", d/span, m*1e6)
+		}
+	}
+}

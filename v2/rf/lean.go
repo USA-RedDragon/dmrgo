@@ -75,7 +75,6 @@ const (
 	mid96Linear
 	mid96Raw
 	mid96RawLock
-	mid96Tab = 4
 )
 
 type leanTiming struct {
