@@ -86,7 +86,7 @@ v2/hytera/hdap/services_decode_gen.go	558	536
 v2/internal/allocgate/allapi/allapi_gen.go	3	0
 v2/internal/allocgate/apigen/apigen.go	88	83
 v2/internal/allocgate/apigen/gen/main.go	5	0
-v2/internal/allocstest/count.go	168	156
+v2/internal/allocstest/count.go	168	155
 v2/internal/bits/bits.go	36	36
 v2/internal/crc/checksum5.go	5	5
 v2/internal/crc/crc32.go	9	9
@@ -296,7 +296,7 @@ v2/rf/hgate.go	56	53
 v2/rf/iqdisc.go	354	343
 v2/rf/iqdsp.go	13	13
 v2/rf/iqformat.go	15	15
-v2/rf/iqlow.go	139	137
+v2/rf/iqlow.go	139	138
 v2/rf/iqrefill.go	147	141
 v2/rf/lagtab.go	3	3
 v2/rf/lean.go	1289	1268
