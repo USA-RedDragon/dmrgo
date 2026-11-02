@@ -9,45 +9,51 @@ The transmit side mirrors it. NewTransmitter makes a Transmitter from a TxConfig
 ## Features
 
 <!-- rfparams:tx-features:begin -->
-- `Transmitter`: Transmitter turns DMR bursts into I/Q samples for a software radio: 4FSK on a carrier, with the power ramps of TDMA bursts. It reads the bits of each Burst from Decoded, with its CACH when HasCACH, and places it on the 30 ms slot grid by Stream and Slot. A BS-sourced burst keeps the carrier up into the next slot; any other burst is an MS burst, with the power ramps in its guard time. A gap of one slot within a Stream is an idle slot with the carrier down, as an MS on one TDMA channel sends. A new Stream, or a gap of more than one slot, keys down, and the next burst keys up at once: the time between transmissions is the caller's. The transmitter ignores Seconds, Distance, Sync and Voice. Make it with NewTransmitter, or set it up with Init in memory of the caller. A Transmitter is not safe for concurrent use, and it must not be copied after Init or NewTransmitter.
-- `AudioTransmitter`: AudioTransmitter turns DMR bursts into the deviation signal that drives the modulator input of an FM radio, as the radio chips of hotspots and MMDVM modems take it: codes of a converter, with the CACH of BS-sourced bursts and the guard time of MS bursts as a Transmitter places them. Active is the push-to-talk of the radio. Make it with NewAudioTransmitter, or set it up with Init in memory of the caller. An AudioTransmitter is not safe for concurrent use, and it must not be copied after Init or NewAudioTransmitter.
-- `PreEmphasis`: A PreEmphasis is the Tier0 modulator of an AudioTransmitter for a radio that pre-emphasizes its modulator input from 300 Hz to 3 kHz, which AudioTxConfig.PreEmphasis takes. The zero PreEmphasis is not set up: Init sets it up in memory of the caller, such as a package variable, and NewPreEmphasis allocates one. A program that sets up none links none of its code or tables. It holds the state of the modulator, so each AudioTransmitter takes a PreEmphasis of its own.
-- `RegionError`: RegionError is the error of a transmitter setup that the Region, Service and Power do not allow, or that no measurement shows to keep their limits. Each such error has one static RegionError, so a call that fails does not allocate. Match it with errors.As.
+- `Transmitter`: Transmitter turns DMR bursts into I/Q samples for a software radio: 4FSK on a carrier, with the power ramps of TDMA bursts.
+- `AudioTransmitter`: AudioTransmitter turns DMR bursts into the deviation signal that drives the modulator input of an FM radio, as the radio chips of hotspots and MMDVM modems take it: codes of a converter, with the CACH of BS-sourced bursts and the guard time of MS bursts as a Transmitter places them.
+- `PreEmphasis`: A PreEmphasis is the Tier0 modulator of an AudioTransmitter for a radio that pre-emphasizes its modulator input from 300 Hz to 3 kHz, which AudioTxConfig.PreEmphasis takes.
+- `RegionError`: RegionError is the error of a transmitter setup that the Region, Service and Power do not allow, or that no measurement shows to keep their limits.
 - `ErrBurstOrder`: ErrBurstOrder is the error of Write on a transmitter for a burst whose Slot does not increase within its Stream.
-- `ErrBurstService`: ErrBurstService was the error of Write on a transmitter of the license-free service for a BS-sourced burst. The transmitters support no license-free service, so none returns it; it stays for compatibility.
-- `ErrTxTimeout`: ErrTxTimeout was the error of Write on a transmitter of the license-free service for a burst that would carry one transmission past 179 s. The transmitters support no license-free service, so none returns it; it stays for compatibility.
 <!-- rfparams:tx-features:end -->
 
 ## Key specifications
 
 <!-- txsheet:begin -->
 
-| Parameter | Tier 0, Audio 16-bit | Tier 0, I/Q 16-bit | Tier 1, Audio 16-bit | Tier 1, I/Q 16-bit | Tier 2, Audio 16-bit | Tier 2, I/Q 16-bit |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Sample rate | 48 kHz | 96 kHz | 48 kHz | 2.4 MHz | 48 kHz | 2.4 MHz |
-| FSK error, hold converter or I/Q | 0.10% | 0.04% | 0.05% | 0.01% | 0.05% | 0.01% |
-| FSK error, ideal converter | 0.14% | - | 0.05% | - | 0.05% | - |
-| Deviation error, TS 102 361-1 pattern | 0.1% | 0.4% | 0.1% | 0.0% | 0.1% | 0.0% |
-| Margin over the need, World, land mobile, 1 W | -27.0 dB | +2.0 dB | -26.9 dB | +1.4 dB | -26.9 dB | +1.4 dB |
-| Margin over the need, World, amateur, 1 W | +4.2 dB | +40.3 dB | +4.3 dB | +32.7 dB | +4.3 dB | +32.7 dB |
-| Margin over the need, US, land mobile, 1 W | +10.0 dB | +11.0 dB | +10.1 dB | +12.0 dB | +10.1 dB | +12.0 dB |
-| Margin over the need, US, amateur, 1 W | +4.2 dB | +40.3 dB | +4.3 dB | +32.7 dB | +4.3 dB | +32.7 dB |
-| Margin over the need, CEPT, land mobile, 1 W | -9.6 dB | +2.0 dB | -9.6 dB | +2.5 dB | -9.6 dB | +2.5 dB |
-| Margin over the need, CEPT, amateur, 1 W | +16.8 dB | - | +16.9 dB | +52.0 dB | +16.9 dB | +52.0 dB |
-| Margin over the need, China, land mobile, 1 W | -27.0 dB | +2.0 dB | -26.9 dB | +1.4 dB | -26.9 dB | +1.4 dB |
-| Margin over the need, China, amateur, 1 W | +7.4 dB | +45.6 dB | +7.5 dB | +35.8 dB | +7.5 dB | +35.8 dB |
-| Margin over the need, Japan, land mobile, 1 W | +4.4 dB | +19.2 dB | +4.5 dB | +23.0 dB | +4.5 dB | +23.0 dB |
-| Margin over the need, Japan, amateur, 1 W | +7.4 dB | +45.6 dB | +7.5 dB | +35.8 dB | +7.5 dB | +35.8 dB |
+### Signal quality
 
-- FSK error is the RMS error of the symbol deviations after the receive filter, as a percent of the deviation of symbol +3, over a random stream. A hold converter keeps each code until the next sample; an ideal converter interpolates it with no images. I/Q has no converter model.
-- Deviation error is the error of the peak deviation of the ETSI test pattern from 2749 Hz. TS 102 361-1 clause 10.2.2.3 sets a limit of 10%. The measurement takes the frequency from the phase step of the FM signal between samples, divided by the sinc response of that step to the frequency, fits a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods of the middle half of the pattern, and takes the peak of that fit.
-- Each margin is the least, over the limits of the region and service at 1 W (30 dBm) with no input low pass, of the margin in dB less the margin that a setup needs on that limit: 10 dB on a spurious domain limit and 3 dB on the others. A setup is accepted from 0. [Measured margins](#measured-margins) gives each limit and power class.
+| Tier | Output | Rate (kHz) | FSK error, hold (%) | FSK error, ideal (%) | Deviation error (%) |
+|:---|:---|---:|---:|---:|---:|
+| Audio tier 0 | 16-bit | 48 | 0.10 | 0.14 | 0.1 |
+| Audio tier 1 | 16-bit | 48 | 0.05 | 0.05 | 0.1 |
+| Audio tier 2 | 16-bit | 48 | 0.05 | 0.05 | 0.1 |
+| I/Q tier 0 | 16-bit | 96 | 0.04 | - | 0.4 |
+| I/Q tier 1 | 16-bit | 2,400 | 0.01 | - | 0.0 |
+| I/Q tier 2 | 16-bit | 2,400 | 0.01 | - | 0.0 |
 
-| Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |
-| --- | ---: | ---: | ---: |
-| I/Q at 96 kHz, CS16 | 4.8 MHz | 944 B | 33.6 KB |
-| Audio at 48 kHz, 12-bit | 3.7 MHz | 700 B | 28.3 KB |
-| Audio at 24 kHz, 12-bit | 3.6 MHz | 740 B | 28.1 KB |
+- FSK error: RMS error of the symbol deviations after the receive filter, as a percent of the deviation of symbol +3. Hold: a converter that keeps each code until the next sample, or I/Q. Ideal: a converter with no images.
+- Deviation error: error of the peak deviation of the TS 102 361-1 test pattern from 2749 Hz. The limit is 10%.
+
+### Margin over the need at 1 W
+
+Least margin in dB to the limits of each region and service at 1 W (30 dBm), less the margin that a setup needs: 10 dB on a spurious domain limit and 3 dB on the others. A setup is accepted from 0. Higher is better.
+
+| Tier | Output | World, land mobile | World, amateur | US, land mobile | US, amateur | CEPT, land mobile | CEPT, amateur | China, land mobile | China, amateur | Japan, land mobile | Japan, amateur |
+|:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | 16-bit | -27.0 | +4.2 | +10.0 | +4.2 | -9.6 | +16.8 | -27.0 | +7.4 | +4.4 | +7.4 |
+| Audio tier 1 | 16-bit | -26.9 | +4.3 | +10.1 | +4.3 | -9.6 | +16.9 | -26.9 | +7.5 | +4.5 | +7.5 |
+| Audio tier 2 | 16-bit | -26.9 | +4.3 | +10.1 | +4.3 | -9.6 | +16.9 | -26.9 | +7.5 | +4.5 | +7.5 |
+| I/Q tier 0 | 16-bit | +2.0 | +40.3 | +11.0 | +40.3 | +2.0 | - | +2.0 | +45.6 | +19.2 | +45.6 |
+| I/Q tier 1 | 16-bit | +1.4 | +32.7 | +12.0 | +32.7 | +2.5 | +52.0 | +1.4 | +35.8 | +23.0 | +35.8 |
+| I/Q tier 2 | 16-bit | +1.4 | +32.7 | +12.0 | +32.7 | +2.5 | +52.0 | +1.4 | +35.8 | +23.0 | +35.8 |
+
+### Tier 0 on a Cortex-M4F
+
+| Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
+|:---|---:|---:|---:|---:|
+| Audio tier 0, 12-bit | 48 | 3.7 | 700 | 28.3 |
+| Audio tier 0, 12-bit | 24 | 3.6 | 740 | 28.1 |
+| I/Q tier 0, CS16 | 96 | 4.8 | 944 | 33.6 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program.
 
@@ -58,10 +64,10 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 ### Formats and rates
 
 <!-- rfparams:tx-formats:begin -->
-| Tier | I/Q rates | Audio rates |
-| --- | --- | --- |
-| Tier 0 | 96 kHz | 24 and 48 kHz |
-| Tier 1, Tier 2 | 48 kHz to 20 MHz, 2.4 MHz by default | 8 kHz to 96 kHz, 48 kHz by default |
+| Tier | I/Q rate (kHz) | Audio rate (kHz) |
+|:---|---:|---:|
+| Tier 0 | 96 | 24 and 48 |
+| Tier 1, Tier 2 | 48 to 20,000, 2,400 by default | 8 to 96, 48 by default |
 
 Under 62.5 kHz, I/Q puts the image of the main lobe within two channels of the carrier, and the limits do not accept it. Tier 1 and Tier 2 make audio at 8000, 11025, 16000, 22050, 32000, 44100, 48000 and 96000 Hz, among other rates. The deviation of a run of symbol +3 is 1944 Hz.
 
@@ -89,7 +95,7 @@ Under 62.5 kHz, I/Q puts the image of the main lobe within two channels of the c
 | `AudioTxConfig.Power` | Power is the most power of the station in dBm, as in TxConfig. |
 <!-- rfparams:tx-formats:end -->
 
-### Limits
+### Regions, services and power
 
 <!-- rfparams:tx-limits:begin -->
 - `TxConfig`: TxConfig sets up a Transmitter. The zero TxConfig is the strictest setup: every region, every licensed service and the highest legal power of each, so that what it makes keeps the limits wherever it is accepted.
@@ -144,156 +150,25 @@ The limits are measured at these values of `Level`, by the bits of the converter
 
 <!-- txsheet:levels:begin -->
 
-| Bits | Tier 0 level | Tier 1 and Tier 2 level at 48 kHz | Tier 1 and Tier 2 peak at that level |
-| ---: | ---: | ---: | ---: |
-| 8 | 65 codes | 59 codes | 2.13 times the level |
-| 10 | 260 codes | 242 codes | 2.11 times the level |
-| 12 | 1040 codes | 972 codes | 2.11 times the level |
-| 16 | 15000 codes | 15000 codes | 2.10 times the level |
+| Bits | Tier 0 level (codes) | Tier 1 and 2 level at 48 kHz (codes) | Tier 1 and 2 peak (times the level) |
+|:---|---:|---:|---:|
+| 8 | 65 | 59 | 2.13 |
+| 10 | 260 | 242 | 2.11 |
+| 12 | 1040 | 972 | 2.11 |
+| 16 | 15000 | 15000 | 2.10 |
 
 <!-- txsheet:levels:end -->
 
-## Typical performance characteristics
-
-<!-- txsheet:graphs:begin -->
-
-### Spectrum
-
-The power in 100 Hz in the 10-minute peak hold of Mask D (see the methods) against the offset from the carrier, relative to the reference power of FCC Mask D, with Mask D for 1 W and 100 W and Mask H and the EA mask for 1 kW. Audio goes through the hold converter and an FM modulator.
-
-![Spectrum: tier0_audio_pe_spectrum](tx/tier0_audio_pe_spectrum.svg)
-![Spectrum: tier0_audio_spectrum](tx/tier0_audio_spectrum.svg)
-![Spectrum: tier0_iq_spectrum](tx/tier0_iq_spectrum.svg)
-![Spectrum: tier1_audio_spectrum](tx/tier1_audio_spectrum.svg)
-![Spectrum: tier1_iq_spectrum](tx/tier1_iq_spectrum.svg)
-![Spectrum: tier2_audio_spectrum](tx/tier2_audio_spectrum.svg)
-![Spectrum: tier2_iq_spectrum](tx/tier2_iq_spectrum.svg)
-
-### Adjacent channel power
-
-The power that the receiver filter of EN 300 113 Annex C passes, against the offset of the filter from the carrier, relative to the total power. The dashed lines are the limit of EN 300 113 in the adjacent and alternate channels. The flat floor far out is the 90 dB stopband of the filter of Annex C, not the signal.
-
-![Adjacent channel power: tier0_audio_acp](tx/tier0_audio_acp.svg)
-![Adjacent channel power: tier0_audio_pe_acp](tx/tier0_audio_pe_acp.svg)
-![Adjacent channel power: tier0_iq_acp](tx/tier0_iq_acp.svg)
-![Adjacent channel power: tier1_audio_acp](tx/tier1_audio_acp.svg)
-![Adjacent channel power: tier1_iq_acp](tx/tier1_iq_acp.svg)
-![Adjacent channel power: tier2_audio_acp](tx/tier2_audio_acp.svg)
-![Adjacent channel power: tier2_iq_acp](tx/tier2_iq_acp.svg)
-
-### Margins
-
-The margin to each limit in dB at 1 W, the worst over the measured points, from `testdata/txmargins.json`.
-
-![Margins: tier0_margins](tx/tier0_margins.svg)
-![Margins: tier1_margins](tx/tier1_margins.svg)
-![Margins: tier2_margins](tx/tier2_margins.svg)
-
-### Eye diagrams
-
-The deviation after the root raised cosine receive filter of the FSK error measurement, at 48 kHz, on the symbol timing that the measurement fits. Audio goes through an ideal converter, which interpolates the codes with no images, and through a hold converter, which keeps each code until the next sample.
-
-![Eye diagrams: tier0_eye](tx/tier0_eye.svg)
-![Eye diagrams: tier1_eye](tx/tier1_eye.svg)
-![Eye diagrams: tier2_eye](tx/tier2_eye.svg)
-
-### FSK error
-
-The FSK error of each tier and output.
-
-![FSK error: fsk_error](tx/fsk_error.svg)
-
-<!-- txsheet:graphs:end -->
-
-## Application information
-
-### Bursts and keying
-
-<!-- rfparams:tx-keying:begin -->
-- `Transmitter.Write`: Write turns the bursts x into samples in stream mode and hands them to OnSamples. It returns len(x) and nil, dmrgo.ErrNilReceiver for a nil t, ErrNotSetUp before Init or NewTransmitter, a *dmrgo.ConfigError for OnSamples in append mode, and for a burst that it does not accept the count of bursts before it with ErrBurstOrder.
-- `Transmitter.Active`: Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last. The carrier ramps down in each idle slot within it.
-- `AudioTransmitter.Active`: Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last, the time that the radio must be keyed.
-<!-- rfparams:tx-keying:end -->
-
-### Calibration of level, offset and deviation
-
-- An audio transmitter makes codes, and the radio turns them into deviation. Set the gain of the radio so that a run of symbol +3 gives the deviation of [Formats and rates](#formats-and-rates). A service monitor, or a software radio with `Receiver.DeviationHz`, measures it.
-- When the modulator input of the radio has a DC offset, set `Offset` to the code that gives no deviation.
-- Keep `Level` at or above the measured level of [Levels](#levels), and turn down the gain of the radio to get the deviation.
-- For I/Q, set the gain of the software radio for the power of the station, and state that power in `Power`.
-
-### Input low pass
-
-<!-- txsheet:lowpass:begin -->
-`AudioTxConfig.InputLowpassHz` states the cutoff of a low pass of at least two poles that the radio puts before its modulator input. 0 is none: the converter drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these. Thus 6000 Hz counts as 8000 Hz, and a cutoff above 8000 Hz counts as none. A low pass lowers the least rate that keeps the limits. A negative cutoff gets a `*dmrgo.ConfigError`.
-<!-- txsheet:lowpass:end -->
-
-### Pre-emphasis
-
-<!-- txsheet:preemph:begin -->
-The microphone input of an FM radio usually pre-emphasizes the audio, with a zero near 300 Hz and a pole near 3000 Hz, as the limits model it. A DMR signal through it has the wrong pulse shape and spreads into the adjacent channel. Use the flat modulator input of the radio (its data port) when it has one. When it does not, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis`: the transmitter then shapes its output so that the pre-emphasis of the radio gives the right signal. It is opt-in: nil is a radio with no pre-emphasis. Set one up with `Init` in memory of the caller, or with `NewPreEmphasis`, one for each transmitter. Only Tier 0 at 48 kHz takes it, and only where its limits are measured to keep their margin: the Tier 0 table of [Least sample rate](#least-sample-rate) gives these setups. Elsewhere it gets a `RegionError`. A program that sets up no `PreEmphasis` links none of its code or tables.
-<!-- txsheet:preemph:end -->
-
-### Choosing a tier
-
-[Key specifications](#key-specifications) and [Measured margins](#measured-margins) give the error and the margins of each tier, and [Formats and rates](#formats-and-rates) the rates that each tier makes.
-
-### Wiring to a radio
-
-- Drive the flat modulator input of the radio when it has one, and state any low pass of the radio in `InputLowpassHz`.
-- With the microphone input, set `PreEmphasis` and state the low pass of the microphone path in `InputLowpassHz`.
-- Key the radio with `Active`.
-- Feed I/Q to a software radio at the stated `Rate` and `Format`.
-
-## Comparison notes
-
-### Audio correction on a flat radio
-
-The `Corr` correction of Tier 1 and Tier 2 audio is fitted through the radio model of the audio optimizer: a hold converter and a two-pole low pass at 8 kHz. Applied as fitted, it drives the band from 9 to 12.5 kHz too hard by 1/h, where h is the response of that model (-8.7 dB at 12 kHz), and on a radio with a flat response there the content lands on the steep part of Emission Mask D. That was the cause of the 2.3 dB loss of Mask D on the ideal radio model against the external transmitters in the comparison of October 2026. The band pass of `Corr` now scales the correction by 2h/(1+h), which leaves the same error on a flat radio as on the hold radio. `TestCorrFlatRadio` in `v2/internal/fsktx` measures the Mask D margin from 5.625 to 12.5 kHz on both radios with and without `Corr`, and fails unless `Corr` raises it by at least 0.5 dB on each.
-
-### Transmitter pairs
-
-<!-- txpairs:begin -->
-
-Two pairs of cells of the comparison of the transmit tiers with external transmitters (October 2026) took each half of the bar from a different transmitter. The external captures of that comparison are gone, so `TestTxPairs` compares Tier 1 audio with a stand-in for the GNU Radio transmitter: a plain root raised cosine of 16 symbols each side, through the same measurements, with 16-bit audio and a hold converter.
-
-| Cell | Tier 1 | Root raised cosine |
-| --- | ---: | ---: |
-| Adjacent channel power at 48 kHz, dBc | -67.77 | -58.81 |
-| Deviation error at 48 kHz, % | 0.0216 | 0.2044 |
-| Eye error at 96 kHz | 0.00636 | 0.00791 |
-| Eye error at 48 kHz, 10 Hz AC-coupled radio | 0.24521 | 0.24430 |
-| The same, without the fit of gain and offset | 0.35272 | 0.35214 |
-| Mean eye error, 10 Hz AC-coupled radio, 64 random streams | 0.29055 | 0.29063 |
-
-- Adjacent channel power against deviation error: Tier 1 is lower on both cells at once.
-- AC-coupled eye against the 96 kHz eye: Tier 1 has the lower 96 kHz eye. On the test stream, without the fit of gain and offset, the AC-coupled eye error is the wander of the data through the 10 Hz high pass and differs by 0.00058 between the two; with the fit, the rest is the intersymbol error of the one symbol where the wander peaks. Over 64 random streams of the same length, each sent by both, the paired difference of Tier 1 less the root raised cosine is -0.00008 with a standard error of 0.00011, and they win 34 and 30 streams: a tie within two standard errors, so the one-stream cell is an artifact of one symbol pattern.
-
-The alternate channel power of the comparison with the MMDVM firmware ties for every transmitter at 24 kHz. The same signals through the hold converter of that comparison and through an ideal converter, which interpolates the codes with no images:
-
-| Signal | Rate | Hold converter | Ideal converter |
-| --- | ---: | ---: | ---: |
-| Tier 1 | 24 kHz | -70.02 dBc | -97.09 dBc |
-| Root raised cosine | 24 kHz | -70.03 dBc | -97.44 dBc |
-| Root raised cosine | 48 kHz | -121.19 dBc | -112.75 dBc |
-| Root raised cosine | 96 kHz | -121.17 dBc | -114.73 dBc |
-
-- Alternate channel power at 24 kHz: through the hold converter every waveform reads the same, and through an ideal converter or at a higher rate it is far lower. The tie is the image of the converter at 24 kHz, which no waveform at that rate changes.
-
-`go test ./internal/fsktx -run TestTxPairs -update-txpairs` in v2 measures them into `v2/internal/fsktx/testdata/txpairs.json` and writes this block, and `DMRGO_LONG=1` measures them again.
-
-<!-- txpairs:end -->
-
 <!-- txdoc:begin -->
 
-## Least sample rate
+### Least sample rate
 
-Each cell gives the least sample rate in kHz for the power breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A power takes the next breakpoint at or above it. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only, and audio with pre-emphasis at 48 kHz only.
+Least sample rate in kHz at the power breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A power takes the next breakpoint at or above it. A dash is a setup that no rate of the grid keeps.
 
-### Tier 0
+<details><summary>Tier 0</summary>
 
 | Input | World, land mobile | World, amateur | US, land mobile | US, amateur | CEPT, land mobile | CEPT, amateur | China, land mobile | China, amateur | Japan, land mobile | Japan, amateur |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Audio 8-bit | - / - / - / - / - / - / - / - / - / - | 48 / 48 / - / - / - / - / - / - / - / - | 48 / 48 / 48 / - / - / - / - / - / - / - | 48 / 48 / - / - / - / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 24 / 24 / 48 / 48 / - / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 24 / 24 / - / - / - / - / - / - / - / - | 24 / 24 / - / - / - / - / - / - / - / - | 24 / 24 / - / - / - / - / - / - / - / - |
 | Audio 8-bit, 8000 Hz low pass | 48 / 48 / - / - / - / - / - / - / - / - | 24 / 24 / 24 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 24 / 24 / 24 / 24 / 24 / 24 / - / - / - / - | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 48 / 48 / - / - / - / - / - / - / - / - | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 |
 | Audio 8-bit, 5000 Hz low pass | 24 / 24 / 48 / - / - / - / - / - / - / - | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 48 / - | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 48 / - / - / - / - / - / - / - | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 | 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 / 24 |
@@ -329,10 +204,12 @@ Each cell gives the least sample rate in kHz for the power breakpoints 27, 30, 4
 | Audio 16-bit, pre-emphasis, 5000 Hz low pass | 48 / 48 / - / - / - / - / - / - / - / - | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / - / - / - / - | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / - / - / - / - / - / - / - / - | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 |
 | Audio 16-bit, pre-emphasis, 3000 Hz low pass | 48 / 48 / 48 / 48 / - / - / - / - / - / - | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / - / - / - / - / - / - | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 | 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 / 48 |
 
-### Tier 1
+</details>
+
+<details><summary>Tier 1</summary>
 
 | Input | World, land mobile | World, amateur | US, land mobile | US, amateur | CEPT, land mobile | CEPT, amateur | China, land mobile | China, amateur | Japan, land mobile | Japan, amateur |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Audio 8-bit | - / - / - / - / - / - / - / - / - / - | 32 / 38 / - / - / - / - / - / - / - / - | 31 / 31 / - / - / - / - / - / - / - / - | 32 / 38 / - / - / - / - / - / - / - / - | 96 / - / - / - / - / - / - / - / - / - | 8 / 8 / 24.5 / 41 / 96 / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 8 / 16.5 / - / - / - / - / - / - / - / - | 19 / 37.5 / - / - / - / - / - / - / - / - | 8 / 16.5 / - / - / - / - / - / - / - / - |
 | Audio 8-bit, 8000 Hz low pass | 39 / 43 / - / - / - / - / - / - / - / - | 8 / 8 / 23 / 26.5 / 26.5 / 26.5 / 26.5 / 34.5 / 34.5 / 34.5 | 18 / 18 / 18 / 20 / 21.5 / 23.5 / 23.5 / 23.5 / 23.5 / 23.5 | 8 / 8 / 23 / 26.5 / 26.5 / 26.5 / 26.5 / 26.5 / 26.5 / 26.5 | 26 / 26 / 34.5 / 38.5 / 42 / 46 / 96 / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 39 / 43 / - / - / - / - / - / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8.5 / 34.5 / 34.5 / 34.5 | 17 / 17 / 17 / 17 / 17 / 17 / 17 / 34.5 / 34.5 / 34.5 | 8 / 8 / 8 / 8 / 8 / 8 / 8.5 / 34.5 / 34.5 / 34.5 |
 | Audio 8-bit, 5000 Hz low pass | 24 / 34 / 45.5 / - / - / - / - / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 16 / 16 / 16 / 16.5 / 18 / 19 / 19 / 19 / 19 / 19 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 24 / 24 / 24 / 24 / 33 / 36 / 40 / 43.5 / 47.5 / 96 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 24 / 34 / 45.5 / - / - / - / - / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 |
@@ -352,10 +229,12 @@ Each cell gives the least sample rate in kHz for the power breakpoints 27, 30, 4
 | I/Q 16-bit | 96.001 / 210.224 / - / - / - / - / - / - / - / - | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 96.001 / 105.112 / 210.224 / - / - / - / - / - | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 96.001 / 210.224 / - / - / - / - / - / - / - / - | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 |
 | I/Q 8-bit | - / - / - / - / - / - / - / - / - / - | 297.302 / 500 / - / - / - / - / - / - / - / - | 707.107 / 1400 / - / - / - / - / - / - / - / - | 297.302 / 500 / - / - / - / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 62.5 / 62.5 / - / - / - / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 62.5 / 62.5 / - / - / - / - / - / - / - / - | 62.5 / 500 / - / - / - / - / - / - / - / - | 62.5 / 62.5 / - / - / - / - / - / - / - / - |
 
-### Tier 2
+</details>
+
+<details><summary>Tier 2</summary>
 
 | Input | World, land mobile | World, amateur | US, land mobile | US, amateur | CEPT, land mobile | CEPT, amateur | China, land mobile | China, amateur | Japan, land mobile | Japan, amateur |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Audio 8-bit | - / - / - / - / - / - / - / - / - / - | 32 / 38 / - / - / - / - / - / - / - / - | 31 / 31 / - / - / - / - / - / - / - / - | 32 / 38 / - / - / - / - / - / - / - / - | 96 / - / - / - / - / - / - / - / - / - | 8 / 8 / 24.5 / 41 / 96 / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 8 / 16.5 / - / - / - / - / - / - / - / - | 19 / 37.5 / - / - / - / - / - / - / - / - | 8 / 16.5 / - / - / - / - / - / - / - / - |
 | Audio 8-bit, 8000 Hz low pass | 39 / 43 / - / - / - / - / - / - / - / - | 8 / 8 / 23 / 26.5 / 26.5 / 26.5 / 26.5 / 34.5 / 34.5 / 34.5 | 18 / 18 / 18 / 20 / 22 / 23.5 / 23.5 / 23.5 / 23.5 / 23.5 | 8 / 8 / 23 / 26.5 / 26.5 / 26.5 / 26.5 / 26.5 / 26.5 / 26.5 | 26 / 26 / 34.5 / 38.5 / 42 / 46 / 96 / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 39 / 43 / - / - / - / - / - / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 34.5 / 34.5 / 34.5 | 17 / 17 / 17 / 17 / 17 / 17 / 17 / 34.5 / 34.5 / 34.5 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 34.5 / 34.5 / 34.5 |
 | Audio 8-bit, 5000 Hz low pass | 24 / 34 / 45.5 / - / - / - / - / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 16 / 16 / 16 / 16.5 / 18 / 19.5 / 19.5 / 19.5 / 19.5 / 19.5 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 24 / 24 / 24 / 24 / 33 / 36 / 40 / 43.5 / 47.5 / 96 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 24 / 34 / 45.5 / - / - / - / - / - / - / - | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 | 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 / 14.5 | 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 / 8 |
@@ -375,16 +254,9 @@ Each cell gives the least sample rate in kHz for the power breakpoints 27, 30, 4
 | I/Q 16-bit | 96.001 / 210.224 / - / - / - / - / - / - / - / - | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 96.001 / 105.112 / 210.224 / - / - / - / - / - | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 96.001 / 210.224 / - / - / - / - / - / - / - / - | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 | 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 / 62.5 |
 | I/Q 8-bit | - / - / - / - / - / - / - / - / - / - | 297.302 / 500 / - / - / - / - / - / - / - / - | 707.107 / 1400 / - / - / - / - / - / - / - / - | 297.302 / 500 / - / - / - / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 62.5 / 62.5 / - / - / - / - / - / - / - / - | - / - / - / - / - / - / - / - / - / - | 62.5 / 62.5 / - / - / - / - / - / - / - / - | 62.5 / 500 / - / - / - / - / - / - / - / - | 62.5 / 62.5 / - / - / - / - / - / - / - / - |
 
-## Methods of the limits
+</details>
 
-- Spurious emissions of EN 300 113: the power in 1 kHz from 31.25 kHz from the carrier (250% of the 12.5 kHz channel separation), in 10 kHz from 100 kHz, in 100 kHz beyond 500 kHz, the reference bandwidths of EN 300 113 V2.2.1 tables 6a and 6b. The other spurious domain rows take the mean power in 100 kHz.
-- Emission Mask D: 47 CFR 90.210(d)(4) takes a reference in a bandwidth wide enough for the true peak (30 kHz here) and the emissions within 50 kHz of the band edge in 100 Hz in peak hold, over sweeps enough to develop the profile. The peak hold is modeled as 10 minutes of sweeps over 112.5 kHz: each frequency gets 53.3 independent 100 Hz looks (the hold time times the square of the bandwidth over the span), so the margin takes, at each frequency, the 0.9816 quantile of the 100 Hz power over the stream, the expected peak of those looks.
-- Emission Mask H and the EA mask: 47 CFR 90.210 table note 6 puts digital emissions at 806-809/851-854 MHz under Mask H, and table note 3 puts 809-824/854-869 MHz under 90.691. Neither section states a method, and the preamble of 90.210 allows average values with the carrier power in the same terms, so both take the mean power in 100 Hz, about 1% of the emission bandwidth (the practice of FCC KDB 971168 and ANSI C63.26), against the mean carrier power.
-- Adjacent and alternate channel power and spurious emissions of EN 300 113 take the mean power (clauses 7.4.2 and 7.5.2). The transients of clause 7.9.3.3 key the carrier unmodulated; the modulated transients of the datasheet take the worst over the keying edges of a voice superframe with its data bursts and of bursts of ten fixed symbol patterns.
-- Each class is measured over a stream long enough that doubling it moves no margin by more than 0.25 dB (`TestLimLengths`): 16 superframes for 8-bit I/Q and 8 for the others.
-  With Mask H and the EA mask, US land mobile audio at 30 dBm needs an input low pass for 24 kHz: Tier 0 at 16 bits takes 48 kHz with no `InputLowpassHz` and 24 kHz with 8000 Hz.
-
-## Setups without a measurement
+### Setups without a measurement
 
 No measurement covers these setups, so the transmitter refuses them:
 
@@ -396,14 +268,70 @@ No measurement covers these setups, so the transmitter refuses them:
 
 A setup between measured ones takes the nearest measured setup that is not looser: a power takes the next breakpoint up, a depth of `Bits` between 8, 10, 12 and 16 takes the next lower depth, and an input low pass between the cutoffs 8000, 5000 and 3000 Hz takes the next looser cutoff, or none.
 
-## Measured margins
+<!-- txdoc:end -->
 
-Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A positive value is inside the limit. A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, the far out rows of the FCC masks and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.
+## Typical performance characteristics
 
-### Tier 0 margins
+<!-- txsheet:graphs:begin -->
+
+### Spectrum
+
+10-minute peak hold in 100 Hz against the offset from the carrier, relative to the reference power of FCC Mask D, with the masks dashed. Audio goes through the hold converter and an FM modulator.
+
+![Spectrum: tier0_audio_pe_spectrum](tx/tier0_audio_pe_spectrum.svg)
+![Spectrum: tier0_audio_spectrum](tx/tier0_audio_spectrum.svg)
+![Spectrum: tier0_iq_spectrum](tx/tier0_iq_spectrum.svg)
+![Spectrum: tier1_audio_spectrum](tx/tier1_audio_spectrum.svg)
+![Spectrum: tier1_iq_spectrum](tx/tier1_iq_spectrum.svg)
+![Spectrum: tier2_audio_spectrum](tx/tier2_audio_spectrum.svg)
+![Spectrum: tier2_iq_spectrum](tx/tier2_iq_spectrum.svg)
+
+### Adjacent channel power
+
+Power that the receiver filter of EN 300 113 Annex C passes, relative to the total, with the limit of EN 300 113 dashed. The floor far out is the 90 dB stopband of that filter.
+
+![Adjacent channel power: tier0_audio_acp](tx/tier0_audio_acp.svg)
+![Adjacent channel power: tier0_audio_pe_acp](tx/tier0_audio_pe_acp.svg)
+![Adjacent channel power: tier0_iq_acp](tx/tier0_iq_acp.svg)
+![Adjacent channel power: tier1_audio_acp](tx/tier1_audio_acp.svg)
+![Adjacent channel power: tier1_iq_acp](tx/tier1_iq_acp.svg)
+![Adjacent channel power: tier2_audio_acp](tx/tier2_audio_acp.svg)
+![Adjacent channel power: tier2_iq_acp](tx/tier2_iq_acp.svg)
+
+### Margins
+
+Margin to each limit at 1 W over the margin that a setup needs, the worst over the measured points.
+
+![Margins: tier0_margins](tx/tier0_margins.svg)
+![Margins: tier1_margins](tx/tier1_margins.svg)
+![Margins: tier2_margins](tx/tier2_margins.svg)
+
+### Eye diagrams
+
+Deviation after the receive filter of the FSK error measurement, at 48 kHz, on the symbol timing that the measurement fits.
+
+![Eye diagrams: tier0_eye](tx/tier0_eye.svg)
+![Eye diagrams: tier1_eye](tx/tier1_eye.svg)
+![Eye diagrams: tier2_eye](tx/tier2_eye.svg)
+
+### FSK error
+
+FSK error of each tier and output.
+
+![FSK error: fsk_error](tx/fsk_error.svg)
+
+<!-- txsheet:graphs:end -->
+
+<!-- txdoc:margins:begin -->
+
+### Measured margins
+
+Margin of the signal to each limit, the worst over the measured points. A positive value is inside the limit. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A dash is a limit that does not apply to the input. [Methods of the limits](#methods-of-the-limits) gives the margin that a setup needs.
+
+<details><summary>Tier 0</summary>
 
 | Limit | Audio 8-bit | Audio 10-bit | Audio 12-bit | Audio 16-bit | I/Q 16-bit | I/Q 8-bit | Audio 8-bit, pre-emphasis | Audio 10-bit, pre-emphasis | Audio 12-bit, pre-emphasis | Audio 16-bit, pre-emphasis |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Deviation error, % under the 10% limit (TS 102 361-1 10.2.2.3) | +9.9 | +9.9 | +9.9 | +9.9 | +9.6 | +9.6 | +8.8 | +8.6 | +8.4 | +8.3 |
 | Adjacent channel power, dB (EN 300 113 7.4) | +3.6 | +5.7 | +5.9 | +5.9 | +5.0 | -0.7 | -13.0 | -1.8 | +3.8 | +4.7 |
 | Alternate channel power, dB (EN 300 113 7.4) | +22.9 | +28.9 | +29.8 | +29.8 | +29.9 | +0.4 | +3.5 | +14.8 | +24.5 | +27.0 |
@@ -431,10 +359,12 @@ Each cell is the margin of the signal to the limit, the worst over the measured 
 | Spurious emissions, dB (Japan) | +17.4 / +14.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +17.4 / +14.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +17.4 / +14.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +17.4 / +14.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +55.6 / +52.6 / +38.6 / +38.6 / +38.6 / +35.6 / +31.6 / +28.6 / +28.6 / +28.6 | +13.9 / +10.9 / -3.1 / -3.1 / -3.1 / -6.1 / -10.1 / -13.1 / -13.1 / -13.1 | +10.6 / +7.6 / -6.4 / -6.4 / -6.4 / -9.4 / -13.4 / -16.4 / -16.4 / -16.4 | +11.0 / +8.0 / -6.0 / -6.0 / -6.0 / -9.0 / -13.0 / -16.0 / -16.0 / -16.0 | +11.0 / +8.0 / -6.0 / -6.0 / -6.0 / -9.0 / -13.0 / -16.0 / -16.0 / -16.0 | +11.0 / +8.0 / -6.0 / -6.0 / -6.0 / -9.0 / -13.0 / -16.0 / -16.0 / -16.0 |
 | Amateur spurious emissions, dB (Japan) | +20.4 / +17.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +20.4 / +17.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +20.4 / +17.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +20.4 / +17.4 / +0.4 / +0.4 / +0.4 / -2.6 / -6.6 / -9.6 / -9.6 / -9.6 | +58.6 / +55.6 / +38.6 / +38.6 / +38.6 / +35.6 / +31.6 / +28.6 / +28.6 / +28.6 | +16.9 / +13.9 / -3.1 / -3.1 / -3.1 / -6.1 / -10.1 / -13.1 / -13.1 / -13.1 | +13.6 / +10.6 / -6.4 / -6.4 / -6.4 / -9.4 / -13.4 / -16.4 / -16.4 / -16.4 | +14.0 / +11.0 / -6.0 / -6.0 / -6.0 / -9.0 / -13.0 / -16.0 / -16.0 / -16.0 | +14.0 / +11.0 / -6.0 / -6.0 / -6.0 / -9.0 / -13.0 / -16.0 / -16.0 / -16.0 | +14.0 / +11.0 / -6.0 / -6.0 / -6.0 / -9.0 / -13.0 / -16.0 / -16.0 / -16.0 |
 
-### Tier 1 margins
+</details>
+
+<details><summary>Tier 1</summary>
 
 | Limit | Audio 8-bit | Audio 10-bit | Audio 12-bit | Audio 16-bit | I/Q 16-bit | I/Q 8-bit |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+|:---|---:|---:|---:|---:|---:|---:|
 | Deviation error, % under the 10% limit (TS 102 361-1 10.2.2.3) | +9.9 | +9.9 | +9.9 | +9.9 | +10.0 | +10.0 |
 | Adjacent channel power, dB (EN 300 113 7.4) | +2.7 | +6.9 | +7.3 | +7.3 | +5.5 | +4.8 |
 | Alternate channel power, dB (EN 300 113 7.4) | +24.5 | +29.4 | +29.9 | +30.0 | +30.0 | +12.4 |
@@ -462,10 +392,12 @@ Each cell is the margin of the signal to the limit, the worst over the measured 
 | Spurious emissions, dB (Japan) | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +45.8 / +42.8 / +28.8 / +28.8 / +28.8 / +25.8 / +21.8 / +18.8 / +18.8 / +18.8 | +18.6 / +15.6 / +1.6 / +1.6 / +1.6 / -1.4 / -5.4 / -8.4 / -8.4 / -8.4 |
 | Amateur spurious emissions, dB (Japan) | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +48.8 / +45.8 / +28.8 / +28.8 / +28.8 / +25.8 / +21.8 / +18.8 / +18.8 / +18.8 | +21.6 / +18.6 / +1.6 / +1.6 / +1.6 / -1.4 / -5.4 / -8.4 / -8.4 / -8.4 |
 
-### Tier 2 margins
+</details>
+
+<details><summary>Tier 2</summary>
 
 | Limit | Audio 8-bit | Audio 10-bit | Audio 12-bit | Audio 16-bit | I/Q 16-bit | I/Q 8-bit |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+|:---|---:|---:|---:|---:|---:|---:|
 | Deviation error, % under the 10% limit (TS 102 361-1 10.2.2.3) | +9.9 | +9.9 | +9.9 | +9.9 | +10.0 | +10.0 |
 | Adjacent channel power, dB (EN 300 113 7.4) | +2.7 | +6.9 | +7.3 | +7.3 | +5.5 | +4.8 |
 | Alternate channel power, dB (EN 300 113 7.4) | +24.5 | +29.4 | +29.9 | +30.0 | +30.0 | +12.4 |
@@ -493,48 +425,114 @@ Each cell is the margin of the signal to the limit, the worst over the measured 
 | Spurious emissions, dB (Japan) | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +17.5 / +14.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +45.8 / +42.8 / +28.8 / +28.8 / +28.8 / +25.8 / +21.8 / +18.8 / +18.8 / +18.8 | +18.6 / +15.6 / +1.6 / +1.6 / +1.6 / -1.4 / -5.4 / -8.4 / -8.4 / -8.4 |
 | Amateur spurious emissions, dB (Japan) | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +20.5 / +17.5 / +0.5 / +0.5 / +0.5 / -2.5 / -6.5 / -9.5 / -9.5 / -9.5 | +48.8 / +45.8 / +28.8 / +28.8 / +28.8 / +25.8 / +21.8 / +18.8 / +18.8 / +18.8 | +21.6 / +18.6 / +1.6 / +1.6 / +1.6 / -1.4 / -5.4 / -8.4 / -8.4 / -8.4 |
 
-<!-- txdoc:end -->
+</details>
+
+<!-- txdoc:margins:end -->
+
+## Application information
+
+### Choosing a tier
+
+Pick a tier by the margins of [Key specifications](#key-specifications) for the region, service and power of the station, and by the rates of [Formats and rates](#formats-and-rates).
+
+### Wiring to a radio
+
+- Drive the flat modulator input of the radio when it has one, and state any low pass of the radio in `InputLowpassHz`.
+- With the microphone input, set `PreEmphasis` and state the low pass of the microphone path in `InputLowpassHz`.
+- Key the radio with `Active`.
+- Feed I/Q to a software radio at the stated `Rate` and `Format`.
+
+### Bursts and keying
+
+<!-- rfparams:tx-keying:begin -->
+- `Transmitter.Write`: Write turns the bursts x into samples in stream mode and hands them to OnSamples. It returns len(x) and nil, dmrgo.ErrNilReceiver for a nil t, ErrNotSetUp before Init or NewTransmitter, a *dmrgo.ConfigError for OnSamples in append mode, and for a burst that it does not accept the count of bursts before it with ErrBurstOrder.
+- `Transmitter.Active`: Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last. The carrier ramps down in each idle slot within it.
+- `AudioTransmitter.Active`: Active reports whether the stream is inside a transmission: from the key-up of its first burst to the key-down after its last, the time that the radio must be keyed.
+<!-- rfparams:tx-keying:end -->
+
+### Levels and calibration
+
+- Set the gain of the radio so that a run of symbol +3 gives the deviation of [Formats and rates](#formats-and-rates). A service monitor, or a software radio with `Receiver.DeviationHz`, measures it.
+- Set `Offset` to the code that gives no deviation when the modulator input of the radio has a DC offset.
+- Keep `Level` at or above the measured level of [Levels](#levels), and turn down the gain of the radio to get the deviation.
+- For I/Q, set the gain of the software radio for the power of the station, and state that power in `Power`.
+
+### Input low pass
+
+<!-- txsheet:lowpass:begin -->
+State a low pass of the radio before its modulator input in `AudioTxConfig.InputLowpassHz`: it lowers the least rate that keeps the limits. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these: 6000 Hz counts as 8000 Hz, and a cutoff above 8000 Hz as none.
+<!-- txsheet:lowpass:end -->
+
+### Pre-emphasis
+
+<!-- txsheet:preemph:begin -->
+Use the flat modulator input (data port) of the radio when it has one. The microphone input pre-emphasizes the audio, with a zero near 300 Hz and a pole near 3000 Hz, and spreads a DMR signal into the adjacent channel. For it, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis` from `Init` or `NewPreEmphasis`, one for each transmitter. Only Tier 0 at 48 kHz takes it, in the setups of the Tier 0 table of [Least sample rate](#least-sample-rate).
+<!-- txsheet:preemph:end -->
+
+## Comparison with other transmitters
 
 <!-- txcmp:begin -->
 
-## Other transmitters
+The audio tiers and the DMR DMO modulator of the MMDVM firmware (commit 046e1df1) make the same symbol stream at 24 kHz into a 12-bit converter and the same radio. [Other transmitters](#other-transmitters) gives the method.
 
-The audio tiers and the DMR DMO modulator of the MMDVM firmware (commit 046e1df1, `DMRDMOTX.cpp` on the host) make the same BS-sourced symbol stream at 24 kHz into a 12-bit converter. The tiers run at a Level of 960 codes, and the MMDVM firmware at a DMRTXLevel of 50, which gives 249 codes for a run of symbol +3. Each output goes through the same radio: a sample-and-hold converter, an 8 kHz two-pole low pass and an FM modulator set to 1944 Hz for a run of +3.
+| Transmitter | Adjacent channel (dBc) | Alternate channel (dBc) | Mask D margin (dB) | FSK error (%) | Deviation error (%) | ETSI pattern deviation error (%) | Voice, I/Q receiver (dB) | Data, I/Q receiver (dB) | Voice, FM receiver (dB) | Data, FM receiver (dB) |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| dmrgo audio tier 0 | -64.9 | -70.1 | 16.1 | 0.09 | -0.04 | -0.12 | 6.1 | 4.7 | 9.5 | 6.4 |
+| dmrgo audio tier 1 | -67.5 | -70.0 | 15.1 | 0.23 | -0.04 | 0.03 | 6.1 | 4.7 | 9.5 | 6.4 |
+| dmrgo audio tier 2 | -67.5 | -70.0 | 15.1 | 0.23 | -0.04 | 0.03 | 6.1 | 4.7 | 9.5 | 6.4 |
+| MMDVM firmware | -58.6 | -70.0 | 13.9 | 1.23 | 0.52 | -1.42 | 6.1 | 4.7 | 9.5 | 6.4 |
 
-| Transmitter | Adjacent channel | Alternate channel | Mask D margin | FSK error | Deviation error | ETSI pattern deviation error | Voice at I/Q receiver | Data at I/Q receiver | Voice at FM receiver | Data at FM receiver |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| dmrgo audio tier 0 | -64.9 dBc | -70.1 dBc | 16.1 dB | 0.09% | -0.04% | -0.12% | 6.1 dB | 4.7 dB | 9.5 dB | 6.4 dB |
-| dmrgo audio tier 1 | -67.5 dBc | -70.0 dBc | 15.1 dB | 0.23% | -0.04% | 0.03% | 6.1 dB | 4.7 dB | 9.5 dB | 6.4 dB |
-| dmrgo audio tier 2 | -67.5 dBc | -70.0 dBc | 15.1 dB | 0.23% | -0.04% | 0.03% | 6.1 dB | 4.7 dB | 9.5 dB | 6.4 dB |
-| MMDVM firmware | -58.6 dBc | -70.0 dBc | 13.9 dB | 1.23% | 0.52% | -1.42% | 6.1 dB | 4.7 dB | 9.5 dB | 6.4 dB |
+Channel power: lower is better. Mask D margin: higher is better. Receiver columns: Eb/N0 at which a reference receiver recovers 90% of the frames; lower is better.
 
-- Adjacent and alternate channel power is the power within 4.25 kHz of 12.5 and 25 kHz off, relative to the carrier, the larger side (EN 300 113 clause 7.4). Lower is better.
-- The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz. Higher is better.
-- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3. The frequency is the phase step of the FM signal between samples at 48 kHz, divided by the sinc response of that step. The symbol centers come through a root-raised-cosine receive filter 128 symbols to each side, with the timing, gain and offset fitted over the stream. The ETSI pattern deviation is the peak of a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods.
-- The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over 64 noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.
+Each receiver column less that of the MMDVM firmware in dB, over the same noise seeds, with one standard error from leaving out one seed at a time. A negative difference favors dmrgo.
 
-Each receiver column less that of the MMDVM firmware, over the same noise seeds, with one standard error from leaving out one seed at a time. A negative difference favors dmrgo.
-
-| Transmitter | Voice at I/Q receiver | Data at I/Q receiver | Voice at FM receiver | Data at FM receiver |
-| --- | --- | --- | --- | --- |
-| dmrgo audio tier 0 | 0.01 ± 0.05 dB | 0.00 ± 0.05 dB | -0.08 ± 0.05 dB | 0.05 ± 0.04 dB |
-| dmrgo audio tier 1 | -0.05 ± 0.04 dB | -0.03 ± 0.06 dB | -0.04 ± 0.04 dB | 0.03 ± 0.04 dB |
-| dmrgo audio tier 2 | -0.05 ± 0.04 dB | -0.02 ± 0.05 dB | -0.04 ± 0.05 dB | 0.03 ± 0.04 dB |
+| Transmitter | Voice, I/Q receiver (dB) | Data, I/Q receiver (dB) | Voice, FM receiver (dB) | Data, FM receiver (dB) |
+|:---|---:|---:|---:|---:|
+| dmrgo audio tier 0 | 0.01 ± 0.05 | 0.00 ± 0.05 | -0.08 ± 0.05 | 0.05 ± 0.04 |
+| dmrgo audio tier 1 | -0.05 ± 0.04 | -0.03 ± 0.06 | -0.04 ± 0.04 | 0.03 ± 0.04 |
+| dmrgo audio tier 2 | -0.05 ± 0.04 | -0.02 ± 0.05 | -0.04 ± 0.05 | 0.03 ± 0.04 |
 
 ![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](tx/compare_spectrum.svg)
-
-<details><summary>Eye diagrams</summary>
-
-The frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.
-
 ![Eye diagram of each transmitter](tx/compare_eye.svg)
-
-</details>
-
-`DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes this block and its graphs.
 
 <!-- txcmp:end -->
 
-## Generating this page
+## Measurement conditions
 
-`go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the margins into `v2/internal/fsktx/testdata/txmargins.json` and the spectra, eye diagrams and FSK error into `v2/internal/fsktx/testdata/txsheet.json`, and writes the tables and graphs of this page. Without `-update-txdoc` the tests fail when the page or a graph differs from the data. `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the formats, rates and limits of this page from the code of `rf`. `go run -C cmd/mcubench . -update` measures the Tier 0 cost into `v2/internal/fsktx/testdata/tier0cost.json`.
+<!-- txdoc:methods:begin -->
+
+### Methods of the limits
+
+- Spurious emissions of EN 300 113: the power in 1 kHz from 31.25 kHz from the carrier (250% of the 12.5 kHz channel separation), in 10 kHz from 100 kHz, in 100 kHz beyond 500 kHz, the reference bandwidths of EN 300 113 V2.2.1 tables 6a and 6b. The other spurious domain rows take the mean power in 100 kHz.
+- Emission Mask D: 47 CFR 90.210(d)(4) takes a reference in a bandwidth wide enough for the true peak (30 kHz here) and the emissions within 50 kHz of the band edge in 100 Hz in peak hold, over sweeps enough to develop the profile. The peak hold is modeled as 10 minutes of sweeps over 112.5 kHz: each frequency gets 53.3 independent 100 Hz looks (the hold time times the square of the bandwidth over the span), so the margin takes, at each frequency, the 0.9816 quantile of the 100 Hz power over the stream, the expected peak of those looks.
+- Emission Mask H and the EA mask: 47 CFR 90.210 table note 6 puts digital emissions at 806-809/851-854 MHz under Mask H, and table note 3 puts 809-824/854-869 MHz under 90.691. Neither section states a method, and the preamble of 90.210 allows average values with the carrier power in the same terms, so both take the mean power in 100 Hz, about 1% of the emission bandwidth (the practice of FCC KDB 971168 and ANSI C63.26), against the mean carrier power.
+- Adjacent and alternate channel power and spurious emissions of EN 300 113 take the mean power (clauses 7.4.2 and 7.5.2). The transients of clause 7.9.3.3 key the carrier unmodulated; the modulated transients of the datasheet take the worst over the keying edges of a voice superframe with its data bursts and of bursts of ten fixed symbol patterns.
+- Each class is measured over a stream long enough that doubling it moves no margin by more than 0.25 dB (`TestLimLengths`): 16 superframes for 8-bit I/Q and 8 for the others.
+  With Mask H and the EA mask, US land mobile audio at 30 dBm needs an input low pass for 24 kHz: Tier 0 at 16 bits takes 48 kHz with no `InputLowpassHz` and 24 kHz with 8000 Hz.
+
+- A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, the far out rows of the FCC masks and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others.
+- China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples.
+- The margins take audio at 48 kHz, and I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. The least sample rates come from `TestMinRatesGenerated`, which writes `minrate_gen.go` in `v2/internal/fsktx`.
+- FSK error: the RMS error of the symbol deviations after the receive filter over a random stream. Deviation error: the frequency is the phase step of the FM signal between samples, divided by the sinc response of that step; a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods of the middle half of the pattern gives the peak.
+
+<!-- txdoc:methods:end -->
+
+### Other transmitters
+
+<!-- txcmp:methods:begin -->
+
+- The MMDVM firmware runs its `DMRDMOTX.cpp` on the host. The tiers run at a Level of 960 codes, and the MMDVM firmware at a DMRTXLevel of 50, which gives 249 codes for a run of symbol +3. The stream is BS-sourced.
+- The radio is a sample-and-hold converter, an 8 kHz two-pole low pass and an FM modulator set to 1944 Hz for a run of +3.
+- Adjacent and alternate channel power is the power within 4.25 kHz of 12.5 and 25 kHz off, relative to the carrier, the larger side (EN 300 113 clause 7.4). The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz.
+- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3. The frequency is the phase step of the FM signal between samples at 48 kHz, divided by the sinc response of that step. The symbol centers come through a root-raised-cosine receive filter 128 symbols to each side, with the timing, gain and offset fitted over the stream. The ETSI pattern deviation is the peak of a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods.
+- The I/Q receiver is rf Tier 2 at 48 kHz, and the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator, over 64 noise seeds a point.
+- The eye diagrams show the frequency of the FM signal after a 2.4 kHz low pass, over 120 symbol pairs.
+- `DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes the comparison and its graphs.
+
+<!-- txcmp:methods:end -->
+
+[Transmitter design notes](tx-notes.md) records the audio correction on a flat radio and the transmitter pairs.
+
+### Generating this page
+
+`go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the margins into `v2/internal/fsktx/testdata/txmargins.json` and the spectra, eye diagrams and FSK error into `v2/internal/fsktx/testdata/txsheet.json`, and writes the tables and graphs of this page. `-render-txdoc` writes them from the committed data, with no measurement. Without these flags the tests fail when the page or a graph differs from the data. `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the formats, rates and limits of this page from the code of `rf`. `go run -C cmd/mcubench . -update` measures the Tier 0 cost into `v2/internal/fsktx/testdata/tier0cost.json`.

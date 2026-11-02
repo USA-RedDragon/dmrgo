@@ -102,12 +102,12 @@ Probes of the constructors: `AudioRxConfig.Bits` from 8 to 16 is accepted, and `
 ### Sample rates
 
 <!-- rxbench:limits:begin -->
-| Tier | I/Q rate (Hz) | Audio rate (Hz) |
+| Tier | I/Q rate (kHz) | Audio rate (kHz) |
 |:---|---:|---:|
-| Tier 0 | 9,600, 12,000, 24,000 to 1,000,000,000 | 8,000 to 48,000 |
-| Tier 1 | 24,000 to 1,000,000,000 | 8,000 to 1,000,000 |
-| Tier 2 | 48,000 to 1,000,000,000 | 8,000 to 1,000,000 |
-| Tier 3 | 48,000 to 1,000,000,000 | 8,000 to 1,000,000 |
+| Tier 0 | 9.6, 12, 24 to 1,000,000 | 8 to 48 |
+| Tier 1 | 24 to 1,000,000 | 8 to 1,000 |
+| Tier 2 | 48 to 1,000,000 | 8 to 1,000 |
+| Tier 3 | 48 to 1,000,000 | 8 to 1,000 |
 
 The constructors accept the rates of each span and refuse the other probe rates: 9,599, 9,600, 9,601, 11,999, 12,000, 12,001, 23,999, 24,000, 47,999, 48,000, 96,000, 250,000, 2,400,000, 20,000,000, 1,000,000,000, 1,000,000,001 Hz for I/Q and 7,999, 8,000, 9,600, 11,025, 12,000, 22,050, 24,000, 44,100, 48,000, 48,001, 96,000, 1,000,000, 1,000,001 Hz for audio.
 

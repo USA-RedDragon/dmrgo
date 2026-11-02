@@ -241,9 +241,9 @@ func txClassByName(name string) (limClass, bool) {
 
 func txOutputName(c limClass) string {
 	if c.iq {
-		return txClassName(c)
+		return txOutput(c)
 	}
-	return txClassName(c) + " at 48 kHz"
+	return txOutput(c) + " at 48 kHz"
 }
 
 func txFileTag(c limClass) string {
@@ -291,7 +291,7 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 			mh = append(mh, -maskhAttn(f, 1000))
 			ea = append(ea, -eaAttn(f, 1000))
 		}
-		out[txFileTag(c)+"_spectrum.svg"] = linePlot(fmt.Sprintf("Tier %d, %s: spectrum, 10-minute peak hold in 100 Hz", c.tier-Tier0, txOutputName(c)),
+		out[txFileTag(c)+"_spectrum.svg"] = linePlot(txTierName(c)+", "+txOutputName(c)+": spectrum, 10-minute peak hold in 100 Hz",
 			plotAxis{min: -40, max: 40, step: 10, label: "Offset from the carrier (kHz)"},
 			plotAxis{min: -120, max: 20, step: 20, label: "Power to the reference (dB)"},
 			[]plotSeries{
@@ -311,7 +311,7 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 		}
 		adj, alt := lim(12.5), lim(25)
 		adj.name = "EN 300 113 limit"
-		out[txFileTag(c)+"_acp.svg"] = linePlot(fmt.Sprintf("Tier %d, %s: power in the EN 300 113 receiver filter", c.tier-Tier0, txOutputName(c)),
+		out[txFileTag(c)+"_acp.svg"] = linePlot(txTierName(c)+", "+txOutputName(c)+": power in the EN 300 113 receiver filter",
 			plotAxis{min: 0, max: 40, step: 5, label: "Filter offset from the carrier (kHz)"},
 			plotAxis{min: -110, max: 0, step: 10, label: "Power to the total (dBc)"},
 			[]plotSeries{{name: "Signal", class: txTierClass(c.tier), x: ox, y: acp}, adj, alt})
@@ -395,7 +395,7 @@ func txFSKGraph(out map[string][]byte, d txSheetData) {
 		if f.Radio == "ideal" {
 			continue
 		}
-		rows = append(rows, fmt.Sprintf("Tier %d, %s", c.tier-Tier0, txClassName(c)))
+		rows = append(rows, txTierName(c)+", "+txOutput(c))
 		hold = append(hold, f.FSKError)
 		iv := math.NaN()
 		for _, g := range d.FSK {
@@ -434,76 +434,117 @@ func txRegimeMargin(t testing.TB, g map[string]float64, r txRegime) (float64, bo
 	return worst, ok
 }
 
+func txTableHead(cols ...string) string {
+	var h, sep strings.Builder
+	for i, c := range cols {
+		h.WriteString("| " + c + " ")
+		if i == 0 || c == "Output" || c == "Limit" || c == "Input" {
+			sep.WriteString("|:---")
+		} else {
+			sep.WriteString("|---:")
+		}
+	}
+	return h.String() + "|\n" + sep.String() + "|\n"
+}
+
+func txTableRow(cells ...string) string { return "| " + strings.Join(cells, " | ") + " |\n" }
+
+func txTierName(c limClass) string {
+	if c.iq {
+		return fmt.Sprintf("I/Q tier %d", c.tier-Tier0)
+	}
+	return fmt.Sprintf("Audio tier %d", c.tier-Tier0)
+}
+
+func txOutput(c limClass) string {
+	_, out, _ := strings.Cut(txClassName(c), " ")
+	return out
+}
+
+func txRateKHz(hz int) string {
+	s := khz(hz)
+	if whole, frac, _ := strings.Cut(s, "."); len(whole) > 3 {
+		s = whole[:len(whole)-3] + "," + whole[len(whole)-3:]
+		if frac != "" {
+			s += "." + frac
+		}
+	}
+	return s
+}
+
+func txSheetRows() []limClass {
+	var audio, iq []limClass
+	for _, c := range txSheetClasses() {
+		switch {
+		case c.pe:
+		case c.iq:
+			iq = append(iq, c)
+		default:
+			audio = append(audio, c)
+		}
+	}
+	return append(audio, iq...)
+}
+
 func renderTxSheet(t testing.TB, d txSheetData, cost txSheetCostData, margins map[string]map[string]float64) string {
 	var b strings.Builder
 	b.WriteString(txSheetBegin + "\n\n")
-	cs := txSheetClasses()
-	var shown []limClass
-	for _, c := range cs {
-		if !c.pe {
-			shown = append(shown, c)
-		}
-	}
-	head, sep := "| Parameter |", "| --- |"
-	for _, c := range shown {
-		head += fmt.Sprintf(" Tier %d, %s |", c.tier-Tier0, txClassName(c))
-		sep += " ---: |"
-	}
-	b.WriteString(head + "\n" + sep + "\n")
+	shown := txSheetRows()
 	fskOf := func(c limClass, radio string) string {
 		for _, f := range d.FSK {
 			if f.Class == c.String() && f.Radio == radio {
-				return fmt.Sprintf("%.2f%%", f.FSKError)
+				return fmt.Sprintf("%.2f", f.FSKError)
 			}
 		}
 		return "-"
 	}
-	row := func(name string, cell func(c limClass) string) {
-		b.WriteString("| " + name + " |")
-		for _, c := range shown {
-			b.WriteString(" " + cell(c) + " |")
-		}
-		b.WriteString("\n")
-	}
-	row("Sample rate", func(c limClass) string {
-		if hz := txDocRate(c); hz >= 1000000 {
-			return strconv.FormatFloat(float64(hz)/1e6, 'f', -1, 64) + " MHz"
-		}
-		return khz(txDocRate(c)) + " kHz"
-	})
-	row("FSK error, hold converter or I/Q", func(c limClass) string {
+	b.WriteString("### Signal quality\n\n")
+	b.WriteString(txTableHead("Tier", "Output", "Rate (kHz)", "FSK error, hold (%)", "FSK error, ideal (%)", "Deviation error (%)"))
+	for _, c := range shown {
+		hold, ideal := fskOf(c, "plain"), fskOf(c, "ideal")
 		if c.iq {
-			return fskOf(c, "")
+			hold, ideal = fskOf(c, ""), "-"
 		}
-		return fskOf(c, "plain")
-	})
-	row("FSK error, ideal converter", func(c limClass) string {
-		if c.iq {
-			return "-"
-		}
-		return fskOf(c, "ideal")
-	})
-	row("Deviation error, TS 102 361-1 pattern", func(c limClass) string {
+		dev := "-"
 		if v, ok := margins[c.String()]["ts_dev_pct"]; ok {
-			return fmt.Sprintf("%.1f%%", 10-v)
+			dev = fmt.Sprintf("%.1f", 10-v)
 		}
-		return "-"
-	})
-	for _, r := range txRegimes {
-		row("Margin over the need, "+r.name+", 1 W", func(c limClass) string {
-			if v, ok := txRegimeMargin(t, margins[c.String()], r); ok {
-				return fmt.Sprintf("%+.1f dB", v)
-			}
-			return "-"
-		})
+		b.WriteString(txTableRow(txTierName(c), txOutput(c), txRateKHz(txDocRate(c)), hold, ideal, dev))
 	}
-	b.WriteString("\n- FSK error is the RMS error of the symbol deviations after the receive filter, as a percent of the deviation of symbol +3, over a random stream. A hold converter keeps each code until the next sample; an ideal converter interpolates it with no images. I/Q has no converter model.\n")
-	b.WriteString("- Deviation error is the error of the peak deviation of the ETSI test pattern from 2749 Hz. TS 102 361-1 clause 10.2.2.3 sets a limit of 10%. The measurement takes the frequency from the phase step of the FM signal between samples, divided by the sinc response of that step to the frequency, fits a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods of the middle half of the pattern, and takes the peak of that fit.\n")
-	b.WriteString("- Each margin is the least, over the limits of the region and service at 1 W (30 dBm) with no input low pass, of the margin in dB less the margin that a setup needs on that limit: 10 dB on a spurious domain limit and 3 dB on the others. A setup is accepted from 0. [Measured margins](#measured-margins) gives each limit and power class.\n\n")
+	b.WriteString("\n- FSK error: RMS error of the symbol deviations after the receive filter, as a percent of the deviation of symbol +3. Hold: a converter that keeps each code until the next sample, or I/Q. Ideal: a converter with no images.\n")
+	b.WriteString("- Deviation error: error of the peak deviation of the TS 102 361-1 test pattern from 2749 Hz. The limit is 10%.\n\n")
+	b.WriteString("### Margin over the need at 1 W\n\n")
+	b.WriteString("Least margin in dB to the limits of each region and service at 1 W (30 dBm), less the margin that a setup needs: 10 dB on a spurious domain limit and 3 dB on the others. A setup is accepted from 0. Higher is better.\n\n")
+	cols := make([]string, 0, 2+len(txRegimes))
+	cols = append(cols, "Tier", "Output")
+	for _, r := range txRegimes {
+		cols = append(cols, r.name)
+	}
+	b.WriteString(txTableHead(cols...))
+	for _, c := range shown {
+		cells := make([]string, 0, len(cols))
+		cells = append(cells, txTierName(c), txOutput(c))
+		for _, r := range txRegimes {
+			cell := "-"
+			if v, ok := txRegimeMargin(t, margins[c.String()], r); ok {
+				cell = fmt.Sprintf("%+.1f", v)
+			}
+			cells = append(cells, cell)
+		}
+		b.WriteString(txTableRow(cells...))
+	}
+	b.WriteString("\n")
 	if len(cost.Rows) > 0 {
-		b.WriteString("| Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |\n| --- | ---: | ---: | ---: |\n")
-		for _, r := range cost.Rows {
-			fmt.Fprintf(&b, "| %s | %.1f MHz | %d B | %.1f KB |\n", r.Name, r.MHz, r.RAMBytes, r.FlashKB)
+		b.WriteString("### Tier 0 on a Cortex-M4F\n\n")
+		b.WriteString(txTableHead("Tier", "Rate (kHz)", "CPU (MHz)", "RAM with stack (B)", "Flash (KB)"))
+		rows := slices.Clone(cost.Rows)
+		slices.SortStableFunc(rows, func(a, b txSheetCost) int {
+			return cmp.Compare(strings.Index(a.Name, "I/Q"), strings.Index(b.Name, "I/Q"))
+		})
+		for _, r := range rows {
+			kind, rest, _ := strings.Cut(r.Name, " at ")
+			rate, out, _ := strings.Cut(rest, " kHz, ")
+			b.WriteString(txTableRow(kind+" tier 0, "+out, rate, fmt.Sprintf("%.1f", r.MHz), strconv.Itoa(r.RAMBytes), fmt.Sprintf("%.1f", r.FlashKB)))
 		}
 		b.WriteString("\n" + cost.Source + "\n\n")
 	}
@@ -513,16 +554,16 @@ func renderTxSheet(t testing.TB, d txSheetData, cost txSheetCostData, margins ma
 
 func renderTxLevels() string {
 	var b strings.Builder
-	b.WriteString(txLevelBegin + "\n\n| Bits | Tier 0 level | Tier 1 and Tier 2 level at 48 kHz | Tier 1 and Tier 2 peak at that level |\n| ---: | ---: | ---: | ---: |\n")
+	b.WriteString(txLevelBegin + "\n\n" + txTableHead("Bits", "Tier 0 level (codes)", "Tier 1 and 2 level at 48 kHz (codes)", "Tier 1 and 2 peak (times the level)"))
 	for _, bits := range audioBitClasses {
 		l0 := measuredLevel(Setup{Tier: Tier0, Bits: bits}, 48000)
 		l1 := measuredLevel(Setup{Tier: Tier1, Bits: bits}, 48000)
 		at := l1 >> (bits - Setup{Tier: Tier1, Bits: bits}.MeasuredBits())
 		pk := "-"
 		if a, err := NewAudio(AudioConfig{Hz: 48000, Level: at, Tier: Tier1}); err == nil {
-			pk = fmt.Sprintf("%.2f times the level", a.Peak()/float64(at))
+			pk = fmt.Sprintf("%.2f", a.Peak()/float64(at))
 		}
-		fmt.Fprintf(&b, "| %d | %d codes | %d codes | %s |\n", bits, l0, l1, pk)
+		fmt.Fprintf(&b, "| %d | %d | %d | %s |\n", bits, l0, l1, pk)
 	}
 	b.WriteString("\n" + txLevelEnd)
 	return b.String()
@@ -535,15 +576,15 @@ func renderTxLowpass() string {
 	}
 	example := inputLowpassGrid[2] + 1000
 	counts := inputLowpassGrid[lowpassClass(example)]
-	return txLowBegin + "\n`AudioTxConfig.InputLowpassHz` states the cutoff of a low pass of at least two poles that the radio puts before its modulator input. 0 is none: the converter drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at " +
-		strings.Join(grid[:len(grid)-1], ", ") + " and " + grid[len(grid)-1] + " Hz, and a stated cutoff takes the next looser of these. Thus " + strconv.Itoa(example) + " Hz counts as " + strconv.Itoa(counts) +
-		" Hz, and a cutoff above " + grid[0] + " Hz counts as none. A low pass lowers the least rate that keeps the limits. A negative cutoff gets a `*dmrgo.ConfigError`.\n" + txLowEnd
+	return txLowBegin + "\nState a low pass of the radio before its modulator input in `AudioTxConfig.InputLowpassHz`: it lowers the least rate that keeps the limits. The limits are measured with a two-pole Butterworth low pass at " +
+		strings.Join(grid[:len(grid)-1], ", ") + " and " + grid[len(grid)-1] + " Hz, and a stated cutoff takes the next looser of these: " + strconv.Itoa(example) + " Hz counts as " + strconv.Itoa(counts) +
+		" Hz, and a cutoff above " + grid[0] + " Hz as none.\n" + txLowEnd
 }
 
 func renderTxPreEmph() string {
-	return txPEBegin + "\nThe microphone input of an FM radio usually pre-emphasizes the audio, with a zero near " + strconv.Itoa(preZeroHz) + " Hz and a pole near " + strconv.Itoa(prePoleHz) +
-		" Hz, as the limits model it. A DMR signal through it has the wrong pulse shape and spreads into the adjacent channel. Use the flat modulator input of the radio (its data port) when it has one. When it does not, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis`: the transmitter then shapes its output so that the pre-emphasis of the radio gives the right signal. It is opt-in: nil is a radio with no pre-emphasis. Set one up with `Init` in memory of the caller, or with `NewPreEmphasis`, one for each transmitter. Only Tier 0 at " +
-		khz(peSamples*SymbolRate) + " kHz takes it, and only where its limits are measured to keep their margin: the Tier 0 table of [Least sample rate](#least-sample-rate) gives these setups. Elsewhere it gets a `RegionError`. A program that sets up no `PreEmphasis` links none of its code or tables.\n" + txPEEnd
+	return txPEBegin + "\nUse the flat modulator input (data port) of the radio when it has one. The microphone input pre-emphasizes the audio, with a zero near " + strconv.Itoa(preZeroHz) + " Hz and a pole near " + strconv.Itoa(prePoleHz) +
+		" Hz, and spreads a DMR signal into the adjacent channel. For it, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis` from `Init` or `NewPreEmphasis`, one for each transmitter. Only Tier 0 at " +
+		khz(peSamples*SymbolRate) + " kHz takes it, in the setups of the Tier 0 table of [Least sample rate](#least-sample-rate).\n" + txPEEnd
 }
 
 func renderTxGraphList(graphs map[string][]byte) string {
@@ -558,11 +599,11 @@ func renderTxGraphList(graphs map[string][]byte) string {
 		}
 		b.WriteString("\n")
 	}
-	section("Spectrum", "The power in 100 Hz in the 10-minute peak hold of Mask D (see the methods) against the offset from the carrier, relative to the reference power of FCC Mask D, with Mask D for 1 W and 100 W and Mask H and the EA mask for 1 kW. Audio goes through the hold converter and an FM modulator.", func(n string) bool { return strings.HasSuffix(n, "_spectrum.svg") })
-	section("Adjacent channel power", "The power that the receiver filter of EN 300 113 Annex C passes, against the offset of the filter from the carrier, relative to the total power. The dashed lines are the limit of EN 300 113 in the adjacent and alternate channels. The flat floor far out is the 90 dB stopband of the filter of Annex C, not the signal.", func(n string) bool { return strings.HasSuffix(n, "_acp.svg") })
-	section("Margins", "The margin to each limit in dB at 1 W, the worst over the measured points, from `testdata/txmargins.json`.", func(n string) bool { return strings.HasSuffix(n, "_margins.svg") })
-	section("Eye diagrams", "The deviation after the root raised cosine receive filter of the FSK error measurement, at 48 kHz, on the symbol timing that the measurement fits. Audio goes through an ideal converter, which interpolates the codes with no images, and through a hold converter, which keeps each code until the next sample.", func(n string) bool { return strings.HasSuffix(n, "_eye.svg") })
-	section("FSK error", "The FSK error of each tier and output.", func(n string) bool { return n == "fsk_error.svg" })
+	section("Spectrum", "10-minute peak hold in 100 Hz against the offset from the carrier, relative to the reference power of FCC Mask D, with the masks dashed. Audio goes through the hold converter and an FM modulator.", func(n string) bool { return strings.HasSuffix(n, "_spectrum.svg") })
+	section("Adjacent channel power", "Power that the receiver filter of EN 300 113 Annex C passes, relative to the total, with the limit of EN 300 113 dashed. The floor far out is the 90 dB stopband of that filter.", func(n string) bool { return strings.HasSuffix(n, "_acp.svg") })
+	section("Margins", "Margin to each limit at 1 W over the margin that a setup needs, the worst over the measured points.", func(n string) bool { return strings.HasSuffix(n, "_margins.svg") })
+	section("Eye diagrams", "Deviation after the receive filter of the FSK error measurement, at 48 kHz, on the symbol timing that the measurement fits.", func(n string) bool { return strings.HasSuffix(n, "_eye.svg") })
+	section("FSK error", "FSK error of each tier and output.", func(n string) bool { return n == "fsk_error.svg" })
 	b.WriteString(txGraphEnd)
 	return b.String()
 }

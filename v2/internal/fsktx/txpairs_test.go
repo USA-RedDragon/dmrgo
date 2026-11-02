@@ -21,6 +21,7 @@ var updateTxPairs = flag.Bool("update-txpairs", false, "measure the transmitter 
 
 const (
 	txPairsFile    = "testdata/txpairs.json"
+	txNotesFile    = "../../../docs/tx-notes.md"
 	txPairsStreams = 64
 	txPairsBegin   = "<!-- txpairs:begin -->"
 	txPairsEnd     = "<!-- txpairs:end -->"
@@ -200,11 +201,9 @@ func renderTxPairs(p txPairs) string {
 
 func TestTxPairs(t *testing.T) {
 	t.Parallel()
-	txDocMu.Lock()
-	defer txDocMu.Unlock()
-	doc, err := os.ReadFile(txDocFile)
+	doc, err := os.ReadFile(txNotesFile)
 	if errors.Is(err, fs.ErrNotExist) && !*updateTxPairs {
-		t.Skip("docs/tx.md is not in this tree")
+		t.Skip("docs/tx-notes.md is not in this tree")
 	}
 	if err != nil {
 		t.Fatal(err)
@@ -237,17 +236,17 @@ func TestTxPairs(t *testing.T) {
 	}
 	i, j := bytes.Index(doc, []byte(txPairsBegin)), bytes.Index(doc, []byte(txPairsEnd))
 	if i < 0 || j < i {
-		t.Fatalf("%s has no %s ... %s block", txDocFile, txPairsBegin, txPairsEnd)
+		t.Fatalf("%s has no %s ... %s block", txNotesFile, txPairsBegin, txPairsEnd)
 	}
 	want := renderTxPairs(p)
 	if *updateTxPairs {
 		out := append(append(append([]byte{}, doc[:i]...), want...), doc[j+len(txPairsEnd):]...)
-		if err := os.WriteFile(txDocFile, out, 0o600); err != nil {
+		if err := os.WriteFile(txNotesFile, out, 0o600); err != nil {
 			t.Fatal(err)
 		}
 		return
 	}
 	if got := string(doc[i : j+len(txPairsEnd)]); got != want {
-		t.Errorf("the transmitter pairs of %s differ from %s; run go test ./internal/fsktx -run TestTxPairs -update-txpairs in v2", txDocFile, txPairsFile)
+		t.Errorf("the transmitter pairs of %s differ from %s; run go test ./internal/fsktx -run TestTxPairs -update-txpairs in v2", txNotesFile, txPairsFile)
 	}
 }

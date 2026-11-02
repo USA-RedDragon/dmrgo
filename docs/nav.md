@@ -67,6 +67,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Receiver](rx.md)
   - [Transmitter](tx.md)
   - [Receiver design notes](rx-notes.md)
+  - [Transmitter design notes](tx-notes.md)
 - Reference
   - [Go API](reference/go-api.md)
   - [C header](reference/c-api.md)

@@ -314,9 +314,9 @@ func ratesCell(rs []sheetAccept, tierIdx int) string {
 		}
 		if ok && (i == len(rs)-1 || tierIdx >= len(rs[i+1].Tiers) || !rs[i+1].Tiers[tierIdx]) {
 			if start == i {
-				spans = append(spans, grouped(int64(r.Hz)))
+				spans = append(spans, grouped64(float64(r.Hz)/1000))
 			} else {
-				spans = append(spans, grouped(int64(rs[start].Hz))+" to "+grouped(int64(r.Hz)))
+				spans = append(spans, grouped64(float64(rs[start].Hz)/1000)+" to "+grouped64(float64(r.Hz)/1000))
 			}
 			start = -1
 		}
@@ -329,7 +329,7 @@ func ratesCell(rs []sheetAccept, tierIdx int) string {
 
 func renderLimits(d data) []byte {
 	var b strings.Builder
-	b.WriteString("\n" + tableHead("Tier", "I/Q rate (Hz)", "Audio rate (Hz)"))
+	b.WriteString("\n" + tableHead("Tier", "I/Q rate (kHz)", "Audio rate (kHz)"))
 	n := 0
 	for _, r := range append(slices.Clone(d.sheet.RatesIQ), d.sheet.RatesAudio...) {
 		n = max(n, len(r.Tiers))

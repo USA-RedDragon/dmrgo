@@ -31,6 +31,10 @@ const (
 	txMarginsFile = "testdata/txmargins.json"
 	txDocBegin    = "<!-- txdoc:begin -->"
 	txDocEnd      = "<!-- txdoc:end -->"
+	txMarginBegin = "<!-- txdoc:margins:begin -->"
+	txMarginEnd   = "<!-- txdoc:margins:end -->"
+	txMethodBegin = "<!-- txdoc:methods:begin -->"
+	txMethodEnd   = "<!-- txdoc:methods:end -->"
 )
 
 func txDocRate(c limClass) int {
@@ -189,20 +193,19 @@ var txRegimes = []txRegime{
 	{"Japan, amateur", limJapan, limAmateur},
 }
 
-func renderTxDocTables(t testing.TB, margins map[string]map[string]float64) string {
-	t.Helper()
+func renderTxDocTables() string {
 	var b strings.Builder
 	b.WriteString(txDocBegin + "\n\n")
-	b.WriteString("## Least sample rate\n\n")
-	b.WriteString("Each cell gives the least sample rate in kHz for the power breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A power takes the next breakpoint at or above it. A dash is a setup that no rate of the grid keeps. `TestMinRatesGenerated` measures the grid, and these tables come from its output, `minrate_gen.go` in `v2/internal/fsktx`. Tier 0 makes audio at 24 and 48 kHz and I/Q at 96 kHz only, and audio with pre-emphasis at 48 kHz only.\n\n")
-	head := "| Input |"
-	sep := "| --- |"
+	b.WriteString("### Least sample rate\n\n")
+	b.WriteString("Least sample rate in kHz at the power breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A power takes the next breakpoint at or above it. A dash is a setup that no rate of the grid keeps.\n\n")
+	cols := make([]string, 0, 1+len(txRegimes))
+	cols = append(cols, "Input")
 	for _, r := range txRegimes {
-		head += " " + r.name + " |"
-		sep += " --- |"
+		cols = append(cols, r.name)
 	}
+	head := txTableHead(cols...)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
-		fmt.Fprintf(&b, "### Tier %d\n\n%s\n%s\n", tier-Tier0, head, sep)
+		fmt.Fprintf(&b, "<details><summary>Tier %d</summary>\n\n%s", tier-Tier0, head)
 		for _, c := range txTierClasses(tier) {
 			lps := c.lowpasses()
 			for _, lp := range lps {
@@ -225,19 +228,26 @@ func renderTxDocTables(t testing.TB, margins map[string]map[string]float64) stri
 				b.WriteString("\n")
 			}
 		}
-		b.WriteString("\n")
+		b.WriteString("\n</details>\n\n")
 	}
-	writeMethods(&b)
 	writeUnmeasured(&b)
-	b.WriteString("## Measured margins\n\n")
-	b.WriteString("Each cell is the margin of the signal to the limit, the worst over the measured points. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A positive value is inside the limit. A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, the far out rows of the FCC masks and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others. China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples. Audio is at 48 kHz, I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. A dash is a limit that does not apply to the input. `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures them into `v2/internal/fsktx/testdata/txmargins.json` and writes these tables.\n\n")
+	b.WriteString(txDocEnd)
+	return b.String()
+}
+
+func renderTxMargins(t testing.TB, margins map[string]map[string]float64) string {
+	var b strings.Builder
+	b.WriteString(txMarginBegin + "\n\n")
+	b.WriteString("### Measured margins\n\n")
+	b.WriteString("Margin of the signal to each limit, the worst over the measured points. A positive value is inside the limit. A limit that changes with power has one value for each power breakpoint, 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm, in that order. A dash is a limit that does not apply to the input. [Methods of the limits](#methods-of-the-limits) gives the margin that a setup needs.\n\n")
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		cs := txTierClasses(tier)
-		fmt.Fprintf(&b, "### Tier %d margins\n\n| Limit |", tier-Tier0)
+		cols := make([]string, 0, 1+len(cs))
+		cols = append(cols, "Limit")
 		for _, c := range cs {
-			b.WriteString(" " + txClassName(c) + " |")
+			cols = append(cols, txClassName(c))
 		}
-		b.WriteString("\n| --- |" + strings.Repeat(" ---: |", len(cs)) + "\n")
+		fmt.Fprintf(&b, "<details><summary>Tier %d</summary>\n\n%s", tier-Tier0, txTableHead(cols...))
 		for _, row := range txLimitRows() {
 			b.WriteString("| " + row.name + " |")
 			for _, c := range cs {
@@ -258,9 +268,21 @@ func renderTxDocTables(t testing.TB, margins map[string]map[string]float64) stri
 			}
 			b.WriteString("\n")
 		}
-		b.WriteString("\n")
+		b.WriteString("\n</details>\n\n")
 	}
-	b.WriteString(txDocEnd)
+	b.WriteString(txMarginEnd)
+	return b.String()
+}
+
+func renderTxMethods() string {
+	var b strings.Builder
+	b.WriteString(txMethodBegin + "\n\n")
+	writeMethods(&b)
+	b.WriteString("- A setup is accepted only with at least 10 dB on each spurious domain limit (the spurious emissions rows, the far out rows of the FCC masks and the amateur rows), where the amplifier shares the limit, at least 3 dB on each other limit in dB, except -0.01 dB on the power slope, and at least 0 on the others.\n")
+	b.WriteString("- China gives its spurious limit in positive peak: its row takes the mean power in 100 kHz plus 11.4 dB, the peak of Gaussian noise over a million samples.\n")
+	b.WriteString("- The margins take audio at 48 kHz, and I/Q at 96 kHz for Tier 0 and at 2.4 MHz for Tier 1 and Tier 2, with no input low pass. The least sample rates come from `TestMinRatesGenerated`, which writes `minrate_gen.go` in `v2/internal/fsktx`.\n")
+	b.WriteString("- FSK error: the RMS error of the symbol deviations after the receive filter over a random stream. Deviation error: the frequency is the phase step of the FM signal between samples, divided by the sinc response of that step; a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods of the middle half of the pattern gives the peak.\n\n")
+	b.WriteString(txMethodEnd)
 	return b.String()
 }
 
@@ -331,25 +353,29 @@ func TestTxDoc(t *testing.T) {
 		}
 	}
 	doc = txSheetDoc(t, doc, margins)
-	i, j := bytes.Index(doc, []byte(txDocBegin)), bytes.Index(doc, []byte(txDocEnd))
-	if i < 0 || j < i {
-		t.Fatalf("%s has no %s ... %s block", txDocFile, txDocBegin, txDocEnd)
+	for _, blk := range []struct{ begin, end, want string }{
+		{txDocBegin, txDocEnd, renderTxDocTables()},
+		{txMarginBegin, txMarginEnd, renderTxMargins(t, margins)},
+		{txMethodBegin, txMethodEnd, renderTxMethods()},
+	} {
+		i, j := bytes.Index(doc, []byte(blk.begin)), bytes.Index(doc, []byte(blk.end))
+		if i < 0 || j < i {
+			t.Fatalf("%s has no %s ... %s block", txDocFile, blk.begin, blk.end)
+		}
+		if got := string(doc[i : j+len(blk.end)]); got != blk.want && !writeTxDoc() {
+			t.Errorf("the %s block of %s differs from minrate_gen.go and %s; run go test ./internal/fsktx -run TestTxDoc -update-txdoc in v2", blk.begin, txDocFile, txMarginsFile)
+		}
+		doc = append(append(append([]byte{}, doc[:i]...), blk.want...), doc[j+len(blk.end):]...)
 	}
-	want := renderTxDocTables(t, margins)
 	if writeTxDoc() {
-		out := append(append(append([]byte{}, doc[:i]...), want...), doc[j+len(txDocEnd):]...)
-		if err := os.WriteFile(txDocFile, out, 0o600); err != nil {
+		if err := os.WriteFile(txDocFile, doc, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		return
-	}
-	if got := string(doc[i : j+len(txDocEnd)]); got != want {
-		t.Errorf("the tables of %s differ from minrate_gen.go and %s; run go test ./internal/fsktx -run TestTxDoc -update-txdoc in v2", txDocFile, txMarginsFile)
 	}
 }
 
 func writeMethods(b *strings.Builder) {
-	b.WriteString("## Methods of the limits\n\n")
+	b.WriteString("### Methods of the limits\n\n")
 	var bands []string
 	for i, x := range enSpurBands {
 		from := khz(int(x.from)) + " kHz"
@@ -377,7 +403,7 @@ func writeMethods(b *strings.Builder) {
 
 func writeUnmeasured(b *strings.Builder) {
 	pw := powerBreakpoints()
-	b.WriteString("## Setups without a measurement\n\n")
+	b.WriteString("### Setups without a measurement\n\n")
 	b.WriteString("No measurement covers these setups, so the transmitter refuses them:\n\n")
 	fmt.Fprintf(b, "- Audio over %s kHz and I/Q over %s MHz, the tops of the measured grids.\n", khz(audioRateTop), strconv.FormatFloat(float64(iqRateTop)/1e6, 'f', -1, 64))
 	fmt.Fprintf(b, "- A `Power` over %d dBm, the top breakpoint.\n", pw[len(pw)-1])

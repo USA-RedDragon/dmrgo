@@ -23,9 +23,12 @@ const (
 	txCmpFile  = "testdata/txcmp.json"
 	txCmpBegin = "<!-- txcmp:begin -->"
 	txCmpEnd   = "<!-- txcmp:end -->"
-	txCmpDir   = "../../../docs/tx"
-	txCmpLevel = 960
-	txCmpHz    = 24000
+
+	txCmpMethodBegin = "<!-- txcmp:methods:begin -->"
+	txCmpMethodEnd   = "<!-- txcmp:methods:end -->"
+	txCmpDir         = "../../../docs/tx"
+	txCmpLevel       = 960
+	txCmpHz          = 24000
 )
 
 var updateTxCmp = flag.Bool("update-txcmp", false, "measure the comparison with the MMDVM firmware modulator (DMRGO_MMDVMTX) into testdata/txcmp.json and rewrite its block and graphs in docs/tx")
@@ -284,15 +287,23 @@ func TestTxCompare(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	i, j := bytes.Index(doc, []byte(txCmpBegin)), bytes.Index(doc, []byte(txCmpEnd))
-	if i < 0 || j < i {
-		t.Fatalf("%s has no %s ... %s block", txDocFile, txCmpBegin, txCmpEnd)
+	write := *updateTxCmp || *renderTxDoc
+	for _, blk := range []struct{ begin, end, want string }{
+		{txCmpBegin, txCmpEnd, renderTxCmp(d)},
+		{txCmpMethodBegin, txCmpMethodEnd, renderTxCmpMethods(d)},
+	} {
+		i, j := bytes.Index(doc, []byte(blk.begin)), bytes.Index(doc, []byte(blk.end))
+		if i < 0 || j < i {
+			t.Fatalf("%s has no %s ... %s block", txDocFile, blk.begin, blk.end)
+		}
+		if got := string(doc[i : j+len(blk.end)]); got != blk.want && !write {
+			t.Errorf("the %s block of %s differs from %s; run go test ./internal/fsktx -run TestTxCompare -update-txcmp in v2", blk.begin, txDocFile, txCmpFile)
+		}
+		doc = append(append(append([]byte{}, doc[:i]...), blk.want...), doc[j+len(blk.end):]...)
 	}
-	want := renderTxCmp(d)
 	graphs := map[string][]byte{"compare_spectrum.svg": txCmpSpectrumSVG(d), "compare_eye.svg": txCmpEyeSVG(d)}
-	if *updateTxCmp || *renderTxDoc {
-		out := append(append(append([]byte{}, doc[:i]...), want...), doc[j+len(txCmpEnd):]...)
-		if err := os.WriteFile(txDocFile, out, 0o600); err != nil {
+	if write {
+		if err := os.WriteFile(txDocFile, doc, 0o600); err != nil {
 			t.Fatal(err)
 		}
 		for name, b := range graphs {
@@ -301,9 +312,6 @@ func TestTxCompare(t *testing.T) {
 			}
 		}
 		return
-	}
-	if got := string(doc[i : j+len(txCmpEnd)]); got != want {
-		t.Errorf("the comparison block of %s differs from %s; run go test ./internal/fsktx -run TestTxCompare -update-txcmp in v2", txDocFile, txCmpFile)
 	}
 	for name, b := range graphs {
 		if old, err := os.ReadFile(filepath.Join(txCmpDir, name)); err != nil || !bytes.Equal(old, b) {
@@ -323,16 +331,15 @@ func f2s(v float64) string { return strconv.FormatFloat(math.Round(v*100)/100+0,
 
 func writeTxCmpPaired(b *strings.Builder, d txCmpData) {
 	ref := d.Rows[len(d.Rows)-1].Name
-	b.WriteString("Each receiver column less that of the " + ref + ", over the same noise seeds, with one standard error from leaving out one seed at a time. A negative difference favors dmrgo.\n\n")
-	b.WriteString("| Transmitter | Voice at I/Q receiver | Data at I/Q receiver | Voice at FM receiver | Data at FM receiver |\n")
-	b.WriteString("| --- | --- | --- | --- | --- |\n")
+	b.WriteString("Each receiver column less that of the " + ref + " in dB, over the same noise seeds, with one standard error from leaving out one seed at a time. A negative difference favors dmrgo.\n\n")
+	b.WriteString(txTableHead("Transmitter", "Voice, I/Q receiver (dB)", "Data, I/Q receiver (dB)", "Voice, FM receiver (dB)", "Data, FM receiver (dB)"))
 	for _, r := range d.Rows {
 		if len(r.Paired) != 4 || len(r.PairedSE) != 4 {
 			continue
 		}
 		b.WriteString("| " + r.Name)
 		for m, v := range r.Paired {
-			b.WriteString(" | " + f2s(v) + " ± " + f2s(r.PairedSE[m]) + " dB")
+			b.WriteString(" | " + f2s(v) + " ± " + f2s(r.PairedSE[m]))
 		}
 		b.WriteString(" |\n")
 	}
@@ -342,24 +349,31 @@ func writeTxCmpPaired(b *strings.Builder, d txCmpData) {
 func renderTxCmp(d txCmpData) string {
 	var b strings.Builder
 	b.WriteString(txCmpBegin + "\n\n")
-	b.WriteString("## Other transmitters\n\n")
-	b.WriteString("The audio tiers and the DMR DMO modulator of the MMDVM firmware (commit " + d.MMDVM + ", `DMRDMOTX.cpp` on the host) make the same BS-sourced symbol stream at " + strconv.Itoa(txCmpHz/1000) + " kHz into a 12-bit converter. The tiers run at a Level of " + strconv.Itoa(txCmpLevel) + " codes, and the MMDVM firmware at a DMRTXLevel of 50, which gives " + strconv.Itoa(d.Rows[len(d.Rows)-1].Level) + " codes for a run of symbol +3. Each output goes through the same radio: a sample-and-hold converter, an 8 kHz two-pole low pass and an FM modulator set to 1944 Hz for a run of +3.\n\n")
-	b.WriteString("| Transmitter | Adjacent channel | Alternate channel | Mask D margin | FSK error | Deviation error | ETSI pattern deviation error | Voice at I/Q receiver | Data at I/Q receiver | Voice at FM receiver | Data at FM receiver |\n")
-	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+	b.WriteString("The audio tiers and the DMR DMO modulator of the MMDVM firmware (commit " + d.MMDVM + ") make the same symbol stream at " + strconv.Itoa(txCmpHz/1000) + " kHz into a 12-bit converter and the same radio. [Other transmitters](#other-transmitters) gives the method.\n\n")
+	b.WriteString(txTableHead("Transmitter", "Adjacent channel (dBc)", "Alternate channel (dBc)", "Mask D margin (dB)", "FSK error (%)", "Deviation error (%)", "ETSI pattern deviation error (%)", "Voice, I/Q receiver (dB)", "Data, I/Q receiver (dB)", "Voice, FM receiver (dB)", "Data, FM receiver (dB)"))
 	for _, r := range d.Rows {
-		b.WriteString("| " + r.Name + " | " + f1s(r.ACP) + " dBc | " + f1s(r.ALT) + " dBc | " + f1s(r.Mask) + " dB | " + f2s(r.FSKError) + "% | " + f2s(r.DevError) + "% | " + f2s(r.ETSIDev) + "% | " + f1s(r.VoiceCN90+10*math.Log10(12500.0/9600)) + " dB | " + f1s(r.DataCN90+10*math.Log10(12500.0/9600)) + " dB | " + f1s(r.DiscVoiceCN90+10*math.Log10(12500.0/9600)) + " dB | " + f1s(r.DiscDataCN90+10*math.Log10(12500.0/9600)) + " dB |\n")
+		ebn0 := func(cn float64) string { return f1s(cn + 10*math.Log10(12500.0/9600)) }
+		b.WriteString(txTableRow(r.Name, f1s(r.ACP), f1s(r.ALT), f1s(r.Mask), f2s(r.FSKError), f2s(r.DevError), f2s(r.ETSIDev), ebn0(r.VoiceCN90), ebn0(r.DataCN90), ebn0(r.DiscVoiceCN90), ebn0(r.DiscDataCN90)))
 	}
-	b.WriteString("\n- Adjacent and alternate channel power is the power within 4.25 kHz of 12.5 and 25 kHz off, relative to the carrier, the larger side (EN 300 113 clause 7.4). Lower is better.\n")
-	b.WriteString("- The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz. Higher is better.\n")
-	b.WriteString("- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3. The frequency is the phase step of the FM signal between samples at 48 kHz, divided by the sinc response of that step. The symbol centers come through a root-raised-cosine receive filter 128 symbols to each side, with the timing, gain and offset fitted over the stream. The ETSI pattern deviation is the peak of a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods.\n")
-	b.WriteString("- The receiver columns give the Eb/N0 at which a reference receiver recovers 90% of the voice frames and rate 1/2 blocks of the stream, over " + strconv.Itoa(d.Seeds) + " noise seeds a point: the I/Q receiver is rf Tier 2 at 48 kHz, the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator. Lower is better.\n\n")
+	b.WriteString("\nChannel power: lower is better. Mask D margin: higher is better. Receiver columns: Eb/N0 at which a reference receiver recovers 90% of the frames; lower is better.\n\n")
 	writeTxCmpPaired(&b, d)
-	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](" + txImgDir + "compare_spectrum.svg)\n\n")
-	b.WriteString("<details><summary>Eye diagrams</summary>\n\nThe frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.\n\n")
-	b.WriteString("![Eye diagram of each transmitter](" + txImgDir + "compare_eye.svg)\n")
-	b.WriteString("\n</details>\n\n")
-	b.WriteString("`DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes this block and its graphs.\n\n")
+	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](" + txImgDir + "compare_spectrum.svg)\n")
+	b.WriteString("![Eye diagram of each transmitter](" + txImgDir + "compare_eye.svg)\n\n")
 	b.WriteString(txCmpEnd)
+	return b.String()
+}
+
+func renderTxCmpMethods(d txCmpData) string {
+	var b strings.Builder
+	b.WriteString(txCmpMethodBegin + "\n\n")
+	b.WriteString("- The MMDVM firmware runs its `DMRDMOTX.cpp` on the host. The tiers run at a Level of " + strconv.Itoa(txCmpLevel) + " codes, and the MMDVM firmware at a DMRTXLevel of 50, which gives " + strconv.Itoa(d.Rows[len(d.Rows)-1].Level) + " codes for a run of symbol +3. The stream is BS-sourced.\n")
+	b.WriteString("- The radio is a sample-and-hold converter, an 8 kHz two-pole low pass and an FM modulator set to 1944 Hz for a run of +3.\n")
+	b.WriteString("- Adjacent and alternate channel power is the power within 4.25 kHz of 12.5 and 25 kHz off, relative to the carrier, the larger side (EN 300 113 clause 7.4). The Mask D margin is the least margin of the peak spectrum to FCC Emission Mask D in 100 Hz.\n")
+	b.WriteString("- FSK error and deviation error compare the symbol-center frequencies with 1944 and 648 Hz (TS 102 361-1 clause 10.2). The ETSI pattern is the +3 +3 -3 -3 test pattern of clause 10.2.2.3. The frequency is the phase step of the FM signal between samples at 48 kHz, divided by the sinc response of that step. The symbol centers come through a root-raised-cosine receive filter 128 symbols to each side, with the timing, gain and offset fitted over the stream. The ETSI pattern deviation is the peak of a fit of a constant and the 1200, 2400 and 3600 Hz tones over a whole number of periods.\n")
+	b.WriteString("- The I/Q receiver is rf Tier 2 at 48 kHz, and the FM receiver is rf Tier 0 on the 9.6 kHz audio of a discriminator, over " + strconv.Itoa(d.Seeds) + " noise seeds a point.\n")
+	b.WriteString("- The eye diagrams show the frequency of the FM signal after a 2.4 kHz low pass, over 120 symbol pairs.\n")
+	b.WriteString("- `DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes the comparison and its graphs.\n\n")
+	b.WriteString(txCmpMethodEnd)
 	return b.String()
 }
 

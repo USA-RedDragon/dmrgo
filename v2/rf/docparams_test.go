@@ -199,6 +199,17 @@ func joinRates(hz []int) string {
 	return strings.Join(parts[:len(parts)-1], ", ") + " and " + parts[len(parts)-1] + " kHz"
 }
 
+func kHzNum(hz float64) string {
+	s := strconv.FormatFloat(hz/1000, 'f', -1, 64)
+	if whole, frac, _ := strings.Cut(s, "."); len(whole) > 3 {
+		s = whole[:len(whole)-3] + "," + whole[len(whole)-3:]
+		if frac != "" {
+			s += "." + frac
+		}
+	}
+	return s
+}
+
 func commonAudioRates() string {
 	var ok []string
 	for _, hz := range []int{8000, 11025, 16000, 22050, 32000, 44100, 48000, 96000} {
@@ -224,10 +235,10 @@ func renderTxFeatures(src, _ *goSource) string {
 
 func renderTxFormats(src, _ *goSource) string {
 	var b strings.Builder
-	b.WriteString("| Tier | I/Q rates | Audio rates |\n| --- | --- | --- |\n")
-	fmt.Fprintf(&b, "| Tier 0 | %s | %s |\n", hzText(tier0IQRate), joinRates(tier0AudioRates()))
+	b.WriteString("| Tier | I/Q rate (kHz) | Audio rate (kHz) |\n|:---|---:|---:|\n")
+	fmt.Fprintf(&b, "| Tier 0 | %s | %s |\n", kHzNum(tier0IQRate), strings.TrimSuffix(joinRates(tier0AudioRates()), " kHz"))
 	fmt.Fprintf(&b, "| Tier 1, Tier 2 | %s to %s, %s by default | %s to %s, %s by default |\n\n",
-		hzText(shaperIQRate), hzText(maxTxIQRate), hzText(defaultTxRate), hzText(minTxAudio), hzText(maxTxAudio), hzText(defaultTxAudio))
+		kHzNum(shaperIQRate), kHzNum(maxTxIQRate), kHzNum(defaultTxRate), kHzNum(minTxAudio), kHzNum(maxTxAudio), kHzNum(defaultTxAudio))
 	fmt.Fprintf(&b, "Under %s, I/Q puts the image of the main lobe within two channels of the carrier, and the limits do not accept it. Tier 1 and Tier 2 make audio at %s, among other rates. The deviation of a run of symbol +3 is %d Hz.\n\n",
 		hzText(minTxIQRate), commonAudioRates(), int(txDeviationHz))
 	docTable(&b, src, "TxConfig", "AudioTxConfig")
