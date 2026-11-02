@@ -22,7 +22,7 @@ func TestTSCC_AnswersARepeatedRandomAccess(t *testing.T) {
 			t.Fatal(err)
 		}
 		ra := msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
-			ServiceKind: uint8(kind), TargetAddress: 3120002, SourceAddress: 3120001}))
+			ServiceKind: uint8(kind), TargetAddress: 3002702, SourceAddress: 3002701}))
 		now := time.Duration(0)
 		waits := func() int {
 			n := 0
@@ -33,7 +33,7 @@ func TestTSCC_AnswersARepeatedRandomAccess(t *testing.T) {
 						continue
 					}
 					if c, ok := b.Data.(*pdu.CSBK); ok {
-						if a, ok := c.AsAckOutbound(); ok && a.TargetAddress == 3120001 && enums.AckReason(a.ReasonCode) == enums.AckReasonWait {
+						if a, ok := c.AsAckOutbound(); ok && a.TargetAddress == 3002701 && enums.AckReason(a.ReasonCode) == enums.AckReasonWait {
 							n++
 						}
 					}
@@ -88,7 +88,7 @@ func (p *setupProbe) run(n int) {
 }
 
 func (p *setupProbe) scan(cs *pdu.CSBK) {
-	const a, b = 3120001, 3120002
+	const a, b = 3002701, 3002702
 	if x, ok := cs.AsAckOutbound(); ok {
 		if x.TargetAddress == a && enums.AckReason(x.ReasonCode) == enums.AckReasonWait {
 			p.waits++
@@ -111,7 +111,7 @@ func (p *setupProbe) inbound(raw layer2.RawBurst) {
 
 func replaceSetup(t *testing.T, kind enums.ServiceKind, sent bool) {
 	t.Helper()
-	const a, b, c = 3120001, 3120002, 3120003
+	const a, b, c = 3002701, 3002702, 3002703
 	cfg := tsccConfig()
 	cfg.Reg = false
 	ts, err := trunk.NewTSCC(cfg)
@@ -166,7 +166,7 @@ func replaceSetup(t *testing.T, kind enums.ServiceKind, sent bool) {
 
 func TestTSCC_LateAnswerGrantsOnlyItsCaller(t *testing.T) {
 	t.Parallel()
-	const a, b, c, d = 3120001, 3120002, 3120003, 3120004
+	const a, b, c, d = 3002701, 3002702, 3002703, 3002704
 	cfg := tsccConfig()
 	cfg.Reg = false
 	ts, err := trunk.NewTSCC(cfg)
@@ -217,9 +217,9 @@ func TestTSCC_UploadDuringDownloadWaitsForIt(t *testing.T) {
 		var err error
 		if poll {
 			b.ms.SetPollResponse(&text)
-			err = a.ms.PollShortData(s.now, 3120002, enums.UDTISO8, 1)
+			err = a.ms.PollShortData(s.now, 3002702, enums.UDTISO8, 1)
 		} else {
-			err = a.ms.SendShortData(s.now, false, 3120002, &text, layer3.ShortDataServiceOptions{})
+			err = a.ms.SendShortData(s.now, false, 3002702, &text, layer3.ShortDataServiceOptions{})
 		}
 		if err != nil {
 			t.Fatal(err)
@@ -236,7 +236,7 @@ func TestTSCC_UploadDuringDownloadWaitsForIt(t *testing.T) {
 			}
 			return false
 		})
-		if err := s.tscc.SendShortData(s.now, false, 3120003, &long); err != nil {
+		if err := s.tscc.SendShortData(s.now, false, 3002703, &long); err != nil {
 			t.Fatalf("poll %v: gateway download: %v", poll, err)
 		}
 		start := s.now
@@ -260,9 +260,9 @@ func TestTSCC_HeldUploadDiesWithItsTransaction(t *testing.T) {
 	cfg.PowerSave = true
 	tg := [trunk.MaxTalkgroups]uint32{9}
 	s := newSim(t, cfg,
-		&trunk.MSConfig{Address: 3120001, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
-		&trunk.MSConfig{Address: 3120002, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
-		&trunk.MSConfig{Address: 3120003, Seed: 3, PowerSave: 7})
+		&trunk.MSConfig{Address: 3002701, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
+		&trunk.MSConfig{Address: 3002702, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
+		&trunk.MSConfig{Address: 3002703, Seed: 3, PowerSave: 7})
 	s.until(10*time.Second, func() bool {
 		for _, m := range s.ms {
 			if !m.ms.Registered() {
@@ -283,14 +283,14 @@ func TestTSCC_HeldUploadDiesWithItsTransaction(t *testing.T) {
 	if err := long.SetText(enums.UDTISO8, bytes.Repeat([]byte{'x'}, 40)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.tscc.SendShortData(s.now, false, 3120003, &long); err != nil {
+	if err := s.tscc.SendShortData(s.now, false, 3002703, &long); err != nil {
 		t.Fatal(err)
 	}
 	refused := false
 	msg := &first
 	for end := s.now + 90*time.Second; s.now < end; {
 		a.log, b.log = nil, nil
-		if err := a.ms.SendShortData(s.now, false, 3120002, msg, layer3.ShortDataServiceOptions{}); err != nil {
+		if err := a.ms.SendShortData(s.now, false, 3002702, msg, layer3.ShortDataServiceOptions{}); err != nil {
 			s.run(time.Second)
 			continue
 		}

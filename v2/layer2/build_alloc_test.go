@@ -45,7 +45,7 @@ func onStack[T any, P interface {
 }
 
 func TestAllocsBuildBurst(t *testing.T) {
-	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.MotorolaServiceOptions()))
+	lc := must(pdu.NewVoiceLC(true, 91, 3002068, layer3.MotorolaServiceOptions()))
 	term := lc
 	term.BurstDataType = enums.DataTypeTerminatorWithLC
 	var header pdu.DataHeader
@@ -60,7 +60,7 @@ func TestAllocsBuildBurst(t *testing.T) {
 	add := func(name string, f func() error) { cases = append(cases, pduCase{name, f}) }
 	add(onStack(lc))
 	add(onStack(term))
-	add(onStack(must(pdu.NewBSOutboundActivation(310123, 3191868))))
+	add(onStack(must(pdu.NewBSOutboundActivation(990023, 3002068))))
 	add(onStack(pdu.PIHeader{AlgorithmID: 1, KeyID: 2, MessageIndicator: 3, Destination: 91}))
 	add(onStack(header))
 	add(onStack(mbc))

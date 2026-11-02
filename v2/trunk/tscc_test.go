@@ -197,7 +197,7 @@ func has(log []trunk.Output, kind trunk.OutputKind) (trunk.Output, bool) {
 
 func voiceLC(t *testing.T, dt enums.DataType) layer2.RawBurst {
 	t.Helper()
-	lc, err := pdu.NewVoiceLC(true, 9, 3120001, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9, 3002701, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,19 +218,19 @@ func TestTSCC_EndToEnd(t *testing.T) {
 	t.Parallel()
 	tg := [trunk.MaxTalkgroups]uint32{9}
 	s := newSim(t, tsccConfig(),
-		&trunk.MSConfig{Address: 3120001, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
-		&trunk.MSConfig{Address: 3120002, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
-		&trunk.MSConfig{Address: 3120003, Seed: 3},
-		&trunk.MSConfig{Address: 3120004, Seed: 4, NoRegistration: true})
+		&trunk.MSConfig{Address: 3002701, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
+		&trunk.MSConfig{Address: 3002702, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
+		&trunk.MSConfig{Address: 3002703, Seed: 3},
+		&trunk.MSConfig{Address: 3002704, Seed: 4, NoRegistration: true})
 	a, b, c := s.ms[0], s.ms[1], s.ms[2]
 
 	s.until(5*time.Second, func() bool { return a.ms.Registered() && b.ms.Registered() && c.ms.Registered() })
-	for _, addr := range []uint32{3120001, 3120002, 3120003} {
+	for _, addr := range []uint32{3002701, 3002702, 3002703} {
 		if !s.tscc.Registered(addr) {
 			t.Errorf("TSCC has no registration of %d", addr)
 		}
 	}
-	if s.tscc.Registered(3120004) {
+	if s.tscc.Registered(3002704) {
 		t.Error("TSCC registered the MS with NoRegistration")
 	}
 
@@ -239,7 +239,7 @@ func TestTSCC_EndToEnd(t *testing.T) {
 	}
 	s.until(3*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && b.ms.State() == trunk.StatePayload })
 	start, ok := s.event(trunk.TSCCCallStart)
-	if !ok || !start.Grant.Group || start.Grant.Target != 9 || start.Grant.Source != 3120001 {
+	if !ok || !start.Grant.Group || start.Grant.Target != 9 || start.Grant.Source != 3002701 {
 		t.Fatalf("TSCCCallStart %+v %v", start, ok)
 	}
 	if a.channel != start.Grant.Channel || b.channel != start.Grant.Channel || c.channel != tsccChannel {
@@ -276,7 +276,7 @@ func individualCall(t *testing.T, s *sim) {
 	a, c := s.ms[0], s.ms[2]
 	s.events = nil
 	a.log, c.log = nil, nil
-	if err := a.ms.Call(s.now, false, 3120003, layer3.VoiceServiceOptions{}); err != nil {
+	if err := a.ms.Call(s.now, false, 3002703, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && c.ms.State() == trunk.StatePayload })
@@ -290,7 +290,7 @@ func individualCall(t *testing.T, s *sim) {
 	s.msOutputs(a, s.mout)
 	s.until(2*time.Second, func() bool { _, ok := s.event(trunk.TSCCCallEnd); return ok && c.ms.State() == trunk.StateControl })
 	end, _ := s.event(trunk.TSCCCallEnd)
-	if end.Reason != trunk.ReasonMaintenance || end.Grant.Group || end.Grant.Target != 3120003 {
+	if end.Reason != trunk.ReasonMaintenance || end.Grant.Group || end.Grant.Target != 3002703 {
 		t.Errorf("TSCCCallEnd %+v", end)
 	}
 }
@@ -313,8 +313,8 @@ func refusedAndPowerOff(t *testing.T, s *sim) {
 	s.mout = b.ms.PowerOff(s.now, s.mout[:0])
 	s.msOutputs(b, s.mout)
 	s.until(3*time.Second, func() bool { return b.ms.Off() })
-	if po, _ := has(b.log, trunk.OutputPowerOff); po.Reason != trunk.ReasonNone || s.tscc.Registered(3120002) {
-		t.Errorf("power off %+v, still registered %v", po, s.tscc.Registered(3120002))
+	if po, _ := has(b.log, trunk.OutputPowerOff); po.Reason != trunk.ReasonNone || s.tscc.Registered(3002702) {
+		t.Errorf("power off %+v, still registered %v", po, s.tscc.Registered(3002702))
 	}
 }
 
@@ -325,9 +325,9 @@ func TestTSCC_NoAnswerAndBusy(t *testing.T) {
 	cfg.Reg = false
 	cfg.AnswerTimeout = time.Second
 	s := newSim(t, cfg,
-		&trunk.MSConfig{Address: 3120001, Seed: 1},
-		&trunk.MSConfig{Address: 3120002, Seed: 2},
-		&trunk.MSConfig{Address: 3120003, Seed: 3})
+		&trunk.MSConfig{Address: 3002701, Seed: 1},
+		&trunk.MSConfig{Address: 3002702, Seed: 2},
+		&trunk.MSConfig{Address: 3002703, Seed: 3})
 	a, b, c := s.ms[0], s.ms[1], s.ms[2]
 	s.run(time.Second)
 	if err := a.ms.Call(s.now, false, 7777, layer3.VoiceServiceOptions{}); err != nil {

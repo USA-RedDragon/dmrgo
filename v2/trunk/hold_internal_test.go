@@ -15,7 +15,7 @@ func TestHeldUploadDiesWithItsTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const a, b = 3120001, 3120002
+	const a, b = 3002701, 3002702
 	if !ts.addOp(udtOp{kind: opShortData, caller: a, called: b, until: constants.TNPTimerDefault}) {
 		t.Fatal("no room for the op")
 	}
@@ -40,7 +40,7 @@ func TestHeldUploadDiesWithItsTransaction(t *testing.T) {
 
 func TestHeldAhoyDiesWithItsSetup(t *testing.T) {
 	t.Parallel()
-	const a, b = 3120001, 3120002
+	const a, b = 3002701, 3002702
 	for _, kind := range []enums.ServiceKind{enums.ServiceKindIndividualVoice, enums.ServiceKindStatusTransport} {
 		ts, err := NewTSCC(&TSCCConfig{Channel: 1, Payload: [MaxPayloadChannels]uint16{10}, PayloadLen: 1, PowerSave: true})
 		if err != nil {

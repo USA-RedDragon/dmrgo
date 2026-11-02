@@ -22,7 +22,7 @@ func udtBursts(t testing.TB, dst uint32, text string, damage bool) []layer2.RawB
 		blocks[0][0] ^= 1
 	}
 	h := withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{
-		LLIDDestination: dst, LLIDSource: 3120002, UAB: 1, Opcode: pdu.UDTOpcodeOutboundHeader})
+		LLIDDestination: dst, LLIDSource: 3002702, UAB: 1, Opcode: pdu.UDTOpcodeOutboundHeader})
 	out := make([]layer2.RawBurst, 0, 1+len(blocks))
 	out = append(out, bsBurst(t, h, testCC))
 	for _, b := range blocks {
@@ -57,7 +57,7 @@ func TestFollower_UDT(t *testing.T) {
 		}
 		wantKinds(t, "UDT", out, trunk.OutputUDT)
 		u, _ := f.UDT()
-		if u.CRCOK == damage || u.Header.UAB != 1 || u.Header.LLIDDestination != msAddr || u.Header.LLIDSource != 3120002 {
+		if u.CRCOK == damage || u.Header.UAB != 1 || u.Header.LLIDDestination != msAddr || u.Header.LLIDSource != 3002702 {
 			t.Errorf("damage %v: UDT %+v", damage, u)
 		}
 		if !damage && string(u.Data[:19]) != "hello trunked world" {

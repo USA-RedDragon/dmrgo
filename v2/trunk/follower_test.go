@@ -93,10 +93,10 @@ func TestFollower_GrantClear(t *testing.T) {
 	out = f.Burst(now, &g, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
 	wantKinds(t, "TV_GRANT", out, trunk.OutputGrant, trunk.OutputTune)
 	gr := out[0].Grant
-	if gr.Target != 9 || gr.Source != 3120001 || !gr.Group || gr.Channel != 5 || gr.Slot != enums.Slot2 || gr.RXHz != 451_050_000 || gr.Service != enums.ServiceKindTalkgroupVoice {
+	if gr.Target != 9 || gr.Source != 3002701 || !gr.Group || gr.Channel != 5 || gr.Slot != enums.Slot2 || gr.RXHz != 451_050_000 || gr.Service != enums.ServiceKindTalkgroupVoice {
 		t.Errorf("Grant = %+v", gr)
 	}
-	if c := gr.Call(); !c.Group || c.Target != 9 || c.Source != 3120001 {
+	if c := gr.Call(); !c.Group || c.Target != 9 || c.Source != 3002701 {
 		t.Errorf("Grant.Call = %+v", c)
 	}
 	if tn := out[1].Tune; tn.Channel != 5 || tn.Slot != enums.Slot2 || tn.RXHz != 451_050_000 {
@@ -121,7 +121,7 @@ func TestFollower_GrantClear(t *testing.T) {
 
 	now += slot
 	late := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: 5, LogicalChannel: true, LateEntry: true, TargetAddress: 9, SourceAddress: 3120001}), testCC)
+		PhysicalChannel: 5, LogicalChannel: true, LateEntry: true, TargetAddress: 9, SourceAddress: 3002701}), testCC)
 	out = f.Burst(now, &late, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
 	wantKinds(t, "late entry TV_GRANT of the cleared call", out, trunk.OutputGrant)
 	if f.State() != trunk.StateControl {
@@ -189,7 +189,7 @@ func TestFollower_Filters(t *testing.T) {
 	wantKinds(t, "TV_GRANT to another talkgroup", out, trunk.OutputGrant)
 
 	pv := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 4, TargetAddress: 3120002, SourceAddress: 3120001}), testCC)
+		PhysicalChannel: 4, TargetAddress: 3002702, SourceAddress: 3002701}), testCC)
 	out = f.Burst(2*slot, &pv, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "PV_GRANT", out, trunk.OutputGrant)
 	if out[0].Grant.Group || out[0].Grant.Service != enums.ServiceKindIndividualVoice {

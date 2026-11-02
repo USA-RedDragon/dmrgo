@@ -14,7 +14,7 @@ import (
 func TestReceiverRetryKeepsPayloadLength(t *testing.T) {
 	t.Parallel()
 
-	txt := sms.Text{Format: sms.FormatIP, Source: 3191868, Destination: 3140598, Confirmed: true, Body: []byte("hello private")}
+	txt := sms.Text{Format: sms.FormatIP, Source: 3002068, Destination: 3002198, Confirmed: true, Body: []byte("hello private")}
 	var hd sms.Header
 	payload, err := sms.AppendPacket(nil, &txt, &hd)
 	if err != nil {

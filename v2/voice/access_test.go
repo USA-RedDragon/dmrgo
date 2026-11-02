@@ -33,7 +33,7 @@ func shape(out []voice.Output) string {
 func TestTransmitter_ChannelAccess(t *testing.T) {
 	t.Parallel()
 
-	call := voice.Call{Group: true, Target: 9, Source: 3120001}
+	call := voice.Call{Group: true, Target: 9, Source: 3002701}
 	idle := 540 * time.Millisecond
 	tests := []struct {
 		name      string

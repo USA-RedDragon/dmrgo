@@ -139,7 +139,7 @@ func TestTransmitter_Source(t *testing.T) {
 	t.Parallel()
 
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Headers: 3, Terminators: 2, Queue: 3 * 12})
-	call := voice.Call{Group: true, Target: 91, Source: 3191868}
+	call := voice.Call{Group: true, Target: 91, Source: 3002068}
 	if err := tx.Start(time.Second, call, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -187,8 +187,8 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 3, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 40})
 	gps := pdu.FLCGPSInfo{Longitude: -87.5, Latitude: 41.75}
-	opts := &voice.CallOptions{TalkerAlias: "KI5VMF JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
-	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3191868}, opts); err != nil {
+	opts := &voice.CallOptions{TalkerAlias: "N0CALL JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
+	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3002068}, opts); err != nil {
 		t.Fatal(err)
 	}
 	for i := range 3 * 6 * 6 {
@@ -211,7 +211,7 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 	if len(starts) != 1 || len(ends) != 1 || ends[0].Reason != voice.EndTerminator || ends[0].Stats.Lost != 1 || ends[0].Stats.Bursts != 35 {
 		t.Fatalf("events %s, end %+v", kinds(got), ends)
 	}
-	if ta := find(got, voice.EventTalkerAlias); len(ta) != 1 || string(ta[0].Text) != "KI5VMF JACOB" {
+	if ta := find(got, voice.EventTalkerAlias); len(ta) != 1 || string(ta[0].Text) != "N0CALL JACOB" {
 		t.Errorf("talker alias %v", kinds(got))
 	}
 	gpsSeen := false
@@ -294,7 +294,7 @@ func TestTransmitter_Relay(t *testing.T) {
 func TestTransmitter_RelayLateEntry(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 9, 3191868), 3, nil)
+	bursts := transmission(t, groupLC(t, 9, 3002068), 3, nil)
 	rx := newReceiver(t, nil)
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()})
 	ev := make([]voice.Event, 0, voice.MaxEvents)
@@ -330,7 +330,7 @@ func timedOutputs(out []voice.Output) []input {
 func TestTransmitter_RelayLost(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 9, 3191868), 2, nil)
+	bursts := transmission(t, groupLC(t, 9, 3002068), 2, nil)
 	rx := newReceiver(t, nil)
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 8})
 	ev := make([]voice.Event, 0, voice.MaxEvents)

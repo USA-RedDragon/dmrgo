@@ -40,7 +40,7 @@ func (p *oldPCG) duration(maxDur time.Duration) time.Duration {
 
 func TestHoldoffMatchesOldGenerator(t *testing.T) {
 	t.Parallel()
-	for _, seed := range []uint64{0, 1, 42, 3191868, math.MaxUint64} {
+	for _, seed := range []uint64{0, 1, 42, 3002068, math.MaxUint64} {
 		old, cur := oldSeed(seed), seedPCG(seed)
 		for i := range 4000 {
 			d := []time.Duration{0, 1, 2 * time.Second, 540 * time.Millisecond, math.MaxInt64}[i%5]

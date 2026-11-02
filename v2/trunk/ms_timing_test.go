@@ -81,7 +81,7 @@ func TestMS_RandomAccessSlotGrid(t *testing.T) {
 				out := make([]trunk.Output, 0, trunk.MaxOutputs)
 				for k := 0; k < 600; k++ {
 					if k == 4 {
-						if err := ms.Call(g.at(k), false, 3120002, layer3.VoiceServiceOptions{}); err != nil {
+						if err := ms.Call(g.at(k), false, 3002702, layer3.VoiceServiceOptions{}); err != nil {
 							t.Fatal(err)
 						}
 					}
@@ -127,7 +127,7 @@ func TestMS_AnswerSlotGrid(t *testing.T) {
 			}
 			al := timedAloha(t, offset)
 			ahoy := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
-				ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}), testCC)
+				ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3002702}), testCC)
 			out := make([]trunk.Output, 0, trunk.MaxOutputs)
 			k := 0
 			for ; k < 4 || g.slot(k) != own; k++ {
@@ -194,7 +194,7 @@ func TestTSCC_WithdrawsTheAnswerSlot(t *testing.T) {
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	for k := range 40 {
 		if k == 10 {
-			if err := ts.Stun(time.Duration(k)*slot, 3120001, false); err != nil {
+			if err := ts.Stun(time.Duration(k)*slot, 3002701, false); err != nil {
 				t.Fatal(err)
 			}
 		}

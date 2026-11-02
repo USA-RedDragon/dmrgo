@@ -37,7 +37,7 @@ func authTransmitter(t *testing.T, cfg voice.TransmitterConfig) *voice.Transmitt
 		cfg.ChanAuth = constants.TMSChanAuth
 	}
 	tx := newTransmitter(t, &cfg)
-	if err := tx.Start(time.Second, voice.Call{Group: true, Target: 9, Source: 3120005}, &voice.CallOptions{HangTime: true}); err != nil {
+	if err := tx.Start(time.Second, voice.Call{Group: true, Target: 9, Source: 3002705}, &voice.CallOptions{HangTime: true}); err != nil {
 		t.Fatal(err)
 	}
 	if tx.State() != voice.TransmitterChanAuth {
@@ -60,8 +60,8 @@ func authTransmitter(t *testing.T, cfg voice.TransmitterConfig) *voice.Transmitt
 func TestTransmitter_ChanAuth(t *testing.T) {
 	t.Parallel()
 
-	own, ownTerm, idle := outbound(t, 3120005)
-	other, _, _ := outbound(t, 3120006)
+	own, ownTerm, idle := outbound(t, 3002705)
+	other, _, _ := outbound(t, 3002706)
 	ms := time.Millisecond
 
 	tx := authTransmitter(t, voice.TransmitterConfig{Slot: enums.Slot1})
@@ -121,7 +121,7 @@ func TestTransmitter_ChanAuthOutbound(t *testing.T) {
 		t.Fatalf("silent outbound: %+v %v", out, tx.State())
 	}
 
-	lc, err := pdu.NewVoiceLC(true, 9, 3120006, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9, 3002706, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

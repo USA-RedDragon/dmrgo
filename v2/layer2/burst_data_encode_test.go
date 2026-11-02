@@ -60,7 +60,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 			if !ok {
 				t.Fatalf("Data is %T", got.Data)
 			}
-			if g, gok := gotLC.AsGroupVoice(); !gok || g.GroupAddress != 9 || g.SourceAddress != 3191868 {
+			if g, gok := gotLC.AsGroupVoice(); !gok || g.GroupAddress != 9 || g.SourceAddress != 3002068 {
 				t.Fatalf("decoded LC %s, want group 9", gotLC.String())
 			}
 		})

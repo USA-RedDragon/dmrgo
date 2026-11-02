@@ -52,12 +52,12 @@ func TestFullLinkControlBytes_IgnoresBurstDataType(t *testing.T) {
 	t.Parallel()
 
 	var f pdu.FullLinkControl
-	noErr(f.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3100999}))
+	noErr(f.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3002699}))
 	got, err := f.Bytes()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := hex9(t, "00000000005b2f5147"); got != want {
+	if want := hex9(t, "00000000005b2dd14b"); got != want {
 		t.Fatalf("Bytes %x, want %x", got, want)
 	}
 }

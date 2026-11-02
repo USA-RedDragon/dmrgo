@@ -14,7 +14,7 @@ func TestRepeaterLateEntryOneHeader(t *testing.T) {
 	t.Parallel()
 	for _, from := range []bs.Source{{RF: true}, {Peer: 1}} {
 		for _, late := range []bool{false, true} {
-			in := call(t, 1, 9, 3191868, 3, enums.Slot1, from, 0)
+			in := call(t, 1, 9, 3002068, 3, enums.Slot1, from, 0)
 			if late {
 				in = in[1:]
 			}

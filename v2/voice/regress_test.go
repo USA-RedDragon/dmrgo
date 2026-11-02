@@ -15,12 +15,12 @@ import (
 )
 
 func rcall() voice.Call {
-	lc, _ := pdu.NewVoiceLCBytes(true, 91, 3191868, layer3.ServiceOptions{})
-	return voice.Call{Group: true, Target: 91, Source: 3191868, LC: lc, Origin: voice.OriginHeader}
+	lc, _ := pdu.NewVoiceLCBytes(true, 91, 3002068, layer3.ServiceOptions{})
+	return voice.Call{Group: true, Target: 91, Source: 3002068, LC: lc, Origin: voice.OriginHeader}
 }
 
 func vburst(t *testing.T, pos int) layer2.RawBurst {
-	b := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	b := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	return b[1+pos]
 }
 
@@ -75,7 +75,7 @@ func TestRegression_RelayPILate(t *testing.T) {
 
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()})
 	c := rcall()
-	o := layer2.VoiceTransmitterOptions{LC: groupLC(t, 91, 3191868), ColorCode: 1, PIHeader: &pdu.PIHeader{AlgorithmID: 1}}
+	o := layer2.VoiceTransmitterOptions{LC: groupLC(t, 91, 3002068), ColorCode: 1, PIHeader: &pdu.PIHeader{AlgorithmID: 1}}
 	vt, err := layer2.NewVoiceTransmitter(&o)
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +204,7 @@ func TestRegression_StopIgnoresTimeout(t *testing.T) {
 func TestRegression_PIHeaderSeqLost(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 2, func(o *layer2.VoiceTransmitterOptions) {
+	bursts := transmission(t, groupLC(t, 91, 3002068), 2, func(o *layer2.VoiceTransmitterOptions) {
 		o.PIHeader = &pdu.PIHeader{AlgorithmID: 1}
 	})
 	in := make([]input, 0, len(bursts))
@@ -227,7 +227,7 @@ func TestRegression_PIHeaderSeqLost(t *testing.T) {
 func TestRegression_RewriteEmbedded(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 4, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 4, nil)
 	rx := newReceiver(t, nil)
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()})
 	ev := make([]voice.Event, 0, voice.MaxEvents)

@@ -119,8 +119,8 @@ func newPool(t testing.TB) *pool {
 		t.Fatal(err)
 	}
 	gps := pdu.FLCGPSInfo{Latitude: 32.75, Longitude: -97.33}
-	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "KI5VMF Jacob", GPS: &gps}
-	if err := tx.Start(0, voice.Call{Group: true, Target: 3100, Source: 3191868}, opts); err != nil {
+	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "N0CALL Jacob", GPS: &gps}
+	if err := tx.Start(0, voice.Call{Group: true, Target: 3100, Source: 3002068}, opts); err != nil {
 		t.Fatal(err)
 	}
 	var out []voice.Output
@@ -344,7 +344,7 @@ func seeds(p *pool) []rxInput {
 	for range 30 {
 		late.burst(1, 0)
 	}
-	late.op(5, 0, 1, 0, 0, 91, 0x30, 0xB4, 0x3C, 0, 250)
+	late.op(5, 0, 1, 0, 0, 91, 0x2D, 0xCE, 0xD4, 0, 250)
 	for range 12 {
 		late.burst(1, 0)
 	}
@@ -722,9 +722,9 @@ func FuzzTransmitterRoundTrip(f *testing.F) {
 }
 
 func roundTripSeeds() []rtInput {
-	call := rtInput{cc: 0x22, terms: 0x04, so: 0x01, target: 3100, source: 3191868}
+	call := rtInput{cc: 0x22, terms: 0x04, so: 0x01, target: 3100, source: 3002068}
 	short := call
-	short.n, short.alias, short.text = 18, 0x06, []byte("KI5VMF")
+	short.n, short.alias, short.text = 18, 0x06, []byte("N0CALL")
 	full := short
 	full.n, full.alias, full.ramp = 60, 0x46, true
 	with := func(flags byte, drop ...byte) rtInput {

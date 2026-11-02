@@ -16,9 +16,9 @@ func udtSim(t *testing.T, extra ...*trunk.MSConfig) *sim {
 	t.Helper()
 	tg := [trunk.MaxTalkgroups]uint32{9}
 	cfgs := append([]*trunk.MSConfig{
-		{Address: 3120001, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
-		{Address: 3120002, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
-		{Address: 3120003, Seed: 3},
+		{Address: 3002701, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
+		{Address: 3002702, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
+		{Address: 3002703, Seed: 3},
 	}, extra...)
 	s := newSim(t, tsccConfig(), cfgs...)
 	s.until(5*time.Second, func() bool {
@@ -58,7 +58,7 @@ func TestTSCC_ShortData(t *testing.T) {
 	if err := text.SetText(enums.UDTISO8, []byte("trunked short data")); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.ms.SendShortData(s.now, false, 3120002, &text, layer3.ShortDataServiceOptions{}); err != nil {
+	if err := a.ms.SendShortData(s.now, false, 3002702, &text, layer3.ShortDataServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	d := waitLog(s, a, trunk.OutputDelivered)
@@ -69,10 +69,10 @@ func TestTSCC_ShortData(t *testing.T) {
 		t.Fatal("B got no UDT")
 	}
 	got := udtOf(b.ms.UDT()).Appended()
-	if s, err := got.Text(nil); err != nil || string(s) != "trunked short data" || udtOf(b.ms.UDT()).Header.LLIDSource != 3120001 {
+	if s, err := got.Text(nil); err != nil || string(s) != "trunked short data" || udtOf(b.ms.UDT()).Header.LLIDSource != 3002701 {
 		t.Errorf("B got %q %v", s, err)
 	}
-	if e, ok := s.event(trunk.TSCCDelivered); !ok || e.Address != 3120001 || e.Grant.Target != 3120002 {
+	if e, ok := s.event(trunk.TSCCDelivered); !ok || e.Address != 3002701 || e.Grant.Target != 3002702 {
 		t.Errorf("TSCCDelivered %+v %v", e, ok)
 	}
 
@@ -94,13 +94,13 @@ func TestTSCC_ShortData(t *testing.T) {
 	}
 
 	c.log, s.events = nil, nil
-	if err := s.tscc.SendShortData(s.now, false, 3120003, &text); err != nil {
+	if err := s.tscc.SendShortData(s.now, false, 3002703, &text); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.tscc.SendShortData(s.now, false, 3120003, &text); !errors.Is(err, trunk.ErrBusy) {
+	if err := s.tscc.SendShortData(s.now, false, 3002703, &text); !errors.Is(err, trunk.ErrBusy) {
 		t.Errorf("second download %v", err)
 	}
-	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != constants.GatewaySDMI || e.Grant.Target != 3120003 {
+	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != constants.GatewaySDMI || e.Grant.Target != 3002703 {
 		t.Errorf("gateway delivered %+v", e)
 	}
 	if _, ok := has(c.log, trunk.OutputUDT); !ok {
@@ -117,7 +117,7 @@ func TestTSCC_Polling(t *testing.T) {
 		t.Fatal(err)
 	}
 	b.ms.SetPollResponse(&pos)
-	if err := a.ms.PollShortData(s.now, 3120002, enums.UDTNMEA, 1); err != nil {
+	if err := a.ms.PollShortData(s.now, 3002702, enums.UDTNMEA, 1); err != nil {
 		t.Fatal(err)
 	}
 	waitLog(s, a, trunk.OutputDelivered)
@@ -128,12 +128,12 @@ func TestTSCC_Polling(t *testing.T) {
 	if _, ok := has(b.log, trunk.OutputPolled); !ok {
 		t.Error("B saw no poll")
 	}
-	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != 3120001 || e.Grant.Target != 3120002 {
+	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != 3002701 || e.Grant.Target != 3002702 {
 		t.Errorf("TSCCDelivered %+v", e)
 	}
 
 	a.log, s.events = nil, nil
-	if err := a.ms.PollShortData(s.now, 3120003, enums.UDTNMEA, 1); err != nil {
+	if err := a.ms.PollShortData(s.now, 3002703, enums.UDTNMEA, 1); err != nil {
 		t.Fatal(err)
 	}
 	if r := waitLog(s, a, trunk.OutputRefused); r.Ack != enums.AckReasonMSNotSupported {
@@ -141,10 +141,10 @@ func TestTSCC_Polling(t *testing.T) {
 	}
 
 	s.events = nil
-	if err := s.tscc.PollShortData(s.now, 3120002, 1); err != nil {
+	if err := s.tscc.PollShortData(s.now, 3002702, 1); err != nil {
 		t.Fatal(err)
 	}
-	if e := waitEvent(s, trunk.TSCCUDT); e.Address != 3120002 {
+	if e := waitEvent(s, trunk.TSCCUDT); e.Address != 3002702 {
 		t.Errorf("TSCCUDT %+v", e)
 	}
 	u := udtOf(s.tscc.UDT()).Appended()
@@ -159,7 +159,7 @@ func TestTSCC_Polling(t *testing.T) {
 		t.Fatal(err)
 	}
 	c.ms.SetUSBDResponse(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP, Payload: p})
-	if err := s.tscc.PollUSBD(s.now, 3120003, pdu.ServiceTypeLIP, 0); err != nil {
+	if err := s.tscc.PollUSBD(s.now, 3002703, pdu.ServiceTypeLIP, 0); err != nil {
 		t.Fatal(err)
 	}
 	waitEvent(s, trunk.TSCCUSBD)
@@ -167,7 +167,7 @@ func TestTSCC_Polling(t *testing.T) {
 		t.Errorf("USBD response %+v", back)
 	}
 	s.events = nil
-	if err := s.tscc.PollUSBD(s.now, 3120002, pdu.ServiceTypeLIP, 1); err != nil {
+	if err := s.tscc.PollUSBD(s.now, 3002702, pdu.ServiceTypeLIP, 1); err != nil {
 		t.Fatal(err)
 	}
 	if e := waitEvent(s, trunk.TSCCRefused); e.Ack != enums.AckReasonMSNotSupported {
@@ -183,7 +183,7 @@ func TestTSCC_Diversion(t *testing.T) {
 	s := udtSim(t)
 	a, b := s.ms[0], s.ms[1]
 	var to trunk.Appended
-	if err := to.SetAddresses(false, []uint32{3120003}); err != nil {
+	if err := to.SetAddresses(false, []uint32{3002703}); err != nil {
 		t.Fatal(err)
 	}
 	opts := layer3.DiversionServiceOptions{Set: true, Voice: true}
@@ -191,21 +191,21 @@ func TestTSCC_Diversion(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitLog(s, b, trunk.OutputDelivered)
-	if e := waitEvent(s, trunk.TSCCDiversion); e.Address != 3120002 {
+	if e := waitEvent(s, trunk.TSCCDiversion); e.Address != 3002702 {
 		t.Errorf("TSCCDiversion %+v", e)
 	}
-	got, dest, ok := s.tscc.Diverted(3120002)
+	got, dest, ok := s.tscc.Diverted(3002702)
 	if !ok || got != opts || dest != to {
 		t.Fatalf("Diverted %+v %v", got, ok)
 	}
-	if err := a.ms.Call(s.now, false, 3120002, layer3.VoiceServiceOptions{}); err != nil {
+	if err := a.ms.Call(s.now, false, 3002702, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	if r := waitLog(s, a, trunk.OutputRefused); r.Reason != trunk.ReasonDiverted {
 		t.Fatalf("call to a diverted MS %+v", r)
 	}
 	u := udtOf(a.ms.UDT()).Appended()
-	if l, err := u.Addresses(); err != nil || l.Addresses[0] != 3120003 {
+	if l, err := u.Addresses(); err != nil || l.Addresses[0] != 3002703 {
 		t.Errorf("diverted to %+v %v", l, err)
 	}
 
@@ -214,7 +214,7 @@ func TestTSCC_Diversion(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitLog(s, b, trunk.OutputDelivered)
-	if _, _, ok := s.tscc.Diverted(3120002); ok {
+	if _, _, ok := s.tscc.Diverted(3002702); ok {
 		t.Error("diversion kept after the clear")
 	}
 
@@ -239,7 +239,7 @@ func TestTSCC_DGNA(t *testing.T) {
 	if err := groups.SetAddresses(true, []uint32{501, 502}); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.ms.AssignGroups(s.now, 3120002, &groups); err != nil {
+	if err := a.ms.AssignGroups(s.now, 3002702, &groups); err != nil {
 		t.Fatal(err)
 	}
 	waitLog(s, a, trunk.OutputDelivered)
@@ -247,7 +247,7 @@ func TestTSCC_DGNA(t *testing.T) {
 		t.Errorf("B groups %+v", g)
 	}
 	s.events = nil
-	if err := s.tscc.AssignGroups(s.now, 3120003, &groups); err != nil {
+	if err := s.tscc.AssignGroups(s.now, 3002703, &groups); err != nil {
 		t.Fatal(err)
 	}
 	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != constants.GatewayDGNAI {
@@ -256,16 +256,16 @@ func TestTSCC_DGNA(t *testing.T) {
 	if g := c.ms.Groups(); g.Groups[1] != 502 {
 		t.Errorf("C groups %+v", g)
 	}
-	if err := s.tscc.AssignGroups(s.now, 3120003, &trunk.Appended{Format: enums.UDTBCD, Blocks: 1}); !errors.Is(err, trunk.ErrUDTFormat) {
+	if err := s.tscc.AssignGroups(s.now, 3002703, &trunk.Appended{Format: enums.UDTBCD, Blocks: 1}); !errors.Is(err, trunk.ErrUDTFormat) {
 		t.Errorf("BCD DGNA %v", err)
 	}
 }
 
 func TestTSCC_Duplex(t *testing.T) {
 	t.Parallel()
-	s := udtSim(t, &trunk.MSConfig{Address: 3120004, Seed: 4, NoDuplex: true})
+	s := udtSim(t, &trunk.MSConfig{Address: 3002704, Seed: 4, NoDuplex: true})
 	a, b, d := s.ms[0], s.ms[1], s.ms[3]
-	if err := a.ms.CallDuplex(s.now, 3120002, layer3.VoiceServiceOptions{}); err != nil {
+	if err := a.ms.CallDuplex(s.now, 3002702, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && b.ms.State() == trunk.StatePayload })
@@ -293,7 +293,7 @@ func TestTSCC_Duplex(t *testing.T) {
 	})
 
 	a.log = nil
-	if err := a.ms.CallDuplex(s.now, 3120004, layer3.VoiceServiceOptions{}); err != nil {
+	if err := a.ms.CallDuplex(s.now, 3002704, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	if r := waitLog(s, a, trunk.OutputRefused); r.Ack != enums.AckReasonMSDuplexNotSupported {
@@ -306,9 +306,9 @@ func TestTSCC_Duplex(t *testing.T) {
 
 func TestTSCC_Ambient(t *testing.T) {
 	t.Parallel()
-	s := udtSim(t, &trunk.MSConfig{Address: 3120004, Seed: 4, Ambient: true})
+	s := udtSim(t, &trunk.MSConfig{Address: 3002704, Seed: 4, Ambient: true})
 	a, d := s.ms[0], s.ms[3]
-	if err := a.ms.CallAmbient(s.now, 3120004, layer3.VoiceServiceOptions{}); err != nil {
+	if err := a.ms.CallAmbient(s.now, 3002704, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	waitLog(s, d, trunk.OutputAmbient)

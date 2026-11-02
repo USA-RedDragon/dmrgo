@@ -69,7 +69,7 @@ func TestMS_DecodedNilDoesNotReplay(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	r.feed(aloha(t), &idle)
 	ahoy := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}), testCC)
+		ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3002702}), testCC)
 	wantKinds(t, "C_AHOY", r.feed(ahoy, &busy), trunk.OutputAhoy, trunk.OutputBurst)
 	for i := range 3 {
 		r.now += 60 * time.Millisecond

@@ -12,30 +12,30 @@ import (
 func TestNewBSOutboundActivation(t *testing.T) {
 	t.Parallel()
 
-	c := must(pdu.NewBSOutboundActivation(310123, 3191868))
+	c := must(pdu.NewBSOutboundActivation(990023, 3002068))
 	b := must(c.Encode())
 	if b[0] != 0x80|0x38 || b[1] != 0 || b[2] != 0 || b[3] != 0 {
 		t.Fatalf("octets 0 to 3 %x, want b8000000", b[:4])
 	}
 	cb := pdu.CSBKBytes(b)
-	if tgt, src, ok := cb.Addresses(); !ok || tgt != 310123 || src != 3191868 || !cb.CRCOK() {
+	if tgt, src, ok := cb.Addresses(); !ok || tgt != 990023 || src != 3002068 || !cb.CRCOK() {
 		t.Fatalf("CSBKBytes.Addresses %d %d %t, CRC %t", tgt, src, ok, cb.CRCOK())
 	}
 	got := pdu.DecodeCSBK(b)
 	p, ok := got.AsBSOutboundActivation()
-	if !ok || p.BSAddress != 310123 || p.SourceAddress != 3191868 || got.FEC.HasErrors() {
+	if !ok || p.BSAddress != 990023 || p.SourceAddress != 3002068 || got.FEC.HasErrors() {
 		t.Fatalf("decoded %+v %t", p, ok)
 	}
-	if tgt, src, ok := got.Addresses(); !ok || tgt != 310123 || src != 3191868 {
+	if tgt, src, ok := got.Addresses(); !ok || tgt != 990023 || src != 3002068 {
 		t.Fatalf("CSBK.Addresses %d %d %t", tgt, src, ok)
 	}
-	if got.SetAddresses(9, 3120001) != nil {
+	if got.SetAddresses(9, 3002701) != nil {
 		t.Fatal("SetAddresses on opcode 0x38")
 	}
-	if p, _ := got.AsBSOutboundActivation(); p.BSAddress != 9 || p.SourceAddress != 3120001 {
+	if p, _ := got.AsBSOutboundActivation(); p.BSAddress != 9 || p.SourceAddress != 3002701 {
 		t.Fatalf("after SetAddresses %+v", p)
 	}
-	if cb.SetAddresses(9, 3120001) != nil {
+	if cb.SetAddresses(9, 3002701) != nil {
 		t.Fatal("CSBKBytes.SetAddresses on opcode 0x38")
 	}
 	cb.Reseal()
@@ -53,7 +53,7 @@ func TestCSBKSetTalkgroupDataGrantMultiItem(t *testing.T) {
 
 	c := pdu.CSBK{ProtectFlag: true}
 	noErr(c.SetAloha(pdu.AlohaPDU{}))
-	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, HiRate: true, TargetAddress: 9, SourceAddress: 3120001}
+	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, HiRate: true, TargetAddress: 9, SourceAddress: 3002701}
 	if err := c.SetTalkgroupDataGrantMultiItem(mi); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestCSBKSetTalkgroupDataGrantMultiItem(t *testing.T) {
 func TestMBCHeaderDispatch(t *testing.T) {
 	t.Parallel()
 
-	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
+	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3002701}
 	var h pdu.MBCHeader
 	noErr(h.SetTalkgroupVoiceGrant(grant))
 	if h.Opcode != pdu.CSBKTalkgroupVoiceGrant || h.FID != enums.FIDStandardized {

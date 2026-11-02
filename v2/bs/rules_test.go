@@ -20,7 +20,7 @@ var rf = bs.Source{RF: true}
 func TestWakeupActivation(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true, Activation: bs.ActivationWakeup})
-	in := call(t, 1, 9, 3191868, 1, enums.Slot1, rf, 0)[:3]
+	in := call(t, 1, 9, 3002068, 1, enums.Slot1, rf, 0)[:3]
 	in = append(in, input{at: 200 * time.Millisecond, slot: enums.Slot1, from: rf, raw: wakeup(t, 2)})
 	got := run(t, r, in, 300*time.Millisecond)
 	if len(got) != 0 || r.State() != bs.StateHibernating {
@@ -50,11 +50,11 @@ func TestWakeupActivation(t *testing.T) {
 func TestColorCode(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true})
-	got := run(t, r, call(t, 2, 9, 3191868, 1, enums.Slot1, rf, 0), time.Second)
+	got := run(t, r, call(t, 2, 9, 3002068, 1, enums.Slot1, rf, 0), time.Second)
 	if len(filter(got, bs.OutputCallStart)) != 0 {
 		t.Fatal("RF call with CC 2 started")
 	}
-	got = run(t, r, call(t, 2, 9, 3191868, 1, enums.Slot1, bs.Source{Peer: 7}, 2*time.Second), 3*time.Second)
+	got = run(t, r, call(t, 2, 9, 3002068, 1, enums.Slot1, bs.Source{Peer: 7}, 2*time.Second), 3*time.Second)
 	if len(filter(got, bs.OutputCallStart)) != 1 {
 		t.Fatal("network call with CC 2 did not start")
 	}
@@ -71,7 +71,7 @@ func TestColorCode(t *testing.T) {
 func TestRFToNetwork(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true})
-	got := run(t, r, call(t, 1, 9, 3191868, 2, enums.Slot1, rf, 0), 2*time.Second)
+	got := run(t, r, call(t, 1, 9, 3002068, 2, enums.Slot1, rf, 0), 2*time.Second)
 	var net, hang int
 	for _, o := range filter(got, bs.OutputBurst) {
 		dt := o.Burst.SlotType().DataType
@@ -95,8 +95,8 @@ func TestRFToNetwork(t *testing.T) {
 func TestSlotOwner(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1})
-	a := call(t, 1, 9, 3191868, 2, enums.Slot1, bs.Source{Peer: 1}, 0)
-	b := call(t, 1, 91, 3120000, 12, enums.Slot1, bs.Source{Peer: 2}, 10*time.Millisecond)
+	a := call(t, 1, 9, 3002068, 2, enums.Slot1, bs.Source{Peer: 1}, 0)
+	b := call(t, 1, 91, 3002700, 12, enums.Slot1, bs.Source{Peer: 2}, 10*time.Millisecond)
 	got := run(t, r, merge(a, b), 6*time.Second)
 	starts := filter(got, bs.OutputCallStart)
 	if len(starts) != 2 || starts[0].From.Peer != 1 || starts[1].From.Peer != 2 {
@@ -123,9 +123,9 @@ func TestSlotOwner(t *testing.T) {
 func TestHangTimeSameTarget(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1})
-	a := call(t, 1, 9, 3191868, 1, enums.Slot2, bs.Source{Peer: 1}, 0)
-	b := call(t, 1, 9, 3120000, 1, enums.Slot2, bs.Source{Peer: 2}, time.Second)
-	c := call(t, 1, 92, 3120001, 1, enums.Slot2, bs.Source{Peer: 3}, 3*time.Second)
+	a := call(t, 1, 9, 3002068, 1, enums.Slot2, bs.Source{Peer: 1}, 0)
+	b := call(t, 1, 9, 3002700, 1, enums.Slot2, bs.Source{Peer: 2}, time.Second)
+	c := call(t, 1, 92, 3002701, 1, enums.Slot2, bs.Source{Peer: 3}, 3*time.Second)
 	got := run(t, r, merge(merge(a, b), c), 5*time.Second)
 	starts := filter(got, bs.OutputCallStart)
 	if len(starts) != 2 || starts[1].From.Peer != 2 {
@@ -140,7 +140,7 @@ func TestHangTimeSameTarget(t *testing.T) {
 func TestTimeout(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true, Timeout: time.Second})
-	got := run(t, r, call(t, 1, 9, 3191868, 6, enums.Slot1, rf, 0), 3*time.Second)
+	got := run(t, r, call(t, 1, 9, 3002068, 6, enums.Slot1, rf, 0), 3*time.Second)
 	rej := filter(got, bs.OutputRejected)
 	if len(rej) != 1 || rej[0].Reason != bs.ReasonTimeout {
 		t.Fatalf("rejections %v", rej)
@@ -169,7 +169,7 @@ func TestTimeout(t *testing.T) {
 func TestReject(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1})
-	in := call(t, 1, 9, 3191868, 1, enums.Slot1, bs.Source{Peer: 4}, 0)
+	in := call(t, 1, 9, 3002068, 1, enums.Slot1, bs.Source{Peer: 4}, 0)
 	out := r.Inbound(0, &in[0].raw, layer2.Hint{Slot: enums.Slot1}, in[0].from, nil)
 	if len(filter(out, bs.OutputCallStart)) != 1 {
 		t.Fatalf("%v", out)
@@ -185,7 +185,7 @@ func TestReject(t *testing.T) {
 		t.Errorf("%d bursts of a rejected call", n)
 	}
 	rej := filter(got, bs.OutputRejected)
-	if len(rej) != 1 || rej[0].Reason != bs.ReasonRejected || rej[0].Slot != enums.Slot1 || rej[0].From.Peer != 4 || rej[0].Call.Source != 3191868 {
+	if len(rej) != 1 || rej[0].Reason != bs.ReasonRejected || rej[0].Slot != enums.Slot1 || rej[0].From.Peer != 4 || rej[0].Call.Source != 3002068 {
 		t.Errorf("rejected outputs %+v", rej)
 	}
 	if len(filter(got, bs.OutputCallEnd)) != 1 {
@@ -238,7 +238,7 @@ func TestConfirmedDataHang(t *testing.T) {
 	b := packet.NewBuilder(16)
 	var h pdu.DataHeader
 	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: 4, LLIDDestination: 3191868, LLIDSource: 3120000, FullMessageFlag: true, SendSequenceNumber: 5}); err != nil {
+		ResponseRequested: true, SAP: 4, LLIDDestination: 3002068, LLIDSource: 3002700, FullMessageFlag: true, SendSequenceNumber: 5}); err != nil {
 		t.Fatal(err)
 	}
 	p, err := b.Segment(h, make([]byte, 30), enums.DataTypeRate12)
@@ -266,7 +266,7 @@ func TestConfirmedDataHang(t *testing.T) {
 			cw, _ := o.Burst.BPTCPayload()
 			lc, _, err := pdu.DecodeFullLCCodeword(cw, enums.DataTypeTerminatorWithLC)
 			l := pdu.LCBytes(lc)
-			if err != nil || l.FLCO() != enums.FLCOTerminatorDataLinkControl || lc[2] != 0x30 || lc[8]&0xC7 != 0x45 {
+			if err != nil || l.FLCO() != enums.FLCOTerminatorDataLinkControl || lc[2] != 0x2D || lc[8]&0xC7 != 0x45 {
 				t.Fatalf("TD_LC %X", lc)
 			}
 			tdlc++
@@ -319,9 +319,9 @@ func TestNew(t *testing.T) {
 func TestSuperseded(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1})
-	a := call(t, 1, 9, 3191868, 1, enums.Slot1, bs.Source{Peer: 1}, 0)
+	a := call(t, 1, 9, 3002068, 1, enums.Slot1, bs.Source{Peer: 1}, 0)
 	a = a[:len(a)-1]
-	b := call(t, 1, 91, 3191868, 1, enums.Slot1, bs.Source{Peer: 1}, a[len(a)-1].at+60*time.Millisecond)
+	b := call(t, 1, 91, 3002068, 1, enums.Slot1, bs.Source{Peer: 1}, a[len(a)-1].at+60*time.Millisecond)
 	got := run(t, r, append(a, b...), 2*time.Second)
 	starts, ends := filter(got, bs.OutputCallStart), filter(got, bs.OutputCallEnd)
 	if len(starts) != 2 || starts[1].Call.Target != 91 || len(ends) != 2 || ends[0].End != voice.EndSuperseded {
@@ -335,8 +335,8 @@ func TestSuperseded(t *testing.T) {
 func TestDecodedMatchesInbound(t *testing.T) {
 	t.Parallel()
 	inputs := map[string][]input{
-		"voice": call(t, 1, 9, 3191868, 2, enums.Slot1, rf, 0),
-		"net":   call(t, 1, 9, 3191868, 2, enums.Slot2, bs.Source{Peer: 4}, 0),
+		"voice": call(t, 1, 9, 3002068, 2, enums.Slot1, rf, 0),
+		"net":   call(t, 1, 9, 3002068, 2, enums.Slot2, bs.Source{Peer: 4}, 0),
 	}
 	for _, name := range []string{"d-sms.bin", "h-sms.bin", "m-sms.bin"} {
 		inputs[name] = timed(loadBin(t, name), enums.Slot2, rf, 0)
@@ -407,7 +407,7 @@ func TestLeadKey(t *testing.T) {
 	t.Parallel()
 	const lead = 20 * time.Millisecond
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeRF, ColorCode: 1, CACH: true, Lead: lead})
-	in := call(t, 1, 9, 3191868, 1, enums.Slot1, rf, 0)
+	in := call(t, 1, 9, 3002068, 1, enums.Slot1, rf, 0)
 	out := r.Inbound(0, &in[0].raw, layer2.Hint{Slot: enums.Slot1}, rf, nil)
 	out = r.Tick(0, out)
 	for _, o := range out {

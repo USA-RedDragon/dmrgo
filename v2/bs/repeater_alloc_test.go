@@ -13,8 +13,8 @@ import (
 )
 
 func TestAllocs(t *testing.T) {
-	in := merge(call(t, 1, 9, 3191868, 3, enums.Slot1, rf, 0), timed(loadBin(t, "d-sms.bin"), enums.Slot2, bs.Source{Peer: 3}, 0))
-	in = merge(in, call(t, 1, 91, 3120000, 3, enums.Slot1, bs.Source{Peer: 2}, 30*time.Millisecond))
+	in := merge(call(t, 1, 9, 3002068, 3, enums.Slot1, rf, 0), timed(loadBin(t, "d-sms.bin"), enums.Slot2, bs.Source{Peer: 3}, 0))
+	in = merge(in, call(t, 1, 91, 3002700, 3, enums.Slot1, bs.Source{Peer: 2}, 30*time.Millisecond))
 	for _, mode := range []bs.Mode{bs.ModeRF, bs.ModeNetwork} {
 		r := newRepeater(t, &bs.Config{Mode: mode, ColorCode: 1, CACH: true})
 		out := make([]bs.Output, 0, bs.MaxOutputs)

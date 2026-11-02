@@ -39,9 +39,9 @@ func TestChanAuthActivityUpdate(t *testing.T) {
 		d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1})
 		d.until(2 * time.Second)
 		mark := len(d.all)
-		burst := header(t, 92, 3120005)
+		burst := header(t, 92, 3002705)
 		if auth == "csbk" {
-			burst = preCSBK(t, 3120005)
+			burst = preCSBK(t, 3002705)
 		}
 		d.in(2*time.Second, enums.Slot1, rf, burst)
 		if st := d.r.SlotState(enums.Slot1); st != bs.SlotChanAuth {
@@ -70,8 +70,8 @@ func TestChanAuthSelectActivityUpdate(t *testing.T) {
 	hash, _ := pdu.AddressHash(93)
 	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthMultiSite, CallHang: -1})
 	d.until(2 * time.Second)
-	d.in(2*time.Second, enums.Slot1, rf, header(t, 92, 3120005))
-	d.in(2*time.Second+60*time.Millisecond, enums.Slot1, rf, header(t, 93, 3120001))
+	d.in(2*time.Second, enums.Slot1, rf, header(t, 92, 3002705))
+	d.in(2*time.Second+60*time.Millisecond, enums.Slot1, rf, header(t, 93, 3002701))
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotChanAuthSelect {
 		t.Fatalf("state %v", st)
 	}

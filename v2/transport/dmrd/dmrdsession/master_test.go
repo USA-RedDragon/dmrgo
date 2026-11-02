@@ -12,9 +12,9 @@ func TestMasterAliasAndPosition(t *testing.T) {
 
 	l := newLink(t, dmrd.DialectMMDVM, "", "pw", "pw")
 	l.advance(l.now)
-	a := dmrd.TalkerAlias{Repeater: 3129100}
+	a := dmrd.TalkerAlias{Repeater: 3002900}
 	alias, _ := a.AppendBinary(nil)
-	g := dmrd.Position{Repeater: 3129100}
+	g := dmrd.Position{Repeater: 3002900}
 	pos, _ := g.AppendBinary(nil)
 	for _, p := range [][]byte{alias, pos} {
 		out := l.master.Packet(l.now, p, nil)

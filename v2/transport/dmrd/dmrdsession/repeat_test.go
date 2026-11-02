@@ -14,7 +14,7 @@ func TestRepeatedRPTKLogin(t *testing.T) {
 	t.Parallel()
 
 	ms := time.Millisecond
-	const id = 3129100
+	const id = 3002900
 	for _, c := range []struct {
 		d       dmrd.Dialect
 		options string
@@ -179,7 +179,7 @@ func TestMasterRPTCBeforeRPTK(t *testing.T) {
 	t.Parallel()
 
 	for _, d := range []dmrd.Dialect{dmrd.DialectMMDVM, dmrd.DialectHBRP} {
-		const id = 3129100
+		const id = 3002900
 		pk := func(c dmrd.Command, id uint32) []byte {
 			b, _ := (&dmrd.Control{Command: c, ID: id}).AppendBinary(nil, d)
 			return b

@@ -132,9 +132,9 @@ func TestRegression_RelayPendingCallRepeatsLastSlot(t *testing.T) {
 	for _, fid := range []enums.FID{enums.FIDStandardized, 0xC2} {
 		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, Queue: voice.MaxQueue})
 		a := rcall()
-		lc, _ := pdu.NewVoiceLCBytes(true, 91, 3191869, layer3.ServiceOptions{})
+		lc, _ := pdu.NewVoiceLCBytes(true, 91, 3002069, layer3.ServiceOptions{})
 		lc.SetFID(fid)
-		b := voice.Call{Group: true, Target: 91, Source: 3191869, LC: lc, FID: fid, Origin: voice.OriginHeader}
+		b := voice.Call{Group: true, Target: 91, Source: 3002069, LC: lc, FID: fid, Origin: voice.OriginHeader}
 		relay := func(e voice.Event) {
 			if err := tx.Relay(slot, &e); err != nil {
 				t.Fatal(err)

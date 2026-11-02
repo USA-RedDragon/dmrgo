@@ -22,24 +22,24 @@ func TestStun_AuthKeys(t *testing.T) {
 	cfgs[0].Auth = &keyA
 	cfgs[1].Auth = &keyB
 	cfg := tsccConfig()
-	cfg.Auth = &trunkauth.Keys{Entries: []trunkauth.Entry{{Addr: 3120001, Key: keyA}, {Addr: 3120002, Key: keyA}}}
+	cfg.Auth = &trunkauth.Keys{Entries: []trunkauth.Entry{{Addr: 3002701, Key: keyA}, {Addr: 3002702, Key: keyA}}}
 	s := registeredSim(t, cfg, cfgs...)
 	a, b := s.ms[0], s.ms[1]
 
-	if err := s.tscc.Stun(s.now, 3120001, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002701, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.tscc.Stun(s.now, 3120002, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002702, false); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return len(stuns(s)) == 2 })
 	for _, e := range stuns(s) {
 		switch e.Address {
-		case 3120001:
+		case 3002701:
 			if e.Ack != enums.AckReasonMSAccepted || e.Reason != trunk.ReasonNone || !a.ms.Stunned() {
 				t.Errorf("A with its key: %+v, stunned %v", e, a.ms.Stunned())
 			}
-		case 3120002:
+		case 3002702:
 			if e.Ack != enums.AckReasonRecipientRefused || e.Reason != trunk.ReasonAuthentication || b.ms.Stunned() {
 				t.Errorf("B with another PSN: %+v, stunned %v", e, b.ms.Stunned())
 			}
@@ -47,7 +47,7 @@ func TestStun_AuthKeys(t *testing.T) {
 	}
 
 	s.events = nil
-	if err := s.tscc.Stun(s.now, 3120001, true); err != nil {
+	if err := s.tscc.Stun(s.now, 3002701, true); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return len(stuns(s)) == 1 })
@@ -56,7 +56,7 @@ func TestStun_AuthKeys(t *testing.T) {
 	}
 
 	s.events = nil
-	if err := s.tscc.Kill(s.now, 3120001); err != nil {
+	if err := s.tscc.Kill(s.now, 3002701); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return len(stuns(s)) == 1 })

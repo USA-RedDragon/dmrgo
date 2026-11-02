@@ -12,7 +12,7 @@ import (
 func TestReceiver_ShortSequence(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 50, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 50, nil)
 	in := timed(bursts, 0, layer2.Hint{})
 	for i := range in {
 		seq := uint16(i)
@@ -34,7 +34,7 @@ func TestReceiver_ShortSequence(t *testing.T) {
 func TestReceiver_BunchedArrival(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 4, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 4, nil)
 	in := timed(bursts, 0, layer2.Hint{})
 	for i := range in {
 		in[i].at = time.Duration(i/2) * 2 * slot
@@ -69,7 +69,7 @@ func TestReceiver_HeaderAfterLateEntry(t *testing.T) {
 func TestReceiver_UndecodableHint(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	other, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 2, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestReceiver_UndecodableHint(t *testing.T) {
 func TestReceiver_DecodedBurstA(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	var b layer2.Burst
 	if err := b.DecodeFromBytes(bursts[1]); err != nil || b.VoiceBurst != enums.VoiceBurstA {
 		t.Fatalf("burst A: %v", err)
@@ -111,7 +111,7 @@ func TestReceiver_DecodedBurstA(t *testing.T) {
 func TestReceiver_LateEntryHangEnds(t *testing.T) {
 	t.Parallel()
 
-	a := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	a := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	rx := newReceiver(t, &voice.ReceiverConfig{Lost: -1})
 	end := time.Duration(len(a)-1) * slot
 	got := feed(t, rx, append(timed(a, 0, layer2.Hint{}), input{at: end + time.Second, raw: a[3]}), -1)

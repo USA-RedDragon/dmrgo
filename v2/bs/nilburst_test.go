@@ -14,7 +14,7 @@ func TestNilBurst(t *testing.T) {
 
 	for _, from := range []bs.Source{rf, {Peer: 7}} {
 		r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true})
-		in := call(t, 1, 9, 3191868, 2, enums.Slot1, from, 0)
+		in := call(t, 1, 9, 3002068, 2, enums.Slot1, from, 0)
 		last := in[len(in)-2].at
 		got := run(t, r, in[:len(in)-1], last)
 		if len(filter(got, bs.OutputCallStart)) != 1 {

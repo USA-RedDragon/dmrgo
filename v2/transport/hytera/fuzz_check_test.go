@@ -11,7 +11,7 @@ import (
 
 func fuzzSeeds() [][]byte {
 	raw, _ := layer2.BuildDataBurst([12]byte{1, 2, 3}, enums.DataTypeVoiceLCHeader, 7, layer2.SyncSourceBS)
-	f := hytera.Frame{Port: 50002, Seq: 1, PacketType: 1, Slot: enums.Slot1, SlotType: hytera.SlotTypeVoiceLCHeader, ColorCode: 7, Burst: raw, Destination: 9, Source: 3191868}
+	f := hytera.Frame{Port: 50002, Seq: 1, PacketType: 1, Slot: enums.Slot1, SlotType: hytera.SlotTypeVoiceLCHeader, ColorCode: 7, Burst: raw, Destination: 9, Source: 3002068}
 	frame, _ := f.AppendBinary(nil)
 	return [][]byte{
 		frame,

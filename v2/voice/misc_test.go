@@ -13,7 +13,7 @@ import (
 func TestReceiver_PIHeader(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, func(o *layer2.VoiceTransmitterOptions) {
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, func(o *layer2.VoiceTransmitterOptions) {
 		o.PIHeader = &pdu.PIHeader{AlgorithmID: 1, KeyID: 2}
 	})
 	got := feed(t, newReceiver(t, nil), timed(bursts, 0, layer2.Hint{}), -1)
@@ -25,7 +25,7 @@ func TestReceiver_PIHeader(t *testing.T) {
 func TestReceiver_ColorCode(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	cc := enums.ColorCode(2)
 	got := feed(t, newReceiver(t, &voice.ReceiverConfig{ColorCode: &cc}), timed(bursts, 0, layer2.Hint{}), -1)
 	if len(got) != 0 {
@@ -60,7 +60,7 @@ func TestReceiver_Decoded(t *testing.T) {
 func TestReceiver_LateEntryInHang(t *testing.T) {
 	t.Parallel()
 
-	a := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	a := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	rx := newReceiver(t, nil)
 	end := time.Duration(len(a)) * slot
 	in := append(timed(a, 0, layer2.Hint{}), timed(a[2:4], end+time.Second, layer2.Hint{})...)

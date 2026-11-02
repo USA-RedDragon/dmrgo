@@ -25,7 +25,7 @@ func TestPowerSave_SleepAndHeldAhoy(t *testing.T) {
 	s := registeredSim(t, cfg, cfgs...)
 	a, c := s.ms[0], s.ms[2]
 	off := c.ms.PowerSaveOffset()
-	if want := uint8(1 + 3120003%15); off != want {
+	if want := uint8(1 + 3002703%15); off != want {
 		t.Fatalf("PowerSave_Offset %d, want %d", off, want)
 	}
 	if a.ms.PowerSaveOffset() != 0 {
@@ -48,7 +48,7 @@ func TestPowerSave_SleepAndHeldAhoy(t *testing.T) {
 
 	c.log = nil
 	s.until(10*time.Second, func() bool { return c.ms.Asleep() })
-	if err := a.ms.Call(s.now, false, 3120003, layer3.VoiceServiceOptions{}); err != nil {
+	if err := a.ms.Call(s.now, false, 3002703, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	s.until(10*time.Second, func() bool { _, ok := has(c.log, trunk.OutputAhoy); return ok })
@@ -73,7 +73,7 @@ func TestMassRegistration(t *testing.T) {
 	}
 
 	a.log, b.log, c.log = nil, nil, nil
-	if err := s.tscc.MassRegister(1, 24, 3120002); err != nil {
+	if err := s.tscc.MassRegister(1, 24, 3002702); err != nil {
 		t.Fatal(err)
 	}
 	s.run(time.Second)
@@ -82,11 +82,11 @@ func TestMassRegistration(t *testing.T) {
 	}
 
 	b.log = nil
-	if err := s.tscc.MassRegister(9, 24, 3120002); err != nil {
+	if err := s.tscc.MassRegister(9, 24, 3002702); err != nil {
 		t.Fatal(err)
 	}
 	s.run(200 * time.Millisecond)
-	if err := s.tscc.MassRegister(0, 24, 3120002); err != nil {
+	if err := s.tscc.MassRegister(0, 24, 3002702); err != nil {
 		t.Fatal(err)
 	}
 	s.run(time.Second)
@@ -113,7 +113,7 @@ func TestIPAdvice(t *testing.T) {
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(a.log, trunk.OutputAccepted); return ok })
 	e, ok := s.event(trunk.TSCCIPAdvice)
-	if !ok || e.Address != 3120001 || e.IP != ip || e.IPv6 || e.Remove {
+	if !ok || e.Address != 3002701 || e.IP != ip || e.IPv6 || e.Remove {
 		t.Errorf("TSCCIPAdvice %+v %v", e, ok)
 	}
 	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.AckReasonRegAccepted || !a.ms.Registered() {
@@ -126,8 +126,8 @@ func TestIPAdvice(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(a.log, trunk.OutputAccepted); return ok })
-	if e, ok := s.event(trunk.TSCCIPAdvice); !ok || e.IP != ip6 || !e.IPv6 || !e.Remove || !s.tscc.Registered(3120001) {
-		t.Errorf("TSCCIPAdvice %+v %v, registered %v", e, ok, s.tscc.Registered(3120001))
+	if e, ok := s.event(trunk.TSCCIPAdvice); !ok || e.IP != ip6 || !e.IPv6 || !e.Remove || !s.tscc.Registered(3002701) {
+		t.Errorf("TSCCIPAdvice %+v %v, registered %v", e, ok, s.tscc.Registered(3002701))
 	}
 
 	s = registeredSim(t, tsccConfig(), threeMS()...)
@@ -151,14 +151,14 @@ func TestSupplementary_VoiceCall(t *testing.T) {
 	if err := a.ms.SetSupplementary(isoText(t, data)); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.ms.Call(s.now, false, 3120003, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
+	if err := a.ms.Call(s.now, false, 3002703, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
 		t.Fatal(err)
 	}
 	s.until(5*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && c.ms.State() == trunk.StatePayload })
 	if _, ok := has(c.log, trunk.OutputUDT); !ok {
 		t.Fatal("C got no supplementary data")
 	}
-	if u := udtOf(c.ms.UDT()); string(u.Data[:len(data)]) != string(data) || !u.Header.SupplementaryFlag || u.Header.LLIDDestination != 3120003 || u.Header.UDTFormat != 4 {
+	if u := udtOf(c.ms.UDT()); string(u.Data[:len(data)]) != string(data) || !u.Header.SupplementaryFlag || u.Header.LLIDDestination != 3002703 || u.Header.UDTFormat != 4 {
 		t.Errorf("C UDT %+v", u)
 	}
 	if _, ok := s.event(trunk.TSCCCallStart); !ok {
@@ -199,7 +199,7 @@ func TestSupplementary_NotOffered(t *testing.T) {
 	if err := a.ms.SetSupplementary(isoText(t, []byte("x"))); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.ms.Call(s.now, false, 3120003, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
+	if err := a.ms.Call(s.now, false, 3002703, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
 		t.Fatal(err)
 	}
 	s.until(5*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && c.ms.State() == trunk.StatePayload })

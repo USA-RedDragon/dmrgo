@@ -28,7 +28,7 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 			PriorityLevel:       0,
 		},
 		GroupAddress:  9990,
-		SourceAddress: 3120101,
+		SourceAddress: 3002801,
 	}
 	noErr(original.SetGroupVoice(want))
 
@@ -150,7 +150,7 @@ func TestFullLinkControl_String(t *testing.T) {
 	}
 	noErr(flc.SetGroupVoice(pdu.FLCGroupVoice{
 		GroupAddress:  9990,
-		SourceAddress: 3120101,
+		SourceAddress: 3002801,
 	}))
 	str := flc.String()
 	if len(str) == 0 {
@@ -162,7 +162,7 @@ func TestFullLinkControl_String(t *testing.T) {
 	if !strings.HasPrefix(str, "FullLinkControl{ BurstDataType: Voice LC Header, ProtectFlag: ") {
 		t.Errorf("header LC: %s", str)
 	}
-	lc, err := pdu.NewVoiceLCBytes(true, 9, 3120101, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLCBytes(true, 9, 3002801, layer3.ServiceOptions{})
 	noErr(err)
 	emb := pdu.DecodeFullLinkControlBytes(lc)
 	if s := emb.String(); strings.Contains(s, "BurstDataType") || !strings.HasPrefix(s, "FullLinkControl{ ProtectFlag: ") {
@@ -253,7 +253,7 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 		{"MinAddresses", 0, 0},
 		{"MaxAddresses", 0xFFFFFF, 0xFFFFFF},
 		{"MidAddresses", 0x7FFFFF, 0x7FFFFF},
-		{"TypicalAddresses", 9990, 3120101},
+		{"TypicalAddresses", 9990, 3002801},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -490,7 +490,7 @@ func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
 	lc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeTerminatorWithLC,
 	}
-	noErr(lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101}))
+	noErr(lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3002801}))
 	clean := must(lc.Encode())
 	for _, flips := range []int{1, 3, 8} {
 		rx := clean

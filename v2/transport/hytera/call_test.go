@@ -68,10 +68,10 @@ func TestFrameSetCall(t *testing.T) {
 	t.Parallel()
 
 	var fr hytera.Frame
-	if err := fr.SetCall(true, 262, 2628347); err != nil || fr.CallType != 0x01 || fr.Destination != 262 || fr.Source != 2628347 {
+	if err := fr.SetCall(true, 262, 3002547); err != nil || fr.CallType != 0x01 || fr.Destination != 262 || fr.Source != 3002547 {
 		t.Fatalf("group: %v %+v", err, fr)
 	}
-	if err := fr.SetCall(false, 65000, 2145007); err != nil || fr.CallType != 0x00 || fr.Destination != 65000 {
+	if err := fr.SetCall(false, 65000, 3002207); err != nil || fr.CallType != 0x00 || fr.Destination != 65000 {
 		t.Fatalf("private: %v %+v", err, fr)
 	}
 	if g, _, _ := fr.Call(); g {
@@ -100,8 +100,8 @@ func TestFrameSetCallHint(t *testing.T) {
 
 	var fr hytera.Frame
 	h := layer2.Hint{Slot: enums.Slot2, Kind: layer2.KindData, DataType: enums.DataTypeVoiceLCHeader, HasDataType: true}
-	if err := fr.SetCallHint(h, layer2.Call{Group: true, Target: 262, Source: 2628347}); err != nil ||
-		fr.CallType != 0x01 || fr.Destination != 262 || fr.Source != 2628347 || fr.SlotType != hytera.SlotTypeVoiceLCHeader || fr.Slot != enums.Slot2 {
+	if err := fr.SetCallHint(h, layer2.Call{Group: true, Target: 262, Source: 3002547}); err != nil ||
+		fr.CallType != 0x01 || fr.Destination != 262 || fr.Source != 3002547 || fr.SlotType != hytera.SlotTypeVoiceLCHeader || fr.Slot != enums.Slot2 {
 		t.Fatalf("%v %+v", err, fr)
 	}
 	want := fr

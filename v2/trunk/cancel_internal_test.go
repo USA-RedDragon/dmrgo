@@ -11,7 +11,7 @@ import (
 
 func TestCancelCallEndsTheWaitForTheGrant(t *testing.T) {
 	t.Parallel()
-	const addr, caller, other = 3120001, 3120002, 3120003
+	const addr, caller, other = 3002701, 3002702, 3002703
 	m, err := NewMS(&MSConfig{Address: addr, NoRegistration: true})
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestCancelCallEndsTheWaitForTheGrant(t *testing.T) {
 
 func TestDuplexAhoyWaitsForThePowerSaveSlot(t *testing.T) {
 	t.Parallel()
-	const a, b = 3120001, 3120002
+	const a, b = 3002701, 3002702
 	for _, kind := range []enums.ServiceKind{enums.ServiceKindDuplexVoice, enums.ServiceKindShortDataPolling} {
 		ts, err := NewTSCC(&TSCCConfig{Channel: 1, Payload: [MaxPayloadChannels]uint16{10}, PayloadLen: 1, PowerSave: true})
 		if err != nil {
@@ -66,7 +66,7 @@ func TestDuplexAhoyWaitsForThePowerSaveSlot(t *testing.T) {
 
 func TestCancelAckIsNotADuplexAnswer(t *testing.T) {
 	t.Parallel()
-	const a, b = 3120001, 3120002
+	const a, b = 3002701, 3002702
 	ts, err := NewTSCC(&TSCCConfig{Channel: 1, Payload: [MaxPayloadChannels]uint16{10}, PayloadLen: 1, PowerSave: true})
 	if err != nil {
 		t.Fatal(err)

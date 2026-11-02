@@ -34,14 +34,14 @@ func newMSSvcPool(t testing.TB) burstPool {
 		svcAhoy(t, enums.ServiceKindSupplementary, false, false, 0, 0, msAddr, constants.GatewaySTUNI),
 		svcAhoy(t, enums.ServiceKindSupplementary, true, false, 0, 0, msAddr, constants.GatewaySTUNI),
 		svcAhoy(t, enums.ServiceKindSupplementary, false, false, 0, 0, msAddr, constants.GatewayKILLI),
-		svcAhoy(t, enums.ServiceKindStatusTransport, false, false, 0x1F, 3, msAddr, 3120002),
-		svcAhoy(t, enums.ServiceKindStatusTransport, false, true, 0x05, 1, 9, 3120002),
+		svcAhoy(t, enums.ServiceKindStatusTransport, false, false, 0x1F, 3, msAddr, 3002702),
+		svcAhoy(t, enums.ServiceKindStatusTransport, false, true, 0x05, 1, 9, 3002702),
 		svcAhoy(t, enums.ServiceKindRegistration, false, false, 0, 1, msAddr, constants.GatewayIPI),
 		svcAhoy(t, enums.ServiceKindIndividualVoice, false, false, 0, 1, msAddr, constants.GatewaySUPLI),
 		svcAck(t, enums.AckReasonAuthResponseTS, 0, 0x123456),
 		svcAck(t, enums.AckReasonRegAccepted, 3, constants.GatewayREGI),
-		svcAck(t, enums.AckReasonStatusPollAcceptedMS, 17, 3120002),
-		svcAck(t, enums.AckReasonMSAccepted, 0, 3120002),
+		svcAck(t, enums.AckReasonStatusPollAcceptedMS, 17, 3002702),
+		svcAck(t, enums.AckReasonMSAccepted, 0, 3002702),
 		svcAck(t, enums.AckReasonIPConnectionFailed, 0, constants.GatewayIPI),
 		svcAck(t, enums.AckReasonNotSupported, 0, constants.GatewayTSI),
 		mass(1, 0, 0), mass(0, 0, 0), mass(3, 24, msAddr),
@@ -126,7 +126,7 @@ func newTSCCSvcPool(t testing.TB) burstPool {
 	t.Helper()
 	rnd := func(kind enums.ServiceKind, opts, res uint8, target uint32) layer2.RawBurst {
 		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
-			ServiceOptions: opts, Reserved: res, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}))
+			ServiceOptions: opts, Reserved: res, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3002701}))
 	}
 	ackU := func(r enums.AckReason, target, from uint32) layer2.RawBurst {
 		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
@@ -141,22 +141,22 @@ func newTSCCSvcPool(t testing.TB) burstPool {
 	}
 	head := func(dst uint32, uab uint8) layer2.RawBurst {
 		return msData(withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{UDTFormat: 6,
-			LLIDDestination: dst, LLIDSource: 3120001, UAB: uab, SupplementaryFlag: true, Opcode: pdu.UDTOpcodeInboundHeader}))
+			LLIDDestination: dst, LLIDSource: 3002701, UAB: uab, SupplementaryFlag: true, Opcode: pdu.UDTOpcodeInboundHeader}))
 	}
 	block := msData(&pdu.Rate12Data{Data: [12]byte{10, 1, 2, 3}})
 	return append(newInboundPool(t),
 		rnd(enums.ServiceKindRegistration, 0b0011001, 0, constants.GatewayREGI),
 		rnd(enums.ServiceKindRegistration, 0b0010000, 0, constants.GatewayREGI),
-		rnd(enums.ServiceKindStatusTransport, 0x1F, 1, 3120002),
+		rnd(enums.ServiceKindStatusTransport, 0x1F, 1, 3002702),
 		rnd(enums.ServiceKindStatusTransport, 0x5F, 3, 9),
 		rnd(enums.ServiceKindStatusTransport, 0x5E, 3, 9),
-		rnd(enums.ServiceKindStatusTransport, 0x3F, 7, 3120002),
-		rnd(enums.ServiceKindIndividualVoice, 0x10, 4, 3120002),
-		ackU(enums.AckReasonMSAccepted, constants.GatewaySTUNI, 3120002),
-		ackU(enums.AckReasonMSAccepted, constants.GatewaySUPLI, 3120002),
-		ackU(enums.AckReasonStatusPollAcceptedMS, 3120001, 3120002),
+		rnd(enums.ServiceKindStatusTransport, 0x3F, 7, 3002702),
+		rnd(enums.ServiceKindIndividualVoice, 0x10, 4, 3002702),
+		ackU(enums.AckReasonMSAccepted, constants.GatewaySTUNI, 3002702),
+		ackU(enums.AckReasonMSAccepted, constants.GatewaySUPLI, 3002702),
+		ackU(enums.AckReasonStatusPollAcceptedMS, 3002701, 3002702),
 		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckvitation, pdu.AckvitationPDU{
-			ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: 77, SourceAddress: 3120002})),
+			ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: 77, SourceAddress: 3002702})),
 		head(constants.GatewayIPI, 0), head(constants.GatewaySUPLI, 1), block,
 		voiceSuperframe(t)[0], voiceSuperframe(t)[3])
 }
@@ -197,7 +197,7 @@ func runTSCCServices(t *testing.T, pool burstPool, in opSeed) {
 				}
 			}
 		case 3:
-			addr := 3120000 + uint32(arg&3)
+			addr := 3002700 + uint32(arg&3)
 			switch arg >> 2 & 7 {
 			case 0:
 				_ = ts.Stun(now, addr, arg&32 != 0)

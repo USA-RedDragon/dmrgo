@@ -25,7 +25,7 @@ func FuzzTalkerAlias(f *testing.F) {
 
 func talkerAliasSeeds(add func(alias string, format, order uint8, extra []byte)) {
 	add("N0CALL", uint8(layer3.TalkerAliasSevenBit), uint8(0), []byte{})
-	add("Jacob McSwain KI5VMF", uint8(layer3.TalkerAliasISOEightBit), uint8(0x1B), []byte{})
+	add("Jacob McSwain N0CALL", uint8(layer3.TalkerAliasISOEightBit), uint8(0x1B), []byte{})
 	add("Grüße aus Texas 73", uint8(layer3.TalkerAliasUTF8), uint8(0x27), []byte{})
 	add("日本語のエイリアス", uint8(layer3.TalkerAliasUTF16), uint8(0x93), []byte{})
 	add("73\x00\x00", uint8(layer3.TalkerAliasUTF16), uint8(0), []byte{})
@@ -117,7 +117,7 @@ func FuzzSysCode(f *testing.F) {
 }
 
 func sysCodeSeeds(add func(v uint16, model uint8, net, site uint16, par uint8, id uint32)) {
-	add(uint16(0x8E21), uint8(2), uint16(5), uint16(0x55), uint8(1), uint32(3120101))
+	add(uint16(0x8E21), uint8(2), uint16(5), uint16(0x55), uint8(1), uint32(3002801))
 	add(uint16(0xFFFF), uint8(4), uint16(0x3FF), uint16(0x1000), uint8(4), uint32(1<<24))
 }
 

@@ -24,17 +24,17 @@ func TestLCBytes_Capture(t *testing.T) {
 		t.Fatalf("Addresses %d -> %d %t, want 3191868 -> 9990", src, tgt, ok)
 	}
 
-	if l.SetGroup(true) != nil || l.SetAddresses(91, 3100999) != nil {
+	if l.SetGroup(true) != nil || l.SetAddresses(91, 3002699) != nil {
 		t.Fatal("edit refused")
 	}
-	if got := hex.EncodeToString(l[:]); got != "00000000005b2f5147" {
+	if got := hex.EncodeToString(l[:]); got != "00000000005b2dd14b" {
 		t.Fatalf("edited LC %s", got)
 	}
 	f := pdu.DecodeFullLinkControlBytes(l)
 	if _, isGroup := f.AsGroupVoice(); !isGroup {
 		t.Fatalf("decoded %s", f.String())
 	}
-	if tgt, src, _ := f.Addresses(); tgt != 91 || src != 3100999 {
+	if tgt, src, _ := f.Addresses(); tgt != 91 || src != 3002699 {
 		t.Fatalf("decoded %s", f.String())
 	}
 	cw := must(l.Codeword(enums.DataTypeVoiceLCHeader))
@@ -204,26 +204,26 @@ func TestNewVoiceLC(t *testing.T) {
 
 	for _, group := range []bool{true, false} {
 		so := layer3.ServiceOptions{IsPrivacy: true, PriorityLevel: 2}
-		f := must(pdu.NewVoiceLC(group, 91, 3191868, so))
+		f := must(pdu.NewVoiceLC(group, 91, 3002068, so))
 		_, isGroup := f.AsGroupVoice()
 		_, isUnit := f.AsUnitToUnit()
 		if f.FID != enums.FIDStandardized || f.BurstDataType != enums.DataTypeVoiceLCHeader || isGroup != group || isUnit == group {
 			t.Fatalf("group %t: %s", group, f.String())
 		}
-		if tgt, src, ok := f.Addresses(); !ok || tgt != 91 || src != 3191868 {
+		if tgt, src, ok := f.Addresses(); !ok || tgt != 91 || src != 3002068 {
 			t.Errorf("group %t: Addresses %d %d %t", group, tgt, src, ok)
 		}
 		if got, ok := f.ServiceOptions(); !ok || got != so {
 			t.Errorf("group %t: ServiceOptions %s %t", group, got.String(), ok)
 		}
-		l := must(pdu.NewVoiceLCBytes(group, 91, 3191868, so))
+		l := must(pdu.NewVoiceLCBytes(group, 91, 3002068, so))
 		if b := must(f.Bytes()); b != [9]byte(l) {
 			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
 		}
 		if g, _, _, ok := l.Call(); !ok || g != group || !soOK(l, so) {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
-		if g, tgt, src, ok := f.Call(); !ok || g != group || tgt != 91 || src != 3191868 {
+		if g, tgt, src, ok := f.Call(); !ok || g != group || tgt != 91 || src != 3002068 {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}
@@ -287,14 +287,14 @@ func TestLCBytes_CallOtherFLCO(t *testing.T) {
 func TestLCBytes_Call(t *testing.T) {
 	t.Parallel()
 
-	l := pdu.LCBytes(hex9(t, "c3100000270630b43c"))
-	if g, tg, src, ok := l.Call(); g || tg != 0x2706 || src != 0x30b43c || !ok {
+	l := pdu.LCBytes(hex9(t, "c310000027062dced4"))
+	if g, tg, src, ok := l.Call(); g || tg != 0x2706 || src != 0x2dced4 || !ok {
 		t.Fatalf("Call of %x: %v %d %d %v", l, g, tg, src, ok)
 	}
-	if err := l.SetCall(true, 91, 3120001); err != nil || l[0] != 0xC0 || l[1] != 0x10 {
+	if err := l.SetCall(true, 91, 3002701); err != nil || l[0] != 0xC0 || l[1] != 0x10 {
 		t.Fatalf("SetCall: %v %x", err, l)
 	}
-	if g, tg, src, ok := l.Call(); !g || tg != 91 || src != 3120001 || !ok {
+	if g, tg, src, ok := l.Call(); !g || tg != 91 || src != 3002701 || !ok {
 		t.Fatalf("Call after SetCall: %v %d %d %v", g, tg, src, ok)
 	}
 	want := l

@@ -107,7 +107,7 @@ func (s *serviceSite) run(d time.Duration) {
 // ExampleMS_SendStatus sends a status call from one MS to another through
 // a TSCC, and polls the status of the other MS.
 func ExampleMS_SendStatus() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1}, &trunk.MSConfig{Address: 3120002, Seed: 2})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1}, &trunk.MSConfig{Address: 3002702, Seed: 2})
 	s.run(3 * time.Second)
 	s.onMS = func(i int, o *trunk.Output) {
 		switch o.Kind {
@@ -118,37 +118,37 @@ func ExampleMS_SendStatus() {
 		default:
 		}
 	}
-	_ = s.ms[0].SendStatus(s.now, false, 3120002, 42)
+	_ = s.ms[0].SendStatus(s.now, false, 3002702, 42)
 	s.run(2 * time.Second)
 	_ = s.ms[1].SetStatus(7)
-	_ = s.ms[0].PollStatus(s.now, 3120002)
+	_ = s.ms[0].PollStatus(s.now, 3002702)
 	s.run(2 * time.Second)
 	// Output:
-	// MS 1 status 42 from 3120001
+	// MS 1 status 42 from 3002701
 	// MS 0 delivered
-	// MS 1 status 127 from 3120001
-	// MS 0 status 7 from 3120002
+	// MS 1 status 127 from 3002701
+	// MS 0 status 7 from 3002702
 }
 
 // ExampleTSCC_Stun stuns an MS, which then refuses calls, and revives it.
 func ExampleTSCC_Stun() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	s.run(3 * time.Second)
 	s.onTSCC = func(o *trunk.TSCCOutput) {
 		if o.Kind == trunk.TSCCStun {
 			fmt.Println(o.Stun, o.Address, o.Ack)
 		}
 	}
-	_ = s.tscc.Stun(s.now, 3120001, false)
+	_ = s.tscc.Stun(s.now, 3002701, false)
 	s.run(time.Second)
 	fmt.Println(s.ms[0].Call(s.now, true, 9, layer3.VoiceServiceOptions{}))
-	_ = s.tscc.Stun(s.now, 3120001, true)
+	_ = s.tscc.Stun(s.now, 3002701, true)
 	s.run(time.Second)
 	fmt.Println("stunned", s.ms[0].Stunned())
 	// Output:
-	// Stun 3120001 MS_Accepted
+	// Stun 3002701 MS_Accepted
 	// trunk: stunned
-	// Revive 3120001 MS_Accepted
+	// Revive 3002701 MS_Accepted
 	// stunned false
 }
 
@@ -158,8 +158,8 @@ func ExampleTSCC_Stun() {
 func ExampleMS_Interrupt() {
 	tg := [trunk.MaxTalkgroups]uint32{9}
 	s := newServiceSite(&trunk.TSCCConfig{TransmitInterrupt: true},
-		&trunk.MSConfig{Address: 3120001, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
-		&trunk.MSConfig{Address: 3120002, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2})
+		&trunk.MSConfig{Address: 3002701, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
+		&trunk.MSConfig{Address: 3002702, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2})
 	s.run(3 * time.Second)
 	_ = s.ms[0].Call(s.now, true, 9, layer3.VoiceServiceOptions{})
 	s.run(time.Second)
@@ -192,13 +192,13 @@ func ExampleMS_Interrupt() {
 	// Output:
 	// MS 1 interrupt accepted
 	// MS 0 got Cease Transmission Command
-	// transmission stopped for 3120002
+	// transmission stopped for 3002702
 }
 
 // ExampleTSCC_MassRegister asks every MS on the TSCC to register again
 // within one second.
 func ExampleTSCC_MassRegister() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1}, &trunk.MSConfig{Address: 3120002, Seed: 2})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1}, &trunk.MSConfig{Address: 3002702, Seed: 2})
 	s.run(3 * time.Second)
 	s.onMS = func(i int, o *trunk.Output) {
 		if o.Kind == trunk.OutputRegistered {
@@ -214,7 +214,7 @@ func ExampleTSCC_MassRegister() {
 
 // ExampleMS_AdviseIP gives the TSCC the IPv4 address of an MS.
 func ExampleMS_AdviseIP() {
-	s := newServiceSite(&trunk.TSCCConfig{IP: true}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{IP: true}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	s.run(3 * time.Second)
 	s.onTSCC = func(o *trunk.TSCCOutput) {
 		if o.Kind == trunk.TSCCIPAdvice {
@@ -229,14 +229,14 @@ func ExampleMS_AdviseIP() {
 	_ = s.ms[0].AdviseIP(s.now, [16]byte{192, 0, 2, 7}, false, false)
 	s.run(2 * time.Second)
 	// Output:
-	// MS 3120001 has 192 0 2 7
+	// MS 3002701 has 192 0 2 7
 	// accepted Reg_Accepted
 }
 
 // ExampleMS_SetSupplementary sends supplementary_user data with an
 // individual voice call. The called MS gets it as a UDT before the grant.
 func ExampleMS_SetSupplementary() {
-	s := newServiceSite(&trunk.TSCCConfig{Supplementary: true}, &trunk.MSConfig{Address: 3120001, Seed: 1}, &trunk.MSConfig{Address: 3120002, Seed: 2})
+	s := newServiceSite(&trunk.TSCCConfig{Supplementary: true}, &trunk.MSConfig{Address: 3002701, Seed: 1}, &trunk.MSConfig{Address: 3002702, Seed: 2})
 	s.run(3 * time.Second)
 	s.onMS = func(i int, o *trunk.Output) {
 		switch {
@@ -253,17 +253,17 @@ func ExampleMS_SetSupplementary() {
 	var a trunk.Appended
 	_ = a.SetText(enums.UDTISO7, []byte("room 4711"))
 	_ = s.ms[0].SetSupplementary(&a)
-	_ = s.ms[0].Call(s.now, false, 3120002, layer3.VoiceServiceOptions{IsSuppData: true})
+	_ = s.ms[0].Call(s.now, false, 3002702, layer3.VoiceServiceOptions{IsSuppData: true})
 	s.run(3 * time.Second)
 	// Output:
 	// MS 1 got "room 4711"
-	// MS 1 got the grant from 3120001
+	// MS 1 got the grant from 3002701
 }
 
 // ExampleMS_Asleep registers an MS with power save: it sleeps between the
 // power save frames that the TSCC gave it.
 func ExampleMS_Asleep() {
-	s := newServiceSite(&trunk.TSCCConfig{PowerSave: true}, &trunk.MSConfig{Address: 3120001, Seed: 1, PowerSave: 2})
+	s := newServiceSite(&trunk.TSCCConfig{PowerSave: true}, &trunk.MSConfig{Address: 3002701, Seed: 1, PowerSave: 2})
 	s.run(3 * time.Second)
 	fmt.Println("offset", s.ms[0].PowerSaveOffset())
 	sleeps := 0

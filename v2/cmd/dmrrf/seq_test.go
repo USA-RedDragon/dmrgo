@@ -161,7 +161,7 @@ func TestLoopbackVoice(t *testing.T) {
 		if group {
 			kind = "group"
 		}
-		fields := fmt.Sprintf("flco=%d fid=0x00 %s src=3191868 dst=9990 privacy=0", map[bool]int{true: 0, false: 3}[group], kind)
+		fields := fmt.Sprintf("flco=%d fid=0x00 %s src=3002068 dst=9990 privacy=0", map[bool]int{true: 0, false: 3}[group], kind)
 		l.expect(t, "lc", "header "+fields, 1)
 		l.expect(t, "lc", "terminator "+fields, 1)
 		l.expect(t, "elc", fields+" emergency=0 checksum=ok fec=ok", 3)
@@ -271,7 +271,7 @@ func TestLoopbackVoiceLateEntry(t *testing.T) {
 	cfg := testConfig()
 	cfg.Group, cfg.Superframes, cfg.LateEntry = true, 2, true
 	l := runLoop(t, "voice", cfg)
-	fields := "flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0"
+	fields := "flco=0 fid=0x00 group src=3002068 dst=9990 privacy=0"
 	l.expect(t, "lc", "header", 0)
 	l.expect(t, "lc", "terminator "+fields, 1)
 	l.expect(t, "elc", fields+" emergency=0 checksum=ok fec=ok", 2)
@@ -305,9 +305,9 @@ func TestLoopbackResponses(t *testing.T) {
 
 	cfg := testConfig()
 	l := runLoop(t, "ack", cfg)
-	l.expect(t, "response", "ACK class=0 type=1 status=0 3191868 -> 9990", 1)
+	l.expect(t, "response", "ACK class=0 type=1 status=0 3002068 -> 9990", 1)
 	l = runLoop(t, "sr", cfg)
-	l.expect(t, "response", "SACK class=2 type=0 status=0 3191868 -> 9990 retry=1,4,6", 1)
+	l.expect(t, "response", "SACK class=2 type=0 status=0 3002068 -> 9990 retry=1,4,6", 1)
 	if !strings.HasPrefix(l.built.Info[0], "sr retry=1,4,6 of 8 blocks, C_RDATA ad") {
 		t.Errorf("tx info %q", l.built.Info[0])
 	}
@@ -434,7 +434,7 @@ func TestLoopbackTier3(t *testing.T) {
 			got = append(got, fmt.Sprintf("cgap %v %d MHz %d", c.FEC.Uncorrectable, c.CdefParms.TXMHz, c.CdefParms.TXKHz))
 		}
 	}
-	want := fmt.Sprintf("[csbk %d csbk %d csbk %d mbc %d 3191868->9990 ch 0xfff cgap false 446 MHz 50]",
+	want := fmt.Sprintf("[csbk %d csbk %d csbk %d mbc %d 3002068->9990 ch 0xfff cgap false 446 MHz 50]",
 		pdu.CSBKAloha, pdu.CSBKTalkgroupVoiceGrant, pdu.CSBKMove, pdu.CSBKTalkgroupVoiceGrant)
 	if fmt.Sprint(got) != want {
 		t.Errorf("got %v\nwant %s", got, want)
@@ -465,7 +465,7 @@ func bsSourcedVoice(t *testing.T, slot int) {
 	cfg.BSSourced, cfg.Slot, cfg.Group, cfg.Superframes = true, slot, true, 2
 	l := runLoop(t, "voice", cfg)
 	ts := fmt.Sprintf("ts=%d", slot+1)
-	l.expect(t, "elc", ts+" flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 checksum=ok", 2)
+	l.expect(t, "elc", ts+" flco=0 fid=0x00 group src=3002068 dst=9990 privacy=0 emergency=0 checksum=ok", 2)
 	l.expect(t, "emb", fmt.Sprintf("%s pos=B cc=1 pi=0 lcss=%q fec=ok", ts, enums.LCSSFirstFragment.String()), 2)
 	l.expect(t, "lc", ts+" header", 1)
 	l.expect(t, "lc", ts+" terminator", 1)

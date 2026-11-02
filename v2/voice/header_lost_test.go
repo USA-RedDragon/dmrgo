@@ -27,7 +27,7 @@ func headerCount(t *testing.T, bursts []layer2.RawBurst) int {
 func TestReceiver_LostAfterHeader(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 3, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 3, nil)
 	headers := headerCount(t, bursts)
 	for _, lost := range []int{0, 1, 2, 4, 6, 8} {
 		t.Run(strconv.Itoa(lost), func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestReceiver_LostAfterHeader(t *testing.T) {
 func TestReceiver_LostAfterHeaderSeq(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	headers := headerCount(t, bursts)
 	tests := []struct {
 		name  string

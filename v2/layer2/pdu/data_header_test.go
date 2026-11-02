@@ -123,7 +123,7 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 		PadOctetCount:          17,
 		SAP:                    4,
 		LLIDDestination:        9990,
-		LLIDSource:             3120101,
+		LLIDSource:             3002801,
 		FullMessageFlag:        true,
 		BlocksToFollow:         10,
 		ReSynchronizeFlag:      true,
@@ -158,8 +158,8 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 	if cdh.LLIDDestination != 9990 {
 		t.Errorf("LLIDDestination = %d, want 9990", cdh.LLIDDestination)
 	}
-	if cdh.LLIDSource != 3120101 {
-		t.Errorf("LLIDSource = %d, want 3120101", cdh.LLIDSource)
+	if cdh.LLIDSource != 3002801 {
+		t.Errorf("LLIDSource = %d, want 3002801", cdh.LLIDSource)
 	}
 	if !cdh.FullMessageFlag {
 		t.Error("FullMessageFlag should be true")
@@ -453,7 +453,7 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 		OptionFlag:        true,
 		UDTFormat:         0b0111,
 		LLIDDestination:   0xFFFED4,
-		LLIDSource:        3120101,
+		LLIDSource:        3002801,
 		PadNibble:         7,
 		UAB:               3,
 		ProtectFlag:       true,

@@ -12,7 +12,7 @@ func TestDecodedEqualsBuilt(t *testing.T) {
 	t.Parallel()
 
 	csbk := pdu.CSBK{LastBlock: true}
-	if err := csbk.SetPreamble(pdu.PreamblePDU{Data: true, CSBKBlocksToFollow: 3, TargetAddress: 3120101, SourceAddress: 3120001}); err != nil {
+	if err := csbk.SetPreamble(pdu.PreamblePDU{Data: true, CSBKBlocksToFollow: 3, TargetAddress: 3002801, SourceAddress: 3002701}); err != nil {
 		t.Fatal(err)
 	}
 	gotCSBK := pdu.DecodeCSBK(must(csbk.Encode()))
@@ -32,7 +32,7 @@ func TestDecodedEqualsBuilt(t *testing.T) {
 	}
 
 	var mbc pdu.MBCHeader
-	if err := mbc.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}); err != nil {
+	if err := mbc.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3002701}); err != nil {
 		t.Fatal(err)
 	}
 	gotMBC := pdu.DecodeMBCHeader(must(mbc.Encode()))

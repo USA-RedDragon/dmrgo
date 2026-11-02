@@ -110,7 +110,7 @@ func checkData(t *testing.T, name string, got []emitted, want []advPkt, late fun
 
 func testCSBK(t *testing.T) layer2.RawBurst {
 	t.Helper()
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, RawPayload: [8]byte{0, 0, 0, 0, 1, 0x30, 0xB4, 0x3C}}
+	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, RawPayload: [8]byte{0, 0, 0, 0, 1, 0x2D, 0xCE, 0xD4}}
 	return must(layer2.BuildBurst(&c, 1, layer2.SyncSourceMS))
 }
 
@@ -236,7 +236,7 @@ func TestExpressVoiceThenData(t *testing.T) {
 	t.Parallel()
 	for _, stream := range []uint32{2, 1} {
 		for _, mode := range []bs.Mode{bs.ModeNetwork, bs.ModeRF} {
-			v := advNetCall(t, 3, 10, 1, 1, time.Second, 3191868)
+			v := advNetCall(t, 3, 10, 1, 1, time.Second, 3002068)
 			last := v[len(v)-1]
 			seq0 := (last.h.Seq + 1) & 0xFF
 			if stream != 1 {
@@ -271,7 +271,7 @@ func TestExpressDataThenVoice(t *testing.T) {
 	for _, mode := range []bs.Mode{bs.ModeNetwork, bs.ModeRF} {
 		d := netData(t, loadBin(t, "h-sms.bin"), enums.Slot1, 40, 2, time.Second)
 		last := d[len(d)-1]
-		v := advNetCall(t, 3, 0, 3, 1, last.at+20*time.Millisecond, 3191868)
+		v := advNetCall(t, 3, 0, 3, 1, last.at+20*time.Millisecond, 3002068)
 		wantD := append([]advPkt(nil), d...)
 		cfg := &bs.Config{Mode: mode, ColorCode: 1, CACH: true}
 		got := expressRun(t, newRepeater(t, cfg), append(append([]advPkt(nil), d...), v...), 6*time.Second, false)
@@ -286,7 +286,7 @@ func TestExpressDataThenVoice(t *testing.T) {
 
 func TestExpressDataDuringOtherVoice(t *testing.T) {
 	t.Parallel()
-	v := advNetCall(t, 5, 0, 1, 2, time.Second, 3191868)
+	v := advNetCall(t, 5, 0, 1, 2, time.Second, 3002068)
 	d := netData(t, []layer2.RawBurst{testCSBK(t)}, enums.Slot1, 0, 9, 2*time.Second)
 	cfg := &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1}
 	got := expressRun(t, newRepeater(t, cfg), append(append([]advPkt(nil), v...), d...), 6*time.Second, false)

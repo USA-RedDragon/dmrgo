@@ -79,9 +79,9 @@ func advRun(t *testing.T, r *bs.Repeater, in []advPkt, end time.Duration, tick f
 
 func TestJitterAdvRestartSeqAfterOtherPeer(t *testing.T) {
 	t.Parallel()
-	a := advNetCall(t, 3, 0, 0, 1, time.Second, 3191868)
-	b := advNetCall(t, 1, 0, 0, 2, a[len(a)-1].at+3*time.Second, 3191869)
-	c := advNetCall(t, 3, 0, 0, 1, b[len(b)-1].at+3*time.Second, 3191870)
+	a := advNetCall(t, 3, 0, 0, 1, time.Second, 3002068)
+	b := advNetCall(t, 1, 0, 0, 2, a[len(a)-1].at+3*time.Second, 3002069)
+	c := advNetCall(t, 3, 0, 0, 1, b[len(b)-1].at+3*time.Second, 3002070)
 	wc := advSlots(c)
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1})
 	in := append(append(a, b...), c...)
@@ -98,14 +98,14 @@ func TestJitterAdvRestartSeqAfterOtherPeer(t *testing.T) {
 			cur = o.Call.Source
 			starts[cur]++
 		case bs.OutputBurst:
-			if cur == 3191870 && o.Hint.Kind == layer2.KindVoice {
+			if cur == 3002070 && o.Hint.Kind == layer2.KindVoice {
 				cSlots += 3
 			}
 		case bs.OutputCallEnd, bs.OutputRejected, bs.OutputKey, bs.OutputDekey:
 		}
 	}
 	t.Logf("starts %v, third call relayed %d of %d voice slots, jitter %+v", starts, cSlots, len(wc), r.JitterStats(enums.Slot1))
-	if starts[3191870] != 1 || cSlots != len(wc) {
+	if starts[3002070] != 1 || cSlots != len(wc) {
 		t.Errorf("third call (peer 1 again, sequence restarted at 0, no stream ID as Hytera) lost: %d of %d slots", cSlots, len(wc))
 	}
 }
@@ -117,13 +117,13 @@ func TestJitterAdvBackToBackCalls(t *testing.T) {
 		tight bool
 	}{{bs.ModeNetwork, false}, {bs.ModeRF, false}, {bs.ModeNetwork, true}, {bs.ModeRF, true}} {
 		mode := tc.mode
-		a := advNetCall(t, 3, 10, 11, 1, time.Second, 3191868)
+		a := advNetCall(t, 3, 10, 11, 1, time.Second, 3002068)
 		last := a[len(a)-1].at
 		bAt := last + 30*time.Millisecond
 		if tc.tight {
 			bAt = a[len(a)-3].at + voice.DefaultJitter + 10*time.Millisecond
 		}
-		b := advNetCall(t, 3, 200, 22, 2, bAt, 3191869)
+		b := advNetCall(t, 3, 200, 22, 2, bAt, 3002069)
 		wa, wb := advSlots(a), advSlots(b)
 		for i := len(a) - 2; i < len(a); i++ {
 			if tc.tight {
@@ -153,7 +153,7 @@ func TestJitterAdvBackToBackCalls(t *testing.T) {
 			case bs.OutputBurst:
 				if o.Hint.Kind == layer2.KindVoice {
 					v := o.Burst.VoiceSlots()
-					if cur == 3191868 {
+					if cur == 3002068 {
 						aSlots = append(aSlots, v[:]...)
 					} else {
 						bSlots = append(bSlots, v[:]...)

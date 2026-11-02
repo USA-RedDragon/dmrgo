@@ -16,7 +16,7 @@ import (
 func controlPool(t testing.TB) []layer2.RawBurst {
 	t.Helper()
 	var p []layer2.RawBurst
-	for _, src := range []uint32{3120005, 3120006} {
+	for _, src := range []uint32{3002705, 3002706} {
 		lc, err := pdu.NewVoiceLC(true, 9, src, layer3.ServiceOptions{})
 		if err != nil {
 			t.Fatal(err)
@@ -96,7 +96,7 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in *controlInput) {
 		out = out[:0]
 		switch op & 0x0F {
 		case 0:
-			_ = tx.Start(now, voice.Call{Group: true, Target: 9, Source: 3120005}, &voice.CallOptions{InCall: arg&0x10 != 0, HangTime: arg&0x20 != 0})
+			_ = tx.Start(now, voice.Call{Group: true, Target: 9, Source: 3002705}, &voice.CallOptions{InCall: arg&0x10 != 0, HangTime: arg&0x20 != 0})
 		case 1:
 			_ = tx.VocoderSlot(vocoder.AMBESilenceSlot())
 		case 2:

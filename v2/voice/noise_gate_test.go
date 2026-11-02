@@ -46,7 +46,7 @@ func TestRegression_NoiseAfterTerminator(t *testing.T) {
 		events := make([]voice.Event, 0, 64*50)
 		at := time.Duration(0)
 		for range 50 {
-			call := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+			call := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 			for _, b := range call {
 				events = append(events, feed(t, rx, []input{{at: at, raw: b}}, -1)...)
 				at += slot
@@ -66,7 +66,7 @@ func TestRegression_NoiseAfterTerminator(t *testing.T) {
 func TestRegression_OtherCodecMissDoesNotCascade(t *testing.T) {
 	t.Parallel()
 
-	lc := groupLC(t, 91, 3191868)
+	lc := groupLC(t, 91, 3002068)
 	lc.FID = 0xC2
 	vt, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1})
 	if err != nil {
@@ -99,7 +99,7 @@ func TestRegression_NoiseBurstInCallIsCounted(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewPCG(5, 6))
-	call := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	in := timed(call, 0, layer2.Hint{})
 	in[4].raw = noiseBurst(r)
 	events := feed(t, newReceiver(t, nil), in, -1)
@@ -116,7 +116,7 @@ func TestRegression_NoiseAfterCarrierDrop(t *testing.T) {
 	cc := enums.ColorCode(1)
 	for _, cfg := range []*voice.ReceiverConfig{nil, {ColorCode: &cc}} {
 		r := rand.New(rand.NewPCG(3, 4))
-		call := transmission(t, groupLC(t, 91, 3191868), 3, nil)
+		call := transmission(t, groupLC(t, 91, 3002068), 3, nil)
 		call = call[:len(call)-1]
 		in := timed(call, 0, layer2.Hint{})
 		start := len(in)
@@ -152,7 +152,7 @@ func TestRegression_WeakCallKeepsVoice(t *testing.T) {
 		r := rand.New(rand.NewPCG(11, 12))
 		have, got := 0, 0
 		for range 40 {
-			vt, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(t, 91, 3191868), ColorCode: 1})
+			vt, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(t, 91, 3002068), ColorCode: 1})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -219,9 +219,9 @@ func TestRegression_SyncCheckRejectsStructuredNoise(t *testing.T) {
 	t.Parallel()
 
 	cc := enums.ColorCode(1)
-	ours := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	ours := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	ours = ours[:len(ours)-1]
-	other := transmission(t, groupLC(t, 92, 3191869), 3, func(o *layer2.VoiceTransmitterOptions) { o.ColorCode = 2 })
+	other := transmission(t, groupLC(t, 92, 3002069), 3, func(o *layer2.VoiceTransmitterOptions) { o.ColorCode = 2 })
 	var zero, ones layer2.RawBurst
 	for i := range ones {
 		ones[i] = 0xFF
@@ -250,7 +250,7 @@ func TestRegression_NoiseAfterLostCall(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewPCG(13, 14))
-	call := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	call = call[:len(call)-1]
 	n := 0
 	for range 50 {
@@ -270,7 +270,7 @@ func TestRegression_NoiseAfterLostCall(t *testing.T) {
 func TestRegression_DecodedBadFECDoesNotPanic(t *testing.T) {
 	t.Parallel()
 
-	call := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	rx := newReceiver(t, nil)
 	for i, raw := range call {
 		b := layer2.NewBurst()
@@ -285,7 +285,7 @@ func TestRegression_RepeatedNoiseBurstEndsCall(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewPCG(15, 16))
-	call := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	call = call[:len(call)-1]
 	held := 0
 	for range 1000 {
@@ -307,7 +307,7 @@ func TestRegression_RepeatedNoiseBurstEndsCall(t *testing.T) {
 func TestRegression_StrongBurstsNotDelayed(t *testing.T) {
 	t.Parallel()
 
-	call := transmission(t, groupLC(t, 91, 3191868), 3, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 3, nil)
 	rx := newReceiver(t, nil)
 	for i, raw := range call[1 : len(call)-1] {
 		events := rx.Burst(time.Duration(i+1)*slot, &raw, layer2.Hint{}, nil)
@@ -326,7 +326,7 @@ func TestRegression_HeldNoiseExpires(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewPCG(17, 18))
-	call := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	term := call[len(call)-1]
 	n := 0
 	for range 500 {
@@ -343,7 +343,7 @@ func TestRegression_NoiseBeforeLateEntry(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewPCG(19, 20))
-	call := transmission(t, groupLC(t, 91, 3191868), 4, nil)
+	call := transmission(t, groupLC(t, 91, 3002068), 4, nil)
 	leaked := 0
 	for range 200 {
 		noise := make([]layer2.RawBurst, 0, 40)

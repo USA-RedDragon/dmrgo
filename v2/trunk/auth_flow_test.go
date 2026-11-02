@@ -116,19 +116,19 @@ func TestTSCC_Authentication(t *testing.T) {
 	cfg.Authenticate, cfg.Seed, cfg.AnswerTimeout = true, 9, time.Second
 	good := [trunkauth.KeyLen]byte{0xA5, 2}
 	s := newSim(t, cfg,
-		&trunk.MSConfig{Address: 3120001, Seed: 1},
-		&trunk.MSConfig{Address: 3120002, Seed: 2},
-		&trunk.MSConfig{Address: 3120003, Seed: 3},
-		&trunk.MSConfig{Address: 3120004, Seed: 4, DeniedLife: time.Hour},
-		&trunk.MSConfig{Address: 3120005, Seed: 5, RegTimeout: 10 * time.Second})
-	s.keys = map[uint32]simKey{3120001: {good, 0}, 3120002: {good, 0x0A0B0C}, 3120004: {good, 0}}
+		&trunk.MSConfig{Address: 3002701, Seed: 1},
+		&trunk.MSConfig{Address: 3002702, Seed: 2},
+		&trunk.MSConfig{Address: 3002703, Seed: 3},
+		&trunk.MSConfig{Address: 3002704, Seed: 4, DeniedLife: time.Hour},
+		&trunk.MSConfig{Address: 3002705, Seed: 5, RegTimeout: 10 * time.Second})
+	s.keys = map[uint32]simKey{3002701: {good, 0}, 3002702: {good, 0x0A0B0C}, 3002704: {good, 0}}
 	s.ms[0].key = &simKey{good, 0}
 	s.ms[1].key = &simKey{good, 0x0A0B0C}
 	s.ms[2].key = &simKey{good, 0}
 	s.ms[3].key = &simKey{[trunkauth.KeyLen]byte{0xA5, 3}, 0}
 
 	s.until(5*time.Second, func() bool { return s.ms[0].ms.Registered() && s.ms[1].ms.Registered() })
-	for _, addr := range []uint32{3120001, 3120002} {
+	for _, addr := range []uint32{3002701, 3002702} {
 		if !s.tscc.Registered(addr) {
 			t.Errorf("TSCC has no registration of %d", addr)
 		}
@@ -158,13 +158,13 @@ func TestTSCC_Authentication(t *testing.T) {
 		default:
 		}
 	}
-	want := map[uint32]enums.AckReason{3120003: enums.AckReasonRegDenied, 3120004: enums.AckReasonRegDenied, 3120005: enums.AckReasonRegRefused}
+	want := map[uint32]enums.AckReason{3002703: enums.AckReasonRegDenied, 3002704: enums.AckReasonRegDenied, 3002705: enums.AckReasonRegRefused}
 	for addr, r := range want {
 		if refused[addr] != r || s.tscc.Registered(addr) {
 			t.Errorf("MS %d: refused %v, want %v; registered %v", addr, refused[addr], r, s.tscc.Registered(addr))
 		}
 	}
-	for _, addr := range []uint32{3120001, 3120002, 3120003, 3120004, 3120005} {
+	for _, addr := range []uint32{3002701, 3002702, 3002703, 3002704, 3002705} {
 		if challenges[addr] == 0 {
 			t.Errorf("MS %d got no challenge", addr)
 		}
@@ -187,10 +187,10 @@ func TestTSCC_AuthPSNPerMS(t *testing.T) {
 	key := [trunkauth.KeyLen]byte{0x5A, 7}
 	const psn = 0x123456
 	s := newSim(t, cfg,
-		&trunk.MSConfig{Address: 3120001, Seed: 1},
-		&trunk.MSConfig{Address: 3120002, Seed: 2, DeniedLife: time.Hour},
-		&trunk.MSConfig{Address: 3120003, Seed: 3, DeniedLife: time.Hour})
-	s.keys = map[uint32]simKey{3120001: {key, psn}, 3120002: {key, 0}, 3120003: {key, psn}}
+		&trunk.MSConfig{Address: 3002701, Seed: 1},
+		&trunk.MSConfig{Address: 3002702, Seed: 2, DeniedLife: time.Hour},
+		&trunk.MSConfig{Address: 3002703, Seed: 3, DeniedLife: time.Hour})
+	s.keys = map[uint32]simKey{3002701: {key, psn}, 3002702: {key, 0}, 3002703: {key, psn}}
 	s.ms[0].key = &simKey{key, psn}
 	s.ms[1].key = &simKey{key, psn}
 	s.ms[2].key = &simKey{key, 0}
@@ -200,12 +200,12 @@ func TestTSCC_AuthPSNPerMS(t *testing.T) {
 		return s.ms[0].ms.Registered() && d1 && d2
 	})
 	for i, m := range s.ms[1:] {
-		addr := uint32(3120002 + i)
+		addr := uint32(3002702 + i)
 		if o, _ := has(m.log, trunk.OutputRefused); o.Ack != enums.AckReasonRegDenied || m.ms.Registered() || s.tscc.Registered(addr) {
 			t.Errorf("MS %d with another PSN than the TSCC: %+v, registered %v", addr, o, m.ms.Registered())
 		}
 	}
-	if !s.tscc.Registered(3120001) {
+	if !s.tscc.Registered(3002701) {
 		t.Error("the TSCC did not register the MS with its PSN")
 	}
 }

@@ -19,7 +19,7 @@ func TestMessageSetRawDataSends(t *testing.T) {
 		var m data.Message
 		m.Payload = payload
 		if err := m.SetRawData(pdu.RawDataHeader{
-			ResponseRequested: confirmed, SAP: enums.SAPShortData, LLIDDestination: 3120002, LLIDSource: 3120001,
+			ResponseRequested: confirmed, SAP: enums.SAPShortData, LLIDDestination: 3002702, LLIDSource: 3002701,
 			SourcePort: 3, DestinationPort: 5,
 		}); err != nil {
 			t.Fatal(err)

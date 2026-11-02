@@ -42,17 +42,17 @@ func newTSCCUDTPool(t testing.TB) burstPool {
 	t.Helper()
 	rnd := func(kind enums.ServiceKind, opts, rsvd uint8, target uint32) layer2.RawBurst {
 		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
-			ServiceOptions: opts, Reserved: rsvd, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}))
+			ServiceOptions: opts, Reserved: rsvd, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3002701}))
 	}
 	ackU := func(r enums.AckReason, info uint32) layer2.RawBurst {
 		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
-			ReasonCode: byte(r), TargetAddress: 3120001, AdditionalInfo: info}))
+			ReasonCode: byte(r), TargetAddress: 3002701, AdditionalInfo: info}))
 	}
 	var text, addrs trunk.Appended
 	if err := text.SetText(enums.UDTISO7, []byte("fuzz")); err != nil {
 		t.Fatal(err)
 	}
-	if err := addrs.SetAddresses(false, []uint32{3120003}); err != nil {
+	if err := addrs.SetAddresses(false, []uint32{3002703}); err != nil {
 		t.Fatal(err)
 	}
 	usbd, err := layer2.BuildBurst(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP}, testCC, layer2.SyncSourceMS)
@@ -60,18 +60,18 @@ func newTSCCUDTPool(t testing.TB) burstPool {
 		t.Fatal(err)
 	}
 	pool := burstPool{
-		rnd(enums.ServiceKindIndividualShortData, 0, 0, 3120002), rnd(enums.ServiceKindTalkgroupShortData, 0, 1, 9),
-		rnd(enums.ServiceKindShortDataPolling, 0b0101, 0, 3120002), rnd(enums.ServiceKindCallDiversion, 0b0101000, 0, constants.GatewayMSI),
+		rnd(enums.ServiceKindIndividualShortData, 0, 0, 3002702), rnd(enums.ServiceKindTalkgroupShortData, 0, 1, 9),
+		rnd(enums.ServiceKindShortDataPolling, 0b0101, 0, 3002702), rnd(enums.ServiceKindCallDiversion, 0b0101000, 0, constants.GatewayMSI),
 		rnd(enums.ServiceKindCallDiversion, 0b0001000, 0, constants.GatewayTSI), rnd(enums.ServiceKindSupplementary, 0, 1<<2, constants.GatewayDGNAI),
-		rnd(enums.ServiceKindDuplexVoice, 0, 0, 3120002), rnd(enums.ServiceKindDuplexPacketData, 0, 0, 3120002),
-		rnd(enums.ServiceKindIndividualVoice, 0, 0b0010, 3120002), rnd(enums.ServiceKindIndividualShortData, 0, 0, constants.GatewayPSTNI),
-		ackU(enums.AckReasonMSAccepted, 3120002), ackU(enums.AckReasonMSNotSupported, 3120002), ackU(enums.AckReasonMSAccepted, 3120001), usbd,
-		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{TargetAddress: 3120002, SourceAddress: 3120001})),
+		rnd(enums.ServiceKindDuplexVoice, 0, 0, 3002702), rnd(enums.ServiceKindDuplexPacketData, 0, 0, 3002702),
+		rnd(enums.ServiceKindIndividualVoice, 0, 0b0010, 3002702), rnd(enums.ServiceKindIndividualShortData, 0, 0, constants.GatewayPSTNI),
+		ackU(enums.AckReasonMSAccepted, 3002702), ackU(enums.AckReasonMSNotSupported, 3002702), ackU(enums.AckReasonMSAccepted, 3002701), usbd,
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{TargetAddress: 3002702, SourceAddress: 3002701})),
 	}
-	pool = append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3120002, LLIDSource: 3120001}, &text)...)
-	pool = append(pool, upload(t, pdu.UDTHeader{OptionFlag: true, LLIDDestination: constants.GatewayMSI, LLIDSource: 3120001}, &addrs)...)
-	pool = append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3120002, LLIDSource: 3120001, Opcode: pdu.UDTOpcodeDGNAInboundHeader}, &addrs)...)
-	return append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3120001, LLIDSource: 3120002}, &text)...)
+	pool = append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3002702, LLIDSource: 3002701}, &text)...)
+	pool = append(pool, upload(t, pdu.UDTHeader{OptionFlag: true, LLIDDestination: constants.GatewayMSI, LLIDSource: 3002701}, &addrs)...)
+	pool = append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3002702, LLIDSource: 3002701, Opcode: pdu.UDTOpcodeDGNAInboundHeader}, &addrs)...)
+	return append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3002701, LLIDSource: 3002702}, &text)...)
 }
 
 func runTSCCUDT(t *testing.T, pool burstPool, in opSeed) {
@@ -110,15 +110,15 @@ func runTSCCUDT(t *testing.T, pool burstPool, in opSeed) {
 		case 3:
 			switch arg % 4 {
 			case 0:
-				_ = ts.SendShortData(now, arg&4 != 0, 3120002, &a)
+				_ = ts.SendShortData(now, arg&4 != 0, 3002702, &a)
 			case 1:
-				_ = ts.AssignGroups(now, 3120002, &a)
+				_ = ts.AssignGroups(now, 3002702, &a)
 			case 2:
-				_ = ts.PollShortData(now, 3120002, 1+int(arg>>4)%4)
+				_ = ts.PollShortData(now, 3002702, 1+int(arg>>4)%4)
 			case 3:
-				_ = ts.PollUSBD(now, 3120002, pdu.ServiceTypeLIP, arg>>4&3)
+				_ = ts.PollUSBD(now, 3002702, pdu.ServiceTypeLIP, arg>>4&3)
 			}
-			_, _, _ = ts.Diverted(3120001)
+			_, _, _ = ts.Diverted(3002701)
 			out = out[:0]
 		}
 		if len(out) > trunk.MaxTSCCOutputs || cap(out) != trunk.MaxTSCCOutputs {

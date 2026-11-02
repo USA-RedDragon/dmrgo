@@ -11,7 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
 
-const cancelCaller, cancelCalled = 3120001, 3120002
+const cancelCaller, cancelCalled = 3002701, 3002702
 
 type cancelProbe struct {
 	t      *testing.T
@@ -205,7 +205,7 @@ func cancelRig(t *testing.T) (*msRig, layer2.RawBurst) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	a := aloha(t)
 	r.feed(a, &idle)
-	if err := r.ms.Call(r.now, false, 3120002, layer3.VoiceServiceOptions{}); err != nil {
+	if err := r.ms.Call(r.now, false, 3002702, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	return r, a
@@ -222,7 +222,7 @@ func (r *msRig) cancelRandom(a layer2.RawBurst) {
 			r.t.Fatalf("outputs %v before the Cancel Call C_RAND", kinds(out))
 		}
 		ra, ok := sent(r.t, &out[0]).AsRandomAccess()
-		if !ok || ra.ServiceKind != uint8(enums.ServiceKindCancelCall) || ra.TargetAddress != 3120002 || ra.SourceAddress != msAddr {
+		if !ok || ra.ServiceKind != uint8(enums.ServiceKindCancelCall) || ra.TargetAddress != 3002702 || ra.SourceAddress != msAddr {
 			r.t.Fatalf("C_RAND %v %+v", ok, ra)
 		}
 		return
@@ -281,7 +281,7 @@ func TestMS_CancelCallRefused(t *testing.T) {
 		wantKinds(t, "after Call_Cancel_Refused", r.feed(a, &idle))
 	}
 	pv := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 8, TargetAddress: 3120002, SourceAddress: msAddr}), testCC)
+		PhysicalChannel: 8, TargetAddress: 3002702, SourceAddress: msAddr}), testCC)
 	wantKinds(t, "PV_GRANT", r.feed(pv, &idle), trunk.OutputGrant, trunk.OutputTune)
 	if r.ms.Busy() {
 		t.Error("busy on the payload channel")
@@ -290,7 +290,7 @@ func TestMS_CancelCallRefused(t *testing.T) {
 
 func TestMS_CancelledCall(t *testing.T) {
 	t.Parallel()
-	const caller = 3120002
+	const caller = 3002702
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	r.feed(aloha(t), &idle)
 	ahoy := func(kind enums.ServiceKind) layer2.RawBurst {
@@ -360,7 +360,7 @@ func TestTSCC_CancelRepeatedDuplexCall(t *testing.T) {
 
 func TestTSCC_CancelAckIsNotAnAnswerForAnotherCaller(t *testing.T) {
 	t.Parallel()
-	const other = 3120003
+	const other = 3002703
 	p := newCancelProbe(t)
 	p.random(enums.ServiceKindIndividualVoice)
 	p.inbound(func(c *pdu.CSBK) error {
@@ -385,7 +385,7 @@ func TestTSCC_CancelAckIsNotAnAnswerForAnotherCaller(t *testing.T) {
 
 func TestTSCC_AnswerGoesToItsCaller(t *testing.T) {
 	t.Parallel()
-	const other = 3120003
+	const other = 3002703
 	p := newCancelProbe(t)
 	p.random(enums.ServiceKindIndividualVoice)
 	p.inbound(func(c *pdu.CSBK) error {

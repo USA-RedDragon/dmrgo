@@ -21,7 +21,7 @@ type jpkt struct {
 
 func netCall(t *testing.T, superframes int, seq0 uint16, bits uint8, stream uint32) []jpkt {
 	t.Helper()
-	in := call(t, 1, 9, 3191868, superframes, enums.Slot1, bs.Source{Peer: 1}, time.Second)
+	in := call(t, 1, 9, 3002068, superframes, enums.Slot1, bs.Source{Peer: 1}, time.Second)
 	out := make([]jpkt, len(in))
 	for i := range in {
 		out[i] = jpkt{at: in[i].at, raw: in[i].raw, h: layer2.Hint{Slot: enums.Slot1, Seq: seq0 + uint16(i), HasSeq: true, SeqBits: bits, Stream: stream, HasStream: stream != 0}}
@@ -275,7 +275,7 @@ func TestJitterBothSlots(t *testing.T) {
 		for i := range b {
 			b[i].at += 25 * time.Millisecond
 			b[i].h.Slot = enums.Slot2
-			b[i].raw = call(t, 1, 9, 3191868, 9, enums.Slot2, bs.Source{Peer: 1}, 0)[i].raw
+			b[i].raw = call(t, 1, 9, 3002068, 9, enums.Slot2, bs.Source{Peer: 1}, 0)[i].raw
 		}
 		in := append(append([]jpkt(nil), a...), b...)
 		wantA, wantB := sentSlots(a), sentSlots(b)

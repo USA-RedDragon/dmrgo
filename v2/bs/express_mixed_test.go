@@ -11,7 +11,7 @@ import (
 func TestExpressCSBKInVoiceStream(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []bs.Mode{bs.ModeNetwork, bs.ModeRF} {
-		v := advNetCall(t, 3, 0, 0, 1, time.Second, 3191868)
+		v := advNetCall(t, 3, 0, 0, 1, time.Second, 3002068)
 		c := advPkt{at: v[9].at + 10*time.Millisecond, raw: testCSBK(t), peer: 1, h: v[9].h}
 		for i := 10; i < len(v); i++ {
 			v[i].h.Seq = (v[i].h.Seq + 1) & 0xFF
@@ -28,8 +28,8 @@ func TestExpressCSBKInVoiceStream(t *testing.T) {
 
 func TestExpressSharedCounter(t *testing.T) {
 	t.Parallel()
-	v := advNetCall(t, 3, 0, 1, 1, time.Second, 3191868)
-	raws := call(t, 1, 9, 3191868, 3, enums.Slot2, bs.Source{Peer: 1}, 0)
+	v := advNetCall(t, 3, 0, 1, 1, time.Second, 3002068)
+	raws := call(t, 1, 9, 3002068, 3, enums.Slot2, bs.Source{Peer: 1}, 0)
 	for i := range v {
 		v[i].h.Slot = enums.Slot2
 		v[i].raw = raws[i].raw

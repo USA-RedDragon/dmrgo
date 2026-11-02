@@ -33,7 +33,7 @@ func tinyCallerOps(t *testing.T) (stored, local []tinyOp) {
 		builder: packet.NewBuilder(4),
 		asm:     packet.NewAssembler(4),
 		bursts:  make([]layer2.RawBurst, 0, 8),
-		lc:      tinyOK(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{})),
+		lc:      tinyOK(pdu.NewVoiceLC(true, 91, 3002068, layer3.ServiceOptions{})),
 	}
 	s.lc.BurstDataType = enums.DataTypeVoiceLCHeader
 	s.opts = layer2.VoiceTransmitterOptions{LC: s.lc, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()}

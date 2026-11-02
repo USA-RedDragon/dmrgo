@@ -39,7 +39,7 @@ func TestCorrectingPDUsReportCorrectionsInFEC(t *testing.T) {
 	tactBits := must(tact.Encode())
 	tactBits[0] ^= 0x02
 	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
-	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3120001}); err != nil {
+	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3002701}); err != nil {
 		t.Fatal(err)
 	}
 	lcBits := must(lc.Encode())

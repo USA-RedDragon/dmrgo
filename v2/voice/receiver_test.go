@@ -15,7 +15,7 @@ func TestReceiver_Call(t *testing.T) {
 	t.Parallel()
 
 	rx := newReceiver(t, nil)
-	in := timed(transmission(t, groupLC(t, 91, 3191868), 3, nil), 0, layer2.Hint{})
+	in := timed(transmission(t, groupLC(t, 91, 3002068), 3, nil), 0, layer2.Hint{})
 	got := feed(t, rx, in, -1)
 	if k := kinds(got); k != "S"+repeat("V", 18)+"E" {
 		t.Fatalf("events %s", k)
@@ -25,7 +25,7 @@ func TestReceiver_Call(t *testing.T) {
 	}
 	start, end := got[0], got[len(got)-1]
 	c := start.Call
-	if !c.Group || c.Target != 91 || c.Source != 3191868 || c.Origin != voice.OriginHeader || c.LC == [9]byte{} {
+	if !c.Group || c.Target != 91 || c.Source != 3002068 || c.Origin != voice.OriginHeader || c.LC == [9]byte{} {
 		t.Errorf("call %+v", c)
 	}
 	if end.Reason != voice.EndTerminator || end.Stats.Bursts != 18 || end.Stats.Lost != 0 || end.Stats.Duration != 19*slot ||
@@ -67,7 +67,7 @@ func repeat(s string, n int) string {
 func TestReceiver_LateEntry(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 9, 3191868), 3, nil)
+	bursts := transmission(t, groupLC(t, 9, 3002068), 3, nil)
 	rx := newReceiver(t, nil)
 	got := feed(t, rx, timed(bursts[4:], 0, layer2.Hint{}), -1)
 	if k := kinds(got); k != repeat("V", 7)+"SV"+repeat("V", 7)+"E" {

@@ -534,7 +534,7 @@ func boolInt(b bool) int {
 
 func newMSStream(t testing.TB, u txUnit, n int) (*testStream, []keying) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Wakeups: 1, Superframes: n}
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3002068, Dest: 9, Group: true, Wakeups: 1, Superframes: n}
 	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

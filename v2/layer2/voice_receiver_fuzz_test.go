@@ -86,9 +86,9 @@ func FuzzVoiceReceiver(f *testing.F) {
 }
 
 func voiceReceiverSeeds() []voiceReceiverSeed {
-	call := voiceReceiverSeed{flags: 0x01, cc: 0x01, so: 0x00, target: 0x000C1C, source: 0x30B43C, slots: 36, step: 7}
+	call := voiceReceiverSeed{flags: 0x01, cc: 0x01, so: 0x00, target: 0x000C1C, source: 0x2DCED4, slots: 36, step: 7}
 	alias := call
-	alias.alias = []byte("KI5VMF")
+	alias.alias = []byte("N0CALL")
 	lossy := alias
 	lossy.actions = []byte{0x45, 0x7F, 0, 0x80, 0, 0x41, 0x52, 0, 0, 0xC0, 0, 0x63, 0, 0, 0x80, 0x80, 0, 0x4C, 0, 0}
 	lossy.junk = make([]byte, 33)

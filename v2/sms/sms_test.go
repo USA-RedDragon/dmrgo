@@ -236,7 +236,7 @@ func TestBCDShortData(t *testing.T) {
 		{"1234560000000000", "1234560000000000ff"},
 		{"0000", "0000"},
 	} {
-		in := sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBCD, Source: 3191868, Destination: 3140598, Body: []byte(tt.digits)}
+		in := sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBCD, Source: 3002068, Destination: 3002198, Body: []byte(tt.digits)}
 		var h sms.Header
 		out, err := sms.AppendPacket(nil, &in, &h)
 		dd, ok := h.Data.AsDefinedData()

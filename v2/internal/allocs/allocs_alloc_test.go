@@ -136,7 +136,7 @@ func TestAllocsVoiceSuperframe(t *testing.T) {
 		t.Fatalf("parrot capture has %d frames", len(frames))
 	}
 	frames = frames[:3*layer2.VoiceBurstsPerSuperframe]
-	lc, err := pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 91, 3002068, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestAllocsVoiceSuperframe(t *testing.T) {
 }
 
 func TestAllocsVoiceTransmitterReset(t *testing.T) {
-	lc, err := pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 91, 3002068, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func TestAllocsVoiceTransmitter(t *testing.T) {
 		t.Fatal(err)
 	}
 	gps := pdu.FLCGPSInfo{Latitude: 41.75}
-	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "KI5VMF", GPS: &gps}
+	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "N0CALL", GPS: &gps}
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	var now time.Duration
 	drain := func() {
@@ -218,7 +218,7 @@ func TestAllocsVoiceTransmitter(t *testing.T) {
 		}
 	}
 	assertZero(t, "source", func() {
-		if err := tx.Start(now, voice.Call{Group: true, Target: 91, Source: 3191868}, opts); err != nil {
+		if err := tx.Start(now, voice.Call{Group: true, Target: 91, Source: 3002068}, opts); err != nil {
 			t.Fatal(err)
 		}
 		for range 3 * 12 {

@@ -17,7 +17,7 @@ func TestOutputCall(t *testing.T) {
 		if err := s.Send(0, m); err != nil {
 			t.Fatal(err)
 		}
-		want := layer2.Call{Group: group, Target: 9, Source: 3120001}
+		want := layer2.Call{Group: group, Target: 9, Source: 3002701}
 		bursts, done := 0, 0
 		var out []data.Output
 		for range 100 {

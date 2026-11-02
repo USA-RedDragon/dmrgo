@@ -57,9 +57,9 @@ func TestLoopbackT3Site(t *testing.T) {
 	t.Run("traffic", func(t *testing.T) {
 		t.Parallel()
 		tr := siteLoop(t, built, iq, rate, built.Carriers[0].OffsetHz, built.Carriers[0].Slots)
-		tr.expect(t, "lc", "ts=2 header flco=0 fid=0x00 group src=3191868 dst=9990", 1)
-		tr.expect(t, "lc", "ts=2 terminator flco=0 fid=0x00 group src=3191868 dst=9990", 1)
-		tr.expect(t, "elc", "ts=2 flco=0 fid=0x00 group src=3191868 dst=9990", cfg.Superframes)
+		tr.expect(t, "lc", "ts=2 header flco=0 fid=0x00 group src=3002068 dst=9990", 1)
+		tr.expect(t, "lc", "ts=2 terminator flco=0 fid=0x00 group src=3002068 dst=9990", 1)
+		tr.expect(t, "elc", "ts=2 flco=0 fid=0x00 group src=3002068 dst=9990", cfg.Superframes)
 		checkAMBE(t, tr, cfg.Superframes*18, false)
 	})
 }
@@ -88,10 +88,10 @@ func siteControl(t *testing.T, built rftx.Built, iq []byte, rate float64) {
 	want := []string{
 		"bcap ch=1 rx=446006250 tx=441006250 bad=false",
 		"bcap ch=2 rx=446031250 tx=441031250 bad=false",
-		"grant ch=2 ts2=true late=false 3191868->9990",
-		"mbc grant ch=0xfff ts2=true 3191868->9990",
+		"grant ch=2 ts2=true late=false 3002068->9990",
+		"mbc grant ch=0xfff ts2=true 3002068->9990",
 		"cgap ch=2 rx=446031250 tx=441031250 bad=false",
-		"grant ch=2 ts2=true late=true 3191868->9990",
+		"grant ch=2 ts2=true late=true 3002068->9990",
 	}
 	all := strings.Join(got, "\n")
 	for _, w := range want {

@@ -16,9 +16,9 @@ import (
 
 func newLink(t *testing.T, d dmrd.Dialect, options string, peerPass, masterPass string) *link {
 	t.Helper()
-	cfg := &dmrdsession.PeerConfig{Dialect: d, ID: 3129100, Password: []byte(peerPass), Config: mmdvmConfig(3129100), Options: []byte(options)}
+	cfg := &dmrdsession.PeerConfig{Dialect: d, ID: 3002900, Password: []byte(peerPass), Config: mmdvmConfig(3002900), Options: []byte(options)}
 	if d == dmrd.DialectHBRP {
-		cfg.Config = hbrpConfig(3129100)
+		cfg.Config = hbrpConfig(3002900)
 	}
 	p, err := dmrdsession.NewPeer(cfg)
 	if err != nil {
@@ -61,7 +61,7 @@ func TestLoopback(t *testing.T) {
 			want = []dmrdsession.OutputKind{dmrdsession.OutputLogin, dmrdsession.OutputConfig, dmrdsession.OutputUp, dmrdsession.OutputOptions, dmrdsession.OutputUp}
 		}
 		sameKinds(t, eventKinds(l), want...)
-		if l.peer.State() != dmrdsession.StateRunning || l.master.State() != dmrdsession.StateRunning || l.master.ID() != 3129100 {
+		if l.peer.State() != dmrdsession.StateRunning || l.master.State() != dmrdsession.StateRunning || l.master.ID() != 3002900 {
 			t.Fatalf("%v: states %v %v", tc.d, l.peer.State(), l.master.State())
 		}
 		if o, _ := find(l.events, dmrdsession.OutputOptions); string(o.Packet) != tc.options {
@@ -74,7 +74,7 @@ func TestLoopback(t *testing.T) {
 		}
 		l.events = nil
 		var d dmrd.Data
-		d.Repeater, d.Slot, d.Source, d.Destination = 3129100, 1, 3191868, 91
+		d.Repeater, d.Slot, d.Source, d.Destination = 3002900, 1, 3002068, 91
 		pkt, _ := d.AppendBinary(nil)
 		if o := l.master.Packet(l.now, pkt, nil); len(o) != 1 || o[0].Kind != dmrdsession.OutputData || o[0].Command != dmrd.CommandDMRD {
 			t.Fatalf("master data %v", kinds(o))
@@ -622,7 +622,7 @@ func TestPeerRepeatedChallenge(t *testing.T) {
 func TestPeerRepeatedSaltMMDVM(t *testing.T) {
 	t.Parallel()
 
-	p, _ := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 3129100, Password: []byte("passw0rd"), Config: mmdvmConfig(3129100), Options: []byte("TS2=91;")})
+	p, _ := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 3002900, Password: []byte("passw0rd"), Config: mmdvmConfig(3002900), Options: []byte("TS2=91;")})
 	salt := []byte("RPTACK\xfc\xb1\x7c\x08")
 	ack := []byte("RPTACK\x00\x2f\xbf\x0c")
 	p.Tick(0, nil)

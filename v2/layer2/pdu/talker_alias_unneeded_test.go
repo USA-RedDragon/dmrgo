@@ -22,7 +22,7 @@ func blockLC(t *testing.T, flco enums.FLCO, fill byte) pdu.FullLinkControl {
 // ETSI TS 102 361-2 clause 5.4.3
 func TestTalkerAliasAssembler_UnneededBlocksReportOnce(t *testing.T) {
 	t.Parallel()
-	lcs, err := pdu.EncodeTalkerAlias("KN4OQW", layer3.TalkerAliasISOEightBit)
+	lcs, err := pdu.EncodeTalkerAlias("N2CALL", layer3.TalkerAliasISOEightBit)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestTalkerAliasAssembler_UnneededBlocksReportOnce(t *testing.T) {
 		}
 		if ok {
 			reports++
-			if alias != "KN4OQW" {
+			if alias != "N2CALL" {
 				t.Errorf("LC %d: alias %q", i, alias)
 			}
 		}
@@ -59,11 +59,11 @@ func TestTalkerAliasAssembler_UnneededBlocksReportOnce(t *testing.T) {
 
 func TestTalkerAliasAssembler_NeededBlockChangeReports(t *testing.T) {
 	t.Parallel()
-	first, err := pdu.EncodeTalkerAlias("KN4OQW Clint", layer3.TalkerAliasISOEightBit)
+	first, err := pdu.EncodeTalkerAlias("N2CALL Clint", layer3.TalkerAliasISOEightBit)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := pdu.EncodeTalkerAlias("KN4OQW Chris", layer3.TalkerAliasISOEightBit)
+	second, err := pdu.EncodeTalkerAlias("N2CALL Chris", layer3.TalkerAliasISOEightBit)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,14 +78,14 @@ func TestTalkerAliasAssembler_NeededBlockChangeReports(t *testing.T) {
 			got = append(got, alias)
 		}
 	}
-	if len(got) != 2 || got[0] != "KN4OQW Clint" || got[1] != "KN4OQW Chris" {
-		t.Errorf("reports %q, want KN4OQW Clint then KN4OQW Chris", got)
+	if len(got) != 2 || got[0] != "N2CALL Clint" || got[1] != "N2CALL Chris" {
+		t.Errorf("reports %q, want N2CALL Clint then N2CALL Chris", got)
 	}
 }
 
 func TestTalkerAliasAssembler_BlockBeforeHeaderKept(t *testing.T) {
 	t.Parallel()
-	lcs, err := pdu.EncodeTalkerAlias("KN4OQW Clint", layer3.TalkerAliasISOEightBit)
+	lcs, err := pdu.EncodeTalkerAlias("N2CALL Clint", layer3.TalkerAliasISOEightBit)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestTalkerAliasAssembler_BlockBeforeHeaderKept(t *testing.T) {
 		}
 		if ok {
 			reports++
-			if alias != "KN4OQW Clint" {
+			if alias != "N2CALL Clint" {
 				t.Errorf("alias %q", alias)
 			}
 		}

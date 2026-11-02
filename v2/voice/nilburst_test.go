@@ -21,7 +21,7 @@ func TestReceiver_NilBurst(t *testing.T) {
 		{layer2.Hint{End: layer2.EndStrong}, voice.EndTransport},
 	} {
 		rx := newReceiver(t, nil)
-		in := timed(transmission(t, groupLC(t, 91, 3191868), 2, nil), 0, layer2.Hint{})
+		in := timed(transmission(t, groupLC(t, 91, 3002068), 2, nil), 0, layer2.Hint{})
 		in = in[:len(in)-1]
 		feed(t, rx, in, -1)
 		at := in[len(in)-1].at + slot

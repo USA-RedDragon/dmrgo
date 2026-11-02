@@ -31,7 +31,7 @@ const streamLead = 6
 
 func newTestStream(t testing.TB, n, tail int) *testStream {
 	t.Helper()
-	return newStreamOf(t, rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Superframes: n, BSSourced: true, Slot: 1}, tail)
+	return newStreamOf(t, rftx.SeqConfig{ColorCode: 7, Source: 3002068, Dest: 9, BS: 990126, Group: true, Wakeups: 1, Superframes: n, BSSourced: true, Slot: 1}, tail)
 }
 
 func newStreamOf(t testing.TB, cfg rftx.SeqConfig, tail int) *testStream {
@@ -44,7 +44,7 @@ func newStreamOf(t testing.TB, cfg rftx.SeqConfig, tail int) *testStream {
 	var data []layer2.RawBurst
 	for len(data) < len(slots)/2+1 {
 		c := cfg
-		c.Slot, c.Group, c.Dest = 0, false, 3140598
+		c.Slot, c.Group, c.Dest = 0, false, 3002198
 		b, err := rftx.Sequence("data12", c)
 		if err != nil {
 			t.Fatal(err)

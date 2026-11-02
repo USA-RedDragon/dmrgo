@@ -12,7 +12,7 @@ import (
 )
 
 func TestAllocsExpress(t *testing.T) {
-	v := advNetCall(t, 3, 0, 1, 1, time.Second, 3191868)
+	v := advNetCall(t, 3, 0, 1, 1, time.Second, 3002068)
 	d := netData(t, loadBin(t, "d-sms.bin"), enums.Slot1, 0, 2, v[len(v)-1].at+20*time.Millisecond)
 	d[1].at, d[2].at = d[2].at, d[1].at
 	d[1], d[2] = d[2], d[1]

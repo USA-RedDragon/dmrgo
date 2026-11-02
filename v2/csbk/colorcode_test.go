@@ -43,8 +43,8 @@ func TestColorCodeFilter(t *testing.T) {
 	} {
 		for _, path := range []string{"Burst", "Decoded"} {
 			q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: tt.own, Source: layer2.SyncSourceMS})
-			r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 3140598, ColorCode: tt.own, Source: layer2.SyncSourceMS})
-			if err := q.RequestRadioCheck(0, 3140598, 3191868, nil); err != nil {
+			r := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 3002198, ColorCode: tt.own, Source: layer2.SyncSourceMS})
+			if err := q.RequestRadioCheck(0, 3002198, 3002068, nil); err != nil {
 				t.Fatal(err)
 			}
 			sent := q.Tick(0, nil)
@@ -59,7 +59,7 @@ func TestColorCodeFilter(t *testing.T) {
 				t.Errorf("%s, Responder.%s: request taken %t, want %t", tt.name, path, got, tt.answer)
 			}
 
-			reply := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 3140598, Source: layer2.SyncSourceMS})
+			reply := mustResponder(t, &csbk.ResponderConfig{Slot: enums.Slot1, Address: 3002198, Source: layer2.SyncSourceMS})
 			own := withCC(sent[0].Burst, tt.own)
 			reply.Burst(sent[0].Due, &own, layer2.Hint{}, nil)
 			at, _ := reply.Deadline()

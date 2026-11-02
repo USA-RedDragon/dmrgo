@@ -319,12 +319,12 @@ func FuzzIQ(f *testing.F) {
 }
 
 func FuzzRoundTrip(f *testing.F) {
-	f.Add(uint8(7), uint32(3191868), uint32(9), true, uint8(0), int16(1200), uint16(100))
+	f.Add(uint8(7), uint32(3002068), uint32(9), true, uint8(0), int16(1200), uint16(100))
 	f.Add(uint8(15), uint32(1), uint32(16777215), false, uint8(9), int16(-3000), uint16(0))
 	f.Add(uint8(15), uint32(1), uint32(16777215), false, uint8(86), int16(-3000), uint16(81))
 	f.Fuzz(func(t *testing.T, cc uint8, src, dst uint32, group bool, sel uint8, off int16, lead uint16) {
 		src, dst = max(src&0xffffff, 1), max(dst&0xffffff, 1)
-		cfg := rftx.SeqConfig{ColorCode: enums.ColorCode(cc % 16), Source: src, Dest: dst, BS: 314926, Group: group, Wakeups: 1, Superframes: 1, BSSourced: true, Slot: 1}
+		cfg := rftx.SeqConfig{ColorCode: enums.ColorCode(cc % 16), Source: src, Dest: dst, BS: 990126, Group: group, Wakeups: 1, Superframes: 1, BSSourced: true, Slot: 1}
 		base := newStreamOf(t, cfg, 40)
 		ts := base.withLead(int(lead % 600))
 		us := append(fuzzAudioUnits(), fuzzIQUnits()...)

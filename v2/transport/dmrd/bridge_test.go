@@ -43,10 +43,10 @@ func TestBridgeV1(t *testing.T) {
 func TestBridgeDMRE(t *testing.T) {
 	t.Parallel()
 
-	d := dmrd.Data{Seq: 3, Source: 3191868, Destination: 91, Repeater: 2345678, Slot: enums.Slot1, Group: true, Frame: dmrd.FrameVoice, Value: 2, Stream: 0xCAFE, BER: 4, RSSI: 90}
+	d := dmrd.Data{Seq: 3, Source: 3002068, Destination: 91, Repeater: 3002378, Slot: enums.Slot1, Group: true, Frame: dmrd.FrameVoice, Value: 2, Stream: 0xCAFE, BER: 4, RSSI: 90}
 	d.Burst[0] = 0x11
 	for _, v := range []uint8{4, 5} {
-		b := dmrd.Bridge{Version: v, Data: d, Time: 1_760_000_000_000_000_000, SourceServer: 23450, SourceRepeater: 3191868, Hops: 2}
+		b := dmrd.Bridge{Version: v, Data: d, Time: 1_760_000_000_000_000_000, SourceServer: 23450, SourceRepeater: 3002068, Hops: 2}
 		b.Signature[0], b.Signature[15] = 0xAB, 0xCD
 		pkt, err := b.AppendBinary(nil)
 		if err != nil {

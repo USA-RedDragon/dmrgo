@@ -154,7 +154,7 @@ func filter(out []bs.Output, k bs.OutputKind) []bs.Output {
 
 func wakeup(t testing.TB, cc enums.ColorCode) layer2.RawBurst {
 	t.Helper()
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBSOutboundActivation, RawPayload: [8]byte{0, 0, 0, 0, 1, 0x30, 0xB4, 0x3C}}
+	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBSOutboundActivation, RawPayload: [8]byte{0, 0, 0, 0, 1, 0x2D, 0xCE, 0xD4}}
 	b, err := layer2.BuildBurst(&c, cc, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)

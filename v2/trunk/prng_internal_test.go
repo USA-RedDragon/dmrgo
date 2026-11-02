@@ -36,7 +36,7 @@ func (p *oldPCG) between(n int) int {
 
 func TestBetweenMatchesOldGenerator(t *testing.T) {
 	t.Parallel()
-	for _, seed := range []uint64{0, 1, 42, 3191868, math.MaxUint64} {
+	for _, seed := range []uint64{0, 1, 42, 3002068, math.MaxUint64} {
 		var old oldPCG
 		old.seed(seed)
 		cur := pcg.New(seed)

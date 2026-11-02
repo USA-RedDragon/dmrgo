@@ -36,7 +36,7 @@ func TestTalkerAliasCutUTF8(t *testing.T) {
 		err          error
 	}{
 		{"ТЕРНАВ\xd0", "ТЕРНАВ", nil},
-		{"KI5VMF ✓\xe2\x9c", "KI5VMF ✓", nil},
+		{"N0CALL ✓\xe2\x9c", "N0CALL ✓", nil},
 		{"\xc3", "", nil},
 		{"a\xf0\x9f\x98", "a", nil},
 		{"a\xc3A", "a\xc3A", pdu.ErrTalkerAliasInvalidUTF8},

@@ -63,9 +63,9 @@ func registeredSim(t *testing.T, cfg *trunk.TSCCConfig, ms ...*trunk.MSConfig) *
 func threeMS() []*trunk.MSConfig {
 	tg := [trunk.MaxTalkgroups]uint32{9}
 	return []*trunk.MSConfig{
-		{Address: 3120001, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
-		{Address: 3120002, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
-		{Address: 3120003, Seed: 3},
+		{Address: 3002701, Talkgroups: tg, TalkgroupsLen: 1, Seed: 1},
+		{Address: 3002702, Talkgroups: tg, TalkgroupsLen: 1, Seed: 2},
+		{Address: 3002703, Seed: 3},
 	}
 }
 
@@ -74,18 +74,18 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 	s := registeredSim(t, tsccConfig(), threeMS()...)
 	a, b, c := s.ms[0], s.ms[1], s.ms[2]
 
-	if err := a.ms.SendStatus(s.now, false, 3120003, 42); err != nil {
+	if err := a.ms.SendStatus(s.now, false, 3002703, 42); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(a.log, trunk.OutputAccepted); return ok })
 	st, ok := has(c.log, trunk.OutputStatus)
-	if !ok || st.Status != 42 || st.Grant.Source != 3120001 || st.Grant.Target != 3120003 || st.Grant.Group {
+	if !ok || st.Status != 42 || st.Grant.Source != 3002701 || st.Grant.Target != 3002703 || st.Grant.Group {
 		t.Errorf("C status %+v %v", st, ok)
 	}
 	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.AckReasonMSAccepted {
 		t.Errorf("A accepted %+v", acc)
 	}
-	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Status != 42 || e.Ack != enums.AckReasonMSAccepted || e.Grant.Target != 3120003 || e.Grant.Source != 3120001 {
+	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Status != 42 || e.Ack != enums.AckReasonMSAccepted || e.Grant.Target != 3002703 || e.Grant.Source != 3002701 {
 		t.Errorf("TSCCStatus %+v %v", e, ok)
 	}
 
@@ -109,16 +109,16 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 	if err := c.ms.SetStatus(17); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.ms.PollStatus(s.now, 3120003); err != nil {
+	if err := a.ms.PollStatus(s.now, 3002703); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(a.log, trunk.OutputStatus); return ok })
-	if st, _ := has(a.log, trunk.OutputStatus); st.Status != 17 || st.Grant.Source != 3120003 {
+	if st, _ := has(a.log, trunk.OutputStatus); st.Status != 17 || st.Grant.Source != 3002703 {
 		t.Errorf("poll answer %+v", st)
 	}
 
 	a.log, s.events = nil, nil
-	if err := s.tscc.SendStatus(s.now, false, 3120002, 0xFFFECB, 5); err != nil {
+	if err := s.tscc.SendStatus(s.now, false, 3002702, 0xFFFECB, 5); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStatus); return ok })
@@ -128,7 +128,7 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 	if err := s.tscc.SendStatus(s.now, true, 9, 1, trunk.StatusPoll); err == nil {
 		t.Error("TSCC.SendStatus: no error for a poll of a talkgroup")
 	}
-	if err := a.ms.SendStatus(s.now, false, 3120003, trunk.StatusPoll); err == nil {
+	if err := a.ms.SendStatus(s.now, false, 3002703, trunk.StatusPoll); err == nil {
 		t.Error("SendStatus: no error for status 127")
 	}
 	if err := c.ms.SetStatus(127); err == nil {
@@ -140,7 +140,7 @@ func TestStatus_NoAnswer(t *testing.T) {
 	t.Parallel()
 	cfg := tsccConfig()
 	cfg.Reg, cfg.AnswerTimeout = false, time.Second
-	s := newSim(t, cfg, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newSim(t, cfg, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	a := s.ms[0]
 	s.run(time.Second)
 	if err := a.ms.SendStatus(s.now, false, 7777, 3); err != nil {
@@ -221,7 +221,7 @@ func TestInterrupt_PayloadInterrupt(t *testing.T) {
 	}
 	s.inject(a, voiceLC(t, enums.DataTypeTerminatorWithLC), g.Slot)
 	s.until(2*time.Second, func() bool { _, ok := has(b.log, trunk.OutputProtect); return ok })
-	if e, ok := s.event(trunk.TSCCInterrupt); !ok || e.Address != 3120002 || e.Reason != trunk.ReasonNone {
+	if e, ok := s.event(trunk.TSCCInterrupt); !ok || e.Address != 3002702 || e.Reason != trunk.ReasonNone {
 		t.Errorf("TSCCInterrupt %+v %v", e, ok)
 	}
 	if p, _ := has(b.log, trunk.OutputProtect); p.Protect != enums.ProtectEnablePTTOneMS {
@@ -337,14 +337,14 @@ func TestStun_WithoutAuthentication(t *testing.T) {
 	s := registeredSim(t, tsccConfig(), cfgs...)
 	a, b, c := s.ms[0], s.ms[1], s.ms[2]
 
-	if err := s.tscc.Stun(s.now, 3120001, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002701, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.tscc.Stun(s.now, 3120001, false); !errors.Is(err, trunk.ErrBusy) {
+	if err := s.tscc.Stun(s.now, 3002701, false); !errors.Is(err, trunk.ErrBusy) {
 		t.Errorf("second Stun: %v", err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
-	if e, _ := s.event(trunk.TSCCStun); e.Address != 3120001 || e.Stun != trunk.StunStun || e.Ack != enums.AckReasonMSAccepted || e.Reason != trunk.ReasonNone {
+	if e, _ := s.event(trunk.TSCCStun); e.Address != 3002701 || e.Stun != trunk.StunStun || e.Ack != enums.AckReasonMSAccepted || e.Reason != trunk.ReasonNone {
 		t.Errorf("TSCCStun %+v", e)
 	}
 	if o, ok := has(a.log, trunk.OutputStun); !ok || o.Stun != trunk.StunStun || !a.ms.Stunned() {
@@ -368,7 +368,7 @@ func TestStun_WithoutAuthentication(t *testing.T) {
 
 	s.events = nil
 	a.log = nil
-	if err := s.tscc.Stun(s.now, 3120001, true); err != nil {
+	if err := s.tscc.Stun(s.now, 3002701, true); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
@@ -377,7 +377,7 @@ func TestStun_WithoutAuthentication(t *testing.T) {
 	}
 
 	s.events = nil
-	if err := s.tscc.Stun(s.now, 3120003, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002703, false); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
@@ -386,7 +386,7 @@ func TestStun_WithoutAuthentication(t *testing.T) {
 	}
 
 	s.events = nil
-	if err := s.tscc.Stun(s.now, 3129999, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3003099, false); err != nil {
 		t.Fatal(err)
 	}
 	s.until(15*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
@@ -406,7 +406,7 @@ func TestStun_Authenticated(t *testing.T) {
 	s := registeredSim(t, tsccConfig(), cfgs...)
 	a := s.ms[0]
 
-	if err := s.tscc.Stun(s.now, 3120001, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002701, false); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStun); return ok })
@@ -418,20 +418,20 @@ func TestStun_Authenticated(t *testing.T) {
 	cfg.Auth = xorAuth(0x5A5A5A)
 	s = registeredSim(t, cfg, cfgs...)
 	a, b := s.ms[0], s.ms[1]
-	if err := s.tscc.Stun(s.now, 3120001, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002701, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.tscc.Stun(s.now, 3120002, false); err != nil {
+	if err := s.tscc.Stun(s.now, 3002702, false); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return len(stuns(s)) == 2 })
 	for _, e := range stuns(s) {
 		switch e.Address {
-		case 3120001:
+		case 3002701:
 			if e.Ack != enums.AckReasonMSAccepted || e.Reason != trunk.ReasonNone || !a.ms.Stunned() {
 				t.Errorf("A: %+v, stunned %v", e, a.ms.Stunned())
 			}
-		case 3120002:
+		case 3002702:
 			if e.Ack != enums.AckReasonRecipientRefused || e.Reason != trunk.ReasonAuthentication || b.ms.Stunned() {
 				t.Errorf("B with another key: %+v, stunned %v", e, b.ms.Stunned())
 			}
@@ -439,20 +439,20 @@ func TestStun_Authenticated(t *testing.T) {
 	}
 
 	s.events = nil
-	if err := s.tscc.Kill(s.now, 3120001); err != nil {
+	if err := s.tscc.Kill(s.now, 3002701); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.tscc.Kill(s.now, 3120003); err != nil {
+	if err := s.tscc.Kill(s.now, 3002703); err != nil {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { return len(stuns(s)) == 2 })
 	for _, e := range stuns(s) {
 		switch e.Address {
-		case 3120001:
+		case 3002701:
 			if e.Stun != trunk.StunKill || e.Ack != enums.AckReasonMSAccepted || !a.ms.Killed() || !a.ms.Off() {
 				t.Errorf("kill A: %+v, killed %v", e, a.ms.Killed())
 			}
-		case 3120003:
+		case 3002703:
 			if e.Ack != enums.AckReasonMSNotSupported || s.ms[2].ms.Killed() {
 				t.Errorf("kill without a key: %+v", e)
 			}
@@ -469,15 +469,15 @@ func TestStun_Authenticated(t *testing.T) {
 
 func TestStun_ConfigState(t *testing.T) {
 	t.Parallel()
-	m, err := trunk.NewMS(&trunk.MSConfig{Address: 3120001, Stunned: true})
+	m, err := trunk.NewMS(&trunk.MSConfig{Address: 3002701, Stunned: true})
 	if err != nil || !m.Stunned() || m.Killed() || m.Off() {
 		t.Fatalf("Stunned config: %v %v %v %v", err, m.Stunned(), m.Killed(), m.Off())
 	}
-	m, err = trunk.NewMS(&trunk.MSConfig{Address: 3120001, Killed: true})
+	m, err = trunk.NewMS(&trunk.MSConfig{Address: 3002701, Killed: true})
 	if err != nil || !m.Killed() || !m.Off() {
 		t.Fatalf("Killed config: %v %v %v", err, m.Killed(), m.Off())
 	}
-	if _, err := trunk.NewMS(&trunk.MSConfig{Address: 3120001, PowerSave: 8}); err == nil {
+	if _, err := trunk.NewMS(&trunk.MSConfig{Address: 3002701, PowerSave: 8}); err == nil {
 		t.Error("PowerSave 8: no error")
 	}
 }

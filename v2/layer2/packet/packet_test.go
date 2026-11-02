@@ -297,13 +297,13 @@ func mustSet(t testing.TB, err error) {
 
 func unconfirmedHeader() pdu.UnconfirmedDataHeader {
 	return pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessageFlag: true}
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702, LLIDSource: 3002701, FullMessageFlag: true}
 }
 
 func confirmedHeader() pdu.ConfirmedDataHeader {
 	return pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002,
-		LLIDSource: 3120001, FullMessageFlag: true, SendSequenceNumber: 5, FragmentSequenceNumber: 8}
+		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702,
+		LLIDSource: 3002701, FullMessageFlag: true, SendSequenceNumber: 5, FragmentSequenceNumber: 8}
 }
 
 func unconfirmed() pdu.DataHeader {
@@ -535,7 +535,7 @@ func TestAssembler_SelectiveRetry(t *testing.T) {
 		t.Fatal(err)
 	}
 	rh := get(t, &resp.Header, (*pdu.DataHeader).AsResponse)
-	if r, err := packet.ResponseOf(&rh); err != nil || r != packet.ResponseSACK || rh.ResponseStatus != 5 || rh.LLIDDestination != 3120001 || rh.LLIDSource != 3120002 || len(resp.Blocks) != 1 {
+	if r, err := packet.ResponseOf(&rh); err != nil || r != packet.ResponseSACK || rh.ResponseStatus != 5 || rh.LLIDDestination != 3002701 || rh.LLIDSource != 3002702 || len(resp.Blocks) != 1 {
 		t.Fatalf("response %+v", rh)
 	}
 

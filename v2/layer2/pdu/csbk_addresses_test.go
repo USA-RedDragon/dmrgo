@@ -32,7 +32,7 @@ func TestCSBK_Addresses(t *testing.T) {
 	}
 	for _, c := range csbks {
 		c.LastBlock = true
-		if c.SetAddresses(3120101, 3120001) != nil {
+		if c.SetAddresses(3002801, 3002701) != nil {
 			t.Fatalf("%s: SetAddresses failed", c.Opcode)
 		}
 		decoded := pdu.DecodeCSBK(must(c.Encode()))
@@ -40,7 +40,7 @@ func TestCSBK_Addresses(t *testing.T) {
 		if res.Uncorrectable {
 			t.Fatalf("%s: CRC fails", c.Opcode)
 		}
-		if target, source, ok := decoded.Addresses(); !ok || target != 3120101 || source != 3120001 {
+		if target, source, ok := decoded.Addresses(); !ok || target != 3002801 || source != 3002701 {
 			t.Errorf("%s: Addresses = %d %d %v", c.Opcode, target, source, ok)
 		}
 		if c.SetAddresses(1<<24, 1) == nil {

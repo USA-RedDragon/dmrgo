@@ -57,7 +57,7 @@ func checkGroup(t *testing.T, payload [12]byte) {
 func TestDataHeaderGroupSMS(t *testing.T) {
 	t.Parallel()
 
-	h, err := pdu.UnconfirmedDataHeader{Group: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 91, LLIDSource: 3120000}.DataHeader()
+	h, err := pdu.UnconfirmedDataHeader{Group: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 91, LLIDSource: 3002700}.DataHeader()
 	if err != nil {
 		t.Fatal(err)
 	}

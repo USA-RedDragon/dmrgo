@@ -12,7 +12,7 @@ import (
 
 const (
 	burstTestGroup  = 91
-	burstTestSource = 3191868
+	burstTestSource = 3002068
 )
 
 func transmit(t *testing.T, c *Codec, pcm []int16) []layer2.RawBurst {

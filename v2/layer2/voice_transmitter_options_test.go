@@ -12,7 +12,7 @@ import (
 
 func talkerAliasLC() pdu.FullLinkControl {
 	var data [48]unpacked.Bit
-	copy(data[:], unpacked.Unpack([]byte("KI5VMF")))
+	copy(data[:], unpacked.Unpack([]byte("N0CALL")))
 	var lc pdu.FullLinkControl
 	mustSet(lc.SetTalkerAliasHeader(pdu.FLCTalkerAliasHeader{
 		TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,

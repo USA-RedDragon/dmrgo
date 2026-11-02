@@ -21,7 +21,7 @@ import (
 func TestReceiver_EmbeddedData(t *testing.T) {
 	t.Parallel()
 
-	alias, err := pdu.EncodeTalkerAlias("KI5VMF JACOB", layer3.TalkerAliasISOEightBit)
+	alias, err := pdu.EncodeTalkerAlias("N0CALL JACOB", layer3.TalkerAliasISOEightBit)
 	if err != nil || len(alias) != 2 {
 		t.Fatalf("alias LCs %d: %v", len(alias), err)
 	}
@@ -38,7 +38,7 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 		}
 		return nil
 	}
-	bursts := transmission(t, groupLC(t, 91, 3191868), 4, func(o *layer2.VoiceTransmitterOptions) { o.EmbeddedLC = hook })
+	bursts := transmission(t, groupLC(t, 91, 3002068), 4, func(o *layer2.VoiceTransmitterOptions) { o.EmbeddedLC = hook })
 	got := feed(t, newReceiver(t, nil), timed(bursts, 0, layer2.Hint{}), -1)
 	want := "S" + repeat("V", 6) + repeat("V", 5) + "M" + "V" + repeat("V", 5) + "MT" + "V" + repeat("V", 5) + "M" + "V" + "E"
 	if k := kinds(got); k != want {
@@ -50,7 +50,7 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 		!ok || g.Latitude < 41.7 || m[2].Call.Target != 91 {
 		t.Errorf("embedded %v %v %+v", m[0].LC.FLCO, m[1].LC.FLCO, g)
 	}
-	if ta := find(got, voice.EventTalkerAlias); string(ta[0].Text) != "KI5VMF JACOB" {
+	if ta := find(got, voice.EventTalkerAlias); string(ta[0].Text) != "N0CALL JACOB" {
 		t.Errorf("alias %q", ta[0].Text)
 	}
 }
@@ -102,7 +102,7 @@ func TestReceiver_XPR8400(t *testing.T) {
 func TestReceiver_Timers(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	rx := newReceiver(t, &voice.ReceiverConfig{Lost: 500 * time.Millisecond, Hang: time.Second})
 	got := feed(t, rx, timed(bursts[:5], 0, layer2.Hint{}), 4*slot+500*time.Millisecond)
 	if k := kinds(got); k != "SVVVVE" || got[5].Reason != voice.EndLost || got[5].Stats.Duration != 4*slot+500*time.Millisecond {
@@ -138,7 +138,7 @@ func TestReceiver_Timers(t *testing.T) {
 func TestReceiver_Ends(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	idle, err := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
@@ -178,14 +178,14 @@ func TestReceiver_Ends(t *testing.T) {
 func TestReceiver_Stream(t *testing.T) {
 	t.Parallel()
 
-	a := transmission(t, groupLC(t, 91, 3191868), 1, nil)
-	b := transmission(t, groupLC(t, 91, 3120001), 1, nil)
+	a := transmission(t, groupLC(t, 91, 3002068), 1, nil)
+	b := transmission(t, groupLC(t, 91, 3002701), 1, nil)
 	in := append(timed(a[:4], 0, layer2.Hint{HasStream: true, Stream: 1}), timed(b, 4*slot, layer2.Hint{HasStream: true, Stream: 2})...)
 	got := feed(t, newReceiver(t, nil), in, -1)
 	if k := kinds(got); k != "SVVVE"+"S"+repeat("V", 6)+"E" {
 		t.Fatalf("events %s", k)
 	}
-	if got[4].Reason != voice.EndSuperseded || got[0].Call.Stream != 1 || got[5].Call.Stream != 2 || got[5].Call.Source != 3120001 {
+	if got[4].Reason != voice.EndSuperseded || got[0].Call.Stream != 1 || got[5].Call.Stream != 2 || got[5].Call.Source != 3002701 {
 		t.Errorf("end %v, streams %d %d", got[4].Reason, got[0].Call.Stream, got[5].Call.Stream)
 	}
 }
@@ -193,8 +193,8 @@ func TestReceiver_Stream(t *testing.T) {
 func TestReceiver_Superseded(t *testing.T) {
 	t.Parallel()
 
-	a := transmission(t, groupLC(t, 91, 3191868), 1, nil)
-	b := transmission(t, groupLC(t, 92, 3120001), 2, nil)
+	a := transmission(t, groupLC(t, 91, 3002068), 1, nil)
+	b := transmission(t, groupLC(t, 92, 3002701), 2, nil)
 	in := append(timed(a[:4], 0, layer2.Hint{}), timed(b, 4*slot, layer2.Hint{})...)
 	got := feed(t, newReceiver(t, nil), in, -1)
 	if k := kinds(got); k != "SVVVEeS"+repeat("V", 12)+"E" {
@@ -217,9 +217,9 @@ func TestReceiver_Superseded(t *testing.T) {
 func TestReceiver_Hang(t *testing.T) {
 	t.Parallel()
 
-	a := transmission(t, groupLC(t, 91, 3191868), 1, nil)
-	same := transmission(t, groupLC(t, 91, 3120001), 1, nil)
-	other := transmission(t, groupLC(t, 92, 3120001), 1, nil)
+	a := transmission(t, groupLC(t, 91, 3002068), 1, nil)
+	same := transmission(t, groupLC(t, 91, 3002701), 1, nil)
+	other := transmission(t, groupLC(t, 92, 3002701), 1, nil)
 	afterA := time.Duration(len(a)) * slot
 
 	got := feed(t, newReceiver(t, nil), append(timed(a, 0, layer2.Hint{}), timed(same, afterA+time.Second, layer2.Hint{})...), -1)
@@ -245,7 +245,7 @@ func TestReceiver_Hang(t *testing.T) {
 		t.Errorf("other terminator: %s", k)
 	}
 
-	lc := groupLC(t, 91, 3191868)
+	lc := groupLC(t, 91, 3002068)
 	gv, ok := lc.AsGroupVoice()
 	if !ok {
 		t.Fatalf("groupLC gave %v", lc.FLCO)
@@ -254,7 +254,7 @@ func TestReceiver_Hang(t *testing.T) {
 	if err := lc.SetGroupVoice(gv); err != nil {
 		t.Fatal(err)
 	}
-	all := groupLC(t, constants.AllMSID, 3191868)
+	all := groupLC(t, constants.AllMSID, 3002068)
 	for _, l := range []pdu.FullLinkControl{lc, all} {
 		rx := newReceiver(t, nil)
 		feed(t, rx, timed(transmission(t, l, 1, nil), 0, layer2.Hint{}), -1)
@@ -267,9 +267,9 @@ func TestReceiver_Hang(t *testing.T) {
 func TestReceiver_Expect(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	rx := newReceiver(t, nil)
-	rx.Expect(0, voice.Call{Group: true, Target: 91, Source: 3191868}, time.Second)
+	rx.Expect(0, voice.Call{Group: true, Target: 91, Source: 3002068}, time.Second)
 	in := timed(bursts[1:3], 0, layer2.Hint{})
 	in = append(in, input{at: 2 * slot, raw: bursts[0]})
 	in = append(in, timed(bursts[3:], 3*slot, layer2.Hint{})...)
@@ -285,7 +285,7 @@ func TestReceiver_Expect(t *testing.T) {
 	}
 
 	rx = newReceiver(t, nil)
-	rx.Expect(0, voice.Call{Group: true, Target: 91, Source: 3191868}, slot)
+	rx.Expect(0, voice.Call{Group: true, Target: 91, Source: 3002068}, slot)
 	got = feed(t, rx, timed(bursts[1:3], 2*slot, layer2.Hint{}), -1)
 	if k := kinds(got); k != "VV" || got[0].Call.Origin != voice.OriginUnknown {
 		t.Errorf("expired Expect: %s", k)
@@ -295,7 +295,7 @@ func TestReceiver_Expect(t *testing.T) {
 func TestReceiver_Duplicates(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	in := timed(bursts[:1], 0, layer2.Hint{})
 	in = append(in, input{at: slot, raw: bursts[0]}, input{at: 2 * slot, raw: bursts[0]})
 	in = append(in, timed(bursts[1:3], 3*slot, layer2.Hint{})...)
@@ -322,7 +322,7 @@ func network(bursts []layer2.RawBurst, seq uint16) []input {
 func TestReceiver_Sequence(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 3, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 3, nil)
 	in := network(bursts, 65530)
 	for i := range in {
 		in[i].at = time.Duration(i) * 5 * time.Millisecond
@@ -352,7 +352,7 @@ func TestReceiver_Sequence(t *testing.T) {
 func TestReceiver_TransportPosition(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	in := network(bursts, 0)
 	for i := 1; i < len(bursts)-1; i++ {
 		v, _ := enums.VoiceBurstAt((i - 1) % 6)
@@ -380,7 +380,7 @@ func TestReceiver_TransportPosition(t *testing.T) {
 func TestReceiver_WeakEnd(t *testing.T) {
 	t.Parallel()
 
-	bursts := transmission(t, groupLC(t, 91, 3191868), 2, nil)
+	bursts := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	in := network(bursts, 0)
 	in[3].hint.End = layer2.EndWeak
 	got := feed(t, newReceiver(t, nil), in, -1)
@@ -423,7 +423,7 @@ func TestReceiver_Fuzz(t *testing.T) {
 	t.Parallel()
 
 	src := loadBin(t, "voice.bin")
-	src = append(src, transmission(t, groupLC(t, 91, 3191868), 2, nil)...)
+	src = append(src, transmission(t, groupLC(t, 91, 3002068), 2, nil)...)
 	r := rand.New(rand.NewSource(1))
 	rx := newReceiver(t, &voice.ReceiverConfig{Lost: 200 * time.Millisecond, Hang: 300 * time.Millisecond})
 	out := make([]voice.Event, 0, voice.MaxEvents)

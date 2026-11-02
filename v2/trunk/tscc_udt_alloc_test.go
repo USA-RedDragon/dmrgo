@@ -35,9 +35,9 @@ func TestAllocsTSCCUDT(t *testing.T) {
 				out = ts.Tick(now, out[:0])
 			}
 		}
-		_ = ts.SendShortData(now, false, 3120002, &a)
-		_ = ts.PollShortData(now, 3120002, 1)
-		_ = ts.PollUSBD(now, 3120002, pdu.ServiceTypeLIP, 0)
+		_ = ts.SendShortData(now, false, 3002702, &a)
+		_ = ts.PollShortData(now, 3002702, 1)
+		_ = ts.PollUSBD(now, 3002702, pdu.ServiceTypeLIP, 0)
 		for range 400 {
 			now += 30 * time.Millisecond
 			out = ts.Tick(now, out[:0])

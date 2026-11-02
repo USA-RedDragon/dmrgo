@@ -19,11 +19,11 @@ func TestChanAuthDataResponseRepeated(t *testing.T) {
 	rf := bs.Source{RF: true}
 	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1, DataHang: 500 * time.Millisecond})
 	d.until(time.Second)
-	d.in(time.Second, enums.Slot1, rf, preCSBK(t, 3120000))
+	d.in(time.Second, enums.Slot1, rf, preCSBK(t, 3002700))
 	b := packet.NewBuilder(16)
 	var h pdu.DataHeader
 	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: 4, LLIDDestination: 3191868, LLIDSource: 3120000, FullMessageFlag: true, SendSequenceNumber: 5}); err != nil {
+		ResponseRequested: true, SAP: 4, LLIDDestination: 3002068, LLIDSource: 3002700, FullMessageFlag: true, SendSequenceNumber: 5}); err != nil {
 		t.Fatal(err)
 	}
 	p, err := b.Segment(h, make([]byte, 30), enums.DataTypeRate12)
@@ -40,7 +40,7 @@ func TestChanAuthDataResponseRepeated(t *testing.T) {
 	end := in[len(in)-1].at
 	d.until(end + 60*time.Millisecond)
 	var rh pdu.DataHeader
-	if err := rh.SetResponse(pdu.ResponsePacketHeader{SAP: 4, LLIDDestination: 3120000, LLIDSource: 3191868, ResponseType: 1}); err != nil {
+	if err := rh.SetResponse(pdu.ResponsePacketHeader{SAP: 4, LLIDDestination: 3002700, LLIDSource: 3002068, ResponseType: 1}); err != nil {
 		t.Fatal(err)
 	}
 	mark := len(d.all)
@@ -61,22 +61,22 @@ func TestChanAuthLostThenOtherCall(t *testing.T) {
 	rf := bs.Source{RF: true}
 	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1})
 	d.until(time.Second)
-	d.in(time.Second, enums.Slot1, rf, header(t, 9, 3120005))
-	a := call(t, 1, 9, 3120005, 1, enums.Slot1, rf, 1060*time.Millisecond)
+	d.in(time.Second, enums.Slot1, rf, header(t, 9, 3002705))
+	a := call(t, 1, 9, 3002705, 1, enums.Slot1, rf, 1060*time.Millisecond)
 	d.feed(a[:len(a)-1])
 	start := a[len(a)-2].at + 200*time.Millisecond
 	mark := len(d.all)
-	d.feed(call(t, 1, 9, 3120007, 2, enums.Slot1, rf, start))
+	d.feed(call(t, 1, 9, 3002707, 2, enums.Slot1, rf, start))
 	d.until(start + 3*time.Second)
 	for _, o := range d.all[mark:] {
-		if o.Kind == bs.OutputCallEnd && o.Call.Source == 3120007 {
+		if o.Kind == bs.OutputCallEnd && o.Call.Source == 3002707 {
 			if o.End != voice.EndTerminator {
-				t.Errorf("the call of 3120007 ended %v", o.End)
+				t.Errorf("the call of 3002707 ended %v", o.End)
 			}
 			return
 		}
 	}
-	t.Error("the call of 3120007 did not end")
+	t.Error("the call of 3002707 did not end")
 }
 
 // ETSI TS 102 361-2 clause 5.1.1.6.1.1
@@ -87,17 +87,17 @@ func TestChanAuthAuthorizedCallKeepsTheSlot(t *testing.T) {
 	for _, hang := range []time.Duration{0, -1} {
 		d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: hang})
 		d.until(time.Second)
-		d.in(time.Second, enums.Slot1, rf, header(t, 9, 3120005))
+		d.in(time.Second, enums.Slot1, rf, header(t, 9, 3002705))
 		mark := len(d.all)
-		d.in(1060*time.Millisecond, enums.Slot1, rf, header(t, 9, 3120005))
+		d.in(1060*time.Millisecond, enums.Slot1, rf, header(t, 9, 3002705))
 		if st := d.r.SlotState(enums.Slot1); st != bs.SlotVoice {
 			t.Fatalf("hang %v: after the authorized MS: %v", hang, st)
 		}
-		d.in(1120*time.Millisecond, enums.Slot1, rf, header(t, 9, 3120007))
+		d.in(1120*time.Millisecond, enums.Slot1, rf, header(t, 9, 3002707))
 		d.until(1500 * time.Millisecond)
 		for _, o := range d.all[mark:] {
-			if o.Kind == bs.OutputCallStart && o.Call.Source != 3120005 || o.Kind == bs.OutputCallEnd {
-				t.Errorf("hang %v: %v %+v after the authorization of 3120005", hang, o.Kind, o.Call)
+			if o.Kind == bs.OutputCallStart && o.Call.Source != 3002705 || o.Kind == bs.OutputCallEnd {
+				t.Errorf("hang %v: %v %+v after the authorization of 3002705", hang, o.Kind, o.Call)
 			}
 		}
 	}

@@ -26,7 +26,7 @@ func TestAddressHash(t *testing.T) {
 	if got := crc8Bytes([]byte("123456789")); got != 0xF4 {
 		t.Fatalf("reference CRC-8 check value = %#x, want 0xf4", got)
 	}
-	for _, id := range []uint32{0, 1, 9990, 3191868, 3120001, 0xFFFFFF, 0x123456} {
+	for _, id := range []uint32{0, 1, 9990, 3002068, 3002701, 0xFFFFFF, 0x123456} {
 		want := crc8Bytes([]byte{byte(id >> 16), byte(id >> 8), byte(id)})
 		if got := must(pdu.AddressHash(id)); got != want {
 			t.Errorf("AddressHash(%d) = %#x, want %#x", id, got, want)

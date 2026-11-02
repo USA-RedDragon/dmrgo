@@ -19,7 +19,7 @@ func TestSetHintFromTransmitter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3120001}, nil); err != nil {
+	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3002701}, nil); err != nil {
 		t.Fatal(err)
 	}
 	var out []voice.Output
@@ -54,7 +54,7 @@ func TestSetHintFromTransmitter(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if g, tg, src := back.Call(); !g || tg != 91 || src != 3120001 {
+			if g, tg, src := back.Call(); !g || tg != 91 || src != 3002701 {
 				t.Fatalf("call %v %d %d of %+v", g, tg, src, o.Call)
 			}
 			got := back.Hint(0)

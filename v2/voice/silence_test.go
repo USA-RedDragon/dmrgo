@@ -11,7 +11,7 @@ func TestTransmitter_ZeroSilenceIsAMBESilence(t *testing.T) {
 	t.Parallel()
 
 	tx := newTransmitter(t, nil)
-	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3191868}, nil); err != nil {
+	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3002068}, nil); err != nil {
 		t.Fatal(err)
 	}
 	var voiced vocoder.AMBEFrame

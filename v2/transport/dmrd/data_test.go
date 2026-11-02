@@ -192,8 +192,8 @@ func TestDataEncodeRange(t *testing.T) {
 func TestDataCall(t *testing.T) {
 	t.Parallel()
 
-	d := dmrd.Data{Destination: 3120001, Source: 3191868}
-	if g, tg, src := d.Call(); g || tg != 3120001 || src != 3191868 {
+	d := dmrd.Data{Destination: 3002701, Source: 3002068}
+	if g, tg, src := d.Call(); g || tg != 3002701 || src != 3002068 {
 		t.Fatalf("Call: %v %d %d", g, tg, src)
 	}
 	if err := d.SetCall(true, 91, 7); err != nil || !d.Group || d.Destination != 91 || d.Source != 7 {

@@ -55,18 +55,18 @@ func aloha(t testing.TB) layer2.RawBurst {
 func tvGrant(t testing.TB, tg uint32, ch uint16, ts2 bool) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: ch, LogicalChannel: ts2, TargetAddress: tg, SourceAddress: 3120001}), testCC)
+		PhysicalChannel: ch, LogicalChannel: ts2, TargetAddress: tg, SourceAddress: 3002701}), testCC)
 }
 
 func pClear(t testing.TB, tg uint32) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetClear, pdu.ClearPDU{
-		Group: true, TargetAddress: tg, SourceAddress: 3120001}), testCC)
+		Group: true, TargetAddress: tg, SourceAddress: 3002701}), testCC)
 }
 
 func terminator(t testing.TB, tg uint32) layer2.RawBurst {
 	t.Helper()
-	lc, err := pdu.NewVoiceLC(true, tg, 3120001, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, tg, 3002701, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func terminator(t testing.TB, tg uint32) layer2.RawBurst {
 func mbcGrant(t testing.TB, tg uint32, cdef layer3.CdefParms, cc enums.ColorCode) [2]layer2.RawBurst {
 	t.Helper()
 	h := withPDU(t, &pdu.MBCHeader{}, (*pdu.MBCHeader).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: trunk.ChannelAbsolute, LogicalChannel: true, TargetAddress: tg, SourceAddress: 3120001})
+		PhysicalChannel: trunk.ChannelAbsolute, LogicalChannel: true, TargetAddress: tg, SourceAddress: 3002701})
 	cg := pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: cc, CdefParms: cdef}
 	p, err := cg.Encode()
 	if err != nil {

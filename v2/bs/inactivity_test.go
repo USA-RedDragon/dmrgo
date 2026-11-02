@@ -11,7 +11,7 @@ import (
 
 func TestInactivityDeadlineMoves(t *testing.T) {
 	t.Parallel()
-	in := call(t, 1, 9, 3191868, 2, enums.Slot1, rf, 0)
+	in := call(t, 1, 9, 3002068, 2, enums.Slot1, rf, 0)
 	r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true, Inactivity: 20 * time.Millisecond})
 	out := make([]bs.Output, 0, bs.MaxOutputs)
 	dekeyed := false

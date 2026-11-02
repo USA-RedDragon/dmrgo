@@ -13,7 +13,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
 
-const peer = 3120009
+const peer = 3002709
 
 func ahoyBurst(t testing.TB, kind enums.ServiceKind, src, dst uint32, als bool, blocks uint8) layer2.RawBurst {
 	t.Helper()
@@ -418,7 +418,7 @@ func TestMS_CallDiverted(t *testing.T) {
 	}
 	randSent(t, r)
 	var a trunk.Appended
-	if err := a.SetAddresses(false, []uint32{3120077}); err != nil {
+	if err := a.SetAddresses(false, []uint32{3002777}); err != nil {
 		t.Fatal(err)
 	}
 	out := r.feedAll(download(t, pdu.UDTHeader{SupplementaryFlag: true, LLIDDestination: msAddr, LLIDSource: constants.GatewayDIVERTI}, &a))
@@ -427,7 +427,7 @@ func TestMS_CallDiverted(t *testing.T) {
 		t.Errorf("reason %v", out[1].Reason)
 	}
 	got := udtOf(r.ms.UDT()).Appended()
-	if l, err := got.Addresses(); err != nil || l.Addresses[0] != 3120077 {
+	if l, err := got.Addresses(); err != nil || l.Addresses[0] != 3002777 {
 		t.Errorf("diverted to %+v %v", l, err)
 	}
 }

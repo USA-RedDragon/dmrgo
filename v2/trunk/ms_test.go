@@ -14,7 +14,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
 
-const msAddr = 3120001
+const msAddr = 3002701
 
 var (
 	idle = [3]byte{}
@@ -132,7 +132,7 @@ func TestMS_NoAnswer(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true, RandomTimeout: -1})
 	a := aloha(t)
 	r.feed(a, &idle)
-	if err := r.ms.Call(r.now, false, 3120002, layer3.VoiceServiceOptions{}); err != nil {
+	if err := r.ms.Call(r.now, false, 3002702, layer3.VoiceServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	wantKinds(t, "withdrawn slot", r.feed(a, &busy))
@@ -200,21 +200,21 @@ func TestMS_Called(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	r.feed(aloha(t), &idle)
 	ahoy := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}), testCC)
+		ServiceKind: uint8(enums.ServiceKindIndividualVoice), TargetAddress: msAddr, SourceAddress: 3002702}), testCC)
 	out := r.feed(ahoy, &busy)
 	wantKinds(t, "C_AHOY", out, trunk.OutputAhoy, trunk.OutputBurst)
-	if out[0].Grant.Source != 3120002 {
+	if out[0].Grant.Source != 3002702 {
 		t.Errorf("Ahoy %+v", out[0].Grant)
 	}
 	ackIn, ok := sent(t, &out[1]).AsAckInbound()
-	if !ok || enums.AckReason(ackIn.ReasonCode) != enums.AckReasonMSAccepted || ackIn.TargetAddress != 3120002 {
+	if !ok || enums.AckReason(ackIn.ReasonCode) != enums.AckReasonMSAccepted || ackIn.TargetAddress != 3002702 {
 		t.Fatalf("C_ACKU %v %+v", ok, ackIn)
 	}
 	pv := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 8, TargetAddress: msAddr, SourceAddress: 3120002}), testCC)
+		PhysicalChannel: 8, TargetAddress: msAddr, SourceAddress: 3002702}), testCC)
 	wantKinds(t, "PV_GRANT", r.feed(pv, &idle), trunk.OutputGrant, trunk.OutputTune)
 	other := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 9, TargetAddress: 3120005, SourceAddress: 3120002}), testCC)
+		PhysicalChannel: 9, TargetAddress: 3002705, SourceAddress: 3002702}), testCC)
 	r2 := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	r2.feed(aloha(t), &idle)
 	wantKinds(t, "PV_GRANT for another MS", r2.feed(other, &idle), trunk.OutputGrant)

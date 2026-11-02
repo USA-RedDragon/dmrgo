@@ -13,7 +13,7 @@ import (
 func lateGrant(t *testing.T, tg uint32, ch uint16) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: ch, LogicalChannel: true, LateEntry: true, TargetAddress: tg, SourceAddress: 3120001}), testCC)
+		PhysicalChannel: ch, LogicalChannel: true, LateEntry: true, TargetAddress: tg, SourceAddress: 3002701}), testCC)
 }
 
 func TestFollower_LateEntrySeenWhileHunting(t *testing.T) {

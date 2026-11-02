@@ -15,7 +15,7 @@ import (
 func ipHeader(t testing.TB, group bool, sap enums.SAP) pdu.DataHeader {
 	t.Helper()
 	return setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
-		SAP: sap, Group: group, LLIDDestination: 9, LLIDSource: 3120001,
+		SAP: sap, Group: group, LLIDDestination: 9, LLIDSource: 3002701,
 	})
 }
 
@@ -59,7 +59,7 @@ func TestEventICMP(t *testing.T) {
 	} {
 		e := data.Event{
 			Kind:    c.kind,
-			Call:    data.Call{Group: c.call, Target: 9, Source: 3120001},
+			Call:    data.Call{Group: c.call, Target: 9, Source: 3002701},
 			Message: data.Message{Header: ipHeader(t, c.group, c.sap), Payload: bad},
 		}
 		m, pointer, ok := e.ICMP(576)

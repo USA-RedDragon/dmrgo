@@ -10,9 +10,9 @@ import (
 
 func TestBroadcastPDU_AsMassReg_Table7_76(t *testing.T) {
 	t.Parallel()
-	b := pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg, BroadcastParms1: 0b00000_1010_11000, Reg: true, Backoff: 3, SysIdentCode: 0x4015, BroadcastParms2: 3120001}
+	b := pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg, BroadcastParms1: 0b00000_1010_11000, Reg: true, Backoff: 3, SysIdentCode: 0x4015, BroadcastParms2: 3002701}
 	got, ok := b.AsMassReg()
-	want := pdu.MassRegParms{AnnouncementType: enums.AnnouncementMassReg, RegWindow: 10, AlohaMask: 24, Reg: true, Backoff: 3, SysIdentCode: 0x4015, Address: 3120001}
+	want := pdu.MassRegParms{AnnouncementType: enums.AnnouncementMassReg, RegWindow: 10, AlohaMask: 24, Reg: true, Backoff: 3, SysIdentCode: 0x4015, Address: 3002701}
 	if !ok || got != want {
 		t.Errorf("AsMassReg = %+v, %v, want %+v", got, ok, want)
 	}
@@ -52,7 +52,7 @@ func TestRegWindowTime_Table6_12(t *testing.T) {
 }
 
 func FuzzBroadcastPDU_AsMassReg(f *testing.F) {
-	f.Add(uint16(0b00000_1010_11000), uint32(3120001), true)
+	f.Add(uint16(0b00000_1010_11000), uint32(3002701), true)
 	f.Fuzz(func(t *testing.T, p1 uint16, p2 uint32, reg bool) {
 		b := pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg, BroadcastParms1: p1, Reg: reg, Backoff: 3, SysIdentCode: 0x4015, BroadcastParms2: p2}
 		v, ok := b.AsMassReg()

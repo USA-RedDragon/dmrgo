@@ -24,27 +24,27 @@ func newInboundPool(t testing.TB) burstPool {
 	t.Helper()
 	rnd := func(kind enums.ServiceKind, opts uint8, target uint32) layer2.RawBurst {
 		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
-			ServiceOptions: opts, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}))
+			ServiceOptions: opts, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3002701}))
 	}
 	return burstPool{
 		rnd(enums.ServiceKindRegistration, 1, 0xFFFEC6),
 		rnd(enums.ServiceKindRegistration, 0, 0xFFFEC6),
 		rnd(enums.ServiceKindTalkgroupVoice, 0, 9),
-		rnd(enums.ServiceKindIndividualVoice, 0, 3120002),
-		rnd(enums.ServiceKindStatusTransport, 0, 3120002),
+		rnd(enums.ServiceKindIndividualVoice, 0, 3002702),
+		rnd(enums.ServiceKindStatusTransport, 0, 3002702),
 		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
-			ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001, AdditionalInfo: 3120002})),
-		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{TargetAddress: 9, SourceAddress: 3120001})),
+			ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3002701, AdditionalInfo: 3002702})),
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{TargetAddress: 9, SourceAddress: 3002701})),
 		voiceLCRaw(t, enums.DataTypeVoiceLCHeader),
 		voiceLCRaw(t, enums.DataTypeTerminatorWithLC),
 		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
-			ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3120001})),
+			ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3002701})),
 	}
 }
 
 func voiceLCRaw(t testing.TB, dt enums.DataType) layer2.RawBurst {
 	t.Helper()
-	lc, err := pdu.NewVoiceLC(true, 9, 3120001, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9, 3002701, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

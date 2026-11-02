@@ -11,7 +11,7 @@ import (
 func dmrGatewayConfig(t *testing.T, id uint32, cc, power uint, height int) []byte {
 	t.Helper()
 	body := fmt.Sprintf("%-8.8s%09d%09d%02d%02d%8.8s%9.9s%03d%-20.20s%-19.19s%c%-124.124s%-40.40s%-40.40s",
-		"KI5VMF", 447000000, 434500000, power, cc, fmt.Sprintf("%08f", 30.123456), fmt.Sprintf("%09f", -97.654321), height,
+		"N0CALL", 447000000, 434500000, power, cc, fmt.Sprintf("%08f", 30.123456), fmt.Sprintf("%09f", -97.654321), height,
 		"Anytown", "dmrgo test", '3', "https://example.org", "20261018", "MMDVM")
 	p := []byte("RPTC")
 	p = append(p, byte(id>>24), byte(id>>16), byte(id>>8), byte(id))
@@ -25,12 +25,12 @@ func dmrGatewayConfig(t *testing.T, id uint32, cc, power uint, height int) []byt
 func TestConfigFromDMRGatewayFormat(t *testing.T) {
 	t.Parallel()
 
-	p := dmrGatewayConfig(t, 3191868, 9, 8, 10)
+	p := dmrGatewayConfig(t, 3002068, 9, 8, 10)
 	c, err := dmrd.MMDVMConfigOf(p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.ID() != 3191868 || string(c.Callsign()) != "KI5VMF" || string(c.Location()) != "Anytown" || string(c.URL()) != "https://example.org" {
+	if c.ID() != 3002068 || string(c.Callsign()) != "N0CALL" || string(c.Location()) != "Anytown" || string(c.URL()) != "https://example.org" {
 		t.Errorf("id %d callsign %q location %q url %q", c.ID(), c.Callsign(), c.Location(), c.URL())
 	}
 	if rx, err := c.RXFrequency(); err != nil || rx != 447000000 {

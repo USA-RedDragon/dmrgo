@@ -23,9 +23,9 @@ func TestAllocsTSCCServices(t *testing.T) {
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
 	allocs := allocstest.PerRun(t, 5, func() {
-		_ = ts.Stun(now, 3120002, false)
-		_ = ts.Kill(now, 3120003)
-		_ = ts.SendStatus(now, false, 3120002, 0xFFFECB, 3)
+		_ = ts.Stun(now, 3002702, false)
+		_ = ts.Kill(now, 3002703)
+		_ = ts.SendStatus(now, false, 3002702, 0xFFFECB, 3)
 		_ = ts.MassRegister(2, 0, 0)
 		for i := range pool {
 			out = ts.Inbound(now, tsccChannel, &pool[i], layer2.Hint{Slot: enums.Slot1}, out[:0])
@@ -62,8 +62,8 @@ func TestAllocsMSServices(t *testing.T) {
 		for i := range pool {
 			now += 30 * time.Millisecond
 			out = ms.Burst(now, &pool[i], layer2.Hint{Slot: enums.Slot1}, &cach, out[:0])
-			_ = ms.SendStatus(now, false, 3120002, 3)
-			_ = ms.PollStatus(now, 3120002)
+			_ = ms.SendStatus(now, false, 3002702, 3)
+			_ = ms.PollStatus(now, 3002702)
 			_ = ms.SetSupplementary(&supl)
 			_ = ms.SetStatus(4)
 			_ = ms.AdviseIP(now, [16]byte{1}, false, false)

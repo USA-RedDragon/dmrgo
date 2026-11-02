@@ -18,7 +18,7 @@ func csbkFrame(t *testing.T) hytera.Frame {
 	}
 	return hytera.Frame{
 		Port: 50002, Mark: 0x0050, Seq: 0x2A, PacketType: 1, Slot: enums.Slot2, SlotType: hytera.SlotTypeCSBK,
-		ColorCode: 1, Burst: raw, Pad: 0x5A, Destination: 262, Source: 2628347,
+		ColorCode: 1, Burst: raw, Pad: 0x5A, Destination: 262, Source: 3002547,
 		Reserved: [17]byte{3, 0, 0, 0, 5, 1, 2, 0, 0, 0, 0x40, 0xB8},
 	}
 }
@@ -33,7 +33,7 @@ func TestFrameOctets(t *testing.T) {
 	}
 	want := map[int]byte{0: 0xC3, 1: 0x52, 2: 0x00, 3: 0x50, 4: 0x2A, 5: 3, 8: 1, 10: 5, 11: 1, 12: 2, 16: 0x22, 17: 0x22,
 		18: 0x33, 19: 0x33, 20: 0x11, 21: 0x11, 24: 0x40, 25: 0xB8, 26: f.Burst[1], 27: f.Burst[0], 58: 0x5A, 59: f.Burst[32],
-		64: 0x06, 65: 0x01, 66: 0x00, 68: 0xFB, 69: 0x1A, 70: 0x28}
+		64: 0x06, 65: 0x01, 66: 0x00, 68: 0xB3, 69: 0xD0, 70: 0x2D}
 	for i, b := range want {
 		if p[i] != b {
 			t.Errorf("octet %d is %#x, want %#x", i, p[i], b)

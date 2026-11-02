@@ -32,7 +32,7 @@ func events(got []emitted, slot enums.Slot) []string {
 
 func peerCSBK(t *testing.T, n byte) layer2.RawBurst {
 	t.Helper()
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, RawPayload: [8]byte{0, 0, 0, n, 1, 0x30, 0xB4, 0x3C}}
+	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, RawPayload: [8]byte{0, 0, 0, n, 1, 0x2D, 0xCE, 0xD4}}
 	return must(layer2.BuildBurst(&c, 1, layer2.SyncSourceMS))
 }
 
@@ -58,7 +58,7 @@ func TestExpressDataTailBeforeVoice(t *testing.T) {
 	for _, mode := range []bs.Mode{bs.ModeNetwork, bs.ModeRF} {
 		d := netData(t, loadBin(t, "d-sms.bin"), enums.Slot1, 50, 5, time.Second)
 		want := append([]advPkt(nil), d...)
-		v := advNetCall(t, 2, 200, 6, 1, d[len(d)-1].at-20*time.Millisecond, 3191870)
+		v := advNetCall(t, 2, 200, 6, 1, d[len(d)-1].at-20*time.Millisecond, 3002070)
 		got := expressRun(t, newRepeater(t, &bs.Config{Mode: mode, ColorCode: 1, CACH: true}), append(append([]advPkt(nil), d...), v...), 6*time.Second, false)
 		late := time.Duration(0)
 		if mode == bs.ModeRF {
@@ -75,8 +75,8 @@ func TestExpressDataTailBeforeVoice(t *testing.T) {
 func TestExpressBehindQueuedVoice(t *testing.T) {
 	t.Parallel()
 	for _, mode := range []bs.Mode{bs.ModeNetwork, bs.ModeRF} {
-		b := advNetCall(t, 3, 100, 22, 2, time.Second, 3191869)
-		a := advNetCall(t, 3, 10, 11, 1, b[len(b)-1].at-300*time.Millisecond, 3191868)
+		b := advNetCall(t, 3, 100, 22, 2, time.Second, 3002069)
+		a := advNetCall(t, 3, 10, 11, 1, b[len(b)-1].at-300*time.Millisecond, 3002068)
 		last := a[len(a)-1]
 		d := netData(t, loadBin(t, "d-sms.bin"), enums.Slot1, (last.h.Seq+1)&0xFF, 11, last.at+20*time.Millisecond)
 		got := expressRun(t, newRepeater(t, &bs.Config{Mode: mode, ColorCode: 1, CACH: true}), append(append(append([]advPkt(nil), b...), a...), d...), 8*time.Second, false)

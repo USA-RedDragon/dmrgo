@@ -446,7 +446,7 @@ func dataSource(sync enums.SyncPattern) (layer2.SyncSource, bool) {
 func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
 	t.Parallel()
 
-	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.MotorolaServiceOptions()))
+	lc := must(pdu.NewVoiceLC(true, 91, 3002068, layer3.MotorolaServiceOptions()))
 	term := lc
 	term.BurstDataType = enums.DataTypeTerminatorWithLC
 	var r34 pdu.Rate34Data
@@ -457,7 +457,7 @@ func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
 	for i := range r1.Data {
 		r1.Data[i] = byte(i * 11)
 	}
-	csbk := must(pdu.NewBSOutboundActivation(310123, 3191868))
+	csbk := must(pdu.NewBSOutboundActivation(990023, 3002068))
 	var mbc pdu.MBCHeader
 	mustSet(mbc.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF}))
 	for _, d := range []layer2.Data{
@@ -495,7 +495,7 @@ func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
 func TestBuildVoiceBurst_MatchesVoiceTransmitter(t *testing.T) {
 	t.Parallel()
 
-	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.MotorolaServiceOptions()))
+	lc := must(pdu.NewVoiceLC(true, 91, 3002068, layer3.MotorolaServiceOptions()))
 	frags := must(layer2.EncodeEmbeddedFullLinkControl(&lc))
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS} {
 		tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 5, Source: src, Silence: silenceSlot()}))

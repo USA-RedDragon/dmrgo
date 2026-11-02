@@ -135,7 +135,7 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 	r.feed(aloha(t), &idle)
 	wantKinds(t, "TV_GRANT", r.feed(tvGrant(t, 9, 5, false), &idle), trunk.OutputGrant, trunk.OutputTune)
 	dis := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetProtect, pdu.ProtectPDU{
-		ProtectKind: uint8(enums.ProtectDisablePTT), Group: true, TargetAddress: 9, SourceAddress: 3120001}), testCC)
+		ProtectKind: uint8(enums.ProtectDisablePTT), Group: true, TargetAddress: 9, SourceAddress: 3002701}), testCC)
 	out := r.feed(dis, nil)
 	wantKinds(t, "DIS_PTT", out, trunk.OutputProtect)
 	if out[0].Protect != enums.ProtectDisablePTT {
@@ -149,7 +149,7 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 		t.Errorf("P_ACKU %v %+v slot %v", ok, ackP, out[1].Slot)
 	}
 	parked := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetProtect, pdu.ProtectPDU{
-		ProtectKind: uint8(enums.ProtectIllegallyParked), Group: true, TargetAddress: 9, SourceAddress: 3120005}), testCC)
+		ProtectKind: uint8(enums.ProtectIllegallyParked), Group: true, TargetAddress: 9, SourceAddress: 3002705}), testCC)
 	out = r.feed(parked, nil)
 	wantKinds(t, "ILLEGALLY_PARKED", out, trunk.OutputCallEnd, trunk.OutputTune)
 	if out[0].Reason != trunk.ReasonParked {
@@ -163,7 +163,7 @@ func TestMS_DataCallAndEmergency(t *testing.T) {
 	regOnly := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAloha, pdu.AlohaPDU{
 		ServiceFunc: uint8(enums.ServiceFunctionRegistration), NRandWait: 1, Backoff: 2, SysIdentCode: sysIdent(t)}), testCC)
 	r.feed(regOnly, &idle)
-	if err := r.ms.CallData(r.now, false, 3120002, layer3.DataServiceOptions{}); err != nil {
+	if err := r.ms.CallData(r.now, false, 3002702, layer3.DataServiceOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	for range 5 {
@@ -182,7 +182,7 @@ func TestMS_DataCallAndEmergency(t *testing.T) {
 		t.Fatalf("C_RAND %v %+v", ok, ra)
 	}
 	pd := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateDataGrant, pdu.PrivateDataGrantPDU{
-		PhysicalChannel: 7, TargetAddress: 3120002, SourceAddress: msAddr}), testCC)
+		PhysicalChannel: 7, TargetAddress: 3002702, SourceAddress: msAddr}), testCC)
 	wantKinds(t, "PD_GRANT", r.feed(pd, &idle), trunk.OutputGrant, trunk.OutputTune)
 	if r.ms.Busy() {
 		t.Error("busy after the grant")

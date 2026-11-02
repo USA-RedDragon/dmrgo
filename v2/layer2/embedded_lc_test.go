@@ -284,7 +284,7 @@ func fragOctets(f [4][32]unpacked.Bit) [4][4]byte {
 func TestEmbeddedLCAssembler(t *testing.T) {
 	t.Parallel()
 
-	lc := [9]byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5b, 0x30, 0xb4, 0x3c}
+	lc := [9]byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5b, 0x2d, 0xce, 0xd4}
 	frags := layer2.EncodeEmbeddedLC(lc)
 	order := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
 	var a layer2.EmbeddedLCAssembler

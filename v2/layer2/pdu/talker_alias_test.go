@@ -34,14 +34,14 @@ func TestTalkerAlias_RoundTrip(t *testing.T) {
 	}{
 		{"", layer3.TalkerAliasSevenBit, 0},
 		{"DL1ABC", layer3.TalkerAliasSevenBit, 0},
-		{"KI5VMF J", layer3.TalkerAliasSevenBit, 1},
+		{"N0CALL J", layer3.TalkerAliasSevenBit, 1},
 		{"0123456789ABCDEFGHIJKLMNOPQRSTU", layer3.TalkerAliasSevenBit, 3},
 		{"Müller", layer3.TalkerAliasISOEightBit, 0},
 		{"N0CALL Jürgen Brück Ñ", layer3.TalkerAliasISOEightBit, 3},
 		{"日本語", layer3.TalkerAliasUTF8, 1},
 		{"ABCDEFGHIJKLMNOPQRSTUVWXYZ0", layer3.TalkerAliasUTF8, 3},
 		{"АБВ", layer3.TalkerAliasUTF16, 0},
-		{"Ω KI5VMF 日本語", layer3.TalkerAliasUTF16, 3},
+		{"Ω N0CALL 日本語", layer3.TalkerAliasUTF16, 3},
 		{"a😀", layer3.TalkerAliasUTF16, 0},
 	}
 	for _, tt := range tests {
@@ -153,7 +153,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	if _, err := pdu.EncodeTalkerAlias("x", layer3.TalkerAliasDataFormat(4)); !errors.As(err, &fre) {
 		t.Errorf("unknown format: %v, want a *dmrgo.FieldRangeError", err)
 	}
-	lcs, _ := pdu.EncodeTalkerAlias("KI5VMF Jacob", layer3.TalkerAliasUTF8)
+	lcs, _ := pdu.EncodeTalkerAlias("N0CALL Jacob", layer3.TalkerAliasUTF8)
 	hdr, ok := lcs[0].AsTalkerAliasHeader()
 	if !ok {
 		t.Fatal("LC 0 is not a header")
@@ -188,7 +188,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	if _, ok, _ := a.Add(&lcs[0]); ok {
 		t.Error("changed header kept old blocks")
 	}
-	if alias, ok, _ := a.Add(&lcs[1]); !ok || alias != "KI5VMF Jacob" {
+	if alias, ok, _ := a.Add(&lcs[1]); !ok || alias != "N0CALL Jacob" {
 		t.Errorf("got %q %v", alias, ok)
 	}
 	a.Reset()

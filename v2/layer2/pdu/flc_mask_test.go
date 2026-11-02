@@ -25,7 +25,7 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	t.Parallel()
 
 	var base pdu.FullLinkControl
-	noErr(base.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101}))
+	noErr(base.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3002801}))
 
 	tests := []struct {
 		dataType enums.DataType
@@ -56,7 +56,7 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 
 	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeIdle} {
 		flc := pdu.FullLinkControl{BurstDataType: dt}
-		noErr(flc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101}))
+		noErr(flc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3002801}))
 		if _, err := flc.Encode(); err == nil {
 			t.Errorf("%s: FullLinkControl.Encode returned no error", dt.String())
 		}

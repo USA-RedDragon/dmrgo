@@ -13,7 +13,7 @@ import (
 
 const (
 	preTarget = 9
-	preSource = 3120000
+	preSource = 3002700
 )
 
 func dataPreambles(t testing.TB, n int) []layer2.RawBurst {
@@ -90,7 +90,7 @@ func TestPreambleBusy(t *testing.T) {
 	in := timed(append(pre, unconfirmedData(t)...), enums.Slot1, rf, 0)
 	header := time.Duration(len(pre)) * 60 * time.Millisecond
 	net := bs.Source{Peer: 7}
-	in = merge(in, call(t, 1, 5, 3191868, 0, enums.Slot1, net, 100*time.Millisecond)[:1])
+	in = merge(in, call(t, 1, 5, 3002068, 0, enums.Slot1, net, 100*time.Millisecond)[:1])
 	r := newRepeater(t, &bs.Config{ColorCode: 1, CACH: true})
 	var mid bs.SlotState
 	end := header + time.Second
@@ -149,7 +149,7 @@ func TestPreambleCSBK(t *testing.T) {
 	if !found {
 		t.Error("no group CSBK Activity Update during the CSBK preambles")
 	}
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, RawPayload: [8]byte{0, 0, 0, 0, preTarget, 0x2F, 0x9B, 0x80}}
+	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, RawPayload: [8]byte{0, 0, 0, 0, preTarget, 0x2D, 0xD1, 0x4C}}
 	d.in(420*time.Millisecond, enums.Slot1, rf, must(layer2.BuildBurst(&c, 1, layer2.SyncSourceMS)))
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotIdle {
 		t.Errorf("slot state %v after the CSBK, want Idle", st)

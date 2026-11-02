@@ -37,7 +37,7 @@ type paddingRejectCase struct {
 func TestEncodeRejectsPaddingBits(t *testing.T) {
 	t.Parallel()
 
-	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
+	lc := must(pdu.NewVoiceLC(true, 91, 3002068, layer3.ServiceOptions{}))
 	cases := []paddingRejectCase{
 		{"layer2.CACH.Encode", 17, "CACH", "Payload", func(_ *testing.T, p []byte) error {
 			c := layer2.CACH{Payload: [3]byte(p)}
@@ -71,7 +71,7 @@ func TestEncodeRejectsPaddingBits(t *testing.T) {
 		}},
 		{"voice.Transmitter.Frame", 49, "vocoder", "AMBEFrame", func(t *testing.T, p []byte) error {
 			tx := must(voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot()}))
-			if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3191868}, nil); err != nil {
+			if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3002068}, nil); err != nil {
 				t.Fatal(err)
 			}
 			return tx.Frame(vocoder.AMBEFrame(p))
@@ -127,7 +127,7 @@ type rangeCase struct {
 func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 	t.Parallel()
 
-	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
+	lc := must(pdu.NewVoiceLC(true, 91, 3002068, layer3.ServiceOptions{}))
 	idle := must(layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS))
 	cases := []rangeCase{
 		{"layer2.BuildBurst", "SlotType", "ColorCode", 4, func() error {
@@ -156,11 +156,11 @@ func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 			return err
 		}},
 		{"pdu.NewVoiceLCBytes", "ServiceOptions", "Reserved", 2, func() error {
-			_, err := pdu.NewVoiceLCBytes(true, 91, 3191868, layer3.ServiceOptions{Reserved: 4})
+			_, err := pdu.NewVoiceLCBytes(true, 91, 3002068, layer3.ServiceOptions{Reserved: 4})
 			return err
 		}},
 		{"pdu.NewVoiceLCBytes", "ServiceOptions", "PriorityLevel", 2, func() error {
-			_, err := pdu.NewVoiceLCBytes(true, 91, 3191868, layer3.ServiceOptions{PriorityLevel: 4})
+			_, err := pdu.NewVoiceLCBytes(true, 91, 3002068, layer3.ServiceOptions{PriorityLevel: 4})
 			return err
 		}},
 		{"pdu.SysCode.Pack", "SysCode", "Model", 2, func() error {
@@ -292,8 +292,8 @@ func TestSetAddressesErrors(t *testing.T) {
 		set  func(target, source uint32) (unchanged bool, err error)
 		none func() error
 	}
-	lcb := must(pdu.NewVoiceLCBytes(true, 91, 3191868, layer3.ServiceOptions{}))
-	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
+	lcb := must(pdu.NewVoiceLCBytes(true, 91, 3002068, layer3.ServiceOptions{}))
+	lc := must(pdu.NewVoiceLC(true, 91, 3002068, layer3.ServiceOptions{}))
 	var pre pdu.CSBK
 	noErr(pre.SetPreamble(pdu.PreamblePDU{TargetAddress: 1, SourceAddress: 2}))
 	csbkb := pdu.CSBKBytes(must(pre.Encode()))

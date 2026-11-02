@@ -11,21 +11,21 @@ import (
 func TestTalkerAliasForms(t *testing.T) {
 	t.Parallel()
 
-	local := []byte{'D', 'M', 'R', 'A', 0x30, 0xB4, 0x3C, 0, 'K', 'I', '5', 'V', 'M', 'F', ' '}
+	local := []byte{'D', 'M', 'R', 'A', 0x2D, 0xCE, 0xD4, 0, 'N', '0', 'C', 'A', 'L', 'L', ' '}
 	l, err := dmrd.DecodeLocalTalkerAlias(local)
-	if err != nil || l.Source != 3191868 || l.Type != 0 || string(l.Data[:]) != "KI5VMF " {
+	if err != nil || l.Source != 3002068 || l.Type != 0 || string(l.Data[:]) != "N0CALL " {
 		t.Fatalf("%+v %v", l, err)
 	}
-	m := dmrd.TalkerAlias{Repeater: 3149999, Source: l.Source, Type: l.Type, Data: l.Data, Size: 19}
+	m := dmrd.TalkerAlias{Repeater: 3003299, Source: l.Source, Type: l.Type, Data: l.Data, Size: 19}
 	p, err := m.AppendBinary(nil)
-	if err != nil || len(p) != 19 || !bytes.Equal(p[8:], local[4:]) || !bytes.Equal(p[4:8], []byte{0x00, 0x30, 0x10, 0xAF}) {
+	if err != nil || len(p) != 19 || !bytes.Equal(p[8:], local[4:]) || !bytes.Equal(p[4:8], []byte{0x00, 0x2D, 0xD3, 0xA3}) {
 		t.Fatalf("%x %v", p, err)
 	}
 	if got, err := dmrd.DecodeTalkerAlias(p); err != nil || got != m {
 		t.Fatalf("%+v %v", got, err)
 	}
 	short, err := dmrd.DecodeTalkerAlias(p[:15])
-	if err != nil || short.Size != 15 || short.Repeater != 3149999 || short.Source != 3191868 || short.Data != [7]byte{'K', 'I', '5'} {
+	if err != nil || short.Size != 15 || short.Repeater != 3003299 || short.Source != 3002068 || short.Data != [7]byte{'N', '0', 'C'} {
 		t.Fatalf("DMRGateway form: %+v %v", short, err)
 	}
 	if q, err := short.AppendBinary(nil); err != nil || !bytes.Equal(q, p[:15]) {
@@ -46,7 +46,7 @@ func TestTalkerAliasForms(t *testing.T) {
 func TestPositionForms(t *testing.T) {
 	t.Parallel()
 
-	local := dmrd.LocalPosition{Source: 3191868, Data: [7]byte{1, 2, 3, 4, 5, 6, 7}}
+	local := dmrd.LocalPosition{Source: 3002068, Data: [7]byte{1, 2, 3, 4, 5, 6, 7}}
 	p, err := local.AppendBinary(nil)
 	if err != nil || len(p) != 14 || string(p[:4]) != "DMRG" {
 		t.Fatalf("%x %v", p, err)
@@ -63,7 +63,7 @@ func TestPositionForms(t *testing.T) {
 		t.Fatalf("%+v %v", got, err)
 	}
 	short, err := dmrd.DecodePosition(q[:14])
-	if err != nil || short.Size != 14 || short.Repeater != 7 || short.Source != 3191868 || short.Data != [7]byte{1, 2, 3} {
+	if err != nil || short.Size != 14 || short.Repeater != 7 || short.Source != 3002068 || short.Data != [7]byte{1, 2, 3} {
 		t.Fatalf("DMRGateway form: %+v %v", short, err)
 	}
 	if r, err := short.AppendBinary(nil); err != nil || !bytes.Equal(r, q[:14]) {
@@ -74,12 +74,12 @@ func TestPositionForms(t *testing.T) {
 func TestAliasAndPositionLC(t *testing.T) {
 	t.Parallel()
 
-	local := dmrd.LocalTalkerAlias{Source: 3191868, Type: 0, Data: [7]byte{0x4B, 'K', 'I', '5', 'V', 'M', 'F'}}
+	local := dmrd.LocalTalkerAlias{Source: 3002068, Type: 0, Data: [7]byte{0x4B, 'N', '0', 'C', 'A', 'L', 'L'}}
 	lc, err := local.LC()
 	if err != nil || lc.FLCO != enums.FLCOTalkerAliasHeader || lc.FID != enums.FIDStandardized {
 		t.Fatalf("local alias: %+v %v", lc, err)
 	}
-	m := dmrd.TalkerAlias{Repeater: 1, Source: 3191868, Type: 2, Data: local.Data, Size: 19}
+	m := dmrd.TalkerAlias{Repeater: 1, Source: 3002068, Type: 2, Data: local.Data, Size: 19}
 	if lc, err := m.LC(); err != nil || lc.FLCO != enums.FLCOTalkerAliasBlock2 {
 		t.Fatalf("alias block 2: %+v %v", lc, err)
 	}
@@ -87,11 +87,11 @@ func TestAliasAndPositionLC(t *testing.T) {
 	if _, err := m.LC(); err == nil {
 		t.Fatal("Type 4: no error")
 	}
-	pos := dmrd.Position{Repeater: 1, Source: 3191868, Data: [7]byte{0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}, Size: 18}
+	pos := dmrd.Position{Repeater: 1, Source: 3002068, Data: [7]byte{0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}, Size: 18}
 	if lc, err := pos.LC(); err != nil || lc.FLCO != enums.FLCOGPSInfo {
 		t.Fatalf("position: %+v %v", lc, err)
 	}
-	lp := dmrd.LocalPosition{Source: 3191868, Data: pos.Data}
+	lp := dmrd.LocalPosition{Source: 3002068, Data: pos.Data}
 	if lc, err := lp.LC(); err != nil || lc.FLCO != enums.FLCOGPSInfo {
 		t.Fatalf("local position: %+v %v", lc, err)
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func testConfig() rftx.SeqConfig {
-	return rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	return rftx.SeqConfig{ColorCode: 1, Source: 3002068, Dest: 9990, BS: 990023, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 }
 
 func TestLoopbackDecodesEverySequence(t *testing.T) {

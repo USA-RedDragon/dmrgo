@@ -19,7 +19,7 @@ func unhex(t testing.TB, s string) []byte {
 	return b
 }
 
-const registration = "000cf020073331393138363800" + "00"
+const registration = "000cf020073330303230363800" + "00"
 
 func TestRegistration(t *testing.T) {
 	t.Parallel()
@@ -31,11 +31,11 @@ func TestRegistration(t *testing.T) {
 	}
 	id, ok := m.DeviceID()
 	if m.Header.Type != ars.TypeDeviceRegistration || !m.Header.Extension || !m.Header.AckRequired || m.Registration.Event != ars.EventInitial ||
-		!ok || id != 3191868 || len(m.User) != 0 || len(m.Password) != 0 || len(m.Extra) != 0 {
+		!ok || id != 3002068 || len(m.User) != 0 || len(m.Password) != 0 || len(m.Extra) != 0 {
 		t.Fatalf("got %s", m.String())
 	}
 	n := ars.NewRegistration(ars.EventInitial)
-	if _, err := n.SetDeviceID(nil, 3191868); err != nil {
+	if _, err := n.SetDeviceID(nil, 3002068); err != nil {
 		t.Fatal(err)
 	}
 	out, err := n.AppendBinary(nil)

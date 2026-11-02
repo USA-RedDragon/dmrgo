@@ -31,7 +31,7 @@ func silenceSlot() [9]byte {
 
 func groupLC(fid enums.FID) pdu.FullLinkControl {
 	var lc pdu.FullLinkControl
-	mustSet(lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}))
+	mustSet(lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3002068}))
 	lc.FID = fid
 	return lc
 }
@@ -154,7 +154,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.String(), res)
 					}
 					target, source, ok := got.Addresses()
-					if !ok || target != 91 || source != 3191868 {
+					if !ok || target != 91 || source != 3002068 {
 						t.Errorf("burst %d: addresses %d -> %d", i, source, target)
 					}
 				}

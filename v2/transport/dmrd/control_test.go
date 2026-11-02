@@ -66,17 +66,17 @@ func TestMMDVMControl(t *testing.T) {
 		p    []byte
 		want dmrd.Control
 	}{
-		{bin("RPTL", 3149999), dmrd.Control{Command: dmrd.CommandRPTL, ID: 3149999}},
+		{bin("RPTL", 3003299), dmrd.Control{Command: dmrd.CommandRPTL, ID: 3003299}},
 		{bin("RPTACK", 0xDEADBEEF), dmrd.Control{Command: dmrd.CommandRPTACK, ID: 0xDEADBEEF}},
-		{append(bin("RPTK", 3149999), token[:]...), dmrd.Control{Command: dmrd.CommandRPTK, ID: 3149999, Token: token}},
-		{bin("RPTPING", 3149999), dmrd.Control{Command: dmrd.CommandRPTPING, ID: 3149999}},
-		{bin("MSTPONG", 3149999), dmrd.Control{Command: dmrd.CommandMSTPONG, ID: 3149999}},
-		{bin("RPTCL", 3149999), dmrd.Control{Command: dmrd.CommandRPTCL, ID: 3149999}},
-		{bin("MSTCL", 3149999), dmrd.Control{Command: dmrd.CommandMSTCL, ID: 3149999}},
-		{bin("MSTNAK", 3149999), dmrd.Control{Command: dmrd.CommandMSTNAK, ID: 3149999}},
-		{bin("RPTSBKN", 3149999), dmrd.Control{Command: dmrd.CommandRPTSBKN, ID: 3149999}},
-		{append(bin("RPTO", 3149999), "StartRef=4013;"...), dmrd.Control{Command: dmrd.CommandRPTO, ID: 3149999, Text: []byte("StartRef=4013;")}},
-		{append(bin("RPTG", 3149999), "+30.1234-097.1234"...), dmrd.Control{Command: dmrd.CommandRPTG, ID: 3149999, Text: []byte("+30.1234-097.1234")}},
+		{append(bin("RPTK", 3003299), token[:]...), dmrd.Control{Command: dmrd.CommandRPTK, ID: 3003299, Token: token}},
+		{bin("RPTPING", 3003299), dmrd.Control{Command: dmrd.CommandRPTPING, ID: 3003299}},
+		{bin("MSTPONG", 3003299), dmrd.Control{Command: dmrd.CommandMSTPONG, ID: 3003299}},
+		{bin("RPTCL", 3003299), dmrd.Control{Command: dmrd.CommandRPTCL, ID: 3003299}},
+		{bin("MSTCL", 3003299), dmrd.Control{Command: dmrd.CommandMSTCL, ID: 3003299}},
+		{bin("MSTNAK", 3003299), dmrd.Control{Command: dmrd.CommandMSTNAK, ID: 3003299}},
+		{bin("RPTSBKN", 3003299), dmrd.Control{Command: dmrd.CommandRPTSBKN, ID: 3003299}},
+		{append(bin("RPTO", 3003299), "StartRef=4013;"...), dmrd.Control{Command: dmrd.CommandRPTO, ID: 3003299, Text: []byte("StartRef=4013;")}},
+		{append(bin("RPTG", 3003299), "+30.1234-097.1234"...), dmrd.Control{Command: dmrd.CommandRPTG, ID: 3003299, Text: []byte("+30.1234-097.1234")}},
 	}
 	for _, tt := range tests {
 		got, err := dmrd.DecodeControl(tt.p, dmrd.DialectMMDVM)
@@ -204,7 +204,7 @@ func TestLoginSalt(t *testing.T) {
 func TestRepeaterID(t *testing.T) {
 	t.Parallel()
 
-	const id = 3129100
+	const id = 3002900
 	data, _ := (&dmrd.Data{Repeater: id, Slot: 1}).AppendBinary(nil)
 	alias, _ := (&dmrd.TalkerAlias{Repeater: id}).AppendBinary(nil)
 	pos, _ := (&dmrd.Position{Repeater: id}).AppendBinary(nil)

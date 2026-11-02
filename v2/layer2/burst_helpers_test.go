@@ -28,7 +28,7 @@ func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 			PriorityLevel: 0,
 		},
 		GroupAddress:  9990,
-		SourceAddress: 3120101,
+		SourceAddress: 3002801,
 	}))
 
 	lcBytes := must(flc.Encode())

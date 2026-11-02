@@ -19,7 +19,7 @@ func TestTSCCManyBusyCarriers(t *testing.T) {
 	ms := make([]*trunk.MSConfig, 0, 28)
 	for i := range 28 {
 		tg := [trunk.MaxTalkgroups]uint32{uint32(100 + i)}
-		ms = append(ms, &trunk.MSConfig{Address: uint32(3120001 + i), Talkgroups: tg, TalkgroupsLen: 1, Seed: uint64(i + 1)})
+		ms = append(ms, &trunk.MSConfig{Address: uint32(3002701 + i), Talkgroups: tg, TalkgroupsLen: 1, Seed: uint64(i + 1)})
 	}
 	s := newSim(t, cfg, ms...)
 	s.until(30*time.Second, func() bool {

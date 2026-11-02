@@ -160,7 +160,7 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 
 	for _, fid := range []enums.FID{enums.FIDStandardized, enums.FIDMotorola} {
 		for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
-			lc := reedsolomon.Encode([9]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C})
+			lc := reedsolomon.Encode([9]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x2D, 0xCE, 0xD4})
 			for i := 9; i < 12; i++ {
 				lc[i] ^= 0x96
 			}
@@ -171,8 +171,8 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 			}
 
 			target, source, ok := flc.Addresses()
-			if !ok || target != 9990 || source != 3191868 {
-				t.Errorf("FID %#x FLCO %d: Addresses() = %d, %d, %v, want 9990, 3191868, true", fid, flco, target, source, ok)
+			if !ok || target != 9990 || source != 3002068 {
+				t.Errorf("FID %#x FLCO %d: Addresses() = %d, %d, %v, want 9990, 3002068, true", fid, flco, target, source, ok)
 			}
 			_, gv := flc.AsGroupVoice()
 			_, uu := flc.AsUnitToUnit()

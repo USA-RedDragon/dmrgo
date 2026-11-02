@@ -118,7 +118,7 @@ func TestBuildAndRebuild(t *testing.T) {
 	t.Parallel()
 
 	var p [12]byte
-	copy(p[:], []byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5B, 0x30, 0xB4, 0x3C})
+	copy(p[:], []byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5B, 0x2D, 0xCE, 0xD4})
 	sealed := p
 	raw, err := layer2.BuildDataBurst(sealed, enums.DataTypeCSBK, 7, layer2.SyncSourceBS)
 	if err != nil {
@@ -148,8 +148,8 @@ func TestBuildAndRebuild(t *testing.T) {
 func TestUserCall(t *testing.T) {
 	t.Parallel()
 
-	u := ipsc.User{Opcode: ipsc.OpPrivateVoice, Destination: 3120001, Source: 3191868}
-	if g, tg, src := u.Call(); g || tg != 3120001 || src != 3191868 {
+	u := ipsc.User{Opcode: ipsc.OpPrivateVoice, Destination: 3002701, Source: 3002068}
+	if g, tg, src := u.Call(); g || tg != 3002701 || src != 3002068 {
 		t.Fatalf("Call: %v %d %d", g, tg, src)
 	}
 	for _, c := range []struct {

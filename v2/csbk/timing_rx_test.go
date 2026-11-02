@@ -14,7 +14,7 @@ import (
 func preambleOn(t *testing.T, src layer2.SyncSource) *layer2.RawBurst {
 	t.Helper()
 	c := pdu.CSBK{LastBlock: true}
-	if err := c.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: 9, SourceAddress: 3120005}); err != nil {
+	if err := c.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: 9, SourceAddress: 3002705}); err != nil {
 		t.Fatal(err)
 	}
 	b, err := layer2.BuildBurst(&c, 1, src)

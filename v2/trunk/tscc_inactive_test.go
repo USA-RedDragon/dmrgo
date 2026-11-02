@@ -14,7 +14,7 @@ import (
 func TestTSCCInactiveClearsRunningCall(t *testing.T) {
 	t.Parallel()
 
-	s := newServiceSite(&trunk.TSCCConfig{Inactive: 2 * time.Second}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{Inactive: 2 * time.Second}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	var ends []trunk.Reason
 	var endAt time.Duration
 	s.onTSCC = func(o *trunk.TSCCOutput) {
@@ -27,7 +27,7 @@ func TestTSCCInactiveClearsRunningCall(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.run(time.Second)
-	lc, _ := pdu.NewVoiceLC(true, 9, 3120001, layer3.ServiceOptions{})
+	lc, _ := pdu.NewVoiceLC(true, 9, 3002701, layer3.ServiceOptions{})
 	vt, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 3, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot()})
 	if err != nil {
 		t.Fatal(err)

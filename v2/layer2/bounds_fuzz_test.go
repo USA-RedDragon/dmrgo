@@ -18,7 +18,7 @@ func burstsBound(n int) int {
 func runTransmitterBounds(t *testing.T, data []byte) {
 	t.Helper()
 	data = data[:min(len(data), maxBoundsOps)]
-	lc, err := pdu.NewVoiceLC(true, 9990, 3191868, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9990, 3002068, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

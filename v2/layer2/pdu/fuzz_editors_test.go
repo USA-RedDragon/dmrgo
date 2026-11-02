@@ -73,11 +73,11 @@ func editorSeeds(tb testing.TB, add func(kind uint8, data []byte, target, source
 		payload, _ := b.BPTCPayload()
 		switch b.SlotType().DataType {
 		case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-			add(uint8(0), payload[:], uint32(9), uint32(3120101), true, uint8(3))
+			add(uint8(0), payload[:], uint32(9), uint32(3002801), true, uint8(3))
 		case enums.DataTypeCSBK:
-			add(uint8(1), payload[:], uint32(9), uint32(3120101), false, uint8(0))
+			add(uint8(1), payload[:], uint32(9), uint32(3002801), false, uint8(0))
 		case enums.DataTypeDataHeader:
-			add(uint8(2), payload[:], uint32(1<<24), uint32(3120101), true, uint8(0))
+			add(uint8(2), payload[:], uint32(1<<24), uint32(3002801), true, uint8(0))
 		default:
 		}
 	}
