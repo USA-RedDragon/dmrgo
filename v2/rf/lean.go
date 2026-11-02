@@ -101,6 +101,7 @@ type leanTiming struct {
 	estN           int32
 	lastC          float32
 	stale          bool
+	fresh          float32
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -137,13 +138,16 @@ func (tm *leanTiming) settle() {
 		q *= q
 	}
 	share := tm.owed * (1 - keep)
-	res := (tm.corr - share) / nall
+	lag := leanClockLag * tm.fresh * (1 - keep)
+	span := nall - lag
+	res := (tm.corr - share + lag*tm.rate) / span
 	tm.owed -= share
+	tm.fresh *= keep
 	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
 	if tm.rateK == 0 || v <= 0 {
 		return
 	}
-	w := nall * nall / (n * v)
+	w := span * span / (n * v)
 	if tm.estN >= leanClockAvg {
 		tm.estS, tm.estW = tm.estS*(leanClockAvg-1)/leanClockAvg, tm.estW*(leanClockAvg-1)/leanClockAvg
 	} else {
@@ -1535,7 +1539,10 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
 	r.ms.rs, r.ms.rs2, r.ms.rk = 0, 0, 0
 	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed = false, r.trackGain, 0, leanClockGain, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 0
+	if !r.bs {
+		r.tm.fresh = 1
+	}
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.mmOK && !r.tm.mm {
