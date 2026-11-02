@@ -1,4 +1,4 @@
-// Command rxbench writes the receiver sensitivity block of docs/rx/README.md
+// Command rxbench writes the receiver sensitivity block of docs/rx.md
 // and its graphs from the sweep data of the receiver in v2/rf. With
 // -update-readme it first runs the long sweep (DMRRF_RXBENCH=full go test
 // -run TestRxBench in v2/rf), then rewrites the block between the rxbench
@@ -35,6 +35,9 @@ import (
 const (
 	beginMarker = "<!-- rxbench:begin -->"
 	endMarker   = "<!-- rxbench:end -->"
+	docName     = "docs/rx.md"
+	graphDir    = "docs/rx"
+	imgDir      = "rx/"
 )
 
 const (
@@ -58,8 +61,8 @@ type options struct {
 
 func defineFlags(fs *flag.FlagSet) options {
 	return options{
-		update:  fs.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx/README.md and the graphs"),
-		check:   fs.Bool("check-readme", false, "fail when the block of docs/rx/README.md or a graph differs from the committed data"),
+		update:  fs.Bool("update-readme", false, "run the long sweep, then rewrite the block of docs/rx.md and the graphs"),
+		check:   fs.Bool("check-readme", false, "fail when the block of docs/rx.md or a graph differs from the committed data"),
 		noSweep: fs.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep"),
 	}
 }
@@ -109,29 +112,29 @@ func run(ctx context.Context, root string, update, sweep bool) error {
 	}
 	block := renderBlock(d)
 	graphs := renderGraphs(d)
-	readmePath := filepath.Join(root, "docs/rx/README.md")
+	readmePath := filepath.Join(root, docName)
 	readme, err := os.ReadFile(readmePath)
 	if err != nil {
 		return err
 	}
 	i, j := bytes.Index(readme, []byte(beginMarker)), bytes.Index(readme, []byte(endMarker))
 	if i < 0 || j < i {
-		return errors.New("docs/rx/README.md has no rxbench markers")
+		return errors.New("docs/rx.md has no rxbench markers")
 	}
 	next := append(append(append([]byte{}, readme[:i+len(beginMarker)]...), block...), readme[j:]...)
 	i, j = bytes.Index(next, []byte(shortLCBegin)), bytes.Index(next, []byte(shortLCEnd))
 	if i < 0 || j < i {
-		return errors.New("docs/rx/README.md has no shortlc markers")
+		return errors.New("docs/rx.md has no shortlc markers")
 	}
 	next = append(append(append([]byte{}, next[:i+len(shortLCBegin)]...), renderShortLC(d.shortLC)...), next[j:]...)
 	i, j = bytes.Index(next, []byte(extBegin)), bytes.Index(next, []byte(extEnd))
 	if i < 0 || j < i {
-		return errors.New("docs/rx/README.md has no extcmp markers")
+		return errors.New("docs/rx.md has no extcmp markers")
 	}
 	next = append(append(append([]byte{}, next[:i+len(extBegin)]...), renderExt(d.ext)...), next[j:]...)
 	stale := !bytes.Equal(next, readme)
 	for name, svg := range graphs {
-		p := filepath.Join(root, "docs/rx", name)
+		p := filepath.Join(root, graphDir, name)
 		old, err := os.ReadFile(p)
 		if err != nil || !bytes.Equal(old, svg) {
 			stale = true
@@ -423,7 +426,7 @@ func renderBlock(d data) []byte {
 	for _, m := range modes() {
 		b.WriteString("#### " + m[1] + "\n\n")
 		for _, g := range graphs() {
-			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](" + m[0] + "/" + g.key + ".svg)\n")
+			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](" + imgDir + m[0] + "/" + g.key + ".svg)\n")
 		}
 		b.WriteString("\n")
 	}

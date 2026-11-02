@@ -15,7 +15,7 @@ var rxMatrixLimits = []mxLimit{
 		},
 		checks: "all",
 		reason: "low-rate I/Q at 9.6 kHz holds 4.8 kHz on each side; 2.5 kHz or more off, 9.8 dB or more of the signal power is outside the channel filter of the radio chip",
-		doc:    "docs/rx/README.md, low-rate I/Q tier 0 (owner accepted 2026-10-29)",
+		doc:    "docs/rx.md, low-rate I/Q tier 0 (owner accepted 2026-10-29)",
 	},
 }
 

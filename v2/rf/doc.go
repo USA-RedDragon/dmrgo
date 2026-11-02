@@ -46,7 +46,7 @@
 // timing, symbol clock, levels and carrier offset, as on the inbound of a
 // repeater or a duplex hotspot with a radio on each slot. The constructors
 // allocate every buffer of the receiver, and Write and Flush allocate
-// nothing. docs/rx/README.md gives the sensitivity, compute and RAM of each
+// nothing. docs/rx.md gives the sensitivity, compute and RAM of each
 // tier, and docs/tx.md the limits and cost of the transmitter.
 //
 // The transmit side mirrors it. NewTransmitter makes a Transmitter from a

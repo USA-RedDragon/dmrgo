@@ -42,6 +42,6 @@ Each state machine has a page with its states, config, timers and errors. The ma
 ## Reference
 
 - The [Go API](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) on pkg.go.dev.
-- The [Receiver](../rx/README.md) and [Transmitter](../tx.md) datasheets.
+- The [Receiver](../rx.md) and [Transmitter](../tx.md) datasheets.
 - [Examples](../reference/examples.md): the example programs, which run offline on captures.
 - [ETSI coverage](../reference/etsi.md): the status of each clause of ETSI TS 102 361.

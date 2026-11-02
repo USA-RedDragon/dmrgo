@@ -57,7 +57,7 @@ const (
 ```
 <!-- /dmrgo:code -->
 
-The [Receiver datasheet](../rx/README.md) gives the measured sensitivity, CPU and RAM of each tier, for each input: FM discriminator audio, I/Q from a software radio, and I/Q that a radio chip filtered to the channel.
+The [Receiver datasheet](../rx.md) gives the measured sensitivity, CPU and RAM of each tier, for each input: FM discriminator audio, I/Q from a software radio, and I/Q that a radio chip filtered to the channel.
 
 ## Pick a tier
 

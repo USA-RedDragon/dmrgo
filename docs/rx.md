@@ -1,7 +1,7 @@
 # Receiver
 
 
-Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a software radio, or from I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel. Its tiers trade CPU and RAM for sensitivity, from a microcontroller to a PC. [v2/cmd/dmrrf](../../v2/cmd/dmrrf/README.md) decodes DMR from I/Q or discriminator audio in the file formats of common software radios, and writes test transmissions in the same formats.
+Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a software radio, or from I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel. Its tiers trade CPU and RAM for sensitivity, from a microcontroller to a PC. [v2/cmd/dmrrf](../v2/cmd/dmrrf/README.md) decodes DMR from I/Q or discriminator audio in the file formats of common software radios, and writes test transmissions in the same formats.
 
 <!-- rxbench:begin -->
 | Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU at C/N 6 dB | Worst-case CPU | RAM |
@@ -84,30 +84,30 @@ Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with 
 
 #### FM discriminator audio
 
-![Voice frame, FM discriminator audio: frame error rate against Eb/N0, references and tiers](audio/ambe.svg)
-![Data rate 1/2, FM discriminator audio: frame error rate against Eb/N0, references and tiers](audio/rate12.svg)
-![Data rate 3/4, FM discriminator audio: frame error rate against Eb/N0, references and tiers](audio/rate34.svg)
-![CSBK, FM discriminator audio: frame error rate against Eb/N0, references and tiers](audio/csbk.svg)
-![Embedded LC, FM discriminator audio: frame error rate against Eb/N0, references and tiers](audio/elc.svg)
-![Data rate 1 payload bits, FM discriminator audio: bit error rate against Eb/N0, references and tiers](audio/rate1_bit.svg)
+![Voice frame, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/ambe.svg)
+![Data rate 1/2, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/rate12.svg)
+![Data rate 3/4, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/rate34.svg)
+![CSBK, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/csbk.svg)
+![Embedded LC, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/elc.svg)
+![Data rate 1 payload bits, FM discriminator audio: bit error rate against Eb/N0, references and tiers](rx/audio/rate1_bit.svg)
 
 #### I/Q at 9.6 kHz
 
-![Voice frame, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](iqlow/ambe.svg)
-![Data rate 1/2, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](iqlow/rate12.svg)
-![Data rate 3/4, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](iqlow/rate34.svg)
-![CSBK, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](iqlow/csbk.svg)
-![Embedded LC, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](iqlow/elc.svg)
-![Data rate 1 payload bits, I/Q at 9.6 kHz: bit error rate against Eb/N0, references and tiers](iqlow/rate1_bit.svg)
+![Voice frame, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/ambe.svg)
+![Data rate 1/2, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/rate12.svg)
+![Data rate 3/4, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/rate34.svg)
+![CSBK, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/csbk.svg)
+![Embedded LC, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/elc.svg)
+![Data rate 1 payload bits, I/Q at 9.6 kHz: bit error rate against Eb/N0, references and tiers](rx/iqlow/rate1_bit.svg)
 
 #### I/Q
 
-![Voice frame, I/Q: frame error rate against Eb/N0, references and tiers](iq/ambe.svg)
-![Data rate 1/2, I/Q: frame error rate against Eb/N0, references and tiers](iq/rate12.svg)
-![Data rate 3/4, I/Q: frame error rate against Eb/N0, references and tiers](iq/rate34.svg)
-![CSBK, I/Q: frame error rate against Eb/N0, references and tiers](iq/csbk.svg)
-![Embedded LC, I/Q: frame error rate against Eb/N0, references and tiers](iq/elc.svg)
-![Data rate 1 payload bits, I/Q: bit error rate against Eb/N0, references and tiers](iq/rate1_bit.svg)
+![Voice frame, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/ambe.svg)
+![Data rate 1/2, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/rate12.svg)
+![Data rate 3/4, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/rate34.svg)
+![CSBK, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/csbk.svg)
+![Embedded LC, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/elc.svg)
+![Data rate 1 payload bits, I/Q: bit error rate against Eb/N0, references and tiers](rx/iq/rate1_bit.svg)
 
 </details>
 
