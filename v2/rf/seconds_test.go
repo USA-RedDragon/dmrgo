@@ -189,3 +189,33 @@ func TestSecondsLowRatePhase(t *testing.T) {
 		}
 	}
 }
+
+func TestSecondsLockBurstExact(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.Superframes = 1
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	ramp := (slotSeconds - burstSeconds) / 2
+	for _, cn := range []float64{math.Inf(1), 30} {
+		for tier := Tier0; tier <= Tier2; tier++ {
+			var sum float64
+			for k := range 16 {
+				start := benchPad + float64(k)*0.00037
+				x := signalBaseband([]signalPart{{start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, uint64(k+1))
+				got := receiveIQAt(t, x, basebandRate, tier)
+				if len(got) == 0 {
+					t.Fatalf("%.0f dB Tier%d start %.5f s: no bursts", cn, tier-Tier0, start)
+				}
+				d := got[0].Seconds - math.Floor(start*basebandRate)/basebandRate - ramp
+				sum += d - math.Round(d/(2*slotSeconds))*2*slotSeconds
+			}
+			if mean := sum / 16; math.Abs(mean) > 0.6e-6 {
+				t.Errorf("%.0f dB Tier%d: the lock burst Seconds is %+.2f us off on average", cn, tier-Tier0, mean*1e6)
+			}
+		}
+	}
+}

@@ -391,6 +391,9 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 					d = -d
 				}
 				e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
+				if tm.stale {
+					tm.stale, e = false, 0
+				}
 				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
 				tm.last, tm.half = xv, d
 				t += 2*tm.step + tm.drift
@@ -409,6 +412,9 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 			default:
 				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
 				e := tm.half * (tm.last - xv)
+				if tm.stale {
+					tm.stale, e = false, 0
+				}
 				tm.last, tm.mid = xv, true
 				t += tm.step
 				tm.lastC = 0

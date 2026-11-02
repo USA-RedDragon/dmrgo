@@ -39,6 +39,7 @@ const (
 	leanFloorRise       = 1.01
 	leanPresent         = 2
 	leanSearchHz        = 200
+	leanLockMMStep      = 0.1
 	leanSignMiss        = 5
 	leanProofErrors     = 0
 	leanExtSignMiss     = 9
@@ -99,6 +100,7 @@ type leanTiming struct {
 	estS, estW     float32
 	estN           int32
 	lastC          float32
+	stale          bool
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -169,6 +171,9 @@ func (tm *leanTiming) strobe(x float32) bool {
 			d = -d
 		}
 		e := leanMMSign * (tm.half*y - d*(tm.last-tm.dc))
+		if tm.stale {
+			tm.stale, e = false, 0
+		}
 		tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
 		tm.last, tm.half = x, d
 		tm.t += 2*tm.step + tm.drift
@@ -189,6 +194,9 @@ func (tm *leanTiming) strobe(x float32) bool {
 	}
 	tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*x*x
 	e := tm.half * (tm.last - x)
+	if tm.stale {
+		tm.stale, e = false, 0
+	}
 	tm.last, tm.mid = x, true
 	tm.t += tm.step
 	tm.lastC = 0
@@ -709,6 +717,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		return 0, false
 	}
 	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
+	if !r.locked {
+		bestD = win.mmZero(&syms, end, bestD, sps)
+	}
 	bestD = min(bestD, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
 	const n = syncSymbols
@@ -720,6 +731,33 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	}
 	r.ringSync(&win, end+bestD, sps, saved)
 	return bestD, true
+}
+
+func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
+	const h = leanLockMMStep
+	if end+d+h > 0 {
+		return d
+	}
+	a, b := win.mmSum(syms, end+d-h, sps), win.mmSum(syms, end+d+h, sps)
+	if a == b {
+		return d
+	}
+	z := d - h - a*2*h/(b-a)
+	if z <= d-2*h || z >= d+2*h || end+z > 0 {
+		return d
+	}
+	return z
+}
+
+func (win *syncWindow) mmSum(syms *[syncSymbols]int8, end, sps float32) float32 {
+	var e float32
+	prev := win.at(end - float32(syncSymbols-1)*sps)
+	for k := 1; k < syncSymbols; k++ {
+		y := win.at(end - float32(syncSymbols-1-k)*sps)
+		e += float32(syms[k-1])*y - float32(syms[k])*prev
+		prev = y
+	}
+	return e
 }
 
 func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols]int8) {
@@ -764,7 +802,7 @@ func (r *leanCore) resampleStart(d float32) {
 
 func (r *leanCore) shiftStrobe(d float32) {
 	r.tm.t += d - r.tm.lastC
-	r.tm.lastC = 0
+	r.tm.lastC, r.tm.stale = 0, true
 }
 
 func (r *leanCore) push(s float32) {
