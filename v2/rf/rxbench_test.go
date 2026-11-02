@@ -825,10 +825,20 @@ func TestRxBench(t *testing.T) {
 
 var benchCPUGrid = []float64{0, 2, 4, 6, 8, 12, 20, 40}
 
-const benchCPURuns = 5
+const (
+	benchCPURuns = 5
+	benchRefCPU  = 14.95e-3
+)
+
+func benchRef(t *testing.T) func() {
+	rs, _ := benchStream(t, 2)
+	a := discAudio(cleanBaseband(rs, 1400).noisy(6, 1), benchAudioHz)
+	return func() { receiveAudioTier(t, a, Tier2) }
+}
 
 func benchCPU(t *testing.T, sig benchSignal, e benchEntry) (at6, worst, worstCN float64) {
 	t.Helper()
+	ref := benchRef(t)
 	for _, cn := range benchCPUGrid {
 		x := sig.noisy(cn, 1)
 		var f func()
@@ -844,7 +854,10 @@ func benchCPU(t *testing.T, sig benchSignal, e benchEntry) (at6, worst, worstCN 
 		}
 		var runs [benchCPURuns]float64
 		for i := range runs {
-			runs[i] = threadCPUSeconds(f)
+			r := threadCPUSeconds(ref)
+			m := threadCPUSeconds(f)
+			r += threadCPUSeconds(ref)
+			runs[i] = m * benchRefCPU / (r / 2)
 		}
 		slices.Sort(runs[:])
 		ns := runs[benchCPURuns/2] * 1e9 / (float64(len(x)) / basebandRate)
