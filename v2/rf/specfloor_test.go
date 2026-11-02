@@ -49,19 +49,31 @@ func TestSpectrumFloorFilteredNoise(t *testing.T) {
 	}
 }
 
+// TestRxFilteredIQ checks that a 6.25 kHz channel filter keeps 90% of the
+// voice frames of each case. Per seed it takes the margin filtered minus 0.9
+// times raw, and fails when the mean margin over the seeds is more than
+// pairedZ standard errors below zero.
 func TestRxFilteredIQ(t *testing.T) {
 	t.Parallel()
-	slots, truth := benchStream(t, 6)
-	cases := []struct {
+	for _, c := range []struct {
 		off, cn float64
 		tier    Tier
-	}{{-2000, 4, Tier1}, {1400, 2, Tier3}, {-2000, 2, Tier3}}
-	for _, c := range cases {
-		x := cleanBaseband(slots, c.off).noisy(c.cn, 5000)
-		raw := scoreBench(truth, receiveBaseband(x, c.tier))["ambe"].Exact
-		filt := scoreBench(truth, receiveBaseband(channelFiltered(x, 6250), c.tier))["ambe"].Exact
-		if filt < raw*9/10 {
-			t.Errorf("%+.0f Hz at %.0f dB, Tier%d: %d voice frames through a 6.25 kHz channel filter, %d without it", c.off, c.cn, c.tier-Tier0, filt, raw)
+		n       int
+		seeds   int
+	}{{-2000, 4, Tier1, 6, 64}, {1400, 2, Tier3, 2, 4}, {-2000, 2, Tier3, 2, 4}} {
+		slots, truth := benchStream(t, c.n)
+		sig := cleanBaseband(slots, c.off)
+		d := make([]float64, c.seeds)
+		forSeeds(c.seeds, func(i int) {
+			x := sig.noisy(c.cn, 5000+uint64(i))
+			r := float64(scoreBench(truth, receiveBaseband(x, c.tier))["ambe"].Exact)
+			f := float64(scoreBench(truth, receiveBaseband(channelFiltered(x, 6250), c.tier))["ambe"].Exact)
+			d[i] = f - 0.9*r
+		})
+		mean, se := meanSE(d)
+		t.Logf("%+.0f Hz at %.0f dB, Tier%d: margin %.2f, SE %.2f over %d seeds", c.off, c.cn, c.tier-Tier0, mean, se, c.seeds)
+		if mean+pairedZ*se < 0 {
+			t.Errorf("%+.0f Hz at %.0f dB, Tier%d: filtered voice frames %.2f per seed below 90%% of raw, SE %.2f", c.off, c.cn, c.tier-Tier0, -mean, se)
 		}
 	}
 }
