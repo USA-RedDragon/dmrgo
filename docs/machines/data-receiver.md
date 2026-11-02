@@ -16,7 +16,7 @@ Use a Receiver for every place that takes data from a channel:
 
 - In a radio or a gateway that receives SMS, location reports or IP datagrams, set `Respond` and `Address`, so that confirmed packets get their responses.
 - In a gateway that answers for many radios, set `Respond` and leave `Address` 0: the Receiver answers every confirmed packet to a radio.
-- In a scanner, a monitor or a bridge, leave `Respond` off. The Receiver then delivers every complete packet and answers none. It reports the responses that it hears, so a bridge can forward them.
+- In a scanner, a monitor or a bridge, leave `Respond` off. The Receiver then delivers every complete packet and answers none. It reports the responses on the channel, so a bridge can forward them.
 
 To send data, use a [data.Sender](data-sender.md). Run one Receiver per logical channel, so two for the two slots of a carrier.
 

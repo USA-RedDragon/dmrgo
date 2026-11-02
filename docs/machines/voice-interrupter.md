@@ -76,7 +76,7 @@ The number of tries is at most <!-- dmrgo:const pkg=voice name=MaxRetries -->`25
 
 ## Worked example
 
-This example runs a Transmitter and an Interrupter on one slot. The Interrupter sends a Cease Transmission Command, the Transmitter takes it from the reverse channel and ends its call, and the Interrupter sees the Terminator with LC.
+This example runs a Transmitter and an Interrupter on one slot. The Interrupter sends a Cease Transmission Command, the Transmitter takes it from the reverse channel and ends its call, and the Interrupter receives the Terminator with LC.
 
 <!-- dmrgo:code file=v2/voice/access_example_test.go symbol=ExampleInterrupter -->
 ```go

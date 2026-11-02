@@ -31,9 +31,10 @@
  *   that gives the items and arena bytes the call can use for the same
  *   arguments, without a change to the handle. The call checks that room
  *   first: with less it returns DMRGO_ERR_SHORT before it runs, so the
- *   handle does not change. A call on a handle without a bound says so in
- *   its comment. A call without a handle can be repeated, and it changes
- *   its in/out arguments only when it returns DMRGO_OK or a library error.
+ *   handle does not change. The comment of a call on a handle without a
+ *   bound states that it has none. A call without a handle can be
+ *   repeated, and it changes its in/out arguments only when it returns
+ *   DMRGO_OK or a library error.
  *
  * Inputs follow these rules:
  *
@@ -42,7 +43,7 @@
  *   changed. Every input array and string is copied or used only during
  *   the call.
  * - A NULL input pointer gives DMRGO_ERR_ARG, except where the comment of
- *   the function says that it may be NULL, which is a Go nil. An output
+ *   the function states that it may be NULL, which is a Go nil. An output
  *   pointer to a value, a count or a need may be NULL to drop that output.
  * - A config, options or vtable struct whose first member is size_t size
  *   is sized: set size to sizeof the struct before the call, for example

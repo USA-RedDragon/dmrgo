@@ -74,8 +74,8 @@
 // if statement or a tagless switch case that tests a copy for 0, "" or nil
 // and assigns a value to a copy in its body. That value, and its constant
 // value when it has one, is the default. When docgen finds no such code and
-// the doc text states a default ("0 means", "nil means"), the column says
-// that the default is not machine-readable. Otherwise the column says zero
+// the doc text states a default ("0 means", "nil means"), the column states
+// that the default is not machine-readable. Otherwise the column holds zero
 // value.
 //
 // # States and transitions
@@ -107,7 +107,7 @@
 // This keeps the table true when the code changes: a new state, a new
 // transition or a method that no longer moves the machine shows up in the
 // next run, and -check fails until the page is updated. A transition that
-// no test makes is not in the table, and the state table says which states
+// no test makes is not in the table, and the state table lists the states
 // no test reached. Tests that fail only because of the hook (for example
 // allocation counts) are listed in the log, and the transitions they made
 // before they failed still count.
