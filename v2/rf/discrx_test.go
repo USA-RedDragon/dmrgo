@@ -336,3 +336,18 @@ func TestLevelUp(t *testing.T) {
 		}
 	}
 }
+
+func TestReadingKeepsPrecisionOverGainSteps(t *testing.T) {
+	t.Parallel()
+	r := mustAudioOpt(AudioRxConfig{Rate: discRate / 2}, discOptions())
+	r.f.gain = 0.448
+	r.f.refresh()
+	r.offsetHz += 11
+	want := r.offset()
+	for _, g := range []float32{1 / 0.448, 0.37, 1 / 0.37} {
+		r.scaleAudio(g)
+	}
+	if got := r.offset(); math.Abs(got-want) > 1e-3 {
+		t.Errorf("offset reading %.4f Hz after three gain steps, want %.4f Hz", got, want)
+	}
+}

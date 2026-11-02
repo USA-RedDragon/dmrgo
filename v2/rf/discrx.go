@@ -490,7 +490,7 @@ func (r *discRx) lagSamples(rate int) int {
 }
 
 func (r *discRx) offset() float64 {
-	return float64(float32(r.offsetHz) / r.f.gain)
+	return float64(r.offsetHz / r.f.gain)
 }
 
 func (r *discRx) deviation() float64 {
@@ -563,7 +563,7 @@ func (r *leanCore) scaleAudio(g float32) {
 	f.dc *= g
 	r.tuneHz *= g
 	r.off *= g
-	r.offsetHz = sat16(float32(r.offsetHz) * g)
+	r.offsetHz *= g
 	r.devHz = sat16(float32(r.devHz) * g)
 	f.scale(g)
 	f.refresh()

@@ -276,7 +276,6 @@ type leanCore struct {
 	acqHead  int32
 	acqFrom  int64
 	acqLow   int16
-	offsetHz int16
 	off      float32
 	acqNext  int64
 	slotEnd  int64
@@ -287,6 +286,7 @@ type leanCore struct {
 	acqGain        float32
 	trackGain      float32
 	tuneHz         float32
+	offsetHz       float32
 	tunePrev       float32
 	tuneNs         uint32
 	lastAt         float32
@@ -1986,7 +1986,7 @@ func (r *leanCore) unlock() {
 		r.tm.mm, r.tm.mid = false, true
 		r.tm.t -= r.tm.step
 	}
-	r.offsetHz = sat16(r.tuneHz + r.dcHz)
+	r.offsetHz = r.tuneHz + r.dcHz
 	r.devHz = sat16(3 * deviationHz * r.devScale)
 	r.devAtHz = sat16(r.fitHz)
 }
