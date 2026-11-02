@@ -45,11 +45,11 @@ The transmit side mirrors it. NewTransmitter makes a Transmitter from a TxConfig
 
 | Tier 0 transmitter | Cortex-M4F CPU | RAM with stack | Flash |
 | --- | ---: | ---: | ---: |
-| I/Q at 96 kHz, CS16 | 4.8 MHz | 944 B | 33.7 KB |
+| I/Q at 96 kHz, CS16 | 4.8 MHz | 944 B | 33.6 KB |
 | Audio at 48 kHz, 12-bit | 3.7 MHz | 700 B | 28.3 KB |
-| Audio at 24 kHz, 12-bit | 3.6 MHz | 740 B | 28.2 KB |
+| Audio at 24 kHz, 12-bit | 3.6 MHz | 740 B | 28.1 KB |
 
-Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program.
+Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program.
 
 <!-- txsheet:end -->
 

@@ -80,9 +80,9 @@ Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N
 |------|------|-----|----------------|-------|
 | Audio tier 0 | 9.6 kHz | 4.9 MHz | 2,304 B | 38.7 KB |
 | Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,360 B | 38.9 KB |
-| Low-rate I/Q tier 0 | 9.6 kHz | 4.9 MHz | 2,320 B | 39.3 KB |
+| Low-rate I/Q tier 0 | 9.6 kHz | 4.9 MHz | 2,312 B | 39.2 KB |
 
-Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
+Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
 <!-- rxbench:specs:end -->
 

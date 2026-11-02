@@ -1,11 +1,11 @@
 {
-	"source": "Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program.",
+	"source": "Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program.",
 	"rows": [
 		{
 			"name": "I/Q at 96 kHz, CS16",
 			"mhz": 4.8,
 			"ram_bytes": 944,
-			"flash_kb": 33.7
+			"flash_kb": 33.6
 		},
 		{
 			"name": "Audio at 48 kHz, 12-bit",
@@ -17,7 +17,7 @@
 			"name": "Audio at 24 kHz, 12-bit",
 			"mhz": 3.6,
 			"ram_bytes": 740,
-			"flash_kb": 28.2
+			"flash_kb": 28.1
 		}
 	]
 }

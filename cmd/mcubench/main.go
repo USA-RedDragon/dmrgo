@@ -39,7 +39,7 @@ const (
 )
 
 const (
-	tinygoVersion = "0.43."
+	tinygoVersion = "0.44."
 	rxDataFile    = "v2/rf/testdata/rxbench_mcu.json"
 	txDataFile    = "v2/internal/fsktx/testdata/tier0cost.json"
 )
