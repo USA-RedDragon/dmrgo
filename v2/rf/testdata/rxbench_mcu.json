@@ -5,9 +5,9 @@
 			"mode": "audio",
 			"tier": 0,
 			"rate": 9600,
-			"mhz": 4.9,
-			"ram_bytes": 2304,
-			"flash_kb": 38.7
+			"mhz": 4.8,
+			"ram_bytes": 2312,
+			"flash_kb": 38.4
 		},
 		{
 			"mode": "audio",
@@ -15,16 +15,16 @@
 			"rate": 9600,
 			"pre_emphasis": true,
 			"mhz": 5.3,
-			"ram_bytes": 2360,
-			"flash_kb": 38.9
+			"ram_bytes": 2368,
+			"flash_kb": 38.6
 		},
 		{
 			"mode": "iqlow",
 			"tier": 0,
 			"rate": 9600,
 			"mhz": 4.9,
-			"ram_bytes": 2312,
-			"flash_kb": 39.2
+			"ram_bytes": 2320,
+			"flash_kb": 38.9
 		}
 	]
 }

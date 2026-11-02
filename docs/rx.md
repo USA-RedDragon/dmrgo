@@ -20,7 +20,7 @@ The Tier of the config sets the detection and its cost, from Tier0, which fits a
 
 <!-- rfparams:rx-features:begin -->
 - `Receiver`: Receiver recovers DMR bursts from a stream of I/Q samples. It locks to the slot timing of the first SYNC it finds, follows the timing and the carrier through the transmission, and gives every burst it recovers. Make it with NewReceiver, or set it up with Init in memory of the caller. A Receiver is not safe for concurrent use, and it must not be copied after Init or NewReceiver.
-- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.9 MHz and 2,232 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
+- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz and 2,312 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
 - `Monitor`: Monitor follows the TDMA channels of the bursts of one Receiver or AudioReceiver, as a scanner does. It finds the TDMA channel of each BS-sourced burst from the CACHs of its stream, decodes the burst, keeps the superframe position and the embedded LC of each channel, and keeps the LC of the call on each channel from its voice LC header, embedded LC and terminator. The zero Monitor is ready to use, and it does not allocate. A Monitor is not safe for concurrent use.
 - Tiers:
   - `TierDefault`: TierDefault is the zero value: Tier1 for NewReceiver and NewAudioReceiver, and Tier0 for Init and under TinyGo.
@@ -64,7 +64,7 @@ Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N
 | Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | -4.5 to 4 kHz | ±2,000 ppm | 47 ms | 45 ms | 0.93 ms | 2.5 ms | 48 KiB |
 | Audio tier 2 | FM audio, 9.6 kHz, coherent detection | ±5 kHz | -3,000 to 2,000 ppm | 46 ms | 45 ms | 8.6 ms | 13 ms | 589 KiB |
 | Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | ±4.5 kHz | -3,000 to 2,000 ppm | 46 ms | 45 ms | 168 ms | 320 ms | 1.3 MiB |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | ±2 kHz | -2,000 to 3,000 ppm | 60 ms | 61 ms | 0.39 ms | 0.44 ms | 1,672 B |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | ±2 kHz | ±2,000 ppm | 60 ms | 61 ms | 0.39 ms | 0.44 ms | 1,672 B |
 | I/Q tier 0 | I/Q, discriminator core | ±6 kHz | ±2,000 ppm | 53 ms | 61 ms | 1.3 ms | 1.5 ms | 19 KiB |
 | I/Q tier 1 | I/Q, soft decoding, noise prediction | ±6 kHz | -2,000 to 3,000 ppm | 44 ms | 44 ms | 1.7 ms | 3.5 ms | 106 KiB |
 | I/Q tier 2 | I/Q, coherent detection | ±6 kHz | -3,000 to 2,000 ppm | 44 ms | 44 ms | 8.4 ms | 11 ms | 603 KiB |
@@ -78,9 +78,9 @@ Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N
 
 | Tier | Rate | CPU | RAM with stack | Flash |
 |------|------|-----|----------------|-------|
-| Audio tier 0 | 9.6 kHz | 4.9 MHz | 2,304 B | 38.7 KB |
-| Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,360 B | 38.9 KB |
-| Low-rate I/Q tier 0 | 9.6 kHz | 4.9 MHz | 2,312 B | 39.2 KB |
+| Audio tier 0 | 9.6 kHz | 4.8 MHz | 2,312 B | 38.4 KB |
+| Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,368 B | 38.6 KB |
+| Low-rate I/Q tier 0 | 9.6 kHz | 4.9 MHz | 2,320 B | 38.9 KB |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
@@ -323,15 +323,15 @@ The CACH of BS-sourced bursts carries the Short LC in four fragments. `OnShortLC
 <!-- shortlc:begin -->
 | Tier | Input | Hard decode | `OnShortLC` | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode | On noise, `OnShortLC` |
 |------|-------|-------------|-------------|--------------------|--------------------|-----------------------|-----------------------|
-| Audio tier 0 | FM audio, 9.6 kHz, core | 7.6 dB | 7.6 dB | 0 of 3,249 | 0 of 3,249 | 0.0 per hour | 0.0 per hour |
-| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,880 | 0 of 3,624 | 0.0 per hour | 0.0 per hour |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.4 dB | 6.3 dB | 1 of 2,642 | 1 of 3,388 | 0.0 per hour | 0.0 per hour |
-| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | 5.5 dB | 4.2 dB | 0 of 2,966 | 0 of 3,681 | 0.0 per hour | 0.0 per hour |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 7.8 dB | 7.8 dB | 2 of 5,980 | 2 of 5,980 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 0 | I/Q, discriminator core | 7.0 dB | 7.0 dB | 3 of 5,747 | 3 of 5,747 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | 6.9 dB | 5.2 dB | 4 of 3,557 | 4 of 4,664 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 2 | I/Q, coherent detection | 7.0 dB | 5.3 dB | 4 of 3,221 | 4 of 4,308 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 3 | I/Q, exact phase trellis | 4.1 dB | 2.7 dB | 0 of 3,718 | 2 of 4,611 | 0.0 per hour | 0.0 per hour |
+| Audio tier 0 | FM audio, 9.6 kHz, core | 7.6 dB | 7.6 dB | 0 of 3,168 | 0 of 3,168 | 0.0 per hour | 0.0 per hour |
+| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,801 | 0 of 3,619 | 0.0 per hour | 0.0 per hour |
+| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.5 dB | 6.3 dB | 0 of 2,552 | 1 of 3,382 | 0.0 per hour | 0.0 per hour |
+| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | 5.5 dB | 4.5 dB | 0 of 2,872 | 2 of 3,617 | 0.0 per hour | 0.0 per hour |
+| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 7.9 dB | 7.9 dB | 0 of 5,867 | 0 of 5,867 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 0 | I/Q, discriminator core | 7.0 dB | 7.0 dB | 0 of 5,637 | 0 of 5,637 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 1 | I/Q, soft decoding, noise prediction | 7.0 dB | 5.2 dB | 0 of 3,415 | 0 of 4,660 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 2 | I/Q, coherent detection | 7.1 dB | 5.3 dB | 0 of 3,096 | 0 of 4,297 | 0.0 per hour | 0.0 per hour |
+| I/Q tier 3 | I/Q, exact phase trellis | 4.2 dB | 2.7 dB | 0 of 3,676 | 2 of 4,515 | 0.0 per hour | 0.0 per hour |
 
 - Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
 - Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
@@ -341,9 +341,9 @@ The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`)
 | Noise sigma | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |-------------|------|------|------|------|
 | 0 | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) |
-| 16 | 18 / 18 (0) | 18 / 38 (20) | 21 / 42 (21) | 44 / 46 (2) |
-| 20 | 0 / 0 (0) | 1 / 9 (8) | 0 / 2 (2) | 25 / 42 (17) |
-| 24 | 0 / 0 (0) | 1 / 1 (0) | 0 / 0 (0) | 7 / 24 (17) |
+| 16 | 17 / 17 (0) | 18 / 38 (20) | 20 / 42 (22) | 44 / 46 (2) |
+| 20 | 0 / 0 (0) | 0 / 9 (9) | 0 / 2 (2) | 25 / 42 (17) |
+| 24 | 0 / 0 (0) | 1 / 1 (0) | 0 / 0 (0) | 7 / 17 (10) |
 
 <!-- shortlc:end -->
 
