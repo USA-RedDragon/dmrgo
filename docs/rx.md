@@ -20,7 +20,7 @@ The Tier of the config sets the detection and its cost, from Tier0, which fits a
 
 <!-- rfparams:rx-features:begin -->
 - `Receiver`: Receiver recovers DMR bursts from a stream of I/Q samples. It locks to the slot timing of the first SYNC it finds, follows the timing and the carrier through the transmission, and gives every burst it recovers. Make it with NewReceiver, or set it up with Init in memory of the caller. A Receiver is not safe for concurrent use, and it must not be copied after Init or NewReceiver.
-- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.8 MHz and 2,312 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
+- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 5.0 MHz and 2,296 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
 - `Monitor`: Monitor follows the TDMA channels of the bursts of one Receiver or AudioReceiver, as a scanner does. It finds the TDMA channel of each BS-sourced burst from the CACHs of its stream, decodes the burst, keeps the superframe position and the embedded LC of each channel, and keeps the LC of the call on each channel from its voice LC header, embedded LC and terminator. The zero Monitor is ready to use, and it does not allocate. A Monitor is not safe for concurrent use.
 - Tiers:
   - `TierDefault`: TierDefault is the zero value: Tier1 for NewReceiver and NewAudioReceiver, and Tier0 for Init and under TinyGo.
@@ -78,9 +78,9 @@ Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N
 
 | Tier | Rate | CPU | RAM with stack | Flash |
 |------|------|-----|----------------|-------|
-| Audio tier 0 | 9.6 kHz | 4.8 MHz | 2,312 B | 38.4 KB |
-| Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,368 B | 38.6 KB |
-| Low-rate I/Q tier 0 | 9.6 kHz | 4.9 MHz | 2,320 B | 38.9 KB |
+| Audio tier 0 | 9.6 kHz | 5.0 MHz | 2,296 B | 39.4 KB |
+| Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,352 B | 39.6 KB |
+| Low-rate I/Q tier 0 | 9.6 kHz | 5.3 MHz | 2,304 B | 39.9 KB |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
