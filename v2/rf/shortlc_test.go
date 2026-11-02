@@ -20,6 +20,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -203,6 +204,9 @@ func TestShortLCSoft(t *testing.T) {
 
 func TestShortLCExactCACH(t *testing.T) {
 	t.Parallel()
+	if testmode.Race {
+		t.Skip("a statistical bar; the runs without -race check it")
+	}
 	slots, _ := benchStream(t, 6)
 	sig := cleanBaseband(slots, 1400)
 	var errs [2]int
