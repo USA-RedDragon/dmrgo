@@ -2092,12 +2092,13 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	r.setLLR()
 	b := &r.cb
-	b.Distance, b.BS, b.HasCACH, b.Stream, b.Slot = -1, r.bs, r.bs, int(r.streams), int64(j)
+	b.Distance, b.BS, b.Stream, b.Slot = -1, r.bs, int(r.streams), int64(j)
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
 	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
 		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256))) - int64(r.lagTicks)
 	b.Seconds = tickSeconds(ticks)
+	b.HasCACH = r.bs && ticks >= cachSymbols*samplesPerSy<<8
 	if r.iqLow && iqLowISI > 0 {
 		r.cancelISI(base)
 	}
