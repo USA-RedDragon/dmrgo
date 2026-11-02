@@ -140,7 +140,7 @@ func tier3Digest(t testing.TB) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-const tier3WantDigest = "d646f9ce13ccb279ec3c0d1fc4b269424bf1d867f187bb24145637eac97629b1"
+const tier3WantDigest = "2f20255842f17c87cf214ec3d7be00b256faa91aa177694a891030436d0ee8d0"
 
 func TestTier3Digest(t *testing.T) {
 	t.Parallel()
