@@ -27,6 +27,7 @@ This page lists the pages of the docs site in reading order, by section; the sit
   - [Use an MMDVM modem](guides/mmdvm-modem.md)
   - [Use basic privacy](guides/basic-privacy.md)
   - [Receive with an SDR or an FM radio](guides/receive-sdr-fm.md)
+  - [Transmit within a region's limits](guides/transmit-region-limits.md)
 - State machines
   - [bs.Repeater](machines/bs-repeater.md)
   - [csbk.Preambles](machines/csbk-preambles.md)
