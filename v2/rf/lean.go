@@ -67,6 +67,7 @@ const (
 	replayFlatLevel     = 0.3
 	replaySyncRho       = 0.95
 	leanClockBlock      = 64
+	leanClockSpan       = 4
 	leanClockSig        = 5
 	leanClockLag        = 120
 )
@@ -102,6 +103,7 @@ type leanTiming struct {
 	lastC          float32
 	stale          bool
 	fresh          float32
+	learned        bool
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -159,7 +161,9 @@ func (tm *leanTiming) settle() {
 		old := tm.rate
 		tm.rate = max32(min32(tm.rate+e, lim), -lim)
 		tm.owed += (tm.rate - old) * leanClockLag
-		tm.estS, tm.estW, tm.estN = 0, 0, 0
+		tm.estS, tm.estW, tm.estN, tm.learned = 0, 0, 0, true
+	} else if tm.estN*leanClockBlock >= leanClockSpan*slotSymbols {
+		tm.learned = true
 	}
 	tm.drift = tm.rate
 }
@@ -334,7 +338,7 @@ type leanCore struct {
 
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
-	suspect, hunt                      bool
+	suspect, hunt, rcOnly              bool
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
 	mid96                              uint8
@@ -721,7 +725,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		return 0, false
 	}
 	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
-	if !r.locked {
+	if !r.locked || p == enums.SyncMSSourcedRC {
 		bestD = win.mmZero(&syms, end, bestD, sps)
 	}
 	bestD = min(bestD, -end)
@@ -992,6 +996,9 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	r.pushSym(x)
+	if r.rcOnly {
+		return false, false, r.rcHit()
+	}
 	if r.hunt && !r.hasExt() && r.midTiming && r.linHunt {
 		return r.lockHunt(at)
 	}
@@ -1001,7 +1008,7 @@ func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	again = r.again
 	r.again = false
 	sym, mid := r.signsMatch2(r.signs, r.midSigns)
-	return again, mid, mid || sym
+	return again, mid, mid || sym || r.rcHit()
 }
 
 func (r *leanCore) lockHunt(at float32) (again, mid, match bool) {
@@ -1029,7 +1036,15 @@ func (r *leanCore) lockHunt(at float32) (again, mid, match bool) {
 	again = r.again
 	r.again = false
 	sym, mid := r.signsMatch2(r.signs, r.midSigns)
-	return again, mid, mid || sym
+	return again, mid, mid || sym || r.rcHit()
+}
+
+func (r *leanCore) rcHit() bool {
+	return r.rcSource() && bits.OnesCount32((r.signs^leanRCSigns)&(1<<syncSymbols-1)) <= int(r.signMiss)
+}
+
+func (r *leanCore) rcSource() bool {
+	return !r.bs && r.src == 1
 }
 
 func (r *leanCore) lockPush(x, at float32) (more bool) {
@@ -1058,13 +1073,16 @@ func (r *leanCore) huntSym(at float32) {
 }
 
 func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
+	if r.rcOnly {
+		return false, false, r.rcHit()
+	}
 	if !r.huntMid(at) {
 		return false, false, false
 	}
 	again = r.again
 	r.again = false
 	sym, mid := r.signsMatch2(r.signs, r.midSigns)
-	return again, mid, mid || sym
+	return again, mid, mid || sym || r.rcHit()
 }
 
 //go:section .text.huntMid
@@ -1108,6 +1126,10 @@ func (r *leanCore) huntMid(at float32) bool {
 
 //go:noinline
 func (r *leanCore) huntMatch(again, mid bool) {
+	if r.rcOnly {
+		r.retime(false)
+		return
+	}
 	if d := r.gridMiss(); r.ms.seek && d >= -leanSeekSyms && d <= leanSeekSyms {
 		r.seekMatch(d, again && mid)
 		return
@@ -1375,16 +1397,20 @@ func (r *leanCore) retime(mid bool) {
 	rho2, src, data := r.syncAt(r.ns - 1)
 	if mid {
 		src, data = r.signsSource(r.midSigns)
-	} else if rho2 < leanExtRho*leanExtRho {
-		return
-	}
-	if src != int(r.src) || r.clipped(r.ns-1) {
-		return
 	}
 	voice, dp, _ := sourceAt(src).SyncPatterns()
 	p := voice
 	if data {
 		p = dp
+	}
+	if r.rcOnly || !mid && (rho2 < leanExtRho*leanExtRho || src != int(r.src)) {
+		if !r.rcSource() || r.rcAt(r.ns-1) < leanExtRho*leanExtRho {
+			return
+		}
+		src, p = int(r.src), enums.SyncMSSourcedRC
+	}
+	if src != int(r.src) || r.clipped(r.ns-1) {
+		return
 	}
 	var saved [syncSymbols]int8
 	if d, ok := r.resample(p, &saved, true); ok {
@@ -1474,10 +1500,15 @@ const (
 	leanRateSig      = 3
 	leanSeekRho      = 0.5
 	leanRateMax      = 2e-3
+	leanRCSigns      = 0xa7c91a
 )
 
 func (r *leanCore) seekMatch(d int32, mid bool) {
-	if rho2, _, _ := r.syncAt(r.ns - 1); !mid && rho2 < leanSeekRho*leanSeekRho {
+	rho2, _, _ := r.syncAt(r.ns - 1)
+	if !mid && r.rcSource() {
+		rho2 = max(rho2, r.rcAt(r.ns-1))
+	}
+	if !mid && rho2 < leanSeekRho*leanSeekRho {
 		return
 	}
 	if !r.ms.late && r.ms.anch[r.next&1] == leanNoSlot {
@@ -1528,7 +1559,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	if r.unproven && r.hasExt() {
 		r.ext.end(r)
 	}
-	r.locked, r.forced, r.suspect, r.hunt, r.src, r.bs = true, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
+	r.locked, r.forced, r.suspect, r.hunt, r.rcOnly, r.src, r.bs = true, false, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.suspectRun = 0
 	r.lockNs = r.ns
 	r.unproven = false
@@ -1540,6 +1571,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.rs, r.ms.rs2, r.ms.rk = 0, 0, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 0
+	r.tm.learned = false
 	if !r.bs {
 		r.tm.fresh = 1
 	}
@@ -1864,10 +1896,14 @@ func (r *leanCore) setHunt() {
 		r.suspectRun++
 	}
 	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
+	r.rcOnly = false
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
-			return
+			if r.bs || r.tm.learned || r.isReplaying() || r.ms.anch[0] != leanNoSlot && r.ms.anch[1] != leanNoSlot {
+				return
+			}
+			r.rcOnly = true
 		}
 	}
 	if !r.hunt {
@@ -2021,7 +2057,7 @@ func (r *leanCore) unlock() {
 	if !r.hunt || !r.hasExt() || r.ext.kept() == nil {
 		r.acqFrom = r.n
 	}
-	r.locked, r.forced, r.hunt = false, false, false
+	r.locked, r.forced, r.hunt, r.rcOnly = false, false, false, false
 	if a := r.audio; a != nil {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
