@@ -338,7 +338,8 @@ type leanCore struct {
 
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
-	suspect, hunt, rcOnly              bool
+	suspect, hunt, rcOnly, cohRefit    bool
+	reEntry                            bool
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
 	mid96                              uint8
@@ -381,6 +382,7 @@ type leanSlots struct {
 
 func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.onBurst, r.lastAnch, r.softFEC = onBurst, leanNoSlot, opt.SoftFEC
+	r.cohRefit = opt.CohExt
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
 	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
@@ -725,7 +727,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		return 0, false
 	}
 	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
-	if !r.locked || p == enums.SyncMSSourcedRC {
+	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
 		bestD = win.mmZero(&syms, end, bestD, sps)
 	}
 	bestD = min(bestD, -end)
@@ -1412,8 +1414,14 @@ func (r *leanCore) retime(mid bool) {
 	if src != int(r.src) || r.clipped(r.ns-1) {
 		return
 	}
+	if r.reEntry && r.ns-1 != r.slotEnd-slotSymbols+leanSyncEnd {
+		return
+	}
 	var saved [syncSymbols]int8
 	if d, ok := r.resample(p, &saved, true); ok {
+		if r.reEntry {
+			r.tm.corr, r.tm.fresh = r.tm.corr+d-r.tm.lastC, 0
+		}
 		r.resampleStart(d)
 		r.ms.moved = true
 	}
@@ -1896,14 +1904,14 @@ func (r *leanCore) setHunt() {
 		r.suspectRun++
 	}
 	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
-	r.rcOnly = false
+	r.rcOnly, r.reEntry = false, false
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
 			if r.bs || r.tm.learned || r.isReplaying() || r.ms.anch[0] != leanNoSlot && r.ms.anch[1] != leanNoSlot {
 				return
 			}
-			r.rcOnly = true
+			r.rcOnly, r.reEntry = !r.cohRefit, true
 		}
 	}
 	if !r.hunt {
