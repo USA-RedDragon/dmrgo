@@ -17,7 +17,14 @@ import (
 	"testing"
 )
 
-var updateTxDoc = flag.Bool("update-txdoc", false, "measure the margins into testdata/txmargins.json and rewrite the tables of docs/tx.md")
+var (
+	updateTxDoc = flag.Bool("update-txdoc", false, "measure the margins into testdata/txmargins.json and rewrite the tables of docs/tx.md")
+	renderTxDoc = flag.Bool("render-txdoc", false, "rewrite the blocks and graphs of docs/tx.md from the committed data in testdata, with no measurement")
+)
+
+var txDocMu sync.Mutex
+
+func writeTxDoc() bool { return *updateTxDoc || *renderTxDoc }
 
 const (
 	txDocFile     = "../../../docs/tx.md"
@@ -182,7 +189,7 @@ var txRegimes = []txRegime{
 	{"Japan, amateur", limJapan, limAmateur},
 }
 
-func renderTxDoc(t testing.TB, margins map[string]map[string]float64) string {
+func renderTxDocTables(t testing.TB, margins map[string]map[string]float64) string {
 	t.Helper()
 	var b strings.Builder
 	b.WriteString(txDocBegin + "\n\n")
@@ -286,8 +293,10 @@ func TestTxDocRowsCoverLimits(t *testing.T) {
 
 func TestTxDoc(t *testing.T) {
 	t.Parallel()
+	txDocMu.Lock()
+	defer txDocMu.Unlock()
 	doc, err := os.ReadFile(txDocFile)
-	if errors.Is(err, fs.ErrNotExist) && !*updateTxDoc {
+	if errors.Is(err, fs.ErrNotExist) && !writeTxDoc() {
 		t.Skip("docs/tx.md is not in this tree")
 	}
 	if err != nil {
@@ -326,8 +335,8 @@ func TestTxDoc(t *testing.T) {
 	if i < 0 || j < i {
 		t.Fatalf("%s has no %s ... %s block", txDocFile, txDocBegin, txDocEnd)
 	}
-	want := renderTxDoc(t, margins)
-	if *updateTxDoc {
+	want := renderTxDocTables(t, margins)
+	if writeTxDoc() {
 		out := append(append(append([]byte{}, doc[:i]...), want...), doc[j+len(txDocEnd):]...)
 		if err := os.WriteFile(txDocFile, out, 0o600); err != nil {
 			t.Fatal(err)

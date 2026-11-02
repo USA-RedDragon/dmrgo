@@ -1,88 +1,88 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420">
-<style>text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1a7f37}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#3fb950}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}</style>
+<style>text{font-family:sans-serif;font-size:13px;fill:#24292f}.t{font-weight:600}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1b7c83}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.q0{fill:#6e7781}.q1{fill:#bc4c00}.q2{fill:#8250df}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#39c5cf}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.q0{fill:#8b949e}.q1{fill:#f0883e}.q2{fill:#d2a8ff}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}</style>
 <rect class="bg" width="100%" height="100%"/>
-<text x="76.0" y="24">I/Q: voice frames against sample clock error, C/N 15.0 dB</text>
-<line class="gr" x1="76.0" y1="364.0" x2="76.0" y2="40.0"/>
+<text class="t" x="16" y="24">I/Q: voice frames against sample clock error, C/N 15.0 dB</text>
+<line class="gr" x1="76.0" y1="364.0" x2="76.0" y2="76.0"/>
 <text x="76.0" y="382.0" text-anchor="middle">-5000</text>
-<line class="gr" x1="97.7" y1="364.0" x2="97.7" y2="40.0"/>
-<text x="97.7" y="382.0" text-anchor="middle">-4500</text>
-<line class="gr" x1="119.4" y1="364.0" x2="119.4" y2="40.0"/>
-<text x="119.4" y="382.0" text-anchor="middle">-4000</text>
-<line class="gr" x1="141.1" y1="364.0" x2="141.1" y2="40.0"/>
-<text x="141.1" y="382.0" text-anchor="middle">-3500</text>
-<line class="gr" x1="162.8" y1="364.0" x2="162.8" y2="40.0"/>
-<text x="162.8" y="382.0" text-anchor="middle">-3000</text>
-<line class="gr" x1="184.5" y1="364.0" x2="184.5" y2="40.0"/>
-<text x="184.5" y="382.0" text-anchor="middle">-2500</text>
-<line class="gr" x1="206.2" y1="364.0" x2="206.2" y2="40.0"/>
-<text x="206.2" y="382.0" text-anchor="middle">-2000</text>
-<line class="gr" x1="227.9" y1="364.0" x2="227.9" y2="40.0"/>
-<text x="227.9" y="382.0" text-anchor="middle">-1500</text>
-<line class="gr" x1="249.6" y1="364.0" x2="249.6" y2="40.0"/>
-<text x="249.6" y="382.0" text-anchor="middle">-1000</text>
-<line class="gr" x1="271.3" y1="364.0" x2="271.3" y2="40.0"/>
-<text x="271.3" y="382.0" text-anchor="middle">-500</text>
-<line class="gr" x1="293.0" y1="364.0" x2="293.0" y2="40.0"/>
-<text x="293.0" y="382.0" text-anchor="middle">0</text>
-<line class="gr" x1="314.7" y1="364.0" x2="314.7" y2="40.0"/>
-<text x="314.7" y="382.0" text-anchor="middle">500</text>
-<line class="gr" x1="336.4" y1="364.0" x2="336.4" y2="40.0"/>
-<text x="336.4" y="382.0" text-anchor="middle">1000</text>
-<line class="gr" x1="358.1" y1="364.0" x2="358.1" y2="40.0"/>
-<text x="358.1" y="382.0" text-anchor="middle">1500</text>
-<line class="gr" x1="379.8" y1="364.0" x2="379.8" y2="40.0"/>
-<text x="379.8" y="382.0" text-anchor="middle">2000</text>
-<line class="gr" x1="401.5" y1="364.0" x2="401.5" y2="40.0"/>
-<text x="401.5" y="382.0" text-anchor="middle">2500</text>
-<line class="gr" x1="423.2" y1="364.0" x2="423.2" y2="40.0"/>
-<text x="423.2" y="382.0" text-anchor="middle">3000</text>
-<line class="gr" x1="444.9" y1="364.0" x2="444.9" y2="40.0"/>
-<text x="444.9" y="382.0" text-anchor="middle">3500</text>
-<line class="gr" x1="466.6" y1="364.0" x2="466.6" y2="40.0"/>
-<text x="466.6" y="382.0" text-anchor="middle">4000</text>
-<line class="gr" x1="488.3" y1="364.0" x2="488.3" y2="40.0"/>
-<text x="488.3" y="382.0" text-anchor="middle">4500</text>
-<line class="gr" x1="510.0" y1="364.0" x2="510.0" y2="40.0"/>
-<text x="510.0" y="382.0" text-anchor="middle">5000</text>
-<line class="gr" x1="76.0" y1="364.0" x2="510.0" y2="364.0"/>
+<line class="gr" x1="106.0" y1="364.0" x2="106.0" y2="76.0"/>
+<text x="106.0" y="382.0" text-anchor="middle">-4500</text>
+<line class="gr" x1="136.0" y1="364.0" x2="136.0" y2="76.0"/>
+<text x="136.0" y="382.0" text-anchor="middle">-4000</text>
+<line class="gr" x1="166.0" y1="364.0" x2="166.0" y2="76.0"/>
+<text x="166.0" y="382.0" text-anchor="middle">-3500</text>
+<line class="gr" x1="196.0" y1="364.0" x2="196.0" y2="76.0"/>
+<text x="196.0" y="382.0" text-anchor="middle">-3000</text>
+<line class="gr" x1="226.0" y1="364.0" x2="226.0" y2="76.0"/>
+<text x="226.0" y="382.0" text-anchor="middle">-2500</text>
+<line class="gr" x1="256.0" y1="364.0" x2="256.0" y2="76.0"/>
+<text x="256.0" y="382.0" text-anchor="middle">-2000</text>
+<line class="gr" x1="286.0" y1="364.0" x2="286.0" y2="76.0"/>
+<text x="286.0" y="382.0" text-anchor="middle">-1500</text>
+<line class="gr" x1="316.0" y1="364.0" x2="316.0" y2="76.0"/>
+<text x="316.0" y="382.0" text-anchor="middle">-1000</text>
+<line class="gr" x1="346.0" y1="364.0" x2="346.0" y2="76.0"/>
+<text x="346.0" y="382.0" text-anchor="middle">-500</text>
+<line class="gr" x1="376.0" y1="364.0" x2="376.0" y2="76.0"/>
+<text x="376.0" y="382.0" text-anchor="middle">0</text>
+<line class="gr" x1="406.0" y1="364.0" x2="406.0" y2="76.0"/>
+<text x="406.0" y="382.0" text-anchor="middle">500</text>
+<line class="gr" x1="436.0" y1="364.0" x2="436.0" y2="76.0"/>
+<text x="436.0" y="382.0" text-anchor="middle">1000</text>
+<line class="gr" x1="466.0" y1="364.0" x2="466.0" y2="76.0"/>
+<text x="466.0" y="382.0" text-anchor="middle">1500</text>
+<line class="gr" x1="496.0" y1="364.0" x2="496.0" y2="76.0"/>
+<text x="496.0" y="382.0" text-anchor="middle">2000</text>
+<line class="gr" x1="526.0" y1="364.0" x2="526.0" y2="76.0"/>
+<text x="526.0" y="382.0" text-anchor="middle">2500</text>
+<line class="gr" x1="556.0" y1="364.0" x2="556.0" y2="76.0"/>
+<text x="556.0" y="382.0" text-anchor="middle">3000</text>
+<line class="gr" x1="586.0" y1="364.0" x2="586.0" y2="76.0"/>
+<text x="586.0" y="382.0" text-anchor="middle">3500</text>
+<line class="gr" x1="616.0" y1="364.0" x2="616.0" y2="76.0"/>
+<text x="616.0" y="382.0" text-anchor="middle">4000</text>
+<line class="gr" x1="646.0" y1="364.0" x2="646.0" y2="76.0"/>
+<text x="646.0" y="382.0" text-anchor="middle">4500</text>
+<line class="gr" x1="676.0" y1="364.0" x2="676.0" y2="76.0"/>
+<text x="676.0" y="382.0" text-anchor="middle">5000</text>
+<line class="gr" x1="76.0" y1="364.0" x2="676.0" y2="364.0"/>
 <text x="68.0" y="368.0" text-anchor="end">0</text>
-<line class="gr" x1="76.0" y1="331.6" x2="510.0" y2="331.6"/>
-<text x="68.0" y="335.6" text-anchor="end">10</text>
-<line class="gr" x1="76.0" y1="299.2" x2="510.0" y2="299.2"/>
-<text x="68.0" y="303.2" text-anchor="end">20</text>
-<line class="gr" x1="76.0" y1="266.8" x2="510.0" y2="266.8"/>
-<text x="68.0" y="270.8" text-anchor="end">30</text>
-<line class="gr" x1="76.0" y1="234.4" x2="510.0" y2="234.4"/>
-<text x="68.0" y="238.4" text-anchor="end">40</text>
-<line class="gr" x1="76.0" y1="202.0" x2="510.0" y2="202.0"/>
-<text x="68.0" y="206.0" text-anchor="end">50</text>
-<line class="gr" x1="76.0" y1="169.6" x2="510.0" y2="169.6"/>
-<text x="68.0" y="173.6" text-anchor="end">60</text>
-<line class="gr" x1="76.0" y1="137.2" x2="510.0" y2="137.2"/>
-<text x="68.0" y="141.2" text-anchor="end">70</text>
-<line class="gr" x1="76.0" y1="104.8" x2="510.0" y2="104.8"/>
-<text x="68.0" y="108.8" text-anchor="end">80</text>
-<line class="gr" x1="76.0" y1="72.4" x2="510.0" y2="72.4"/>
-<text x="68.0" y="76.4" text-anchor="end">90</text>
-<line class="gr" x1="76.0" y1="40.0" x2="510.0" y2="40.0"/>
-<text x="68.0" y="44.0" text-anchor="end">100</text>
-<rect class="ax" x="76.0" y="40.0" width="434.0" height="324.0"/>
-<text x="293.0" y="408.0" text-anchor="middle">Sample clock error (ppm)</text>
-<text x="18" y="202.0" text-anchor="middle" transform="rotate(-90 18 202.0)">Voice frames recovered (%)</text>
-<path class="l s1" d="M76.0,350.1 L119.4,358.0 L162.8,127.4 L206.2,59.1 L227.9,40.0 L249.6,40.0 L262.6,40.0 L271.3,40.0 L280.0,40.0 L284.3,40.0 L288.7,40.0 L293.0,40.0 L297.3,40.0 L301.7,40.0 L306.0,40.0 L314.7,40.0 L323.4,40.0 L336.4,40.0 L358.1,40.0 L379.8,50.1 L423.2,188.5 L466.6,359.1 L510.0,346.4"/>
-<circle class="p s1" cx="76.0" cy="350.1" r="2"/><circle class="p s1" cx="119.4" cy="358.0" r="2"/><circle class="p s1" cx="162.8" cy="127.4" r="2"/><circle class="p s1" cx="206.2" cy="59.1" r="2"/><circle class="p s1" cx="227.9" cy="40.0" r="2"/><circle class="p s1" cx="249.6" cy="40.0" r="2"/><circle class="p s1" cx="262.6" cy="40.0" r="2"/><circle class="p s1" cx="271.3" cy="40.0" r="2"/><circle class="p s1" cx="280.0" cy="40.0" r="2"/><circle class="p s1" cx="284.3" cy="40.0" r="2"/><circle class="p s1" cx="288.7" cy="40.0" r="2"/><circle class="p s1" cx="293.0" cy="40.0" r="2"/><circle class="p s1" cx="297.3" cy="40.0" r="2"/><circle class="p s1" cx="301.7" cy="40.0" r="2"/><circle class="p s1" cx="306.0" cy="40.0" r="2"/><circle class="p s1" cx="314.7" cy="40.0" r="2"/><circle class="p s1" cx="323.4" cy="40.0" r="2"/><circle class="p s1" cx="336.4" cy="40.0" r="2"/><circle class="p s1" cx="358.1" cy="40.0" r="2"/><circle class="p s1" cx="379.8" cy="50.1" r="2"/><circle class="p s1" cx="423.2" cy="188.5" r="2"/><circle class="p s1" cx="466.6" cy="359.1" r="2"/><circle class="p s1" cx="510.0" cy="346.4" r="2"/>
-<line class="l s1" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
-<text x="556.0" y="54.0">Tier 0</text>
-<path class="l s2" d="M76.0,351.6 L119.4,355.4 L162.8,160.4 L206.2,62.9 L227.9,40.4 L249.6,40.4 L262.6,40.4 L271.3,40.4 L280.0,40.4 L284.3,40.0 L288.7,40.4 L293.0,40.4 L297.3,40.4 L301.7,40.4 L306.0,40.0 L314.7,40.0 L323.4,40.4 L336.4,40.4 L358.1,40.4 L379.8,48.6 L423.2,174.2 L466.6,355.4 L510.0,348.2"/>
-<circle class="p s2" cx="76.0" cy="351.6" r="2"/><circle class="p s2" cx="119.4" cy="355.4" r="2"/><circle class="p s2" cx="162.8" cy="160.4" r="2"/><circle class="p s2" cx="206.2" cy="62.9" r="2"/><circle class="p s2" cx="227.9" cy="40.4" r="2"/><circle class="p s2" cx="249.6" cy="40.4" r="2"/><circle class="p s2" cx="262.6" cy="40.4" r="2"/><circle class="p s2" cx="271.3" cy="40.4" r="2"/><circle class="p s2" cx="280.0" cy="40.4" r="2"/><circle class="p s2" cx="284.3" cy="40.0" r="2"/><circle class="p s2" cx="288.7" cy="40.4" r="2"/><circle class="p s2" cx="293.0" cy="40.4" r="2"/><circle class="p s2" cx="297.3" cy="40.4" r="2"/><circle class="p s2" cx="301.7" cy="40.4" r="2"/><circle class="p s2" cx="306.0" cy="40.0" r="2"/><circle class="p s2" cx="314.7" cy="40.0" r="2"/><circle class="p s2" cx="323.4" cy="40.4" r="2"/><circle class="p s2" cx="336.4" cy="40.4" r="2"/><circle class="p s2" cx="358.1" cy="40.4" r="2"/><circle class="p s2" cx="379.8" cy="48.6" r="2"/><circle class="p s2" cx="423.2" cy="174.2" r="2"/><circle class="p s2" cx="466.6" cy="355.4" r="2"/><circle class="p s2" cx="510.0" cy="348.2" r="2"/>
-<line class="l s2" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
-<text x="556.0" y="76.0">Tier 1</text>
-<path class="l s3" d="M76.0,341.1 L119.4,337.4 L162.8,116.9 L206.2,43.4 L227.9,40.0 L249.6,40.0 L262.6,40.0 L271.3,40.0 L280.0,40.0 L284.3,40.0 L288.7,40.0 L293.0,40.0 L297.3,40.0 L301.7,40.0 L306.0,40.0 L314.7,40.0 L323.4,40.0 L336.4,40.0 L358.1,40.0 L379.8,42.2 L423.2,131.9 L466.6,337.4 L510.0,333.6"/>
-<circle class="p s3" cx="76.0" cy="341.1" r="2"/><circle class="p s3" cx="119.4" cy="337.4" r="2"/><circle class="p s3" cx="162.8" cy="116.9" r="2"/><circle class="p s3" cx="206.2" cy="43.4" r="2"/><circle class="p s3" cx="227.9" cy="40.0" r="2"/><circle class="p s3" cx="249.6" cy="40.0" r="2"/><circle class="p s3" cx="262.6" cy="40.0" r="2"/><circle class="p s3" cx="271.3" cy="40.0" r="2"/><circle class="p s3" cx="280.0" cy="40.0" r="2"/><circle class="p s3" cx="284.3" cy="40.0" r="2"/><circle class="p s3" cx="288.7" cy="40.0" r="2"/><circle class="p s3" cx="293.0" cy="40.0" r="2"/><circle class="p s3" cx="297.3" cy="40.0" r="2"/><circle class="p s3" cx="301.7" cy="40.0" r="2"/><circle class="p s3" cx="306.0" cy="40.0" r="2"/><circle class="p s3" cx="314.7" cy="40.0" r="2"/><circle class="p s3" cx="323.4" cy="40.0" r="2"/><circle class="p s3" cx="336.4" cy="40.0" r="2"/><circle class="p s3" cx="358.1" cy="40.0" r="2"/><circle class="p s3" cx="379.8" cy="42.2" r="2"/><circle class="p s3" cx="423.2" cy="131.9" r="2"/><circle class="p s3" cx="466.6" cy="337.4" r="2"/><circle class="p s3" cx="510.0" cy="333.6" r="2"/>
-<line class="l s3" x1="526.0" y1="94.0" x2="550.0" y2="94.0"/>
-<text x="556.0" y="98.0">Tier 2</text>
-<path class="l s4" d="M76.0,332.9 L119.4,322.8 L162.8,119.1 L206.2,44.1 L227.9,40.0 L249.6,40.0 L262.6,40.0 L271.3,40.0 L280.0,40.0 L284.3,40.0 L288.7,40.0 L293.0,40.0 L297.3,40.0 L301.7,40.0 L306.0,40.0 L314.7,40.0 L323.4,40.0 L336.4,40.0 L358.1,40.0 L379.8,40.7 L423.2,130.8 L466.6,327.6 L510.0,328.8"/>
-<circle class="p s4" cx="76.0" cy="332.9" r="2"/><circle class="p s4" cx="119.4" cy="322.8" r="2"/><circle class="p s4" cx="162.8" cy="119.1" r="2"/><circle class="p s4" cx="206.2" cy="44.1" r="2"/><circle class="p s4" cx="227.9" cy="40.0" r="2"/><circle class="p s4" cx="249.6" cy="40.0" r="2"/><circle class="p s4" cx="262.6" cy="40.0" r="2"/><circle class="p s4" cx="271.3" cy="40.0" r="2"/><circle class="p s4" cx="280.0" cy="40.0" r="2"/><circle class="p s4" cx="284.3" cy="40.0" r="2"/><circle class="p s4" cx="288.7" cy="40.0" r="2"/><circle class="p s4" cx="293.0" cy="40.0" r="2"/><circle class="p s4" cx="297.3" cy="40.0" r="2"/><circle class="p s4" cx="301.7" cy="40.0" r="2"/><circle class="p s4" cx="306.0" cy="40.0" r="2"/><circle class="p s4" cx="314.7" cy="40.0" r="2"/><circle class="p s4" cx="323.4" cy="40.0" r="2"/><circle class="p s4" cx="336.4" cy="40.0" r="2"/><circle class="p s4" cx="358.1" cy="40.0" r="2"/><circle class="p s4" cx="379.8" cy="40.7" r="2"/><circle class="p s4" cx="423.2" cy="130.8" r="2"/><circle class="p s4" cx="466.6" cy="327.6" r="2"/><circle class="p s4" cx="510.0" cy="328.8" r="2"/>
-<line class="l s4" x1="526.0" y1="116.0" x2="550.0" y2="116.0"/>
-<text x="556.0" y="120.0">Tier 3</text>
+<line class="gr" x1="76.0" y1="335.2" x2="676.0" y2="335.2"/>
+<text x="68.0" y="339.2" text-anchor="end">10</text>
+<line class="gr" x1="76.0" y1="306.4" x2="676.0" y2="306.4"/>
+<text x="68.0" y="310.4" text-anchor="end">20</text>
+<line class="gr" x1="76.0" y1="277.6" x2="676.0" y2="277.6"/>
+<text x="68.0" y="281.6" text-anchor="end">30</text>
+<line class="gr" x1="76.0" y1="248.8" x2="676.0" y2="248.8"/>
+<text x="68.0" y="252.8" text-anchor="end">40</text>
+<line class="gr" x1="76.0" y1="220.0" x2="676.0" y2="220.0"/>
+<text x="68.0" y="224.0" text-anchor="end">50</text>
+<line class="gr" x1="76.0" y1="191.2" x2="676.0" y2="191.2"/>
+<text x="68.0" y="195.2" text-anchor="end">60</text>
+<line class="gr" x1="76.0" y1="162.4" x2="676.0" y2="162.4"/>
+<text x="68.0" y="166.4" text-anchor="end">70</text>
+<line class="gr" x1="76.0" y1="133.6" x2="676.0" y2="133.6"/>
+<text x="68.0" y="137.6" text-anchor="end">80</text>
+<line class="gr" x1="76.0" y1="104.8" x2="676.0" y2="104.8"/>
+<text x="68.0" y="108.8" text-anchor="end">90</text>
+<line class="gr" x1="76.0" y1="76.0" x2="676.0" y2="76.0"/>
+<text x="68.0" y="80.0" text-anchor="end">100</text>
+<rect class="ax" x="76.0" y="76.0" width="600.0" height="288.0"/>
+<text x="376.0" y="408.0" text-anchor="middle">Sample clock error (ppm)</text>
+<text x="18" y="220.0" text-anchor="middle" transform="rotate(-90 18 220.0)">Voice frames recovered (%)</text>
+<path class="l s1" d="M76.0,351.7 L136.0,358.7 L196.0,153.7 L256.0,93.0 L286.0,76.0 L316.0,76.0 L334.0,76.0 L346.0,76.0 L358.0,76.0 L364.0,76.0 L370.0,76.0 L376.0,76.0 L382.0,76.0 L388.0,76.0 L394.0,76.0 L406.0,76.0 L418.0,76.0 L436.0,76.0 L466.0,76.0 L496.0,85.0 L556.0,208.0 L616.0,359.7 L676.0,348.3"/>
+<circle class="p s1" cx="76.0" cy="351.7" r="2"/><circle class="p s1" cx="136.0" cy="358.7" r="2"/><circle class="p s1" cx="196.0" cy="153.7" r="2"/><circle class="p s1" cx="256.0" cy="93.0" r="2"/><circle class="p s1" cx="286.0" cy="76.0" r="2"/><circle class="p s1" cx="316.0" cy="76.0" r="2"/><circle class="p s1" cx="334.0" cy="76.0" r="2"/><circle class="p s1" cx="346.0" cy="76.0" r="2"/><circle class="p s1" cx="358.0" cy="76.0" r="2"/><circle class="p s1" cx="364.0" cy="76.0" r="2"/><circle class="p s1" cx="370.0" cy="76.0" r="2"/><circle class="p s1" cx="376.0" cy="76.0" r="2"/><circle class="p s1" cx="382.0" cy="76.0" r="2"/><circle class="p s1" cx="388.0" cy="76.0" r="2"/><circle class="p s1" cx="394.0" cy="76.0" r="2"/><circle class="p s1" cx="406.0" cy="76.0" r="2"/><circle class="p s1" cx="418.0" cy="76.0" r="2"/><circle class="p s1" cx="436.0" cy="76.0" r="2"/><circle class="p s1" cx="466.0" cy="76.0" r="2"/><circle class="p s1" cx="496.0" cy="85.0" r="2"/><circle class="p s1" cx="556.0" cy="208.0" r="2"/><circle class="p s1" cx="616.0" cy="359.7" r="2"/><circle class="p s1" cx="676.0" cy="348.3" r="2"/>
+<path class="l s2" d="M76.0,353.0 L136.0,356.3 L196.0,183.0 L256.0,96.3 L286.0,76.3 L316.0,76.3 L334.0,76.3 L346.0,76.3 L358.0,76.3 L364.0,76.0 L370.0,76.3 L376.0,76.3 L382.0,76.3 L388.0,76.3 L394.0,76.0 L406.0,76.0 L418.0,76.3 L436.0,76.3 L466.0,76.3 L496.0,83.7 L556.0,195.3 L616.0,356.3 L676.0,350.0"/>
+<circle class="p s2" cx="76.0" cy="353.0" r="2"/><circle class="p s2" cx="136.0" cy="356.3" r="2"/><circle class="p s2" cx="196.0" cy="183.0" r="2"/><circle class="p s2" cx="256.0" cy="96.3" r="2"/><circle class="p s2" cx="286.0" cy="76.3" r="2"/><circle class="p s2" cx="316.0" cy="76.3" r="2"/><circle class="p s2" cx="334.0" cy="76.3" r="2"/><circle class="p s2" cx="346.0" cy="76.3" r="2"/><circle class="p s2" cx="358.0" cy="76.3" r="2"/><circle class="p s2" cx="364.0" cy="76.0" r="2"/><circle class="p s2" cx="370.0" cy="76.3" r="2"/><circle class="p s2" cx="376.0" cy="76.3" r="2"/><circle class="p s2" cx="382.0" cy="76.3" r="2"/><circle class="p s2" cx="388.0" cy="76.3" r="2"/><circle class="p s2" cx="394.0" cy="76.0" r="2"/><circle class="p s2" cx="406.0" cy="76.0" r="2"/><circle class="p s2" cx="418.0" cy="76.3" r="2"/><circle class="p s2" cx="436.0" cy="76.3" r="2"/><circle class="p s2" cx="466.0" cy="76.3" r="2"/><circle class="p s2" cx="496.0" cy="83.7" r="2"/><circle class="p s2" cx="556.0" cy="195.3" r="2"/><circle class="p s2" cx="616.0" cy="356.3" r="2"/><circle class="p s2" cx="676.0" cy="350.0" r="2"/>
+<path class="l s3" d="M76.0,343.7 L136.0,340.3 L196.0,144.3 L256.0,79.0 L286.0,76.0 L316.0,76.0 L334.0,76.0 L346.0,76.0 L358.0,76.0 L364.0,76.0 L370.0,76.0 L376.0,76.0 L382.0,76.0 L388.0,76.0 L394.0,76.0 L406.0,76.0 L418.0,76.0 L436.0,76.0 L466.0,76.0 L496.0,78.0 L556.0,157.7 L616.0,340.3 L676.0,337.0"/>
+<circle class="p s3" cx="76.0" cy="343.7" r="2"/><circle class="p s3" cx="136.0" cy="340.3" r="2"/><circle class="p s3" cx="196.0" cy="144.3" r="2"/><circle class="p s3" cx="256.0" cy="79.0" r="2"/><circle class="p s3" cx="286.0" cy="76.0" r="2"/><circle class="p s3" cx="316.0" cy="76.0" r="2"/><circle class="p s3" cx="334.0" cy="76.0" r="2"/><circle class="p s3" cx="346.0" cy="76.0" r="2"/><circle class="p s3" cx="358.0" cy="76.0" r="2"/><circle class="p s3" cx="364.0" cy="76.0" r="2"/><circle class="p s3" cx="370.0" cy="76.0" r="2"/><circle class="p s3" cx="376.0" cy="76.0" r="2"/><circle class="p s3" cx="382.0" cy="76.0" r="2"/><circle class="p s3" cx="388.0" cy="76.0" r="2"/><circle class="p s3" cx="394.0" cy="76.0" r="2"/><circle class="p s3" cx="406.0" cy="76.0" r="2"/><circle class="p s3" cx="418.0" cy="76.0" r="2"/><circle class="p s3" cx="436.0" cy="76.0" r="2"/><circle class="p s3" cx="466.0" cy="76.0" r="2"/><circle class="p s3" cx="496.0" cy="78.0" r="2"/><circle class="p s3" cx="556.0" cy="157.7" r="2"/><circle class="p s3" cx="616.0" cy="340.3" r="2"/><circle class="p s3" cx="676.0" cy="337.0" r="2"/>
+<path class="l s4" d="M76.0,336.3 L136.0,327.3 L196.0,146.3 L256.0,79.7 L286.0,76.0 L316.0,76.0 L334.0,76.0 L346.0,76.0 L358.0,76.0 L364.0,76.0 L370.0,76.0 L376.0,76.0 L382.0,76.0 L388.0,76.0 L394.0,76.0 L406.0,76.0 L418.0,76.0 L436.0,76.0 L466.0,76.0 L496.0,76.7 L556.0,156.7 L616.0,331.7 L676.0,332.7"/>
+<circle class="p s4" cx="76.0" cy="336.3" r="2"/><circle class="p s4" cx="136.0" cy="327.3" r="2"/><circle class="p s4" cx="196.0" cy="146.3" r="2"/><circle class="p s4" cx="256.0" cy="79.7" r="2"/><circle class="p s4" cx="286.0" cy="76.0" r="2"/><circle class="p s4" cx="316.0" cy="76.0" r="2"/><circle class="p s4" cx="334.0" cy="76.0" r="2"/><circle class="p s4" cx="346.0" cy="76.0" r="2"/><circle class="p s4" cx="358.0" cy="76.0" r="2"/><circle class="p s4" cx="364.0" cy="76.0" r="2"/><circle class="p s4" cx="370.0" cy="76.0" r="2"/><circle class="p s4" cx="376.0" cy="76.0" r="2"/><circle class="p s4" cx="382.0" cy="76.0" r="2"/><circle class="p s4" cx="388.0" cy="76.0" r="2"/><circle class="p s4" cx="394.0" cy="76.0" r="2"/><circle class="p s4" cx="406.0" cy="76.0" r="2"/><circle class="p s4" cx="418.0" cy="76.0" r="2"/><circle class="p s4" cx="436.0" cy="76.0" r="2"/><circle class="p s4" cx="466.0" cy="76.0" r="2"/><circle class="p s4" cx="496.0" cy="76.7" r="2"/><circle class="p s4" cx="556.0" cy="156.7" r="2"/><circle class="p s4" cx="616.0" cy="331.7" r="2"/><circle class="p s4" cx="676.0" cy="332.7" r="2"/>
+<line class="l s1" x1="76.0" y1="46.0" x2="100.0" y2="46.0"/>
+<text x="106.0" y="50.0">Tier 0</text>
+<line class="l s2" x1="166.0" y1="46.0" x2="190.0" y2="46.0"/>
+<text x="196.0" y="50.0">Tier 1</text>
+<line class="l s3" x1="256.0" y1="46.0" x2="280.0" y2="46.0"/>
+<text x="286.0" y="50.0">Tier 2</text>
+<line class="l s4" x1="346.0" y1="46.0" x2="370.0" y2="46.0"/>
+<text x="376.0" y="50.0">Tier 3</text>
 </svg>

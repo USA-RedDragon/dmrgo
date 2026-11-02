@@ -295,7 +295,7 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 			plotAxis{min: -40, max: 40, step: 10, label: "Offset from the carrier (kHz)"},
 			plotAxis{min: -120, max: 20, step: 20, label: "Power to the reference (dB)"},
 			[]plotSeries{
-				{name: "Signal", class: "s2", x: fx, y: psd},
+				{name: "Signal", class: txTierClass(c.tier), x: fx, y: psd},
 				{name: "Mask D, 1 W", class: "r1", dash: "6 4", x: fx, y: md1},
 				{name: "Mask D, 100 W", class: "r2", dash: "6 4", x: fx, y: md100},
 				{name: "Mask H, 1 kW", class: "r3", dash: "2 3", x: fx, y: mh},
@@ -314,9 +314,11 @@ func txSpectrumGraphs(out map[string][]byte, d txSheetData) {
 		out[txFileTag(c)+"_acp.svg"] = linePlot(fmt.Sprintf("Tier %d, %s: power in the EN 300 113 receiver filter", c.tier-Tier0, txOutputName(c)),
 			plotAxis{min: 0, max: 40, step: 5, label: "Filter offset from the carrier (kHz)"},
 			plotAxis{min: -110, max: 0, step: 10, label: "Power to the total (dBc)"},
-			[]plotSeries{{name: "Signal", class: "s2", x: ox, y: acp}, adj, alt})
+			[]plotSeries{{name: "Signal", class: txTierClass(c.tier), x: ox, y: acp}, adj, alt})
 	}
 }
+
+func txTierClass(t Tier) string { return "s" + strconv.Itoa(int(t-Tier0)+1) }
 
 func txEyeGraphs(out map[string][]byte, d txSheetData) {
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
@@ -326,7 +328,7 @@ func txEyeGraphs(out map[string][]byte, d txSheetData) {
 			if !ok || c.tier != tier || c.pe {
 				continue
 			}
-			p := eyePanel{title: txClassName(c) + ", " + txRadioName(e.Radio)}
+			p := eyePanel{title: txClassName(c) + ", " + txRadioName(e.Radio), class: txTierClass(tier)}
 			if c.iq {
 				p.title = txClassName(c)
 			}
@@ -361,7 +363,7 @@ func txMarginGraphs(t testing.TB, out map[string][]byte, margins map[string]map[
 			if (c.iq && c.format != fmtS16) || (!c.iq && c.bits != 16) {
 				continue
 			}
-			g := barGroup{name: txClassName(c), class: "f" + strconv.Itoa(len(groups)+1)}
+			g := barGroup{name: txClassName(c), class: "q" + strconv.Itoa(len(groups)+1)}
 			for _, k := range keys {
 				v := math.NaN()
 				for _, key := range k {
@@ -411,265 +413,7 @@ func txFSKGraph(out map[string][]byte, d txSheetData) {
 	}
 	out["fsk_error.svg"] = barPlot("FSK error per tier and output",
 		plotAxis{min: 0, max: top, step: 0.25, label: "FSK error (% of the deviation of symbol +3)"}, rows,
-		[]barGroup{{name: "Hold converter, or I/Q", class: "f2", v: hold}, {name: "Ideal converter", class: "f3", v: ideal}}, math.NaN())
-}
-
-const (
-	sheetW, sheetH = 700, 420
-	plotPadL       = 76
-	plotPadR       = 190
-	plotPadT       = 40
-	plotPadB       = 56
-	plotStyle      = `text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1a7f37}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#3fb950}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}`
-)
-
-type plotAxis struct {
-	min, max, step float64
-	label          string
-	log            bool
-}
-
-func (a plotAxis) frac(v float64) float64 {
-	if a.log {
-		return (math.Log10(v) - math.Log10(a.min)) / (math.Log10(a.max) - math.Log10(a.min))
-	}
-	return (v - a.min) / (a.max - a.min)
-}
-
-func (a plotAxis) ticks() []float64 {
-	var out []float64
-	if a.log {
-		for e := math.Ceil(math.Log10(a.min) - 1e-9); e <= math.Log10(a.max)+1e-9; e++ {
-			out = append(out, math.Pow(10, e))
-		}
-		return out
-	}
-	for k := math.Ceil(a.min/a.step - 1e-9); k*a.step <= a.max+1e-9*math.Abs(a.step); k++ {
-		out = append(out, k*a.step+0)
-	}
-	return out
-}
-
-func plotNum(v float64) string {
-	if v != 0 && (math.Abs(v) < 1e-2 || math.Abs(v) >= 1e6) {
-		return "1e" + strconv.Itoa(int(math.Round(math.Log10(math.Abs(v)))))
-	}
-	return strconv.FormatFloat(v, 'f', -1, 64)
-}
-
-func plotPx(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
-
-type plotSeries struct {
-	name, class, dash string
-	x, y              []float64
-	marks             bool
-}
-
-type plotFrame struct {
-	b      *strings.Builder
-	x0, y0 float64
-	w, h   float64
-	xa, ya plotAxis
-}
-
-func (f plotFrame) sx(v float64) float64 { return f.x0 + f.xa.frac(v)*f.w }
-func (f plotFrame) sy(v float64) float64 { return f.y0 + (1-f.ya.frac(v))*f.h }
-
-func (f plotFrame) in(x, y float64) bool {
-	return x >= f.xa.min && x <= f.xa.max && y >= f.ya.min && y <= f.ya.max && !math.IsNaN(y)
-}
-
-func plotOpen(b *strings.Builder, title string) {
-	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="` + strconv.Itoa(sheetW) + `" height="` + strconv.Itoa(sheetH) +
-		`" viewBox="0 0 ` + strconv.Itoa(sheetW) + ` ` + strconv.Itoa(sheetH) + `">` + "\n")
-	b.WriteString("<style>" + plotStyle + "</style>\n")
-	b.WriteString(`<rect class="bg" width="100%" height="100%"/>` + "\n")
-	b.WriteString(`<text x="` + plotPx(plotPadL) + `" y="24">` + title + `</text>` + "\n")
-}
-
-func (f plotFrame) grid(xlabels, ylabels bool) {
-	b := f.b
-	for _, v := range f.xa.ticks() {
-		x := f.sx(v)
-		b.WriteString(`<line class="gr" x1="` + plotPx(x) + `" y1="` + plotPx(f.y0+f.h) + `" x2="` + plotPx(x) + `" y2="` + plotPx(f.y0) + `"/>` + "\n")
-		if xlabels {
-			b.WriteString(`<text x="` + plotPx(x) + `" y="` + plotPx(f.y0+f.h+18) + `" text-anchor="middle">` + plotNum(v) + `</text>` + "\n")
-		}
-	}
-	for _, v := range f.ya.ticks() {
-		y := f.sy(v)
-		b.WriteString(`<line class="gr" x1="` + plotPx(f.x0) + `" y1="` + plotPx(y) + `" x2="` + plotPx(f.x0+f.w) + `" y2="` + plotPx(y) + `"/>` + "\n")
-		if ylabels {
-			b.WriteString(`<text x="` + plotPx(f.x0-8) + `" y="` + plotPx(y+4) + `" text-anchor="end">` + plotNum(v) + `</text>` + "\n")
-		}
-	}
-	b.WriteString(`<rect class="ax" x="` + plotPx(f.x0) + `" y="` + plotPx(f.y0) + `" width="` + plotPx(f.w) + `" height="` + plotPx(f.h) + `"/>` + "\n")
-}
-
-func (f plotFrame) labels() {
-	b := f.b
-	b.WriteString(`<text x="` + plotPx(f.x0+f.w/2) + `" y="` + plotPx(sheetH-12) + `" text-anchor="middle">` + f.xa.label + `</text>` + "\n")
-	cy := f.y0 + f.h/2
-	b.WriteString(`<text x="18" y="` + plotPx(cy) + `" text-anchor="middle" transform="rotate(-90 18 ` + plotPx(cy) + `)">` + f.ya.label + `</text>` + "\n")
-}
-
-func (f plotFrame) series(s plotSeries) {
-	var path, marks strings.Builder
-	pen := false
-	for k := range s.x {
-		if k >= len(s.y) || !f.in(s.x[k], s.y[k]) {
-			pen = false
-			continue
-		}
-		op := "L"
-		if !pen {
-			op = "M"
-		}
-		pen = true
-		x, y := plotPx(f.sx(s.x[k])), plotPx(f.sy(s.y[k]))
-		path.WriteString(op + x + "," + y + " ")
-		marks.WriteString(`<circle class="p ` + s.class + `" cx="` + x + `" cy="` + y + `" r="2"/>`)
-	}
-	if path.Len() == 0 {
-		return
-	}
-	f.b.WriteString(`<path class="l ` + s.class + `"` + plotDash(s.dash) + ` d="` + strings.TrimSpace(path.String()) + `"/>` + "\n")
-	if s.marks {
-		f.b.WriteString(marks.String() + "\n")
-	}
-}
-
-func plotDash(d string) string {
-	if d == "" {
-		return ""
-	}
-	return ` stroke-dasharray="` + d + `"`
-}
-
-func plotLegend(b *strings.Builder, i int, class, dash, name string) {
-	x := float64(sheetW - plotPadR + 16)
-	y := float64(plotPadT + 10 + i*22)
-	b.WriteString(`<line class="l ` + class + `"` + plotDash(dash) + ` x1="` + plotPx(x) + `" y1="` + plotPx(y) + `" x2="` + plotPx(x+24) + `" y2="` + plotPx(y) + `"/>` + "\n")
-	b.WriteString(`<text x="` + plotPx(x+30) + `" y="` + plotPx(y+4) + `">` + name + `</text>` + "\n")
-}
-
-func linePlot(title string, xa, ya plotAxis, series []plotSeries) []byte {
-	var b strings.Builder
-	plotOpen(&b, title)
-	f := plotFrame{b: &b, x0: plotPadL, y0: plotPadT, w: sheetW - plotPadL - plotPadR, h: sheetH - plotPadT - plotPadB, xa: xa, ya: ya}
-	f.grid(true, true)
-	f.labels()
-	i := 0
-	for _, s := range series {
-		f.series(s)
-		if s.name != "" {
-			plotLegend(&b, i, s.class, s.dash, s.name)
-			i++
-		}
-	}
-	b.WriteString("</svg>\n")
-	return []byte(b.String())
-}
-
-type eyePanel struct {
-	title  string
-	traces [][]float64
-}
-
-func eyePlot(title string, steps int, panels []eyePanel) []byte {
-	var b strings.Builder
-	plotOpen(&b, title)
-	const gap = 16
-	n := float64(len(panels))
-	w := (sheetW - plotPadL - 24 - gap*(n-1)) / n
-	ya := plotAxis{min: -4.5, max: 4.5, step: 1.5, label: "Deviation (units of 648 Hz)"}
-	xa := plotAxis{min: -1, max: 1, step: 0.5, label: "Time (symbols)"}
-	for i, p := range panels {
-		f := plotFrame{b: &b, x0: plotPadL + float64(i)*(w+gap), y0: plotPadT + 18, w: w, h: sheetH - plotPadT - 18 - plotPadB, xa: xa, ya: ya}
-		f.grid(true, i == 0)
-		b.WriteString(`<text x="` + plotPx(f.x0+w/2) + `" y="` + plotPx(f.y0-6) + `" text-anchor="middle">` + p.title + `</text>` + "\n")
-		id := "eye" + strconv.Itoa(i)
-		b.WriteString(`<clipPath id="` + id + `"><rect x="` + plotPx(f.x0) + `" y="` + plotPx(f.y0) + `" width="` + plotPx(w) + `" height="` + plotPx(f.h) + `"/></clipPath>` + "\n")
-		b.WriteString(`<g class="e s2" clip-path="url(#` + id + `)">` + "\n")
-		for _, tr := range p.traces {
-			var path strings.Builder
-			for k, v := range tr {
-				op := "L"
-				if k == 0 {
-					op = "M"
-				}
-				x := float64(k-steps) / float64(steps)
-				path.WriteString(op + strconv.Itoa(int(math.Round(f.sx(x)))) + "," + strconv.Itoa(int(math.Round(f.sy(v)))))
-			}
-			b.WriteString(`<path d="` + path.String() + `"/>` + "\n")
-		}
-		b.WriteString("</g>\n")
-		for _, lv := range []float64{-3, -1, 1, 3} {
-			y := plotPx(f.sy(lv))
-			b.WriteString(`<line class="l r0" stroke-dasharray="2 4" x1="` + plotPx(f.x0) + `" y1="` + y + `" x2="` + plotPx(f.x0+w) + `" y2="` + y + `"/>` + "\n")
-		}
-		if i == 0 {
-			cy := f.y0 + f.h/2
-			b.WriteString(`<text x="18" y="` + plotPx(cy) + `" text-anchor="middle" transform="rotate(-90 18 ` + plotPx(cy) + `)">` + ya.label + `</text>` + "\n")
-		}
-	}
-	b.WriteString(`<text x="` + plotPx((plotPadL+sheetW-24)/2) + `" y="` + plotPx(sheetH-12) + `" text-anchor="middle">` + xa.label + `</text>` + "\n")
-	b.WriteString("</svg>\n")
-	return []byte(b.String())
-}
-
-type barGroup struct {
-	name, class string
-	v           []float64
-}
-
-func barPlot(title string, xa plotAxis, rows []string, groups []barGroup, ref float64) []byte {
-	var b strings.Builder
-	labelW := 300.0
-	for _, name := range rows {
-		labelW = max(labelW, 7*float64(len(name))+24)
-	}
-	width := int(labelW) + sheetW - 300
-	rowH := 10.0*float64(len(groups)) + 8
-	h := rowH*float64(len(rows)) + 40
-	height := int(math.Ceil(plotPadT + h + plotPadB + 22*float64(len(groups))))
-	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="` + strconv.Itoa(width) + `" height="` + strconv.Itoa(height) +
-		`" viewBox="0 0 ` + strconv.Itoa(width) + ` ` + strconv.Itoa(height) + `">` + "\n")
-	b.WriteString("<style>" + plotStyle + "</style>\n")
-	b.WriteString(`<rect class="bg" width="100%" height="100%"/>` + "\n")
-	b.WriteString(`<text x="16" y="24">` + title + `</text>` + "\n")
-	f := plotFrame{b: &b, x0: labelW, y0: plotPadT, w: sheetW - 300 - 24, h: h - 40, xa: xa, ya: plotAxis{min: 0, max: 1, step: 1}}
-	for _, v := range xa.ticks() {
-		x := f.sx(v)
-		b.WriteString(`<line class="gr" x1="` + plotPx(x) + `" y1="` + plotPx(f.y0+f.h) + `" x2="` + plotPx(x) + `" y2="` + plotPx(f.y0) + `"/>` + "\n")
-		b.WriteString(`<text x="` + plotPx(x) + `" y="` + plotPx(f.y0+f.h+18) + `" text-anchor="middle">` + plotNum(v) + `</text>` + "\n")
-	}
-	b.WriteString(`<rect class="ax" x="` + plotPx(f.x0) + `" y="` + plotPx(f.y0) + `" width="` + plotPx(f.w) + `" height="` + plotPx(f.h) + `"/>` + "\n")
-	b.WriteString(`<text x="` + plotPx(f.x0+f.w/2) + `" y="` + plotPx(f.y0+f.h+38) + `" text-anchor="middle">` + xa.label + `</text>` + "\n")
-	zero := f.sx(max(xa.min, min(xa.max, 0)))
-	for r, name := range rows {
-		top := f.y0 + 4 + float64(r)*rowH
-		b.WriteString(`<text x="` + plotPx(f.x0-8) + `" y="` + plotPx(top+rowH/2) + `" text-anchor="end">` + name + `</text>` + "\n")
-		for g, grp := range groups {
-			if r >= len(grp.v) || math.IsNaN(grp.v[r]) {
-				continue
-			}
-			x := f.sx(max(xa.min, min(xa.max, grp.v[r])))
-			lo, hi := min(zero, x), max(zero, x)
-			b.WriteString(`<rect class="` + grp.class + `" x="` + plotPx(lo) + `" y="` + plotPx(top+float64(g)*10) + `" width="` + plotPx(max(hi-lo, 1)) + `" height="8"/>` + "\n")
-		}
-	}
-	if !math.IsNaN(ref) {
-		x := plotPx(f.sx(ref))
-		b.WriteString(`<line class="l r1" stroke-dasharray="6 4" x1="` + x + `" y1="` + plotPx(f.y0) + `" x2="` + x + `" y2="` + plotPx(f.y0+f.h) + `"/>` + "\n")
-	}
-	for g, grp := range groups {
-		y := f.y0 + f.h + 58 + float64(g)*22
-		b.WriteString(`<rect class="` + grp.class + `" x="` + plotPx(f.x0) + `" y="` + plotPx(y-8) + `" width="24" height="8"/>` + "\n")
-		b.WriteString(`<text x="` + plotPx(f.x0+30) + `" y="` + plotPx(y) + `">` + grp.name + `</text>` + "\n")
-	}
-	b.WriteString("</svg>\n")
-	return []byte(b.String())
+		[]barGroup{{name: "Hold converter, or I/Q", class: "q1", v: hold}, {name: "Ideal converter", class: "q2", v: ideal}}, math.NaN())
 }
 
 func txRegimeMargin(t testing.TB, g map[string]float64, r txRegime) (float64, bool) {
@@ -858,7 +602,7 @@ func txSheetDoc(t *testing.T, doc []byte, margins map[string]map[string]float64)
 		if err == nil && bytes.Equal(old, graphs[name]) {
 			continue
 		}
-		if !*updateTxDoc {
+		if !writeTxDoc() {
 			t.Errorf("%s differs from %s; run go test ./internal/fsktx -run TestTxDoc -update-txdoc in v2", p, txSheetFile)
 			continue
 		}
@@ -877,7 +621,7 @@ func txSheetDoc(t *testing.T, doc []byte, margins map[string]map[string]float64)
 		if i < 0 || j < i {
 			t.Fatalf("%s has no %s ... %s block", txDocFile, blk.begin, blk.end)
 		}
-		if got := string(doc[i : j+len(blk.end)]); got != blk.want && !*updateTxDoc {
+		if got := string(doc[i : j+len(blk.end)]); got != blk.want && !writeTxDoc() {
 			t.Errorf("the %s block of %s differs from %s; run go test ./internal/fsktx -run TestTxDoc -update-txdoc in v2", blk.begin, txDocFile, txSheetFile)
 		}
 		doc = append(append(append([]byte{}, doc[:i]...), blk.want...), doc[j+len(blk.end):]...)

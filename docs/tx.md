@@ -527,10 +527,7 @@ Each receiver column less that of the MMDVM firmware, over the same noise seeds,
 
 The frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.
 
-![Eye diagram of dmrgo audio tier 0](tx/compare_eye_0.svg)
-![Eye diagram of dmrgo audio tier 1](tx/compare_eye_1.svg)
-![Eye diagram of dmrgo audio tier 2](tx/compare_eye_2.svg)
-![Eye diagram of MMDVM firmware](tx/compare_eye_3.svg)
+![Eye diagram of each transmitter](tx/compare_eye.svg)
 
 </details>
 

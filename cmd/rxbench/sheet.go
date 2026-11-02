@@ -370,7 +370,7 @@ func eyeGraphs(out map[string][]byte, d data, m string) {
 			if e.Mode != t.Mode || e.Tier != t.Tier {
 				continue
 			}
-			p := eyePanel{title: "C/N " + strconv.FormatFloat(e.CN, 'f', -1, 64) + " dB"}
+			p := eyePanel{title: "C/N " + strconv.FormatFloat(e.CN, 'f', -1, 64) + " dB", class: tierClass(t.Tier)}
 			for _, tr := range e.Traces {
 				v := make([]float64, len(tr))
 				for i, x := range tr {
@@ -399,7 +399,7 @@ func sweepGraph(d data, m, title string, xs []sheetSweep, xa plotAxis, scale flo
 				x, y = append(x, p.X*scale), append(y, 100*r)
 			}
 		}
-		series = append(series, plotSeries{name: "Tier " + strconv.Itoa(t.Tier), class: "s" + strconv.Itoa(t.Tier+1), x: x, y: y, marks: true})
+		series = append(series, plotSeries{name: "Tier " + strconv.Itoa(t.Tier), class: tierClass(t.Tier), x: x, y: y, marks: true})
 	}
 	return linePlot(modeLabel(m)+": "+title, xa, plotAxis{min: 0, max: 100, step: 10, label: "Voice frames recovered (%)"}, series)
 }
@@ -429,7 +429,7 @@ func lateGraph(d data, m string) []byte {
 				lo, hi, top = min(lo, p.CN), max(hi, p.CN), max(top, v)
 			}
 		}
-		series = append(series, plotSeries{name: "Tier " + strconv.Itoa(t.Tier), class: "s" + strconv.Itoa(t.Tier+1), x: x, y: y, marks: true})
+		series = append(series, plotSeries{name: "Tier " + strconv.Itoa(t.Tier), class: tierClass(t.Tier), x: x, y: y, marks: true})
 	}
 	if len(series) == 0 {
 		lo, hi = 0, 1

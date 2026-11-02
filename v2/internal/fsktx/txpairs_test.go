@@ -200,6 +200,8 @@ func renderTxPairs(p txPairs) string {
 
 func TestTxPairs(t *testing.T) {
 	t.Parallel()
+	txDocMu.Lock()
+	defer txDocMu.Unlock()
 	doc, err := os.ReadFile(txDocFile)
 	if errors.Is(err, fs.ErrNotExist) && !*updateTxPairs {
 		t.Skip("docs/tx.md is not in this tree")

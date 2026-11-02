@@ -252,8 +252,10 @@ func measureTxCmp(t *testing.T, bin string) txCmpData {
 
 func TestTxCompare(t *testing.T) {
 	t.Parallel()
+	txDocMu.Lock()
+	defer txDocMu.Unlock()
 	doc, err := os.ReadFile(txDocFile)
-	if errors.Is(err, fs.ErrNotExist) && !*updateTxCmp {
+	if errors.Is(err, fs.ErrNotExist) && !*updateTxCmp && !*renderTxDoc {
 		t.Skip("docs/tx.md is not in this tree")
 	}
 	if err != nil {
@@ -287,11 +289,8 @@ func TestTxCompare(t *testing.T) {
 		t.Fatalf("%s has no %s ... %s block", txDocFile, txCmpBegin, txCmpEnd)
 	}
 	want := renderTxCmp(d)
-	graphs := map[string][]byte{"compare_spectrum.svg": txCmpSpectrumSVG(d)}
-	for k, r := range d.Rows {
-		graphs["compare_eye_"+strconv.Itoa(k)+".svg"] = txCmpEyeSVG(d, r)
-	}
-	if *updateTxCmp {
+	graphs := map[string][]byte{"compare_spectrum.svg": txCmpSpectrumSVG(d), "compare_eye.svg": txCmpEyeSVG(d)}
+	if *updateTxCmp || *renderTxDoc {
 		out := append(append(append([]byte{}, doc[:i]...), want...), doc[j+len(txCmpEnd):]...)
 		if err := os.WriteFile(txDocFile, out, 0o600); err != nil {
 			t.Fatal(err)
@@ -357,79 +356,50 @@ func renderTxCmp(d txCmpData) string {
 	writeTxCmpPaired(&b, d)
 	b.WriteString("![Spectrum of each transmitter, power in 250 Hz against the offset from the carrier](" + txImgDir + "compare_spectrum.svg)\n\n")
 	b.WriteString("<details><summary>Eye diagrams</summary>\n\nThe frequency of the FM signal after a 2.4 kHz low pass, two symbols wide, over 120 symbol pairs.\n\n")
-	for k, r := range d.Rows {
-		b.WriteString("![Eye diagram of " + r.Name + "](" + txImgDir + "compare_eye_" + strconv.Itoa(k) + ".svg)\n")
-	}
+	b.WriteString("![Eye diagram of each transmitter](" + txImgDir + "compare_eye.svg)\n")
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("`DMRGO_MMDVMTX=<mmdvmtx> go test ./internal/fsktx -run TestTxCompare -update-txcmp` in v2 measures them into `v2/internal/fsktx/testdata/txcmp.json` and writes this block and its graphs.\n\n")
 	b.WriteString(txCmpEnd)
 	return b.String()
 }
 
-const (
-	txSvgW, txSvgH = 700, 360
-	txPadL, txPadR = 64, 190
-	txPadT, txPadB = 36, 48
-	txSvgStyle     = `text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.s0{stroke:#cf222e}.s1{stroke:#0969da}.s2{stroke:#1a7f37}.s3{stroke:#9a6700}.l{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:0.6;stroke-opacity:0.5}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.s0{stroke:#ff7b72}.s1{stroke:#58a6ff}.s2{stroke:#3fb950}.s3{stroke:#d29922}}`
-)
-
-func txPx(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
-
-func txSvgFrame(b *strings.Builder, title, xTitle, yTitle string, xs, ys []float64, xmin, xmax, ymin, ymax float64) (func(float64) float64, func(float64) float64) {
-	pw, ph := float64(txSvgW-txPadL-txPadR), float64(txSvgH-txPadT-txPadB)
-	sx := func(x float64) float64 { return txPadL + (x-xmin)/(xmax-xmin)*pw }
-	sy := func(y float64) float64 { return txPadT + (ymax-y)/(ymax-ymin)*ph }
-	fmt.Fprintf(b, `<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">`+"\n", txSvgW, txSvgH, txSvgW, txSvgH)
-	b.WriteString("<style>" + txSvgStyle + "</style>\n")
-	b.WriteString(`<text x="` + txPx(txPadL) + `" y="22">` + title + `</text>` + "\n")
-	for _, x := range xs {
-		fmt.Fprintf(b, `<line class="gr" x1="%s" y1="%s" x2="%s" y2="%s"/>`+"\n", txPx(sx(x)), txPx(sy(ymin)), txPx(sx(x)), txPx(sy(ymax)))
-		fmt.Fprintf(b, `<text x="%s" y="%s" text-anchor="middle">%s</text>`+"\n", txPx(sx(x)), txPx(sy(ymin)+16), strconv.FormatFloat(x, 'f', -1, 64))
+func txCmpClass(name string) string {
+	if n, ok := strings.CutPrefix(name, "dmrgo audio tier "); ok {
+		if k, err := strconv.Atoi(n); err == nil {
+			return "s" + strconv.Itoa(k+1)
+		}
 	}
-	for _, y := range ys {
-		fmt.Fprintf(b, `<line class="gr" x1="%s" y1="%s" x2="%s" y2="%s"/>`+"\n", txPx(sx(xmin)), txPx(sy(y)), txPx(sx(xmax)), txPx(sy(y)))
-		fmt.Fprintf(b, `<text x="%s" y="%s" text-anchor="end">%s</text>`+"\n", txPx(sx(xmin)-6), txPx(sy(y)+4), strconv.FormatFloat(y, 'f', -1, 64))
-	}
-	fmt.Fprintf(b, `<rect class="ax" x="%s" y="%s" width="%s" height="%s"/>`+"\n", txPx(sx(xmin)), txPx(sy(ymax)), txPx(pw), txPx(ph))
-	fmt.Fprintf(b, `<text x="%s" y="%s" text-anchor="middle">%s</text>`+"\n", txPx(sx((xmin+xmax)/2)), txPx(float64(txSvgH)-10), xTitle)
-	fmt.Fprintf(b, `<text x="14" y="%s" transform="rotate(-90 14 %s)" text-anchor="middle">%s</text>`+"\n", txPx(sy((ymin+ymax)/2)), txPx(sy((ymin+ymax)/2)), yTitle)
-	return sx, sy
+	return "r0"
 }
 
 func txCmpSpectrumSVG(d txCmpData) []byte {
-	var b strings.Builder
-	xs := []float64{-25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25}
-	ys := []float64{0, -20, -40, -60, -80, -100}
-	sx, sy := txSvgFrame(&b, "Spectrum of each transmitter", "Offset from the carrier (kHz)", "Power in 250 Hz (dBc)", xs, ys, -25, 25, -100, 0)
-	for k, r := range d.Rows {
-		var pts []string
+	series := make([]plotSeries, 0, len(d.Rows))
+	for _, r := range d.Rows {
+		s := plotSeries{name: r.Name, class: txCmpClass(r.Name)}
 		for i, v := range r.Spectrum {
-			f := (-25000 + float64(i)*d.BinHz) / 1000
-			pts = append(pts, txPx(sx(f))+","+txPx(sy(max(v, -100))))
+			s.x = append(s.x, (-25000+float64(i)*d.BinHz)/1000)
+			s.y = append(s.y, max(v, -100))
 		}
-		fmt.Fprintf(&b, `<polyline class="l s%d" points="%s"/>`+"\n", k%4, strings.Join(pts, " "))
-		ly := float64(txPadT + 20 + 22*k)
-		lx := float64(txSvgW - txPadR + 14)
-		fmt.Fprintf(&b, `<line class="l s%d" x1="%s" y1="%s" x2="%s" y2="%s"/>`+"\n", k%4, txPx(lx), txPx(ly-4), txPx(lx+20), txPx(ly-4))
-		fmt.Fprintf(&b, `<text x="%s" y="%s">%s</text>`+"\n", txPx(lx+26), txPx(ly), r.Name)
+		series = append(series, s)
 	}
-	b.WriteString("</svg>\n")
-	return []byte(b.String())
+	return linePlot("Spectrum of each transmitter, power in 250 Hz",
+		plotAxis{min: -25, max: 25, step: 5, label: "Offset from the carrier (kHz)"},
+		plotAxis{min: -100, max: 0, step: 20, label: "Power in 250 Hz (dBc)"}, series)
 }
 
-func txCmpEyeSVG(d txCmpData, r txCmpRow) []byte {
-	var b strings.Builder
-	n := 2 * d.EyeSPS
-	xs := []float64{0, 0.5, 1, 1.5, 2}
-	ys := []float64{-3000, -2000, -1000, 0, 1000, 2000, 3000}
-	sx, sy := txSvgFrame(&b, "Eye diagram of "+r.Name, "Time (symbols)", "Frequency (Hz)", xs, ys, 0, 2, -3000, 3000)
-	for _, tr := range r.Eye {
-		var pts []string
-		for j, v := range tr {
-			pts = append(pts, txPx(sx(float64(j)/float64(n)*2))+","+txPx(sy(max(-3000, min(3000, v)))))
+func txCmpEyeSVG(d txCmpData) []byte {
+	panels := make([]eyePanel, 0, len(d.Rows))
+	for _, r := range d.Rows {
+		title := strings.TrimPrefix(r.Name, "dmrgo ")
+		p := eyePanel{title: strings.ToUpper(title[:1]) + title[1:], class: txCmpClass(r.Name)}
+		for _, tr := range r.Eye {
+			v := make([]float64, len(tr))
+			for j, x := range tr {
+				v[j] = x / 648
+			}
+			p.traces = append(p.traces, v)
 		}
-		fmt.Fprintf(&b, `<polyline class="e s1" points="%s"/>`+"\n", strings.Join(pts, " "))
+		panels = append(panels, p)
 	}
-	b.WriteString("</svg>\n")
-	return []byte(b.String())
+	return eyePlot("Eye of each transmitter after a 2.4 kHz low pass", d.EyeSPS, panels)
 }

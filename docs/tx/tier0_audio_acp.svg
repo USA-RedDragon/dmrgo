@@ -1,57 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420">
-<style>text{font-family:sans-serif;font-size:13px;fill:#24292f}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1a7f37}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#3fb950}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}</style>
+<style>text{font-family:sans-serif;font-size:13px;fill:#24292f}.t{font-weight:600}.bg{fill:#ffffff}.ax{stroke:#24292f;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.r3{stroke:#1b7c83}.r4{stroke:#9a6700}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.q0{fill:#6e7781}.q1{fill:#bc4c00}.q2{fill:#8250df}.f1{fill:#cf222e}.f2{fill:#0969da}.f3{fill:#1a7f37}.f4{fill:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}.e{fill:none;stroke-width:1;stroke-opacity:.25}@media (prefers-color-scheme:dark){text{fill:#e6edf3}.bg{fill:#0d1117}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.r3{stroke:#39c5cf}.r4{stroke:#d29922}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}.q0{fill:#8b949e}.q1{fill:#f0883e}.q2{fill:#d2a8ff}.f1{fill:#ff7b72}.f2{fill:#58a6ff}.f3{fill:#3fb950}.f4{fill:#d29922}}</style>
 <rect class="bg" width="100%" height="100%"/>
-<text x="76.0" y="24">Tier 0, Audio 16-bit at 48 kHz: power in the EN 300 113 receiver filter</text>
-<line class="gr" x1="76.0" y1="364.0" x2="76.0" y2="40.0"/>
+<text class="t" x="16" y="24">Tier 0, Audio 16-bit at 48 kHz: power in the EN 300 113 receiver filter</text>
+<line class="gr" x1="76.0" y1="364.0" x2="76.0" y2="76.0"/>
 <text x="76.0" y="382.0" text-anchor="middle">0</text>
-<line class="gr" x1="130.2" y1="364.0" x2="130.2" y2="40.0"/>
-<text x="130.2" y="382.0" text-anchor="middle">5</text>
-<line class="gr" x1="184.5" y1="364.0" x2="184.5" y2="40.0"/>
-<text x="184.5" y="382.0" text-anchor="middle">10</text>
-<line class="gr" x1="238.8" y1="364.0" x2="238.8" y2="40.0"/>
-<text x="238.8" y="382.0" text-anchor="middle">15</text>
-<line class="gr" x1="293.0" y1="364.0" x2="293.0" y2="40.0"/>
-<text x="293.0" y="382.0" text-anchor="middle">20</text>
-<line class="gr" x1="347.2" y1="364.0" x2="347.2" y2="40.0"/>
-<text x="347.2" y="382.0" text-anchor="middle">25</text>
-<line class="gr" x1="401.5" y1="364.0" x2="401.5" y2="40.0"/>
-<text x="401.5" y="382.0" text-anchor="middle">30</text>
-<line class="gr" x1="455.8" y1="364.0" x2="455.8" y2="40.0"/>
-<text x="455.8" y="382.0" text-anchor="middle">35</text>
-<line class="gr" x1="510.0" y1="364.0" x2="510.0" y2="40.0"/>
-<text x="510.0" y="382.0" text-anchor="middle">40</text>
-<line class="gr" x1="76.0" y1="364.0" x2="510.0" y2="364.0"/>
+<line class="gr" x1="151.0" y1="364.0" x2="151.0" y2="76.0"/>
+<text x="151.0" y="382.0" text-anchor="middle">5</text>
+<line class="gr" x1="226.0" y1="364.0" x2="226.0" y2="76.0"/>
+<text x="226.0" y="382.0" text-anchor="middle">10</text>
+<line class="gr" x1="301.0" y1="364.0" x2="301.0" y2="76.0"/>
+<text x="301.0" y="382.0" text-anchor="middle">15</text>
+<line class="gr" x1="376.0" y1="364.0" x2="376.0" y2="76.0"/>
+<text x="376.0" y="382.0" text-anchor="middle">20</text>
+<line class="gr" x1="451.0" y1="364.0" x2="451.0" y2="76.0"/>
+<text x="451.0" y="382.0" text-anchor="middle">25</text>
+<line class="gr" x1="526.0" y1="364.0" x2="526.0" y2="76.0"/>
+<text x="526.0" y="382.0" text-anchor="middle">30</text>
+<line class="gr" x1="601.0" y1="364.0" x2="601.0" y2="76.0"/>
+<text x="601.0" y="382.0" text-anchor="middle">35</text>
+<line class="gr" x1="676.0" y1="364.0" x2="676.0" y2="76.0"/>
+<text x="676.0" y="382.0" text-anchor="middle">40</text>
+<line class="gr" x1="76.0" y1="364.0" x2="676.0" y2="364.0"/>
 <text x="68.0" y="368.0" text-anchor="end">-110</text>
-<line class="gr" x1="76.0" y1="334.5" x2="510.0" y2="334.5"/>
-<text x="68.0" y="338.5" text-anchor="end">-100</text>
-<line class="gr" x1="76.0" y1="305.1" x2="510.0" y2="305.1"/>
-<text x="68.0" y="309.1" text-anchor="end">-90</text>
-<line class="gr" x1="76.0" y1="275.6" x2="510.0" y2="275.6"/>
-<text x="68.0" y="279.6" text-anchor="end">-80</text>
-<line class="gr" x1="76.0" y1="246.2" x2="510.0" y2="246.2"/>
-<text x="68.0" y="250.2" text-anchor="end">-70</text>
-<line class="gr" x1="76.0" y1="216.7" x2="510.0" y2="216.7"/>
-<text x="68.0" y="220.7" text-anchor="end">-60</text>
-<line class="gr" x1="76.0" y1="187.3" x2="510.0" y2="187.3"/>
-<text x="68.0" y="191.3" text-anchor="end">-50</text>
-<line class="gr" x1="76.0" y1="157.8" x2="510.0" y2="157.8"/>
-<text x="68.0" y="161.8" text-anchor="end">-40</text>
-<line class="gr" x1="76.0" y1="128.4" x2="510.0" y2="128.4"/>
-<text x="68.0" y="132.4" text-anchor="end">-30</text>
-<line class="gr" x1="76.0" y1="98.9" x2="510.0" y2="98.9"/>
-<text x="68.0" y="102.9" text-anchor="end">-20</text>
-<line class="gr" x1="76.0" y1="69.5" x2="510.0" y2="69.5"/>
-<text x="68.0" y="73.5" text-anchor="end">-10</text>
-<line class="gr" x1="76.0" y1="40.0" x2="510.0" y2="40.0"/>
-<text x="68.0" y="44.0" text-anchor="end">0</text>
-<rect class="ax" x="76.0" y="40.0" width="434.0" height="324.0"/>
-<text x="293.0" y="408.0" text-anchor="middle">Filter offset from the carrier (kHz)</text>
-<text x="18" y="202.0" text-anchor="middle" transform="rotate(-90 18 202.0)">Power to the total (dBc)</text>
-<path class="l s2" d="M76.0,42.1 L78.7,42.1 L81.4,42.1 L84.1,42.1 L86.8,42.4 L89.6,42.7 L92.3,43.2 L95.0,43.5 L97.7,44.1 L100.4,44.7 L103.1,45.6 L105.8,46.5 L108.5,47.4 L111.3,48.2 L114.0,49.4 L116.7,50.9 L119.4,52.4 L122.1,54.4 L124.8,56.5 L127.5,58.9 L130.2,62.1 L133.0,65.6 L135.7,69.7 L138.4,73.9 L141.1,77.7 L143.8,81.8 L146.5,85.9 L149.2,91.0 L151.9,96.0 L154.7,101.0 L157.4,105.4 L160.1,110.1 L162.8,114.8 L165.5,119.8 L168.2,125.4 L170.9,131.6 L173.7,138.1 L176.4,144.9 L179.1,151.6 L181.8,157.8 L184.5,164.3 L187.2,170.5 L189.9,176.4 L192.6,182.3 L195.4,189.0 L198.1,197.0 L200.8,204.9 L203.5,213.5 L206.2,222.6 L208.9,231.2 L211.6,238.5 L214.3,243.5 L217.1,247.7 L219.8,251.2 L222.5,253.5 L225.2,255.6 L227.9,258.0 L230.6,259.7 L233.3,261.5 L236.0,263.3 L238.8,264.7 L241.5,266.2 L244.2,267.4 L246.9,268.3 L249.6,269.2 L252.3,270.0 L255.0,270.6 L257.7,271.5 L260.4,272.4 L263.2,273.3 L265.9,274.2 L268.6,275.6 L271.3,276.8 L274.0,278.3 L276.7,279.8 L279.4,281.5 L282.1,283.6 L284.9,285.1 L287.6,287.4 L290.3,289.5 L293.0,291.5 L295.7,293.0 L298.4,294.5 L301.1,296.0 L303.9,297.4 L306.6,299.2 L309.3,300.7 L312.0,301.6 L314.7,302.4 L317.4,303.3 L320.1,303.6 L322.8,304.2 L325.5,304.5 L328.3,304.5 L331.0,304.8 L333.7,304.8 L336.4,304.8 L339.1,305.1 L341.8,305.1 L344.5,305.1 L347.2,305.1 L350.0,305.1 L352.7,305.1 L355.4,304.8 L358.1,304.8 L360.8,304.8 L363.5,304.8 L366.2,304.8 L369.0,304.5 L371.7,304.5 L374.4,304.5 L377.1,304.2 L379.8,304.2 L382.5,303.9 L385.2,303.9 L387.9,303.6 L390.6,303.3 L393.4,303.0 L396.1,302.7 L398.8,302.7 L401.5,302.4 L404.2,302.1 L406.9,302.1 L409.6,301.9 L412.4,301.9 L415.1,301.6 L417.8,301.6 L420.5,301.3 L423.2,301.3 L425.9,301.0 L428.6,301.0 L431.3,300.7 L434.0,300.7 L436.8,300.7 L439.5,300.4 L442.2,300.4 L444.9,300.1 L447.6,299.8 L450.3,299.5 L453.0,299.2 L455.8,298.6 L458.5,298.0 L461.2,297.4 L463.9,296.8 L466.6,296.3 L469.3,295.7 L472.0,295.1 L474.7,294.2 L477.5,293.6 L480.2,292.7 L482.9,291.8 L485.6,290.7 L488.3,288.9 L491.0,286.5 L493.7,283.0 L496.4,278.3 L499.1,273.6 L501.9,269.5 L504.6,265.3 L507.3,261.5 L510.0,258.3"/>
-<line class="l s2" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
-<text x="556.0" y="54.0">Signal</text>
-<path class="l r1" stroke-dasharray="6 4" d="M165.5,216.7 L257.7,216.7"/>
-<line class="l r1" stroke-dasharray="6 4" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
-<text x="556.0" y="76.0">EN 300 113 limit</text>
-<path class="l r1" stroke-dasharray="6 4" d="M301.1,216.7 L393.4,216.7"/>
+<line class="gr" x1="76.0" y1="337.8" x2="676.0" y2="337.8"/>
+<text x="68.0" y="341.8" text-anchor="end">-100</text>
+<line class="gr" x1="76.0" y1="311.6" x2="676.0" y2="311.6"/>
+<text x="68.0" y="315.6" text-anchor="end">-90</text>
+<line class="gr" x1="76.0" y1="285.5" x2="676.0" y2="285.5"/>
+<text x="68.0" y="289.5" text-anchor="end">-80</text>
+<line class="gr" x1="76.0" y1="259.3" x2="676.0" y2="259.3"/>
+<text x="68.0" y="263.3" text-anchor="end">-70</text>
+<line class="gr" x1="76.0" y1="233.1" x2="676.0" y2="233.1"/>
+<text x="68.0" y="237.1" text-anchor="end">-60</text>
+<line class="gr" x1="76.0" y1="206.9" x2="676.0" y2="206.9"/>
+<text x="68.0" y="210.9" text-anchor="end">-50</text>
+<line class="gr" x1="76.0" y1="180.7" x2="676.0" y2="180.7"/>
+<text x="68.0" y="184.7" text-anchor="end">-40</text>
+<line class="gr" x1="76.0" y1="154.5" x2="676.0" y2="154.5"/>
+<text x="68.0" y="158.5" text-anchor="end">-30</text>
+<line class="gr" x1="76.0" y1="128.4" x2="676.0" y2="128.4"/>
+<text x="68.0" y="132.4" text-anchor="end">-20</text>
+<line class="gr" x1="76.0" y1="102.2" x2="676.0" y2="102.2"/>
+<text x="68.0" y="106.2" text-anchor="end">-10</text>
+<line class="gr" x1="76.0" y1="76.0" x2="676.0" y2="76.0"/>
+<text x="68.0" y="80.0" text-anchor="end">0</text>
+<rect class="ax" x="76.0" y="76.0" width="600.0" height="288.0"/>
+<text x="376.0" y="408.0" text-anchor="middle">Filter offset from the carrier (kHz)</text>
+<text x="18" y="220.0" text-anchor="middle" transform="rotate(-90 18 220.0)">Power to the total (dBc)</text>
+<path class="l s1" d="M76.0,77.8 L79.8,77.8 L83.5,77.8 L87.2,77.8 L91.0,78.1 L94.8,78.4 L98.5,78.9 L102.2,79.1 L106.0,79.7 L109.8,80.2 L113.5,81.0 L117.2,81.8 L121.0,82.5 L124.8,83.3 L128.5,84.4 L132.2,85.7 L136.0,87.0 L139.8,88.8 L143.5,90.7 L147.2,92.8 L151.0,95.6 L154.8,98.8 L158.5,102.4 L162.2,106.1 L166.0,109.5 L169.8,113.2 L173.5,116.8 L177.2,121.3 L181.0,125.7 L184.8,130.2 L188.5,134.1 L192.2,138.3 L196.0,142.5 L199.8,147.0 L203.5,151.9 L207.2,157.4 L211.0,163.2 L214.8,169.2 L218.5,175.2 L222.2,180.7 L226.0,186.5 L229.8,192.0 L233.5,197.2 L237.2,202.5 L241.0,208.5 L244.8,215.5 L248.5,222.6 L252.2,230.2 L256.0,238.3 L259.8,245.9 L263.5,252.5 L267.2,256.9 L271.0,260.6 L274.8,263.7 L278.5,265.8 L282.2,267.7 L286.0,269.7 L289.8,271.3 L293.5,272.9 L297.2,274.5 L301.0,275.8 L304.8,277.1 L308.5,278.1 L312.2,278.9 L316.0,279.7 L319.8,280.5 L323.5,281.0 L327.2,281.8 L331.0,282.6 L334.8,283.4 L338.5,284.1 L342.2,285.5 L346.0,286.5 L349.8,287.8 L353.5,289.1 L357.2,290.7 L361.0,292.5 L364.8,293.8 L368.5,295.9 L372.2,297.8 L376.0,299.6 L379.8,300.9 L383.5,302.2 L387.2,303.5 L391.0,304.8 L394.8,306.4 L398.5,307.7 L402.2,308.5 L406.0,309.3 L409.8,310.1 L413.5,310.3 L417.2,310.9 L421.0,311.1 L424.8,311.1 L428.5,311.4 L432.2,311.4 L436.0,311.4 L439.8,311.6 L443.5,311.6 L447.2,311.6 L451.0,311.6 L454.8,311.6 L458.5,311.6 L462.2,311.4 L466.0,311.4 L469.8,311.4 L473.5,311.4 L477.2,311.4 L481.0,311.1 L484.8,311.1 L488.5,311.1 L492.2,310.9 L496.0,310.9 L499.8,310.6 L503.5,310.6 L507.2,310.3 L511.0,310.1 L514.8,309.8 L518.5,309.5 L522.2,309.5 L526.0,309.3 L529.8,309.0 L533.5,309.0 L537.2,308.8 L541.0,308.8 L544.8,308.5 L548.5,308.5 L552.2,308.2 L556.0,308.2 L559.8,308.0 L563.5,308.0 L567.2,307.7 L571.0,307.7 L574.8,307.7 L578.5,307.4 L582.2,307.4 L586.0,307.2 L589.8,306.9 L593.5,306.7 L597.2,306.4 L601.0,305.9 L604.8,305.4 L608.5,304.8 L612.2,304.3 L616.0,303.8 L619.8,303.3 L623.5,302.7 L627.2,301.9 L631.0,301.4 L634.8,300.6 L638.5,299.9 L642.2,298.8 L646.0,297.2 L649.8,295.1 L653.5,292.0 L657.2,287.8 L661.0,283.6 L664.8,280.0 L668.5,276.3 L672.2,272.9 L676.0,270.0"/>
+<path class="l r1" stroke-dasharray="6 4" d="M199.8,233.1 L327.2,233.1"/>
+<path class="l r1" stroke-dasharray="6 4" d="M387.2,233.1 L514.8,233.1"/>
+<line class="l s1" x1="76.0" y1="46.0" x2="100.0" y2="46.0"/>
+<text x="106.0" y="50.0">Signal</text>
+<line class="l r1" stroke-dasharray="6 4" x1="166.0" y1="46.0" x2="190.0" y2="46.0"/>
+<text x="196.0" y="50.0">EN 300 113 limit</text>
 </svg>
