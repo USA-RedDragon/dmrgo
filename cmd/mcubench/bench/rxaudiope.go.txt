@@ -1,0 +1,32 @@
+package main
+
+import (
+	"unsafe"
+
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
+)
+
+var (
+	rx  rf.AudioReceiver
+	pe  rf.RxPreEmphasis
+	buf [256]int16
+)
+
+func run() bool {
+	if err := rx.Init(rf.AudioRxConfig{Rate: atoi(rateS), OnBursts: onBursts, PreEmphasis: pe.Init()}); err != nil {
+		return false
+	}
+	for {
+		n := read(unsafe.Pointer(&buf[0]), 2*len(buf)) / 2
+		if n <= 0 {
+			break
+		}
+		if doRun == "1" {
+			_, _ = rx.Write(buf[:n])
+		}
+	}
+	if doRun == "1" {
+		_ = rx.Flush()
+	}
+	return true
+}

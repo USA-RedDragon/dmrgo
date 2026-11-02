@@ -51,7 +51,7 @@ func readELF(path string) (*image, error) {
 			lo := s.Value &^ 1
 			img.funcs = append(img.funcs, funcSym{lo, lo + s.Size, s.Name})
 		case elf.STT_OBJECT:
-			if strings.HasPrefix(s.Name, "main.") && s.Name != "main.rx" && s.Name != "main.mod" {
+			if strings.HasPrefix(s.Name, "main.") && s.Name != "main.rx" && s.Name != "main.pe" && s.Name != "main.mod" {
 				img.mainData += s.Size
 			}
 		default:

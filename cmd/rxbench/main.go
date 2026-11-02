@@ -274,12 +274,13 @@ type data struct {
 	shortLC    shortLCData
 	ext        extData
 	sheet      sheet
+	mcu        mcuData
 }
 
 func load(dir string) (data, error) {
 	var d data
 	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings,
-		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet} {
+		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet, "rxbench_mcu.json": &d.mcu} {
 		if err := loadJSON(filepath.Join(dir, name), v); err != nil {
 			return d, err
 		}
@@ -316,11 +317,6 @@ func payloadNames() [][2]string {
 		{"sync", "SYNC detection"},
 	}
 }
-
-const (
-	mcuAudio = "2,232 B of RAM with its stack and up to 4.9 MHz, built with TinyGo -opt z,"
-	mcuIQLow = "2,248 B and up to 5.0 MHz. Both are over the 2 KB line: the detection of standalone RC bursts adds 40 B of stack, 320 B of flash and up to 0.03 MHz on an MS stream, and the MS bursts of both TDMA slots, each with its own timing and levels, add 88 B of RAM, 1,504 B of flash and up to 0.85 MHz on an MS stream, which raises the worst case of low-rate I/Q tier 0 from 4.6 to 4.8 MHz. These costs are accepted. The burst-edge gain hold, the CACH replay, the clock rate tracking, the I/Q gain cap and the lookback replay checks add 88 B of RAM, 1,272 B of flash and up to 3.4% of the cycles of a locked stream, and this cost is accepted too"
-)
 
 const (
 	modeAudio = "audio"

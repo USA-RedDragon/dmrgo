@@ -39,7 +39,16 @@ Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N
 - Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least 90% of the voice frames at C/N 15.0 dB. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N 15.0 dB. "At least" marks a range that reaches the ends of the grid.
 - Late entry is the median time from the first sample to the end of the first burst that the tier recovers exactly, when the input starts at a random point of a call. A count gives the runs that recovered a burst within 1500 ms, when some did not.
 - CPU is per second of signal, measured on an AMD Ryzen 9 7950X 16-Core Processor. Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver. No tier allocates after it starts.
-- On a Cortex-M4F, audio tier 0 needs 2,232 B of RAM with its stack and up to 4.9 MHz, built with TinyGo -opt z, and low-rate I/Q tier 0 2,248 B and up to 5.0 MHz. Both are over the 2 KB line: the detection of standalone RC bursts adds 40 B of stack, 320 B of flash and up to 0.03 MHz on an MS stream, and the MS bursts of both TDMA slots, each with its own timing and levels, add 88 B of RAM, 1,504 B of flash and up to 0.85 MHz on an MS stream, which raises the worst case of low-rate I/Q tier 0 from 4.6 to 4.8 MHz. These costs are accepted. The burst-edge gain hold, the CACH replay, the clock rate tracking, the I/Q gain cap and the lookback replay checks add 88 B of RAM, 1,272 B of flash and up to 3.4% of the cycles of a locked stream, and this cost is accepted too.
+
+### Tier 0 on a Cortex-M4F
+
+| Tier | Rate | CPU | RAM with stack | Flash |
+|------|------|-----|----------------|-------|
+| Audio tier 0 | 9.6 kHz | 4.9 MHz | 2,304 B | 38.7 KB |
+| Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,360 B | 38.9 KB |
+| Low-rate I/Q tier 0 | 9.6 kHz | 4.9 MHz | 2,320 B | 39.3 KB |
+
+Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
 <!-- rxbench:specs:end -->
 
@@ -191,9 +200,13 @@ Audio tiers take FM discriminator audio, as from a radio. They also take inverte
 
 The carrier of low-rate I/Q tier 0 must be less than 2.5 kHz from the center: the 9.6 kHz I/Q holds 4.8 kHz on each side, and at 2.5 kHz off 9.8 dB of the signal power, at 4 kHz 3.7 dB, falls outside the channel filter of the chip. On carriers 2.4 to 5 kHz off, tier 0 loses 28 cells of the comparison with the external receivers. 6 of them no receiver can win: a genie receiver given every parameter, which decodes C0 and C1 jointly gets at most 0.85 to 0.894 of the AMBE frames exact (upper 95% bound, against the bar of 0.90) at 4.8, +5 and -5 kHz, MS and BS. The other 22 need a coherent receiver. One that was measured needed about 5 KB of RAM, 42 KB of flash and 27 to 114 MHz on the Cortex-M4F and still won only 5 of the 12 cells at 2.4 and ±3 kHz, so tier 0 does not take that cost and these 22 cells are accepted as lost: 16 at carriers 2.4 to 4.8 kHz off, and 6 that an exact genie wins with 0.996 to 1.000 of the frames: the frames with C0 and C1 right at +5 and -5 kHz, and the exact frames at 4 kHz, MS and BS.
 
+### Accepted Tier 0 costs
+
+Tier 0 needs more than 2 KB of RAM with its stack on a Cortex-M4F; [Tier 0 on a Cortex-M4F](#tier-0-on-a-cortex-m4f) gives the measured cost. These parts of Tier 0 were accepted at their cost when they were added: the detection of standalone RC bursts, the MS bursts of both TDMA slots with their own timing and levels, the burst-edge gain hold, the CACH replay, the clock rate tracking, the I/Q gain cap, the lookback replay checks, and `PreEmphasis` on audio tier 0.
+
 ### De-emphasized audio
 
-The speaker and accessory outputs of an FM radio de-emphasize the discriminator audio from 300 Hz to 3 kHz. That tilts the 4FSK levels by up to 20 dB, and no audio tier decodes it. `AudioRxConfig.PreEmphasis` takes a `RxPreEmphasis`, the receive twin of the transmit `PreEmphasis`: a first-order filter that inverts the de-emphasis before the receiver detects the bursts. Set one up with `Init` in memory of the caller, or with `NewRxPreEmphasis`, one for each receiver. Nil is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it, and the receiver is then the same, bit for bit, as without the field. Every tier and rate takes it. A program that sets up no `RxPreEmphasis` links none of its filter; on the Cortex-M4F the receiver then needs 136 B more flash than before the field, and the same RAM and MHz.
+The speaker and accessory outputs of an FM radio de-emphasize the discriminator audio from 300 Hz to 3 kHz. That tilts the 4FSK levels by up to 20 dB, and no audio tier decodes it. `AudioRxConfig.PreEmphasis` takes a `RxPreEmphasis`, the receive twin of the transmit `PreEmphasis`: a first-order filter that inverts the de-emphasis before the receiver detects the bursts. Set one up with `Init` in memory of the caller, or with `NewRxPreEmphasis`, one for each receiver. Nil is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it, and the receiver is then the same, bit for bit, as without the field. Every tier and rate takes it. A program that sets up no `RxPreEmphasis` links none of its filter.
 
 The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio that de-emphasizes it from 300 Hz to 3 kHz, and `pre_emphasis: true` sets up a `RxPreEmphasis`. Frames recovered exactly, 4 streams per point, C/N in 12.5 kHz:
 
@@ -225,7 +238,7 @@ The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio
 | 3 | 48 kHz | 10 dB | 432/432 | 0/432 | 432/432 | 24/24 | 0/24 | 24/24 |
 
 - The filter runs at 9.6, 12 or 24 kHz, the rate of the receiver after its half-band filters. With the de-emphasis it is flat within 0.1 dB to 2.4 kHz at 24 kHz, 0.4 dB at 12 kHz and 0.7 dB at 9.6 kHz. A first-order filter cannot follow the 3 kHz corner so close to the Nyquist rate of 9.6 kHz, so at 9.6 kHz the tiers get most of the loss back but not all of it.
-- On a Cortex-M4F at 9.6 kHz, audio tier 0 with `PreEmphasis` needs up to 5.3 MHz, 0.46 MHz more than without it, and 2,200 B of RAM with its stack, 56 B more, built with TinyGo -opt z. Its code is 220 B of flash. This Tier 0 cost with the option on, 5.24 MHz and 2,200 B, is accepted. The option is off by default.
+- [Tier 0 on a Cortex-M4F](#tier-0-on-a-cortex-m4f) gives the cost of audio tier 0 with `PreEmphasis`. The option is off by default.
 
 ### Short LC
 

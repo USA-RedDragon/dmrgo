@@ -1,0 +1,30 @@
+{
+	"source": "Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.",
+	"rows": [
+		{
+			"mode": "audio",
+			"tier": 0,
+			"rate": 9600,
+			"mhz": 4.9,
+			"ram_bytes": 2304,
+			"flash_kb": 38.7
+		},
+		{
+			"mode": "audio",
+			"tier": 0,
+			"rate": 9600,
+			"pre_emphasis": true,
+			"mhz": 5.3,
+			"ram_bytes": 2360,
+			"flash_kb": 38.9
+		},
+		{
+			"mode": "iqlow",
+			"tier": 0,
+			"rate": 9600,
+			"mhz": 4.9,
+			"ram_bytes": 2320,
+			"flash_kb": 39.3
+		}
+	]
+}

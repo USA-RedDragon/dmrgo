@@ -1,10 +1,10 @@
-// Command mcubench measures the Tier 0 transmitters of
+// Command mcubench measures the Tier 0 receivers and transmitters of
 // v2/rf on a Cortex-M4F. For each row it builds one bench program with
 // TinyGo -opt z, runs it in qemu-system-arm (mps2-an386) with an
 // instruction counter plugin, and takes the CPU from a cycle model of the
 // counted instructions, the RAM from the static data and a painted stack,
 // and the flash from the sections of the ELF. With -update it writes
-// v2/internal/fsktx/testdata/tier0cost.json.
+// v2/rf/testdata/rxbench_mcu.json and v2/internal/fsktx/testdata/tier0cost.json.
 // With -check it measures again and fails when a value differs, or skips
 // with the reason when a tool is missing.
 package main
@@ -23,6 +23,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -30,12 +31,16 @@ import (
 var benchFS embed.FS
 
 const (
+	progRxAudio = "rxaudio"
+	progRxPE    = "rxaudiope"
+	progRxIQ    = "rxiq"
 	progTxAudio = "txaudio"
 	progTxIQ    = "txiq"
 )
 
 const (
 	tinygoVersion = "0.43."
+	rxDataFile    = "v2/rf/testdata/rxbench_mcu.json"
 	txDataFile    = "v2/internal/fsktx/testdata/tier0cost.json"
 )
 
@@ -127,6 +132,21 @@ func goDirective(path string) (string, error) {
 	return "", errors.New(path + " has no go directive")
 }
 
+type rxRow struct {
+	Mode     string  `json:"mode"`
+	Tier     int     `json:"tier"`
+	Rate     int     `json:"rate"`
+	PreEmph  bool    `json:"pre_emphasis,omitempty"`
+	MHz      float64 `json:"mhz"`
+	RAMBytes uint64  `json:"ram_bytes"`
+	FlashKB  float64 `json:"flash_kb"`
+}
+
+type rxData struct {
+	Source string  `json:"source"`
+	Rows   []rxRow `json:"rows"`
+}
+
 type txRow struct {
 	Name     string  `json:"name"`
 	MHz      float64 `json:"mhz"`
@@ -140,9 +160,13 @@ type txData struct {
 }
 
 type benchRow struct {
-	prog string
-	rate int
-	name string
+	prog, mode string
+	rate       int
+	name       string
+}
+
+func rxRows() []benchRow {
+	return []benchRow{{prog: progRxAudio, mode: "audio", rate: 9600}, {prog: progRxPE, mode: "audio", rate: 9600}, {prog: progRxIQ, mode: "iqlow", rate: 9600}}
 }
 
 func txRows() []benchRow {
@@ -152,6 +176,8 @@ func txRows() []benchRow {
 		{prog: progTxAudio, rate: 24000, name: "Audio at 24 kHz, 12-bit"},
 	}
 }
+
+func signalConds() []string { return []string{"30", "10", "6", "2", "-1", "noise", "ms10", "ms2"} }
 
 func run(ctx context.Context, root, work string, update bool) error {
 	t, err := findTools(ctx, root)
@@ -168,6 +194,14 @@ func run(ctx context.Context, root, work string, update bool) error {
 	if err := b.setup(ctx); err != nil {
 		return err
 	}
+	rx := rxData{Source: "Built with TinyGo " + t.version + " `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program."}
+	for _, r := range rxRows() {
+		m, err := b.rx(ctx, r)
+		if err != nil {
+			return fmt.Errorf("%s %d: %w", r.prog, r.rate, err)
+		}
+		rx.Rows = append(rx.Rows, rxRow{Mode: r.mode, Rate: r.rate, PreEmph: r.prog == progRxPE, MHz: m.mhz, RAMBytes: m.ram, FlashKB: m.flashKB})
+	}
 	tx := txData{Source: "Built with TinyGo " + t.version + " `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program."}
 	for _, r := range txRows() {
 		m, err := b.tx(ctx, r)
@@ -180,7 +214,7 @@ func run(ctx context.Context, root, work string, update bool) error {
 	for _, f := range []struct {
 		path string
 		v    any
-	}{{txDataFile, tx}} {
+	}{{rxDataFile, rx}, {txDataFile, tx}} {
 		js, err := json.MarshalIndent(f.v, "", "\t")
 		if err != nil {
 			return err
@@ -211,6 +245,15 @@ type bench struct {
 	t      tools
 	plugin string
 	target string
+	sig    string
+	refs   map[string]sigRef
+}
+
+type sigRef struct {
+	samples int
+	bursts  string
+	hash    string
+	rate    int
 }
 
 func (b *bench) cmd(ctx context.Context, dir string, env []string, name string, args ...string) error {
@@ -264,14 +307,14 @@ func (b *bench) setup(ctx context.Context) error {
 		}
 	}
 	files := map[string]string{}
-	for _, n := range []string{"m4count.c", "startup.s", "common.go.txt", progTxAudio + ".go.txt", progTxIQ + ".go.txt"} {
+	for _, n := range []string{"m4count.c", "startup.s", "common.go.txt", progRxAudio + ".go.txt", progRxPE + ".go.txt", progRxIQ + ".go.txt", progTxAudio + ".go.txt", progTxIQ + ".go.txt"} {
 		data, err := benchFS.ReadFile("bench/" + n)
 		if err != nil {
 			return err
 		}
 		files[n] = string(data)
 	}
-	for _, prog := range []string{progTxAudio, progTxIQ} {
+	for _, prog := range []string{progRxAudio, progRxPE, progRxIQ, progTxAudio, progTxIQ} {
 		dir := filepath.Join(src, "zzmcubench", prog)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return err
@@ -327,6 +370,36 @@ func (b *bench) setup(ctx context.Context) error {
 	if err := b.cmd(ctx, b.work, nil, b.t.cc, args...); err != nil {
 		return skipError{"cannot build the QEMU plugin (needs qemu-plugin.h and glib): " + err.Error()}
 	}
+	return b.signals(ctx)
+}
+
+func (b *bench) signals(ctx context.Context) error {
+	b.sig = filepath.Join(b.work, "sig")
+	if err := os.MkdirAll(b.sig, 0o755); err != nil {
+		return err
+	}
+	rates := map[string][]string{}
+	for _, r := range rxRows() {
+		rates[r.prog] = append(rates[r.prog], strconv.Itoa(r.rate))
+	}
+	env := []string{"DMRGO_MCUBENCH_OUT=" + b.sig, "DMRGO_MCUBENCH_AUDIO=" + strings.Join(rates[progRxAudio], " "),
+		"DMRGO_MCUBENCH_AUDIOPE=" + strings.Join(rates[progRxPE], " "), "DMRGO_MCUBENCH_IQ=" + strings.Join(rates[progRxIQ], " ")}
+	if err := b.cmd(ctx, filepath.Join(b.root, "v2"), env, "go", "test", "-count=1", "-run", "^TestMCUBenchSignals$", "./rf"); err != nil {
+		return err
+	}
+	ref, err := os.ReadFile(filepath.Join(b.sig, "ref.txt"))
+	if err != nil {
+		return err
+	}
+	b.refs = map[string]sigRef{}
+	for _, l := range strings.Split(strings.TrimSpace(string(ref)), "\n") {
+		var name string
+		var r sigRef
+		if _, err := fmt.Sscan(l, &name, &r.samples, &r.bursts, &r.hash, &r.rate); err != nil {
+			return fmt.Errorf("ref.txt: %q: %w", l, err)
+		}
+		b.refs[name] = r
+	}
 	return nil
 }
 
@@ -376,7 +449,7 @@ func (b *bench) qemu(ctx context.Context, elf, dir, input string) (runOut, error
 	}
 	o.bursts, o.hash = f[1], f[2]
 	if o.bursts == "4294967295" {
-		return o, fmt.Errorf("qemu %s: the bench could not set up the transmitter", elf)
+		return o, fmt.Errorf("qemu %s: the bench could not set up the receiver or transmitter", elf)
 	}
 	return o, nil
 }
@@ -388,6 +461,64 @@ type measure struct {
 }
 
 func round1(v float64) float64 { return math.Round(v*10) / 10 }
+
+func (b *bench) rx(ctx context.Context, r benchRow) (measure, error) {
+	on, err := b.build(ctx, r.prog, r.rate, true)
+	if err != nil {
+		return measure{}, err
+	}
+	off, err := b.build(ctx, r.prog, r.rate, false)
+	if err != nil {
+		return measure{}, err
+	}
+	img, err := readELF(on)
+	if err != nil {
+		return measure{}, err
+	}
+	offImg, err := readELF(off)
+	if err != nil {
+		return measure{}, err
+	}
+	prefix := map[string]string{progRxAudio: "a", progRxPE: "p", progRxIQ: "q"}[r.prog]
+	var m measure
+	var depth uint64
+	for _, c := range signalConds() {
+		name := fmt.Sprintf("%s-%s-%d.bin", prefix, c, r.rate)
+		ref, ok := b.refs[name]
+		if !ok {
+			return m, fmt.Errorf("no signal %s", name)
+		}
+		dir := filepath.Join(b.work, "run", strings.TrimSuffix(name, ".bin"))
+		o1, err := b.qemu(ctx, on, dir, filepath.Join(b.sig, name))
+		if err != nil {
+			return m, err
+		}
+		if o1.bursts != ref.bursts || o1.hash != ref.hash {
+			return m, fmt.Errorf("%s: the bench gave %s bursts with hash %s, the Go receiver %s with hash %s", name, o1.bursts, o1.hash, ref.bursts, ref.hash)
+		}
+		o0, err := b.qemu(ctx, off, dir, filepath.Join(b.sig, name))
+		if err != nil {
+			return m, err
+		}
+		c1, err := img.cycles(o1.counts, func(s string) bool { return s == "main.onBursts" || strings.HasPrefix(s, "main.mix") })
+		if err != nil {
+			return m, err
+		}
+		c0, err := offImg.cycles(o0.counts, func(string) bool { return false })
+		if err != nil {
+			return m, err
+		}
+		secs := float64(ref.samples) / float64(ref.rate)
+		m.mhz = max(m.mhz, float64(c1.total-c1.matched-c0.total)/secs/1e6)
+		depth = max(depth, o1.depth)
+		_ = os.Remove(o1.counts)
+		_ = os.Remove(o0.counts)
+	}
+	m.mhz = round1(m.mhz)
+	m.ram = img.ram - img.mainData + depth
+	m.flashKB = round1(float64(img.flash) / 1000)
+	return m, nil
+}
 
 func (b *bench) tx(ctx context.Context, r benchRow) (measure, error) {
 	elf, err := b.build(ctx, r.prog, r.rate, true)

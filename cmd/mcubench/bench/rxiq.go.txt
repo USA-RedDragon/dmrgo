@@ -1,0 +1,31 @@
+package main
+
+import (
+	"unsafe"
+
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
+)
+
+var (
+	rx  rf.Receiver
+	buf [128]uint32
+)
+
+func run() bool {
+	if err := rx.Init(rf.RxConfig{Rate: atoi(rateS), OnBursts: onBursts}); err != nil {
+		return false
+	}
+	for {
+		n := read(unsafe.Pointer(&buf[0]), 4*len(buf))
+		if n <= 0 {
+			break
+		}
+		if doRun == "1" {
+			_, _ = rx.Write(unsafe.Slice((*byte)(unsafe.Pointer(&buf[0])), n))
+		}
+	}
+	if doRun == "1" {
+		_ = rx.Flush()
+	}
+	return true
+}

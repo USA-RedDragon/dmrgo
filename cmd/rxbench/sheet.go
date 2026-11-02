@@ -67,6 +67,36 @@ type sheet struct {
 	RatesAudio []sheetAccept  `json:"rates_audio"`
 }
 
+type mcuRow struct {
+	Mode     string  `json:"mode"`
+	Tier     int     `json:"tier"`
+	Rate     int     `json:"rate"`
+	PreEmph  bool    `json:"pre_emphasis"`
+	MHz      float64 `json:"mhz"`
+	RAMBytes int     `json:"ram_bytes"`
+	FlashKB  float64 `json:"flash_kb"`
+}
+
+type mcuData struct {
+	Source string   `json:"source"`
+	Rows   []mcuRow `json:"rows"`
+}
+
+func renderMCU(b *strings.Builder, d data) {
+	if len(d.mcu.Rows) == 0 {
+		return
+	}
+	b.WriteString("### Tier 0 on a Cortex-M4F\n\n| Tier | Rate | CPU | RAM with stack | Flash |\n|------|------|-----|----------------|-------|\n")
+	for _, r := range d.mcu.Rows {
+		name := shortName(tier{Mode: r.Mode, Tier: r.Tier})
+		if r.PreEmph {
+			name += ", `PreEmphasis`"
+		}
+		fmt.Fprintf(b, "| %s | %s kHz | %s MHz | %s B | %s KB |\n", name, strconv.FormatFloat(float64(r.Rate)/1000, 'f', -1, 64), f1(r.MHz), grouped(int64(r.RAMBytes)), f1(r.FlashKB))
+	}
+	b.WriteString("\n" + d.mcu.Source + "\n\n")
+}
+
 func loadJSON(path string, v any) error {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -246,7 +276,8 @@ func renderSpecs(d data) []byte {
 	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
 		b.WriteString(" No tier allocates after it starts.")
 	}
-	b.WriteString("\n- On a Cortex-M4F, audio tier 0 needs " + mcuAudio + " and low-rate I/Q tier 0 " + mcuIQLow + ".\n\n")
+	b.WriteString("\n\n")
+	renderMCU(&b, d)
 	return []byte(b.String())
 }
 
