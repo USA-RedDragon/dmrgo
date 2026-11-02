@@ -58,6 +58,7 @@ type sheetData struct {
 	BiasStep   float64        `json:"bias_step_symbols"`
 	OffsetCN   float64        `json:"offset_cn"`
 	RateCN     float64        `json:"rate_cn"`
+	SweepSeeds int            `json:"sweep_seeds"`
 	AcqWindow  float64        `json:"acq_window_ms"`
 	Timing     []sheetTiming  `json:"timing"`
 	Eyes       []sheetEye     `json:"eyes"`
@@ -80,6 +81,7 @@ const (
 	sheetRateCN    = 15
 	sheetAcqMS     = 1500
 	sheetAcqRuns   = 12
+	sheetSeeds     = 8
 )
 
 func sheetEyeCNs() []float64 { return []float64{30, 12, 6} }
@@ -327,6 +329,25 @@ func sheetSweepOf(t testing.TB, truth []benchSlot, e benchEntry, xs []float64, m
 	return out
 }
 
+func sheetSum(sw []sheetSweep) sheetSweep {
+	out := sw[0]
+	out.Points = make([]sheetPoint, len(sw[0].Points))
+	for j, p := range sw[0].Points {
+		sum := map[string]*benchScore{}
+		for _, s := range sw {
+			for k, v := range s.Points[j].Payloads {
+				if sum[k] == nil {
+					sum[k] = &benchScore{}
+				}
+				sum[k].Exact += v.Exact
+				sum[k].Truth += v.Truth
+			}
+		}
+		out.Points[j] = sheetPoint{X: p.X, Payloads: sum}
+	}
+	return out
+}
+
 func noClock(float64) float64 { return 1 }
 
 func ppmClock(ppm float64) float64 { return 1 + ppm*1e-6 }
@@ -394,12 +415,12 @@ func TestRxSheet(t *testing.T) {
 	slots, truth := benchStream(t, 6)
 	sig := cleanBaseband(slots, 0)
 	entries := benchEntries()
-	d := sheetData{EyeSteps: sheetEyeSteps, BiasStep: 1.0 / (2 * sheetBiasSteps), OffsetCN: sheetOffsetCN, RateCN: sheetRateCN, AcqWindow: sheetAcqMS,
+	d := sheetData{EyeSteps: sheetEyeSteps, BiasStep: 1.0 / (2 * sheetBiasSteps), OffsetCN: sheetOffsetCN, RateCN: sheetRateCN, SweepSeeds: sheetSeeds, AcqWindow: sheetAcqMS,
 		RatesIQ: sheetRates(false), RatesAudio: sheetRates(true)}
 	eyes := make([][]sheetEye, len(entries))
 	bias := make([]float64, len(entries))
-	offs := make([]sheetSweep, len(entries))
-	rates := make([]sheetSweep, len(entries))
+	offs := make([][]sheetSweep, len(entries))
+	rates := make([][]sheetSweep, len(entries))
 	acqs := make([]sheetAcqTier, len(entries))
 	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
 	var wg sync.WaitGroup
@@ -418,15 +439,18 @@ func TestRxSheet(t *testing.T) {
 				eyes[i] = append(eyes[i], sheetEyeOf(t, sig, e, cn, bias[i]))
 			}
 		})
-		job(func() {
-			offs[i] = sheetSweepOf(t, truth, e, sheetOffsets(), func(hz float64) []complex64 {
-				return cleanBaseband(slots, hz).noisy(sheetOffsetCN, 31)
-			}, noClock)
-		})
-		job(func() {
-			x := sig.noisy(sheetRateCN, 41)
-			rates[i] = sheetSweepOf(t, truth, e, sheetPPMs(), func(ppm float64) []complex64 { return resampleClock(x, ppm) }, ppmClock)
-		})
+		offs[i], rates[i] = make([]sheetSweep, sheetSeeds), make([]sheetSweep, sheetSeeds)
+		for k := range uint64(sheetSeeds) {
+			job(func() {
+				offs[i][k] = sheetSweepOf(t, truth, e, sheetOffsets(), func(hz float64) []complex64 {
+					return cleanBaseband(slots, hz).noisy(sheetOffsetCN, 31+k)
+				}, noClock)
+			})
+			job(func() {
+				x := sig.noisy(sheetRateCN, 41+k)
+				rates[i][k] = sheetSweepOf(t, truth, e, sheetPPMs(), func(ppm float64) []complex64 { return resampleClock(x, ppm) }, ppmClock)
+			})
+		}
 		job(func() { acqs[i] = sheetAcqOf(t, sig, truth, e) })
 	}
 	wg.Wait()
@@ -434,7 +458,10 @@ func TestRxSheet(t *testing.T) {
 		d.Timing = append(d.Timing, sheetTiming{Mode: e.mode, Tier: e.number(), Bias: bias[i]})
 		d.Eyes = append(d.Eyes, eyes[i]...)
 	}
-	d.Offset, d.RateError, d.Acquire = offs, rates, acqs
+	for i := range entries {
+		d.Offset, d.RateError = append(d.Offset, sheetSum(offs[i])), append(d.RateError, sheetSum(rates[i]))
+	}
+	d.Acquire = acqs
 	b, err := json.Marshal(d)
 	if err != nil {
 		t.Fatal(err)

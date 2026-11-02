@@ -57,6 +57,7 @@ type sheet struct {
 	BiasStep   float64        `json:"bias_step_symbols"`
 	OffsetCN   float64        `json:"offset_cn"`
 	RateCN     float64        `json:"rate_cn"`
+	SweepSeeds int            `json:"sweep_seeds"`
 	AcqWindow  float64        `json:"acq_window_ms"`
 	Timing     []sheetTiming  `json:"timing"`
 	Eyes       []sheetEye     `json:"eyes"`
@@ -270,7 +271,7 @@ func renderSpecs(d data) []byte {
 		}
 		b.WriteString("| " + strings.Join([]string{shortName(t), inputName(t), off, rate, lowAcq, highAcq, msCell(t.NsPerSecond), msCell(t.WorstNs), ramCell(t.RAMBytes)}, " | ") + " |\n")
 	}
-	fmt.Fprintf(&b, "\n- Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least %s of the voice frames at C/N %s dB. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N %s dB. \"At least\" marks a range that reaches the ends of the grid.\n", pct(recoverMin), f1(s.OffsetCN), f1(s.RateCN))
+	fmt.Fprintf(&b, "\n- Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least %s of the voice frames at C/N %s dB%s. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N %s dB. \"At least\" marks a range that reaches the ends of the grid.\n", pct(recoverMin), f1(s.OffsetCN), seedsText(s.SweepSeeds), f1(s.RateCN))
 	fmt.Fprintf(&b, "- Late entry is the median time from the first sample to the end of the first burst that the tier recovers exactly, when the input starts at a random point of a call. A count gives the runs that recovered a burst within %s ms, when some did not.\n", strconv.FormatFloat(s.AcqWindow, 'f', -1, 64))
 	b.WriteString("- CPU is per second of signal, measured on an " + d.bench.Machine + ". Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver.")
 	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
@@ -279,6 +280,13 @@ func renderSpecs(d data) []byte {
 	b.WriteString("\n\n")
 	renderMCU(&b, d)
 	return []byte(b.String())
+}
+
+func seedsText(n int) string {
+	if n < 2 {
+		return ""
+	}
+	return ", counted over the frames of " + strconv.Itoa(n) + " noise draws"
 }
 
 func ratesCell(rs []sheetAccept, tierIdx int) string {
