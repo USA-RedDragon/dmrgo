@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	docRxFile = "../../docs/rx.md"
 	docTxFile = "../../docs/tx.md"
 )
 
@@ -65,6 +66,86 @@ func pkgParas(src *goSource, tx bool) string {
 		}
 	}
 	return strings.Join(out, "\n\n") + "\n"
+}
+
+func rxBitsSpan() (lo, hi int) {
+	lo, hi = -1, -1
+	for b := 1; b <= 32; b++ {
+		if _, err := NewAudioReceiver(&AudioRxConfig{Bits: b, Tier: Tier0}); err == nil {
+			if lo < 0 {
+				lo = b
+			}
+			hi = b
+		}
+	}
+	return lo, hi
+}
+
+func rxOffsetBound() float64 {
+	lo, hi := 0.0, 1e6
+	for range 40 {
+		m := (lo + hi) / 2
+		if _, err := NewReceiver(&RxConfig{Rate: basebandRate, OffsetHz: m}); err == nil {
+			lo = m
+		} else {
+			hi = m
+		}
+	}
+	return math.Round(hi)
+}
+
+func renderRxIntro(src, _ *goSource) string { return pkgParas(src, false) }
+
+func renderRxFeatures(src, _ *goSource) string {
+	var b strings.Builder
+	for _, n := range []string{"Receiver", "AudioReceiver", "Monitor"} {
+		docBullet(&b, src, n, n)
+	}
+	b.WriteString("- Tiers:\n")
+	for _, c := range src.consts["Tier"] {
+		if d := src.doc(c); d != "" {
+			fmt.Fprintf(&b, "  - `%s`: %s\n", c, d)
+		}
+	}
+	b.WriteString("- I/Q formats:\n")
+	for _, c := range src.consts["IQFormat"] {
+		if d := src.doc(c); d != "" {
+			fmt.Fprintf(&b, "  - `%s`: %s\n", c, d)
+		}
+	}
+	return b.String()
+}
+
+func renderRxLimits(src, _ *goSource) string {
+	lo, hi := rxBitsSpan()
+	var b strings.Builder
+	docTable(&b, src, "RxConfig", "AudioRxConfig")
+	fmt.Fprintf(&b, "\nProbes of the constructors: `AudioRxConfig.Bits` from %d to %d is accepted, and `RxConfig.OffsetHz` up to %s in size at a `Rate` of %s. A field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: %s.\n",
+		lo, hi, hzText(rxOffsetBound()), hzText(basebandRate), "`"+strings.Join(src.configErrors("RxConfig.", "AudioRxConfig."), "`, `")+"`")
+	return b.String()
+}
+
+func renderRxLevels(src, _ *goSource) string {
+	var b strings.Builder
+	for _, k := range []string{"AudioReceiver.Level", "AudioReceiver.Offset", "Receiver.OffsetHz", "Receiver.DeviationHz"} {
+		docBullet(&b, src, k, k)
+	}
+	return b.String()
+}
+
+func renderRxEye(_, _ *goSource) string {
+	return fmt.Sprintf("Each eye diagram shows the receiver input after the DMR matched filter (root raised cosine, roll-off %s), at %s, folded on `Burst.Seconds` of each burst that the tier recovered. The dotted lines are the four symbol levels.\n",
+		strconv.FormatFloat(rrcAlpha, 'f', -1, 64), hzText(basebandRate))
+}
+
+func renderRxSweep(_, _ *goSource) string {
+	const noiseBandHz = 12500
+	var b strings.Builder
+	b.WriteString("- The test stream is a BS outbound stream: a voice call on one slot and data, CSBKs and headers on the other.\n")
+	fmt.Fprintf(&b, "- White Gaussian noise is added at each C/N in %s. Eb/N0 is C/N plus %.1f dB.\n", hzText(noiseBandHz), 10*math.Log10(float64(noiseBandHz)/(2*symbolRate)))
+	fmt.Fprintf(&b, "- The audio tiers get the audio of an FM discriminator at %s. The sweep makes it from the same noisy signal with the IF filter of a %s radio, so their Eb/N0 is that of the signal at the antenna.\n", hzText(benchAudioHz), hzText(2*audioIFHz))
+	fmt.Fprintf(&b, "- The I/Q tiers get the noisy samples at %s. Low-rate I/Q tier 0 gets them at %s, through the decimation filter of a radio chip: a %d-tap Kaiser-windowed sinc with its -6 dB point at %s.\n", hzText(basebandRate), hzText(iq0LowHz), lowIQTaps, hzText(lowIQCut*iq0LowHz))
+	return b.String()
 }
 
 func txPowerClasses() []int {
@@ -208,6 +289,12 @@ type docBlock struct {
 
 func docBlocks() []docBlock {
 	return []docBlock{
+		{docRxFile, "rx-intro", renderRxIntro},
+		{docRxFile, "rx-features", renderRxFeatures},
+		{docRxFile, "rx-limits", renderRxLimits},
+		{docRxFile, "rx-eye", renderRxEye},
+		{docRxFile, "rx-levels", renderRxLevels},
+		{docRxFile, "rx-sweep", renderRxSweep},
 		{docTxFile, "tx-intro", renderTxIntro},
 		{docTxFile, "tx-features", renderTxFeatures},
 		{docTxFile, "tx-formats", renderTxFormats},

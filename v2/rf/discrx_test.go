@@ -13,12 +13,15 @@ const (
 	audioOffset = 300
 )
 
-const audioIFLen = 31
+const (
+	audioIFLen = 31
+	audioIFHz  = 6250.0
+)
 
 func audioIFTaps() []float64 {
 	const n = audioIFLen
 	h := make([]float64, n)
-	fc := 6250.0 / basebandRate
+	fc := audioIFHz / basebandRate
 	for i := range h {
 		k := float64(i - n/2)
 		s := 2 * fc

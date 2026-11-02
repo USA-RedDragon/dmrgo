@@ -1,6 +1,40 @@
 # Receiver
 
-Package `rf` receives DMR from FM discriminator audio, from the I/Q samples of a software radio, or from I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel. Its tiers trade CPU and RAM for sensitivity, from a microcontroller to a PC. [v2/cmd/dmrrf](../v2/cmd/dmrrf/README.md) decodes DMR from I/Q or discriminator audio in the file formats of common software radios, and writes test transmissions in the same formats.
+<!-- rfparams:rx-intro:begin -->
+Package rf recovers DMR bursts from the I/Q samples of a software radio and from the output of an FM discriminator: 4FSK detection, SYNC search and slot timing, soft-decision decoding of each FEC field, and the superframe position of voice bursts. It also turns bursts back into I/Q samples and into the deviation signal of an FM radio.
+
+NewReceiver makes a Receiver from an RxConfig, for I/Q at RxConfig.Rate in RxConfig.Format: CU8 as rtl_sdr writes it, CS8 as hackrf_transfer writes it, CS16 or CF32. NewAudioReceiver makes an AudioReceiver from an AudioRxConfig, for the samples of a discriminator. Init sets up either one in Tier0 in memory of the caller, for a microcontroller.
+
+The callback of the config picks the mode. With OnBursts set, Write takes samples and hands the bursts that they complete to OnBursts, and Flush ends the stream. With OnBursts nil, AppendBursts appends the bursts to a slice, and AppendFlush ends the stream.
+
+A Monitor follows the TDMA channels of the bursts, as a scanner does: it finds the TDMA channel of each burst from the CACHs of its stream, decodes it, and keeps the LC of the call on each channel. Burst.Hint gives the layer2.Hint of a burst for the voice and data machines.
+
+OnShortLC of the config receives the Short LCs that the CACHs of the bursts carry. It decodes them as layer2.ShortLCAssembler does, and from Tier1 up decodes a Short LC that fails again from the soft values of its four fragments, with ShortLC.Soft set. The bursts are the same with it and without it.
+
+The Tier of the config sets the detection and its cost, from Tier0, which fits a microcontroller, to Tier3, for offline decoding. Every tier follows a BS-sourced stream on both TDMA slots, and Tier0 to Tier2 also follow the MS-sourced bursts of both slots, each slot with its own SYNC timing, symbol clock, levels and carrier offset, as on the inbound of a repeater or a duplex hotspot with a radio on each slot. The constructors allocate every buffer of the receiver, and Write and Flush allocate nothing. docs/rx.md gives the sensitivity, compute and RAM of each tier, and docs/tx.md the limits and cost of the transmitter.
+<!-- rfparams:rx-intro:end -->
+
+[v2/cmd/dmrrf](../v2/cmd/dmrrf/README.md) decodes DMR from I/Q or discriminator audio in the file formats of common software radios, and writes test transmissions in the same formats.
+
+## Features
+
+<!-- rfparams:rx-features:begin -->
+- `Receiver`: Receiver recovers DMR bursts from a stream of I/Q samples. It locks to the slot timing of the first SYNC it finds, follows the timing and the carrier through the transmission, and gives every burst it recovers. Make it with NewReceiver, or set it up with Init in memory of the caller. A Receiver is not safe for concurrent use, and it must not be copied after Init or NewReceiver.
+- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 4.9 MHz and 2,232 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
+- `Monitor`: Monitor follows the TDMA channels of the bursts of one Receiver or AudioReceiver, as a scanner does. It finds the TDMA channel of each BS-sourced burst from the CACHs of its stream, decodes the burst, keeps the superframe position and the embedded LC of each channel, and keeps the LC of the call on each channel from its voice LC header, embedded LC and terminator. The zero Monitor is ready to use, and it does not allocate. A Monitor is not safe for concurrent use.
+- Tiers:
+  - `TierDefault`: TierDefault is the zero value: Tier1 for NewReceiver and NewAudioReceiver, and Tier0 for Init and under TinyGo.
+  - `Tier0`: Tier0 slices the output of an FM discriminator and its matched filter. On I/Q from 48 kHz an FM discriminator at 12 kHz comes before it, and the receiver keeps about 19 KB. On I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel it keeps about 1.4 KB, and Init sets it up in memory of the caller, for a microcontroller. On I/Q from 48 kHz Tier0 to Tier3 find a carrier up to 6.25 kHz off, half the channel spacing, from the spectrum before they lock; a carrier further off is taken for the next channel.
+  - `Tier1`: Tier1 adds to Tier0 the soft decoders: a BPTC(196,96) block whose check fails by ordered statistics, C0 and C1 of each voice frame by soft ML, the embedded LC of each superframe over its four fragments and the earlier superframes of the call, and LookbackSlots slots before the first lock decoded again. On I/Q it keeps the input samples of those slots, and when it tuned to the carrier before the lock it filters them again at the new tune before it decodes them. It detects the bursts that they decode, and each rate 3/4 block, from the symbols of the discriminator with the correlation of their noise. It keeps about 35 KB on audio and 108 KB on I/Q, 58 KB of that for the input samples.
+  - `Tier2`: Tier2 adds to the soft decoders of Tier1 the detection again of the bursts with a trellis over three symbols that carries the carrier phase with each survivor, from the SYNC or EMB of the burst, within a compute budget per slot: on I/Q from the samples at 24 kHz, on audio from the carrier phase that it sums from the discriminator samples. It holds each burst one slot longer and keeps about 550 KB on audio and 565 KB on I/Q, 75 KB of that for the input samples.
+  - `Tier3`: Tier3 detects the bursts of Tier2 again by log-MAP over a window of three symbols with one of 52 carrier phases in the trellis state and no compute budget, and detects each voice burst once more with the bits that its FEC fixed. On I/Q it also filters the samples of the trellis to the channel width, fits the burst timing over slots and keeps 16 lookback slots; on audio it makes four passes over each data burst. It needs about 20 times the compute of Tier2 on I/Q and 10 times on audio, and keeps about 2.3 MB on I/Q and 1.3 MB on audio, for decoding on a PC.
+- I/Q formats:
+  - `IQFormatDefault`: IQFormatDefault is the zero value: IQFormatCS16.
+  - `IQFormatCU8`: IQFormatCU8 is unsigned 8-bit, as rtl_sdr writes it.
+  - `IQFormatCS8`: IQFormatCS8 is signed 8-bit, as hackrf_transfer writes it.
+  - `IQFormatCS16`: IQFormatCS16 is signed 16-bit little-endian, as PlutoSDR, LimeSDR, USRP and the radio chips give it.
+  - `IQFormatCF32`: IQFormatCF32 is little-endian float32, as GNU Radio gives it, with full scale at 1.
+<!-- rfparams:rx-features:end -->
 
 ## Key specifications
 
@@ -54,6 +88,27 @@ Built with TinyGo 0.43.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 ## Absolute limits and operating conditions
 
+<!-- rfparams:rx-limits:begin -->
+| Field | Rule |
+|-------|------|
+| `RxConfig.Tier` | Tier selects the detection. The zero value TierDefault is Tier1 for NewReceiver, and Tier0 for Init and under TinyGo. |
+| `RxConfig.Rate` | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier0 to Tier3 take a Rate from 48000 to 1e9, and Tier0 and Tier1 also one from 24000, which runs their receiver with a complex front end in place of the FM discriminator, with about 2 KB of state for Tier0. Tier0 also takes 9600 and 12000, for I/Q that a radio chip filtered to the channel, with about 1.4 KB of state; Init sets up only these. |
+| `RxConfig.Format` | Format is the layout of the I/Q samples. 0 means IQFormatCS16. |
+| `RxConfig.OffsetHz` | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. |
+| `RxConfig.OnBursts` | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
+| `RxConfig.LookbackSlots` | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
+| `RxConfig.OnShortLC` | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo.ConfigError for it. |
+| `AudioRxConfig.Tier` | Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is Tier1 for NewAudioReceiver, and Tier0 for Init, which does not allocate the stages of the higher tiers, and under TinyGo, which has neither. Tier2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of Tier1. Tier3 detects the bursts of Tier2 again over 52 carrier phases with no compute budget and makes four passes over each data burst, at about 10 times the CPU time of Tier2, 1.3 MB and the delay of Tier2. |
+| `AudioRxConfig.Rate` | Rate is the sample rate of the discriminator samples, in Hz, from 8000 to 1000000, and for Tier0 to 48000. 0 means 48000. The receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600: at Rate when it is one of them, else at the lowest of them at or above Rate, or 48000 above 48000, through a resampler. Tier0, also under TinyGo, resamples in fixed point with a table in flash. A lower rate costs less: the receiver halves 48 kHz and then 24 kHz with a half-band filter before its matched filter, which runs at 12 kHz or 9.6 kHz. |
+| `AudioRxConfig.Bits` | Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. |
+| `AudioRxConfig.Unsigned` | Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. |
+| `AudioRxConfig.OnBursts` | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the bursts of the slots before the lock, decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
+| `AudioRxConfig.PreEmphasis` | PreEmphasis, when not nil, states that the radio de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, so that the receiver inverts it with the filter that it holds before it detects the bursts: a RxPreEmphasis of this receiver alone, set up by Init or NewRxPreEmphasis. Nil is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it. Every Tier and Rate takes it. A RxPreEmphasis that is not set up gives a *dmrgo.ConfigError. |
+| `AudioRxConfig.OnShortLC` | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo.ConfigError for it. |
+
+Probes of the constructors: `AudioRxConfig.Bits` from 8 to 16 is accepted, and `RxConfig.OffsetHz` up to 24 kHz in size at a `Rate` of 48 kHz. A field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: `AudioRxConfig.Bits`, `AudioRxConfig.OnBursts`, `AudioRxConfig.OnShortLC`, `AudioRxConfig.PreEmphasis`, `AudioRxConfig.Rate`, `AudioRxConfig.Tier`, `RxConfig.Format`, `RxConfig.LookbackSlots`, `RxConfig.OffsetHz`, `RxConfig.OnBursts`, `RxConfig.OnShortLC`, `RxConfig.Rate`, `RxConfig.Tier`.
+<!-- rfparams:rx-limits:end -->
+
 <!-- rxbench:limits:begin -->
 | Tier | I/Q rates accepted | Audio rates accepted |
 |------|------|------|
@@ -69,6 +124,10 @@ A span gives the first and last rate of the probe that the constructor accepts i
 ## Typical performance characteristics
 
 [Test conditions](#test-conditions) gives the method of each graph and table.
+
+<!-- rfparams:rx-eye:begin -->
+Each eye diagram shows the receiver input after the DMR matched filter (root raised cosine, roll-off 0.2), at 48 kHz, folded on `Burst.Seconds` of each burst that the tier recovered. The dotted lines are the four symbol levels.
+<!-- rfparams:rx-eye:end -->
 
 <!-- rxbench:begin -->
 ### Error rate, FM discriminator audio
@@ -192,9 +251,26 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 ## Application information
 
-### Inputs
+### Choosing a tier
 
-Audio tiers take FM discriminator audio, as from a radio. They also take inverted audio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.
+[Key specifications](#key-specifications) gives the sensitivity, CPU and RAM of each tier, and [Features](#features) what each tier does. Pick the lowest tier whose sensitivity meets the link budget, on the hardware that runs it.
+
+### Wiring to a radio
+
+- Audio tiers take FM discriminator audio, as from a radio, of either polarity. The discriminator output of a radio, or its flat data port, has the low frequencies of the signal and no de-emphasis. It is the best input for `AudioReceiver`.
+- The speaker and accessory outputs of a radio de-emphasize the audio. [De-emphasized audio](#de-emphasized-audio) gives the setup for them.
+- I/Q tiers take the samples of a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel. When the oscillator of a software radio is off, set `RxConfig.OffsetHz` to its known offset.
+
+### Levels and calibration
+
+Set the gain of the sound card so that the audio of the strongest signal does not clip, and keep the I/Q samples of CU8 and CS8 from clipping. These methods give what the receiver measured:
+
+<!-- rfparams:rx-levels:begin -->
+- `AudioReceiver.Level`: Level returns the outer level of the last locked stream: the code of a run of symbol +3 (1944 Hz) less the DC code.
+- `AudioReceiver.Offset`: Offset returns the DC code of the last locked stream: the code of the carrier, from its offset and the offset of the converter.
+- `Receiver.OffsetHz`: OffsetHz returns the carrier offset of the last stream that ended, in Hz. Tier2 and Tier3 return the carrier of their coherent fit, which also follows the stream in progress.
+- `Receiver.DeviationHz`: DeviationHz returns the outer deviation of the last locked stream, in Hz. Every tier reads it from the sync symbol levels and divides out the response of its channel filter and discriminator at the carrier offset from the tuned frequency. For a clean 1944 Hz signal the reading is 1 to 1.5% low and within 3% at every offset. The lookup uses the carrier offset of the samples of each sync fit, so a retune after a fit does not change it. A sync fit made before the timing settles can move the reading by a few percent more. At a Rate of 9600 the reading is up to 3% low, by the sub-sample phase of the bursts, and it does not include the channel filter of the radio chip.
+<!-- rfparams:rx-levels:end -->
 
 ### Low-rate I/Q carrier range
 
@@ -515,10 +591,12 @@ Frames recovered by the tier against the other receiver, and the mean difference
 
 ### The sweep
 
+<!-- rfparams:rx-sweep:begin -->
 - The test stream is a BS outbound stream: a voice call on one slot and data, CSBKs and headers on the other.
-- White Gaussian noise is added at each C/N in 12.5 kHz. Eb/N0 is C/N plus 1.2 dB.
+- White Gaussian noise is added at each C/N in 12.5 kHz. Eb/N0 is C/N plus 1.1 dB.
 - The audio tiers get the audio of an FM discriminator at 9.6 kHz. The sweep makes it from the same noisy signal with the IF filter of a 12.5 kHz radio, so their Eb/N0 is that of the signal at the antenna.
 - The I/Q tiers get the noisy samples at 48 kHz. Low-rate I/Q tier 0 gets them at 9.6 kHz, through the decimation filter of a radio chip: a 255-tap Kaiser-windowed sinc with its -6 dB point at 4.32 kHz.
+<!-- rfparams:rx-sweep:end -->
 - Each point runs more streams for each payload until it has 20 errors or enough frames to show 20 errors at an error rate of 1e-4, the bottom of the graphs. A payload stops after two points in a row under 1e-4. The 90% point is a linear interpolation between C/N points.
 - CPU is the CPU time of the receiver alone to receive one second of signal, on one goroutine locked to its thread, as the median of five runs. Before and after each run the test times a reference: audio tier 2 on two superframes at C/N 6 dB. It scales the run by 14.95 ms over the mean reference time, the reference time on the test machine (an AMD Ryzen 9 7950X) with no other load. Load on the machine slows the reference and the receiver alike, so the scaled time moves by less than 1 ms per second where the raw time moves by 8 ms. The discriminator model of the sweep is outside the timed part. The test measures it at C/N 0, 2, 4, 6, 8, 12, 20 and 40 dB on one noise seed. The worst case is the highest of these. RAM is what the receiver keeps in stream mode, with `OnBursts` set. For audio tier 0 that is the size of `rf.AudioReceiver`, and for low-rate I/Q tier 0 the size of the `rf.Receiver` of a TinyGo build: their whole state, which `Init` can place in static memory. For the other tiers it is the heap after `NewReceiver` or `NewAudioReceiver`.
 - The data is in `v2/rf/testdata/rxbench.json`. `TestRxBench` in `v2/rf` writes it with `DMRRF_RXBENCH=full`. `DMRRF_RXBENCH=cpu` measures only the CPU again.
@@ -563,4 +641,4 @@ The real recordings are captures of a Motorola XPR 8400 repeater with an RTL-SDR
 
 ## Generating this page
 
-`go run -C cmd/rxbench . -update-readme` runs the sweep, which takes hours, then the tests of the eye diagrams, offset, clock and late entry, and writes the tables and graphs of this page. `-update-readme -sheet` runs only the second set, in minutes, and `-update-readme -no-sweep` only renders the committed data. `-check-readme` fails when the page or a graph differs from the data in `v2/rf/testdata`.
+`go run -C cmd/rxbench . -update-readme` runs the sweep, which takes hours, then the tests of the eye diagrams, offset, clock and late entry, and writes the tables and graphs of this page. `-update-readme -sheet` runs only the second set, in minutes, and `-update-readme -no-sweep` only renders the committed data. `-check-readme` fails when the page or a graph differs from the data in `v2/rf/testdata`. `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the facts, limits and test parameters of this page from the code, and fails without the variable when they differ. `go run -C cmd/mcubench . -update` measures the Cortex-M4F numbers.

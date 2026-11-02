@@ -11,9 +11,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
+const (
+	lowIQTaps = 255
+	lowIQCut  = 0.45
+)
+
 func lowIQ(x []complex64, hz int) []complex64 {
-	const n, beta = 255, 8.0
-	fc := 0.45 * float64(hz) / basebandRate
+	const n, beta = lowIQTaps, 8.0
+	fc := lowIQCut * float64(hz) / basebandRate
 	i0 := func(v float64) float64 {
 		s, t := 1.0, 1.0
 		for k := 1; k < 60; k++ {
