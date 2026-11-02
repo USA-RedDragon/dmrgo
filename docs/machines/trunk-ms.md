@@ -120,7 +120,7 @@ This example runs an MS against a TSCC with one payload channel. The MS register
 <!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleMS -->
 ```go
 func ExampleMS() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	s.onMS = func(_ int, o *trunk.Output) {
 		switch o.Kind {
 		case trunk.OutputRegistered:
@@ -194,7 +194,7 @@ Output:
 ```text
 Registered
 Control registered true
-Grant talkgroup 9 from 3120001
+Grant talkgroup 9 from 3002701
 Tune channel 10 TS1
 Payload
 CallEnd Maintenance

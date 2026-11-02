@@ -96,9 +96,9 @@ The package example logs a Peer into a [Master](dmrdsession-master.md) over the 
 func Example() {
 	var rptc dmrd.MMDVMConfig
 	copy(rptc[:], "RPTC")
-	rptc.SetID(3129100)
+	rptc.SetID(3002900)
 	peer, _ := dmrdsession.NewPeer(&dmrdsession.PeerConfig{
-		Dialect: dmrd.DialectMMDVM, ID: 3129100, Password: []byte("passw0rd"), Config: rptc[:], Options: []byte("TS2=91;"),
+		Dialect: dmrd.DialectMMDVM, ID: 3002900, Password: []byte("passw0rd"), Config: rptc[:], Options: []byte("TS2=91;"),
 	})
 	master, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM})
 
@@ -176,9 +176,9 @@ The next example runs an HBRP Peer whose master does not answer, with short time
 func ExamplePeer() {
 	var rptc dmrd.HBRPConfig
 	copy(rptc[:], "RPTC")
-	rptc.SetID(2620001)
+	rptc.SetID(3002401)
 	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{
-		Dialect: dmrd.DialectHBRP, ID: 2620001, Password: []byte("passw0rd"), Config: rptc[:],
+		Dialect: dmrd.DialectHBRP, ID: 3002401, Password: []byte("passw0rd"), Config: rptc[:],
 		Retry: 5 * time.Second, Timeout: 15 * time.Second,
 	})
 	if err != nil {

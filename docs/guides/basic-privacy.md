@@ -66,7 +66,7 @@ Set the Privacy service option and FID 0x10 in the [voice.Call](https://pkg.go.d
 <!-- dmrgo:code file=v2/privacy/example_test.go symbol=sendPrivateCall -->
 ```go
 func sendPrivateCall(ptx *privacy.Transmitter, tx *voice.Transmitter) ([]vocoder.AMBEFrame, error) {
-	call := voice.Call{Group: true, Target: 9, Source: 3191868, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
+	call := voice.Call{Group: true, Target: 9, Source: 3002068, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
 	ptx.Start(0)
 	if err := tx.Start(0, call, nil); err != nil {
 		return nil, err

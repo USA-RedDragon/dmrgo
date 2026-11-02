@@ -142,7 +142,7 @@ This example sends a Motorola radio check with 5 Pre_CSBKs and no retries. No ra
 ```go
 func ExampleRequester_RequestRadioCheck() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
-	if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
+	if err := q.RequestRadioCheck(0, 3002198, 3002068, &csbk.RequestOptions{Preambles: 5}); err != nil {
 		panic(err)
 	}
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)

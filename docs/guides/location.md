@@ -114,7 +114,7 @@ func answerLRRP(server, radio uint32, d ip.Datagram, data []byte) error {
 <!-- dmrgo:output test=location.ExampleDecoder_Decode_lrrp -->
 ```text
 request: location: packet carries no position
-LRRP from 3191868: 34.21217 108.83333, 5 m, request 2468ace0, result 0
+LRRP from 3002068: 34.21217 108.83333, 5 m, request 2468ace0, result 0
 ```
 <!-- /dmrgo:output -->
 
@@ -128,7 +128,7 @@ An `lrrp.Message` is large, and a `location.Decoder` holds one. Keep them in a s
 ```go
 func ExampleAppendPacket() {
 	f := location.Fix{
-		Format: location.FormatNMEA, Source: 3191868, Destination: 3140598, Valid: true,
+		Format: location.FormatNMEA, Source: 3002068, Destination: 3002198, Valid: true,
 		Latitude: 34.212166, Longitude: 108.833333, Course: 121, HasCourse: true, HasSpeed: true,
 		Year: 2025, Month: 12, Day: 2, Hour: 20, Minute: 0, Second: 37, HasTime: true,
 	}
@@ -151,7 +151,7 @@ func ExampleAppendPacket() {
 <!-- dmrgo:output test=location.ExampleAppendPacket -->
 ```text
 8 blocks: "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"
-NMEA from 3191868: 34.21217 108.83333 <nil>
+NMEA from 3002068: 34.21217 108.83333 <nil>
 ```
 <!-- /dmrgo:output -->
 

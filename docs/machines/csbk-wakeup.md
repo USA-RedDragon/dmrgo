@@ -100,7 +100,7 @@ This example wakes a repeater that does not answer. With the defaults, the Wakeu
 ```go
 func ExampleWakeup() {
 	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
-	_ = w.Wake(0, 314926, 3191868)
+	_ = w.Wake(0, 990126, 3002068)
 	for {
 		at, ok := w.Deadline()
 		if !ok {

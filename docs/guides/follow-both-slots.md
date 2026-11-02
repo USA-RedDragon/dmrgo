@@ -169,7 +169,7 @@ func generatedCall() ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	lc, err := pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3141592}.FullLinkControl()
+	lc, err := pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3003192}.FullLinkControl()
 	if err != nil {
 		return nil, err
 	}
@@ -214,12 +214,12 @@ The first line describes the stream. Then come the events of both slots in the o
 <!-- dmrgo:output example=scanner -->
 ```text
 stream: 43813 bits, 37 junk bits, 149 bits flipped
-TS2 call: group 3141592 -> 3100 (Voice LC Header)
+TS2 call: group 3003192 -> 3100 (Voice LC Header)
 TS1 late entry at voice burst Unknown
 TS1 call: private 3191868 -> 9990 (embedded LC)
 TS2 talker alias: "KF5XYZ Jacob"
 TS2 GPS: lat 27.1234 lon -88.4321 (PositionLessThan20M)
-TS2 call end: group 3141592 -> 3100, 72 voice bursts
+TS2 call end: group 3003192 -> 3100, 72 voice bursts
 TS1 call end: private 3191868 -> 9990, 74 voice bursts
 framer: first burst at bit 349, 151 bursts
 TS1: 74 voice bursts (A=11 B=12 C=12 D=12 E=13 F=13 unknown=1), 0 embedded LC errors, AMBE BER 0.33%

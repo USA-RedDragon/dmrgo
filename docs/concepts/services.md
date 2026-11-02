@@ -72,7 +72,7 @@ A zero machine does nothing. Each method that starts work, such as `Start`, `Req
 ```go
 func ExampleErrZeroValue() {
 	m := &data.Message{Payload: []byte("hello")}
-	if err := m.Header.SetUnconfirmed(pdu.UnconfirmedDataHeader{LLIDDestination: 3120002, LLIDSource: 3120001}); err != nil {
+	if err := m.Header.SetUnconfirmed(pdu.UnconfirmedDataHeader{LLIDDestination: 3002702, LLIDSource: 3002701}); err != nil {
 		fmt.Println(err)
 		return
 	}

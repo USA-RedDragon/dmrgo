@@ -117,14 +117,14 @@ This example sends a Motorola radio check from a Requester to two Responders: on
 ```go
 func ExampleResponder() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
-	if err := q.RequestRadioCheck(0, 3140598, 3191868, nil); err != nil {
+	if err := q.RequestRadioCheck(0, 3002198, 3002068, nil); err != nil {
 		fmt.Println(err)
 		return
 	}
 	sent := q.Tick(0, nil)
 	request := sent[0].Burst
 	for _, offset := range []bool{false, true} {
-		r, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3140598, ColorCode: 1, Source: layer2.SyncSourceMS, Offset: offset})
+		r, err := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3002198, ColorCode: 1, Source: layer2.SyncSourceMS, Offset: offset})
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -146,9 +146,9 @@ Output:
 
 <!-- dmrgo:output test=csbk.ExampleResponder -->
 ```text
-Request RadioCheck from 3191868 state Sending
+Request RadioCheck from 3002068 state Sending
 offset false Burst due 60ms state Idle
-Request RadioCheck from 3191868 state Sending
+Request RadioCheck from 3002068 state Sending
 offset true Burst due 90ms state Idle
 ```
 <!-- /dmrgo:output -->

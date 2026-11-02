@@ -79,7 +79,7 @@ func sendCall(txConn, rxConn *net.UDPConn) error {
 	if err != nil {
 		return err
 	}
-	if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3191868}, nil); err != nil {
+	if err := tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3002068}, nil); err != nil {
 		return err
 	}
 	for range 18 {
@@ -149,7 +149,7 @@ The group call over the loopback interface:
 
 <!-- dmrgo:output test=hytera.ExampleFrame_SetCallHint -->
 ```text
-Voice LC Header on TS1 from 3191868 to 9 group true
+Voice LC Header on TS1 from 3002068 to 9 group true
 Terminator with LC after 6 voice bursts: Terminator
 ```
 <!-- /dmrgo:output -->

@@ -81,7 +81,7 @@ This part of the C test program builds a CSBK burst, decodes it, reads its addre
 static void test_layer2(void) {
 	dmrgo_layer2_data_t data = {0};
 	data.tag = DMRGO_LAYER2_DATA_PDU_CSBK;
-	OK(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3191868, &data.v.pdu_csbk));
+	OK(dmrgo_pdu_new_bs_outbound_activation(0x123456, 3002068, &data.v.pdu_csbk));
 	dmrgo_layer2_raw_burst_t raw;
 	OK(dmrgo_layer2_build_burst(&data, 5, DMRGO_LAYER2_SYNC_SOURCE_BS, &raw));
 	dmrgo_pdu_slot_type_t st;
@@ -100,19 +100,19 @@ static void test_layer2(void) {
 	uint32_t target = 0, source = 0;
 	bool ok = false;
 	OK(dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok));
-	CHECK(ok && target == 0x123456 && source == 3191868);
+	CHECK(ok && target == 0x123456 && source == 3002068);
 	dmrgo_layer2_raw_burst_t again;
 	OK(dmrgo_layer2_burst_encode(b, &again));
 	CHECK(memcmp(again.v, raw.v, sizeof raw.v) == 0);
 
-	OK(dmrgo_pdu_csbk_set_addresses(&got.v.pdu_csbk, 0x654321, 3191868));
+	OK(dmrgo_pdu_csbk_set_addresses(&got.v.pdu_csbk, 0x654321, 3002068));
 	OK(dmrgo_layer2_burst_set_data(b, &got));
 	OK(dmrgo_layer2_burst_encode(b, &again));
 	CHECK(memcmp(again.v, raw.v, sizeof raw.v) != 0);
 	OK(dmrgo_layer2_burst_decode_from_bytes(b, &again));
 	OK(dmrgo_layer2_burst_get_data(b, &got));
 	OK(dmrgo_pdu_csbk_addresses(&got.v.pdu_csbk, &target, &source, &ok));
-	CHECK(got.tag == DMRGO_LAYER2_DATA_PDU_CSBK && ok && target == 0x654321 && source == 3191868);
+	CHECK(got.tag == DMRGO_LAYER2_DATA_PDU_CSBK && ok && target == 0x654321 && source == 3002068);
 	OK(dmrgo_layer2_burst_free(b));
 	printf("layer2: build, decode, set and encode a CSBK burst\n");
 }

@@ -84,7 +84,7 @@ This example runs a TSCC with one payload channel and one MS. The TSCC reports t
 <!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleTSCC -->
 ```go
 func ExampleTSCC() {
-	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3120001, Seed: 1})
+	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1})
 	s.onTSCC = func(o *trunk.TSCCOutput) {
 		switch o.Kind {
 		case trunk.TSCCRegistered:
@@ -101,7 +101,7 @@ func ExampleTSCC() {
 	s.run(time.Second)
 	s.take(0, s.ms[0].EndCall(s.now, s.mout[:0]))
 	s.run(time.Second)
-	fmt.Println("registered", s.tscc.Registered(3120001))
+	fmt.Println("registered", s.tscc.Registered(3002701))
 }
 ```
 <!-- /dmrgo:code -->
@@ -110,8 +110,8 @@ Output:
 
 <!-- dmrgo:output test=trunk.ExampleTSCC -->
 ```text
-Registered 3120001
-CallStart talkgroup 9 from 3120001 on channel 10 TS1
+Registered 3002701
+CallStart talkgroup 9 from 3002701 on channel 10 TS1
 CallEnd Maintenance
 registered true
 ```

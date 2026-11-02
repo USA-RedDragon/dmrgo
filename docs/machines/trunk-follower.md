@@ -103,7 +103,7 @@ func ExampleFollower() {
 	alohaCSBK := pdu.CSBK{LastBlock: true}
 	_ = alohaCSBK.SetAloha(pdu.AlohaPDU{SysIdentCode: code})
 	grantCSBK := pdu.CSBK{LastBlock: true}
-	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001})
+	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3002701})
 	aloha, _ := layer2.BuildBurst(&alohaCSBK, 1, layer2.SyncSourceBS)
 	grant, _ := layer2.BuildBurst(&grantCSBK, 1, layer2.SyncSourceBS)
 
@@ -133,7 +133,7 @@ Output:
 <!-- dmrgo:output test=trunk.ExampleFollower -->
 ```text
 site 1 2
-grant to talkgroup 9 from 3120001
+grant to talkgroup 9 from 3002701
 tune to channel 17 TS2 451200000 Hz
 ```
 <!-- /dmrgo:output -->

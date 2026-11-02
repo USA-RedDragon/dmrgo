@@ -117,7 +117,7 @@ func unconfirmed(w io.Writer) error {
 <!-- dmrgo:code file=v2/sms/example_test.go symbol=Example -->
 ```go
 func Example() {
-	t := sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Body: []byte("Hello")}
+	t := sms.Text{Format: sms.FormatTMS, Source: 3002068, Destination: 3002198, Body: []byte("Hello")}
 	data, err := sms.AppendPacket(nil, &t, &header)
 	if err != nil {
 		fmt.Println(err)
@@ -137,7 +137,7 @@ func Example() {
 
 <!-- dmrgo:output test=sms.Example -->
 ```text
-5 blocks, TMS from 3191868: Hello <nil>
+5 blocks, TMS from 3002068: Hello <nil>
 ```
 <!-- /dmrgo:output -->
 
@@ -272,7 +272,7 @@ h-sms.bin: Defined Short 3191868 -> 9990, Rate 1/2, 26 octets, CRC 654553b8, tex
 m-sms.bin: Unconfirmed 3191868 -> 9990, Rate 1/2, 62 octets, CRC 0b8c211b, text "TEST KI5VMF"
 unconfirmed: 6 bursts, BF=5 POC=9, port 5016, text "Hello from dmrgo, unconfirmed SMS test": ok
 confirmed: 4 bursts, missing [1], SACK requests [1]
-confirmed: retry done, "LIP: 41.878,-87.629,hdg=90,v=12", ACK 3120002 -> 3120001: ok
+confirmed: retry done, "LIP: 41.878,-87.629,hdg=90,v=12", ACK 3002702 -> 3002701: ok
 ```
 <!-- /dmrgo:output -->
 
@@ -290,14 +290,14 @@ func ExampleSender() {
 		fmt.Println(err)
 		return
 	}
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3120002, Respond: true})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002702, Respond: true})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("a confirmed message of a few blocks")}
 	if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3002702, LLIDSource: 3002701,
 	}); err != nil {
 		fmt.Println(err)
 		return

@@ -38,15 +38,15 @@ In this example the two machines pass the bursts to each other in memory:
 ```go
 func ExampleResponder_callAlert() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
-	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3191868, ColorCode: 1, Source: layer2.SyncSourceMS})
+	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Slot: enums.Slot1, Address: 3002068, ColorCode: 1, Source: layer2.SyncSourceMS})
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 	now := time.Duration(0)
 	for i := range 2 {
 		var err error
 		if i == 0 {
-			err = q.RequestRadioCheck(now, 3191868, 3140598, nil)
+			err = q.RequestRadioCheck(now, 3002068, 3002198, nil)
 		} else {
-			err = q.RequestCallAlert(now, 3191868, 3140598, nil)
+			err = q.RequestCallAlert(now, 3002068, 3002198, nil)
 		}
 		if err != nil {
 			fmt.Println(err)
@@ -77,7 +77,7 @@ The Requester sends the request again after each wait for the answer, up to the 
 ```go
 func ExampleRequester_RequestRadioCheck() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
-	if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
+	if err := q.RequestRadioCheck(0, 3002198, 3002068, &csbk.RequestOptions{Preambles: 5}); err != nil {
 		panic(err)
 	}
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
@@ -145,7 +145,7 @@ func Example() {
 ```go
 func ExampleWakeup() {
 	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
-	_ = w.Wake(0, 314926, 3191868)
+	_ = w.Wake(0, 990126, 3002068)
 	for {
 		at, ok := w.Deadline()
 		if !ok {
@@ -169,9 +169,9 @@ The radio check and the call alert, each answered:
 
 <!-- dmrgo:output test=csbk.ExampleResponder_callAlert -->
 ```text
-responder: Request RadioCheck from 3140598
+responder: Request RadioCheck from 3002198
 requester: Done RadioCheck Answered after 60ms
-responder: Request CallAlert from 3140598
+responder: Request CallAlert from 3002198
 requester: Done CallAlert Answered after 60ms
 ```
 <!-- /dmrgo:output -->

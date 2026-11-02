@@ -112,12 +112,12 @@ Each burst line shows the bits that `rx` decodes, and `fixed <n>` when soft-deci
 ```
 cach t=93.75ms at=0 tc=1 lcss=last fec=ok payload=11111011000110000
 slc t=93.75ms slco=1 activity ts1=0x9 hash1=0x5a ts2=0x0 hash2=0x00 fec=ok
-pi t=123.75ms ts=1 algid=0x21 mfid=0x10 keyid=0x01 mi=0x12345678 dst=314926 fec=ok
+pi t=123.75ms ts=1 algid=0x21 mfid=0x10 keyid=0x01 mi=0x12345678 dst=990126 fec=ok
 emb t=301.25ms ts=- pos=B cc=7 pi=0 lcss=first fec=ok
 ambe t=301.25ms ts=- pos=B seq=3 n=0 0x1b8a8724c81ec fec=ok
-elc t=481.25ms ts=- flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 checksum=ok fec=ok
-lc t=601.25ms ts=- terminator flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 fec=ok
-response t=61.25ms ts=- SACK class=2 type=0 status=0 3191868 -> 314926 retry=1,4,6
+elc t=481.25ms ts=- flco=0 fid=0x00 group src=3002068 dst=9990 privacy=0 emergency=0 checksum=ok fec=ok
+lc t=601.25ms ts=- terminator flco=0 fid=0x00 group src=3002068 dst=9990 privacy=0 emergency=0 fec=ok
+response t=61.25ms ts=- SACK class=2 type=0 status=0 3002068 -> 990126 retry=1,4,6
 ```
 
 ## Capturing the IPSC layout of rate 3/4 and rate 1 data

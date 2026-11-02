@@ -38,7 +38,7 @@ A [Monitor](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Monitor) fol
 <!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor -->
 ```go
 func ExampleMonitor() {
-	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1,
+	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3002068, Dest: 9, BS: 990126, Group: true, Wakeups: 1,
 		Superframes: 2, BSSourced: true, Slot: 1})
 	if err != nil {
 		fmt.Println(err)
@@ -138,7 +138,7 @@ The Monitor follows a group call on TDMA channel 2 of a repeater:
 
 <!-- dmrgo:output test=rf.ExampleMonitor -->
 ```text
-call from 3191868 to 9 ended after 12 voice bursts
+call from 3002068 to 9 ended after 12 voice bursts
 ```
 <!-- /dmrgo:output -->
 

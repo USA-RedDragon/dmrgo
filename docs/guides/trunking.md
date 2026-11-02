@@ -33,11 +33,11 @@ func buildCSBKs(sc pdu.SysCode) (uint16, []*pdu.CSBK, error) {
 	builds := []func() (pdu.CSBK, error){
 		pdu.AlohaPDU{TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}.CSBK,
 		pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}.CSBK,
-		pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}.CSBK,
-		pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
-		pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}.CSBK,
-		pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}.CSBK,
-		pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}.CSBK,
+		pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3002701}.CSBK,
+		pdu.PrivateVoiceGrantPDU{PhysicalChannel: 43, TargetAddress: 3002702, SourceAddress: 3002701}.CSBK,
+		pdu.AhoyPDU{TargetAddress: 3002702, SourceAddress: 3002701}.CSBK,
+		pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3002702}.CSBK,
+		pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3002702}.CSBK,
 	}
 	csbks := make([]*pdu.CSBK, len(builds))
 	for i, build := range builds {
@@ -118,7 +118,7 @@ A grant to a channel that the site has not announced carries the frequencies in 
 <!-- dmrgo:code file=v2/examples/trunking/main.go symbol=mbcGrant -->
 ```go
 func mbcGrant(w io.Writer) error {
-	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
+	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3002701}
 	hdr, err := grant.MBCHeader()
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func ExampleFollower() {
 	alohaCSBK := pdu.CSBK{LastBlock: true}
 	_ = alohaCSBK.SetAloha(pdu.AlohaPDU{SysIdentCode: code})
 	grantCSBK := pdu.CSBK{LastBlock: true}
-	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001})
+	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3002701})
 	aloha, _ := layer2.BuildBurst(&alohaCSBK, 1, layer2.SyncSourceBS)
 	grant, _ := layer2.BuildBurst(&grantCSBK, 1, layer2.SyncSourceBS)
 
@@ -247,7 +247,7 @@ To decode the voice of a grant, pass `Grant.Call` to [voice.Receiver.Expect](htt
 outbound CSBKs: 7 round trips ok
 C_ALOHA SYScode 0x6acd: model 1 net 85 site 19 par 1
 Burst.Encode matches BuildBurst for TV_GRANT PDU
-opcode 0x38 from BS: TD_GRANT_MI ch 77 tg 9 src 3120001
+opcode 0x38 from BS: TD_GRANT_MI ch 77 tg 9 src 3002701
 inbound C_RAND PDU ok, sync MS-sourced data
 MBC TV_GRANT PDU ch 0xFFF tg 9: TX 451.1250 MHz RX 456.1250 MHz
 CACH Short LC: 8 C_SYS_Parms/P_SYS_Parms round trips ok over 4 models
@@ -260,7 +260,7 @@ The Follower:
 <!-- dmrgo:output test=trunk.ExampleFollower -->
 ```text
 site 1 2
-grant to talkgroup 9 from 3120001
+grant to talkgroup 9 from 3002701
 tune to channel 17 TS2 451200000 Hz
 ```
 <!-- /dmrgo:output -->

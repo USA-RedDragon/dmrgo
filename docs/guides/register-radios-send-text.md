@@ -34,13 +34,13 @@ The example first builds the registration as a radio does, with [ars.NewRegistra
 ```go
 func ExampleNewAck() {
 	reg := ars.NewRegistration(ars.EventInitial)
-	if _, err := reg.SetDeviceID(nil, 3191868); err != nil {
+	if _, err := reg.SetDeviceID(nil, 3002068); err != nil {
 		fmt.Println(err)
 		return
 	}
 	payload, _ := reg.AppendBinary(nil)
-	radio := ip.RadioAddress(ip.DefaultNetwork, 3191868)
-	server := ip.RadioAddress(ip.DefaultNetwork, 3140598)
+	radio := ip.RadioAddress(ip.DefaultNetwork, 3002068)
+	server := ip.RadioAddress(ip.DefaultNetwork, 3002198)
 	packet, _ := ip.AppendIPv4(nil, &ip.Datagram{Source: radio, Destination: server, SourcePort: ip.PortARS, DestinationPort: ip.PortARS, Payload: payload})
 
 	d, err := ip.Decode(enums.SAPIPBasedPacketData, packet)
@@ -131,8 +131,8 @@ The registration and its answer:
 
 <!-- dmrgo:output test=ars.ExampleNewAck -->
 ```text
-Device Registration Initial from 3191868 at 3191868
-answer 0002bf01 in 32 octets to 3191868
+Device Registration Initial from 3002068 at 3002068
+answer 0002bf01 in 32 octets to 3002068
 ```
 <!-- /dmrgo:output -->
 

@@ -92,7 +92,7 @@ This example uses a [csbk.Requester](csbk-requester.md) to make a Motorola call 
 ```go
 func ExamplePreambles() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS})
-	_ = q.RequestCallAlert(0, 3191868, 3140598, &csbk.RequestOptions{Preambles: 2})
+	_ = q.RequestCallAlert(0, 3002068, 3002198, &csbk.RequestOptions{Preambles: 2})
 	p, err := csbk.NewPreambles(nil)
 	if err != nil {
 		fmt.Println(err)
@@ -115,8 +115,8 @@ Output:
 
 <!-- dmrgo:output test=csbk.ExamplePreambles -->
 ```text
-Announced to 3191868 until 120ms
-Joined to 3191868 until 0s
+Announced to 3002068 until 120ms
+Joined to 3002068 until 0s
 ```
 <!-- /dmrgo:output -->
 

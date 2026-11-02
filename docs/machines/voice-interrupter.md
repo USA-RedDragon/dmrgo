@@ -91,7 +91,7 @@ func ExampleInterrupter() {
 		fmt.Println(err)
 		return
 	}
-	_ = tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3120001}, nil)
+	_ = tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3002701}, nil)
 	_ = in.Interrupt(90*time.Millisecond, enums.RCCeaseTransmissionCommand)
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	var b layer2.Burst
