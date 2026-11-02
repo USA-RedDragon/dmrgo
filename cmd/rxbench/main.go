@@ -300,12 +300,12 @@ func inputName(t tier) string {
 		modeAudio + "0": "FM audio, 9.6 kHz, core",
 		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding, noise prediction",
 		modeAudio + "2": "FM audio, 9.6 kHz, coherent detection",
-		modeAudio + "3": "FM audio, 9.6 kHz, coherent detection, data passes",
+		modeAudio + "3": "FM audio, 9.6 kHz, exact phase trellis, data passes",
 		modeIQLow + "0": "I/Q, 9.6 kHz, discriminator core",
 		modeIQ + "0":    "I/Q, discriminator core",
 		modeIQ + "1":    "I/Q, soft decoding, noise prediction",
 		modeIQ + "2":    "I/Q, coherent detection",
-		modeIQ + "3":    "I/Q, phase trellis with Tier 2 beside it",
+		modeIQ + "3":    "I/Q, exact phase trellis",
 	}[t.Mode+strconv.Itoa(t.Tier)]
 }
 
