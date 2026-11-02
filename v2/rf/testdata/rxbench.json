@@ -2184,8 +2184,8 @@
      }
     }
    ],
-   "ns_per_second": 348282.4862159295,
-   "worst_ns_per_second": 607677.0533527216,
+   "ns_per_second": 338442.32229913026,
+   "worst_ns_per_second": 410685.08365055954,
    "worst_cn": 4,
    "ram_bytes": 1696,
    "allocs": 0
@@ -4361,8 +4361,8 @@
      }
     }
    ],
-   "ns_per_second": 1263110.536467346,
-   "worst_ns_per_second": 2967102.417459409,
+   "ns_per_second": 931671.1158088496,
+   "worst_ns_per_second": 2457316.5741855334,
    "worst_cn": 2,
    "ram_bytes": 48616,
    "allocs": 0
@@ -6422,8 +6422,8 @@
      }
     }
    ],
-   "ns_per_second": 10388486.76498979,
-   "worst_ns_per_second": 20598295.67429034,
+   "ns_per_second": 8557553.639595786,
+   "worst_ns_per_second": 13458074.614681214,
    "ram_bytes": 602520,
    "allocs": 0
   },
@@ -8450,8 +8450,8 @@
      }
     }
    ],
-   "ns_per_second": 187966276.89997005,
-   "worst_ns_per_second": 345926916.0628479,
+   "ns_per_second": 167727257.70066673,
+   "worst_ns_per_second": 319763514.41107804,
    "ram_bytes": 1322808,
    "allocs": 0
   },
@@ -10646,9 +10646,9 @@
      }
     }
    ],
-   "ns_per_second": 463243.30279259157,
-   "worst_ns_per_second": 516212.1356497775,
-   "worst_cn": 2,
+   "ns_per_second": 391641.43356854573,
+   "worst_ns_per_second": 444969.7710588573,
+   "worst_cn": 4,
    "ram_bytes": 1672,
    "allocs": 0
   },
@@ -12823,8 +12823,9 @@
      }
     }
    ],
-   "ns_per_second": 1488338.1077964792,
-   "worst_ns_per_second": 2065805.1402671975,
+   "ns_per_second": 1305053.860926828,
+   "worst_ns_per_second": 1539849.787391838,
+   "worst_cn": 2,
    "ram_bytes": 18904,
    "allocs": 0
   },
@@ -14979,8 +14980,8 @@
      }
     }
    ],
-   "ns_per_second": 1930239.046689609,
-   "worst_ns_per_second": 4210563.679483388,
+   "ns_per_second": 1747139.879449238,
+   "worst_ns_per_second": 3528438.965137447,
    "ram_bytes": 108528,
    "allocs": 0
   },
@@ -17003,8 +17004,8 @@
      }
     }
    ],
-   "ns_per_second": 9230660.292843973,
-   "worst_ns_per_second": 11668394.381164752,
+   "ns_per_second": 8357644.260485212,
+   "worst_ns_per_second": 10629967.559498038,
    "ram_bytes": 617408,
    "allocs": 0
   },
@@ -19003,8 +19004,8 @@
      }
     }
    ],
-   "ns_per_second": 305991275.08452874,
-   "worst_ns_per_second": 449123518.4068041,
+   "ns_per_second": 283639424.4217545,
+   "worst_ns_per_second": 385594424.92379457,
    "ram_bytes": 2391392,
    "allocs": 0
   }
