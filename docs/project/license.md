@@ -8,4 +8,4 @@ The WebAssembly backend of [vocoder/codec2](https://pkg.go.dev/github.com/USA-Re
 
 ## Test data
 
-The tests use only captures made for dmrgo, examples from the specifications, and data from projects under a permissive license. Copyleft projects, such as SDRTrunk and ok-dmrlib, can tell us facts about the protocol, but their test files are not copied into dmrgo.
+The tests use only captures made for dmrgo, examples from the specifications, and data from projects under a permissive license.
