@@ -23,6 +23,8 @@ const (
 	discFitFarStep = 0.05
 	discSeedRho    = 0.4
 	discFitRho     = 0.3
+	discFitRepeat  = 3
+	discFitSure    = 0.85
 )
 
 const (
@@ -499,6 +501,16 @@ func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 	return e, a2 / (a2 + max(noise[best], 0))
 }
 
+func indexEdge(e, span, rho float64) int8 {
+	switch {
+	case rho < discFitRho || rho >= 1 || math.Abs(e) < span-discFitStep/2:
+		return 0
+	case e < 0:
+		return -1
+	}
+	return 1
+}
+
 func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 	span := discFitNear
 	if s.hNew {
@@ -507,6 +519,22 @@ func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 	h := s.model.h
 	s.totalHz += fit
 	e, rho := s.scaleFit(k0, k1, span, discFitStep)
+	edge := indexEdge(e, span, rho)
+	if !s.hNew && rho < discFitSure {
+		edge = 0
+	}
+	if s.hEdge*edge > 0 {
+		s.hEdge = min(max(s.hEdge+edge, -discFitRepeat), discFitRepeat)
+	} else {
+		s.hEdge = edge
+	}
+	for n := 0; n < 3 && edge != 0 && (s.hNew || s.hEdge == discFitRepeat*edge); n++ {
+		s.hFit *= math.Exp(e)
+		e, rho = s.scaleFit(k0, k1, span, discFitStep)
+		if indexEdge(e, span, rho) != edge {
+			break
+		}
+	}
 	s.totalHz = s.freq
 	if rho >= discFitRho && rho < 1 {
 		v := cohIndexVar0 + cohIndexVar*(1-rho)/rho

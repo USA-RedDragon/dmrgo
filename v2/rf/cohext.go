@@ -119,6 +119,7 @@ type cohStage struct {
 	hFit            float64
 	hVar            float64
 	hNew            bool
+	hEdge           int8
 	size            int64
 	radios          [2]cohRadio
 	radio           int8
@@ -135,20 +136,21 @@ type cohRadio struct {
 	nFit                      int
 	scale                     float32
 	freqOK, hNew, ok          bool
+	hEdge                     int8
 }
 
 func (s *cohStage) saveRadio(r *cohRadio) {
 	r.dt, r.freq, r.totalHz, r.fitVar = s.dt, s.freq, s.totalHz, s.fitVar
 	r.ampAvg, r.noiseAvg, r.symAvg, r.hFit, r.hVar = s.ampAvg, s.noiseAvg, s.symAvg, s.hFit, s.hVar
 	r.amp, r.noise, r.nFit, r.scale, r.freqOK, r.hNew, r.ok = s.amp, s.noise, s.nFit, s.scale, s.freqOK, s.hNew, true
-	r.tfit, r.tfitBase, r.tfitRef = s.tfit, s.tfitBase, s.tfitRef
+	r.tfit, r.tfitBase, r.tfitRef, r.hEdge = s.tfit, s.tfitBase, s.tfitRef, s.hEdge
 }
 
 func (s *cohStage) loadRadio(r *cohRadio) {
 	s.dt, s.freq, s.totalHz, s.fitVar = r.dt, r.freq, r.totalHz, r.fitVar
 	s.ampAvg, s.noiseAvg, s.symAvg, s.hFit, s.hVar = r.ampAvg, r.noiseAvg, r.symAvg, r.hFit, r.hVar
 	s.amp, s.noise, s.nFit, s.scale, s.freqOK, s.hNew = r.amp, r.noise, r.nFit, r.scale, r.freqOK, r.hNew
-	s.tfit, s.tfitBase, s.tfitRef = r.tfit, r.tfitBase, r.tfitRef
+	s.tfit, s.tfitBase, s.tfitRef, s.hEdge = r.tfit, r.tfitBase, r.tfitRef, r.hEdge
 }
 
 func (s *cohStage) slotRadio(c *leanCore, slot int64) {
@@ -162,7 +164,7 @@ func (s *cohStage) slotRadio(c *leanCore, slot int64) {
 	if s.radios[p].ok {
 		s.loadRadio(&s.radios[p])
 	} else if s.radio >= 0 {
-		s.freqOK, s.nFit, s.hNew = false, 0, true
+		s.freqOK, s.nFit, s.hNew, s.hEdge = false, 0, true, 0
 		s.tfit = [5]float64{}
 		s.ampAvg, s.noiseAvg, s.symAvg = 0, 0, 0
 	}
@@ -774,7 +776,7 @@ func (s *cohStage) lost(lo int64) bool {
 }
 
 func (s *cohStage) lock() {
-	s.lastT0, s.lastSync, s.mineOK, s.relock, s.hNew = 0, 0, false, true, true
+	s.lastT0, s.lastSync, s.mineOK, s.relock, s.hNew, s.hEdge = 0, 0, false, true, true, 0
 	s.tfit = [5]float64{}
 	s.radio, s.radios[0].ok, s.radios[1].ok = -1, false, false
 	s.hVar += cohIndexWalk
