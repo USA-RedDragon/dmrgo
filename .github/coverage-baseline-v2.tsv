@@ -86,7 +86,7 @@ v2/hytera/hdap/services_decode_gen.go	558	536
 v2/internal/allocgate/allapi/allapi_gen.go	3	0
 v2/internal/allocgate/apigen/apigen.go	88	83
 v2/internal/allocgate/apigen/gen/main.go	5	0
-v2/internal/allocstest/count.go	168	156
+v2/internal/allocstest/count.go	168	155
 v2/internal/bits/bits.go	36	36
 v2/internal/crc/checksum5.go	5	5
 v2/internal/crc/crc32.go	9	9
@@ -113,7 +113,7 @@ v2/internal/fec/reedsolomon/reed_solomon_12_9_4.go	54	54
 v2/internal/fec/trellis/trellis_3_4.go	75	75
 v2/internal/fecref/ambe/ambe.go	88	87
 v2/internal/fecref/bptc/bptc_196_96.go	98	95
-v2/internal/fecref/bptc/bptc_cach.go	84	84
+v2/internal/fecref/bptc/bptc_cach.go	88	88
 v2/internal/fecref/bptc/bptc_embedded_lc.go	111	110
 v2/internal/fecref/bptc/bptc_single_burst.go	61	61
 v2/internal/fecref/crc/checksum5.go	4	4
@@ -280,7 +280,7 @@ v2/rf/cohlate.go	7	7
 v2/rf/devgain.go	21	19
 v2/rf/disc48.go	33	33
 v2/rf/disccoh.go	289	284
-v2/rf/discrx.go	407	390
+v2/rf/discrx.go	412	395
 v2/rf/discsoft.go	49	48
 v2/rf/exact.go	254	251
 v2/rf/ext.go	732	718
@@ -292,8 +292,7 @@ v2/rf/iqdsp.go	13	13
 v2/rf/iqformat.go	15	15
 v2/rf/iqlow.go	139	137
 v2/rf/iqrefill.go	147	141
-v2/rf/lagtab.go	3	3
-v2/rf/lean.go	1297	1276
+v2/rf/lean.go	1298	1277
 v2/rf/leanfec.go	261	259
 v2/rf/leanfront.go	155	138
 v2/rf/monitor.go	71	70
@@ -305,7 +304,7 @@ v2/rf/rawvoice.go	23	23
 v2/rf/rx.go	141	140
 v2/rf/rxhost.go	70	64
 v2/rf/rxpreemph.go	27	27
-v2/rf/shortlc_host.go	88	85
+v2/rf/shortlc_host.go	90	87
 v2/rf/sink.go	21	20
 v2/rf/softfec.go	553	549
 v2/rf/softgrid.go	57	57
