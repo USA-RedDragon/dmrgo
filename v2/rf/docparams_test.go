@@ -47,6 +47,21 @@ func docBullet(b *strings.Builder, src *goSource, name, key string) {
 	}
 }
 
+func firstSentence(d string) string {
+	for i := 0; i+2 < len(d); i++ {
+		if d[i] == '.' && d[i+1] == ' ' && d[i+2] >= 'A' && d[i+2] <= 'Z' {
+			return d[:i+1]
+		}
+	}
+	return d
+}
+
+func featureBullet(b *strings.Builder, src *goSource, indent, name string) {
+	if d := src.doc(name); d != "" {
+		fmt.Fprintf(b, "%s- `%s`: %s\n", indent, name, firstSentence(d))
+	}
+}
+
 func docTable(b *strings.Builder, src *goSource, types ...string) {
 	b.WriteString("| Field | Rule |\n|-------|------|\n")
 	for _, t := range types {
@@ -61,7 +76,7 @@ func docTable(b *strings.Builder, src *goSource, types ...string) {
 func pkgParas(src *goSource, tx bool) string {
 	var out []string
 	for i, p := range src.pkg {
-		if strings.Contains(p, "Transmitter") == tx || tx && i == 0 {
+		if i == 0 || tx && strings.Contains(p, "Transmitter") {
 			out = append(out, p)
 		}
 	}
@@ -99,19 +114,15 @@ func renderRxIntro(src, _ *goSource) string { return pkgParas(src, false) }
 func renderRxFeatures(src, _ *goSource) string {
 	var b strings.Builder
 	for _, n := range []string{"Receiver", "AudioReceiver", "Monitor"} {
-		docBullet(&b, src, n, n)
+		featureBullet(&b, src, "", n)
 	}
 	b.WriteString("- Tiers:\n")
 	for _, c := range src.consts["Tier"] {
-		if d := src.doc(c); d != "" {
-			fmt.Fprintf(&b, "  - `%s`: %s\n", c, d)
-		}
+		featureBullet(&b, src, "  ", c)
 	}
 	b.WriteString("- I/Q formats:\n")
 	for _, c := range src.consts["IQFormat"] {
-		if d := src.doc(c); d != "" {
-			fmt.Fprintf(&b, "  - `%s`: %s\n", c, d)
-		}
+		featureBullet(&b, src, "  ", c)
 	}
 	return b.String()
 }
@@ -205,8 +216,8 @@ func renderTxIntro(src, _ *goSource) string { return pkgParas(src, true) }
 
 func renderTxFeatures(src, _ *goSource) string {
 	var b strings.Builder
-	for _, n := range []string{"Transmitter", "AudioTransmitter", "PreEmphasis", "RegionError", "ErrBurstOrder", "ErrBurstService", "ErrTxTimeout"} {
-		docBullet(&b, src, n, n)
+	for _, n := range []string{"Transmitter", "AudioTransmitter", "PreEmphasis", "RegionError", "ErrBurstOrder"} {
+		featureBullet(&b, src, "", n)
 	}
 	return b.String()
 }

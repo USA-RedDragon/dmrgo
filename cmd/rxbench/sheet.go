@@ -87,13 +87,14 @@ func renderMCU(b *strings.Builder, d data) {
 	if len(d.mcu.Rows) == 0 {
 		return
 	}
-	b.WriteString("### Tier 0 on a Cortex-M4F\n\n| Tier | Rate | CPU | RAM with stack | Flash |\n|------|------|-----|----------------|-------|\n")
+	b.WriteString("### Tier 0 on a Cortex-M4F\n\n")
+	b.WriteString(tableHead("Tier", "Rate (kHz)", "CPU (MHz)", "RAM with stack (B)", "Flash (KB)"))
 	for _, r := range d.mcu.Rows {
 		name := shortName(tier{Mode: r.Mode, Tier: r.Tier})
 		if r.PreEmph {
 			name += ", `PreEmphasis`"
 		}
-		fmt.Fprintf(b, "| %s | %s kHz | %s MHz | %s B | %s KB |\n", name, strconv.FormatFloat(float64(r.Rate)/1000, 'f', -1, 64), f1(r.MHz), grouped(int64(r.RAMBytes)), f1(r.FlashKB))
+		b.WriteString(tableRow(name, strconv.FormatFloat(float64(r.Rate)/1000, 'f', -1, 64), f1(r.MHz), grouped(int64(r.RAMBytes)), f1(r.FlashKB)))
 	}
 	b.WriteString("\n" + d.mcu.Source + "\n\n")
 }
@@ -139,7 +140,7 @@ func sweepRange(s sheetSweep) (sweepSpan, bool) {
 	return sweepSpan{lo: s.Points[a].X, hi: s.Points[b].X, loEdge: a == 0, hiEdge: b == len(s.Points)-1}, true
 }
 
-func (s sweepSpan) text(scale float64, unit string) string {
+func (s sweepSpan) text(scale float64) string {
 	f := func(v float64) string { return grouped64(v / scale) }
 	pre := ""
 	if s.loEdge && s.hiEdge {
@@ -153,9 +154,9 @@ func (s sweepSpan) text(scale float64, unit string) string {
 		hi = "above " + hi
 	}
 	if s.lo == -s.hi && s.loEdge == s.hiEdge {
-		return pre + "±" + f(s.hi) + " " + unit
+		return pre + "±" + f(s.hi)
 	}
-	return pre + lo + " to " + hi + " " + unit
+	return pre + lo + " to " + hi
 }
 
 func grouped64(v float64) string {
@@ -207,7 +208,7 @@ func acqAt(a sheetAcqTier, cn float64) string {
 		if !ok {
 			return "-"
 		}
-		cell := strconv.FormatFloat(math.Round(m), 'f', 0, 64) + " ms"
+		cell := strconv.FormatFloat(math.Round(m), 'f', 0, 64)
 		if len(p.Times) < p.Runs {
 			cell += fmt.Sprintf(" (%d of %d)", len(p.Times), p.Runs)
 		}
@@ -228,52 +229,66 @@ func floorCell(d data, k string) string {
 	return "-"
 }
 
+func tableHead(cols ...string) string {
+	var h, sep strings.Builder
+	for i, c := range cols {
+		h.WriteString("| " + c + " ")
+		if i == 0 || strings.HasPrefix(c, "Input") || strings.HasPrefix(c, "Recording") {
+			sep.WriteString("|:---")
+		} else {
+			sep.WriteString("|---:")
+		}
+	}
+	return h.String() + "|\n" + sep.String() + "|\n"
+}
+
+func tableRow(cells ...string) string { return "| " + strings.Join(cells, " | ") + " |\n" }
+
 func renderSpecs(d data) []byte {
 	var b strings.Builder
 	keys := []string{keyAMBE, keyRate12, keyRate34, keyCSBK, keyELC}
 	b.WriteString("\n### Sensitivity\n\n")
-	fmt.Fprintf(&b, "Eb/N0 at which the tier recovers %s of the frames exactly. Lower is better. C/N in %s is %s dB lower.\n\n", pct(recoverMin), bandText(), f1(cnToEbN0(0)))
-	b.WriteString("| Tier | Voice | Data rate 1/2 | Data rate 3/4 | CSBK | Embedded LC |\n")
-	b.WriteString("|------|-------|---------------|---------------|------|-------------|\n")
+	fmt.Fprintf(&b, "Eb/N0 in dB at which the tier recovers %s of the frames exactly. C/N in %s is %s dB lower. Lower is better.\n\n", pct(recoverMin), bandText(), f1(cnToEbN0(0)))
+	b.WriteString(tableHead("Tier", "Voice", "Rate 1/2", "Rate 3/4", "CSBK", "Embedded LC"))
 	row := make([]string, 0, 1+len(keys))
-	row = append(row, "Best possible (4FSK floor)")
+	row = append(row, "4FSK floor")
 	for _, k := range keys {
 		row = append(row, floorCell(d, k))
 	}
-	b.WriteString("| " + strings.Join(row, " | ") + " |\n")
+	b.WriteString(tableRow(row...))
 	for _, t := range d.bench.Tiers {
 		row := make([]string, 0, 1+len(keys))
 		row = append(row, shortName(t))
 		for _, k := range keys {
 			row = append(row, dbCell(at90(tierCurve(t, k))))
 		}
-		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
+		b.WriteString(tableRow(row...))
 	}
 	s := d.sheet
 	b.WriteString("\n### Operating characteristics\n\n")
-	fmt.Fprintf(&b, "| Tier | Input | Carrier offset | Sample clock error | Late entry at C/N %d dB | Late entry at C/N %d dB | CPU at C/N 6 dB | Worst-case CPU | RAM |\n", acqLowCN, acqHighCN)
-	b.WriteString("|------|-------|----------------|--------------------|------|------|------|------|-----|\n")
+	b.WriteString(tableHead("Tier", "Input", "Rate (kHz)", "Carrier offset (kHz)", "Clock error (ppm)",
+		fmt.Sprintf("Late entry, C/N %d dB (ms)", acqLowCN), fmt.Sprintf("Late entry, C/N %d dB (ms)", acqHighCN), "CPU, C/N 6 dB (ms/s)", "CPU, worst (ms/s)", "RAM (KiB)"))
 	for _, t := range d.bench.Tiers {
 		off, rate := "-", "-"
 		if sw, ok := findSweep(s.Offset, t); ok {
 			if r, ok := sweepRange(sw); ok {
-				off = r.text(1000, "kHz")
+				off = r.text(1000)
 			}
 		}
 		if sw, ok := findSweep(s.RateError, t); ok {
 			if r, ok := sweepRange(sw); ok {
-				rate = r.text(1, "ppm")
+				rate = r.text(1)
 			}
 		}
 		lowAcq, highAcq := "-", "-"
 		if a, ok := findAcq(s, t); ok {
 			lowAcq, highAcq = acqAt(a, acqLowCN), acqAt(a, acqHighCN)
 		}
-		b.WriteString("| " + strings.Join([]string{shortName(t), inputName(t), off, rate, lowAcq, highAcq, msCell(t.NsPerSecond), msCell(t.WorstNs), ramCell(t.RAMBytes)}, " | ") + " |\n")
+		b.WriteString(tableRow(shortName(t), inputName(t), inputRate(t), off, rate, lowAcq, highAcq, msCell(t.NsPerSecond), msCell(t.WorstNs), ramCell(t.RAMBytes)))
 	}
-	fmt.Fprintf(&b, "\n- Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least %s of the voice frames at C/N %s dB%s. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N %s dB. \"At least\" marks a range that reaches the ends of the grid.\n", pct(recoverMin), f1(s.OffsetCN), seedsText(s.SweepSeeds), f1(s.RateCN))
-	fmt.Fprintf(&b, "- Late entry is the median time from the first sample to the end of the first burst that the tier recovers exactly, when the input starts at a random point of a call. A count gives the runs that recovered a burst within %s ms, when some did not.\n", strconv.FormatFloat(s.AcqWindow, 'f', -1, 64))
-	b.WriteString("- CPU is per second of signal, measured on an " + d.bench.Machine + ". Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver.")
+	fmt.Fprintf(&b, "\n- Carrier offset and clock error: the range with at least %s of the voice frames at C/N %s dB%s. \"At least\" marks a range that reaches the ends of the grid.\n", pct(recoverMin), f1(s.OffsetCN), seedsText(s.SweepSeeds))
+	fmt.Fprintf(&b, "- Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within %s ms.\n", strconv.FormatFloat(s.AcqWindow, 'f', -1, 64))
+	b.WriteString("- CPU per second of signal on an " + d.bench.Machine + ", worst over C/N 0 to 40 dB. RAM is the state of the receiver.")
 	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
 		b.WriteString(" No tier allocates after it starts.")
 	}
@@ -286,7 +301,7 @@ func seedsText(n int) string {
 	if n < 2 {
 		return ""
 	}
-	return ", counted over the frames of " + strconv.Itoa(n) + " noise draws"
+	return ", over " + strconv.Itoa(n) + " noise draws"
 }
 
 func ratesCell(rs []sheetAccept, tierIdx int) string {
@@ -309,20 +324,20 @@ func ratesCell(rs []sheetAccept, tierIdx int) string {
 	if len(spans) == 0 {
 		return "none"
 	}
-	return strings.Join(spans, ", ") + " Hz"
+	return strings.Join(spans, ", ")
 }
 
 func renderLimits(d data) []byte {
 	var b strings.Builder
-	b.WriteString("\n| Tier | I/Q rates accepted | Audio rates accepted |\n|------|------|------|\n")
+	b.WriteString("\n" + tableHead("Tier", "I/Q rate (Hz)", "Audio rate (Hz)"))
 	n := 0
 	for _, r := range append(slices.Clone(d.sheet.RatesIQ), d.sheet.RatesAudio...) {
 		n = max(n, len(r.Tiers))
 	}
 	for i := range n {
-		fmt.Fprintf(&b, "| Tier %d | %s | %s |\n", i, ratesCell(d.sheet.RatesIQ, i), ratesCell(d.sheet.RatesAudio, i))
+		b.WriteString(tableRow("Tier "+strconv.Itoa(i), ratesCell(d.sheet.RatesIQ, i), ratesCell(d.sheet.RatesAudio, i)))
 	}
-	b.WriteString("\nA span gives the first and last rate of the probe that the constructor accepts in a row. It returns an error for the other rates of the probe. The probe tries ")
+	b.WriteString("\nThe constructors accept the rates of each span and refuse the other probe rates: ")
 	var all []string
 	for _, r := range d.sheet.RatesIQ {
 		all = append(all, grouped(int64(r.Hz)))
@@ -479,5 +494,5 @@ func renderSheetGraphs(b *strings.Builder, d data) {
 	for _, m := range modes() {
 		b.WriteString("![" + modeTitle(m[0]) + ": late entry time against C/N](" + imgDir + m[0] + "/late_entry.svg)\n")
 	}
-	b.WriteString("\n")
+	b.WriteString("\n### CPU\n\n![CPU of each tier per second of signal](" + imgDir + "cpu.svg)\n\n")
 }

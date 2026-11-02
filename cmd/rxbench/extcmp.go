@@ -12,8 +12,10 @@ import (
 const extDSDFME = "dsd-fme"
 
 const (
-	extBegin = "<!-- extcmp:begin -->"
-	extEnd   = "<!-- extcmp:end -->"
+	extMethodsBegin = "<!-- extcmp:methods:begin -->"
+	extMethodsEnd   = "<!-- extcmp:methods:end -->"
+	extBegin        = "<!-- extcmp:begin -->"
+	extEnd          = "<!-- extcmp:end -->"
 )
 
 type extPoint struct {
@@ -135,11 +137,11 @@ func extCell(d extDecoder, k string) string {
 	c := at90(x, y)
 	switch {
 	case !c.ok:
-		return "> " + f1(top) + " dB"
+		return "> " + f1(top)
 	case c.below:
-		return "< " + f1(c.ebn0) + " dB"
+		return "< " + f1(c.ebn0)
 	}
-	return f1(c.ebn0) + " dB"
+	return f1(c.ebn0)
 }
 
 type extVerdict int
@@ -170,7 +172,34 @@ func (p extPair) verdict() extVerdict {
 
 func renderExt(e extData) []byte {
 	var b strings.Builder
-	b.WriteString("\n")
+	b.WriteString("\nThe tiers and other receivers decode the same noisy signals. Each cell is the Eb/N0 in dB at which the receiver recovers 90% of the frames exactly. Lower is better. [Other receivers](#other-receivers) gives the method.\n\n")
+	for _, s := range e.Streams {
+		b.WriteString("### " + extStreamName(s) + "\n\n")
+		cols := make([]string, 0, 2+len(extPayloadNames()))
+		cols = append(cols, "Receiver")
+		for _, p := range extPayloadNames() {
+			cols = append(cols, p[1])
+		}
+		b.WriteString(tableHead(append(cols, "CPU, C/N 6 dB (ms/s)")...))
+		for _, d := range s.Decoders {
+			b.WriteString("| " + extDecoderName(d.Name) + " |")
+			for _, p := range extPayloadNames() {
+				b.WriteString(" " + extCell(d, p[0]) + " |")
+			}
+			cpu := "-"
+			if extExternal(d.Name) && d.CPUNs > 0 {
+				cpu = msCell(d.CPUNs)
+			}
+			b.WriteString(" " + cpu + " |\n")
+		}
+		b.WriteString("\n")
+	}
+	renderExtCells(&b, e)
+	return []byte(b.String())
+}
+
+func renderExtMethods(e extData) []byte {
+	var b strings.Builder
 	var exts []string
 	for _, s := range e.Streams {
 		for _, d := range s.Decoders {
@@ -179,8 +208,7 @@ func renderExt(e extData) []byte {
 			}
 		}
 	}
-	b.WriteString("The tiers and other receivers decode the same noisy signals. Each cell is the Eb/N0 at which the receiver recovers 90% of the frames exactly. Lower is better.\n\n")
-	b.WriteString("- Receivers: ")
+	b.WriteString("\n- Receivers: ")
 	vs := make([]string, 0, len(exts))
 	for _, n := range exts {
 		v := e.Versions[strings.TrimSuffix(n, "-fixed")]
@@ -197,31 +225,6 @@ func renderExt(e extData) []byte {
 		cns = append(cns, f1(c))
 	}
 	b.WriteString("- On a Cortex-M4F the MMDVM DMO receiver with its RRC filter (`arm_fir_fast_q15` of CMSIS-DSP in blocks of 2 samples, as `IO.cpp` runs it), built with " + m.Compiler + " and run in " + m.Machine + " on the MS stream at C/N " + strings.Join(cns, " and ") + " dB, needs up to " + f1(m.WorstMHz) + " MHz by the cycle model of the Tier 0 numbers, " + grouped(int64(m.StateBytes+m.FilterBytes+m.StackBytes)) + " B of RAM (" + grouped(int64(m.StateBytes)) + " B of receiver state, " + strconv.Itoa(m.FilterBytes) + " B of filter state and " + strconv.Itoa(m.StackBytes) + " B of stack) and " + grouped(int64(m.FlashBytes)) + " B of flash.\n\n")
-	for _, s := range e.Streams {
-		b.WriteString("### " + extStreamName(s) + "\n\n")
-		b.WriteString("| Receiver |")
-		for _, p := range extPayloadNames() {
-			b.WriteString(" " + p[1] + " |")
-		}
-		b.WriteString(" CPU at C/N 6 dB |\n|---|")
-		for range extPayloadNames() {
-			b.WriteString("---|")
-		}
-		b.WriteString("---|\n")
-		for _, d := range s.Decoders {
-			b.WriteString("| " + extDecoderName(d.Name) + " |")
-			for _, p := range extPayloadNames() {
-				b.WriteString(" " + extCell(d, p[0]) + " |")
-			}
-			cpu := "-"
-			if extExternal(d.Name) && d.CPUNs > 0 {
-				cpu = msCell(d.CPUNs)
-			}
-			b.WriteString(" " + cpu + " |\n")
-		}
-		b.WriteString("\n")
-	}
-	renderExtCells(&b, e)
 	return []byte(b.String())
 }
 

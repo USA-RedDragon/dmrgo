@@ -2,16 +2,6 @@
 
 <!-- rfparams:rx-intro:begin -->
 Package rf recovers DMR bursts from the I/Q samples of a software radio and from the output of an FM discriminator: 4FSK detection, SYNC search and slot timing, soft-decision decoding of each FEC field, and the superframe position of voice bursts. It also turns bursts back into I/Q samples and into the deviation signal of an FM radio.
-
-NewReceiver makes a Receiver from an RxConfig, for I/Q at RxConfig.Rate in RxConfig.Format: CU8 as rtl_sdr writes it, CS8 as hackrf_transfer writes it, CS16 or CF32. NewAudioReceiver makes an AudioReceiver from an AudioRxConfig, for the samples of a discriminator. Init sets up either one in Tier0 in memory of the caller, for a microcontroller.
-
-The callback of the config picks the mode. With OnBursts set, Write takes samples and hands the bursts that they complete to OnBursts, and Flush ends the stream. With OnBursts nil, AppendBursts appends the bursts to a slice, and AppendFlush ends the stream.
-
-A Monitor follows the TDMA channels of the bursts, as a scanner does: it finds the TDMA channel of each burst from the CACHs of its stream, decodes it, and keeps the LC of the call on each channel. Burst.Hint gives the layer2.Hint of a burst for the voice and data machines.
-
-OnShortLC of the config receives the Short LCs that the CACHs of the bursts carry. It decodes them as layer2.ShortLCAssembler does, and from Tier1 up decodes a Short LC that fails again from the soft values of its four fragments, with ShortLC.Soft set. The bursts are the same with it and without it.
-
-The Tier of the config sets the detection and its cost, from Tier0, which fits a microcontroller, to Tier3, for offline decoding. Every tier follows a BS-sourced stream on both TDMA slots, and Tier0 to Tier2 also follow the MS-sourced bursts of both slots, each slot with its own SYNC timing, symbol clock, levels and carrier offset, as on the inbound of a repeater or a duplex hotspot with a radio on each slot. The constructors allocate every buffer of the receiver, and Write and Flush allocate nothing. docs/rx.md gives the sensitivity, compute and RAM of each tier, and docs/tx.md the limits and cost of the transmitter.
 <!-- rfparams:rx-intro:end -->
 
 [v2/cmd/dmrrf](../v2/cmd/dmrrf/README.md) decodes DMR from I/Q or discriminator audio in the file formats of common software radios, and writes test transmissions in the same formats.
@@ -19,15 +9,15 @@ The Tier of the config sets the detection and its cost, from Tier0, which fits a
 ## Features
 
 <!-- rfparams:rx-features:begin -->
-- `Receiver`: Receiver recovers DMR bursts from a stream of I/Q samples. It locks to the slot timing of the first SYNC it finds, follows the timing and the carrier through the transmission, and gives every burst it recovers. Make it with NewReceiver, or set it up with Init in memory of the caller. A Receiver is not safe for concurrent use, and it must not be copied after Init or NewReceiver.
-- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 5.0 MHz and 2,296 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
-- `Monitor`: Monitor follows the TDMA channels of the bursts of one Receiver or AudioReceiver, as a scanner does. It finds the TDMA channel of each BS-sourced burst from the CACHs of its stream, decodes the burst, keeps the superframe position and the embedded LC of each channel, and keeps the LC of the call on each channel from its voice LC header, embedded LC and terminator. The zero Monitor is ready to use, and it does not allocate. A Monitor is not safe for concurrent use.
+- `Receiver`: Receiver recovers DMR bursts from a stream of I/Q samples.
+- `AudioReceiver`: AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself.
+- `Monitor`: Monitor follows the TDMA channels of the bursts of one Receiver or AudioReceiver, as a scanner does.
 - Tiers:
   - `TierDefault`: TierDefault is the zero value: Tier1 for NewReceiver and NewAudioReceiver, and Tier0 for Init and under TinyGo.
-  - `Tier0`: Tier0 slices the output of an FM discriminator and its matched filter. On I/Q from 48 kHz an FM discriminator at 12 kHz comes before it, and the receiver keeps about 19 KB. On I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel it keeps about 1.4 KB, and Init sets it up in memory of the caller, for a microcontroller. On I/Q from 48 kHz Tier0 to Tier3 find a carrier up to 6.25 kHz off, half the channel spacing, from the spectrum before they lock; a carrier further off is taken for the next channel.
-  - `Tier1`: Tier1 adds to Tier0 the soft decoders: a BPTC(196,96) block whose check fails by ordered statistics, C0 and C1 of each voice frame by soft ML, the embedded LC of each superframe over its four fragments and the earlier superframes of the call, and LookbackSlots slots before the first lock decoded again. On I/Q it keeps the input samples of those slots, and when it tuned to the carrier before the lock it filters them again at the new tune before it decodes them. It detects the bursts that they decode, and each rate 3/4 block, from the symbols of the discriminator with the correlation of their noise. It keeps about 35 KB on audio and 108 KB on I/Q, 58 KB of that for the input samples.
-  - `Tier2`: Tier2 adds to the soft decoders of Tier1 the detection again of the bursts with a trellis over three symbols that carries the carrier phase with each survivor, from the SYNC or EMB of the burst, within a compute budget per slot: on I/Q from the samples at 24 kHz, on audio from the carrier phase that it sums from the discriminator samples. It holds each burst one slot longer and keeps about 550 KB on audio and 565 KB on I/Q, 75 KB of that for the input samples.
-  - `Tier3`: Tier3 detects the bursts of Tier2 again by log-MAP over a window of three symbols with one of 52 carrier phases in the trellis state and no compute budget, and detects each voice burst once more with the bits that its FEC fixed. On I/Q it also filters the samples of the trellis to the channel width, fits the burst timing over slots and keeps 16 lookback slots; on audio it makes four passes over each data burst. It needs about 20 times the compute of Tier2 on I/Q and 10 times on audio, and keeps about 2.3 MB on I/Q and 1.3 MB on audio, for decoding on a PC.
+  - `Tier0`: Tier0 slices the output of an FM discriminator and its matched filter.
+  - `Tier1`: Tier1 adds to Tier0 the soft decoders: a BPTC(196,96) block whose check fails by ordered statistics, C0 and C1 of each voice frame by soft ML, the embedded LC of each superframe over its four fragments and the earlier superframes of the call, and LookbackSlots slots before the first lock decoded again.
+  - `Tier2`: Tier2 adds to the soft decoders of Tier1 the detection again of the bursts with a trellis over three symbols that carries the carrier phase with each survivor, from the SYNC or EMB of the burst, within a compute budget per slot: on I/Q from the samples at 24 kHz, on audio from the carrier phase that it sums from the discriminator samples.
+  - `Tier3`: Tier3 detects the bursts of Tier2 again by log-MAP over a window of three symbols with one of 52 carrier phases in the trellis state and no compute budget, and detects each voice burst once more with the bits that its FEC fixed.
 - I/Q formats:
   - `IQFormatDefault`: IQFormatDefault is the zero value: IQFormatCS16.
   - `IQFormatCU8`: IQFormatCU8 is unsigned 8-bit, as rtl_sdr writes it.
@@ -41,46 +31,46 @@ The Tier of the config sets the detection and its cost, from Tier0, which fits a
 <!-- rxbench:specs:begin -->
 ### Sensitivity
 
-Eb/N0 at which the tier recovers 90% of the frames exactly. Lower is better. C/N in 12.5 kHz is 1.1 dB lower.
+Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kHz is 1.1 dB lower. Lower is better.
 
-| Tier | Voice | Data rate 1/2 | Data rate 3/4 | CSBK | Embedded LC |
-|------|-------|---------------|---------------|------|-------------|
-| Best possible (4FSK floor) | -1.0 dB | -3.0 dB | 0.3 dB | -4.1 dB | < -6.9 dB |
-| Audio tier 0 | 9.6 dB | 6.5 dB | 8.3 dB | 6.4 dB | 9.5 dB |
-| Audio tier 1 | 8.2 dB | 6.4 dB | 7.9 dB | 5.4 dB | 4.3 dB |
-| Audio tier 2 | 4.9 dB | 4.4 dB | 6.2 dB | 3.8 dB | 2.4 dB |
-| Audio tier 3 | 4.4 dB | 3.5 dB | 5.7 dB | 2.7 dB | 2.4 dB |
-| Low-rate I/Q tier 0 | 10.3 dB | 6.6 dB | 8.3 dB | 6.5 dB | 9.6 dB |
-| I/Q tier 0 | 9.3 dB | 5.4 dB | 7.6 dB | 5.4 dB | 9.2 dB |
-| I/Q tier 1 | 8.0 dB | 5.4 dB | 7.0 dB | 3.6 dB | 2.5 dB |
-| I/Q tier 2 | 4.9 dB | 4.4 dB | 5.5 dB | 3.2 dB | 2.0 dB |
-| I/Q tier 3 | 2.5 dB | 1.8 dB | 4.8 dB | 1.1 dB | 0.1 dB |
+| Tier | Voice | Rate 1/2 | Rate 3/4 | CSBK | Embedded LC |
+|:---|---:|---:|---:|---:|---:|
+| 4FSK floor | -1.0 | -3.0 | 0.3 | -4.1 | < -6.9 |
+| Audio tier 0 | 9.6 | 6.5 | 8.3 | 6.4 | 9.5 |
+| Audio tier 1 | 8.2 | 6.4 | 7.9 | 5.4 | 4.3 |
+| Audio tier 2 | 4.9 | 4.4 | 6.2 | 3.8 | 2.4 |
+| Audio tier 3 | 4.4 | 3.5 | 5.7 | 2.7 | 2.4 |
+| Low-rate I/Q tier 0 | 10.3 | 6.6 | 8.3 | 6.5 | 9.6 |
+| I/Q tier 0 | 9.3 | 5.4 | 7.6 | 5.4 | 9.2 |
+| I/Q tier 1 | 8.0 | 5.4 | 7.0 | 3.6 | 2.5 |
+| I/Q tier 2 | 4.9 | 4.4 | 5.5 | 3.2 | 2.0 |
+| I/Q tier 3 | 2.5 | 1.8 | 4.8 | 1.1 | 0.1 |
 
 ### Operating characteristics
 
-| Tier | Input | Carrier offset | Sample clock error | Late entry at C/N 8 dB | Late entry at C/N 20 dB | CPU at C/N 6 dB | Worst-case CPU | RAM |
-|------|-------|----------------|--------------------|------|------|------|------|-----|
-| Audio tier 0 | FM audio, 9.6 kHz, core | -4.5 to 4 kHz | ±2,000 ppm | 59 ms | 62 ms | 0.34 ms | 0.41 ms | 1,696 B |
-| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | -4.5 to 4 kHz | ±2,000 ppm | 47 ms | 45 ms | 0.93 ms | 2.5 ms | 48 KiB |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | ±4.5 kHz | ±2,000 ppm | 47 ms | 45 ms | 8.6 ms | 13 ms | 589 KiB |
-| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | ±4.5 kHz | ±2,000 ppm | 46 ms | 45 ms | 168 ms | 320 ms | 1.3 MiB |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | ±2 kHz | ±2,000 ppm | 60 ms | 61 ms | 0.39 ms | 0.44 ms | 1,672 B |
-| I/Q tier 0 | I/Q, discriminator core | ±6 kHz | ±2,000 ppm | 53 ms | 61 ms | 1.3 ms | 1.5 ms | 19 KiB |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | ±6 kHz | ±2,000 ppm | 44 ms | 44 ms | 1.7 ms | 3.5 ms | 106 KiB |
-| I/Q tier 2 | I/Q, coherent detection | ±6 kHz | ±2,000 ppm | 44 ms | 44 ms | 8.4 ms | 11 ms | 603 KiB |
-| I/Q tier 3 | I/Q, exact phase trellis | ±6 kHz | ±2,000 ppm | 47 ms | 44 ms | 284 ms | 386 ms | 2.3 MiB |
+| Tier | Input | Rate (kHz) | Carrier offset (kHz) | Clock error (ppm) | Late entry, C/N 8 dB (ms) | Late entry, C/N 20 dB (ms) | CPU, C/N 6 dB (ms/s) | CPU, worst (ms/s) | RAM (KiB) |
+|:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 59 | 62 | 0.34 | 0.41 | 1.7 |
+| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 47 | 45 | 0.93 | 2.5 | 48 |
+| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 8.6 | 13 | 589 |
+| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 46 | 45 | 168 | 320 | 1,292 |
+| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 60 | 61 | 0.39 | 0.44 | 1.6 |
+| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 61 | 1.3 | 1.5 | 19 |
+| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 1.7 | 3.5 | 106 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 8.4 | 11 | 603 |
+| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 284 | 386 | 2,336 |
 
-- Carrier offset is the range around zero, on the grid of [its graph](#carrier-offset), in which the tier recovers at least 90% of the voice frames at C/N 15.0 dB, counted over the frames of 8 noise draws. Sample clock error is the same on the grid of [its graph](#sample-clock-error), at C/N 15.0 dB. "At least" marks a range that reaches the ends of the grid.
-- Late entry is the median time from the first sample to the end of the first burst that the tier recovers exactly, when the input starts at a random point of a call. A count gives the runs that recovered a burst within 1500 ms, when some did not.
-- CPU is per second of signal, measured on an AMD Ryzen 9 7950X 16-Core Processor. Worst-case CPU is the highest over C/N 0 to 40 dB. RAM is the state of the receiver. No tier allocates after it starts.
+- Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
+- Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
+- CPU per second of signal on an AMD Ryzen 9 7950X 16-Core Processor, worst over C/N 0 to 40 dB. RAM is the state of the receiver. No tier allocates after it starts.
 
 ### Tier 0 on a Cortex-M4F
 
-| Tier | Rate | CPU | RAM with stack | Flash |
-|------|------|-----|----------------|-------|
-| Audio tier 0 | 9.6 kHz | 5.0 MHz | 2,296 B | 39.4 KB |
-| Audio tier 0, `PreEmphasis` | 9.6 kHz | 5.3 MHz | 2,352 B | 39.6 KB |
-| Low-rate I/Q tier 0 | 9.6 kHz | 5.3 MHz | 2,304 B | 39.9 KB |
+| Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
+|:---|---:|---:|---:|---:|
+| Audio tier 0 | 9.6 | 5.0 | 2,296 | 39.4 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 5.3 | 2,352 | 39.6 |
+| Low-rate I/Q tier 0 | 9.6 | 5.3 | 2,304 | 39.9 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
@@ -109,30 +99,28 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 Probes of the constructors: `AudioRxConfig.Bits` from 8 to 16 is accepted, and `RxConfig.OffsetHz` up to 24 kHz in size at a `Rate` of 48 kHz. A field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: `AudioRxConfig.Bits`, `AudioRxConfig.OnBursts`, `AudioRxConfig.OnShortLC`, `AudioRxConfig.PreEmphasis`, `AudioRxConfig.Rate`, `AudioRxConfig.Tier`, `RxConfig.Format`, `RxConfig.LookbackSlots`, `RxConfig.OffsetHz`, `RxConfig.OnBursts`, `RxConfig.OnShortLC`, `RxConfig.Rate`, `RxConfig.Tier`.
 <!-- rfparams:rx-limits:end -->
 
-<!-- rxbench:limits:begin -->
-| Tier | I/Q rates accepted | Audio rates accepted |
-|------|------|------|
-| Tier 0 | 9,600, 12,000, 24,000 to 1,000,000,000 Hz | 8,000 to 48,000 Hz |
-| Tier 1 | 24,000 to 1,000,000,000 Hz | 8,000 to 1,000,000 Hz |
-| Tier 2 | 48,000 to 1,000,000,000 Hz | 8,000 to 1,000,000 Hz |
-| Tier 3 | 48,000 to 1,000,000,000 Hz | 8,000 to 1,000,000 Hz |
+### Sample rates
 
-A span gives the first and last rate of the probe that the constructor accepts in a row. It returns an error for the other rates of the probe. The probe tries 9,599, 9,600, 9,601, 11,999, 12,000, 12,001, 23,999, 24,000, 47,999, 48,000, 96,000, 250,000, 2,400,000, 20,000,000, 1,000,000,000, 1,000,000,001 Hz for I/Q and 7,999, 8,000, 9,600, 11,025, 12,000, 22,050, 24,000, 44,100, 48,000, 48,001, 96,000, 1,000,000, 1,000,001 Hz for audio.
+<!-- rxbench:limits:begin -->
+| Tier | I/Q rate (Hz) | Audio rate (Hz) |
+|:---|---:|---:|
+| Tier 0 | 9,600, 12,000, 24,000 to 1,000,000,000 | 8,000 to 48,000 |
+| Tier 1 | 24,000 to 1,000,000,000 | 8,000 to 1,000,000 |
+| Tier 2 | 48,000 to 1,000,000,000 | 8,000 to 1,000,000 |
+| Tier 3 | 48,000 to 1,000,000,000 | 8,000 to 1,000,000 |
+
+The constructors accept the rates of each span and refuse the other probe rates: 9,599, 9,600, 9,601, 11,999, 12,000, 12,001, 23,999, 24,000, 47,999, 48,000, 96,000, 250,000, 2,400,000, 20,000,000, 1,000,000,000, 1,000,000,001 Hz for I/Q and 7,999, 8,000, 9,600, 11,025, 12,000, 22,050, 24,000, 44,100, 48,000, 48,001, 96,000, 1,000,000, 1,000,001 Hz for audio.
 
 <!-- rxbench:limits:end -->
 
 ## Typical performance characteristics
 
-[Test conditions](#test-conditions) gives the method of each graph and table.
-
-<!-- rfparams:rx-eye:begin -->
-Each eye diagram shows the receiver input after the DMR matched filter (root raised cosine, roll-off 0.2), at 48 kHz, folded on `Burst.Seconds` of each burst that the tier recovered. The dotted lines are the four symbol levels.
-<!-- rfparams:rx-eye:end -->
-
 <!-- rxbench:begin -->
-### Error rate, FM discriminator audio
+### Error rate
 
-Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.
+Error rate against Eb/N0 of each tier, with the 4FSK floor dashed. Points with no errors are left out.
+
+#### FM discriminator audio
 
 ![Voice frame, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/ambe.svg)
 ![Data rate 1/2, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/rate12.svg)
@@ -141,9 +129,7 @@ Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with 
 ![Embedded LC, FM discriminator audio: frame error rate against Eb/N0, references and tiers](rx/audio/elc.svg)
 ![Data rate 1 payload bits, FM discriminator audio: bit error rate against Eb/N0, references and tiers](rx/audio/rate1_bit.svg)
 
-### Error rate, I/Q at 9.6 kHz
-
-Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.
+#### I/Q at 9.6 kHz
 
 ![Voice frame, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/ambe.svg)
 ![Data rate 1/2, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/rate12.svg)
@@ -152,9 +138,7 @@ Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with 
 ![Embedded LC, I/Q at 9.6 kHz: frame error rate against Eb/N0, references and tiers](rx/iqlow/elc.svg)
 ![Data rate 1 payload bits, I/Q at 9.6 kHz: bit error rate against Eb/N0, references and tiers](rx/iqlow/rate1_bit.svg)
 
-### Error rate, I/Q
-
-Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.
+#### I/Q
 
 ![Voice frame, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/ambe.svg)
 ![Data rate 1/2, I/Q: frame error rate against Eb/N0, references and tiers](rx/iq/rate12.svg)
@@ -195,96 +179,98 @@ On a clean signal, the symbol centers of every tier fall on `Burst.Seconds` plus
 ![I/Q at 9.6 kHz: late entry time against C/N](rx/iqlow/late_entry.svg)
 ![I/Q: late entry time against C/N](rx/iq/late_entry.svg)
 
+### CPU
+
+![CPU of each tier per second of signal](rx/cpu.svg)
+
 ### Sensitivity per payload type
 
-Eb/N0 in dB for 90% recovery. [The floors](#the-floors) defines each floor.
+Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) defines each floor.
 
 | Payload | 4FSK floor | DMR floor | Code cost | Code-aware |
-|---------|------------|-----------|-----------|------------|
-| Voice frame (AMBE+2, 49 bits) | -1.0 dB | at least 1.3 dB | 2.3 to 2.9 | 1.9 dB |
-| Voice frame, protected bits (C0 and C1) | -5.3 dB | at least -4.9 dB | 0.4 to 4.6 | -0.7 dB |
-| Data block, rate 1/2 | -3.0 dB | - | at most 3.5 | 0.5 dB |
-| Data block, rate 3/4 | 0.3 dB | at least 1.3 dB | 0.9 to 4.3 | 4.6 dB |
-| Data block, rate 1 | 5.3 dB | 6.5 dB | 1.2 | 6.6 dB |
-| CSBK | -4.1 dB | - | at most 4.5 | 0.3 dB |
-| Voice LC header and terminator | -4.3 dB | - | at most 5.0 | 0.7 dB |
-| Data header | -3.9 dB | - | at most 4.4 | 0.5 dB |
-| Embedded LC | < -6.9 dB | - | - | -2.0 dB |
-| EMB | < -6.9 dB | < -6.9 dB | - | -3.4 dB |
-| Slot type | < -6.9 dB | < -6.9 dB | - | -2.5 dB |
-| SYNC detection | < -6.9 dB | < -6.9 dB | - | < -6.9 dB |
+|:---|---:|---:|---:|---:|
+| Voice frame (AMBE+2, 49 bits) | -1.0 | at least 1.3 | 2.3 to 2.9 | 1.9 |
+| Voice frame, protected bits (C0 and C1) | -5.3 | at least -4.9 | 0.4 to 4.6 | -0.7 |
+| Data block, rate 1/2 | -3.0 | - | at most 3.5 | 0.5 |
+| Data block, rate 3/4 | 0.3 | at least 1.3 | 0.9 to 4.3 | 4.6 |
+| Data block, rate 1 | 5.3 | 6.5 | 1.2 | 6.6 |
+| CSBK | -4.1 | - | at most 4.5 | 0.3 |
+| Voice LC header and terminator | -4.3 | - | at most 5.0 | 0.7 |
+| Data header | -3.9 | - | at most 4.4 | 0.5 |
+| Embedded LC | < -6.9 | - | - | -2.0 |
+| EMB | < -6.9 | < -6.9 | - | -3.4 |
+| Slot type | < -6.9 | < -6.9 | - | -2.5 |
+| SYNC detection | < -6.9 | < -6.9 | - | < -6.9 |
 
 | Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
-|---------|------|------|------|------|------|------|------|------|------|
-| Voice frame (AMBE+2, 49 bits) | 9.6 dB | 8.2 dB | 4.9 dB | 4.4 dB | 10.3 dB | 9.3 dB | 8.0 dB | 4.9 dB | 2.5 dB |
-| Voice frame, protected bits (C0 and C1) | 5.9 dB | 5.2 dB | 3.9 dB | 3.2 dB | 5.4 dB | 4.6 dB | 3.7 dB | 3.1 dB | 1.6 dB |
-| Data block, rate 1/2 | 6.5 dB | 6.4 dB | 4.4 dB | 3.5 dB | 6.6 dB | 5.4 dB | 5.4 dB | 4.4 dB | 1.8 dB |
-| Data block, rate 3/4 | 8.3 dB | 7.9 dB | 6.2 dB | 5.7 dB | 8.3 dB | 7.6 dB | 7.0 dB | 5.5 dB | 4.8 dB |
-| Data block, rate 1 | 11.3 dB | 11.3 dB | 8.3 dB | 8.0 dB | 12.4 dB | 11.1 dB | 11.3 dB | 7.8 dB | 7.6 dB |
-| CSBK | 6.4 dB | 5.4 dB | 3.8 dB | 2.7 dB | 6.5 dB | 5.4 dB | 3.6 dB | 3.2 dB | 1.1 dB |
-| Voice LC header and terminator | 6.4 dB | 5.5 dB | 4.3 dB | 3.3 dB | 6.5 dB | 5.7 dB | 4.1 dB | 3.4 dB | 1.1 dB |
-| Data header | 6.4 dB | 5.1 dB | 3.9 dB | 2.8 dB | 6.5 dB | 5.5 dB | 3.8 dB | 3.3 dB | 1.1 dB |
-| Embedded LC | 9.5 dB | 4.3 dB | 2.4 dB | 2.4 dB | 9.6 dB | 9.2 dB | 2.5 dB | 2.0 dB | 0.1 dB |
-| EMB | 3.9 dB | 3.8 dB | 2.0 dB | 1.4 dB | 2.7 dB | 2.4 dB | 1.9 dB | 1.0 dB | -0.1 dB |
-| Slot type | 4.0 dB | 4.0 dB | 1.3 dB | 1.5 dB | 3.1 dB | 2.7 dB | 2.5 dB | 0.7 dB | -0.2 dB |
-| SYNC detection | 3.7 dB | 3.6 dB | 0.8 dB | 0.9 dB | 2.6 dB | 2.2 dB | 2.0 dB | -0.7 dB | -1.5 dB |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.4 | 10.3 | 9.3 | 8.0 | 4.9 | 2.5 |
+| Voice frame, protected bits (C0 and C1) | 5.9 | 5.2 | 3.9 | 3.2 | 5.4 | 4.6 | 3.7 | 3.1 | 1.6 |
+| Data block, rate 1/2 | 6.5 | 6.4 | 4.4 | 3.5 | 6.6 | 5.4 | 5.4 | 4.4 | 1.8 |
+| Data block, rate 3/4 | 8.3 | 7.9 | 6.2 | 5.7 | 8.3 | 7.6 | 7.0 | 5.5 | 4.8 |
+| Data block, rate 1 | 11.3 | 11.3 | 8.3 | 8.0 | 12.4 | 11.1 | 11.3 | 7.8 | 7.6 |
+| CSBK | 6.4 | 5.4 | 3.8 | 2.7 | 6.5 | 5.4 | 3.6 | 3.2 | 1.1 |
+| Voice LC header and terminator | 6.4 | 5.5 | 4.3 | 3.3 | 6.5 | 5.7 | 4.1 | 3.4 | 1.1 |
+| Data header | 6.4 | 5.1 | 3.9 | 2.8 | 6.5 | 5.5 | 3.8 | 3.3 | 1.1 |
+| Embedded LC | 9.5 | 4.3 | 2.4 | 2.4 | 9.6 | 9.2 | 2.5 | 2.0 | 0.1 |
+| EMB | 3.9 | 3.8 | 2.0 | 1.4 | 2.7 | 2.4 | 1.9 | 1.0 | -0.1 |
+| Slot type | 4.0 | 4.0 | 1.3 | 1.5 | 3.1 | 2.7 | 2.5 | 0.7 | -0.2 |
+| SYNC detection | 3.7 | 3.6 | 0.8 | 0.9 | 2.6 | 2.2 | 2.0 | -0.7 | -1.5 |
 
 ### Real recordings
 
 Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR.
 
-| Recording | C/N | Frames | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
-|-----------|-----|--------|------|------|------|------|
-| MS voice relayed, HackRF on the uplink | 9.3 dB | 2013 | 1474 | 1520 | 1828 | 1865 |
-| Late entry voice relayed, HackRF on the uplink | 11.1 dB | 1890 | 1463 | 1499 | 1622 | 1632 |
-| Voice with PI header relayed, HackRF on the uplink | 17.3 dB | 1818 | 1818 | 1818 | 1818 | 1818 |
-| Mixed voice and data, network to air, run 1 | 9.7 dB | 144 | 114 | 119 | 122 | 126 |
-| Mixed voice and data, network to air, run 2 | 10.6 dB | 144 | 117 | 121 | 125 | 126 |
-| Voice, network to air | 10.0 dB | 90 | 88 | 90 | 90 | 90 |
-| Voice, network to air | 11.6 dB | 90 | 82 | 82 | 90 | 90 |
-| Gain sweep, RTL gain 0 dB | 9.9 dB | 51 | 41 | 47 | 50 | 50 |
-| Gain sweep, RTL gain 9.7 dB | 7.3 dB | 51 | 33 | 44 | 48 | 48 |
-| Gain sweep, RTL gain 19.7 dB | 10.4 dB | 51 | 50 | 51 | 51 | 51 |
-| Gain sweep, RTL gain 29.7 dB | 11.2 dB | 51 | 44 | 50 | 50 | 50 |
+| Recording | C/N (dB) | Frames | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
+|:---|---:|---:|---:|---:|---:|---:|
+| MS voice relayed, HackRF on the uplink | 9.3 | 2013 | 1474 | 1520 | 1828 | 1865 |
+| Late entry voice relayed, HackRF on the uplink | 11.1 | 1890 | 1463 | 1499 | 1622 | 1632 |
+| Voice with PI header relayed, HackRF on the uplink | 17.3 | 1818 | 1818 | 1818 | 1818 | 1818 |
+| Mixed voice and data, network to air, run 1 | 9.7 | 144 | 114 | 119 | 122 | 126 |
+| Mixed voice and data, network to air, run 2 | 10.6 | 144 | 117 | 121 | 125 | 126 |
+| Voice, network to air | 10.0 | 90 | 88 | 90 | 90 | 90 |
+| Voice, network to air | 11.6 | 90 | 82 | 82 | 90 | 90 |
+| Gain sweep, RTL gain 0 dB | 9.9 | 51 | 41 | 47 | 50 | 50 |
+| Gain sweep, RTL gain 9.7 dB | 7.3 | 51 | 33 | 44 | 48 | 48 |
+| Gain sweep, RTL gain 19.7 dB | 10.4 | 51 | 50 | 51 | 51 | 51 |
+| Gain sweep, RTL gain 29.7 dB | 11.2 | 51 | 44 | 50 | 50 | 50 |
 
 <!-- rxbench:end -->
 
-## Application information
+### Short LC
 
-### Choosing a tier
+Eb/N0 in dB for 90% of the Short LCs right, and the Short LCs that pass the CRC-8 with wrong bits.
 
-[Key specifications](#key-specifications) gives the sensitivity, CPU and RAM of each tier, and [Features](#features) what each tier does. Pick the lowest tier whose sensitivity meets the link budget, on the hardware that runs it.
+<!-- shortlc:begin -->
+| Tier | Input | Hard decode (dB) | `OnShortLC` (dB) | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode (1/h) | On noise, `OnShortLC` (1/h) |
+|:---|:---|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | FM audio | 7.6 | 7.6 | 0 of 3,168 | 0 of 3,168 | 0.0 | 0.0 |
+| Audio tier 1 | FM audio | 7.6 | 6.5 | 0 of 2,801 | 0 of 3,619 | 0.0 | 0.0 |
+| Audio tier 2 | FM audio | 7.5 | 6.3 | 0 of 2,552 | 1 of 3,382 | 0.0 | 0.0 |
+| Audio tier 3 | FM audio | 5.5 | 4.5 | 0 of 2,872 | 2 of 3,617 | 0.0 | 0.0 |
+| Low-rate I/Q tier 0 | I/Q | 7.9 | 7.9 | 0 of 5,867 | 0 of 5,867 | 0.0 | 0.0 |
+| I/Q tier 0 | I/Q | 7.0 | 7.0 | 0 of 5,637 | 0 of 5,637 | 0.0 | 0.0 |
+| I/Q tier 1 | I/Q | 7.0 | 5.2 | 0 of 3,415 | 0 of 4,660 | 0.0 | 0.0 |
+| I/Q tier 2 | I/Q | 7.1 | 5.3 | 0 of 3,096 | 0 of 4,297 | 0.0 | 0.0 |
+| I/Q tier 3 | I/Q | 4.2 | 2.7 | 0 of 3,676 | 2 of 4,515 | 0.0 | 0.0 |
 
-### Wiring to a radio
+- Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
+- Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
 
-- Audio tiers take FM discriminator audio, as from a radio, of either polarity. The discriminator output of a radio, or its flat data port, has the low frequencies of the signal and no de-emphasis. It is the best input for `AudioReceiver`.
-- The speaker and accessory outputs of a radio de-emphasize the audio. [De-emphasized audio](#de-emphasized-audio) gives the setup for them.
-- I/Q tiers take the samples of a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel. When the oscillator of a software radio is off, set `RxConfig.OffsetHz` to its known offset.
+The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`) with noise added to its CU8 codes. Short LCs, hard decode / `OnShortLC` (of them soft):
 
-### Levels and calibration
+| Noise sigma | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
+|:---|---:|---:|---:|---:|
+| 0 | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) |
+| 16 | 17 / 17 (0) | 18 / 38 (20) | 20 / 42 (22) | 44 / 46 (2) |
+| 20 | 0 / 0 (0) | 0 / 9 (9) | 0 / 2 (2) | 25 / 42 (17) |
+| 24 | 0 / 0 (0) | 1 / 1 (0) | 0 / 0 (0) | 7 / 17 (10) |
 
-Set the gain of the sound card so that the audio of the strongest signal does not clip, and keep the I/Q samples of CU8 and CS8 from clipping. These methods give what the receiver measured:
-
-<!-- rfparams:rx-levels:begin -->
-- `AudioReceiver.Level`: Level returns the outer level of the last locked stream: the code of a run of symbol +3 (1944 Hz) less the DC code.
-- `AudioReceiver.Offset`: Offset returns the DC code of the last locked stream: the code of the carrier, from its offset and the offset of the converter.
-- `Receiver.OffsetHz`: OffsetHz returns the carrier offset of the last stream that ended, in Hz. Tier2 and Tier3 return the carrier of their coherent fit, which also follows the stream in progress.
-- `Receiver.DeviationHz`: DeviationHz returns the outer deviation of the last locked stream, in Hz. Every tier reads it from the sync symbol levels and divides out the response of its channel filter and discriminator at the carrier offset from the tuned frequency. For a clean 1944 Hz signal the reading is 1 to 1.5% low and within 3% at every offset. The lookup uses the carrier offset of the samples of each sync fit, so a retune after a fit does not change it. A sync fit made before the timing settles can move the reading by a few percent more. At a Rate of 9600 the reading is up to 3% low, by the sub-sample phase of the bursts, and it does not include the channel filter of the radio chip.
-<!-- rfparams:rx-levels:end -->
-
-### Low-rate I/Q carrier range
-
-The carrier of low-rate I/Q tier 0 must be less than 2.5 kHz from the center: the 9.6 kHz I/Q holds 4.8 kHz on each side, and at 2.5 kHz off 9.8 dB of the signal power, at 4 kHz 3.7 dB, falls outside the channel filter of the chip. On carriers 2.4 to 5 kHz off, tier 0 loses 28 cells of the comparison with the external receivers. 6 of them no receiver can win: a genie receiver given every parameter, which decodes C0 and C1 jointly gets at most 0.85 to 0.894 of the AMBE frames exact (upper 95% bound, against the bar of 0.90) at 4.8, +5 and -5 kHz, MS and BS. The other 22 need a coherent receiver. One that was measured needed about 5 KB of RAM, 42 KB of flash and 27 to 114 MHz on the Cortex-M4F and still won only 5 of the 12 cells at 2.4 and ±3 kHz, so tier 0 does not take that cost and these 22 cells are accepted as lost: 16 at carriers 2.4 to 4.8 kHz off, and 6 that an exact genie wins with 0.996 to 1.000 of the frames: the frames with C0 and C1 right at +5 and -5 kHz, and the exact frames at 4 kHz, MS and BS.
-
-### Accepted Tier 0 costs
-
-Tier 0 needs more than 2 KB of RAM with its stack on a Cortex-M4F; [Tier 0 on a Cortex-M4F](#tier-0-on-a-cortex-m4f) gives the measured cost. These parts of Tier 0 were accepted at their cost when they were added: the detection of standalone RC bursts, the MS bursts of both TDMA slots with their own timing and levels, the burst-edge gain hold, the CACH replay, the clock rate tracking, the I/Q gain cap, the lookback replay checks, and `PreEmphasis` on audio tier 0.
+<!-- shortlc:end -->
 
 ### De-emphasized audio
 
-The speaker and accessory outputs of an FM radio de-emphasize the discriminator audio from 300 Hz to 3 kHz. That tilts the 4FSK levels by up to 20 dB, and no audio tier decodes it. `AudioRxConfig.PreEmphasis` takes a `RxPreEmphasis`, the receive twin of the transmit `PreEmphasis`: a first-order filter that inverts the de-emphasis before the receiver detects the bursts. Set one up with `Init` in memory of the caller, or with `NewRxPreEmphasis`, one for each receiver. Nil is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it, and the receiver is then the same, bit for bit, as without the field. Every tier and rate takes it. A program that sets up no `RxPreEmphasis` links none of its filter.
-
-The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio that de-emphasizes it from 300 Hz to 3 kHz, and `pre_emphasis: true` sets up a `RxPreEmphasis`. Frames recovered exactly, 4 streams per point, C/N in 12.5 kHz:
+Frames recovered exactly, 4 streams per point, C/N in 12.5 kHz. The radio de-emphasizes its audio from 300 Hz to 3 kHz.
 
 | Tier | Rate | C/N | Voice, flat | Voice, de-emphasized | Voice, de-emphasized with `PreEmphasis` | Rate 3/4, flat | Rate 3/4, de-emphasized | Rate 3/4, de-emphasized with `PreEmphasis` |
 |------|------|-----|------|------|------|------|------|------|
@@ -313,176 +299,94 @@ The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio
 | 3 | 48 kHz | 8 dB | 431/432 | 0/432 | 431/432 | 24/24 | 0/24 | 24/24 |
 | 3 | 48 kHz | 10 dB | 432/432 | 0/432 | 432/432 | 24/24 | 0/24 | 24/24 |
 
-- The filter runs at 9.6, 12 or 24 kHz, the rate of the receiver after its half-band filters. With the de-emphasis it is flat within 0.1 dB to 2.4 kHz at 24 kHz, 0.4 dB at 12 kHz and 0.7 dB at 9.6 kHz. A first-order filter cannot follow the 3 kHz corner so close to the Nyquist rate of 9.6 kHz, so at 9.6 kHz the tiers get most of the loss back but not all of it.
-- [Tier 0 on a Cortex-M4F](#tier-0-on-a-cortex-m4f) gives the cost of audio tier 0 with `PreEmphasis`. The option is off by default.
+## Application information
+
+### Choosing a tier
+
+Pick the lowest tier whose sensitivity in [Key specifications](#key-specifications) meets the link budget, on the hardware that runs it.
+
+### Wiring to a radio
+
+- Audio tiers take FM discriminator audio of either polarity. The discriminator output or flat data port of a radio is the best input.
+- The speaker and accessory outputs de-emphasize the audio: set `AudioRxConfig.PreEmphasis` to a `RxPreEmphasis`, one for each receiver, from `Init` or `NewRxPreEmphasis`.
+- I/Q tiers take the samples of a software radio. Low-rate I/Q tier 0 takes I/Q at 9.6 or 12 kHz that a radio chip filtered to the channel, with the carrier less than 2.5 kHz from the center.
+- When the oscillator of a software radio is off, set `RxConfig.OffsetHz` to its known offset.
+
+### Levels and calibration
+
+Keep the audio of the strongest signal and the CU8 and CS8 samples from clipping. These methods give what the receiver measured:
+
+<!-- rfparams:rx-levels:begin -->
+- `AudioReceiver.Level`: Level returns the outer level of the last locked stream: the code of a run of symbol +3 (1944 Hz) less the DC code.
+- `AudioReceiver.Offset`: Offset returns the DC code of the last locked stream: the code of the carrier, from its offset and the offset of the converter.
+- `Receiver.OffsetHz`: OffsetHz returns the carrier offset of the last stream that ended, in Hz. Tier2 and Tier3 return the carrier of their coherent fit, which also follows the stream in progress.
+- `Receiver.DeviationHz`: DeviationHz returns the outer deviation of the last locked stream, in Hz. Every tier reads it from the sync symbol levels and divides out the response of its channel filter and discriminator at the carrier offset from the tuned frequency. For a clean 1944 Hz signal the reading is 1 to 1.5% low and within 3% at every offset. The lookup uses the carrier offset of the samples of each sync fit, so a retune after a fit does not change it. A sync fit made before the timing settles can move the reading by a few percent more. At a Rate of 9600 the reading is up to 3% low, by the sub-sample phase of the bursts, and it does not include the channel filter of the radio chip.
+<!-- rfparams:rx-levels:end -->
 
 ### Short LC
 
-The CACH of BS-sourced bursts carries the Short LC in four fragments. `OnShortLC` of `RxConfig` and `AudioRxConfig` receives each Short LC that passes its CRC-8, with the stream, slot and time of the burst of the last fragment. The receiver decodes the fragments of the `Decoded` CACH as `layer2.ShortLCAssembler` does. From tier 1 up, when that decode fails, it decodes the Short LC again from the soft values of the four fragments, and sets `ShortLC.Soft`. It accepts a soft decode only when the decode flips few bits and its soft cost is low. I/Q tier 3 takes a lower soft cost limit than the other tiers, because at the limit of the other tiers its soft decodes pass the CRC-8 with wrong bits more often than its hard decodes do. Tier 0 gives the hard decode only, and `Init` and TinyGo builds take no `OnShortLC`. The bursts, `FixedCACH` and `layer2.ShortLCAssembler` are the same with it and without it.
-
-<!-- shortlc:begin -->
-| Tier | Input | Hard decode | `OnShortLC` | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode | On noise, `OnShortLC` |
-|------|-------|-------------|-------------|--------------------|--------------------|-----------------------|-----------------------|
-| Audio tier 0 | FM audio, 9.6 kHz, core | 7.6 dB | 7.6 dB | 0 of 3,168 | 0 of 3,168 | 0.0 per hour | 0.0 per hour |
-| Audio tier 1 | FM audio, 9.6 kHz, soft decoding, noise prediction | 7.6 dB | 6.5 dB | 0 of 2,801 | 0 of 3,619 | 0.0 per hour | 0.0 per hour |
-| Audio tier 2 | FM audio, 9.6 kHz, coherent detection | 7.5 dB | 6.3 dB | 0 of 2,552 | 1 of 3,382 | 0.0 per hour | 0.0 per hour |
-| Audio tier 3 | FM audio, 9.6 kHz, exact phase trellis, data passes | 5.5 dB | 4.5 dB | 0 of 2,872 | 2 of 3,617 | 0.0 per hour | 0.0 per hour |
-| Low-rate I/Q tier 0 | I/Q, 9.6 kHz, discriminator core | 7.9 dB | 7.9 dB | 0 of 5,867 | 0 of 5,867 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 0 | I/Q, discriminator core | 7.0 dB | 7.0 dB | 0 of 5,637 | 0 of 5,637 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 1 | I/Q, soft decoding, noise prediction | 7.0 dB | 5.2 dB | 0 of 3,415 | 0 of 4,660 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 2 | I/Q, coherent detection | 7.1 dB | 5.3 dB | 0 of 3,096 | 0 of 4,297 | 0.0 per hour | 0.0 per hour |
-| I/Q tier 3 | I/Q, exact phase trellis | 4.2 dB | 2.7 dB | 0 of 3,676 | 2 of 4,515 | 0.0 per hour | 0.0 per hour |
-
-- Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
-- Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
-
-The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`) with noise added to its CU8 codes. Short LCs, hard decode / `OnShortLC` (of them soft):
-
-| Noise sigma | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
-|-------------|------|------|------|------|
-| 0 | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) |
-| 16 | 17 / 17 (0) | 18 / 38 (20) | 20 / 42 (22) | 44 / 46 (2) |
-| 20 | 0 / 0 (0) | 0 / 9 (9) | 0 / 2 (2) | 25 / 42 (17) |
-| 24 | 0 / 0 (0) | 1 / 1 (0) | 0 / 0 (0) | 7 / 17 (10) |
-
-<!-- shortlc:end -->
-
-`TestShortLCBench` in `v2/rf` writes `v2/rf/testdata/rxbench_shortlc.json` with `DMRRF_SLCBENCH` set to the path of the capture, and `go run -C cmd/rxbench . -update-readme -no-sweep` writes the tables.
-
-### A carrier off the tuned frequency
-
-I/Q tier 0 runs at 12 kHz. A carrier more than 2.5 kHz off is outside its AFC range and partly outside its channel filter, so the receiver must retune before it can lock. When the input power rises, the spectrum hunt estimates the carrier from the next three FFT frames, about 8 ms, and retunes. Tier 0 keeps no samples to decode again, so the symbols before the retune are lost, and at 4 kHz the first burst comes out with its first symbols wrong.
-
-The AFC of I/Q tiers 0 to 2 takes the angle of the lag-1 product of the channel filter output. This is not an unbiased frequency estimate: for a carrier off the oscillator, the filter passes less of the far side of the FM spectrum, so the estimate reads closer to the oscillator. With no noise, before the lock, it reads a carrier 1400 Hz off as about 740 Hz at Tier 0, 1040 Hz at Tier 1 and 830 Hz at Tier 2. Noise in the filter moves it a further 80 to 100 Hz toward the oscillator at 6 dB C/N. The spectrum hunt corrects this: before the lock it also retunes to an estimate from 12 or more FFT frames, about 32 ms, that is 300 Hz or more from the oscillator. That estimate weights each bin by its power over the noise floor, so the filter shape does not bias it. Its spread comes from the symbols of the burst: about 130 Hz over 32 ms and 260 Hz over 8 ms. After the lock, the AFC tunes to the frequency offset of the discriminator when the lag-1 estimate agrees with it within 300 Hz or within half the offset, since the lag-1 estimate reads short of the offset. Tiers 1 and 2 do not use the fast estimate after a power rise, so after a noise lead they can lock with the oscillator at the old frequency, and the locked AFC then follows a carrier 1.4 kHz off within 200 ms.
-
-An I/Q DC offset, as of an RTL-SDR, puts a spur at 0 Hz. The DC block of the front end removes it after about 0.1 s, and until then it pulled the spectrum estimate toward 0 Hz. The hunt takes the three bins around 0 Hz as at most the interpolation of their neighbors, so a spur, which only adds power there, does not move the estimate.
-
-A carrier exactly on the tuned frequency with no modulation, as a CW lead, and a DC offset are the same signal: both are a constant complex value c added to the noise, x[n] = c + w[n]. An estimator has only x as its input, so while the CW alone is present from the first sample, no receiver can separate the part of c that is offset from the part that is carrier. The DC block takes all of it as offset. When the modulation starts, the old mean stays in the DC estimate as a tone at the carrier until the estimate follows. On the matrix row with a 500 ms CW lead at 0 Hz, the leftover was 107 of 126 LSB after 20 ms, 47 after 50 ms and 23 at the lock, 120 ms after the CW ended. It cost the first burst and read the deviation 4 to 5% low. The DC block now starts its estimate again when a mean that held more than half of the power turns into a constant envelope whose phase moves away from it: that is a carrier that started its modulation, while a DC offset under a signal leaves the envelope varying. On that row the leftover falls to 4 LSB within 10 ms, and each tier finds the first burst, with 1 bit wrong.
-
-On the XPR 8400 capture (`v2/cmd/dmrrf/testdata/xpr8400_gain_sweep.cu8`), the carrier is about +1.4 kHz: 1364 Hz is the power centroid and 1440 Hz the mirror center of its spectrum. The oscillator of each tier at the lock:
-
-| Tier | Before | Now |
-|------|--------|-----|
-| 0 | 422 Hz, still 422 Hz 200 ms later | 1373 Hz |
-| 1 | 658 Hz, 1340 Hz 200 ms later | 1373 Hz |
-| 2 | 512 Hz, 1318 Hz 200 ms later | 1373 Hz |
-| 3 | 1187 Hz | 1373 Hz |
-
-- Over 64 start points Tier 0 now decodes 1608 of 3072 frames exact, and 1655 before. With the oscillator held fixed, it decodes 1561 at 422 Hz, 1602 at 1373 Hz and 1594 to 1637 from 800 to 1800 Hz, so Tier 0 has no offset bias. The 1655 came from the path of the oscillator before this change, 0 Hz for 60 ms and then 422 Hz, which beats every fixed frequency on this 1 s capture. On synthetic I/Q, Tier 0 with the oscillator held fixed decodes the most frames at the carrier.
-- On 300 synthetic streams with a carrier 1.4 kHz off and a DC spur, each decoded by the receiver before and after the change with the same noise, Tier 0 decodes 8016 of 10800 frames exact, before 7395, at 7 dB C/N in 12.5 kHz. At 10 dB it decodes 10619, before 10344. The 64 start points of the capture share one second of samples, so they are not independent; the 300 streams are.
-- `TestIQLockOffsetXPR8400` and `TestIQLockOffsetDCSpur` in `v2/rf` check the oscillator of each tier at and after the lock.
-
-First burst after a noise lead, I/Q tier 0 at 2.048 Msps, 30 starts per offset (3 sequences, 5 noise leads, 2 noise seeds), C/N 47 dB in 12.5 kHz:
-
-| Offset | Found, before | Found | Raw bits exact, before | Raw bits exact |
-|--------|---------------|-------|------------------------|----------------|
-| +1.5 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
-| -1.5 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
-| +2.5 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
-| -2.5 kHz | 30/30 | 30/30 | 18/30 | 18/30 |
-| +3 kHz | 30/30 | 30/30 | 27/30 | 24/30 |
-| -3 kHz | 30/30 | 30/30 | 30/30 | 30/30 |
-| +4 kHz | 30/30 | 30/30 | 0/30 | 0/30 |
-| -4 kHz | 30/30 | 30/30 | 0/30 | 0/30 |
-
-- Before is the receiver without the small-offset retune and the DC spur handling of this section. The noise leads are 0.2, 0.2131, 0.2517, 0.3011 and 0.3377 s.
-- At +3 kHz the retune from 32 ms of spectrum moves the oscillator again during the first burst in 3 more of the 30 starts.
-- On 1,200 s of noise at 48 kHz, 600 s steady and 600 s with 2x steps of the noise power every 0.3 s, Tier 0 retuned 0 times, before and now.
-- `TestRxTier0FirstBurstAtOffset` in `v2/rf` checks that the first burst is found at 2.5, 3 and 4 kHz.
-
-### The deviation reading
-
-`Receiver.DeviationHz` gives the outer deviation of the last locked stream. The spec value is 1944 Hz. Every tier reads it from the sync symbol levels. Two parts of the receiver make those levels low:
-
-- The discriminator measures the phase step over one sample, so it averages the frequency over that sample. At 12 kHz this takes 2.6% off the levels, at 24 kHz 0.9%.
-- The channel filter cuts the edges of the FM spectrum. On the tuned frequency this takes 2.3 to 3.2% more off the levels, and more when the carrier is off the tuned frequency.
-
-The receiver divides the reading by the response of its own filter and discriminator at the carrier offset from the tuned frequency. `go generate` derives the response, `devGainIQ` and `devGainLow` in `v2/rf/tables_gen.go`: it sends a spec signal through the same filters and fits the sync levels at the best strobe time.
-
-Clean signal, 3 bursts, I/Q at 48 kHz and 2.048 Msps, reading as a fraction of 1944 Hz:
-
-| Input | Before | Now |
-|-------|--------|-----|
-| I/Q tiers 0 to 2, on the tuned frequency | 0.935 to 0.947 | 0.986 to 0.992 |
-| I/Q tiers 0 to 2, 700 Hz to 4 kHz off | 0.923 to 0.952 | 0.971 to 1.022 |
-| I/Q tier 3 | 1.000 | 1.000 |
-| Low-rate I/Q tier 0, 9.6 kHz | 0.937 | 0.975 to 0.994 |
-| Low-rate I/Q tier 0, 12 kHz | 0.969 | 0.991 to 0.994 |
-
-- About 1% stays below tier 3: the strobe and the level steps of the core.
-- At 9.6 kHz the reading follows the sub-sample phase of the bursts, the same sawtooth as the burst time.
-- The table holds the response for a carrier up to 2.75 kHz from the tuned frequency at tiers 0 and 1, and 3.5 kHz at tier 2. Further off, the filter distorts the signal and the receiver uses the response at that limit.
-- The levels keep most of the first sync fit of a stream. A first fit made before the timing settles can read high, 2.5% in a measured tier 0 case 1.5 kHz off. Each sync fit keeps the carrier offset of its samples, and the receiver looks the response up at the average of those offsets, so an AFC retune after a fit does not change its correction. `TestDeviationAfterRetune` checks this with a retune of 1.4 kHz.
-- Low-rate I/Q comes from the channel filter of a radio chip. The reading does not include that filter, so it reads low when the filter cuts the signal.
-- `TestIQDeviationReading` in `v2/rf` checks the reading within 3% at tiers 0 to 3 and 12 kHz, and within 4% at 9.6 kHz. The scenario matrix checks 0.95 to 1.03 at the I/Q tiers below tier 3 and 0.90 to 1.03 at 9.6 kHz.
+Set `OnShortLC` of the config to receive the Short LCs of the CACH. From tier 1 up, the receiver decodes a Short LC that fails again from its soft values and sets `ShortLC.Soft`. Tier 0, `Init` and TinyGo builds give the hard decode only.
 
 ## Comparison with other receivers
 
 <!-- extcmp:begin -->
-The tiers and other receivers decode the same noisy signals. Each cell is the Eb/N0 at which the receiver recovers 90% of the frames exactly. Lower is better.
-
-- Receivers: dsd-fme (commit 587181f4), MMDVM firmware (commit 046e1df1), MMDVM firmware, end of burst fixed (commit 046e1df1).
-- Each point decodes 192 noise seeds at each C/N from 0 to 20 dB in steps of 1 dB. Every receiver gets the same seeds.
-- The FM audio comes from the discriminator model of the sweep with a 95-tap IF filter: a Kaiser-windowed sinc with its -6 dB point at 6 kHz and at least 84 dB of attenuation from 7.5 kHz, as the IF of a 12.5 kHz radio. The audio tiers get it at 9.6 kHz, dsd-fme at 48 kHz and the MMDVM firmware at 24 kHz, with the DC offset of the carrier and no other.
-- dsd-fme decodes from `-fs -i - -o null -Z`. Its voice frames come from its AMBE+2 printout and its data blocks from one print line added after its FEC, which changes no decision. A frame counts when it equals the next frame of the truth in order. The MMDVM firmware is its DMO receiver (`DMRDMORX.cpp`) on the host with the 0.2 RRC filter of `IO.cpp`, and its burst bits go through the FEC of dmrgo. The tiers and the MMDVM firmware count a frame only at its own slot.
-- The MMDVM DMO receiver takes each burst one sample before its last symbol arrives. `DMRDMORX.cpp` sets the end at `m_endPtr = m_dataPtr + DMR_SLOT_TYPE_LENGTH_SAMPLES / 2U + DMR_INFO_LENGTH_SAMPLES / 2U - 1U` (lines 327 and 358), 269 samples after the last SYNC symbol, but the last symbol of the burst is 270 samples after it, and `samplesToBits` reads it from `m_endPtr + DMO_BUFFER_LENGTH_SAMPLES - DMR_FRAME_LENGTH_SAMPLES + DMR_RADIO_SYMBOL_LENGTH + 1U` (line 126) on, which reaches the sample of 60 ms before. So the last two bits of every burst are random, and its voice and rate 3/4 cells do not reach 90% at any C/N. The second MMDVM row drops the `- 1U` and the `+ 1U`. Only MS bursts carry the SYNC patterns that the MMDVM DMO receiver looks for.
-- On a Cortex-M4F the MMDVM DMO receiver with its RRC filter (`arm_fir_fast_q15` of CMSIS-DSP in blocks of 2 samples, as `IO.cpp` runs it), built with arm-none-eabi-gcc 13.2 -Os and run in QEMU mps2-an386, Cortex-M4 on the MS stream at C/N 6.0 and 40.0 dB, needs up to 19.3 MHz by the cycle model of the Tier 0 numbers, 6,256 B of RAM (5,820 B of receiver state, 140 B of filter state and 296 B of stack) and 10,798 B of flash.
+The tiers and other receivers decode the same noisy signals. Each cell is the Eb/N0 in dB at which the receiver recovers 90% of the frames exactly. Lower is better. [Other receivers](#other-receivers) gives the method.
 
 ### BS outbound, both slots, carrier 1400 Hz off
 
-| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Audio tier 0 | 9.6 dB | 6.0 dB | 6.6 dB | 8.2 dB | 11.6 dB | 6.5 dB | 6.7 dB | 6.6 dB | 9.6 dB | 4.4 dB | 4.8 dB | - |
-| Audio tier 1 | 8.3 dB | 5.3 dB | 6.6 dB | 8.0 dB | 11.6 dB | 5.4 dB | 5.8 dB | 5.4 dB | 5.8 dB | 4.1 dB | 4.5 dB | - |
-| Audio tier 2 | 5.0 dB | 4.0 dB | 4.4 dB | 6.2 dB | 8.5 dB | 3.9 dB | 4.1 dB | 4.0 dB | 3.8 dB | 2.3 dB | 2.2 dB | - |
-| Low-rate I/Q tier 0 | 10.3 dB | 5.5 dB | 6.7 dB | 8.2 dB | 12.7 dB | 6.6 dB | 6.6 dB | 6.9 dB | 9.7 dB | 4.0 dB | 4.4 dB | - |
-| I/Q tier 0 | 9.4 dB | 4.8 dB | 5.7 dB | 7.6 dB | 11.3 dB | 5.5 dB | 5.9 dB | 5.9 dB | 9.3 dB | 3.3 dB | 3.8 dB | - |
-| I/Q tier 1 | 8.0 dB | 3.9 dB | 5.5 dB | 7.1 dB | 11.4 dB | 3.9 dB | 4.1 dB | 4.0 dB | 4.1 dB | 3.0 dB | 3.2 dB | - |
-| I/Q tier 2 | 4.7 dB | 3.1 dB | 4.2 dB | 5.4 dB | 8.0 dB | 3.1 dB | 3.1 dB | 3.3 dB | 3.0 dB | < 1.1 dB | 1.3 dB | - |
-| dsd-fme | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | - | - | 30 ms |
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU, C/N 6 dB (ms/s) |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | 9.6 | 6.0 | 6.6 | 8.2 | 11.6 | 6.5 | 6.7 | 6.6 | 9.6 | 4.4 | 4.8 | - |
+| Audio tier 1 | 8.3 | 5.3 | 6.6 | 8.0 | 11.6 | 5.4 | 5.8 | 5.4 | 5.8 | 4.1 | 4.5 | - |
+| Audio tier 2 | 5.0 | 4.0 | 4.4 | 6.2 | 8.5 | 3.9 | 4.1 | 4.0 | 3.8 | 2.3 | 2.2 | - |
+| Low-rate I/Q tier 0 | 10.3 | 5.5 | 6.7 | 8.2 | 12.7 | 6.6 | 6.6 | 6.9 | 9.7 | 4.0 | 4.4 | - |
+| I/Q tier 0 | 9.4 | 4.8 | 5.7 | 7.6 | 11.3 | 5.5 | 5.9 | 5.9 | 9.3 | 3.3 | 3.8 | - |
+| I/Q tier 1 | 8.0 | 3.9 | 5.5 | 7.1 | 11.4 | 3.9 | 4.1 | 4.0 | 4.1 | 3.0 | 3.2 | - |
+| I/Q tier 2 | 4.7 | 3.1 | 4.2 | 5.4 | 8.0 | 3.1 | 3.1 | 3.3 | 3.0 | < 1.1 | 1.3 | - |
+| dsd-fme | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | - | - | 30 |
 
 ### MS bursts, one slot, carrier 1400 Hz off
 
-| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Audio tier 0 | 9.7 dB | 6.1 dB | 6.5 dB | 8.7 dB | 11.6 dB | 6.5 dB | 7.1 dB | 6.4 dB | 9.6 dB | 5.8 dB | 4.7 dB | - |
-| Audio tier 1 | 9.7 dB | 5.9 dB | 6.5 dB | 8.6 dB | 11.6 dB | 5.4 dB | 6.1 dB | 5.1 dB | 6.1 dB | 5.7 dB | 4.6 dB | - |
-| Audio tier 2 | 5.9 dB | 5.4 dB | 4.1 dB | 6.4 dB | 8.5 dB | 3.9 dB | 5.9 dB | 3.9 dB | 5.7 dB | 5.3 dB | 3.6 dB | - |
-| Low-rate I/Q tier 0 | 10.4 dB | 6.1 dB | 6.5 dB | 8.7 dB | 12.6 dB | 6.6 dB | 10.8 dB | 6.3 dB | 9.8 dB | 5.7 dB | 4.1 dB | - |
-| I/Q tier 0 | 9.6 dB | 5.5 dB | 5.5 dB | 8.0 dB | 11.3 dB | 5.7 dB | 8.4 dB | 5.4 dB | 9.7 dB | 5.0 dB | 3.5 dB | - |
-| I/Q tier 1 | 9.1 dB | 4.9 dB | 5.4 dB | 7.4 dB | 11.4 dB | 3.8 dB | 5.5 dB | 3.8 dB | 5.1 dB | 4.7 dB | 3.1 dB | - |
-| I/Q tier 2 | 4.9 dB | 4.2 dB | 2.9 dB | 5.5 dB | 7.8 dB | 2.3 dB | 5.2 dB | 2.4 dB | 4.7 dB | 4.0 dB | < 1.1 dB | - |
-| dsd-fme | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | > 21.1 dB | - | - | 28 ms |
-| MMDVM firmware | > 21.1 dB | 10.0 dB | 10.5 dB | > 21.1 dB | 11.4 dB | 10.3 dB | 10.4 dB | 10.3 dB | 10.1 dB | 10.0 dB | 10.3 dB | 1.5 ms |
-| MMDVM firmware, end of burst fixed | 9.9 dB | 9.0 dB | 10.0 dB | 10.1 dB | 11.4 dB | 9.8 dB | 9.9 dB | 9.7 dB | 9.5 dB | 9.0 dB | 9.8 dB | 1.5 ms |
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU, C/N 6 dB (ms/s) |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | 9.7 | 6.1 | 6.5 | 8.7 | 11.6 | 6.5 | 7.1 | 6.4 | 9.6 | 5.8 | 4.7 | - |
+| Audio tier 1 | 9.7 | 5.9 | 6.5 | 8.6 | 11.6 | 5.4 | 6.1 | 5.1 | 6.1 | 5.7 | 4.6 | - |
+| Audio tier 2 | 5.9 | 5.4 | 4.1 | 6.4 | 8.5 | 3.9 | 5.9 | 3.9 | 5.7 | 5.3 | 3.6 | - |
+| Low-rate I/Q tier 0 | 10.4 | 6.1 | 6.5 | 8.7 | 12.6 | 6.6 | 10.8 | 6.3 | 9.8 | 5.7 | 4.1 | - |
+| I/Q tier 0 | 9.6 | 5.5 | 5.5 | 8.0 | 11.3 | 5.7 | 8.4 | 5.4 | 9.7 | 5.0 | 3.5 | - |
+| I/Q tier 1 | 9.1 | 4.9 | 5.4 | 7.4 | 11.4 | 3.8 | 5.5 | 3.8 | 5.1 | 4.7 | 3.1 | - |
+| I/Q tier 2 | 4.9 | 4.2 | 2.9 | 5.5 | 7.8 | 2.3 | 5.2 | 2.4 | 4.7 | 4.0 | < 1.1 | - |
+| dsd-fme | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | > 21.1 | - | - | 28 |
+| MMDVM firmware | > 21.1 | 10.0 | 10.5 | > 21.1 | 11.4 | 10.3 | 10.4 | 10.3 | 10.1 | 10.0 | 10.3 | 1.5 |
+| MMDVM firmware, end of burst fixed | 9.9 | 9.0 | 10.0 | 10.1 | 11.4 | 9.8 | 9.9 | 9.7 | 9.5 | 9.0 | 9.8 | 1.5 |
 
 ### BS outbound, both slots, carrier 0 Hz off
 
-| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Audio tier 0 | 9.6 dB | 5.8 dB | 6.2 dB | 8.3 dB | 11.4 dB | 6.1 dB | 6.2 dB | 6.4 dB | 9.7 dB | 4.1 dB | 4.4 dB | - |
-| Audio tier 1 | 8.2 dB | 5.0 dB | 6.2 dB | 7.9 dB | 11.4 dB | 5.0 dB | 5.3 dB | 5.1 dB | 5.1 dB | 4.0 dB | 4.1 dB | - |
-| Audio tier 2 | 5.0 dB | 3.8 dB | 4.2 dB | 6.3 dB | 8.3 dB | 3.8 dB | 4.0 dB | 3.9 dB | 3.7 dB | 2.4 dB | 2.4 dB | - |
-| Low-rate I/Q tier 0 | 9.7 dB | 5.0 dB | 6.1 dB | 8.0 dB | 11.5 dB | 6.0 dB | 6.0 dB | 6.1 dB | 9.6 dB | 3.4 dB | 3.7 dB | - |
-| I/Q tier 0 | 9.3 dB | 4.8 dB | 5.6 dB | 7.9 dB | 11.4 dB | 5.4 dB | 5.6 dB | 5.7 dB | 9.3 dB | 3.1 dB | 3.3 dB | - |
-| I/Q tier 1 | 8.0 dB | 3.9 dB | 5.4 dB | 7.1 dB | 11.5 dB | 3.9 dB | 4.0 dB | 3.9 dB | 4.1 dB | 2.9 dB | 3.0 dB | - |
-| I/Q tier 2 | 4.7 dB | 3.1 dB | 4.2 dB | 5.5 dB | 7.9 dB | 3.1 dB | 3.1 dB | 3.3 dB | 3.0 dB | < 1.1 dB | 1.3 dB | - |
-| dsd-fme | 20.5 dB | 9.6 dB | 12.9 dB | 15.3 dB | > 21.1 dB | 11.3 dB | 11.7 dB | 15.6 dB | 19.0 dB | - | - | 37 ms |
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU, C/N 6 dB (ms/s) |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | 9.6 | 5.8 | 6.2 | 8.3 | 11.4 | 6.1 | 6.2 | 6.4 | 9.7 | 4.1 | 4.4 | - |
+| Audio tier 1 | 8.2 | 5.0 | 6.2 | 7.9 | 11.4 | 5.0 | 5.3 | 5.1 | 5.1 | 4.0 | 4.1 | - |
+| Audio tier 2 | 5.0 | 3.8 | 4.2 | 6.3 | 8.3 | 3.8 | 4.0 | 3.9 | 3.7 | 2.4 | 2.4 | - |
+| Low-rate I/Q tier 0 | 9.7 | 5.0 | 6.1 | 8.0 | 11.5 | 6.0 | 6.0 | 6.1 | 9.6 | 3.4 | 3.7 | - |
+| I/Q tier 0 | 9.3 | 4.8 | 5.6 | 7.9 | 11.4 | 5.4 | 5.6 | 5.7 | 9.3 | 3.1 | 3.3 | - |
+| I/Q tier 1 | 8.0 | 3.9 | 5.4 | 7.1 | 11.5 | 3.9 | 4.0 | 3.9 | 4.1 | 2.9 | 3.0 | - |
+| I/Q tier 2 | 4.7 | 3.1 | 4.2 | 5.5 | 7.9 | 3.1 | 3.1 | 3.3 | 3.0 | < 1.1 | 1.3 | - |
+| dsd-fme | 20.5 | 9.6 | 12.9 | 15.3 | > 21.1 | 11.3 | 11.7 | 15.6 | 19.0 | - | - | 37 |
 
 ### MS bursts, one slot, carrier 0 Hz off
 
-| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU at C/N 6 dB |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Audio tier 0 | 9.7 dB | 6.1 dB | 6.1 dB | 8.4 dB | 11.6 dB | 6.1 dB | 7.0 dB | 6.1 dB | 9.6 dB | 5.8 dB | 4.4 dB | - |
-| Audio tier 1 | 9.7 dB | 5.9 dB | 6.1 dB | 8.2 dB | 11.6 dB | 4.9 dB | 6.0 dB | 5.0 dB | 6.1 dB | 5.7 dB | 4.2 dB | - |
-| Audio tier 2 | 6.0 dB | 4.6 dB | 3.9 dB | 6.5 dB | 8.5 dB | 3.3 dB | 5.1 dB | 3.5 dB | 4.8 dB | 4.0 dB | 2.3 dB | - |
-| Low-rate I/Q tier 0 | 9.8 dB | 5.7 dB | 6.1 dB | 8.4 dB | 11.7 dB | 6.0 dB | 7.1 dB | 6.0 dB | 9.8 dB | 5.1 dB | 3.9 dB | - |
-| I/Q tier 0 | 9.5 dB | 5.2 dB | 5.5 dB | 7.9 dB | 11.1 dB | 5.4 dB | 6.2 dB | 5.5 dB | 9.3 dB | 4.8 dB | 3.3 dB | - |
-| I/Q tier 1 | 9.1 dB | 4.7 dB | 5.3 dB | 7.5 dB | 11.4 dB | 3.8 dB | 4.9 dB | 3.8 dB | 4.9 dB | 4.5 dB | 3.0 dB | - |
-| I/Q tier 2 | 4.1 dB | 3.0 dB | 2.9 dB | 5.4 dB | 7.9 dB | 2.3 dB | 3.4 dB | 2.4 dB | 3.1 dB | 2.5 dB | < 1.1 dB | - |
-| dsd-fme | 16.6 dB | 8.9 dB | 11.1 dB | 14.6 dB | 18.0 dB | 11.3 dB | > 21.1 dB | 11.3 dB | 14.8 dB | - | - | 35 ms |
-| MMDVM firmware | > 21.1 dB | 10.0 dB | 10.4 dB | > 21.1 dB | 11.4 dB | 10.4 dB | 10.2 dB | 10.2 dB | 10.1 dB | 10.0 dB | 10.3 dB | 1.5 ms |
-| MMDVM firmware, end of burst fixed | 10.0 dB | 9.1 dB | 10.0 dB | 10.1 dB | 11.4 dB | 10.0 dB | 9.8 dB | 9.8 dB | 9.7 dB | 9.1 dB | 9.9 dB | 1.5 ms |
+| Receiver | Voice | Voice C0 C1 | Rate 1/2 | Rate 3/4 | Rate 1 | CSBK | LC header | Data header | Embedded LC | EMB | Slot type | CPU, C/N 6 dB (ms/s) |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Audio tier 0 | 9.7 | 6.1 | 6.1 | 8.4 | 11.6 | 6.1 | 7.0 | 6.1 | 9.6 | 5.8 | 4.4 | - |
+| Audio tier 1 | 9.7 | 5.9 | 6.1 | 8.2 | 11.6 | 4.9 | 6.0 | 5.0 | 6.1 | 5.7 | 4.2 | - |
+| Audio tier 2 | 6.0 | 4.6 | 3.9 | 6.5 | 8.5 | 3.3 | 5.1 | 3.5 | 4.8 | 4.0 | 2.3 | - |
+| Low-rate I/Q tier 0 | 9.8 | 5.7 | 6.1 | 8.4 | 11.7 | 6.0 | 7.1 | 6.0 | 9.8 | 5.1 | 3.9 | - |
+| I/Q tier 0 | 9.5 | 5.2 | 5.5 | 7.9 | 11.1 | 5.4 | 6.2 | 5.5 | 9.3 | 4.8 | 3.3 | - |
+| I/Q tier 1 | 9.1 | 4.7 | 5.3 | 7.5 | 11.4 | 3.8 | 4.9 | 3.8 | 4.9 | 4.5 | 3.0 | - |
+| I/Q tier 2 | 4.1 | 3.0 | 2.9 | 5.4 | 7.9 | 2.3 | 3.4 | 2.4 | 3.1 | 2.5 | < 1.1 | - |
+| dsd-fme | 16.6 | 8.9 | 11.1 | 14.6 | 18.0 | 11.3 | > 21.1 | 11.3 | 14.8 | - | - | 35 |
+| MMDVM firmware | > 21.1 | 10.0 | 10.4 | > 21.1 | 11.4 | 10.4 | 10.2 | 10.2 | 10.1 | 10.0 | 10.3 | 1.5 |
+| MMDVM firmware, end of burst fixed | 10.0 | 9.1 | 10.0 | 10.1 | 11.4 | 10.0 | 9.8 | 9.8 | 9.7 | 9.1 | 9.9 | 1.5 |
 
 ### Cells won and lost
 
@@ -587,7 +491,7 @@ Frames recovered by the tier against the other receiver, and the mean difference
 
 <!-- extcmp:end -->
 
-## Test conditions
+## Measurement conditions
 
 ### The sweep
 
@@ -602,6 +506,10 @@ Frames recovered by the tier against the other receiver, and the mean difference
 - The data is in `v2/rf/testdata/rxbench.json`. `TestRxBench` in `v2/rf` writes it with `DMRRF_RXBENCH=full`. `DMRRF_RXBENCH=cpu` measures only the CPU again.
 
 ### The eye, offset, clock and late entry tests
+
+<!-- rfparams:rx-eye:begin -->
+Each eye diagram shows the receiver input after the DMR matched filter (root raised cosine, roll-off 0.2), at 48 kHz, folded on `Burst.Seconds` of each burst that the tier recovered. The dotted lines are the four symbol levels.
+<!-- rfparams:rx-eye:end -->
 
 - The eye diagrams use the sweep stream with no carrier offset at three C/N. The tier receives the noisy signal, and the test folds the output of the DMR matched filter on `Burst.Seconds` of each burst that the tier gives. The audio tiers fold the audio of the discriminator, and the I/Q tiers the discriminator of the I/Q, at 48 kHz.
 - The offset test moves the carrier of the stream over the span of its graph. The clock test resamples the noisy I/Q to a sample clock that is off by each error of its graph, and scores each burst at its drifted time. The audio tiers get the audio of the discriminator of that signal.
@@ -639,6 +547,26 @@ The real recordings are captures of a Motorola XPR 8400 repeater with an RTL-SDR
 - A gain sweep capture is a 1 s slice of one call. Its score is against the whole call, and its frame count is the span of the call that the tiers received, at least the 51 frames of 1 s.
 - C/N is in 12.5 kHz. The noise density comes from the carrier-off blocks of the capture, or from 40 to 60 kHz off the carrier when the capture has less than 0.2 s with no carrier.
 
-## Generating this page
+### Other receivers
+
+<!-- extcmp:methods:begin -->
+- Receivers: dsd-fme (commit 587181f4), MMDVM firmware (commit 046e1df1), MMDVM firmware, end of burst fixed (commit 046e1df1).
+- Each point decodes 192 noise seeds at each C/N from 0 to 20 dB in steps of 1 dB. Every receiver gets the same seeds.
+- The FM audio comes from the discriminator model of the sweep with a 95-tap IF filter: a Kaiser-windowed sinc with its -6 dB point at 6 kHz and at least 84 dB of attenuation from 7.5 kHz, as the IF of a 12.5 kHz radio. The audio tiers get it at 9.6 kHz, dsd-fme at 48 kHz and the MMDVM firmware at 24 kHz, with the DC offset of the carrier and no other.
+- dsd-fme decodes from `-fs -i - -o null -Z`. Its voice frames come from its AMBE+2 printout and its data blocks from one print line added after its FEC, which changes no decision. A frame counts when it equals the next frame of the truth in order. The MMDVM firmware is its DMO receiver (`DMRDMORX.cpp`) on the host with the 0.2 RRC filter of `IO.cpp`, and its burst bits go through the FEC of dmrgo. The tiers and the MMDVM firmware count a frame only at its own slot.
+- The MMDVM DMO receiver takes each burst one sample before its last symbol arrives. `DMRDMORX.cpp` sets the end at `m_endPtr = m_dataPtr + DMR_SLOT_TYPE_LENGTH_SAMPLES / 2U + DMR_INFO_LENGTH_SAMPLES / 2U - 1U` (lines 327 and 358), 269 samples after the last SYNC symbol, but the last symbol of the burst is 270 samples after it, and `samplesToBits` reads it from `m_endPtr + DMO_BUFFER_LENGTH_SAMPLES - DMR_FRAME_LENGTH_SAMPLES + DMR_RADIO_SYMBOL_LENGTH + 1U` (line 126) on, which reaches the sample of 60 ms before. So the last two bits of every burst are random, and its voice and rate 3/4 cells do not reach 90% at any C/N. The second MMDVM row drops the `- 1U` and the `+ 1U`. Only MS bursts carry the SYNC patterns that the MMDVM DMO receiver looks for.
+- On a Cortex-M4F the MMDVM DMO receiver with its RRC filter (`arm_fir_fast_q15` of CMSIS-DSP in blocks of 2 samples, as `IO.cpp` runs it), built with arm-none-eabi-gcc 13.2 -Os and run in QEMU mps2-an386, Cortex-M4 on the MS stream at C/N 6.0 and 40.0 dB, needs up to 19.3 MHz by the cycle model of the Tier 0 numbers, 6,256 B of RAM (5,820 B of receiver state, 140 B of filter state and 296 B of stack) and 10,798 B of flash.
+
+<!-- extcmp:methods:end -->
+
+### De-emphasized audio and Short LC
+
+- The sweep job field `radio: "deemph"` gives the audio tiers the audio of a radio that de-emphasizes it from 300 Hz to 3 kHz, and `pre_emphasis: true` sets up a `RxPreEmphasis`.
+- The filter runs at 9.6, 12 or 24 kHz, the rate of the receiver after its half-band filters. With the de-emphasis it is flat within 0.1 dB to 2.4 kHz at 24 kHz, 0.4 dB at 12 kHz and 0.7 dB at 9.6 kHz. A first-order filter cannot follow the 3 kHz corner so close to the Nyquist rate of 9.6 kHz, so at 9.6 kHz the tiers get most of the loss back but not all of it.
+- `TestShortLCBench` in `v2/rf` writes `v2/rf/testdata/rxbench_shortlc.json` with `DMRRF_SLCBENCH` set to the path of the capture.
+
+[Receiver design notes](rx-notes.md) records how the carrier hunt, the deviation reading and the Tier 0 costs were checked.
+
+### Generating this page
 
 `go run -C cmd/rxbench . -update-readme` runs the sweep, which takes hours, then the tests of the eye diagrams, offset, clock and late entry, and writes the tables and graphs of this page. `-update-readme -sheet` runs only the second set, in minutes, and `-update-readme -no-sweep` only renders the committed data. `-check-readme` fails when the page or a graph differs from the data in `v2/rf/testdata`. `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the facts, limits and test parameters of this page from the code, and fails without the variable when they differ. `go run -C cmd/mcubench . -update` measures the Cortex-M4F numbers.

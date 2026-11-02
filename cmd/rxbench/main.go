@@ -186,6 +186,7 @@ func run(ctx context.Context, root string, update bool, sweep int) error {
 	}{
 		{specsBegin, specsEnd, renderSpecs(d)}, {limitsBegin, limitsEnd, renderLimits(d)}, {beginMarker, endMarker, renderBlock(d)},
 		{shortLCBegin, shortLCEnd, renderShortLC(d.shortLC)}, {extBegin, extEnd, renderExt(d.ext)},
+		{extMethodsBegin, extMethodsEnd, renderExtMethods(d.ext)},
 	} {
 		if next, err = replaceBlock(next, blk.begin, blk.end, blk.body); err != nil {
 			return err
@@ -350,7 +351,7 @@ const (
 )
 
 func modes() [][3]string {
-	return [][3]string{{modeAudio, "FM discriminator audio", "Audio"}, {modeIQLow, "I/Q at 9.6 kHz", "Low-rate I/Q"}, {modeIQ, "I/Q", "I/Q"}}
+	return [][3]string{{modeAudio, "FM discriminator audio", "Audio"}, {modeIQLow, "I/Q at 9.6 kHz", "Low-rate I/Q"}, {modeIQ, inputIQ, inputIQ}}
 }
 
 func modeLabel(m string) string {
@@ -366,18 +367,20 @@ func shortName(t tier) string {
 	return modeLabel(t.Mode) + " tier " + strconv.Itoa(t.Tier)
 }
 
+const inputIQ = "I/Q"
+
 func inputName(t tier) string {
-	return map[string]string{
-		modeAudio + "0": "FM audio, 9.6 kHz, core",
-		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding, noise prediction",
-		modeAudio + "2": "FM audio, 9.6 kHz, coherent detection",
-		modeAudio + "3": "FM audio, 9.6 kHz, exact phase trellis, data passes",
-		modeIQLow + "0": "I/Q, 9.6 kHz, discriminator core",
-		modeIQ + "0":    "I/Q, discriminator core",
-		modeIQ + "1":    "I/Q, soft decoding, noise prediction",
-		modeIQ + "2":    "I/Q, coherent detection",
-		modeIQ + "3":    "I/Q, exact phase trellis",
-	}[t.Mode+strconv.Itoa(t.Tier)]
+	if t.Mode == modeAudio {
+		return "FM audio"
+	}
+	return inputIQ
+}
+
+func inputRate(t tier) string {
+	if t.Mode == modeIQ {
+		return "48"
+	}
+	return "9.6"
 }
 
 type crossing struct {
@@ -408,13 +411,10 @@ func tierCurve(t tier, k string) (x, y []float64) {
 }
 
 func ramCell(n int) string {
-	switch {
-	case n < 10<<10:
-		return grouped(int64(n)) + " B"
-	case n < 1<<20:
-		return strconv.Itoa((n+1023)/1024) + " KiB"
+	if n < 10<<10 {
+		return f1(float64(n) / 1024)
 	}
-	return f1(float64(n)/(1<<20)) + " MiB"
+	return grouped(int64((n + 1023) / 1024))
 }
 
 func grouped(n int64) string {
@@ -429,10 +429,9 @@ func f1(v float64) string { return strconv.FormatFloat(math.Round(v*10)/10+0, 'f
 
 func renderBlock(d data) []byte {
 	var b strings.Builder
-	b.WriteString("\n")
+	b.WriteString("\n### Error rate\n\nError rate against Eb/N0 of each tier, with the 4FSK floor dashed. Points with no errors are left out.\n\n")
 	for _, m := range modes() {
-		b.WriteString("### Error rate, " + m[1] + "\n\n")
-		b.WriteString("Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.\n\n")
+		b.WriteString("#### " + m[1] + "\n\n")
 		for _, g := range graphs() {
 			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](" + imgDir + m[0] + "/" + g.key + ".svg)\n")
 		}
@@ -452,17 +451,14 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("### Real recordings\n\n")
 	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR.\n\n")
-	b.WriteString("| Recording | C/N | Frames |")
+	cols0 := make([]string, 0, 3+len(rec))
+	cols0 = append(cols0, "Recording", "C/N (dB)", "Frames")
 	for _, t := range rec {
-		b.WriteString(" " + shortName(t) + " |")
+		cols0 = append(cols0, shortName(t))
 	}
-	b.WriteString("\n|-----------|-----|--------|")
-	for range rec {
-		b.WriteString("------|")
-	}
-	b.WriteString("\n")
+	b.WriteString(tableHead(cols0...))
 	for _, r := range d.recordings {
-		b.WriteString("| " + r.Name + " | " + f1(r.CN) + " dB | " + strconv.Itoa(r.Truth) + " |")
+		b.WriteString("| " + r.Name + " | " + f1(r.CN) + " | " + strconv.Itoa(r.Truth) + " |")
 		for _, i := range cols {
 			b.WriteString(" " + strconv.Itoa(r.Exact[i]) + " |")
 		}
@@ -474,9 +470,8 @@ func renderBlock(d data) []byte {
 
 func renderSensitivity(b *strings.Builder, d data) {
 	b.WriteString("### Sensitivity per payload type\n\n")
-	b.WriteString("Eb/N0 in dB for " + pct(recoverMin) + " recovery. [The floors](#the-floors) defines each floor.\n\n")
-	b.WriteString("| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |\n")
-	b.WriteString("|---------|------------|-----------|-----------|------------|\n")
+	b.WriteString("Eb/N0 in dB for " + pct(recoverMin) + " of the frames recovered exactly. [The floors](#the-floors) defines each floor.\n\n")
+	b.WriteString(tableHead("Payload", "4FSK floor", "DMR floor", "Code cost", "Code-aware"))
 	for _, p := range payloadNames() {
 		cells := []string{p[1], "-", "-", "-", "-"}
 		if f, ok := d.floor.Payloads[p[0]]; ok {
@@ -489,15 +484,12 @@ func renderSensitivity(b *strings.Builder, d data) {
 		}
 		b.WriteString("| " + strings.Join(cells, " | ") + " |\n")
 	}
-	b.WriteString("\n| Payload |")
+	cols := make([]string, 0, 1+len(d.bench.Tiers))
+	cols = append(cols, "Payload")
 	for _, t := range d.bench.Tiers {
-		b.WriteString(" " + shortName(t) + " |")
+		cols = append(cols, shortName(t))
 	}
-	b.WriteString("\n|---------|")
-	for range d.bench.Tiers {
-		b.WriteString("------|")
-	}
-	b.WriteString("\n")
+	b.WriteString("\n" + tableHead(cols...))
 	for _, p := range payloadNames() {
 		cells := make([]string, 0, 1+len(d.bench.Tiers))
 		cells = append(cells, p[1])
@@ -580,20 +572,20 @@ func dbCell(c crossing) string {
 		return "-"
 	}
 	if c.below {
-		return "< " + f1(c.ebn0) + " dB"
+		return "< " + f1(c.ebn0)
 	}
-	return f1(c.ebn0) + " dB"
+	return f1(c.ebn0)
 }
 
 func msCell(ns float64) string {
 	ms := ns / 1e6
 	switch {
 	case ms >= 10:
-		return strconv.FormatFloat(math.Round(ms), 'f', 0, 64) + " ms"
+		return grouped(int64(math.Round(ms)))
 	case ms >= 1:
-		return strconv.FormatFloat(math.Round(ms*10)/10, 'f', 1, 64) + " ms"
+		return strconv.FormatFloat(math.Round(ms*10)/10, 'f', 1, 64)
 	}
-	return strconv.FormatFloat(math.Round(ms*100)/100, 'f', 2, 64) + " ms"
+	return strconv.FormatFloat(math.Round(ms*100)/100, 'f', 2, 64)
 }
 
 type graph struct {

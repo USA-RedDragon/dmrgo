@@ -72,14 +72,13 @@ func perHour(n int, s float64) string {
 
 func renderShortLC(d shortLCData) []byte {
 	var b strings.Builder
-	b.WriteString("\n| Tier | Input | Hard decode | `OnShortLC` | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode | On noise, `OnShortLC` |\n")
-	b.WriteString("|------|-------|-------------|-------------|--------------------|--------------------|-----------------------|-----------------------|\n")
+	b.WriteString("\n" + tableHead("Tier", "Input", "Hard decode (dB)", "`OnShortLC` (dB)", "Wrong, hard decode", "Wrong, `OnShortLC`", "On noise, hard decode (1/h)", "On noise, `OnShortLC` (1/h)"))
 	for _, t := range d.Tiers {
 		bt := tier{Mode: t.Mode, Tier: t.Tier}
 		hard := sum(t.Hard) + t.HardWrong
 		b.WriteString("| " + strings.Join([]string{shortName(bt), inputName(bt), dbCell(t.at90(t.Hard)), dbCell(t.at90(t.LC)),
 			grouped(int64(t.HardWrong)) + " of " + grouped(int64(hard)), grouped(int64(t.LCWrong)) + " of " + grouped(int64(t.Decoded)),
-			perHour(t.NoiseHard, t.NoiseSeconds) + " per hour", perHour(t.NoiseLC, t.NoiseSeconds) + " per hour"}, " | ") + " |\n")
+			perHour(t.NoiseHard, t.NoiseSeconds), perHour(t.NoiseLC, t.NoiseSeconds)}, " | ") + " |\n")
 	}
 	b.WriteString("\n- Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from " + strconv.Itoa(d.Seeds) + " streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.\n")
 	b.WriteString("- Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.\n")
@@ -94,13 +93,12 @@ func renderShortLC(d shortLCData) []byte {
 			sigmas = append(sigmas, c.Sigma)
 		}
 	}
-	b.WriteString("| Noise sigma |")
-	sep := "|-------------|"
+	cols := make([]string, 0, 1+len(tiers))
+	cols = append(cols, "Noise sigma")
 	for _, t := range tiers {
-		b.WriteString(" I/Q tier " + strconv.Itoa(t) + " |")
-		sep += "------|"
+		cols = append(cols, "I/Q tier "+strconv.Itoa(t))
 	}
-	b.WriteString("\n" + sep + "\n")
+	b.WriteString(tableHead(cols...))
 	for _, s := range sigmas {
 		b.WriteString("| " + strconv.FormatFloat(s, 'f', -1, 64) + " |")
 		for _, t := range tiers {
