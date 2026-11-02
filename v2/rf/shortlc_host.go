@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	slcNotes      = 512
-	slcMatch      = 1e-3
-	slcMaxFlips   = 8
-	slcCostTenths = 50
+	slcNotes         = 512
+	slcMatch         = 1e-3
+	slcMaxFlips      = 8
+	slcCostTenths    = 50
+	slcCostTenthsIQ3 = 28
 )
 
 type slcNote struct {
@@ -43,11 +44,14 @@ type slcHook struct {
 	slc *shortLCOut
 }
 
-func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, _ error) error {
+func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, iq bool, _ error) error {
 	if on == nil {
 		return nil
 	}
 	o := &shortLCOut{on: on, cost: slcCostTenths}
+	if iq && t == Tier3 {
+		o.cost = slcCostTenthsIQ3
+	}
 	if t != Tier0 {
 		o.soft = newSoftDecoder()
 		o.soft.OSDOrder, o.soft.OSDWindow, o.soft.ShortLCList = 2, 0, 2

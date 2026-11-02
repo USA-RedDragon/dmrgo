@@ -450,13 +450,15 @@ func TestShortLCTierCost(t *testing.T) {
 	c := &softOSDCodes[softShortLCCode]
 	for _, tc := range []struct {
 		tier Tier
+		iq   bool
 		flip int16
 		ok   bool
 	}{
-		{Tier1, 100, true}, {Tier2, 100, true}, {Tier3, 100, true}, {Tier1, 160, false},
+		{Tier1, true, 100, true}, {Tier2, true, 100, true}, {Tier3, false, 100, true},
+		{Tier3, true, 100, false}, {Tier3, true, 40, true}, {Tier1, true, 160, false},
 	} {
 		var s burstSink
-		if err := s.attachShortLC(func([]ShortLC) {}, tc.tier, nil); err != nil {
+		if err := s.attachShortLC(func([]ShortLC) {}, tc.tier, tc.iq, nil); err != nil {
 			t.Fatal(err)
 		}
 		o := s.slc
@@ -487,7 +489,7 @@ func TestShortLCTierCost(t *testing.T) {
 		v := unpacked.Uint(info[:]) << 4
 		want := pdu.DecodeShortLC([5]byte{byte(v >> 32 & 0xff), byte(v >> 24 & 0xff), byte(v >> 16 & 0xff), byte(v >> 8 & 0xff), byte(v & 0xff)})
 		if ok != tc.ok || ok && (!slcSame(lc, want) || lc.FEC.ErrorsCorrected != 6) {
-			t.Errorf("tier %d, flips of %d: ok %v, LC %+v, want ok %v, LC %+v", tc.tier, tc.flip, ok, lc, tc.ok, want)
+			t.Errorf("tier %d, I/Q %v, flips of %d: ok %v, LC %+v, want ok %v, LC %+v", tc.tier, tc.iq, tc.flip, ok, lc, tc.ok, want)
 		}
 	}
 }
