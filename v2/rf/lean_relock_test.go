@@ -3,7 +3,11 @@
 package rf
 
 import (
+	"encoding/binary"
+	"fmt"
 	"math"
+	"math/rand/v2"
+	"slices"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -76,6 +80,60 @@ func relockCheck(t *testing.T, label string, x []complex64, want []float64) {
 				t.Errorf("%s t%d audio %v: %d of %d bursts", label, tier-Tier0, audio, found, len(want))
 			}
 		}
+	}
+}
+
+func TestLeanPayloadSync(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123, Superframes: 1}
+	v, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const lead = 0.05
+	var p [8]byte
+	binary.BigEndian.PutUint64(p[:], uint64(enums.SyncMSSourcedData)<<16)
+	for lost := 1; lost <= 2; lost++ {
+		vb := slices.Clone(v.Bursts)
+		copy(vb[2+lost][0:6], p[:6])
+		var fade [][2]float64
+		var want []float64
+		for i, w := range relockStarts(lead, len(vb)) {
+			if i >= 2 && i < 2+lost {
+				s := lead + float64(2*i)*slotSeconds
+				fade = append(fade, [2]float64{s, s + slotSeconds})
+				continue
+			}
+			want = append(want, w)
+		}
+		x := relockSynth([]relockPart{{vb, lead, 0}}, fade, lead+float64(2*len(vb))*slotSeconds+0.1)
+		rng := rand.New(rand.NewPCG(uint64(lost), 9))
+		for i := range x {
+			x[i] += complex(float32(rng.NormFloat64()*0.01), float32(rng.NormFloat64()*0.01))
+		}
+		relockCheck(t, fmt.Sprintf("%d lost", lost), x, want)
+	}
+}
+
+func TestLeanTalkerAfterDrop(t *testing.T) {
+	t.Parallel()
+	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123, Superframes: 1}
+	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 310123, Message: "TALKER TWO DATA"}
+	v, err := rftx.Sequence("voice", c1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := rftx.Sequence("data12", c2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const lead = 0.05
+	vb := v.Bursts[:len(v.Bursts)-1]
+	for _, gap := range []float64{0.0555, 0.0592, 0.1147, 0.1295, 0.21} {
+		t2 := lead + float64(2*len(vb))*slotSeconds + gap + 7.3/symbolRate
+		x := relockSynth([]relockPart{{vb, lead, 0}, {d.Bursts, t2, 150}}, nil, t2+float64(2*len(d.Bursts))*slotSeconds+0.1)
+		want := append(relockStarts(lead, len(vb)), relockStarts(t2, len(d.Bursts))...)
+		relockCheck(t, fmt.Sprintf("gap %.4f s", gap), x, want)
 	}
 }
 

@@ -43,6 +43,9 @@ const (
 	leanSearchHz        = 200
 	leanLockMMStep      = 0.1
 	leanSignMiss        = 5
+	leanFadeBursts      = 2
+	leanInBurst         = cachSymbols + syncSymbols - 1
+	leanDeferSkew       = 0.125
 	leanProofErrors     = 0
 	leanExtSignMiss     = 9
 	leanExtRho          = 0.3
@@ -298,6 +301,12 @@ type leanCore struct {
 	n        int64
 	first    int64
 	lockNs   int64
+	lastGood int32
+	termAt   int32
+	pendEnd  int64
+	pendWait uint8
+	pendSrc  uint8
+	pendData bool
 	unproven bool
 	rcLone   bool
 	base     int64
@@ -862,6 +871,9 @@ func (r *leanCore) symbol(x, at float32) {
 		r.searchHit(r.searchSigns())
 		return
 	}
+	if r.pendEnd != 0 && r.ns >= r.pendEnd+int64(r.pendWait) {
+		r.decidePend()
+	}
 	if r.hunt {
 		r.huntSym(at)
 	}
@@ -1221,6 +1233,81 @@ func (r *leanCore) huntMatch(again, mid bool) {
 	}
 }
 
+func (r *leanCore) holding() bool {
+	return !r.bs && r.lastGood != r.termAt && r.next-1-r.lastGood <= 2*leanFadeBursts+1
+}
+
+func (r *leanCore) held(d float32, src int, data bool, p enums.SyncPattern) bool {
+	base := r.slotEnd - slotSymbols
+	if !r.locked || !r.holding() || (r.next-r.lastGood)&1 != 0 || r.ns-1 < base+leanInBurst ||
+		abs32(d) > leanDeferSkew*2*r.tm.step || !r.fitOK(r.ns-1, p) {
+		return false
+	}
+	if r.ns >= base+leanSyncEnd+1 {
+		return r.slotHolds(base)
+	}
+	if r.pendEnd == 0 {
+		r.pendEnd, r.pendWait, r.pendSrc, r.pendData = r.ns-1, uint8(base+leanSyncEnd+2-r.ns), uint8(src), data
+	}
+	return true
+}
+
+func (r *leanCore) fitOK(end int64, p enums.SyncPattern) bool {
+	g, _, res := r.fitSync(end, p)
+	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz
+}
+
+//go:noinline
+func (r *leanCore) decidePend() {
+	end := r.pendEnd
+	r.pendEnd = 0
+	if r.slotHolds(end + int64(r.pendWait) - leanSyncEnd - 1) {
+		return
+	}
+	src, back := int(r.pendSrc), r.ns-1-end
+	if r.hasExt() {
+		r.forceLock(src, r.pendData, back)
+		return
+	}
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	p := voice
+	if r.pendData {
+		p = dp
+	}
+	r.fitLevels(end, p, true, false)
+	r.lockStream(src, 0, back)
+	r.forced, r.hunt = true, true
+}
+
+func (r *leanCore) slotHolds(base int64) bool {
+	for d := int64(-1); d <= 1 && base+leanSyncEnd+d < r.ns; d++ {
+		end := base + leanSyncEnd + d
+		if rho2, src, _ := r.syncAt(end); src == int(r.src) && rho2 >= discAnchor*discAnchor || r.rcAt(end) >= discAnchor*discAnchor {
+			return true
+		}
+	}
+	off := int32(roundf((r.off - r.dcHz) / llrStepHz))
+	thr := 2 * int32(roundf(r.devScale*deviationHz/llrStepHz))
+	var cw uint16
+	for i := range int64(8) {
+		k := base + syncFirstSym + i
+		if i >= 4 {
+			k += syncSymbols - 8
+		}
+		x := int32(r.ring[ringPos(k)])*(discStepHz/llrStepHz) + off
+		cw <<= 2
+		if x < 0 {
+			cw |= 2
+			x = -x
+		}
+		if x > thr {
+			cw |= 1
+		}
+	}
+	e := embOfCW(cw)
+	return r.embOK(&e)
+}
+
 func (r *leanCore) fitScale() {
 	g := 1 / r.devScale
 	r.scaleAudio(g)
@@ -1368,7 +1455,7 @@ var syncNib = [syncSymbols / 4][16]uint32{
 }
 
 //go:noinline
-func (r *leanCore) searchFit(p enums.SyncPattern, src int, strict bool) (float32, bool) {
+func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d float32, ok, hold bool) {
 	var saved [syncSymbols]int8
 	pairing := !strict && !r.cohVerify()
 	lim := float32(discLock)
@@ -1376,6 +1463,10 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, strict bool) (float32
 		lim = leanPairLock
 	}
 	if d, c2, sampled := r.resample(p, &saved, r.locked, lim); sampled {
+		if strict && r.held(d, src, data, p) {
+			r.restoreSync(&saved)
+			return 0, false, true
+		}
 		strong := c2 >= discLock*discLock
 		ok := strong && r.fitLevels(r.ns-1, p, true, true)
 		if !ok && strong && pairing && r.paired(src) {
@@ -1384,7 +1475,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, strict bool) (float32
 		}
 		if ok {
 			r.resampleStart(d)
-			return d, true
+			return d, true, false
 		}
 		r.restoreSync(&saved)
 		if pairing {
@@ -1394,7 +1485,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, strict bool) (float32
 	if !strict {
 		r.acqNext = r.ns + leanAcqWait
 	}
-	return 0, false
+	return 0, false, false
 }
 
 func (r *leanCore) searchSym(strict bool) {
@@ -1418,7 +1509,13 @@ func (r *leanCore) searchSym(strict bool) {
 	ok := false
 	var d float32
 	if !weak && (strict || r.ns >= r.acqNext) {
-		d, ok = r.searchFit(p, src, strict)
+		var hold bool
+		if d, ok, hold = r.searchFit(p, src, data, strict); hold {
+			return
+		}
+	}
+	if !ok && strict && rho2 >= discLock*discLock && r.held(0, src, data, p) {
+		return
 	}
 	verified := false
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
@@ -1532,6 +1629,10 @@ func (r *leanCore) midSync() {
 	var saved [syncSymbols]int8
 	d, _, ok := r.resample(p, &saved, true, discLock)
 	if !ok {
+		return
+	}
+	if r.held(d, src, data, p) {
+		r.restoreSync(&saved)
 		return
 	}
 	if !r.clipped(r.ns-1) && r.fitLevels(r.ns-1, p, true, true) {
@@ -1666,6 +1767,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.pairSrc = 0
 	r.lockNs = r.ns
 	r.unproven, r.rcLone = false, false
+	r.lastGood, r.termAt, r.pendEnd = 0, leanNoSlot, 0
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
@@ -2333,6 +2435,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	if r.isReplayDry() {
 		r.ext.replayLock(j, b)
 	}
+	r.lastGood = j
 	if r.bs {
 		r.sink.noteLean(r, b)
 	}
@@ -2460,7 +2563,10 @@ func (r *leanCore) embOK(emb *pdu.EmbeddedSignalling) bool {
 }
 
 func embOf(d *layer2.RawBurst) pdu.EmbeddedSignalling {
-	cw := uint16(d[13]&0xf)<<12 | uint16(d[14]>>4)<<8 | uint16(d[18]&0xf)<<4 | uint16(d[19]>>4)
+	return embOfCW(uint16(d[13]&0xf)<<12 | uint16(d[14]>>4)<<8 | uint16(d[18]&0xf)<<4 | uint16(d[19]>>4))
+}
+
+func embOfCW(cw uint16) pdu.EmbeddedSignalling {
 	info, res := pdu.DecodeEMBCodeword(cw)
 	e := info.EmbeddedSignalling()
 	e.FEC = res
@@ -2478,6 +2584,9 @@ func (r *leanCore) noteData(b *Burst, j int32, c *leanChan) {
 	}
 	if isHeader(st.DataType) {
 		c.hdr = j
+	}
+	if st.DataType == enums.DataTypeTerminatorWithLC {
+		r.termAt = j
 	}
 }
 
