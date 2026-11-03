@@ -39,8 +39,8 @@ var (
 const polyMaxPhases = 1024
 
 type poly struct {
-	p32  rs.Poly[float32]
-	p64  rs.Poly[float64]
+	p32  rs.Poly32
+	p64  rs.Poly64
 	f32  bool
 	n    int
 	l, m int

@@ -4,7 +4,7 @@ import "testing"
 
 func TestPolyLinear(t *testing.T) {
 	t.Parallel()
-	var p Poly[float64]
+	var p Poly64
 	h := []float64{1, 0, 2.0 / 3, 1.0 / 3, 1.0 / 3, 2.0 / 3}
 	if p.Init(h, 2, 3, 2, make([]float64, 3)) || p.Init(h, 2, 3, 4, make([]float64, 4)) || p.Init(h[:5], 2, 3, 2, make([]float64, 4)) {
 		t.Fatal("Init took a short ring, m above l or a short table")
