@@ -299,6 +299,7 @@ type leanCore struct {
 	first    int64
 	lockNs   int64
 	unproven bool
+	rcLone   bool
 	base     int64
 	anchor   enums.SyncPattern
 	onBurst  func(*Burst)
@@ -974,6 +975,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 	switch {
 	case r.ns > leanSyncEnd+1 && sym:
 		r.searchSym(false)
+	case r.ns > leanSyncEnd+1 && r.rcSigns(r.signs) && r.searchRC():
 	case r.ns >= leanRing && r.hasExt():
 		if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 			r.forceLock(src, data, back)
@@ -1015,7 +1017,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 	}
 	r.midSigns = b
 	sym, mid = signsMatch[site0](r, a, b)
-	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.hasExt() || mid && r.ns > leanSyncEnd+2
+	hit = r.ns > leanSyncEnd+1 && (sym || r.rcSigns(a)) || r.ns >= leanRing && r.hasExt() || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
 
@@ -1071,6 +1073,50 @@ func (r *leanCore) paired(src int) bool {
 
 func (r *leanCore) rcHit() bool {
 	return r.rcSource() && bits.OnesCount32((r.signs^leanRCSigns)&(1<<syncSymbols-1)) <= int(r.signMiss)
+}
+
+func (r *leanCore) rcSigns(signs uint32) bool {
+	return r.sources > 1 && bits.OnesCount32((signs^leanRCSigns)&(1<<syncSymbols-1)) <= int(r.signMiss)
+}
+
+//go:noinline
+func (r *leanCore) searchRC() bool {
+	if r.clipped(r.ns-1) || r.ns < r.acqNext {
+		return false
+	}
+	rho2 := r.rcAt(r.ns - 1)
+	if rho2 < leanResample*leanResample {
+		return false
+	}
+	p := enums.SyncMSSourcedRC
+	var saved [syncSymbols]int8
+	d, c2, ok := r.resample(p, &saved, false, discLock)
+	if ok {
+		if ok = c2 >= discLock*discLock && r.fitLevels(r.ns-1, p, true, true); ok {
+			r.resampleStart(d)
+		} else {
+			r.restoreSync(&saved)
+		}
+	}
+	if !ok {
+		if rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true) {
+			return false
+		}
+		d = 0
+	}
+	r.lockStream(1, d, 0)
+	r.rcLone = true
+	return true
+}
+
+//go:noinline
+func (r *leanCore) rcProof(d *layer2.RawBurst) bool {
+	emb := d.StandaloneRCEMB()
+	if emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected > leanProofErrors {
+		return false
+	}
+	cc, ok := r.colorCode()
+	return !ok || emb.ColorCode == cc
 }
 
 func (r *leanCore) rcSource() bool {
@@ -1619,7 +1665,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.suspectRun = 0
 	r.pairSrc = 0
 	r.lockNs = r.ns
-	r.unproven = false
+	r.unproven, r.rcLone = false, false
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
@@ -1782,7 +1828,7 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 		}
 	}
 	isAnchor := best >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+shift, anchor)
-	ms := !r.bs && r.lastAnch != leanNoSlot
+	ms := !r.bs && (r.lastAnch != leanNoSlot || base+leanSyncEnd == r.lockNs-1)
 	if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
 		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
 	}
@@ -1938,6 +1984,7 @@ func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern
 		r.amp = levelForget*r.amp + (1-levelForget)*energy
 	}
 	r.lastAnch = j
+	r.rcLone = r.rcLone && anchor == enums.SyncMSSourcedRC
 	if r.unproven && anchor != enums.SyncMSSourcedRC && r.ext.anchorProves(base+leanSyncEnd) &&
 		r.syncErrors(base+leanSyncEnd, anchor) <= layer2.DefaultSyncThreshold {
 		r.unproven = false
@@ -2273,6 +2320,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	if r.clickSpan > 0 {
 		r.clickFloor(v)
+	}
+	if r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data) {
+		return
 	}
 	if !r.classify(b, j) && (!r.hasExt() || !r.ext.place(r, b, j)) {
 		if r.hasExt() && !r.isReplayDry() {
