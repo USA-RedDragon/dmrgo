@@ -150,6 +150,9 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 	if err := t.host.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset); err != nil {
 		return nil, audioErrs.rate
 	}
+	if l := t.host.audioLag(); l > 0 {
+		p.lag = l
+	}
 	t.setup(&cfg, &p)
 	t.sps = int32(sps)
 	if cfg.OnSamples != nil {

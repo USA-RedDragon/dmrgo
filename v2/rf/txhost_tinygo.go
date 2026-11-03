@@ -20,6 +20,8 @@ func (*txHost) iqS16(int8) []int16 { return nil }
 
 func (*txHost) audio(int8) []int16 { return nil }
 
+func (*txHost) audioLag() int { return 0 }
+
 type audioPeaks struct{}
 
 func newAudioPeaks(Tier, int) (audioPeaks, error) { return audioPeaks{}, errTxHost }

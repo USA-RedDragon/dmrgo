@@ -44,6 +44,8 @@ func (h *txHost) iqS16(s int8) []int16 { return h.iq.Symbol(s) }
 
 func (h *txHost) audio(s int8) []int16 { return h.s16[:h.au.Symbol(h.s16, s)] }
 
+func (h *txHost) audioLag() int { return h.au.Lag() }
+
 type audioPeaks struct{ a *fsktx.Audio }
 
 func newAudioPeaks(t Tier, rate int) (audioPeaks, error) {

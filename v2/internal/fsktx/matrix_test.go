@@ -179,7 +179,7 @@ func (u txUnit) lag() int {
 	}
 	switch m := u.designMod().(type) {
 	case audioMod:
-		return m.a.lag()
+		return m.a.Lag()
 	case *iqMod:
 		return m.q.k.n/2 + m.q.dn
 	}
@@ -583,14 +583,4 @@ func checkExact(t *testing.T, name string, sc rawScore, miss int) {
 	if sc.bursts == 0 || sc.exact < sc.bursts-miss {
 		t.Errorf("%s: %d of %d bursts exact, %d of %d bits wrong", name, sc.exact, sc.bursts, sc.errs, sc.bits)
 	}
-}
-
-func (a *Audio) lag() int {
-	if a.k == nil {
-		return a.mcu.k.t.span
-	}
-	if a.cbp == nil {
-		return a.k.n / 2
-	}
-	return a.k.n/2 + int(math.Round(float64(len(a.cbp)/2)*a.step/float64(a.spp)))
 }

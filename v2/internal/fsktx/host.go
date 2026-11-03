@@ -572,17 +572,26 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1 && d.Floor >= 0) {
 				return nil, errDroop
 			}
-			lag := pu.span
-			if a.cbp != nil {
-				lag += int(math.Round(float64(len(a.cbp)/2) * SymbolRate / float64(cfg.Hz)))
-			}
 			a.dr = droop{a1: math.Exp(-2 * math.Pi * d.Hz / SymbolRate), a2: math.Exp(-2 * math.Pi * d.LowHz / SymbolRate),
-				g: d.Gain, floor: d.Floor, bias: d.Bias, own: d.Own, max: d.Max, lag: min(lag, 62)}
+				g: d.Gain, floor: d.Floor, bias: d.Bias, own: d.Own, max: d.Max, lag: min(a.Lag(), 62)}
 		}
 		return a, nil
 	default:
 		return nil, errTier
 	}
+}
+
+// Lag returns the symbol periods by which the output of a lags its
+// symbols: the half-length of the pulse, plus that of the correction band
+// pass when a has one.
+func (a *Audio) Lag() int {
+	if a.k == nil {
+		return a.mcu.k.t.span
+	}
+	if a.cbp == nil {
+		return a.k.n / 2
+	}
+	return a.k.n/2 + int(math.Round(float64(len(a.cbp)/2)*a.step/float64(a.spp)))
 }
 
 // AppendSymbol shapes the symbol s, -3, -1, +1, +3 or 0 for no
