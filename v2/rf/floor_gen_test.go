@@ -106,7 +106,11 @@ func TestRxFloor(t *testing.T) {
 		t.Skip("set DMRRF_FLOOR=full to regenerate " + floorPath)
 		return
 	}
-	pts := genPoints(t, false)
+	writeFloor(t, genPoints(t, false))
+}
+
+func writeFloor(t *testing.T, pts []floorPoint) {
+	t.Helper()
 	out := floorFile{
 		Source:   "rf floor_eval_test.go: lower bounds on the frame error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the field, on the stream and noise seeds of the sweep: the 4FSK floor for any code of the size of the field, and the DMR floor for its DMR code",
 		Payloads: map[string]*floorPair{},
@@ -129,7 +133,11 @@ func TestRxAware(t *testing.T) {
 		t.Skip("set DMRRF_AWARE=full to regenerate " + awarePath)
 		return
 	}
-	pts := genPoints(t, true)
+	writeAware(t, genPoints(t, true))
+}
+
+func writeAware(t *testing.T, pts []floorPoint) {
+	t.Helper()
 	out := awareFile{
 		Source:   "rf floor_aware_test.go: the error rate of a receiver with the knowledge of the genie of the floor and the decoders of the tiers, on the stream and noise seeds of the sweep",
 		Payloads: map[string]*floorCurve{},
@@ -166,15 +174,24 @@ func writeCurves(t *testing.T, path string, b []byte, err error) {
 	}
 }
 
-func genPoints(t *testing.T, aware bool) []floorPoint {
-	slots, truth := benchStream(t, 30)
-	workers := max(1, runtime.NumCPU()*3/4)
+func floorCases() []benchCase {
 	var cases []benchCase
 	for cn := -8.0; cn <= 12; cn += 0.5 {
 		for seed := range uint64(4) {
 			cases = append(cases, benchCase{cn, 100 + seed})
 		}
 	}
+	return cases
+}
+
+func floorWorkers() int { return max(1, runtime.NumCPU()*3/4) }
+
+func genPoints(t *testing.T, aware bool) []floorPoint {
+	return genPointsAt(t, aware, floorCases(), floorWorkers())
+}
+
+func genPointsAt(t *testing.T, aware bool, cases []benchCase, workers int) []floorPoint {
+	slots, truth := benchStream(t, 30)
 	pts := floorRun(t, slots, truth, cases, 1, true, nil, workers, aware, 0)
 	done := map[string]bool{}
 	for pi := range pts {
