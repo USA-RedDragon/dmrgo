@@ -31,6 +31,7 @@ type leanExt interface {
 	liveFit(c *leanCore, sym, t int64, q, w float32)
 	rateSettled(c *leanCore) bool
 	rateAgrees(c *leanCore, base int64) bool
+	lineShift(c *leanCore, sym, fit int64) (float32, bool)
 	grid(c *leanCore, start int64) (int64, bool)
 }
 
@@ -900,7 +901,7 @@ func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float
 
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
-	x.early, x.timing = [extQueue]bool{}, !c.bs
+	x.early, x.timing, x.stretch = [extQueue]bool{}, !c.bs, 0
 	x.vOK = false
 	x.proofs = 0
 	if x.coh != nil {
@@ -1419,6 +1420,7 @@ const (
 	extSyncMid     = -(syncSymbols - 1) / 2.0
 	extSettleFits  = 3
 	extEmbWeight   = 1.0 / 32
+	extPullSig     = 3
 	extSettleSpan  = 4 * slotSymbols
 )
 
@@ -1587,7 +1589,10 @@ func (x *softExt) rateSettled(c *leanCore) bool {
 
 func (x *softExt) rateAgrees(c *leanCore, base int64) bool {
 	d, sig, ok := x.rate[x.ancParity(c, base)].rateError(c)
-	return ok && d*d <= leanClockSig*leanClockSig*sig*sig
+	if !ok {
+		return x.stretch != 0 && c.tm.rate == x.stretch*2*c.tm.step
+	}
+	return d*d <= leanClockSig*leanClockSig*sig*sig
 }
 
 func (x *softExt) embFit(c *leanCore, b *Burst) {
@@ -1628,4 +1633,16 @@ func (x *softExt) embFit(c *leanCore, b *Burst) {
 		return
 	}
 	x.liveFit(c, c.ns-1-back, c.strobeTicks(end+z), sxy*sxy/(sxx*pp), extEmbWeight)
+}
+
+func (x *softExt) lineShift(c *leanCore, sym, fit int64) (float32, bool) {
+	if !x.rateAgrees(c, sym-leanSyncEnd) {
+		return 0, false
+	}
+	a := &x.anc[x.ancParity(c, sym-leanSyncEnd)]
+	t, ok := a.at(x.ancSlot(sym-leanSyncEnd)*slotSymbols+leanSyncEnd, -extSyncMid)
+	if !ok || float32(abs64(fit-t)) > extPullSig*extAnchorSig*samplesPerSy*256 {
+		return 0, false
+	}
+	return float32(t-c.strobeTicks(c.lastAt)) / (float32(c.mfStep) * 256), true
 }

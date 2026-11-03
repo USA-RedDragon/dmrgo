@@ -1643,6 +1643,10 @@ func (r *leanCore) retime(mid bool) {
 			r.restoreSync(&saved)
 			sps := 2 * r.tm.step
 			r.tm.measure(d-r.tm.lastC, leanRefitVar*(1-c2)/c2*sps*sps)
+			if s, ok := r.lineShift(z); ok {
+				r.tm.corr += s
+				r.shiftStrobe(s + r.tm.lastC)
+			}
 			return
 		}
 		if r.reEntry {
@@ -2794,4 +2798,11 @@ func (r *leanCore) strobeTicks(at float32) int64 { return r.ticksAt(r.n, at) }
 
 func (r *leanCore) ticksAt(n int64, at float32) int64 {
 	return (r.mfStep*(n-1)+r.center)<<8 + int64(int32(roundf(float32(int32(r.mfStep))*at*256)))
+}
+
+func (r *leanCore) lineShift(z float32) (float32, bool) {
+	if !r.hasExt() {
+		return 0, false
+	}
+	return r.ext.lineShift(r, r.ns-1, r.strobeTicks(r.lastAt+z))
 }
