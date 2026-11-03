@@ -2402,7 +2402,6 @@ func (r *leanCore) shift(d float32) {
 		}
 		r.rebuildSigns()
 		r.preOff -= k * discStepHz
-		r.llrOff -= int32(k) * (discStepHz / llrStepHz)
 	}
 	r.dcHz -= d
 	r.ms.lv[0].dcHz -= d
