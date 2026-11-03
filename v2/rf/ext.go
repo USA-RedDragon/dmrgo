@@ -727,7 +727,7 @@ func (x *softExt) push(c *leanCore, b *Burst, hold bool, start int64) int {
 		x.drain(c, true, 0)
 	}
 	i := (x.head + x.n) % extQueue
-	_, _, known := x.anchorPeriod(x.ancParity(c, start-cachSymbols))
+	known := x.timed(x.ancParity(c, start-cachSymbols))
 	x.q[i], x.held[i], x.qcoh[i], x.qc2[i] = *b, hold, false, c2MarkOf(b, x.ch[b.Slot&1].raw)
 	x.early[i], x.earlyStart[i] = x.timing && !known, start
 	x.n++
@@ -744,7 +744,7 @@ func (x *softExt) retime(c *leanCore) {
 		start := x.earlyStart[i]
 		if t, ok := x.grid(c, start); ok {
 			x.q[i].Seconds = tickSeconds(t - int64(c.lagTicks))
-		} else if _, _, known := x.anchorPeriod(x.ancParity(c, start-cachSymbols)); !known && c.ns-start <= extEarlySymbols {
+		} else if !x.timed(x.ancParity(c, start-cachSymbols)) && c.ns-start <= extEarlySymbols {
 			continue
 		}
 		x.early[i] = false
@@ -1431,6 +1431,7 @@ const (
 	extSettleFits  = 3
 	extEmbWeight   = 1.0 / 32
 	extPullSig     = 3
+	extRateFits    = 3
 	extSettleSpan  = 4 * slotSymbols
 )
 
@@ -1515,10 +1516,6 @@ func (a *extAnchor) at(xs int64, frac float32) (int64, bool) {
 	return a.tref + k*samplesPerSy<<8 + int64(roundf(frac*samplesPerSy*256+c+b*u)), true
 }
 
-func (x *softExt) anchorPeriod(p int) (c, b float32, ok bool) {
-	return x.anc[p].line()
-}
-
 func (a *extAnchor) clocked() bool {
 	_, b, ok := a.line()
 	v := a.sxx - a.sx*a.sx/a.w
@@ -1527,15 +1524,29 @@ func (a *extAnchor) clocked() bool {
 }
 
 func (x *softExt) grid(c *leanCore, start int64) (int64, bool) {
-	a := &x.anc[x.ancParity(c, start-cachSymbols)]
-	if !a.clocked() {
-		return 0, false
-	}
+	p := x.ancParity(c, start-cachSymbols)
+	a := &x.anc[p]
 	xs := x.ancSlot(start-cachSymbols)*slotSymbols + leanSyncEnd
-	if v := float32(xs - a.ref); v > a.hi+extAnchorReach || v < a.lo-extAnchorReach {
+	if v := float32(xs - a.ref); a.n == 0 || v > a.hi+extAnchorReach || v < a.lo-extAnchorReach {
 		return 0, false
 	}
-	return a.at(xs, cachSymbols-leanSyncEnd-extSyncMid)
+	if a.clocked() {
+		return a.at(xs, cachSymbols-leanSyncEnd-extSyncMid)
+	}
+	r := &x.rate[p]
+	if r.n < extRateFits || !r.clocked() {
+		return 0, false
+	}
+	_, b, _ := r.line()
+	k := xs - a.ref
+	u := float32(k) + cachSymbols - leanSyncEnd - extSyncMid
+	return a.tref + k*samplesPerSy<<8 + int64(roundf((cachSymbols-leanSyncEnd-extSyncMid)*samplesPerSy*256+a.sy/a.w+b*(u-a.sx/a.w))), true
+}
+
+func (x *softExt) timed(p int) bool {
+	_, _, ok := x.anc[p].line()
+	r := &x.rate[p]
+	return ok || r.n >= extRateFits && r.clocked()
 }
 
 func abs64(v int64) int64 {
