@@ -45,10 +45,11 @@ type AudioTxConfig struct {
 	// PreEmphasis, when not nil, states that the radio pre-emphasizes its
 	// modulator input from 300 Hz to 3 kHz, so that the transmitter
 	// inverts it with the modulator that it holds: a PreEmphasis of this
-	// transmitter alone, set up by Init or NewPreEmphasis. Nil is a radio
-	// with no pre-emphasis. Only Tier0 at Rate 48000 takes it, and only in
-	// the regions, services and powers where the limits keep their margin
-	// with it; elsewhere it gives a *RegionError.
+	// transmitter alone, set up by Init or NewPreEmphasis. Tier1 and Tier2
+	// invert it with a filter of their own. Nil is a radio with no
+	// pre-emphasis. The limits are measured with it as without it, and a
+	// setup whose limits do not keep their margin with it gives a
+	// *RegionError.
 	PreEmphasis *PreEmphasis
 	// InputLowpassHz states the cutoff in Hz of a low pass of at least two
 	// poles that the radio puts before its modulator input; 0 means none,
@@ -146,7 +147,7 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 	} else {
 		level, err = cfg.fitHost(avail)
 	}
-	measured := measuredLevel(cfg.Tier, cfg.Rate, cfg.Bits)
+	measured := measuredLevel(cfg.Tier, cfg.Rate, cfg.Bits, cfg.PreEmphasis != nil)
 	if cfg.InputHighpassHz > 0 && cfg.Level == 0 && measured > 0 {
 		level = min(level, measured)
 	}
@@ -158,7 +159,7 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 	}
 	var room float64
 	if cfg.InputHighpassHz > 0 {
-		room = highpassRoom(cfg.Tier, cfg.Rate, p.level, avail)
+		room = highpassRoom(cfg.Tier, cfg.Rate, p.level, avail, cfg.PreEmphasis != nil)
 	}
 	t := &AudioTransmitter{}
 	if p.tier == Tier0 {
@@ -166,7 +167,7 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 		return t, nil
 	}
 	sps := cfg.Rate/symbolRate + 2
-	if err := t.host.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset, cfg.InputHighpassHz, room); err != nil {
+	if err := t.host.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset, cfg.InputHighpassHz, room, cfg.PreEmphasis != nil); err != nil {
 		return nil, audioErrs.rate
 	}
 	if l := t.host.audioLag(); l > 0 {
@@ -223,12 +224,12 @@ func (c *AudioTxConfig) prepare() (audioPlan, int, error) {
 	}
 	var p audioPlan
 	switch {
-	case c.Tier == Tier0 && c.Rate == 24000:
-		p.table = fsktx.Table24k()
 	case c.PreEmphasis != nil && !c.PreEmphasis.set():
 		return audioPlan{}, 0, e.preEmphSet
-	case c.Tier == Tier0 && c.Rate == 48000 && c.PreEmphasis != nil:
+	case c.Tier == Tier0 && (c.Rate == 24000 || c.Rate == 48000) && c.PreEmphasis != nil:
 		p.pe = c.PreEmphasis
+	case c.Tier == Tier0 && c.Rate == 24000:
+		p.table = fsktx.Table24k()
 	case c.Tier == Tier0 && c.Rate == 48000:
 		p.table = fsktx.Table48k()
 	case c.Tier == Tier0, c.Rate < minTxAudio:
@@ -265,9 +266,6 @@ func (c *AudioTxConfig) plan(p *audioPlan, g *txGate, level, measured int) error
 	class, err := r.check(e, g)
 	if err != nil {
 		return err
-	}
-	if c.PreEmphasis != nil && (c.Tier != Tier0 || c.Rate != 48000) {
-		return e.preEmph
 	}
 	if measured == 0 || level < measured {
 		return e.levelLow
@@ -323,7 +321,7 @@ func (p *audioPlan) peak(level int) int {
 }
 
 func (c *AudioTxConfig) fitHost(avail int) (int, error) {
-	ps, err := newAudioPeaks(c.Tier, c.Rate)
+	ps, err := newAudioPeaks(c.Tier, c.Rate, c.PreEmphasis != nil)
 	if err != nil {
 		return 0, audioErrs.rate
 	}
@@ -368,7 +366,7 @@ func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {
 		}
 		if p.pe != nil {
 			t.pe = p.pe
-			_ = t.pe.init(&t.pe.m, p.level, in)
+			_ = t.pe.init(&t.pe.m, p.rate, p.level, in)
 			t.sps = int32(t.pe.m.Samples())
 		} else {
 			_ = t.mcu.Init(p.table, p.level, in)

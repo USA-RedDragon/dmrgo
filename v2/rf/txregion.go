@@ -135,7 +135,7 @@ var audioErrs = txErrs{
 	powerCeil:   &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "above the highest legal power of the service in the region"},
 	service:     &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "the transmitter supports no license-free service"},
 	spur:        &RegionError{Type: "rf", Field: "AudioTxConfig.Region", Reason: "the signal is not measured 10 dB under the spurious domain limits"},
-	preEmph:     &RegionError{Type: "rf", Field: "AudioTxConfig.PreEmphasis", Reason: "with pre-emphasis only Tier0 at 48000 Hz keeps the limits, and not in every region, service and power"},
+	preEmph:     &RegionError{Type: "rf", Field: "AudioTxConfig.PreEmphasis", Reason: "no measurement with pre-emphasis keeps the limits in this setup"},
 	levelLow:    &RegionError{Type: "rf", Field: "AudioTxConfig.Level", Reason: "under the level that the limits are measured at for Bits"},
 	region:      &RegionError{Type: "rf", Field: "AudioTxConfig.Region", Reason: "unknown region"},
 	svc:         &RegionError{Type: "rf", Field: "AudioTxConfig.Service", Reason: "unknown service"},

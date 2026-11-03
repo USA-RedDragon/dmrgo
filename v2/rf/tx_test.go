@@ -227,7 +227,7 @@ func TestTxAccepts(t *testing.T) {
 		if c.Bits == 0 {
 			bits = 16
 		}
-		if tx.Level() < measuredLevel(tx.tier, int(tx.rate), bits) {
+		if tx.Level() < measuredLevel(tx.tier, int(tx.rate), bits, false) {
 			t.Errorf("%+v: level %d", c, tx.Level())
 		}
 		want := c.Offset
@@ -482,6 +482,53 @@ func TestPreEmphasisInit(t *testing.T) {
 	c.PreEmphasis = nil
 	if err := tx.init(c, openGate); err != nil || tx.pe != nil {
 		t.Fatalf("Init without PreEmphasis: %v", err)
+	}
+}
+
+func TestTxPreEmphasisMeasured(t *testing.T) {
+	t.Parallel()
+	accepted := map[Tier]int{}
+	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
+		for _, rate := range []int{24000, 48000} {
+			for _, region := range []Region{RegionWorld, RegionUS, RegionCEPT, RegionChina, RegionJapan} {
+				for _, svc := range []Service{ServiceLandMobile, ServiceAmateur} {
+					for _, lp := range []int{0, 8000} {
+						c := AudioTxConfig{Tier: tier, Rate: rate, Bits: 12, Unsigned: true, Region: region, Service: svc, Power: 30, InputLowpassHz: lp, PreEmphasis: NewPreEmphasis()}
+						r := txRegs{region: region, service: svc, power: 30}
+						class, err := r.check(&audioErrs, openGate)
+						if err != nil {
+							t.Fatal(err)
+						}
+						least := r.minRate(tier, false, 12, class, lp, true)
+						want := least > 0 && rate >= least
+						tx, err := newAudioTransmitter(c, openGate)
+						if got := err == nil; got != want {
+							t.Errorf("%+v: error %v, the limits with pre-emphasis allow it from %d Hz", c, err, least)
+							continue
+						}
+						if err != nil {
+							field := "AudioTxConfig.PreEmphasis"
+							if least > 0 {
+								field = "AudioTxConfig.Rate"
+							}
+							if f, region := errField(err); f != field || !region {
+								t.Errorf("%+v: %v, want a RegionError of %s", c, err, field)
+							}
+							continue
+						}
+						accepted[tier]++
+						if tx.Level() < measuredLevel(tier, rate, 12, true) || len(tx.AppendSamples(nil, msBursts(t, "voice")[:2])) == 0 {
+							t.Errorf("%+v: level %d, or no samples", c, tx.Level())
+						}
+					}
+				}
+			}
+		}
+	}
+	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
+		if accepted[tier] == 0 {
+			t.Errorf("tier %v: no measured setup takes pre-emphasis", tier)
+		}
 	}
 }
 

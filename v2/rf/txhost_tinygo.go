@@ -12,9 +12,9 @@ var errTxHost error = iqErrs.tier
 
 func (*txHost) newIQ(Tier, int, float64) error { return errTxHost }
 
-func (*txHost) newAudio(Tier, int, int, int, int, float64) error { return errTxHost }
+func (*txHost) newAudio(Tier, int, int, int, int, float64, bool) error { return errTxHost }
 
-func highpassRoom(Tier, int, int, int) float64 { return 0 }
+func highpassRoom(Tier, int, int, int, bool) float64 { return 0 }
 
 func (*txHost) key(bool) {}
 
@@ -26,11 +26,11 @@ func (*txHost) audioLag() int { return 0 }
 
 type audioPeaks struct{}
 
-func newAudioPeaks(Tier, int) (audioPeaks, error) { return audioPeaks{}, errTxHost }
+func newAudioPeaks(Tier, int, bool) (audioPeaks, error) { return audioPeaks{}, errTxHost }
 
 func (audioPeaks) peak(int) (int, error) { return 0, errTxHost }
 
-func measuredLevel(_ Tier, _, bits int) int {
+func measuredLevel(_ Tier, _, bits int, _ bool) int {
 	return fsktx.Setup{Tier: fsktx.Tier0, Bits: bits}.Tier0Level()
 }
 

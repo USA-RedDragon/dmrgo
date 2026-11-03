@@ -25,12 +25,19 @@ func (h *txHost) newIQ(t Tier, rate int, offsetHz float64) error {
 	return nil
 }
 
-func (h *txHost) newAudio(t Tier, rate, level, offset, highpass int, room float64) error {
+func audioConfig(t Tier, rate, level, offset, highpass int, room float64, pe bool) fsktx.AudioConfig {
 	c := fsktx.AudioConfig{Hz: rate, Level: level, Offset: offset, Tier: fsktx.Tier(t)}
 	if highpass > 0 && room > 0 {
 		c.Droop = fsktx.HighpassDroop(float64(highpass), room)
 	}
-	a, err := fsktx.NewAudio(c)
+	if pe {
+		c.PreEmphasisHz = [2]float64{preZeroHz, prePoleHz}
+	}
+	return c
+}
+
+func (h *txHost) newAudio(t Tier, rate, level, offset, highpass int, room float64, pe bool) error {
+	a, err := fsktx.NewAudio(audioConfig(t, rate, level, offset, highpass, room, pe))
 	if err != nil {
 		return err
 	}
@@ -52,8 +59,8 @@ func (h *txHost) audioLag() int { return h.au.Lag() }
 
 type audioPeaks struct{ a *fsktx.Audio }
 
-func newAudioPeaks(t Tier, rate int) (audioPeaks, error) {
-	a, err := fsktx.NewAudio(fsktx.AudioConfig{Hz: rate, Level: 1, Tier: fsktx.Tier(t)})
+func newAudioPeaks(t Tier, rate int, pe bool) (audioPeaks, error) {
+	a, err := fsktx.NewAudio(audioConfig(t, rate, 1, 0, 0, 0, pe))
 	return audioPeaks{a}, err
 }
 
@@ -65,14 +72,14 @@ func (p audioPeaks) peak(level int) (int, error) {
 	return int(math.Ceil(pk)), nil
 }
 
-func measuredLevel(t Tier, rate, bits int) int {
-	s := fsktx.Setup{Tier: fsktx.Tier(t), Bits: bits}
+func measuredLevel(t Tier, rate, bits int, pe bool) int {
+	s := fsktx.Setup{Tier: fsktx.Tier(t), Bits: bits, PreEmphasis: pe}
 	level, depth := s.Tier0Level(), s.MeasuredBits()
 	if t == Tier0 || depth == 0 || depth == 16 {
 		return level
 	}
 	half := 1<<(depth-1) - 1
-	ps, _ := newAudioPeaks(t, rate)
+	ps, _ := newAudioPeaks(t, rate, pe)
 	peak := func(l int) int {
 		pk, err := ps.peak(l)
 		if err != nil {
@@ -94,8 +101,8 @@ func measuredLevel(t Tier, rate, bits int) int {
 	return l << (bits - depth)
 }
 
-func highpassRoom(t Tier, rate, level, avail int) float64 {
-	ps, err := newAudioPeaks(t, rate)
+func highpassRoom(t Tier, rate, level, avail int, pe bool) float64 {
+	ps, err := newAudioPeaks(t, rate, pe)
 	if err != nil || level < 1 {
 		return 0
 	}
