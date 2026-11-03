@@ -131,7 +131,7 @@ func (r *discRx) run(x []int16) {
 		x = x[r.warm(x):]
 	}
 	if len(x) > 0 {
-		r.runNow(x)
+		r.runN(x)
 	}
 }
 
@@ -154,13 +154,13 @@ func (r *discRx) warm(x []int16) int {
 		}
 		f.ran, f.edge = true, true
 		f.quiet, _ = heldStats(held[:e])
-		r.runNow(held[:e])
+		r.runN(held[:e])
 		copy(held, held[e:])
 		f.nHeld = uint8(len(held) - e)
 		return n
 	case v1 == 0:
 		f.ran, f.edge, f.quiet = true, false, m1
-		r.runNow(held)
+		r.runN(held)
 		f.nHeld = 0
 		return n
 	}
@@ -192,7 +192,7 @@ func (r *discRx) warm(x []int16) int {
 		tm := &r.tm
 		tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.last, tm.half = 0, 0, 0, 0, 0, 0, 0, 0
 	}
-	r.runNow(held)
+	r.runN(held)
 	return n
 }
 
@@ -218,18 +218,19 @@ func heldStats(x []int16) (m, v float32) {
 	return m, v / float32(len(x))
 }
 
-func (r *discRx) runNow(x []int16) {
+func (r *discRx) runN(x []int16) int {
 	if !r.front96 {
-		r.runAll(x)
+		n := r.runAll(x)
 		r.polarity()
-		return
+		return n
 	}
+	n := len(x)
 	for {
 		i, _ := r.run96(x, 0, nil)
 		x = x[i:]
 		if !r.slotDue {
 			r.polarity()
-			return
+			return n
 		}
 		r.slotDue = false
 		r.endSlot()
@@ -237,7 +238,7 @@ func (r *discRx) runNow(x []int16) {
 }
 
 //go:noinline
-func (r *discRx) runAll(x []int16) {
+func (r *discRx) runAll(x []int16) int {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	var dn int32
@@ -309,6 +310,10 @@ func (r *discRx) runAll(x []int16) {
 				kh = r.acqHead
 				buf, an = r.acqBuf()
 				search, keep = !r.locked, !r.locked || r.hunt
+				if r.dueLock() {
+					r.keepRaw(x, i+1)
+					return i + 1
+				}
 			}
 		}
 	}
@@ -316,6 +321,7 @@ func (r *discRx) runAll(x []int16) {
 	r.n += int64(dn)
 	r.acqHead, r.acqLow = kh, kq
 	r.keepRaw(x, len(x))
+	return len(x)
 }
 
 const (

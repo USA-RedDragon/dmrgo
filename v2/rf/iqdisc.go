@@ -369,6 +369,8 @@ type iqRx struct {
 	yN        int64
 	refill    *iqRefill
 	tunes     *[iqTunes]iqTune
+	soft      *softExt
+	outN      int64
 	nTunes    int
 	maxHz     float32
 	syncOnly  bool
@@ -455,6 +457,7 @@ func (r *iqRx) sample(v complex64) {
 	if r.pow != nil {
 		r.pow.push(y)
 	}
+	r.outN++
 	if r.yHist != nil {
 		r.yHist[r.yN&int64(len(r.yHist)-1)] = y
 		if r.cHist != nil {
@@ -467,8 +470,7 @@ func (r *iqRx) sample(v complex64) {
 	r.audio = r.audio[:n+1]
 	r.audio[n] = int16(max(min(roundf(f*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
 	if n+1 == cap(r.audio) {
-		r.d.write(r.audio)
-		r.audio = r.audio[:0]
+		r.writeAudio()
 	}
 }
 
@@ -486,8 +488,7 @@ func (r *iqRx) follow() {
 		r.afcAvg += complex(iqAFCAvgGain, 0) * (acc - r.afcAvg)
 	}
 	avg := r.conv.hzOf(r.afcAvg)
-	r.d.write(r.audio)
-	r.audio = r.audio[:0]
+	r.writeAudio()
 	f := &r.d.f
 	if f.gain <= 0 {
 		return
@@ -546,8 +547,7 @@ func (r *iqRx) hunt(v complex64) {
 	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
-	r.d.write(r.audio)
-	r.audio = r.audio[:0]
+	r.writeAudio()
 	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	dc := float32(0)
@@ -617,8 +617,7 @@ func (r *iqRx) drain() {
 	if r.yHist != nil || r.conv.afc != nil {
 		return
 	}
-	r.d.write(r.audio)
-	r.audio = r.audio[:0]
+	r.writeAudio()
 }
 
 func (r *iqRx) write(iq []byte) {
@@ -658,7 +657,6 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 }
 
 func (r *iqRx) flush() {
-	r.d.write(r.audio)
-	r.audio = r.audio[:0]
+	r.writeAudio()
 	r.d.flush()
 }

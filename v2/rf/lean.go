@@ -398,6 +398,7 @@ type leanCore struct {
 	reEntry                            bool
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
+	lockDue                            bool
 	mid96                              uint8
 	replaying, replayDry, replayDeep   bool
 	lateTime                           bool
@@ -1036,7 +1037,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 			r.ext.weakAt(r.ns - 1 - back)
 		}
 	}
-	if mid && !r.locked && r.ns > leanAcqSymbols {
+	if mid && !r.locked && !r.dueLock() && r.ns > leanAcqSymbols {
 		r.searchMid()
 	}
 }
@@ -1507,6 +1508,11 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 			ok = r.fitLevels(r.ns-1, p, true, false)
 			r.pairLv = ok
 		}
+		if ok && r.wantRetune(p, src, false) {
+			r.restoreSync(&saved)
+			r.lockDue = true
+			return 0, 0, false, false
+		}
 		if ok {
 			r.resampleStart(d)
 			return d, c2, true, false
@@ -1523,6 +1529,9 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 }
 
 func (r *leanCore) searchSym(strict bool) {
+	if r.dueLock() {
+		return
+	}
 	if r.clipped(r.ns - 1) {
 		return
 	}
@@ -1540,7 +1549,7 @@ func (r *leanCore) searchSym(strict bool) {
 	if data {
 		p = dp
 	}
-	ok := false
+	ok, verified := false, false
 	var d, c2 float32
 	if !weak && (strict || r.ns >= r.acqNext) {
 		var hold bool
@@ -1554,17 +1563,27 @@ func (r *leanCore) searchSym(strict bool) {
 	if !ok && r.ns <= leanSyncEnd+1 {
 		return
 	}
-	verified := false
+	if r.dueLock() {
+		return
+	}
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
 		if strict || !r.hasExt() || !r.ext.verify(r, p, rho2) {
 			return
 		}
 		r.fitLevels(r.ns-1, p, true, false)
+		if r.wantRetune(p, src, true) {
+			r.lockDue = true
+			return
+		}
 		if t, ok := r.ext.lockShift(r, p, 0); ok {
 			d = t * 2 * r.tm.step
 			r.shiftStrobe(d)
 		}
 		verified, c2 = true, 0
+	}
+	if !ok && !verified && r.wantRetune(p, src, false) {
+		r.lockDue = true
+		return
 	}
 	r.lockStream(src, d, c2, 0)
 	if verified {
@@ -1819,6 +1838,9 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 }
 
 func (r *leanCore) lockStream(src int, d, q float32, back int64) {
+	if r.dueLock() {
+		return
+	}
 	if r.unproven && r.hasExt() {
 		r.ext.end(r)
 	}

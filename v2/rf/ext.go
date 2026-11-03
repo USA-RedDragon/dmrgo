@@ -34,6 +34,7 @@ type leanExt interface {
 	lineShift(c *leanCore, sym, fit int64) (float32, bool)
 	grid(c *leanCore, start int64) (int64, bool)
 	relevel(k float32)
+	lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool
 }
 
 const extQueue = 8
@@ -90,6 +91,10 @@ type softExt struct {
 	out             [4]layer2.RawBurst
 	acq             []int16
 	refill          func(*leanCore, int64)
+	retune          func(*leanCore) bool
+	pendP           enums.SyncPattern
+	pendSrc         int
+	pendV           bool
 	refillCoh       func(float64)
 	settleCoh       func()
 	lookback        int

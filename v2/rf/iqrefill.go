@@ -38,7 +38,8 @@ func (r *iqRx) attachRefill(x *softExt) {
 	f := &iqRefill{raw: make([][2]int16, 2*len(x.acq)*h*r.conv.decim+warm+lag), tuned: -1}
 	f.conv.hist = make([]complex64, 2*len(r.conv.taps))
 	r.refill = f
-	x.refill = r.refillKept
+	x.refill, x.retune = r.refillKept, r.retuneWanted
+	r.soft = x
 	if r.cHist != nil {
 		f.wide = make([]complex64, int64(r.conv.decim)*int64(len(r.cHist))+2*int64(len(r.conv.coh.taps)))
 		f.mixed = make([]complex128, len(f.wide)+2*max(len(r.conv.coh.taps), len(r.conv.taps)))
@@ -148,6 +149,82 @@ func (r *iqRx) noteTune(hz float32) {
 		}
 		f.tuned = f.n
 	}
+}
+
+func (r *iqRx) lockOffset() float32 {
+	d := &r.d.f
+	if d.gain <= 0 {
+		return 0
+	}
+	return (d.dc + r.d.dcHz) / (d.gain * iqUnitsPerHz)
+}
+
+func (r *iqRx) retuneWanted(*leanCore) bool {
+	if r.refill == nil || r.tunes != nil || r.d.locked {
+		return false
+	}
+	hz := r.lockOffset()
+	lim := r.tuneLimit()
+	return abs32(hz) >= iqRefillHz && (lim <= 0 || abs32(r.conv.hz+hz-r.center) <= lim)
+}
+
+func (r *iqRx) lockRetune(rest []int16) {
+	hz := r.lockOffset()
+	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
+	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
+	r.tuneWith(hz, 0, r.tuneLimit())
+	r.refillKept(&r.d.leanCore, r.d.n)
+	r.regenAudio(rest)
+	r.soft.relock(&r.d.leanCore)
+}
+
+func (r *iqRx) regenAudio(rest []int16) bool {
+	f := r.refill
+	per := int64(r.conv.step)
+	k0 := r.outN - int64(len(rest))
+	warm := (int64(len(r.conv.taps)) + per - 1) / per
+	s := (k0 - warm) * per
+	if s < max(f.n-int64(len(f.raw)), f.from) || k0 < 0 {
+		return false
+	}
+	cv := &f.conv
+	hist := cv.hist
+	clear(hist)
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz}
+	p := f.head - int(f.n-s)
+	if p < 0 {
+		p += len(f.raw)
+	}
+	j := s / per
+	for i := s; i < f.n && j < k0+int64(len(rest)); i++ {
+		w := f.raw[p]
+		if p++; p == len(f.raw) {
+			p = 0
+		}
+		v, _, ok := cv.push(complex(float32(w[0])*(1.0/iqRefillScale), float32(w[1])*(1.0/iqRefillScale)))
+		if !ok {
+			continue
+		}
+		if j >= k0 {
+			rest[j-k0] = int16(max(min(roundf(v*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
+		}
+		j++
+	}
+	return true
+}
+
+func (r *iqRx) writeAudio() {
+	x := r.audio
+	for len(x) > 0 {
+		n := r.d.writeN(x)
+		x = x[n:]
+		if !r.d.lockDue {
+			break
+		}
+		r.lockRetune(x)
+		r.d.lockDue = false
+	}
+	r.audio = r.audio[:0]
 }
 
 func (r *iqRx) refillKept(c *leanCore, m int64) {

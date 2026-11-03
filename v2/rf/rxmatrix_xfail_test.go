@@ -127,7 +127,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"s0.none.-3000.ms.csbk.0ppm.low.a9600.40dB/t2":             {checks: "missing"},
 	"s0.none.-3000.ms.csbk.0ppm.low.a9600.40dB/t3":             {checks: "missing"},
 
-	"agc.noise.-1500.ms.data1.-500ppm.nom.cu8-48k.inf.step10dB/t1":    {checks: "bits"},
 	"agc.noise.-2500.ms.rc.0ppm.low.cs16-2048k.40dB.dc/t0":            {checks: "bits"},
 	"gap.cw2s.+3000.ms.data1.+500ppm.nom.a9600.inf.step10dB/t0":       {checks: "bits,seconds"},
 	"gap.cw2s.+3000.ms.data1.+500ppm.nom.a9600.inf.step10dB/t1":       {checks: "bits,seconds"},
@@ -139,7 +138,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t2":       {checks: "bits,cach"},
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t3":       {checks: "cach"},
 	"mid.none.+2500.bs.voice.+500ppm.low.cu8-48k.40dB.dc/t0":          {checks: "missing"},
-	"mid.none.+2500.bs.voice.+500ppm.low.cu8-48k.40dB.dc/t2":          {checks: "cach"},
 	"mid.none.+4000.ms2.voice.+500ppm.nom.cs16-48k.inf.dc/t0":         {checks: "missing"},
 	"mid.none.+4000.ms2.voice.+500ppm.nom.cs16-48k.inf.dc/t1":         {checks: "missing"},
 	"mid.none.+4000.ms2.voice.+500ppm.nom.cs16-48k.inf.dc/t2":         {checks: "missing"},
@@ -157,7 +155,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"s0.noise.-4000.bs.data12.-500ppm.low.a9600.40dB.step10dB/t2":     {checks: "bits,cach"},
 	"s0.noise.-4000.bs.data12.-500ppm.low.a9600.40dB.step10dB/t3":     {checks: "bits,cach"},
 	"s0.none.+2500.ms2.csbk.+500ppm.high.cs16-2048k.40dB.step10dB/t0": {checks: "missing"},
-	"s0.none.+2500.ms2.csbk.+500ppm.high.cs16-2048k.40dB.step10dB/t1": {checks: "missing"},
 	"s0.none.+3000.ms2.rc.-500ppm.low.cu8-2048k.40dB.dc/t0":           {checks: "missing"},
 	"s0.none.+3000.ms2.rc.-500ppm.low.cu8-2048k.40dB.dc/t1":           {checks: "bits,missing"},
 	"s0.none.+3000.ms2.rc.-500ppm.low.cu8-2048k.40dB.dc/t2":           {checks: "bits,missing"},
