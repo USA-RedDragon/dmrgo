@@ -91,10 +91,7 @@ type softExt struct {
 	out             [4]layer2.RawBurst
 	acq             []int16
 	refill          func(*leanCore, int64)
-	retune          func(*leanCore) bool
-	pendP           enums.SyncPattern
-	pendSrc         int
-	pendV           bool
+	rt              lockRetune
 	refillCoh       func(float64)
 	settleCoh       func()
 	lookback        int

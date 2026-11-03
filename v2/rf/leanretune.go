@@ -4,6 +4,13 @@ package rf
 
 import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
+type lockRetune struct {
+	want     func(*leanCore) bool
+	p        enums.SyncPattern
+	src      int
+	verified bool
+}
+
 func (r *leanCore) dueLock() bool { return r.lockDue }
 
 func (r *leanCore) wantRetune(p enums.SyncPattern, src int, verified bool) bool {
@@ -40,13 +47,13 @@ func (r *leanCore) relock(p enums.SyncPattern, src int, verified bool) {
 }
 
 func (x *softExt) lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool {
-	if x.retune == nil || !x.retune(c) {
+	if x.rt.want == nil || !x.rt.want(c) {
 		return false
 	}
-	x.pendP, x.pendSrc, x.pendV = p, src, verified
+	x.rt.p, x.rt.src, x.rt.verified = p, src, verified
 	return true
 }
 
 func (x *softExt) relock(c *leanCore) {
-	c.relock(x.pendP, x.pendSrc, x.pendV)
+	c.relock(x.rt.p, x.rt.src, x.rt.verified)
 }

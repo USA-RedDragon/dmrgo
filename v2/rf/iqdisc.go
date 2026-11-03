@@ -369,7 +369,6 @@ type iqRx struct {
 	yN        int64
 	refill    *iqRefill
 	tunes     *[iqTunes]iqTune
-	soft      *softExt
 	outN      int64
 	nTunes    int
 	maxHz     float32

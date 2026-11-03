@@ -10,6 +10,7 @@ const (
 )
 
 type iqRefill struct {
+	soft     *softExt
 	raw      [][2]int16
 	head     int
 	n        int64
@@ -38,8 +39,8 @@ func (r *iqRx) attachRefill(x *softExt) {
 	f := &iqRefill{raw: make([][2]int16, 2*len(x.acq)*h*r.conv.decim+warm+lag), tuned: -1}
 	f.conv.hist = make([]complex64, 2*len(r.conv.taps))
 	r.refill = f
-	x.refill, x.retune = r.refillKept, r.retuneWanted
-	r.soft = x
+	x.refill, x.rt.want = r.refillKept, r.retuneWanted
+	f.soft = x
 	if r.cHist != nil {
 		f.wide = make([]complex64, int64(r.conv.decim)*int64(len(r.cHist))+2*int64(len(r.conv.coh.taps)))
 		f.mixed = make([]complex128, len(f.wide)+2*max(len(r.conv.coh.taps), len(r.conv.taps)))
@@ -175,7 +176,7 @@ func (r *iqRx) lockRetune(rest []int16) {
 	r.tuneWith(hz, 0, r.tuneLimit())
 	r.refillKept(&r.d.leanCore, r.d.n)
 	r.regenAudio(rest)
-	r.soft.relock(&r.d.leanCore)
+	r.refill.soft.relock(&r.d.leanCore)
 }
 
 func (r *iqRx) regenAudio(rest []int16) bool {
