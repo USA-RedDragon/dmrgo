@@ -248,3 +248,42 @@ func TestSecondsLockBurstOffset(t *testing.T) {
 		}
 	}
 }
+
+func TestSecondsTalkerSwitch(t *testing.T) {
+	t.Parallel()
+	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 310123, Superframes: 1}
+	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 310123, Message: "TALKER TWO DATA"}
+	v, err := rftx.Sequence("voice", c1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := rftx.Sequence("data12", c2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const lead = 0.05
+	vb := v.Bursts[:len(v.Bursts)-1]
+	f1, e1 := rftx.Modulate(vb, rftx.Schedule{Slot: 0})
+	f2, e2 := rftx.Modulate(d.Bursts, rftx.Schedule{Slot: 0})
+	ramp := (slotSeconds - burstSeconds) / 2
+	for _, c := range []struct{ gap, frac float64 }{{0.0192, 0.05}, {0.1192, 0.25}} {
+		t2 := math.Round((lead+float64(2*len(vb))*slotSeconds+c.gap+c.frac/symbolRate)*basebandRate) / basebandRate
+		x := signalBaseband([]signalPart{{lead, f1, e1}, {t2, f2, e2}}, t2+float64(len(f2))/basebandRate+0.1, math.Inf(1), 1)
+		for tier := Tier0; tier <= Tier3; tier++ {
+			got := receiveIQAt(t, x, basebandRate, tier)
+			lo, hi, n := math.Inf(1), math.Inf(-1), 0
+			for i := range d.Bursts {
+				w := t2 + float64(2*i)*slotSeconds + ramp
+				for _, b := range got {
+					if e := b.Seconds - w; math.Abs(e) < 50e-6 {
+						lo, hi, n = min(lo, e), max(hi, e), n+1
+						break
+					}
+				}
+			}
+			if n < len(d.Bursts) || hi-lo > mxSecondsMean {
+				t.Errorf("gap %.1f ms, %.2f symbol, Tier%d: %d of %d bursts of the second talker, Seconds spread %.1f us", c.gap*1e3, c.frac, tier-Tier0, n, len(d.Bursts), (hi-lo)*1e6)
+			}
+		}
+	}
+}

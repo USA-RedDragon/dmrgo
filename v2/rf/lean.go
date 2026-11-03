@@ -768,6 +768,26 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		return 0, 0, false
 	}
 	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
+	if best == 0 || best == len(c)-1 {
+		k := float32(-4)
+		if best > 0 {
+			k = 4
+		}
+		if end+k*sps/4 > 0 {
+			return 0, 0, false
+		}
+		out, in := win.corr(&syms, end+k*sps/4, sps), c[best-int(k)/4]
+		if out >= c[best] {
+			return 0, 0, false
+		}
+		lo, hi := out, in
+		if k > 0 {
+			lo, hi = in, out
+		}
+		if den := lo - 2*c[best] + hi; den < 0 {
+			bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
+		}
+	}
 	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
 		bestD = win.mmZero(&syms, end, bestD, sps)
 	}
