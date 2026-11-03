@@ -316,6 +316,7 @@ type leanTuner interface {
 
 type leanCore struct {
 	center   int64
+	endTicks int64
 	mfStep   int64
 	n        int64
 	first    int64
@@ -2504,6 +2505,10 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern, g, dc float32) int
 	return n
 }
 
+func (r *leanCore) markEnd() {
+	r.endTicks = (r.mfStep*(r.n+1) + discSpan*samplesPerSy) << 8
+}
+
 //go:noinline
 func (r *leanCore) unlock() {
 	if r.hasExt() {
@@ -2638,6 +2643,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
 	ticks := r.burstTicks(base)
+	if r.endTicks != 0 && ticks+(slotSymbols-cachSymbols)*samplesPerSy<<8 > r.endTicks {
+		return
+	}
 	b.Seconds = tickSeconds(ticks)
 	b.HasCACH = r.bs && ticks >= cachSymbols*samplesPerSy<<8
 	if r.iqLow && iqLowISI > 0 {

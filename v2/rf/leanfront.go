@@ -249,12 +249,14 @@ func (r *leanRx) writeBaseband(x []complex64) {
 }
 
 func (r *leanRx) flush() {
+	r.markEnd()
 	for range slotSamplesN {
 		r.sample(0)
 	}
 	if r.locked {
 		r.unlock()
 	}
+	r.endTicks = 0
 }
 
 func (r *leanRx) sample(v complex64) {

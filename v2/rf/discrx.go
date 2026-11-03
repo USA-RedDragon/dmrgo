@@ -113,6 +113,7 @@ func (r *discRx) flushBursts() int {
 }
 
 func (r *discRx) flush() {
+	r.markEnd()
 	var idle [16]int16
 	r.idle(&idle)
 	for range slotSymbols * discSPS &^ 63 / len(idle) {
@@ -121,9 +122,11 @@ func (r *discRx) flush() {
 	if r.locked {
 		r.unlock()
 	}
+	r.endTicks = 0
 }
 
 func (r *discRx) flushIQ() {
+	r.markEnd()
 	var idle [16]int16
 	r.idle(&idle)
 	for range slotSymbols * discSPS &^ 63 / len(idle) {
@@ -132,6 +135,7 @@ func (r *discRx) flushIQ() {
 	if r.locked {
 		r.unlock()
 	}
+	r.endTicks = 0
 }
 
 func (r *discRx) idle(idle *[16]int16) {
