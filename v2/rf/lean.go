@@ -2566,6 +2566,10 @@ func llrAtS[_ any](r *leanCore, p int) int16 {
 }
 
 //go:noinline
+func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) bool {
+	return anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
+}
+
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.base, r.anchor = base, anchor
 	v := max(r.discVar, 1)
@@ -2626,10 +2630,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	if r.clickSpan > 0 {
 		r.clickFloor(v)
 	}
-	if anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms {
-		return
-	}
-	if r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data) {
+	if r.unreported(b, anchor, lo, hi) {
 		return
 	}
 	if !r.classify(b, j) && (!r.hasExt() || !r.ext.place(r, b, j)) && !r.dataSync(b) {
