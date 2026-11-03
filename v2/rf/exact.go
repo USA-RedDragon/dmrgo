@@ -31,6 +31,8 @@ type xtrellis struct {
 	below    float32
 	jk       []float32
 	beamW    float32
+	simd     bool
+	ext      []float32
 }
 
 var jacobian = [128]float32{0.69314718, 0.63259904, 0.57593942, 0.52312326, 0.47407698, 0.42870068, 0.38687101, 0.34844458, 0.31326169, 0.28115014, 0.25192908, 0.22541265, 0.20141328, 0.17974464, 0.16022415, 0.14267506, 0.12692801, 0.11282228, 0.10020656, 0.088939465, 0.078889734, 0.0699362, 0.061967589, 0.054882179, 0.048587352, 0.042999079, 0.038041372, 0.0336457, 0.029750418, 0.026300195, 0.023245464, 0.020541901, 0.018149928, 0.016034256, 0.014163457, 0.01250957, 0.011047745, 0.009755911, 0.0086144838, 0.0076060944, 0.0067153485, 0.0059286084, 0.0052337982, 0.004620229, 0.0040784433, 0.0036000751, 0.0031777265, 0.0028048569, 0.0024756851, 0.002185102, 0.0019285932, 0.0017021703, 0.0015023102, 0.001325901, 0.0011701947, 0.0010327642, 0.00091146645, 0.00080440939, 0.00070992233, 0.00062653039, 0.00055293148, 0.00048797616, 0.0004306498, 0.00038005673, 0.00033540637, 0.00029600092, 0.00026122444, 0.00023053329, 0.00020344767, 0.00017954409, 0.00015844877, 0.00013983185, 0.00012340219, 0.00010890284, 9.6107034e-05, 8.4814638e-05, 7.4849029e-05, 6.6054326e-05, 5.8292965e-05, 5.1443537e-05, 4.5398899e-05, 4.0064495e-05, 3.5356876e-05, 3.1202398e-05, 2.753607e-05, 2.4300536e-05, 2.1445178e-05, 1.8925327e-05, 1.6701561e-05, 1.4739091e-05, 1.3007213e-05, 1.1478834e-05, 1.0130042e-05, 8.9397363e-06, 7.8892937e-06, 6.9622805e-06, 6.1441935e-06}
@@ -59,6 +61,7 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 		corr: make([]complex64, maxSteps*m.windows), top: make([]float32, maxSteps+1), beam: make([]float32, maxSteps),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
 		pen: driftPenalty, drifts: 1, jk: make([]float32, maxSteps), beamW: exactBeam,
+		simd: xtHasAVX2(), ext: make([]float32, np+16),
 	}
 	if np != phaseStates {
 		t.row = 1
@@ -77,6 +80,9 @@ func (t *xtrellis) forward(src, d0, d1, d2, d3 []float32, lo int, l *xlanes, thr
 	n := len(src)
 	d0, d1, d2, d3 = d0[:n], d1[:n], d2[:n], d3[:n]
 	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
+	if v, ok := t.forwardSIMD(src, d0, d1, d2, d3, cos, sin, l, thr, top, first); ok {
+		return v
+	}
 	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
 	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
 	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
@@ -170,6 +176,9 @@ func (t *xtrellis) backward(src, e0, e1, e2, e3, dst []float32, lo int, l *xlane
 	n := len(src)
 	e0, e1, e2, e3, dst = e0[:n], e1[:n], e2[:n], e3[:n], dst[:n]
 	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
+	if t.backwardSIMD(src, e0, e1, e2, e3, dst, cos, sin, l, thr, best) {
+		return
+	}
 	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
 	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
 	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
@@ -371,15 +380,17 @@ func (t *xtrellis) jumpCosts(steps int, sum float32) {
 func (t *xtrellis) drift(m []float32, ns int, jump float32) {
 	for s := range ns {
 		b := m[s*t.np : (s+1)*t.np]
-		first, prev := b[0], b[t.np-1]
-		for p := range t.np {
-			cur := b[p]
-			nxt := first
-			if p+1 < t.np {
-				nxt = b[p+1]
+		if !t.driftSIMD(b) {
+			first, prev := b[0], b[t.np-1]
+			for p := range t.np {
+				cur := b[p]
+				nxt := first
+				if p+1 < t.np {
+					nxt = b[p+1]
+				}
+				b[p] = max(cur, max(prev, nxt)-t.pen)
+				prev = cur
 			}
-			b[p] = max(cur, max(prev, nxt)-t.pen)
-			prev = cur
 		}
 		if jump > 0 {
 			top := negInf

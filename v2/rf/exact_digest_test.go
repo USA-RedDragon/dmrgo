@@ -90,7 +90,7 @@ func xtCases() []xtCase {
 	return out
 }
 
-func xtDigest() string {
+func xtDigest(simd bool) string {
 	m := newCPMModel(1, 10)
 	const steps = exactGapSlots * slotSymbols
 	h := sha256.New()
@@ -98,6 +98,7 @@ func xtDigest() string {
 	for i, c := range xtCases() {
 		xt := newXTrellis(m, c.np, steps)
 		xt.logmap, xt.jump, xt.fade, xt.below, xt.drifts = c.logmap, c.jump, c.fade, c.below, c.drifts
+		xt.simd = xt.simd && simd
 		if c.beam > 0 {
 			xt.beamW = c.beam
 		}
@@ -124,8 +125,10 @@ const xtWantDigest = "5dd0552565fb064df633f9e03867e87bb72aa6ec076bd48ce1edc72609
 
 func TestExactTrellisDigest(t *testing.T) {
 	t.Parallel()
-	if got := xtDigest(); got != xtWantDigest {
-		t.Errorf("xtrellis digest %s, want %s", got, xtWantDigest)
+	for _, simd := range []bool{true, false} {
+		if got := xtDigest(simd); got != xtWantDigest {
+			t.Errorf("xtrellis digest with vector kernels %v: %s, want %s", simd, got, xtWantDigest)
+		}
 	}
 }
 
