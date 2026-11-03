@@ -238,3 +238,28 @@ func TestCarrierLeadInMS(t *testing.T) {
 		}
 	}
 }
+
+func TestRxAudioQuietSource(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 2)
+	sig := cleanBaseband(slots, 1400)
+	for _, hz := range []int{9600, 48000} {
+		for _, level := range []float64{0.02, 0.01} {
+			a := discAudio(sig.noisy(30, 1), hz)
+			for i, v := range a {
+				a[i] = int16(math.Round(float64(v) * level))
+			}
+			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+				t.Run(fmt.Sprintf("%d/%g/tier%d", hz, level, tier-Tier0), func(t *testing.T) {
+					t.Parallel()
+					sc := scoreBench(truth, receiveAudioAt(t, a, hz, tier))
+					for _, k := range []string{"ambe", "csbk", "rate12", "rate34", "header", "lc"} {
+						if s := sc[k]; s != nil && s.Exact != s.Truth {
+							t.Errorf("%s: %d of %d exact", k, s.Exact, s.Truth)
+						}
+					}
+				})
+			}
+		}
+	}
+}
