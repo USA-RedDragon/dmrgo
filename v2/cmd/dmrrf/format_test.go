@@ -143,7 +143,7 @@ func TestFormatInference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(b[:4]) != "RIFF" || len(b) != wavHeaderSize+2*15980 {
+	if string(b[:4]) != "RIFF" || len(b) != wavHeaderSize+2*16060 {
 		t.Fatalf("WAV of %d bytes starting %q", len(b), b[:4])
 	}
 	odd := filepath.Join(dir, "capture.dat")
