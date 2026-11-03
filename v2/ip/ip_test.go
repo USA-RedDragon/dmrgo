@@ -45,7 +45,7 @@ func TestDecodeCapturedIPv4(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if d.Source != ip.RadioAddress(ip.DefaultNetwork, 3191868) || d.Destination != ip.RadioAddress(ip.DefaultNetwork, 3140598) {
+			if d.Source != ip.RadioAddress(ip.DefaultNetwork, 3191868) || d.Destination != ip.RadioAddress(ip.DefaultNetwork, 3002198) {
 				t.Errorf("addresses %v to %v", d.Source, d.Destination)
 			}
 			if ip.RadioID(d.Source) != 3191868 {

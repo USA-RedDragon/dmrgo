@@ -10,7 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 )
 
-const hostUnreachable = "45000038000000004001c2330c2febf60c30b43c03018cec000000004500003a000d00004011c2140c30b43c0c2febf60fa70fa70026509e"
+const hostUnreachable = "45000038000000004001ded50c2dcf560c30b43c0301704a000000004500003a000d00004011deb60c30b43c0c2dcf560fa70fa700266d40"
 
 func TestICMPMessages(t *testing.T) {
 	t.Parallel()
@@ -39,7 +39,7 @@ func TestAppendICMPPacket(t *testing.T) {
 
 	tms := unhex(t, appcapture.TMS)
 	c := ip.ICMPPacket{
-		Source:      ip.RadioAddress(ip.DefaultNetwork, 3140598),
+		Source:      ip.RadioAddress(ip.DefaultNetwork, 3002198),
 		Destination: ip.RadioAddress(ip.DefaultNetwork, 3191868),
 		Message:     ip.ICMPHostUnreachable,
 		Original:    tms,
@@ -172,7 +172,7 @@ func TestCheckIPv4(t *testing.T) {
 		f(b)
 		return b
 	}
-	df := mod(func(b []byte) { b[6] = 0x40; b[10], b[11] = 0x82, 0x14 })
+	df := mod(func(b []byte) { b[6] = 0x40; b[10], b[11] = 0x9E, 0xB6 })
 	tests := []struct {
 		name    string
 		data    []byte

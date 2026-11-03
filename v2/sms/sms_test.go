@@ -114,8 +114,8 @@ func TestAppendPacketMatchesRadios(t *testing.T) {
 		text sms.Text
 		want string
 	}{
-		{sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Sequence: 1, Body: []byte("MOTO TEST\x00")}, appcapture.TMS},
-		{sms.Text{Format: sms.FormatAnyTone, Source: 3191868, Destination: 3140598, Body: []byte("DMR TEST")}, appcapture.DMRText},
+		{sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3002198, Sequence: 1, Body: []byte("MOTO TEST\x00")}, appcapture.TMS},
+		{sms.Text{Format: sms.FormatAnyTone, Source: 3191868, Destination: 3002198, Body: []byte("DMR TEST")}, appcapture.DMRText},
 	}
 	for _, tt := range tests {
 		var h sms.Header

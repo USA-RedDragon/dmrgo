@@ -103,7 +103,7 @@ func TestReceiverAnyToneThroughXPR(t *testing.T) {
 	}
 
 	cc := enums.ColorCode(7)
-	ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true, Address: 3140598, ColorCode: &cc}), bursts)
+	ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true, Address: 3002198, ColorCode: &cc}), bursts)
 	if got := ipIDs(ev); !bytes.Equal(got, []byte{5, 5, 6, 7}) {
 		t.Errorf("endpoint: IP IDs %v, want [5 5 6 7]", got)
 	}

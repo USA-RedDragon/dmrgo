@@ -2,19 +2,20 @@
 // the tests and examples of the application protocol packages. Each value
 // is the user data of one DMR data packet, after the message CRC. The
 // radio is a BTECH DA-7X2 with AnyTone D890UV firmware, ID 3191868, sending
-// to 3140598 through an XPR 8400 repeater, captured on 2026-10-16 unless a
-// value states otherwise.
+// through an XPR 8400 repeater, captured on 2026-10-16 unless a value states
+// otherwise. The captured destination radio ID is replaced by the fictional
+// 3002198 (IPv4 12.45.207.86), with the IPv4 and UDP checksums computed again.
 package appcapture
 
 // TMS is the AnyTone M-SMS text "MOTO TEST" as relayed over IPSC: an IPv4
-// packet from 12.48.180.60 to 12.47.235.246 with a UDP datagram from port
+// packet from 12.48.180.60 to 12.45.207.86 with a UDP datagram from port
 // 4007 to 4007 that holds a MOTOTRBO text message.
-const TMS = "4500003a000d00004011c2140c30b43c0c2febf60fa70fa70026509e001ca00081040d000a004d004f0054004f00200054004500530054000000"
+const TMS = "4500003a000d00004011deb60c30b43c0c2dcf560fa70fa700266d40001ca00081040d000a004d004f0054004f00200054004500530054000000"
 
 // DMRText is the AnyTone "DMR Standard" text "DMR TEST" as relayed over
 // IPSC: an IPv4 packet with a UDP datagram from port 5016 to 5016 whose
 // payload is 00 0d 00 0a, the text in UTF-16LE and a 16-bit NUL.
-const DMRText = "45000032000c00000111011e0c30b43c0c2febf613981398001edcd6000d000a44004d005200200054004500530054000000"
+const DMRText = "45000032000c000001111dc00c30b43c0c2dcf5613981398001ef978000d000a44004d005200200054004500530054000000"
 
 // HSMS is the payload of the AnyTone H-SMS text "HYT TEST" received on air:
 // a defined data packet (DD_HEAD, SAP short data, DD format 1) that holds a

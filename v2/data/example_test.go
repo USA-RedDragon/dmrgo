@@ -55,7 +55,7 @@ func ExampleReceiver() {
 // addressed radio returns the ACK bursts to send, with their Due times.
 func ExampleReceiver_respond() {
 	bursts := readTimedExample("testdata/anytone_sms_xpr.txt")
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3140598, Respond: true})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002198, Respond: true})
 	if err != nil {
 		fmt.Println(err)
 		return

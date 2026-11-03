@@ -79,8 +79,8 @@ func Example_reply() {
 		fmt.Println(err)
 	}
 	// Output:
-	// AnyTone text from 3191868 to 3140598: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
-	// radio: "got it" from 3140598 <nil>
+	// AnyTone text from 3191868 to 3002198: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
+	// radio: "got it" from 3002198 <nil>
 	// sender: Delivered after 1 tries (ACK)
 }
 
@@ -90,7 +90,7 @@ func readText(path string) (sms.Text, error) {
 		return sms.Text{}, err
 	}
 	defer f.Close()
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3140598})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002198})
 	if err != nil {
 		return sms.Text{}, err
 	}
