@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -2627,7 +2628,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	if r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data) {
 		return
 	}
-	if !r.classify(b, j) && (!r.hasExt() || !r.ext.place(r, b, j)) {
+	if !r.classify(b, j) && (!r.hasExt() || !r.ext.place(r, b, j)) && !r.dataSync(b) {
 		if r.hasExt() && !r.isReplayDry() {
 			r.ext.unplaced(r, b)
 		}
@@ -2815,6 +2816,27 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		return true
 	}
 	return false
+}
+
+func (r *leanCore) dataSync(b *Burst) bool {
+	_, data, _ := sourceAt(int(r.src)).SyncPatterns()
+	dd := syncDist(&b.Data, data)
+	if dd > discAnchorBits || r.unproven || r.isReplaying() {
+		return false
+	}
+	rho2, src, neg := r.syncAt(r.base + leanSyncEnd)
+	if !neg || src != int(r.src) || rho2 < leanSeekRho*leanSeekRho {
+		return false
+	}
+	if g, _, _ := r.fitSync(r.base+leanSyncEnd, data); r.flatSync(g) {
+		return false
+	}
+	st, res := golay.Decode2087(slotTypeWord(&b.Data))
+	if cc, ok := r.colorCode(); !ok || res.Uncorrectable || enums.ColorCode(st>>16) != cc || enums.DataType(st>>12&0xF).IsReserved() {
+		return false
+	}
+	b.Distance, b.Sync = dd, data
+	return true
 }
 
 func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {

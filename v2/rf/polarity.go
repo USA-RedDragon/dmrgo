@@ -3,6 +3,7 @@ package rf
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 const (
@@ -44,15 +45,7 @@ func (f *audioFront) observe(b *Burst) {
 	score := int(f.polSum)
 	switch b.Sync {
 	case enums.SyncBSSourcedData, enums.SyncMSSourcedData, enums.SyncTDMA1Data, enums.SyncTDMA2Data:
-		var cw uint32
-		for j := range 20 {
-			i := 98 + j
-			if j >= 10 {
-				i += 48
-			}
-			cw = cw<<1 | uint32(b.Data[i/8]>>(7-i%8)&1)
-		}
-		_, res := golay.Decode2087(cw)
+		_, res := golay.Decode2087(slotTypeWord(&b.Data))
 		switch {
 		case !res.Uncorrectable && res.ErrorsCorrected <= 1:
 			score -= polGood
@@ -83,4 +76,16 @@ func (r *discRx) polarity() {
 			r.unlock()
 		}
 	}
+}
+
+func slotTypeWord(d *layer2.RawBurst) uint32 {
+	var cw uint32
+	for j := range 20 {
+		i := 98 + j
+		if j >= 10 {
+			i += 48
+		}
+		cw = cw<<1 | uint32(d[i/8]>>(7-i%8)&1)
+	}
+	return cw
 }
