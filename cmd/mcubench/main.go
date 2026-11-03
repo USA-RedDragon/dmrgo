@@ -534,7 +534,7 @@ func (b *bench) tx(ctx context.Context, r benchRow) (measure, error) {
 		return measure{}, err
 	}
 	c, err := img.cycles(o.counts, func(s string) bool {
-		return strings.Contains(s, "internal/fsktx") || strings.Contains(s, "dmrgo/v2/rf.") || s == "main.step" || s == "main.toDAC"
+		return strings.Contains(s, "internal/fsktx") || strings.Contains(s, "dmrgo/v2/rf.") || strings.HasPrefix(s, "OUTLINED_FUNCTION") || s == "main.step" || s == "main.toDAC"
 	})
 	if err != nil {
 		return measure{}, err
