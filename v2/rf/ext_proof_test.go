@@ -50,7 +50,7 @@ func TestExtWeakLockProof(t *testing.T) {
 			if c.unproven {
 				x.prove(c, &bs[i])
 			}
-			x.push(c, &bs[i], false)
+			x.push(c, &bs[i], false, 0)
 			x.drain(c, false, 0)
 		}
 		x.end(c)

@@ -287,3 +287,45 @@ func TestSecondsTalkerSwitch(t *testing.T) {
 		}
 	}
 }
+
+func TestSecondsClockError(t *testing.T) {
+	t.Parallel()
+	for _, content := range []uint8{0, 1} {
+		for _, clock := range []uint8{1, 2} {
+			for _, f := range []uint8{1, 5} {
+				row := mxRow{mxOffset: 3, mxContent: content, mxClock: clock, mxFormat: f}
+				s, err := mxBuild(row)
+				if err != nil {
+					t.Fatal(err)
+				}
+				in := mxInputOf(s, row)
+				for tier := Tier0; tier <= Tier3; tier++ {
+					got, _, err := mxReceive(in, mxRx{row.val(mxFormat), tier})
+					if err != nil {
+						t.Fatal(err)
+					}
+					var sum float64
+					n := 0
+					for _, b := range got {
+						at := b.Seconds + in.delay
+						j := mxNearest(s, at)
+						if j < 3 {
+							continue
+						}
+						d := at - s.truth[j].at
+						if math.Abs(d) > mxSeconds {
+							t.Errorf("%s Tier%d: burst %d is %+.1f us off", row.name(), tier-Tier0, j, d*1e6)
+						}
+						sum += d
+						n++
+					}
+					if n < len(s.truth)-4 {
+						t.Errorf("%s Tier%d: %d of %d bursts after the third", row.name(), tier-Tier0, n, len(s.truth)-3)
+					} else if m := sum / float64(n); math.Abs(m) > mxSecondsMean {
+						t.Errorf("%s Tier%d: Seconds is %+.1f us off on average", row.name(), tier-Tier0, m*1e6)
+					}
+				}
+			}
+		}
+	}
+}

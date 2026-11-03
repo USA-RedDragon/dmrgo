@@ -24,9 +24,14 @@ type leanExt interface {
 	anchorProves(end int64) bool
 	replayLock(j int32, b *Burst)
 	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
+	lockFit(c *leanCore, sym, t int64, q float32)
+	syncFit(c *leanCore, sym, t int64, q float32)
+	grid(c *leanCore, start int64) (int64, bool)
 }
 
 const extQueue = 8
+
+const extEarlySymbols = 3 * slotSymbols
 
 const extLate = 5
 
@@ -62,6 +67,12 @@ type softExt struct {
 	ch              [2]extChan
 	q               [extQueue]Burst
 	held            [extQueue]bool
+	early           [extQueue]bool
+	earlyStart      [extQueue]int64
+	timing          bool
+	atN             int64
+	anc             [2]extAnchor
+	ancBase         int64
 	proofCC         enums.ColorCode
 	weakEnd         int64
 	proofs          uint8
@@ -148,7 +159,6 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		x.warm(c, b)
 		return
 	}
-	x.replayTime(c, b)
 	if c.unproven {
 		x.prove(c, b)
 	}
@@ -199,7 +209,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	default:
 		ch.have = 0
 	}
-	x.push(c, b, hold)
+	x.push(c, b, hold, c.base+cachSymbols)
 	if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
 		x.embeddedLC(ch, b.Slot)
 		ch.have = 0
@@ -308,7 +318,7 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 		noteCallLC(&ch.raw, &b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
 		ch.elc.callLC(&b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
 	}
-	i := x.push(c, b, hold)
+	i := x.push(c, b, hold, c.base+cachSymbols)
 	x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
 	if x.coh.nextOK {
 		x.back(c, b.Slot-1)
@@ -690,23 +700,42 @@ func (x *softExt) prove(c *leanCore, b *Burst) {
 	x.proofs++
 }
 
-func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
+func (x *softExt) push(c *leanCore, b *Burst, hold bool, start int64) int {
 	if x.n == extQueue && c.unproven {
 		x.head = (x.head + 1) % extQueue
 		x.n--
 	}
 	if x.n == extQueue {
-		x.held[x.head] = false
+		x.held[x.head], x.early[x.head] = false, false
 		x.drain(c, true, 0)
 	}
 	i := (x.head + x.n) % extQueue
+	_, _, known := x.anchorPeriod(x.ancParity(c, start-cachSymbols))
 	x.q[i], x.held[i], x.qcoh[i] = *b, hold, false
+	x.early[i], x.earlyStart[i] = x.timing && !known, start
 	x.n++
+	x.retime(c)
 	return i
 }
 
+func (x *softExt) retime(c *leanCore) {
+	for k := range x.n {
+		i := (x.head + k) % extQueue
+		if !x.early[i] {
+			continue
+		}
+		start := x.earlyStart[i]
+		if t, ok := x.grid(c, start); ok {
+			x.q[i].Seconds = tickSeconds(t - int64(c.lagTicks))
+		} else if _, _, known := x.anchorPeriod(x.ancParity(c, start-cachSymbols)); !known && c.ns-start <= extEarlySymbols {
+			continue
+		}
+		x.early[i] = false
+	}
+}
+
 func (x *softExt) drain(c *leanCore, one bool, keep int) {
-	for x.n > keep && !x.held[x.head] && !c.unproven {
+	for x.n > keep && !x.held[x.head] && !x.early[x.head] && !c.unproven {
 		c.emit(&x.q[x.head])
 		x.head = (x.head + 1) % extQueue
 		x.n--
@@ -719,7 +748,6 @@ func (x *softExt) drain(c *leanCore, one bool, keep int) {
 func (x *softExt) kept() []int16 { return x.acq }
 
 func (x *softExt) unplaced(c *leanCore, b *Burst) {
-	x.replayTime(c, b)
 	ch := &x.ch[b.Slot&1]
 	if ch.lateN == extLate {
 		copy(ch.late[:], ch.late[1:])
@@ -780,7 +808,7 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 		if x.stages&extELC != 0 {
 			hold = x.fragment(ch, lb)
 		}
-		x.push(c, lb, hold)
+		x.push(c, lb, hold, l.base+cachSymbols)
 		if lb.Voice == enums.VoiceBurstE && ch.have == 0xf {
 			x.embeddedLC(ch, lb.Slot)
 			ch.have = 0
@@ -859,6 +887,7 @@ func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float
 
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
+	x.early, x.timing = [extQueue]bool{}, !c.bs
 	x.vOK = false
 	x.proofs = 0
 	if x.coh != nil {
@@ -947,8 +976,10 @@ func (x *softExt) firstSlot(c *leanCore) {
 	sps := 2 * c.tm.step
 	last := x.lockSym
 	at := x.lockAt
+	x.atN = x.lockN
 	if c.hunt && c.acqFrom <= x.lockN {
 		at -= float32(c.n - x.lockN)
+		x.atN = c.n
 	}
 	n32 := x.replaySlots(c, last, at, sps)
 	n := int(n32)
@@ -1055,12 +1086,6 @@ func (x *softExt) refillLock(c *leanCore) {
 func (x *softExt) settleLock() {
 	if x.settleCoh != nil {
 		x.settleCoh()
-	}
-}
-
-func (x *softExt) replayTime(c *leanCore, b *Burst) {
-	if c.isReplaying() {
-		b.Seconds -= float64(x.lockSym-c.base-cachSymbols) * float64(x.stretch) / symbolRate
 	}
 }
 
@@ -1233,6 +1258,9 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 			cv[i] = keptSyncCorr(c, &syms[p], at-span+float32(best+i-1)*sps/8, sps)
 		}
 		off := (float32(best) + edgeVertex3(&cv)) * sps / 8
+		if j >= 0 {
+			x.syncFit(c, first+j*slotSymbols+leanSyncEnd, c.ticksAt(x.atN, at-span+keptMMZero(c, &syms[p], at-span, off, sps)), r)
+		}
 		w := r / (max32(1-r, 1e-6) * tv * sps * sps)
 		sw, sx, sy, sxx, sxy = sw+w, sx+w*span, sy+w*off, sxx+w*span*span, sxy+w*span*off
 		m++
@@ -1299,7 +1327,7 @@ func edgeVertex3(c *[3]float32) float32 {
 
 func (x *softExt) end(c *leanCore) {
 	for i := range x.held {
-		x.held[i] = false
+		x.held[i], x.early[i] = false, false
 	}
 	x.ch[0].have, x.ch[1].have = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
@@ -1366,3 +1394,125 @@ func (x *softExt) coreCleaner() bool {
 }
 
 const extPayloadHalf = 98
+
+const (
+	extAnchorSpan  = 16 * slotSymbols
+	extAnchorReach = 2 * slotSymbols
+	extAnchorRho2  = 0.985
+	extAnchorJump  = 0.25
+	extAnchorSig   = 0.0034
+	extSyncMid     = -(syncSymbols - 1) / 2.0
+)
+
+type extAnchor struct {
+	ref, tref int64
+	n, sx, sy float32
+	sxx, sxy  float32
+	lo, hi    float32
+}
+
+func (x *softExt) lockFit(c *leanCore, sym, t int64, q float32) {
+	x.ancBase, x.anc = c.first, [2]extAnchor{}
+	x.syncFit(c, sym, t, q)
+}
+
+func (x *softExt) ancSlot(base int64) int64 {
+	k := base - x.ancBase + slotSymbols/2
+	q := k / slotSymbols
+	if k < 0 && k%slotSymbols != 0 {
+		q--
+	}
+	return q
+}
+
+func (x *softExt) ancParity(c *leanCore, base int64) int {
+	if c.bs {
+		return 0
+	}
+	return int(x.ancSlot(base) & 1)
+}
+
+func (x *softExt) syncFit(c *leanCore, sym, t int64, q float32) {
+	if q < extAnchorRho2 {
+		return
+	}
+	xs := x.ancSlot(sym-leanSyncEnd)*slotSymbols + leanSyncEnd
+	t -= (syncSymbols - 1) * samplesPerSy << 7
+	a := &x.anc[x.ancParity(c, sym-leanSyncEnd)]
+	if a.n > 0 {
+		if p, ok := a.at(xs, 0); !ok || abs64(t-p) > int64(extAnchorJump*samplesPerSy*256) {
+			a.n = 0
+		}
+	}
+	if a.n == 0 {
+		*a = extAnchor{ref: xs, tref: t}
+	}
+	k := xs - a.ref
+	if k < -extAnchorSpan || k > extAnchorSpan {
+		return
+	}
+	v := float32(k)
+	y := float32(t - a.tref - k*samplesPerSy<<8)
+	a.n, a.sx, a.sy, a.sxx, a.sxy = a.n+1, a.sx+v, a.sy+y, a.sxx+v*v, a.sxy+v*y
+	a.lo, a.hi = min(a.lo, v), max(a.hi, v)
+}
+
+func (a *extAnchor) line() (c, b float32, ok bool) {
+	if a.n < 2 || a.hi-a.lo < 2*slotSymbols {
+		return a.sy / max(a.n, 1), 0, false
+	}
+	b = (a.n*a.sxy - a.sx*a.sy) / (a.n*a.sxx - a.sx*a.sx)
+	return (a.sy - b*a.sx) / a.n, b, abs32(b) <= leanClockMax*(samplesPerSy<<8)
+}
+
+func (a *extAnchor) at(xs int64, frac float32) (int64, bool) {
+	k := xs - a.ref
+	if v := float32(k); v > a.hi+extAnchorReach || v < a.lo-extAnchorReach {
+		if _, _, ok := a.line(); !ok {
+			return 0, false
+		}
+	}
+	c, b, _ := a.line()
+	u := float32(k) + frac
+	return a.tref + k*samplesPerSy<<8 + int64(roundf(frac*samplesPerSy*256+c+b*u)), true
+}
+
+func (x *softExt) anchorPeriod(p int) (c, b float32, ok bool) {
+	return x.anc[p].line()
+}
+
+func (a *extAnchor) clocked() bool {
+	_, b, ok := a.line()
+	v := a.sxx - a.sx*a.sx/a.n
+	sig := float32(extAnchorSig * samplesPerSy * 256)
+	return ok && b*b*v > leanClockSig*leanClockSig*sig*sig
+}
+
+func (x *softExt) grid(c *leanCore, start int64) (int64, bool) {
+	a := &x.anc[x.ancParity(c, start-cachSymbols)]
+	if !a.clocked() {
+		return 0, false
+	}
+	xs := x.ancSlot(start-cachSymbols)*slotSymbols + leanSyncEnd
+	if v := float32(xs - a.ref); v > a.hi+extAnchorReach || v < a.lo-extAnchorReach {
+		return 0, false
+	}
+	return a.at(xs, cachSymbols-leanSyncEnd-extSyncMid)
+}
+
+func abs64(v int64) int64 {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
+func keptMMZero(c *leanCore, syms *[syncSymbols]int8, end, off, sps float32) float32 {
+	var win syncWindow
+	b0 := max(int32(-end-off-sps/2)-2, 0)
+	if b0+leanSyncWindow > c.acqKept() {
+		return off
+	}
+	c.fillWindow(&win, b0)
+	return min(win.mmZero(syms, end, off, sps), -end)
+}

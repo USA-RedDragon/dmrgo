@@ -743,11 +743,11 @@ func peakAt(c *[7]float32, k int) float32 {
 	return c[k]
 }
 
-func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool, lim float32) (float32, float32, bool) {
+func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool, lim float32) (d, c2, z float32, ok bool) {
 	sps := 2 * r.tm.step
 	end := r.lastAt
 	if !r.burstKept() && (!r.locked || max(int32(-end-sps/2)-2, 0)+leanSyncWindow > r.acqKept()) {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
@@ -758,14 +758,14 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		reach = 2
 	}
 	if !coarseSync(&win, &syms, end, sps, reach) {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	ninf := float32(math.Inf(-1))
 	var c [7]float32
 	best := win.peak(&syms, &c, end, sps, wide)
 	if r.locked && best < len(c)-1 && c[best+1] == ninf {
 		r.again = true
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
 	if best == 0 || best == len(c)-1 {
@@ -774,11 +774,11 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 			k = 4
 		}
 		if end+k*sps/4 > 0 {
-			return 0, 0, false
+			return 0, 0, 0, false
 		}
 		out, in := win.corr(&syms, end+k*sps/4, sps), c[best-int(k)/4]
 		if out >= c[best] {
-			return 0, 0, false
+			return 0, 0, 0, false
 		}
 		lo, hi := out, in
 		if k > 0 {
@@ -790,6 +790,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	}
 	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
 		bestD = win.mmZero(&syms, end, bestD, sps)
+		z = bestD
+	} else if z = bestD; r.hasExt() {
+		z = win.mmZero(&syms, end, bestD, sps)
 	}
 	bestD = min(bestD, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
@@ -798,10 +801,10 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	sxx := svv - sv*sv/n
 	spp := 9*n - sp*sp/n
 	if sxy <= 0 || sxy*sxy < lim*lim*sxx*spp {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
 	r.ringSync(&win, end+bestD, sps, saved)
-	return bestD, sxy * sxy / (sxx * spp), true
+	return bestD, sxy * sxy / (sxx * spp), min(z, -end), true
 }
 
 func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
@@ -1127,7 +1130,7 @@ func (r *leanCore) searchRC() bool {
 	}
 	p := enums.SyncMSSourcedRC
 	var saved [syncSymbols]int8
-	d, c2, ok := r.resample(p, &saved, false, discLock)
+	d, c2, _, ok := r.resample(p, &saved, false, discLock)
 	if ok {
 		if ok = c2 >= discLock*discLock && r.fitLevels(r.ns-1, p, true, true); ok {
 			r.resampleStart(d)
@@ -1139,9 +1142,9 @@ func (r *leanCore) searchRC() bool {
 		if rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true) {
 			return false
 		}
-		d = 0
+		d, c2 = 0, 0
 	}
-	r.lockStream(1, d, 0)
+	r.lockStream(1, d, c2, 0)
 	r.rcLone = true
 	return true
 }
@@ -1300,7 +1303,7 @@ func (r *leanCore) decidePend() {
 		p = dp
 	}
 	r.fitLevels(end, p, true, false)
-	r.lockStream(src, 0, back)
+	r.lockStream(src, 0, 0, back)
 	r.forced, r.hunt = true, true
 }
 
@@ -1480,17 +1483,17 @@ var syncNib = [syncSymbols / 4][16]uint32{
 }
 
 //go:noinline
-func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d float32, ok, hold bool) {
+func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d, c2 float32, ok, hold bool) {
 	var saved [syncSymbols]int8
 	pairing := !strict && !r.cohVerify()
 	lim := float32(discLock)
 	if pairing {
 		lim = leanPairLock
 	}
-	if d, c2, sampled := r.resample(p, &saved, r.locked, lim); sampled {
+	if d, c2, _, sampled := r.resample(p, &saved, r.locked, lim); sampled {
 		if strict && r.held(d, src, data, p) {
 			r.restoreSync(&saved)
-			return 0, false, true
+			return 0, 0, false, true
 		}
 		strong := c2 >= discLock*discLock
 		ok := strong && r.fitLevels(r.ns-1, p, true, true)
@@ -1500,7 +1503,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 		}
 		if ok {
 			r.resampleStart(d)
-			return d, true, false
+			return d, c2, true, false
 		}
 		r.restoreSync(&saved)
 		if pairing {
@@ -1510,7 +1513,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 	if !strict {
 		r.acqNext = r.ns + leanAcqWait
 	}
-	return 0, false, false
+	return 0, 0, false, false
 }
 
 func (r *leanCore) searchSym(strict bool) {
@@ -1532,10 +1535,10 @@ func (r *leanCore) searchSym(strict bool) {
 		p = dp
 	}
 	ok := false
-	var d float32
+	var d, c2 float32
 	if !weak && (strict || r.ns >= r.acqNext) {
 		var hold bool
-		if d, ok, hold = r.searchFit(p, src, data, strict); hold {
+		if d, c2, ok, hold = r.searchFit(p, src, data, strict); hold {
 			return
 		}
 	}
@@ -1555,9 +1558,9 @@ func (r *leanCore) searchSym(strict bool) {
 			d = t * 2 * r.tm.step
 			r.shiftStrobe(d)
 		}
-		verified = true
+		verified, c2 = true, 0
 	}
-	r.lockStream(src, d, 0)
+	r.lockStream(src, d, c2, 0)
 	if verified {
 		r.unproven = true
 		r.ext.weakAt(r.ns - 1)
@@ -1575,7 +1578,7 @@ func (r *leanCore) searchMid() {
 	at := r.lastAt
 	r.lastAt = at - r.tm.step
 	var saved [syncSymbols]int8
-	d, _, ok := r.resample(p, &saved, false, discLock)
+	d, c2, _, ok := r.resample(p, &saved, false, discLock)
 	r.lastAt = at
 	if !ok {
 		return
@@ -1588,7 +1591,7 @@ func (r *leanCore) searchMid() {
 		return
 	}
 	r.resampleStart(d)
-	r.lockStream(src, d, 0)
+	r.lockStream(src, d, c2, 0)
 }
 
 //go:noinline
@@ -1629,7 +1632,10 @@ func (r *leanCore) retime(mid bool) {
 		return
 	}
 	var saved [syncSymbols]int8
-	if d, c2, ok := r.resample(p, &saved, true, discLock); ok {
+	if d, c2, z, ok := r.resample(p, &saved, true, discLock); ok {
+		if r.hasExt() && r.ns-1 == r.slotEnd-slotSymbols+leanSyncEnd {
+			r.ext.syncFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2)
+		}
 		if r.reEntry && !r.cohRefit && p != enums.SyncMSSourcedRC {
 			r.restoreSync(&saved)
 			sps := 2 * r.tm.step
@@ -1655,7 +1661,7 @@ func (r *leanCore) midSync() {
 		p = dp
 	}
 	var saved [syncSymbols]int8
-	d, _, ok := r.resample(p, &saved, true, discLock)
+	d, _, _, ok := r.resample(p, &saved, true, discLock)
 	if !ok {
 		return
 	}
@@ -1665,7 +1671,7 @@ func (r *leanCore) midSync() {
 	}
 	if !r.clipped(r.ns-1) && r.fitLevels(r.ns-1, p, true, true) {
 		r.resampleStart(d)
-		r.lockStream(src, d, 0)
+		r.lockStream(src, d, 0, 0)
 		r.forced = true
 		return
 	}
@@ -1779,11 +1785,11 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 		d = t * 2 * r.tm.step
 		r.shiftStrobe(d)
 	}
-	r.lockStream(src, d, back)
+	r.lockStream(src, d, 0, back)
 	r.forced, r.hunt = true, true
 }
 
-func (r *leanCore) lockStream(src int, d float32, back int64) {
+func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	if r.unproven && r.hasExt() {
 		r.ext.end(r)
 	}
@@ -1813,6 +1819,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.eAcc, r.eSyms = 0, 0
 	if r.hasExt() {
 		r.ext.locked(r, d)
+		r.ext.lockFit(r, r.ns-1-back, r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step), q)
 	}
 }
 
@@ -2494,8 +2501,19 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 }
 
 func (r *leanCore) burstTicks(base int64) int64 {
-	return (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
-		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256))) - int64(r.lagTicks)
+	rate := float32(0)
+	if r.bs {
+		rate = r.tm.rate
+	}
+	back := float32(r.ns-1-(base+cachSymbols)) * (2*r.tm.step + rate)
+	ticks := (r.mfStep*(r.n-1)+r.center)<<8 +
+		int64(int32(roundf(float32(int32(r.mfStep))*(r.lastAt-back)*256))) - int64(r.lagTicks)
+	if r.hasExt() && !r.bs {
+		if t, ok := r.ext.grid(r, base+cachSymbols); ok {
+			ticks = t - int64(r.lagTicks)
+		}
+	}
+	return ticks
 }
 
 func (r *leanCore) emit(b *Burst) {
@@ -2729,4 +2747,10 @@ func symbolOf(b0, b1 unpacked.Bit) int8 {
 
 func syncDist(b *layer2.RawBurst, p enums.SyncPattern) int {
 	return bits.OnesCount64(ibits.Field(b[:], framer.SyncOffset, framer.SyncBits) ^ uint64(p))
+}
+
+func (r *leanCore) strobeTicks(at float32) int64 { return r.ticksAt(r.n, at) }
+
+func (r *leanCore) ticksAt(n int64, at float32) int64 {
+	return (r.mfStep*(n-1)+r.center)<<8 + int64(int32(roundf(float32(int32(r.mfStep))*at*256)))
 }
