@@ -2335,22 +2335,21 @@ func (r *leanCore) retune(d float32) {
 }
 
 func (r *leanCore) shift(d float32) {
+	center := float32(0)
 	if r.locked {
-		r.off -= d
-	} else {
-		if r.acqKept() > 0 {
-			r.rescaleKept(256, int32(roundf(-d*(256.0/discStepHz))))
+		center = r.dcHz - d
+	} else if r.acqKept() > 0 {
+		r.rescaleKept(256, int32(roundf(-d*(256.0/discStepHz))))
+	}
+	off := r.off - d
+	k := roundf((off - center) / discStepHz)
+	r.off = off - k*discStepHz
+	if k != 0 {
+		a8 := int32(k) * 256
+		for i, v := range &r.ring {
+			r.ring[i] = int8(scale8(int32(v), 256, a8))
 		}
-		off := r.off - d
-		k := roundf(off / discStepHz)
-		r.off = off - k*discStepHz
-		if k != 0 {
-			a8 := int32(k) * 256
-			for i, v := range &r.ring {
-				r.ring[i] = int8(scale8(int32(v), 256, a8))
-			}
-			r.rebuildSigns()
-		}
+		r.rebuildSigns()
 	}
 	r.dcHz -= d
 	r.ms.lv[0].dcHz -= d
