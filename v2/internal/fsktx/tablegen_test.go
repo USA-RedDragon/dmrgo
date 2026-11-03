@@ -125,17 +125,15 @@ func renderLUT(b *bytes.Buffer, h []float64, l, n int) {
 		return int32(int16(math.Round(h[p*n+i] * tableUnits / 3)))
 	}
 	val := [5]int32{-3, -1, 1, 3, 0}
-	fmt.Fprintf(b, "var tapsIQLUT = [%d][32][%d]int32{\n", n/2, (l+1)/2)
+	fmt.Fprintf(b, "var tapsIQLUT = [%d][25][%d]int32{\n", n/2, (l+1)/2)
 	for j := range n / 2 {
 		b.WriteString("{")
-		for q := range 32 {
+		for q := range 25 {
 			b.WriteString("{")
 			for g := range (l + 1) / 2 {
 				var v int32
-				if q < 25 {
-					for k, c := range [2]int{q / 5, q % 5} {
-						v += (tap(2*g, 2*j+k) + tap(2*g+1, 2*j+k)<<16) * val[c]
-					}
+				for k, c := range [2]int{q / 5, q % 5} {
+					v += (tap(2*g, 2*j+k) + tap(2*g+1, 2*j+k)<<16) * val[c]
 				}
 				fmt.Fprintf(b, "%d,", v)
 			}
@@ -292,14 +290,14 @@ func renderTables() ([]byte, error) {
 		return nil, err
 	}
 	if tier0IQWide {
-		fmt.Fprintf(&b, "var cosTable = [%d]int32{", 1<<cosTableBits+cosQuarter+1)
-		for i := range 1<<cosTableBits + cosQuarter + 1 {
+		fmt.Fprintf(&b, "var cosTable = [%d]int32{", 1<<cosTableBits)
+		for i := range 1 << cosTableBits {
 			v := math.Round(iqAmplitude*65536*math.Cos(2*math.Pi*(float64(i-cosQuarter)+0.5)/(1<<cosTableBits))) + 32768
 			fmt.Fprintf(&b, "%d,", int32(v))
 		}
 	} else {
-		fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+cosQuarter+1)
-		for i := range 1<<cosTableBits + cosQuarter + 1 {
+		fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits)
+		for i := range 1 << cosTableBits {
 			fmt.Fprintf(&b, "%d,", int16(math.Round(iqAmplitude*math.Cos(2*math.Pi*float64(i)/(1<<cosTableBits)))))
 		}
 	}

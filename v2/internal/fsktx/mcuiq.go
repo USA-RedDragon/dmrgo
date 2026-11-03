@@ -205,14 +205,15 @@ const (
 	cosShift   = 32 - cosTableBits
 	cosQuarter = 1 << cosTableBits / 4
 	cosMask    = 1<<cosTableBits - 1
+	cosTurn    = cosQuarter << cosShift
 )
 
 func cosSin(phase uint32) (int16, int16) {
 	i := phase >> cosShift
-	c, ns := cosTable[i], cosTable[i+cosQuarter]
+	c, ns := cosTable[i], cosTable[(phase+cosTurn)>>cosShift]
 	if tier0IQFine && tier0IQWide {
 		m := cosFrac32(phase)
-		sn, c := cosTable[i], cosTable[i+cosQuarter]
+		sn, c := c, ns
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
 		return int16(co >> 16), int16(si >> 16)
@@ -230,9 +231,8 @@ func cosFrac32(phase uint32) int32 {
 
 func putIQ(d *[2]int16, phase uint32) {
 	if tier0IQFine && tier0IQWide {
-		i := phase >> cosShift
 		m := cosFrac32(phase)
-		sn, c := cosTable[i], cosTable[i+cosQuarter]
+		sn, c := cosTable[phase>>cosShift], cosTable[(phase+cosTurn)>>cosShift]
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
 		*(*uint32)(unsafe.Pointer(d)) = uint32(si)&0xffff0000 | uint32(co)>>16
@@ -294,12 +294,12 @@ func (m *MCUIQ) steady1(dst []int16) {
 		}
 		prev = w
 		phase += uint32(v)
-		i, f := phase>>cosShift, int32(uint64(phase<<cosTableBits)*uint64(fr)>>32)-int32(fr>>1)
-		sn, c := cosTable[i], cosTable[i+cosQuarter]
+		f := int32(uint64(phase<<cosTableBits)*uint64(fr)>>32) - int32(fr>>1)
+		sn, c := cosTable[phase>>cosShift], cosTable[(phase+cosTurn)>>cosShift]
 		lo := uint32(sn+int32(int64(c)*int64(f)>>32))&0xffff0000 | uint32(c-int32(int64(sn)*int64(f)>>32))>>16
 		phase += uint32(v + dw)
-		i, f = phase>>cosShift, int32(uint64(phase<<cosTableBits)*uint64(fr)>>32)-int32(fr>>1)
-		sn, c = cosTable[i], cosTable[i+cosQuarter]
+		f = int32(uint64(phase<<cosTableBits)*uint64(fr)>>32) - int32(fr>>1)
+		sn, c = cosTable[phase>>cosShift], cosTable[(phase+cosTurn)>>cosShift]
 		hi := uint32(sn+int32(int64(c)*int64(f)>>32))&0xffff0000 | uint32(c-int32(int64(sn)*int64(f)>>32))>>16
 		*(*[2]uint32)(unsafe.Pointer(&dst[4*p])) = [2]uint32{lo, hi}
 		p++
@@ -365,7 +365,7 @@ func (m *MCUIQ) ramping(dst []int16) {
 			}
 			rc := cosTable[q&cosMask]
 			if tier0IQFine && tier0IQWide {
-				rc = cosTable[q&cosMask+cosQuarter] >> 16
+				rc = cosTable[(q+cosQuarter)&cosMask] >> 16
 			}
 			a := int32(uint32(iqAmplitude-rc) * 32768 / (2 * iqAmplitude))
 			d := dst[j : j+2 : j+2]
