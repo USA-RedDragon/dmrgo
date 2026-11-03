@@ -70,6 +70,7 @@ const (
 	leanClockSpan       = 4
 	leanClockSig        = 5
 	leanClockLag        = 120
+	leanClockLagBS      = leanClockLag / 2
 )
 
 const (
@@ -125,14 +126,14 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 	return v, at, ok
 }
 
-func (tm *leanTiming) settle() {
+func (tm *leanTiming) settle(lagN float32) {
 	if tm.nc < leanClockBlock {
 		return
 	}
 	n := float32(tm.nc)
 	v := tm.corr2/n - tm.corr*tm.corr/(n*n)
 	nall := float32(tm.nall)
-	q, keep := float32(1-1.0/leanClockLag), float32(1)
+	q, keep := 1-1/lagN, float32(1)
 	for k := tm.nall; k > 0; k >>= 1 {
 		if k&1 != 0 {
 			keep *= q
@@ -140,7 +141,7 @@ func (tm *leanTiming) settle() {
 		q *= q
 	}
 	share := tm.owed * (1 - keep)
-	lag := leanClockLag * tm.fresh * (1 - keep)
+	lag := lagN * tm.fresh * (1 - keep)
 	span := nall - lag
 	res := (tm.corr - share + lag*tm.rate) / span
 	tm.owed -= share
@@ -160,7 +161,7 @@ func (tm *leanTiming) settle() {
 		lim := leanClockMax * 2 * tm.step
 		old := tm.rate
 		tm.rate = max32(min32(tm.rate+e, lim), -lim)
-		tm.owed += (tm.rate - old) * leanClockLag
+		tm.owed += (tm.rate - old) * lagN
 		tm.estS, tm.estW, tm.estN, tm.learned = 0, 0, 0, true
 	} else if tm.estN*leanClockBlock >= leanClockSpan*slotSymbols {
 		tm.learned = true
@@ -1056,7 +1057,11 @@ func (r *leanCore) lockPush(x, at float32) (more bool) {
 }
 
 func (r *leanCore) endSlot() {
-	r.tm.settle()
+	lagN := float32(leanClockLag)
+	if r.bs {
+		lagN = leanClockLagBS
+	}
+	r.tm.settle(lagN)
 	first := r.next == 0
 	if r.hasExt() && first {
 		r.ext.firstSlot(r)
@@ -1578,11 +1583,8 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
 	r.ms.rs, r.ms.rs2, r.ms.rk = 0, 0, 0
 	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 1
 	r.tm.learned = false
-	if !r.bs {
-		r.tm.fresh = 1
-	}
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.mmOK && !r.tm.mm {
