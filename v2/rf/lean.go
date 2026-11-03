@@ -369,6 +369,7 @@ type leanCore struct {
 	again, midTiming, front96, slotDue bool
 	mid96                              uint8
 	replaying, replayDry, replayDeep   bool
+	lateTime                           bool
 	iqLow, linHunt                     bool
 	mmOK                               bool
 	chase                              uint8

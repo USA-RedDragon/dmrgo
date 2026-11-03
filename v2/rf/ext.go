@@ -953,6 +953,9 @@ func (x *softExt) firstSlot(c *leanCore) {
 		x.coh.warmFreq(c, c.first, n)
 	}
 	stretch := x.clockStretch(c, n, last, at, sps)
+	if stretch == 0 && x.coh != nil {
+		stretch = float32(x.coh.warmStretch)
+	}
 	x.stretch = stretch
 	if stretch != 0 {
 		c.tm.rate, c.tm.drift = stretch*sps, stretch*sps
@@ -1090,13 +1093,107 @@ const (
 )
 
 func (x *softExt) clockStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
-	if e := x.replayStretch(c, n, last, at, sps); e != 0 || x.coh == nil {
-		return e
+	e, m := x.replayStretch(c, n, last, at, sps)
+	if e == 0 && m < 2 {
+		e = blindStretch(c, n, last, at, sps)
 	}
-	return float32(x.coh.warmStretch)
+	return e
 }
 
-func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
+const (
+	blindSlip = 0.45
+	blindStep = 0.2
+	blindEye  = 0.3
+)
+
+func blindMixed(k, m int) bool {
+	return 5*k >= m && 5*k <= 4*m
+}
+
+func blindStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
+	first := c.first - int64(n)*slotSymbols
+	room := float32(c.acqKept()-4) - at
+	d := c.devScale * deviationHz
+	if d <= 0 {
+		return 0
+	}
+	ofs := c.off - c.dcHz
+	eye := func(j int64, s float32) (e float32, m, outer, pos int) {
+		base := first + j*slotSymbols
+		for k := base + cachSymbols; k < base+slotSymbols; k++ {
+			back := float32(last-k) * sps * (1 + s)
+			if back > room {
+				continue
+			}
+			v := c.keptAt(at-back)*discStepHz + ofs
+			y := abs32(v)
+			e += min32(abs32(y-d), abs32(y-3*d))
+			m++
+			if y > 2*d {
+				outer++
+			}
+			if v > 0 {
+				pos++
+			}
+		}
+		return e / d, m, outer, pos
+	}
+	var good uint32
+	near, far := float32(0), float32(0)
+	j0 := max(int64(n)-32, 0)
+	for j := j0; j < int64(n); j++ {
+		if !c.bs && (int64(n)-j)&1 != 0 {
+			continue
+		}
+		span := float32(last - first - j*slotSymbols)
+		step := blindStep / span
+		top := float32(math.MaxFloat32)
+		cnt, out, pos := 0, 0, 0
+		for s := -float32(leanClockMax); s <= leanClockMax; s += step {
+			if e, m, o, p := eye(j, s); m > 0 && e/float32(m) < top {
+				top, cnt, out, pos = e/float32(m), m, o, p
+			}
+		}
+		if cnt >= slotSymbols/2 && top < blindEye && blindMixed(out, cnt) && blindMixed(pos, cnt) {
+			good |= 1 << (j - j0)
+			near, far = span, max(far, span)
+		}
+	}
+	if good == 0 {
+		return 0
+	}
+	lim := min32(leanClockMax, blindSlip/near)
+	total := func(s float32) float32 {
+		var t float32
+		for j := j0; j < int64(n); j++ {
+			if good>>(j-j0)&1 != 0 {
+				e, _, _, _ := eye(j, s)
+				t += e
+			}
+		}
+		return t
+	}
+	step := blindStep / far
+	best, top := float32(0), total(0)
+	for s := -lim; s <= lim; s += step {
+		if v := total(s); v < top {
+			best, top = s, v
+		}
+	}
+	lo := best - step
+	for i := range 17 {
+		s := lo + float32(i)*step/8
+		if v := total(s); v < top {
+			best, top = s, v
+		}
+	}
+	if abs32(best)*far < 0.1 {
+		return 0
+	}
+	return best
+}
+
+func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) (float32, int) {
 	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
 	var syms [2][syncSymbols]int8
 	syncSyms(voice, &syms[0])
@@ -1120,7 +1217,7 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 		best, p, r := keptSyncPeak(c, &syms, at-span, sps, reach)
 		if best <= -reach || best >= reach {
 			if j < 0 {
-				return 0
+				return 0, m
 			}
 			continue
 		}
@@ -1134,17 +1231,17 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 		m++
 	}
 	if m < 2 {
-		return 0
+		return 0, m
 	}
 	vx := sxx - sx*sx/sw
 	if vx <= 0 {
-		return 0
+		return 0, m
 	}
 	b := (sxy - sx*sy/sw) / vx
 	if e := -b; b*b*vx > leanClockSig*leanClockSig && abs32(e) <= leanClockMax {
-		return e
+		return e, m
 	}
-	return 0
+	return 0, m
 }
 
 func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32, w int) (best, pat int, top float32) {

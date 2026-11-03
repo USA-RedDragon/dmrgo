@@ -363,7 +363,7 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 
 func symTime(c *leanCore, k int64) float64 {
 	per := float64(samplesPerSy)
-	if c.replaying && c.tm.step > 0 {
+	if (c.replaying || c.lateTime) && c.tm.step > 0 {
 		per *= 1 + float64(c.tm.rate)/(2*float64(c.tm.step))
 	}
 	t := float64(c.mfStep*(c.n-1)+c.center) - float64(c.ns-1-k)*per + float64(c.mfStep)*float64(c.lastAt)

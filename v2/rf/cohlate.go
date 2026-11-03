@@ -12,7 +12,9 @@ type cohSaver struct {
 func (x *softExt) cohLate(c *leanCore, lb *Burst) bool {
 	saved := *x.coh
 	x.coh.fitOnly = false
+	c.lateTime = true
 	ok := x.coh.detect(c, lb, &x.llr)
+	c.lateTime = false
 	gen, stamp := x.coh.gen, x.coh.symStamp
 	*x.coh = saved
 	x.coh.gen, x.coh.symStamp, x.coh.symKey = gen+1, stamp+1, cohSymKey{}
