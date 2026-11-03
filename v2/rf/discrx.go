@@ -14,10 +14,13 @@ const (
 	audio96Taps    = 4*audio96Span + 1
 	discLevelUp    = 1.41
 	frontQuarter   = frontBlock / 4
+	heldStep       = 8
 	discEdgeRatio  = 16
 	discIQMaxGain  = 1
 	discEdgeHot    = 0.5
 	audioMaxK      = 1<<15 - 1
+	audioMaxGain   = audioMaxK * rrcStepHz / 65536.0
+	discMeanJump   = 2 * discInputRMSHz
 	audioMaxOff    = 1<<30 - 1<<16
 	audioStartGain = math.MaxInt8 * rrcStepHz / -float32(math.MinInt16)
 )
@@ -76,6 +79,7 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	if cfg.pol {
 		r.f.polBits = polOn
 	}
+	r.f.cold = !cfg.iq && !cfg.lowIQ
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
 	if r.f.slow {
@@ -123,6 +127,96 @@ func (r *discRx) flush() {
 }
 
 func (r *discRx) run(x []int16) {
+	for r.f.cold && len(x) > 0 {
+		x = x[r.warm(x):]
+	}
+	if len(x) > 0 {
+		r.runNow(x)
+	}
+}
+
+func (r *discRx) warm(x []int16) int {
+	f := &r.f
+	held := r.huntBuf[:frontQuarter]
+	n := copy(held[f.nHeld:], x)
+	f.nHeld += uint8(n)
+	if int(f.nHeld) < len(held) {
+		return n
+	}
+	const h = frontQuarter / 2
+	m0, v0 := heldStats(held[:h])
+	m1, v1 := heldStats(held[h:])
+	switch {
+	case v1 > discEdgeRatio*v0 && !f.edge:
+		e := quietEnd(held[:h], v1)
+		if e == 0 {
+			break
+		}
+		f.ran, f.edge = true, true
+		f.quiet, _ = heldStats(held[:e])
+		r.runNow(held[:e])
+		copy(held, held[e:])
+		f.nHeld = uint8(len(held) - e)
+		return n
+	case v1 == 0:
+		f.ran, f.edge, f.quiet = true, false, m1
+		r.runNow(held)
+		f.nHeld = 0
+		return n
+	}
+	m, v := (m0+m1)/2, max(v0, v1)
+	if v0 > discEdgeRatio*v1 {
+		m = m0
+	}
+	f.cold, f.nHeld = false, 0
+	if g := discInputRMSHz / (sqrtf(v) * f.gain); g > 2 || g < 0.5 {
+		r.scaleAudio(g)
+	}
+	f.mean = m * f.gain
+	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
+		r.retune(d)
+	}
+	if f.ran {
+		q := sat8((f.quiet*f.gain - f.dc) / rrcStepHz)
+		for i := range f.rrcHist {
+			f.rrcHist[i] = q
+		}
+		for i := range f.hbHist {
+			f.hbHist[i] = q
+		}
+	} else {
+		clear(f.rrcHist[:])
+		clear(f.hbHist[:])
+		tm := &r.tm
+		tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.last, tm.half = 0, 0, 0, 0, 0, 0, 0, 0
+	}
+	r.runNow(held)
+	return n
+}
+
+func quietEnd(x []int16, loud float32) int {
+	for k := 0; k+heldStep <= len(x); k += heldStep {
+		if _, v := heldStats(x[k : k+heldStep]); discEdgeRatio*v > loud {
+			return k
+		}
+	}
+	return len(x)
+}
+
+func heldStats(x []int16) (m, v float32) {
+	var sum int32
+	for _, u := range x {
+		sum += int32(u)
+	}
+	m = float32(sum) / float32(len(x))
+	for _, u := range x {
+		d := float32(u) - m
+		v += d * d
+	}
+	return m, v / float32(len(x))
+}
+
+func (r *discRx) runNow(x []int16) {
 	if !r.front96 {
 		r.runAll(x)
 		r.polarity()
@@ -523,7 +617,11 @@ func (r *discRx) levels() {
 	f.sum, f.sq, f.n, f.qsum, f.qsq = 0, 0, 0, 0, 0
 	m *= f.gain
 	v *= f.gain * f.gain
-	f.mean += discMeanGain * (m - f.mean)
+	if f.maxGain == 0 && abs32(m-f.mean) > discMeanJump {
+		f.mean = m
+	} else {
+		f.mean += discMeanGain * (m - f.mean)
+	}
 	f.idle = min(f.idle+1, f.idleHold)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
 		g := discInputRMSHz / rms
@@ -545,10 +643,13 @@ func (r *discRx) levels() {
 				g = min(g, f.maxGain/f.gain)
 			}
 			if g != 1 {
-				r.scaleAudio(g)
+				g = r.scaleAudio(g)
+				if mg := m * g; f.maxGain == 0 && abs32(mg-f.mean) > discMeanJump {
+					f.mean = mg
+				}
 			}
-		case edge && f.maxGain > 0:
-			if hot := discInputRMSHz / (sqrtf(max(f.qmax, 0)) * f.gain); hot < discEdgeHot {
+		case edge:
+			if hot := discInputRMSHz / (sqrtf(max(f.qmax, 0)) * abs32(f.gain)); hot < discEdgeHot {
 				r.scaleAudio(hot)
 			}
 		}
@@ -562,8 +663,13 @@ func sq32(x int64) float32 {
 	return float32(uint32(x>>32))*(1<<32) + float32(uint32(x))
 }
 
-func (r *leanCore) scaleAudio(g float32) {
+func (r *leanCore) scaleAudio(g float32) float32 {
 	f := r.audio
+	if g > 0 {
+		if g = min(g, audioMaxGain/abs32(f.gain)); abs32(g-1) < 1e-6 {
+			return 1
+		}
+	}
 	f.gain *= g
 	f.mean *= g
 	f.dc *= g
@@ -574,6 +680,7 @@ func (r *leanCore) scaleAudio(g float32) {
 	f.scale(g)
 	f.refresh()
 	r.rescale(g)
+	return g
 }
 
 type audioFront struct {
@@ -605,6 +712,11 @@ type audioFront struct {
 	polSum   int8
 	polBits  uint8
 	pol      discPol
+	cold     bool
+	ran      bool
+	edge     bool
+	nHeld    uint8
+	quiet    float32
 }
 
 func (f *audioFront) refresh() {
