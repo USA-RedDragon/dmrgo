@@ -68,7 +68,7 @@ type Transmitter struct {
 	host   txHost
 	mcu    fsktx.MCUIQ
 	s16    [2 * tier0IQSamples]int16
-	small  [tier0IQSamples * 8]byte
+	small  [tier0IQSamples * 24]byte
 	chunk  []byte
 	out    []byte
 	on     func([]byte)
@@ -237,7 +237,8 @@ func (t *Transmitter) setup(c *TxConfig, p *txPlan) {
 	t.core.reset(p.lag)
 	t.rate, t.format, t.tier, t.on, t.set = int32(p.rate), c.Format, p.tier, c.OnSamples, true
 	if t.on != nil && p.tier == Tier0 {
-		t.chunk = t.small[:int(t.sps)*p.sb]
+		n := int(t.sps) * p.sb
+		t.chunk = t.small[:len(t.small)/n*n]
 	}
 }
 
