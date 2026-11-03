@@ -15,6 +15,8 @@ import (
 const (
 	discAnchor          = 0.6
 	levelForget         = 0.8
+	leanSyncClip        = 2
+	leanSyncClipMax     = 4
 	discAnchorBits      = 12
 	discFirstSpread     = 0.35
 	leanRing            = slotSymbols + 2
@@ -1841,6 +1843,9 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		return true
 	}
+	if check {
+		g, dc = r.inlierLevels(end, p, g, dc)
+	}
 	r.devScale = levelForget*r.devScale + (1-levelForget)*g
 	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
 	r.discVar = levelForget*r.discVar + (1-levelForget)*res
@@ -1890,6 +1895,38 @@ func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) 
 		res += e * e
 	}
 	return g, dc, res / syncSymbols
+}
+
+func (r *leanCore) inlierLevels(end int64, p enums.SyncPattern, g, dc float32) (float32, float32) {
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	ref := max(r.devScale, leanMinScale) * deviationHz
+	lim := leanSyncClip * ref
+	var n, sp, spp, sx, spx float32
+	j := ringPos(end - syncSymbols + 1)
+	out := 0
+	for k := range syncSymbols {
+		v := float32(r.ring[j])*discStepHz + r.off
+		if j++; j == leanRing {
+			j = 0
+		}
+		s := float32(syms[k])
+		if abs32(v-r.dcHz-ref*s) > lim && abs32(v-dc-g*deviationHz*s) > lim {
+			out++
+			continue
+		}
+		n++
+		sp += s
+		spp += s * s
+		sx += v
+		spx += s * v
+	}
+	den := n*spp - sp*sp
+	if out == 0 || out > leanSyncClipMax || den <= 0 {
+		return g, dc
+	}
+	gd := (n*spx - sp*sx) / den
+	return gd / deviationHz, (sx - gd*sp) / n
 }
 
 //go:noinline
