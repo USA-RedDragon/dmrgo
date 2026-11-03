@@ -102,22 +102,28 @@ type leanTiming struct {
 	mid            bool
 	hold           bool
 	mm             bool
-	rate, rateK    float32
-	drift, corr    float32
-	corr2          float32
-	nc, nall       int32
-	owed           float32
-	estS, estW     float32
-	estN           int32
+	rateK          float32
 	lastC          float32
 	stale          bool
-	fresh          float32
-	learned        bool
-	baseN          int32
-	baseC          float32
-	mK             int32
-	mS, mC, mVar   float32
-	mOK            bool
+	leanClock
+	baseN        int32
+	baseC        float32
+	mK           int32
+	mS, mC, mVar float32
+	mOK          bool
+}
+
+type leanClock struct {
+	rate, drift, corr, corr2 float32
+	owed, estS, estW, fresh  float32
+	nc, nall, estN           int32
+	learned                  bool
+}
+
+func (tm *leanTiming) newTalker() {
+	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
+	tm.estS, tm.estW, tm.estN = 0, 0, 0
+	tm.owed, tm.fresh, tm.learned, tm.mOK = 0, 1, false, false
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -410,13 +416,10 @@ type leanSlots struct {
 	seek  bool
 	retry bool
 	late  bool
-	in    uint8
-	out   uint8
 	fresh [2]uint8
-	rate  float32
-	rs    float32
-	rs2   float32
-	rk    int32
+	clk   leanClock
+	clkNs uint16
+	clkAt uint8
 }
 
 func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
@@ -1705,10 +1708,7 @@ const (
 	leanReplayErrors = 1
 	leanReplayFalse  = 4
 	leanReplayNear   = 8
-	leanRateMin      = 3
-	leanRateSig      = 3
 	leanSeekRho      = 0.5
-	leanRateMax      = 2e-3
 	leanRCSigns      = 0xa7c91a
 )
 
@@ -1778,8 +1778,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
-	r.ms.in, r.ms.out, r.ms.fresh, r.ms.rate = 0, 0, [2]uint8{}, 0
-	r.ms.rs, r.ms.rs2, r.ms.rk = 0, 0, 0
+	r.ms.fresh, r.ms.clkAt = [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 1
 	r.tm.learned = false
@@ -1972,6 +1971,7 @@ func (r *leanCore) slotFirst(j int32, base int64, anchor enums.SyncPattern) {
 	r.amp = 0
 	if !r.isReplaying() {
 		r.ms.fresh[j&1] = 2
+		r.saveClock(o)
 	}
 }
 
@@ -2005,13 +2005,10 @@ func (r *leanCore) slotSwitch(j int32) {
 	sps := 2 * r.tm.step
 	if m.anch[p] != leanNoSlot {
 		if live {
-			r.slotRate(p, sps)
 			r.savePhase(p)
-			m.out |= 1 << p
 		}
 		m.lv[p] = r.levels()
 	}
-	m.in &^= 1 << p
 	if m.fresh[p] > 0 {
 		m.fresh[p]--
 	}
@@ -2035,11 +2032,14 @@ func (r *leanCore) slotSwitch(j int32) {
 	if !live {
 		return
 	}
+	if m.anch[p] != leanNoSlot {
+		r.swapClock(p, q)
+	}
 	lo := float32(0)
 	if !r.tm.mm && r.tm.mid {
 		lo = r.tm.step
 	}
-	u := m.t[q] + float32(int16(m.n[q]-uint16(r.n))) + float32(int16(uint16(r.ns)-m.ns[q]))*(sps+m.rate)
+	u := m.t[q] + float32(int16(m.n[q]-uint16(r.n))) + float32(int16(uint16(r.ns)-m.ns[q]))*(sps+r.tm.rate)
 	cur := r.symWait()
 	for k := 0; (u <= lo || u <= cur-sps/2) && k < 4; k++ {
 		u += sps
@@ -2051,27 +2051,25 @@ func (r *leanCore) slotSwitch(j int32) {
 	}
 	r.tm.t = u - lo
 	r.savePhase(q)
-	m.in |= 1 << q
 }
 
-func (r *leanCore) slotRate(p int32, sps float32) {
+func (r *leanCore) saveClock(i int32) {
 	m := &r.ms
-	n := int32(int16(uint16(r.ns) - m.ns[p]))
-	if n <= 0 || (m.in|m.out)&(1<<p) == 0 {
+	m.clk, m.clkAt, m.clkNs = r.tm.leanClock, uint8(i)+1, uint16(r.ns)
+	r.tm.newTalker()
+}
+
+func (r *leanCore) swapClock(p, q int32) {
+	m := &r.ms
+	if m.clkAt != uint8(q)+1 {
+		r.saveClock(p)
 		return
 	}
-	e := r.symWait() - m.t[p] - float32(int16(m.n[p]-uint16(r.n))) - float32(n)*sps
-	res := e/float32(n) - m.rate
-	if m.in&(1<<p) != 0 {
-		res = e / float32(2*n)
-	}
-	m.rs, m.rs2, m.rk = m.rs+res, m.rs2+res*res, m.rk+1
-	k := float32(m.rk)
-	mean := m.rs / k
-	if v := m.rs2/k - mean*mean; m.rk >= leanRateMin && mean*mean*k > leanRateSig*leanRateSig*v {
-		m.rate = max32(min32(m.rate+mean, leanRateMax*sps), -leanRateMax*sps)
-		m.rs, m.rs2, m.rk = 0, 0, 0
-	}
+	gap := int32(int16(uint16(r.ns) - m.clkNs))
+	r.tm.leanClock, m.clk = m.clk, r.tm.leanClock
+	m.clkAt, m.clkNs = uint8(p)+1, uint16(r.ns)
+	r.tm.nall += gap
+	r.tm.mOK = false
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
