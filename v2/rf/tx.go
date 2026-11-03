@@ -348,27 +348,32 @@ func (t *Transmitter) key(on bool) {
 	t.host.key(on)
 }
 
-func (t *Transmitter) symbol(s int8) {
-	sb := t.format.bytes()
-	if cap(t.out)-len(t.out) < int(t.sps)*sb {
-		if t.on == nil {
-			return
+func (t *Transmitter) symbols(ss []int8) {
+	sb := t.format.bytes() * int(t.sps)
+	for len(ss) > 0 {
+		if cap(t.out)-len(t.out) < sb {
+			if t.on == nil {
+				return
+			}
+			t.deliver()
+			if cap(t.out) < sb {
+				return
+			}
 		}
-		t.deliver()
-		if cap(t.out) < int(t.sps)*sb {
-			return
+		k := 1
+		switch {
+		case t.tier == Tier0 && t.format == IQFormatCS16 && txLittle && uintptr(unsafe.Pointer(unsafe.SliceData(t.out)))&1 == 0:
+			l := len(t.out)
+			k = min(len(ss), (cap(t.out)-l)/sb)
+			d := t.out[l : l+k*sb]
+			n := t.mcu.Symbols(unsafe.Slice((*int16)(unsafe.Pointer(unsafe.SliceData(d))), len(d)/2), ss[:k])
+			t.out = t.out[:l+2*n]
+		case t.tier == Tier0:
+			t.put16(t.s16[:t.mcu.Symbol(t.s16[:], ss[0])])
+		default:
+			t.put16(t.host.iqS16(ss[0]))
 		}
-	}
-	switch {
-	case t.tier == Tier0 && t.format == IQFormatCS16 && txLittle && uintptr(unsafe.Pointer(unsafe.SliceData(t.out)))&1 == 0:
-		l := len(t.out)
-		d := t.out[l : l+4*int(t.sps)]
-		n := t.mcu.Symbol(unsafe.Slice((*int16)(unsafe.Pointer(unsafe.SliceData(d))), 2*t.sps), s)
-		t.out = t.out[:l+2*n]
-	case t.tier == Tier0:
-		t.put16(t.s16[:t.mcu.Symbol(t.s16[:], s)])
-	default:
-		t.put16(t.host.iqS16(s))
+		ss = ss[k:]
 	}
 }
 

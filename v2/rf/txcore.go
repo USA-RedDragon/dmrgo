@@ -32,7 +32,7 @@ const (
 )
 
 type txSymbols interface {
-	symbol(s int8)
+	symbols(s []int8)
 	key(on bool)
 }
 
@@ -58,14 +58,21 @@ func (c *txCore) reset(lag int) {
 	c.lag = int32(lag)
 }
 
-func (c *txCore) feed(o txSymbols, s int8) {
-	for c.qn > 0 && c.q[0].at <= c.n {
-		o.key(c.q[0].on)
-		copy(c.q[:c.qn-1], c.q[1:c.qn])
-		c.qn--
+func (c *txCore) feed(o txSymbols, s []int8) {
+	for len(s) > 0 {
+		for c.qn > 0 && c.q[0].at <= c.n {
+			o.key(c.q[0].on)
+			copy(c.q[:c.qn-1], c.q[1:c.qn])
+			c.qn--
+		}
+		k := len(s)
+		if c.qn > 0 {
+			k = int(min(int64(k), c.q[0].at-c.n))
+		}
+		o.symbols(s[:k])
+		c.n += int64(k)
+		s = s[k:]
 	}
-	o.symbol(s)
-	c.n++
 }
 
 func (c *txCore) setKey(o txSymbols, on bool) {
@@ -83,15 +90,16 @@ func (c *txCore) setKey(o txSymbols, on bool) {
 }
 
 func (c *txCore) zeros(o txSymbols, k int) {
-	for range k {
-		c.feed(o, 0)
+	clear(c.syms[:])
+	for k > 0 {
+		n := min(k, len(c.syms))
+		c.feed(o, c.syms[:n])
+		k -= n
 	}
 }
 
 func (c *txCore) bits(o txSymbols, b []byte) {
-	for _, s := range fsktx.Dibits(c.syms[:], b) {
-		c.feed(o, s)
-	}
+	c.feed(o, fsktx.Dibits(c.syms[:], b))
 }
 
 func (c *txCore) down(o txSymbols) {

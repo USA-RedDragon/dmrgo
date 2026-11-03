@@ -458,6 +458,12 @@ func (t *AudioTransmitter) deliver() {
 
 func (*AudioTransmitter) key(bool) {}
 
+func (t *AudioTransmitter) symbols(ss []int8) {
+	for _, s := range ss {
+		t.symbol(s)
+	}
+}
+
 func (t *AudioTransmitter) symbol(s int8) {
 	if cap(t.out)-len(t.out) < int(t.sps) {
 		if t.on == nil {

@@ -89,53 +89,69 @@ func (m *MCUIQ) Key(on bool) { m.on = on }
 // shorter than 2*Samples, or before Init, it writes nothing, does not take
 // the symbol and returns 0. The output lags the symbols by eight symbol
 // periods and one sample of the shaper, at 48 kHz.
+func (m *MCUIQ) Symbol(dst []int16, s int8) int {
+	one := [1]int8{s}
+	return m.Symbols(dst, one[:])
+}
+
+// Symbols is Symbol for each symbol of ss in turn, with the I/Q of each
+// after that of the one before in dst. It takes as many symbols as dst
+// holds the I/Q of, and returns the number of values it wrote.
 //
 //go:nobounds
-func (m *MCUIQ) Symbol(dst []int16, s int8) int {
+func (m *MCUIQ) Symbols(dst []int16, ss []int8) int {
 	n := int(m.values)
-	if n == 0 || len(dst) < n {
+	if n == 0 {
 		return 0
 	}
-	var c uint32
-	switch s {
-	case -3:
-		c = 0
-	case -1:
-		c = 1
-	case 1:
-		c = 2
-	case 3:
-		c = 3
-	default:
-		c = 4
-	}
-	if iqWords == 4 {
-		h := (*[4]uint32)(unsafe.Pointer(&m.hist))
-		h[3] = h[3]<<8 | h[2]>>24
-		h[2] = h[2]<<8 | h[1]>>24
-		h[1] = h[1]<<8 | h[0]>>24
-	} else {
-		for i := iqWords - 1; i > 0; i-- {
-			m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
-		}
-	}
-	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255*13>>6
-	m.shape(c)
-	dst = dst[:n]
 	word := littleEndian && uintptr(unsafe.Pointer(unsafe.SliceData(dst)))&3 == 0
-	switch {
-	case m.on && m.env == m.ramp:
-		if word && tier0IQFine && tier0IQWide && cosFracWide%2 == 0 && m.upShift == 1 {
-			m.steady1(dst)
-		} else {
-			m.steady(dst, word)
+	fast := word && tier0IQFine && tier0IQWide && cosFracWide%2 == 0 && m.upShift == 1
+	j := 0
+	for _, s := range ss {
+		if len(dst)-j < n {
+			break
 		}
-	case !m.on && m.env == 0:
-		m.silent(dst)
-	default:
-		m.ramping(dst)
+		var c uint32
+		switch s {
+		case -3:
+			c = 0
+		case -1:
+			c = 1
+		case 1:
+			c = 2
+		case 3:
+			c = 3
+		default:
+			c = 4
+		}
+		if iqWords == 4 {
+			h := (*[4]uint32)(unsafe.Pointer(&m.hist))
+			h[3] = h[3]<<8 | h[2]>>24
+			h[2] = h[2]<<8 | h[1]>>24
+			h[1] = h[1]<<8 | h[0]>>24
+		} else {
+			for i := iqWords - 1; i > 0; i-- {
+				m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
+			}
+		}
+		m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255*13>>6
+		m.shape(c)
+		d := dst[j : j+n]
+		switch {
+		case m.on && m.env == m.ramp:
+			if fast {
+				m.steady1(d)
+			} else {
+				m.steady(d, word)
+			}
+		case !m.on && m.env == 0:
+			m.silent(d)
+		default:
+			m.ramping(d)
+		}
+		j += n
 	}
-	return n
+	return j
 }
 
 func (m *MCUIQ) shape(c uint32) {

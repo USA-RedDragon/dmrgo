@@ -392,6 +392,7 @@ var api = [...]any{
 	(*internal_fsktx.MCUIQ).Key,
 	(*internal_fsktx.MCUIQ).Samples,
 	(*internal_fsktx.MCUIQ).Symbol,
+	(*internal_fsktx.MCUIQ).Symbols,
 	internal_fsktx.AudioTable.Hz,
 	internal_fsktx.AudioTable.Peak,
 	internal_fsktx.AudioTable.Span,
