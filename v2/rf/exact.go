@@ -82,9 +82,6 @@ func (t *xtrellis) forward(src, d0, d1, d2, d3 []float32, lo int, l *xlanes, thr
 	n := len(src)
 	d0, d1, d2, d3 = d0[:n], d1[:n], d2[:n], d3[:n]
 	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
-	if v, ok := t.forwardSIMD(src, d0, d1, d2, d3, cos, sin, l, thr, top, first); ok {
-		return v
-	}
 	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
 	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
 	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
@@ -178,9 +175,6 @@ func (t *xtrellis) backward(src, e0, e1, e2, e3, dst []float32, lo int, l *xlane
 	n := len(src)
 	e0, e1, e2, e3, dst = e0[:n], e1[:n], e2[:n], e3[:n], dst[:n]
 	cos, sin := phaseCos[t.row][lo:lo+n], phaseSin[t.row][lo:lo+n]
-	if t.backwardSIMD(src, e0, e1, e2, e3, dst, cos, sin, l, thr, best) {
-		return
-	}
 	re0, re1, re2, re3 := l.re[0], l.re[1], l.re[2], l.re[3]
 	im0, im1, im2, im3 := l.im[0], l.im[1], l.im[2], l.im[3]
 	b0, b1, b2, b3 := l.bonus[0], l.bonus[1], l.bonus[2], l.bonus[3]
@@ -302,7 +296,10 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		lp := t.lp[4*k : 4*k+4]
 		var l xlanes
 		var dst [4][]float32
-		for s := range ns {
+		if t.isa > 0 && t.logmap {
+			top = t.forwardSIMD(alpha, next, corr, lp, thr)
+		}
+		for s := 0; s < ns && (t.isa == 0 || !t.logmap); s++ {
 			for d := range 4 {
 				w := 4*s + d
 				l.re[d], l.im[d], l.bonus[d] = real(corr[w]), imag(corr[w]), lp[d]
@@ -337,7 +334,10 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		var e [4][]float32
 		var best [4]float32
 		copy(best[:], a)
-		for s := range ns {
+		if t.isa > 0 && t.logmap {
+			t.backwardSIMD(alpha, beta, t.next, corr, lp, thr, &best)
+		}
+		for s := 0; s < ns && (t.isa == 0 || !t.logmap); s++ {
 			for d := range 4 {
 				w := 4*s + d
 				l.re[d], l.im[d], l.bonus[d] = real(corr[w]), imag(corr[w]), lp[d]
@@ -384,9 +384,10 @@ func (t *xtrellis) jumpCosts(steps int, sum float32) {
 }
 
 func (t *xtrellis) drift(m []float32, ns int, jump float32) {
+	simd := t.driftSIMD(m[:ns*t.np])
 	for s := range ns {
 		b := m[s*t.np : (s+1)*t.np]
-		if !t.driftSIMD(b) {
+		if !simd {
 			first, prev := b[0], b[t.np-1]
 			for p := range t.np {
 				cur := b[p]

@@ -389,18 +389,50 @@ idone:
 	VZEROUPPER
 	RET
 
-TEXT ·xdriftAVX2(SB), NOSPLIT, $0-28
-	MOVQ         b+0(FP), DI
-	MOVQ         ext+8(FP), SI
-	MOVQ         n+16(FP), CX
-	VBROADCASTSS pen+24(FP), Y14
+TEXT ·xdriftAVX2(SB), NOSPLIT, $0-36
+	MOVQ         m+0(FP), DI
+	MOVQ         ns+8(FP), R8
+	MOVQ         np+16(FP), CX
+	MOVQ         ext+24(FP), SI
+	VBROADCASTSS pen+32(FP), Y14
 	VMOVUPS      xsign<>(SB), Y15
-	XORQ         BX, BX
+	MOVQ         CX, AX
+	ANDQ         $7, AX
+	NEGQ         AX
+	LEAQ         xtail<>+32(SB), DX
+	VMOVUPS      (DX)(AX*4), Y13
+	MOVQ         CX, R9
+	ANDQ         $-8, R9
+
+ds:
+	TESTQ  R8, R8
+	JEQ    ddone
+	MOVL   -4(DI)(CX*4), AX
+	MOVL   AX, (SI)
+	XORQ   BX, BX
+
+dc:
+	CMPQ    BX, R9
+	JGE     dct
+	VMOVUPS (DI)(BX*4), Y0
+	VMOVUPS Y0, 4(SI)(BX*4)
+	ADDQ    $8, BX
+	JMP     dc
+
+dct:
+	CMPQ       BX, CX
+	JGE        dcd
+	VMASKMOVPS (DI)(BX*4), Y13, Y0
+	VMASKMOVPS Y0, Y13, 4(SI)(BX*4)
+
+dcd:
+	MOVL (DI), AX
+	MOVL AX, 4(SI)(CX*4)
+	XORQ BX, BX
 
 dl:
-	LEAQ    8(BX), AX
-	CMPQ    AX, CX
-	JGT     dt
+	CMPQ    BX, R9
+	JGE     dt
 	VMOVUPS (SI)(BX*4), Y0
 	VMOVUPS 4(SI)(BX*4), Y1
 	VMOVUPS 8(SI)(BX*4), Y2
@@ -413,12 +445,7 @@ dl:
 
 dt:
 	CMPQ       BX, CX
-	JGE        ddone
-	MOVQ       CX, AX
-	SUBQ       BX, AX
-	NEGQ       AX
-	LEAQ       xtail<>+32(SB), DX
-	VMOVUPS    (DX)(AX*4), Y13
+	JGE        dn
 	VMOVUPS    (SI)(BX*4), Y0
 	VMOVUPS    4(SI)(BX*4), Y1
 	VMOVUPS    8(SI)(BX*4), Y2
@@ -426,6 +453,11 @@ dt:
 	VSUBPS     Y14, Y3, Y3
 	GOMAX(Y1, Y3, Y4)
 	VMASKMOVPS Y4, Y13, (DI)(BX*4)
+
+dn:
+	LEAQ (DI)(CX*4), DI
+	DECQ R8
+	JMP  ds
 
 ddone:
 	VZEROUPPER
