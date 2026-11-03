@@ -1116,18 +1116,19 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 				continue
 			}
 		}
-		best, p, r := keptSyncPeak(c, &syms, at-span, sps)
-		if best <= 0 || best >= 8 {
+		reach := 4 + int(leanClockMax*span*8/sps)
+		best, p, r := keptSyncPeak(c, &syms, at-span, sps, reach)
+		if best <= -reach || best >= reach {
 			if j < 0 {
 				return 0
 			}
 			continue
 		}
-		var cv [9]float32
+		var cv [3]float32
 		for i := range cv {
-			cv[i] = keptSyncCorr(c, &syms[p], at-span+float32(i-4)*sps/8, sps)
+			cv[i] = keptSyncCorr(c, &syms[p], at-span+float32(best+i-1)*sps/8, sps)
 		}
-		off := (float32(best-4) + edgeVertex9(&cv, best)) * sps / 8
+		off := (float32(best) + edgeVertex3(&cv)) * sps / 8
 		w := r / (max32(1-r, 1e-6) * tv * sps * sps)
 		sw, sx, sy, sxx, sxy = sw+w, sx+w*span, sy+w*off, sxx+w*span*span, sxy+w*span*off
 		m++
@@ -1146,11 +1147,15 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 	return 0
 }
 
-func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32) (best, pat int, top float32) {
-	best = -1
+func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32, w int) (best, pat int, top float32) {
+	best = -w
+	oldest := float32(c.acqKept() - 4)
 	for p := range syms {
-		for i := range 9 {
-			t := end + float32(i-4)*sps/8
+		for i := -w; i <= w; i++ {
+			t := end + float32(i)*sps/8
+			if float32(syncSymbols-1)*sps-t > oldest {
+				continue
+			}
 			var sv, svv, sxv, sp, spp float32
 			for m, q := range &syms[p] {
 				v := c.keptAt(t - float32(syncSymbols-1-m)*sps)
@@ -1181,12 +1186,9 @@ func keptSyncCorr(c *leanCore, syms *[syncSymbols]int8, t, sps float32) float32 
 	return v
 }
 
-func edgeVertex9(c *[9]float32, best int) float32 {
-	if best <= 0 || best >= len(c)-1 {
-		return 0
-	}
-	if den := c[best-1] - 2*c[best] + c[best+1]; den < 0 {
-		return max32(min32(0.5*(c[best-1]-c[best+1])/den, 0.5), -0.5)
+func edgeVertex3(c *[3]float32) float32 {
+	if den := c[0] - 2*c[1] + c[2]; den < 0 {
+		return max32(min32(0.5*(c[0]-c[2])/den, 0.5), -0.5)
 	}
 	return 0
 }
