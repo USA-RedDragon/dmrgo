@@ -168,10 +168,12 @@ func (r *discRx) warm(x []int16) int {
 	if v0 > discEdgeRatio*v1 {
 		m = m0
 	}
-	f.cold, f.nHeld = false, 0
-	if g := discInputRMSHz / (sqrtf(v) * f.gain); g > 2 || g < 0.5 {
-		r.scaleAudio(g)
+	f.cold, f.nHeld, f.leveled = false, 0, true
+	g := discInputRMSHz / (sqrtf(v) * f.gain)
+	if u := g * f.gain; u >= 0.5 && u <= 2 && (!f.up || u <= discLevelUp) {
+		g = 1 / f.gain
 	}
+	r.scaleAudio(g)
 	f.mean = m * f.gain
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
 		r.retune(d)
