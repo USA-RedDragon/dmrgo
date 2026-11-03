@@ -1567,19 +1567,10 @@ func (r *leanCore) searchSym(strict bool) {
 		return
 	}
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
-		if strict || !r.hasExt() || !r.ext.verify(r, p, rho2) {
+		if d, verified = r.weakLock(p, src, rho2, strict); !verified {
 			return
 		}
-		r.fitLevels(r.ns-1, p, true, false)
-		if r.wantRetune(p, src, true) {
-			r.lockDue = true
-			return
-		}
-		if t, ok := r.ext.lockShift(r, p, 0); ok {
-			d = t * 2 * r.tm.step
-			r.shiftStrobe(d)
-		}
-		verified, c2 = true, 0
+		c2 = 0
 	}
 	if !ok && !verified && r.wantRetune(p, src, false) {
 		r.lockDue = true
@@ -1590,6 +1581,23 @@ func (r *leanCore) searchSym(strict bool) {
 		r.unproven = true
 		r.ext.weakAt(r.ns - 1)
 	}
+}
+
+func (r *leanCore) weakLock(p enums.SyncPattern, src int, rho2 float32, strict bool) (float32, bool) {
+	if strict || !r.hasExt() || !r.ext.verify(r, p, rho2) {
+		return 0, false
+	}
+	r.fitLevels(r.ns-1, p, true, false)
+	if r.wantRetune(p, src, true) {
+		r.lockDue = true
+		return 0, false
+	}
+	var d float32
+	if t, ok := r.ext.lockShift(r, p, 0); ok {
+		d = t * 2 * r.tm.step
+		r.shiftStrobe(d)
+	}
+	return d, true
 }
 
 //go:noinline

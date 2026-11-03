@@ -218,6 +218,7 @@ func heldStats(x []int16) (m, v float32) {
 	return m, v / float32(len(x))
 }
 
+//nolint:unparam // writeN reads the count outside TinyGo.
 func (r *discRx) runN(x []int16) int {
 	if !r.front96 {
 		n := r.runAll(x)
