@@ -245,13 +245,15 @@ func (r *discRx) runAll(x []int16) {
 	buf, an := r.acqBuf()
 	cubic, half, slow := tm.cubic, f.half, f.slow
 	search, keep := !r.locked, !r.locked || r.hunt
-	for _, v := range x {
+	r.startRaw(0)
+	for i, v := range x {
 		if search {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
 			if f.n++; f.n&(frontQuarter-1) == 0 {
 				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 				r.acqHead, r.acqLow = kh, kq
+				r.keepRaw(x, i)
 				r.levels()
 				sa, sb, s0, s1, s2, s3, t = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 				kq = r.acqLow
@@ -313,6 +315,7 @@ func (r *discRx) runAll(x []int16) {
 	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 	r.n += int64(dn)
 	r.acqHead, r.acqLow = kh, kq
+	r.keepRaw(x, len(x))
 }
 
 const (
@@ -363,6 +366,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
 	st := r.state96()
+	r.startRaw(i0)
 	k, off := f.k, f.off
 	hist := &f.rrcHist
 	h := f.rrcHead
@@ -380,6 +384,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 						tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 						r.acqHead, r.acqLow = kh, kq
 						f.rrcHead = h
+						r.keepRaw(x, i)
 						r.levels()
 						sb, s0, s1, s2, s3, t = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 						kq = r.acqLow
@@ -531,6 +536,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				r.acqHead, r.acqLow = kh, kq
 				f.rrcHead = h
 				r.slotDue = true
+				r.keepRaw(x, i)
 				return i, fed
 			}
 			if sym {
@@ -558,6 +564,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 					r.symbol(tm.last, at)
 				}
 				if r.slotDue {
+					r.keepRaw(x, i)
 					return i, fed
 				}
 				sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
@@ -575,6 +582,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 	r.n += int64(n - i0)
 	r.acqHead, r.acqLow = kh, kq
+	r.keepRaw(x, n)
 	return n, fed
 }
 
@@ -605,6 +613,9 @@ func (r *discRx) levels() {
 	qm := float32(f.sum-f.qsum) / frontQuarter
 	qv := sq32(f.sq-f.qsq)/frontQuarter - qm*qm
 	f.qsum, f.qsq = f.sum, f.sq
+	if f.maxGain == 0 {
+		r.quarterHot(qv)
+	}
 	if f.n == frontQuarter {
 		f.qmin, f.qmax = qv, qv
 	} else {
@@ -661,6 +672,113 @@ func (r *discRx) levels() {
 	}
 }
 
+const (
+	snapHistAt = 2 * frontQuarter
+	snapAt     = (snapHistAt + 2*audio12Taps + halfTaps + 3) &^ 3
+	_          = uint(leanHuntSamples - snapAt - unsafe.Sizeof(frontSnap{}))
+)
+
+type frontSnap struct {
+	kh      int32
+	low     int16
+	rrc, hb uint8
+	seg     uint16
+	rn      uint8
+	odd, ok bool
+}
+
+func (r *leanCore) snap() *frontSnap {
+	return (*frontSnap)(unsafe.Add(unsafe.Pointer(&r.huntBuf), snapAt))
+}
+
+func (r *leanCore) startRaw(i int) {
+	if f := r.audio; f.maxGain == 0 && !f.cold && !r.locked {
+		r.snap().seg = uint16(i)
+	}
+}
+
+func (r *leanCore) keepRaw(x []int16, i int) {
+	f := r.audio
+	if f.maxGain != 0 || f.cold || r.locked {
+		return
+	}
+	sn := r.snap()
+	if j := int(sn.seg); sn.ok && sn.rn <= frontQuarter && j <= i {
+		sn.rn += uint8(copy(r.rawRing()[sn.rn:], x[j:i]))
+	}
+	sn.seg = uint16(i)
+}
+
+func (r *leanCore) rawRing() *[frontQuarter]int16 {
+	return (*[frontQuarter]int16)(unsafe.Pointer(&r.huntBuf))
+}
+
+func (r *leanCore) snapHist() (*[2 * audio12Taps]int8, *[halfTaps]int8) {
+	p := unsafe.Add(unsafe.Pointer(&r.huntBuf), snapHistAt)
+	return (*[2 * audio12Taps]int8)(p), (*[halfTaps]int8)(unsafe.Add(p, 2*audio12Taps))
+}
+
+func (r *leanCore) quarterHot(qv float32) {
+	f := r.audio
+	if f.cold {
+		r.snap().ok = false
+		return
+	}
+	if g := discInputRMSHz / (sqrtf(max(qv, 0)) * abs32(f.gain)); r.snap().ok && f.leveled && qv > 0 && g < discEdgeHot {
+		r.scaleAudio(g)
+	}
+	rrc, hb := r.snapHist()
+	*rrc, *hb = f.rrcHist, f.hbHist
+	sn := r.snap()
+	*sn = frontSnap{kh: r.acqHead, low: r.acqLow, rrc: uint8(f.rrcHead), hb: uint8(f.hbHead), seg: sn.seg, odd: f.odd, ok: true}
+}
+
+func (r *leanCore) refilter(g float32) bool {
+	f := r.audio
+	if sn := r.snap(); r.locked || !sn.ok || sn.rn > frontQuarter {
+		return false
+	}
+	rrc, hb := r.snapHist()
+	for i, h := range rrc {
+		rrc[i] = scaleSat8(h, g)
+	}
+	for i, h := range hb {
+		hb[i] = scaleSat8(h, g)
+	}
+	sn := r.snap()
+	sn.low = int16(scale8(int32(sn.low), int32(g*256+0.5), 0))
+	f.rrcHist, f.hbHist = *rrc, *hb
+	f.rrcHead, f.hbHead, f.odd = int(sn.rrc), int(sn.hb), sn.odd
+	buf, an := r.acqBuf()
+	kh, kq := sn.kh, sn.low
+	for _, v := range r.rawRing()[:sn.rn] {
+		var acc int32
+		switch u := f.quantize(v); {
+		case f.slow:
+			acc = f.mf96(u)
+		case f.half:
+			w, ok := f.halfBand(u)
+			if !ok {
+				continue
+			}
+			acc = f.mf12(w)
+		default:
+			acc = f.mf12(u)
+		}
+		q := int16(int8((acc + 1<<13) >> 14))
+		if kh&1 == 0 {
+			kq = q
+		} else if i := kh >> 1; i < int32(len(buf)) {
+			buf[i] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+		}
+		if kh++; kh == an {
+			kh = 0
+		}
+	}
+	r.acqLow = kq
+	return true
+}
+
 func sq32(x int64) float32 {
 	return float32(uint32(x>>32))*(1<<32) + float32(uint32(x))
 }
@@ -679,9 +797,11 @@ func (r *leanCore) scaleAudio(g float32) float32 {
 	r.off *= g
 	r.offsetHz *= g
 	r.devHz = sat16(float32(r.devHz) * g)
-	f.scale(g)
 	f.refresh()
 	r.rescale(g)
+	if f.maxGain != 0 || !r.refilter(g) {
+		f.scale(g)
+	}
 	return g
 }
 

@@ -2421,6 +2421,7 @@ func (r *leanCore) unlock() {
 		r.acqFrom = r.n
 	}
 	r.locked, r.forced, r.hunt, r.stepHold, r.preStep = false, false, false, false, false
+	r.snap().ok = false
 	if a := r.audio; a != nil {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
