@@ -23,3 +23,5 @@ func (r *leanCore) isReplaying() bool { return false }
 func (r *leanCore) isReplayDry() bool { return false }
 
 type acStage struct{}
+
+func (r *leanCore) cohVerify() bool { return false }

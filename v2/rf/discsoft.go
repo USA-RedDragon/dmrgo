@@ -88,3 +88,8 @@ func (r *leanCore) hasExt() bool { return r.ext != nil }
 func (r *leanCore) isReplaying() bool { return r.replaying }
 
 func (r *leanCore) isReplayDry() bool { return r.replayDry }
+
+func (r *leanCore) cohVerify() bool {
+	x, ok := r.ext.(*softExt)
+	return ok && x.coh != nil
+}

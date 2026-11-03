@@ -24,6 +24,8 @@ const (
 	leanReplaySymbols   = leanSyncEnd + 1
 	leanAcqSamples      = (leanReplaySymbols*5/2 + 7 + 2) &^ 1
 	leanResample        = 0.7
+	leanPairLock        = 0.84
+	leanPairSlots       = 6
 	leanCoarse          = 0.75
 	leanOverScale       = 2
 	leanMinScale        = 0.1
@@ -302,6 +304,9 @@ type leanCore struct {
 
 	acqGain        float32
 	trackGain      float32
+	pairNs         int64
+	pairSrc        uint8
+	pairLv         bool
 	tuneHz         float32
 	offsetHz       float32
 	tunePrev       float32
@@ -703,11 +708,11 @@ func peakAt(c *[7]float32, k int) float32 {
 	return c[k]
 }
 
-func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool) (float32, bool) {
+func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool, lim float32) (float32, float32, bool) {
 	sps := 2 * r.tm.step
 	end := r.lastAt
 	if !r.burstKept() && (!r.locked || max(int32(-end-sps/2)-2, 0)+leanSyncWindow > r.acqKept()) {
-		return 0, false
+		return 0, 0, false
 	}
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
@@ -718,14 +723,14 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		reach = 2
 	}
 	if !coarseSync(&win, &syms, end, sps, reach) {
-		return 0, false
+		return 0, 0, false
 	}
 	ninf := float32(math.Inf(-1))
 	var c [7]float32
 	best := win.peak(&syms, &c, end, sps, wide)
 	if r.locked && best < len(c)-1 && c[best+1] == ninf {
 		r.again = true
-		return 0, false
+		return 0, 0, false
 	}
 	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
 	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
@@ -737,11 +742,11 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	sxy := sxv - sp*sv/n
 	sxx := svv - sv*sv/n
 	spp := 9*n - sp*sp/n
-	if sxy <= 0 || sxy*sxy < discLock*discLock*sxx*spp {
-		return 0, false
+	if sxy <= 0 || sxy*sxy < lim*lim*sxx*spp {
+		return 0, 0, false
 	}
 	r.ringSync(&win, end+bestD, sps, saved)
-	return bestD, true
+	return bestD, sxy * sxy / (sxx * spp), true
 }
 
 func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
@@ -1042,6 +1047,11 @@ func (r *leanCore) lockHunt(at float32) (again, mid, match bool) {
 	return again, mid, mid || sym || r.rcHit()
 }
 
+func (r *leanCore) paired(src int) bool {
+	k := r.ns - r.pairNs
+	return r.pairSrc == uint8(src)+1 && k >= slotSymbols-1 && k <= leanPairSlots*slotSymbols+1 && (k+1)%slotSymbols <= 2
+}
+
 func (r *leanCore) rcHit() bool {
 	return r.rcSource() && bits.OnesCount32((r.signs^leanRCSigns)&(1<<syncSymbols-1)) <= int(r.signMiss)
 }
@@ -1302,6 +1312,35 @@ var syncNib = [syncSymbols / 4][16]uint32{
 }
 
 //go:noinline
+func (r *leanCore) searchFit(p enums.SyncPattern, src int, strict bool) (float32, bool) {
+	var saved [syncSymbols]int8
+	pairing := !strict && !r.cohVerify()
+	lim := float32(discLock)
+	if pairing {
+		lim = leanPairLock
+	}
+	if d, c2, sampled := r.resample(p, &saved, r.locked, lim); sampled {
+		strong := c2 >= discLock*discLock
+		ok := strong && r.fitLevels(r.ns-1, p, true, true)
+		if !ok && strong && pairing && r.paired(src) {
+			ok = r.fitLevels(r.ns-1, p, true, false)
+			r.pairLv = ok
+		}
+		if ok {
+			r.resampleStart(d)
+			return d, true
+		}
+		r.restoreSync(&saved)
+		if pairing {
+			r.pairNs, r.pairSrc = r.ns, uint8(src)+1
+		}
+	}
+	if !strict {
+		r.acqNext = r.ns + leanAcqWait
+	}
+	return 0, false
+}
+
 func (r *leanCore) searchSym(strict bool) {
 	if r.clipped(r.ns - 1) {
 		return
@@ -1323,21 +1362,7 @@ func (r *leanCore) searchSym(strict bool) {
 	ok := false
 	var d float32
 	if !weak && (strict || r.ns >= r.acqNext) {
-		var saved [syncSymbols]int8
-		var sampled bool
-		if d, sampled = r.resample(p, &saved, r.locked); sampled {
-			if ok = r.fitLevels(r.ns-1, p, true, true); ok {
-				r.resampleStart(d)
-			} else {
-				r.restoreSync(&saved)
-			}
-		}
-		if !ok {
-			if !strict {
-				r.acqNext = r.ns + leanAcqWait
-			}
-			d = 0
-		}
+		d, ok = r.searchFit(p, src, strict)
 	}
 	verified := false
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
@@ -1369,7 +1394,7 @@ func (r *leanCore) searchMid() {
 	at := r.lastAt
 	r.lastAt = at - r.tm.step
 	var saved [syncSymbols]int8
-	d, ok := r.resample(p, &saved, false)
+	d, _, ok := r.resample(p, &saved, false, discLock)
 	r.lastAt = at
 	if !ok {
 		return
@@ -1423,7 +1448,7 @@ func (r *leanCore) retime(mid bool) {
 		return
 	}
 	var saved [syncSymbols]int8
-	if d, ok := r.resample(p, &saved, true); ok {
+	if d, _, ok := r.resample(p, &saved, true, discLock); ok {
 		if r.reEntry {
 			r.tm.corr, r.tm.fresh = r.tm.corr+d-r.tm.lastC, 0
 		}
@@ -1441,7 +1466,7 @@ func (r *leanCore) midSync() {
 		p = dp
 	}
 	var saved [syncSymbols]int8
-	d, ok := r.resample(p, &saved, true)
+	d, _, ok := r.resample(p, &saved, true, discLock)
 	if !ok {
 		return
 	}
@@ -1574,6 +1599,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	}
 	r.locked, r.forced, r.suspect, r.hunt, r.rcOnly, r.src, r.bs = true, false, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.suspectRun = 0
+	r.pairSrc = 0
 	r.lockNs = r.ns
 	r.unproven = false
 	r.streams++
@@ -1866,7 +1892,11 @@ func (r *leanCore) slotRate(p int32, sps float32) {
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
-	r.fitLevels(base+leanSyncEnd, anchor, false, true)
+	if r.pairLv && r.fitLevels(base+leanSyncEnd, anchor, true, true) {
+		r.pairLv = false
+	} else {
+		r.fitLevels(base+leanSyncEnd, anchor, false, true)
+	}
 	d := r.dcHz
 	if o := (j + 1) & 1; !r.bs && r.ms.anch[o] != leanNoSlot {
 		d = (d + r.ms.lv[o].dcHz) / 2
