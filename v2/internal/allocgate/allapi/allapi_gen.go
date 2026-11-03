@@ -14,6 +14,7 @@ import (
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	hytera_hdap "github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	internal_bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	internal_c2mode "github.com/USA-RedDragon/dmrgo/v2/internal/c2mode"
 	internal_crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	internal_digest "github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	internal_dvsisim "github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
@@ -295,6 +296,9 @@ var api = [...]any{
 	internal_bits.SetBit,
 	internal_bits.SetField,
 	internal_bits.SetField64,
+	(*internal_c2mode.Detector).Add,
+	(*internal_c2mode.Detector).Mode,
+	(*internal_c2mode.Detector).Reset,
 	internal_crc.CCITT,
 	internal_crc.CCITTUpdate,
 	internal_crc.CRC32,

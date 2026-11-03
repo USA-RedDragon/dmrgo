@@ -134,9 +134,6 @@ func FuzzDetector(f *testing.F) {
 			var s [9]byte
 			copy(s[:], raw[off:])
 			got := d.add(&s)
-			if d.score < -detectLimit || d.score > detectLimit {
-				t.Fatalf("score %d out of range", d.score)
-			}
 			if got != Mode2400 && got != Mode3200 {
 				t.Fatalf("add returned %d", got)
 			}
