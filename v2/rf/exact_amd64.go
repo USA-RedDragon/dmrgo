@@ -11,13 +11,13 @@ func xfwdLogAVX2(src, d0, d1, d2, d3, cs, sn *float32, n int, l *xlanes, thr, to
 func xfwdFirstAVX2(src, d0, d1, d2, d3, cs, sn *float32, n int, l *xlanes, thr, top float32) float32
 
 //go:noescape
-func xbwdLogAVX2(src, e0, e1, e2, e3, dst, cs, sn *float32, n int, l *xlanes, thr float32, best *[4]float32)
+func xbwdLogAVX2(src, e0, e1, e2, e3, dst, cs, sn *float32, n int, l *xlanes, thr float32, best *[4]float32, yb *float32, pm *uint8)
 
 //go:noescape
 func xfwdLog512(src, d0, d1, d2, d3, cs, sn *float32, n int, l *xlanes, thr, top float32) float32
 
 //go:noescape
-func xbwdLog512(src, e0, e1, e2, e3, dst, cs, sn *float32, n int, l *xlanes, thr float32, best *[4]float32)
+func xbwdLog512(src, e0, e1, e2, e3, dst, cs, sn *float32, n int, l *xlanes, thr float32, best *[4]float32, yb *float32, pm *uint8)
 
 //go:noescape
 func xcorrAVX2(seg *complex64, sps int, tre, tim *float32, nw int, rr, ri, scale float32, corr *complex64) float32
@@ -116,9 +116,10 @@ func (t *xtrellis) backwardSIMD(alpha, beta, out []float32, corr []complex64, lp
 }
 
 func (t *xtrellis) backwardCall(src, e0, e1, e2, e3, dst, cs, sn *float32, n int, l *xlanes, thr float32, best *[4]float32) {
+	yb, pm := &t.yb[0], &t.pm[0]
 	if t.isa > 1 {
-		xbwdLog512(src, e0, e1, e2, e3, dst, cs, sn, n, l, thr, best)
+		xbwdLog512(src, e0, e1, e2, e3, dst, cs, sn, n, l, thr, best, yb, pm)
 		return
 	}
-	xbwdLogAVX2(src, e0, e1, e2, e3, dst, cs, sn, n, l, thr, best)
+	xbwdLogAVX2(src, e0, e1, e2, e3, dst, cs, sn, n, l, thr, best, yb, pm)
 }

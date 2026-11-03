@@ -329,6 +329,47 @@ LD:
 	VLA(Y4, Y15, Y4, LA3) \
 	VBLENDVPS Y3, xninf<>(SB), Y4, Y4
 
+#define CHAIN2(OFF, POFF, LL, LD) \
+	VMOVSS       POFF(SP), X12 \
+	VBROADCASTSS X12, Y10 \
+	VSUBPS       OFF(R8), Y10, Y11 \
+	VMULPS       xeight<>(SB), Y11, Y11 \
+	VCMPPS       $0x1d, xn96<>(SB), Y11, Y11 \
+	VMOVMSKPS    Y11, AX \
+	ORL          R13, AX \
+	NOTL         AX \
+	ANDL         $0xff, AX \
+	JEQ          LD \
+LL: \
+	BSFL         AX, DX \
+	LEAL         -1(AX), R12 \
+	ANDL         R12, AX \
+	VMOVSS       OFF(R8)(DX*4), X5 \
+	SLOGADDB \
+	TESTL        AX, AX \
+	JNE          LL \
+	VMOVSS       X12, POFF(SP) \
+LD:
+
+#define TPTAIL(LA1, LA2, LA3) \
+	VADDPS    Y4, Y0, Y7 \
+	VMOVUPS   Y7, 0(R12) \
+	VADDPS    Y5, Y0, Y7 \
+	VMOVUPS   Y7, 32(R12) \
+	VADDPS    Y6, Y0, Y7 \
+	VMOVUPS   Y7, 64(R12) \
+	VADDPS    Y15, Y0, Y7 \
+	VMOVUPS   Y7, 96(R12) \
+	VMOVMSKPS Y3, AX \
+	MOVQ      BX, DX \
+	SHRQ      $3, DX \
+	ADDQ      pm+104(FP), DX \
+	MOVB      AX, (DX) \
+	VLA(Y4, Y5, Y4, LA1) \
+	VLA(Y4, Y6, Y4, LA2) \
+	VLA(Y4, Y15, Y4, LA3) \
+	VBLENDVPS Y3, xninf<>(SB), Y4, Y4
+
 #define CHAINS(A0, B0, C0, D0, A1, B1, C1, D1, A2, B2, C2, D2, A3, B3, C3, D3) \
 	CHAIN(0, 128, A0, B0, C0, D0) \
 	CHAIN(32, 132, A1, B1, C1, D1) \
