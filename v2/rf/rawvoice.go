@@ -2,6 +2,7 @@ package rf
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/c2mode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -56,5 +57,40 @@ func voiceSlotMask(i int) byte {
 		return 0xFF
 	default:
 		return 0
+	}
+}
+
+const (
+	c2Other uint8 = iota
+	c2Voice
+	c2Reset
+)
+
+func c2MarkOf(b *Burst, raw bool) uint8 {
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	switch {
+	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
+		if raw {
+			return c2Voice
+		}
+		return c2Reset
+	case known && kind == layer2.KindData:
+		return c2Reset
+	default:
+		return c2Other
+	}
+}
+
+func c2Note(d *c2mode.Detector, b *Burst, mark uint8) {
+	b.Codec2 = 0
+	switch mark {
+	case c2Voice:
+		slots := b.Data.VoiceSlots()
+		for i := range slots {
+			d.Add(&slots[i])
+		}
+		b.Codec2 = d.Mode()
+	case c2Reset:
+		d.Reset()
 	}
 }

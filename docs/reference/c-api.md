@@ -4266,6 +4266,8 @@ struct dmrgo_rf_burst_t {
 	dmrgo_layer2_raw_burst_t fixed;
 	uint8_t fixed_cach[3];
 	bool has_fixed;
+	/* Codec2 is the bit rate, 2400 or 3200, of the Codec2 frames of a voice burst of a call whose voice LC has FID 0xC2, once the frames since the start of the call identify it, which 5 clean frames do. It is 0 for other bursts, before that, and at DMRGO_RF_TIER0. */
+	int64_t codec2;
 };
 
 struct dmrgo_rf_audio_rx_config_on_bursts_fn_t {

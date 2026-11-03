@@ -3386,6 +3386,7 @@ func out_rf_Burst(d *C.dmrgo_rf_burst_t, s *g_rf.Burst, oc *outc) {
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.fixed)) = s.Fixed
 	*(*[3]byte)(unsafe.Pointer(&d.fixed_cach)) = s.FixedCACH
 	d.has_fixed = C.bool(s.HasFixed)
+	d.codec2 = C.int64_t(s.Codec2)
 }
 
 func in_rf_Burst(s *C.dmrgo_rf_burst_t) (d g_rf.Burst) {
@@ -3402,6 +3403,7 @@ func in_rf_Burst(s *C.dmrgo_rf_burst_t) (d g_rf.Burst) {
 	d.Fixed = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.fixed))
 	d.FixedCACH = *(*[3]byte)(unsafe.Pointer(&s.fixed_cach))
 	d.HasFixed = bool(s.has_fixed)
+	d.Codec2 = int(s.codec2)
 	return
 }
 

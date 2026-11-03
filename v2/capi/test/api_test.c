@@ -1519,6 +1519,77 @@ static bool rf_region_refused(int rc) {
 	return true;
 }
 
+static void test_rf_codec2(void) {
+	dmrgo_pdu_full_link_control_t lc;
+	memset(&lc, 0, sizeof lc);
+	dmrgo_pdu_flc_group_voice_t gv = {.group_address = 9, .source_address = 1234567};
+	OK(dmrgo_pdu_full_link_control_set_group_voice(&lc, &gv));
+	lc.fid = DMRGO_CODEC2_DEFAULT_FID;
+	dmrgo_layer2_voice_transmitter_options_t o = {.size = sizeof o, .lc = lc, .color_code = 7, .source = DMRGO_LAYER2_SYNC_SOURCE_MS};
+	dmrgo_layer2_voice_transmitter_t *vt = NULL;
+	OK(dmrgo_layer2_new_voice_transmitter(&o, &vt));
+	static dmrgo_layer2_raw_burst_t raw[40];
+	size_t n = 0;
+	OK(dmrgo_layer2_voice_transmitter_headers(vt, raw, 40, &n, NULL));
+	uint32_t x = 1;
+	for (int i = 0; i < 4 * 6 * 3; i++) {
+		uint8_t s[1][9] = {{0}};
+		for (int k = 0; k < 8; k++) {
+			x = x * 1103515245u + 12345u;
+			s[0][k] = (uint8_t)(x >> 16);
+		}
+		s[0][6] |= 0x07;
+		size_t m = 0;
+		OK(dmrgo_layer2_voice_transmitter_add_slots(vt, (const uint8_t (*)[9])s, 1, raw + n, 40 - n, &m, NULL));
+		n += m;
+	}
+	size_t m = 0;
+	OK(dmrgo_layer2_voice_transmitter_terminate(vt, raw + n, 40 - n, &m, NULL));
+	n += m;
+	OK(dmrgo_layer2_voice_transmitter_free(vt));
+	static dmrgo_rf_burst_t b[40];
+	for (size_t i = 0; i < n; i++) {
+		memset(&b[i], 0, sizeof b[i]);
+		b[i].data = raw[i];
+		b[i].stream = 1;
+		b[i].slot = 2 * (int64_t)i;
+	}
+	dmrgo_rf_tx_config_t c = {.size = sizeof c, .tier = DMRGO_RF_TIER0, .rate = 96000, .region = DMRGO_RF_REGION_US, .service = DMRGO_SERVICE_LAND_MOBILE, .power = 40};
+	dmrgo_rf_transmitter_t *t = NULL;
+	int rc = dmrgo_rf_new_transmitter(&c, &t);
+	if (rf_region_refused(rc)) {
+		printf("rf codec2: the region limits refuse the setup, so the check waits for them\n");
+		return;
+	}
+	OK(rc);
+	int64_t most = 0;
+	OK(dmrgo_rf_transmitter_max_output(t, (int64_t)n, &most));
+	uint8_t *iq = malloc((size_t)most * 4);
+	size_t len = 0;
+	OK(dmrgo_rf_transmitter_append_samples(t, iq, (size_t)most * 4, &len, NULL, b, n));
+	OK(dmrgo_rf_transmitter_append_flush(t, iq, (size_t)most * 4, &len, NULL));
+	OK(dmrgo_rf_transmitter_free(t));
+	dmrgo_rf_rx_config_t rc2 = {.size = sizeof rc2, .tier = DMRGO_RF_TIER1, .rate = 96000};
+	dmrgo_rf_receiver_t *r = NULL;
+	OK(dmrgo_rf_new_receiver(&rc2, &r));
+	size_t items = 0, arena = 0, got = 0;
+	OK(dmrgo_rf_receiver_append_bursts_need(r, iq, len, &items, &arena));
+	dmrgo_rf_burst_t *out = malloc((items + 8) * sizeof *out);
+	OK(dmrgo_rf_receiver_append_bursts(r, out, items + 8, &got, NULL, iq, len));
+	OK(dmrgo_rf_receiver_append_flush(r, out, items + 8, &got, NULL));
+	OK(dmrgo_rf_receiver_free(r));
+	int known = 0, wrong = 0;
+	for (size_t i = 0; i < got; i++) {
+		bool voice = out[i].sync == DMRGO_ENUMS_SYNC_MS_SOURCED_VOICE || out[i].voice != DMRGO_ENUMS_VOICE_BURST_UNKNOWN;
+		known += voice && out[i].codec2 == 3200;
+		wrong += out[i].codec2 != 0 && (!voice || out[i].codec2 != 3200);
+	}
+	CHECK(known >= 22 && wrong == 0);
+	free(out);
+	free(iq);
+	printf("rf codec2: %d of 24 voice bursts carry Codec2 mode 3200 through the receiver\n", known);
+}
+
 static void test_rf_transmitter(void) {
 	static dmrgo_rf_burst_t b[RF_SLOTS];
 	CHECK(rf_bursts(b, RF_SLOTS) == RF_SLOTS);
@@ -1676,6 +1747,7 @@ int main(int argc, char **argv) {
 	test_rf_receiver();
 	test_rf_audio_receiver();
 	test_rf_transmitter();
+	test_rf_codec2();
 	test_rf_audio_transmitter();
 	if (failures) {
 		fprintf(stderr, "%d checks failed\n", failures);

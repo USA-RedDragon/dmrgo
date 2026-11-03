@@ -5,6 +5,7 @@ import (
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/c2mode"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -52,6 +53,7 @@ type extChan struct {
 	late  [extLate]lateBurst
 	lateN int
 	raw   bool
+	c2    c2mode.Detector
 }
 
 type softExt struct {
@@ -102,6 +104,7 @@ type softExt struct {
 	ac              *acStage
 	np              *npml
 	qcoh            [extQueue]bool
+	qc2             [extQueue]uint8
 	qcore           [extQueue]layer2.RawBurst
 	errCore, errCoh float32
 	known           [layer2.BurstBits]bool
@@ -620,10 +623,12 @@ func (x *softExt) fragment(ch *extChan, b *Burst) bool {
 
 func (x *softExt) embeddedLC(ch *extChan, e int64) {
 	var ps [4]*Burst
+	var qi [4]int
 	for k := range x.n {
-		b := &x.q[(x.head+k)%extQueue]
+		j := (x.head + k) % extQueue
+		b := &x.q[j]
 		if i := (b.Slot - ch.b) / 2; b.Slot&1 == e&1 && b.Slot >= ch.b && b.Slot <= e && (b.Slot-ch.b)%2 == 0 {
-			ps[i] = b
+			ps[i], qi[i] = b, j
 		}
 	}
 	for i, b := range ps {
@@ -645,6 +650,7 @@ func (x *softExt) embeddedLC(ch *extChan, e int64) {
 		}
 		if ch.raw {
 			keepVoiceSlots(&b.Fixed, &b.Data)
+			x.qc2[qi[i]] = c2Voice
 		}
 	}
 	x.release(ch)
@@ -714,7 +720,7 @@ func (x *softExt) push(c *leanCore, b *Burst, hold bool, start int64) int {
 	}
 	i := (x.head + x.n) % extQueue
 	_, _, known := x.anchorPeriod(x.ancParity(c, start-cachSymbols))
-	x.q[i], x.held[i], x.qcoh[i] = *b, hold, false
+	x.q[i], x.held[i], x.qcoh[i], x.qc2[i] = *b, hold, false, c2MarkOf(b, x.ch[b.Slot&1].raw)
 	x.early[i], x.earlyStart[i] = x.timing && !known, start
 	x.n++
 	x.retime(c)
@@ -739,6 +745,7 @@ func (x *softExt) retime(c *leanCore) {
 
 func (x *softExt) drain(c *leanCore, one bool, keep int) {
 	for x.n > keep && !x.held[x.head] && !x.early[x.head] && !c.unproven {
+		c2Note(&x.ch[x.q[x.head].Slot&1].c2, &x.q[x.head], x.qc2[x.head])
 		c.emit(&x.q[x.head])
 		x.head = (x.head + 1) % extQueue
 		x.n--
@@ -1340,6 +1347,8 @@ func (x *softExt) end(c *leanCore) {
 		x.n = 0
 	}
 	x.drain(c, false, 0)
+	x.ch[0].c2.Reset()
+	x.ch[1].c2.Reset()
 }
 
 const (

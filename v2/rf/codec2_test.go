@@ -12,6 +12,17 @@ import (
 )
 
 func codec2Call(t *testing.T, n int, late bool, cn float64) ([]complex64, [][9]byte, float64) {
+	return codec2CallMode(t, n, late, cn, codec2ModeOf(late))
+}
+
+func codec2ModeOf(late bool) int {
+	if late {
+		return 2400
+	}
+	return 3200
+}
+
+func codec2CallMode(t *testing.T, n int, late bool, cn float64, mode int) ([]complex64, [][9]byte, float64) {
 	t.Helper()
 	var lc pdu.FullLinkControl
 	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3191868}); err != nil {
@@ -30,7 +41,7 @@ func codec2Call(t *testing.T, n int, late bool, cn float64) ([]complex64, [][9]b
 	rng := rand.New(rand.NewPCG(7, 8))
 	slots := make([][9]byte, n*layer2.VoiceBurstsPerSuperframe*layer2.VoiceSlotsPerBurst)
 	for i := range slots {
-		for k := range 6 {
+		for k := range mode / 400 {
 			slots[i][k] = byte(rng.Uint32())
 		}
 		b, err := tx.AddSlots(slots[i])
@@ -97,6 +108,9 @@ func TestReceiverCodec2Call(t *testing.T) {
 				if bad != 0 {
 					t.Errorf("%d of %d Codec2 frames differ", bad, len(want))
 				}
+				if n, bad := codec2ModeBad(got, start, late, rn.tier, len(want)/layer2.VoiceSlotsPerBurst); bad != 0 {
+					t.Errorf("%d of %d bursts carry the wrong Codec2 mode", bad, n)
+				}
 			})
 		}
 	}
@@ -126,4 +140,31 @@ func codec2Bad(got []Burst, want [][9]byte, start float64, late bool) int {
 		}
 	}
 	return bad
+}
+
+func codec2ModeBad(got []Burst, start float64, late bool, tier Tier, n int) (int, int) {
+	mode, from := codec2ModeOf(late), 2
+	if late {
+		from = layer2.VoiceBurstsPerSuperframe
+	}
+	if tier == Tier0 {
+		mode = 0
+	}
+	count, bad := 0, 0
+	for i := range got {
+		b := &got[i]
+		k := int(math.Round((b.Seconds - start) / (2 * slotSeconds)))
+		want := 0
+		if k >= from && k < n {
+			want = mode
+		}
+		if k >= 0 && k < from {
+			continue
+		}
+		count++
+		if b.Codec2 != want {
+			bad++
+		}
+	}
+	return count, bad
 }

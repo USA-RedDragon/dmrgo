@@ -13,6 +13,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 func TestCoreTier3(t *testing.T) {
@@ -317,6 +318,9 @@ func TestCoreTier3Codec2Call(t *testing.T) {
 		got = append(got, r.flushAll()...)
 		if bad := codec2Bad(got, want, start, late); bad != 0 {
 			t.Errorf("late entry %v: %d of %d Codec2 frames differ", late, bad, len(want))
+		}
+		if n, bad := codec2ModeBad(got, start, late, Tier3, len(want)/layer2.VoiceSlotsPerBurst); bad != 0 {
+			t.Errorf("late entry %v: %d of %d bursts carry the wrong Codec2 mode", late, bad, n)
 		}
 	}
 }

@@ -40,6 +40,11 @@ type Burst struct {
 	Fixed     layer2.RawBurst
 	FixedCACH [3]byte
 	HasFixed  bool
+	// Codec2 is the bit rate, 2400 or 3200, of the Codec2 frames of a
+	// voice burst of a call whose voice LC has FID 0xC2, once the frames
+	// since the start of the call identify it, which 5 clean frames do. It
+	// is 0 for other bursts, before that, and at Tier0.
+	Codec2 int
 }
 
 // Decoded returns the burst and CACH bits to decode: Fixed and FixedCACH
