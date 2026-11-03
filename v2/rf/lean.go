@@ -1637,7 +1637,7 @@ func (r *leanCore) retime(mid bool) {
 	var saved [syncSymbols]int8
 	if d, c2, z, ok := r.resample(p, &saved, true, discLock); ok {
 		if r.hasExt() && r.ns-1 == r.slotEnd-slotSymbols+leanSyncEnd {
-			r.ext.liveFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2)
+			r.ext.liveFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2, 1)
 		}
 		if r.reEntry && !r.cohRefit && p != enums.SyncMSSourcedRC {
 			r.restoreSync(&saved)
