@@ -344,6 +344,7 @@ type iqRx struct {
 	afcAvg    complex64
 	afcPull   float32
 	yHist     []complex64
+	pow       *iqPower
 	cHist     []complex64
 	cLag      int64
 	specPull  float32
@@ -389,6 +390,8 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.d.sink = cfg.sink
 	r.devTab = devTabOf(&opt)
 	r.d.lagTicks += r.conv.lagTicks()
+	r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())))
+	r.d.setPower(r.pow)
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
@@ -430,6 +433,9 @@ func (r *iqRx) sample(v complex64) {
 	f, y, ok := r.conv.push(v)
 	if !ok {
 		return
+	}
+	if r.pow != nil {
+		r.pow.push(y)
 	}
 	if r.yHist != nil {
 		r.yHist[r.yN&int64(len(r.yHist)-1)] = y

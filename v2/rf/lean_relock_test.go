@@ -176,3 +176,51 @@ func TestLeanLoneRCProof(t *testing.T) {
 		}
 	}
 }
+
+func TestLeanFadeNoBursts(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123, Superframes: 1}
+	v, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const lead = 0.05
+	var fade [][2]float64
+	for i := 2; i < 4; i++ {
+		s := lead + float64(2*i)*slotSeconds
+		fade = append(fade, [2]float64{s, s + slotSeconds})
+	}
+	clean := relockSynth([]relockPart{{v.Bursts, lead, 0}}, fade, lead+float64(2*len(v.Bursts))*slotSeconds+0.1)
+	for _, sigma := range []float64{0, 1e-3} {
+		x := append([]complex64(nil), clean...)
+		rng := rand.New(rand.NewPCG(7, 8))
+		for i := range x {
+			x[i] += complex(float32(rng.NormFloat64()*sigma), float32(rng.NormFloat64()*sigma))
+		}
+		for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+			for _, audio := range []bool{false, true} {
+				if audio && sigma > 0 {
+					continue
+				}
+				var got []Burst
+				delay := 0.0
+				if audio {
+					r := mustAudio(AudioRxConfig{Rate: 48000, Tier: tier})
+					got = r.AppendFlush(r.AppendBursts(nil, discAudio(x, 48000)))
+					delay = secondsAudioLag / basebandRate
+				} else {
+					r := mustNew(RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCS16})
+					got = r.AppendFlush(r.AppendBursts(nil, iqBytes(x, IQFormatCS16)))
+				}
+				for _, b := range got {
+					at := b.Seconds + delay
+					for _, f := range fade {
+						if at > f[0]-1e-3 && at < f[1] {
+							t.Errorf("sigma %g t%d audio %v: burst at %.4f s in the fade %.3f to %.3f s", sigma, tier-Tier0, audio, at, f[0], f[1])
+						}
+					}
+				}
+			}
+		}
+	}
+}

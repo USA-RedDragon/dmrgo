@@ -43,7 +43,9 @@ const (
 	leanSearchHz        = 200
 	leanLockMMStep      = 0.1
 	leanSignMiss        = 5
+	leanBurstSec        = float64(slotSymbols-cachSymbols) / symbolRate
 	leanFadeBursts      = 2
+	leanFlatSyms        = 1
 	leanInBurst         = cachSymbols + syncSymbols - 1
 	leanDeferSkew       = 0.125
 	leanProofErrors     = 0
@@ -309,6 +311,7 @@ type leanCore struct {
 	pendData bool
 	unproven bool
 	rcLone   bool
+	pow      leanPow
 	base     int64
 	anchor   enums.SyncPattern
 	onBurst  func(*Burst)
@@ -1867,7 +1870,15 @@ func (r *leanCore) slot() {
 	r.next++
 	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
 	energy := r.eAcc / float32(max(r.eSyms, 1))
+	known := r.eSyms > 0
 	r.eAcc, r.eSyms = 0, 0
+	measured := false
+	if !r.bs {
+		var e float32
+		if e, measured = r.slotPower(base); measured {
+			energy = e
+		}
+	}
 	_, dp, _ := sourceAt(int(r.src)).SyncPatterns()
 	seek := !r.bs && r.lastAnch != leanNoSlot && r.ms.anch[j&1] == leanNoSlot
 	isAnchor, shift, anchor := r.slotAnchor(base, seek)
@@ -1880,10 +1891,12 @@ func (r *leanCore) slot() {
 		}
 		r.anchorAt(j, base, shift, anchor, energy)
 	}
-	present := isAnchor || r.noise == 0 || energy > 1.5*r.noise
+	present := isAnchor || !known && !measured || r.noise == 0 && !measured || energy > 1.5*r.noise
 	if seek && !isAnchor {
 		present = false
-		r.noise = min(r.noise, energy)
+		if known || measured {
+			r.noise = min(r.noise, energy)
+		}
 	}
 	r.holdNext(j, present)
 	switch {
@@ -2385,8 +2398,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	b.Distance, b.BS, b.Stream, b.Slot = -1, r.bs, int(r.streams), int64(j)
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
-	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
-		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256))) - int64(r.lagTicks)
+	ticks := r.burstTicks(base)
 	b.Seconds = tickSeconds(ticks)
 	b.HasCACH = r.bs && ticks >= cachSymbols*samplesPerSy<<8
 	if r.iqLow && iqLowISI > 0 {
@@ -2396,7 +2408,11 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	h := ringPos(base)
 	var acc byte
 	beyond := 0
+	lo, hi := int8(math.MaxInt8), int8(math.MinInt8)
 	for k := range slotSymbols {
+		if k >= cachSymbols {
+			lo, hi = min(lo, r.ring[h]), max(hi, r.ring[h])
+		}
 		x := int32(r.ring[h])*(discStepHz/llrStepHz) + r.llrOff
 		if h++; h == leanRing {
 			h = 0
@@ -2422,6 +2438,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	if r.clickSpan > 0 {
 		r.clickFloor(v)
+	}
+	if anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms {
+		return
 	}
 	if r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data) {
 		return
@@ -2452,6 +2471,11 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.repair(&r.fec, b, cc, ok)
 	}
 	r.emit(b)
+}
+
+func (r *leanCore) burstTicks(base int64) int64 {
+	return (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
+		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256))) - int64(r.lagTicks)
 }
 
 func (r *leanCore) emit(b *Burst) {
