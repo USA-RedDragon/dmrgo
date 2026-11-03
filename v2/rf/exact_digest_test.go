@@ -23,6 +23,7 @@ type xtCase struct {
 	drifts    int
 	priors    bool
 	slip, cut bool
+	beam      float32
 }
 
 func xtInput(m *cpmModel, steps int, c xtCase, seed uint64) (x []complex64, scale float32, lp, slp []float32) {
@@ -70,7 +71,7 @@ func xtInput(m *cpmModel, steps int, c xtCase, seed uint64) (x []complex64, scal
 }
 
 func xtCases() []xtCase {
-	out := make([]xtCase, 0, 32)
+	out := make([]xtCase, 0, 40)
 	for _, np := range []int{52, phaseStates} {
 		for _, logmap := range []bool{true, false} {
 			for _, cn := range []float64{30, 12, 6, 2} {
@@ -81,6 +82,8 @@ func xtCases() []xtCase {
 				xtCase{np: np, logmap: logmap, cn: 8, rot: 2.1, slip: true, jump: 4, drifts: 2},
 				xtCase{np: np, logmap: logmap, cn: 8, cut: true, jump: 3, fade: true, drifts: 1},
 				xtCase{np: np, logmap: logmap, cn: 8, cut: true, jump: 3, fade: true, below: 0.5, priors: true, drifts: 1},
+				xtCase{np: np, logmap: logmap, cn: 10, beam: 1, drifts: 1},
+				xtCase{np: np, logmap: logmap, cn: 14, kappa: anchorKappa, priors: true, beam: 2, drifts: 1},
 			)
 		}
 	}
@@ -95,6 +98,9 @@ func xtDigest() string {
 	for i, c := range xtCases() {
 		xt := newXTrellis(m, c.np, steps)
 		xt.logmap, xt.jump, xt.fade, xt.below, xt.drifts = c.logmap, c.jump, c.fade, c.below, c.drifts
+		if c.beam > 0 {
+			xt.beamW = c.beam
+		}
 		x, scale, lp, slp := xtInput(m, steps, c, uint64(i)+1)
 		copy(xt.lp, lp)
 		copy(xt.slp, slp)
@@ -114,7 +120,7 @@ func xtDigest() string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-const xtWantDigest = "6a24ccdfa7b80f0db8a4db763546e9bfca8deba9007a39757bfae3933fa30e2b"
+const xtWantDigest = "5dd0552565fb064df633f9e03867e87bb72aa6ec076bd48ce1edc7260952f2f7"
 
 func TestExactTrellisDigest(t *testing.T) {
 	t.Parallel()
