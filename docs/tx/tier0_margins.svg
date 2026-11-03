@@ -25,8 +25,8 @@
 <rect class="ax" x="367.0" y="76.0" width="309.0" height="730.0"/>
 <text x="521.5" y="850.0" text-anchor="middle">Margin over the need (dB), accepted from 0</text>
 <text x="359.0" y="99.0" text-anchor="end">Adjacent channel power (EN 300 113 7.4)</text>
-<rect class="q1" x="470.0" y="80.0" width="10.0" height="8"/>
-<rect class="q2" x="470.0" y="90.0" width="6.8" height="8"/>
+<rect class="q1" x="470.0" y="80.0" width="9.9" height="8"/>
+<rect class="q2" x="470.0" y="90.0" width="6.9" height="8"/>
 <rect class="q3" x="470.0" y="100.0" width="5.8" height="8"/>
 <text x="359.0" y="137.0" text-anchor="end">Alternate channel power (EN 300 113 7.4)</text>
 <rect class="q1" x="470.0" y="118.0" width="92.1" height="8"/>
@@ -37,61 +37,61 @@
 <text x="359.0" y="213.0" text-anchor="end">Transient alternate channel power (China)</text>
 <rect class="q2" x="470.0" y="204.0" width="65.8" height="8"/>
 <text x="359.0" y="251.0" text-anchor="end">Spurious emissions (EN 300 113 7.5)</text>
-<rect class="q1" x="436.9" y="232.0" width="33.1" height="8"/>
-<rect class="q2" x="470.0" y="242.0" width="107.5" height="8"/>
-<rect class="q3" x="421.7" y="252.0" width="48.3" height="8"/>
+<rect class="q1" x="437.1" y="232.0" width="32.9" height="8"/>
+<rect class="q2" x="470.0" y="242.0" width="107.6" height="8"/>
+<rect class="q3" x="421.9" y="252.0" width="48.1" height="8"/>
 <text x="359.0" y="289.0" text-anchor="end">Emission Mask D (47 CFR 90.210(d))</text>
 <rect class="q1" x="470.0" y="270.0" width="43.4" height="8"/>
 <rect class="q2" x="470.0" y="280.0" width="37.9" height="8"/>
 <rect class="q3" x="470.0" y="290.0" width="25.8" height="8"/>
 <text x="359.0" y="327.0" text-anchor="end">Emission Mask D far out (47 CFR 90.210(d)(3))</text>
-<rect class="q1" x="470.0" y="308.0" width="34.4" height="8"/>
+<rect class="q1" x="470.0" y="308.0" width="34.5" height="8"/>
 <rect class="q3" x="470.0" y="328.0" width="12.2" height="8"/>
 <text x="359.0" y="365.0" text-anchor="end">Emission Mask H (47 CFR 90.210(h))</text>
-<rect class="q1" x="470.0" y="346.0" width="83.3" height="8"/>
-<rect class="q2" x="470.0" y="356.0" width="81.7" height="8"/>
-<rect class="q3" x="470.0" y="366.0" width="77.4" height="8"/>
+<rect class="q1" x="470.0" y="346.0" width="83.4" height="8"/>
+<rect class="q2" x="470.0" y="356.0" width="81.8" height="8"/>
+<rect class="q3" x="470.0" y="366.0" width="77.2" height="8"/>
 <text x="359.0" y="403.0" text-anchor="end">Emission Mask H far out (47 CFR 90.210(h)(5))</text>
-<rect class="q1" x="470.0" y="384.0" width="58.4" height="8"/>
+<rect class="q1" x="470.0" y="384.0" width="58.5" height="8"/>
 <rect class="q3" x="470.0" y="404.0" width="36.2" height="8"/>
 <text x="359.0" y="441.0" text-anchor="end">800 MHz EA mask (47 CFR 90.691(a))</text>
-<rect class="q1" x="470.0" y="422.0" width="75.0" height="8"/>
-<rect class="q2" x="470.0" y="432.0" width="165.8" height="8"/>
-<rect class="q3" x="470.0" y="442.0" width="53.4" height="8"/>
+<rect class="q1" x="470.0" y="422.0" width="75.4" height="8"/>
+<rect class="q2" x="470.0" y="432.0" width="166.1" height="8"/>
+<rect class="q3" x="470.0" y="442.0" width="53.1" height="8"/>
 <text x="359.0" y="479.0" text-anchor="end">800 MHz EA mask far out (47 CFR 90.691(a)(2))</text>
-<rect class="q1" x="470.0" y="460.0" width="58.4" height="8"/>
+<rect class="q1" x="470.0" y="460.0" width="58.5" height="8"/>
 <rect class="q3" x="470.0" y="480.0" width="36.2" height="8"/>
 <text x="359.0" y="517.0" text-anchor="end">Amateur spurious emissions (47 CFR 97.307(e))</text>
-<rect class="q1" x="470.0" y="498.0" width="14.6" height="8"/>
+<rect class="q1" x="470.0" y="498.0" width="14.7" height="8"/>
 <rect class="q2" x="470.0" y="508.0" width="138.3" height="8"/>
 <rect class="q3" x="462.8" y="518.0" width="7.2" height="8"/>
 <text x="359.0" y="555.0" text-anchor="end">Amateur spurious emissions (ERC/REC 74-01)</text>
-<rect class="q1" x="470.0" y="536.0" width="57.8" height="8"/>
-<rect class="q3" x="470.0" y="556.0" width="36.0" height="8"/>
+<rect class="q1" x="470.0" y="536.0" width="57.9" height="8"/>
+<rect class="q3" x="470.0" y="556.0" width="35.9" height="8"/>
 <text x="359.0" y="593.0" text-anchor="end">Alternate channel power (China)</text>
-<rect class="q1" x="470.0" y="574.0" width="127.3" height="8"/>
-<rect class="q2" x="470.0" y="584.0" width="110.9" height="8"/>
-<rect class="q3" x="470.0" y="594.0" width="55.8" height="8"/>
+<rect class="q1" x="470.0" y="574.0" width="127.0" height="8"/>
+<rect class="q2" x="470.0" y="584.0" width="111.0" height="8"/>
+<rect class="q3" x="470.0" y="594.0" width="55.7" height="8"/>
 <text x="359.0" y="631.0" text-anchor="end">Spurious emissions (China, positive peak)</text>
-<rect class="q1" x="377.3" y="612.0" width="92.7" height="8"/>
-<rect class="q2" x="470.0" y="622.0" width="38.3" height="8"/>
+<rect class="q1" x="377.4" y="612.0" width="92.6" height="8"/>
+<rect class="q2" x="470.0" y="622.0" width="38.4" height="8"/>
 <rect class="q3" x="367.0" y="632.0" width="103.0" height="8"/>
 <text x="359.0" y="669.0" text-anchor="end">Amateur spurious emissions (China)</text>
-<rect class="q1" x="470.0" y="650.0" width="25.4" height="8"/>
-<rect class="q2" x="470.0" y="660.0" width="156.4" height="8"/>
-<rect class="q3" x="470.0" y="670.0" width="3.5" height="8"/>
+<rect class="q1" x="470.0" y="650.0" width="25.5" height="8"/>
+<rect class="q2" x="470.0" y="660.0" width="156.5" height="8"/>
+<rect class="q3" x="470.0" y="670.0" width="3.6" height="8"/>
 <text x="359.0" y="707.0" text-anchor="end">Adjacent channel power (Japan)</text>
 <rect class="q1" x="470.0" y="688.0" width="57.6" height="8"/>
-<rect class="q2" x="470.0" y="698.0" width="66.0" height="8"/>
+<rect class="q2" x="470.0" y="698.0" width="66.1" height="8"/>
 <rect class="q3" x="470.0" y="708.0" width="52.7" height="8"/>
 <text x="359.0" y="745.0" text-anchor="end">Spurious emissions (Japan)</text>
-<rect class="q1" x="470.0" y="726.0" width="15.1" height="8"/>
-<rect class="q2" x="470.0" y="736.0" width="146.1" height="8"/>
-<rect class="q3" x="463.2" y="746.0" width="6.8" height="8"/>
+<rect class="q1" x="470.0" y="726.0" width="15.2" height="8"/>
+<rect class="q2" x="470.0" y="736.0" width="146.2" height="8"/>
+<rect class="q3" x="463.3" y="746.0" width="6.7" height="8"/>
 <text x="359.0" y="783.0" text-anchor="end">Amateur spurious emissions (Japan)</text>
-<rect class="q1" x="470.0" y="764.0" width="25.4" height="8"/>
-<rect class="q2" x="470.0" y="774.0" width="156.4" height="8"/>
-<rect class="q3" x="470.0" y="784.0" width="3.5" height="8"/>
+<rect class="q1" x="470.0" y="764.0" width="25.5" height="8"/>
+<rect class="q2" x="470.0" y="774.0" width="156.5" height="8"/>
+<rect class="q3" x="470.0" y="784.0" width="3.6" height="8"/>
 <line class="l r0" stroke-dasharray="6 4" x1="470.0" y1="76.0" x2="470.0" y2="806.0"/>
 <rect class="q1" x="367.0" y="42.0" width="24" height="8"/>
 <text x="397.0" y="50.0">Audio 16-bit</text>
