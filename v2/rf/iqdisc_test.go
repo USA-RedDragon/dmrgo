@@ -132,7 +132,7 @@ func TestTier3Adjacent(t *testing.T) {
 	for _, held := range []bool{false, true} {
 		o := tierOptions(Tier3)
 		if !held {
-			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQStopHz = 0, 0, 0, 0
+			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQStopHz, o.IQSpecHunt = 0, 0, 0, 0, false
 		}
 		n, want, _ := adjacentReceive(t, Tier3, &o, 0)
 		switch {

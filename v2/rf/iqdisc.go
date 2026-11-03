@@ -376,6 +376,7 @@ type iqRx struct {
 	pullAgree bool
 	spec      *spectrum
 	specLock  bool
+	outBand   bool
 	center    float32
 	devTab    uint8
 }
@@ -505,7 +506,7 @@ func (r *iqRx) follow() {
 		}
 		return
 	}
-	if incoherent {
+	if incoherent || r.outBand {
 		r.afcAvg, r.afcPull = 0, 0
 		return
 	}
@@ -539,10 +540,14 @@ func (r *iqRx) hunt(v complex64) {
 		return
 	}
 	r.specLock = false
-	if !r.spec.push(v) || !r.spec.OK {
+	if !r.spec.push(v) {
 		return
 	}
 	hz := float32(r.spec.Hz)
+	r.outBand = r.spec.OK && abs32(hz-r.center) > iqTuneMaxHz
+	if !r.spec.OK {
+		return
+	}
 	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}

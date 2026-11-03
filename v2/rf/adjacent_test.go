@@ -85,3 +85,29 @@ func TestIQAdjacentSelectivity(t *testing.T) {
 		}
 	}
 }
+
+// TestIQAdjacentPull runs each I/Q tier next to a DMR channel 40 dB stronger
+// at +12.5 kHz whose spectrum in this channel is legal (rftx.ModulateBS,
+// -62.7 dBc), with a noise lead before the wanted call. The converter must
+// not follow the other channel before the lock.
+func TestIQAdjacentPull(t *testing.T) {
+	t.Parallel()
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+		for _, off := range []float64{0, 300} {
+			if tier == Tier3 && off == 0 {
+				continue
+			}
+			t.Run(strconv.Itoa(int(tier-Tier0))+"/"+strconv.FormatFloat(off, 'f', 0, 64), func(t *testing.T) {
+				t.Parallel()
+				o := tierOptions(tier)
+				n, want, pull := adjacentReceiveSeed(t, tier, &o, off, 3)
+				if n < want {
+					t.Errorf("C0 and C1 of %d of %d voice frames exact", n, want)
+				}
+				if pull > iqAFCLockHz {
+					t.Errorf("oscillator %.0f Hz off the carrier while locked", pull)
+				}
+			})
+		}
+	}
+}
