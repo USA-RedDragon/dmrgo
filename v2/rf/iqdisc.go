@@ -16,6 +16,10 @@ const (
 	iqAFCAvgGain   = 0.25
 	iqAFCJumpHz    = 1000
 	iqAFCCoherence = 0.48
+	iqZeroFloor    = 8
+	iqZeroRun      = 8
+	iqZeroSeconds  = 250e-6
+	iqZeroQuiet    = int(basebandRate * iqZeroSeconds)
 	iqStopTaps     = 33
 	iqStopKaiser   = 8
 )
@@ -43,6 +47,10 @@ type iqDisc struct {
 	afcPrev complex64
 	afcHead int
 	coh     *iqCohFIR
+	floor   float32
+	zeros   int
+	span    int
+	zrun    int
 }
 
 type iqCohFIR struct {
@@ -187,6 +195,10 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	for i := range d.taps {
 		d.taps[i] /= float32(sum)
 	}
+	d.span = len(d.taps)
+	if d.halfOn {
+		d.span = len(d.half.hist)/2 + 2*len(d.taps)
+	}
 }
 
 func convolveTaps(a, b []float64) []float64 {
@@ -263,6 +275,11 @@ func (d *iqDisc) turn(w float32) {
 }
 
 func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
+	if d.zrun = zeroRunOf(v, d.zrun); d.zrun >= iqZeroRun {
+		d.zeros = d.span
+	} else if d.zeros > 0 {
+		d.zeros--
+	}
 	if d.ncoN++; d.ncoN == 512 {
 		d.ncoN = 0
 		g := (3 - real(d.ncoRot)*real(d.ncoRot) - imag(d.ncoRot)*imag(d.ncoRot)) / 2
@@ -324,6 +341,9 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 		d.afcPrev = d.afcSum
 		d.pwAvg += real(d.afcSum)*real(d.afcSum) + imag(d.afcSum)*imag(d.afcSum)
 	}
+	if pw := re*re + im*im; d.zeros > 0 && (pw < d.floor || real(p)*real(p)+imag(p)*imag(p) < d.floor*pw) {
+		return 0, y, true
+	}
 	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
 }
 
@@ -379,6 +399,7 @@ type iqRx struct {
 	outBand   bool
 	center    float32
 	devTab    uint8
+	raw       int
 }
 
 func newIQRx(cfg rxSetup, opt options) *iqRx {
@@ -388,7 +409,9 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	if hz == 0 {
 		hz = discRate
 	}
+	lsb := cfg.Format.lsb() / iqZeroFloor
 	r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg, stop: opt.IQStopHz})
+	r.conv.floor = lsb * lsb
 	r.maxHz, r.syncOnly, r.pullAgree = opt.IQTuneMaxHz, opt.IQTuneSyncOnly, opt.IQPullAgree
 	r.specPull = iqAFCPullHz
 	if opt.IQSpecFine {
@@ -433,6 +456,9 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
+		if r.fe.rs != nil {
+			r.conv.span += resampleTaps
+		}
 		r.inChunk = max(r.fe.size*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), r.fe.size)
 		r.d.lagTicks += r.fe.lag
 	}
@@ -651,16 +677,35 @@ func (r *iqRx) bytes(iq []byte) {
 }
 
 func (r *iqRx) byteSample(i, q byte) complex64 {
+	silent := i == 0 && q == 0
+	if !r.signed {
+		silent = (i == 127 || i == 128) && (q == 127 || q == 128)
+	}
+	if !silent {
+		r.raw = 0
+	} else {
+		r.raw = min(r.raw+1, iqZeroQuiet)
+	}
 	var v complex64
 	if r.signed {
 		v = complex(float32(int8(i))/127.5, float32(int8(q))/127.5)
 	} else {
 		v = complex((float32(i)-127.5)/127.5, (float32(q)-127.5)/127.5)
 	}
-	return r.dc.remove(v)
+	if v = r.dc.remove(v); r.raw >= iqZeroQuiet {
+		return 0
+	}
+	return v
 }
 
 func (r *iqRx) flush() {
 	r.writeAudio()
 	r.d.flush()
+}
+
+func zeroRunOf(v complex64, n int) int {
+	if v != 0 {
+		return 0
+	}
+	return min(n+1, iqZeroRun)
 }

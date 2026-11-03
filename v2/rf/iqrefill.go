@@ -191,7 +191,7 @@ func (r *iqRx) regenAudio(rest []int16) bool {
 	cv := &f.conv
 	hist := cv.hist
 	clear(hist)
-	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz}
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
 	p := f.head - int(f.n-s)
 	if p < 0 {
 		p += len(f.raw)
@@ -256,7 +256,7 @@ func (r *iqRx) refillKept(c *leanCore, m int64) {
 	cv := &f.conv
 	hist := cv.hist
 	clear(hist)
-	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz}
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
 	fr := r.d.f
 	fr.rrcHist, fr.hbHist, fr.rrcHead, fr.hbHead, fr.odd = [2 * audio12Taps]int8{}, [halfTaps]int8{}, 0, 0, false
 	j := s / per

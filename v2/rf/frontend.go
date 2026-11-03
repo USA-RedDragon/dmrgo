@@ -74,12 +74,30 @@ type frontEnd struct {
 	phase  int
 	rs     *resample.Complex
 	dc     dcBlock
+	raw    int
+	quiet  int
+}
+
+func rawRunOf(s []byte, f IQFormat, n, most int) int {
+	silent := true
+	if f == IQFormatCU8 {
+		silent = (s[0] == 127 || s[0] == 128) && (s[1] == 127 || s[1] == 128)
+	} else {
+		for _, b := range s {
+			silent = silent && b == 0
+		}
+	}
+	if !silent {
+		return 0
+	}
+	return min(n+1, most)
 }
 
 func newFrontEnd(rate float64, format IQFormat, out float64) *frontEnd {
 	dec := max(int(rate/(4*out)), 1)
 	mid := rate / float64(dec)
 	f := &frontEnd{format: format, size: format.bytes(), dec: dec}
+	f.quiet = max(int(rate*iqZeroSeconds), iqZeroRun) + dec*cicOrder
 	f.lag = int32(math.Round(float64(dec-1) / 2 / rate * basebandRate * 256))
 	f.gain = float32(1 / (frontScale(format) * math.Pow(float64(dec), cicOrder)))
 	f.dc.init(mid)
@@ -135,6 +153,7 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 	w := 0
 	for i := 0; i+f.size <= len(in); i += f.size {
 		re, im := f.sample(in[i:])
+		f.raw = rawRunOf(in[i:i+f.size], f.format, f.raw, f.quiet)
 		for s := range cicOrder {
 			f.integ[s][0] += re
 			f.integ[s][1] += im
@@ -149,7 +168,9 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 			re, im, f.comb[s][0], f.comb[s][1] = re-f.comb[s][0], im-f.comb[s][1], re, im
 		}
 		v := complex(float32(re)*f.gain, float32(im)*f.gain)
-		v = f.dc.remove(v)
+		if v = f.dc.remove(v); f.raw >= f.quiet {
+			v = 0
+		}
 		if f.rs == nil {
 			out[w] = v
 			w++

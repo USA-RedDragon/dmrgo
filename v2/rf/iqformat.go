@@ -26,6 +26,15 @@ const (
 	IQFormatCF32
 )
 
+func (f IQFormat) lsb() float32 {
+	switch f {
+	case IQFormatCU8, IQFormatCS8:
+		return 1 / 127.5
+	case IQFormatDefault, IQFormatCS16, IQFormatCF32:
+	}
+	return 1.0 / 32767
+}
+
 func (f IQFormat) bytes() int {
 	switch f {
 	case IQFormatCU8, IQFormatCS8:
