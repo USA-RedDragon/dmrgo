@@ -272,30 +272,48 @@ L1: \
 	VADDSS      X6, X4, X4 \
 L2:
 
+#define SLOGADDB \
+	VSUBSS      X5, X12, X6 \
+	VXORPS      X7, X7, X7 \
+	VCMPSS      $0x11, X7, X6, X7 \
+	VBLENDVPS   X7, X5, X12, X4 \
+	VANDPS      xsign<>(SB), X7, X7 \
+	VXORPS      X7, X6, X6 \
+	VMULSS      xeight<>(SB), X6, X6 \
+	VCMPSS      $0x1d, xn96<>(SB), X6, X8 \
+	VCVTTSS2SIQ X6, R12 \
+	VCVTSI2SSQ  R12, X7, X7 \
+	VSUBSS      X7, X6, X6 \
+	ANDQ        $127, R12 \
+	LEAQ        ·jacobian(SB), DX \
+	VADDSS      (DX)(R12*4), X4, X7 \
+	LEAQ        ·jacobianSlope(SB), DX \
+	VMULSS      (DX)(R12*4), X6, X6 \
+	VADDSS      X6, X7, X7 \
+	VBLENDVPS   X8, X4, X7, X12
+
 #define CHAIN(YOFF, POFF, LL, LD, L1, L2) \
 	VMOVMSKPS    Y3, R12 \
-	VMOVUPS      YOFF(SP), Y9 \
 	VMOVSS       POFF(SP), X12 \
-LL: \
 	VBROADCASTSS X12, Y10 \
-	VSUBPS       Y9, Y10, Y11 \
+	VSUBPS       YOFF(SP), Y10, Y11 \
 	VMULPS       xeight<>(SB), Y11, Y11 \
 	VCMPPS       $0x1d, xn96<>(SB), Y11, Y11 \
 	VMOVMSKPS    Y11, AX \
 	ORL          R12, AX \
-	CMPL         AX, $0xff \
-	JEQ          LD \
 	NOTL         AX \
+	ANDL         $0xff, AX \
+	JEQ          LD \
+LL: \
 	BSFL         AX, DX \
-	LEAQ         xupto<>(SB), AX \
-	ORL          (AX)(DX*4), R12 \
-	VMOVAPS      X12, X4 \
+	LEAL         -1(AX), R12 \
+	ANDL         R12, AX \
 	VMOVSS       YOFF(SP)(DX*4), X5 \
-	SLOGADD(L1, L2) \
-	VMOVAPS      X4, X12 \
-	JMP          LL \
-LD: \
-	VMOVSS       X12, POFF(SP)
+	SLOGADDB \
+	TESTL        AX, AX \
+	JNE          LL \
+	VMOVSS       X12, POFF(SP) \
+LD:
 
 #define BWDTAIL(LA1, LA2, LA3) \
 	VADDPS    Y4, Y0, Y7 \
