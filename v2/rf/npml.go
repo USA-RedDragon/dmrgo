@@ -36,13 +36,12 @@ func (q *npml) fitSync(c *leanCore, p enums.SyncPattern, base int64) {
 	if sxx <= 0 {
 		return
 	}
-	rho := max(min(sxy/sxx*syncSymbols/(syncSymbols-1), npmlMax), -npmlMax)
-	if q.n == 0 {
-		q.rho = rho
-	} else {
-		q.rho += npmlGain * (rho - q.rho)
-	}
+	q.add(max(min(sxy/sxx*syncSymbols/(syncSymbols-1), npmlMax), -npmlMax))
+}
+
+func (q *npml) add(rho float32) {
 	q.n++
+	q.rho += max(npmlGain, 1/float32(q.n)) * (rho - q.rho)
 }
 
 func (q *npml) end() { q.n = 0 }
