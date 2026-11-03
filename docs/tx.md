@@ -95,6 +95,7 @@ Under 62.5 kHz, I/Q puts the image of the main lobe within two channels of the c
 | `AudioTxConfig.Region` | Region is the regulatory region whose limits the signal keeps. |
 | `AudioTxConfig.Service` | Service is the radio service of the station, as in TxConfig. |
 | `AudioTxConfig.Power` | Power is the most power of the station in dBm, as in TxConfig. |
+| `AudioTxConfig.InputHighpassHz` | InputHighpassHz states the corner in Hz of the AC coupling, a first-order high pass, that the radio puts before its modulator input; 0 means none stated, and the signal is the same as without the field. Tier1 and Tier2 then add back the low frequencies that the high pass takes away, as far as the room of the converter above the peak at Level allows, and a zero Level takes the level that the limits are measured at, which leaves that room at 16 bits and none at fewer. A corner over 20 Hz, a negative one, or a corner at Tier0 gives a *dmrgo.ConfigError. |
 <!-- rfparams:tx-formats:end -->
 
 ### Regions, services and power
@@ -143,7 +144,7 @@ Each `RegionError` has one of these values of `Field`, after the name of the con
 | `Service` | unknown service |
 | `PreEmphasis` | the limits with pre-emphasis are not measured |
 
-A field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: `AudioTxConfig.Bits`, `AudioTxConfig.InputLowpassHz`, `AudioTxConfig.Level`, `AudioTxConfig.Offset`, `AudioTxConfig.OnSamples`, `AudioTxConfig.Power`, `AudioTxConfig.PreEmphasis`, `AudioTxConfig.Rate`, `AudioTxConfig.Tier`, `TxConfig.Format`, `TxConfig.OffsetHz`, `TxConfig.OnSamples`, `TxConfig.Power`, `TxConfig.Rate`, `TxConfig.Tier`.
+A field out of range gets a `*dmrgo.ConfigError` with one of these values of `Field`: `AudioTxConfig.Bits`, `AudioTxConfig.InputHighpassHz`, `AudioTxConfig.InputLowpassHz`, `AudioTxConfig.Level`, `AudioTxConfig.Offset`, `AudioTxConfig.OnSamples`, `AudioTxConfig.Power`, `AudioTxConfig.PreEmphasis`, `AudioTxConfig.Rate`, `AudioTxConfig.Tier`, `TxConfig.Format`, `TxConfig.OffsetHz`, `TxConfig.OnSamples`, `TxConfig.Power`, `TxConfig.Rate`, `TxConfig.Tier`.
 <!-- rfparams:tx-limits:end -->
 
 ### Levels
@@ -499,6 +500,12 @@ Pick a tier by the margins of [Key specifications](#key-specifications) for the 
 <!-- txsheet:lowpass:begin -->
 State a low pass of the radio before its modulator input in `AudioTxConfig.InputLowpassHz`: it lowers the least rate that keeps the limits. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these: 6000 Hz counts as 8000 Hz, and a cutoff above 8000 Hz as none.
 <!-- txsheet:lowpass:end -->
+
+### Input high pass
+
+<!-- txhighpass:sheet:begin -->
+State the AC coupling of the modulator input of the radio, a first-order high pass, in `AudioTxConfig.InputHighpassHz`, from 1 to 20 Hz. Tier 1 and Tier 2 then add back the low frequencies that it takes away, within the room of the converter above the peak at the measured level: up to 171 Hz of deviation at 16 bits, and none at fewer bits, where the statement has no effect. Through a radio with a 10 Hz high pass, the eye error of Tier 1 at 48 kHz falls from 0.291 to 0.253. The stated high pass keeps every limit at the measured points; [Input high pass](tx-notes.md#input-high-pass) gives the measurement.
+<!-- txhighpass:sheet:end -->
 
 ### Pre-emphasis
 
