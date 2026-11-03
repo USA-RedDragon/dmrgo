@@ -613,9 +613,7 @@ func (r *discRx) levels() {
 	qm := float32(f.sum-f.qsum) / frontQuarter
 	qv := sq32(f.sq-f.qsq)/frontQuarter - qm*qm
 	f.qsum, f.qsq = f.sum, f.sq
-	if f.maxGain == 0 {
-		r.quarterHot(qv)
-	}
+	r.quarterHot(qv)
 	if f.n == frontQuarter {
 		f.qmin, f.qmax = qv, qv
 	} else {
@@ -630,7 +628,7 @@ func (r *discRx) levels() {
 	f.sum, f.sq, f.n, f.qsum, f.qsq = 0, 0, 0, 0, 0
 	m *= f.gain
 	v *= f.gain * f.gain
-	if f.maxGain == 0 && abs32(m-f.mean) > discMeanJump {
+	if f.jumps(m) {
 		f.mean = m
 	} else {
 		f.mean += discMeanGain * (m - f.mean)
@@ -657,7 +655,7 @@ func (r *discRx) levels() {
 			}
 			if g != 1 {
 				g = r.scaleAudio(g)
-				if mg := m * g; f.maxGain == 0 && abs32(mg-f.mean) > discMeanJump {
+				if mg := m * g; f.jumps(mg) {
 					f.mean = mg
 				}
 			}
@@ -692,14 +690,14 @@ func (r *leanCore) snap() *frontSnap {
 }
 
 func (r *leanCore) startRaw(i int) {
-	if f := r.audio; f.maxGain == 0 && !f.cold && !r.locked {
+	if f := r.audio; audioOn() && f.maxGain == 0 && !f.cold && !r.locked {
 		r.snap().seg = uint16(i)
 	}
 }
 
 func (r *leanCore) keepRaw(x []int16, i int) {
 	f := r.audio
-	if f.maxGain != 0 || f.cold || r.locked {
+	if !audioOn() || f.maxGain != 0 || f.cold || r.locked {
 		return
 	}
 	sn := r.snap()
@@ -720,6 +718,9 @@ func (r *leanCore) snapHist() (*[2 * audio12Taps]int8, *[halfTaps]int8) {
 
 func (r *leanCore) quarterHot(qv float32) {
 	f := r.audio
+	if !audioOn() || f.maxGain != 0 {
+		return
+	}
 	if f.cold {
 		r.snap().ok = false
 		return
@@ -799,7 +800,7 @@ func (r *leanCore) scaleAudio(g float32) float32 {
 	r.devHz = sat16(float32(r.devHz) * g)
 	f.refresh()
 	r.rescale(g)
-	if f.maxGain != 0 || !r.refilter(g) {
+	if !audioOn() || f.maxGain != 0 || !r.refilter(g) {
 		f.scale(g)
 	}
 	return g
@@ -839,6 +840,10 @@ type audioFront struct {
 	edge     bool
 	nHeld    uint8
 	quiet    float32
+}
+
+func (f *audioFront) jumps(m float32) bool {
+	return audioOn() && f.maxGain == 0 && abs32(m-f.mean) > discMeanJump
 }
 
 func (f *audioFront) refresh() {

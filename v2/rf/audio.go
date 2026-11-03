@@ -184,6 +184,7 @@ func (r *AudioReceiver) configure(cfg AudioRxConfig, opt *options) {
 	}
 	r.sink = &r.bursts
 	r.setup(discSetup{Hz: hz, opt: opt, pol: true}, dec)
+	setAudioOn()
 	r.bursts.on = cfg.OnBursts
 	if r.pe = cfg.PreEmphasis; r.pe != nil {
 		r.pe.start(&r.pe.f, hz)

@@ -2071,7 +2071,7 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 			}
 		}
 	}
-	if a := r.audio; a != nil && a.maxGain == 0 && !r.isReplaying() && r.overload(best, base+leanSyncEnd+shift) {
+	if a := r.audio; audioOn() && a != nil && a.maxGain == 0 && !r.isReplaying() && r.overload(best, base+leanSyncEnd+shift) {
 		r.relevel(leanClipDrop)
 		r.stepHold = true
 		return false, 0, 0
