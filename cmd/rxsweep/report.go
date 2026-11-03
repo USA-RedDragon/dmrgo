@@ -626,6 +626,7 @@ func writeCSV(path string, rows []*row, floors map[string]floorRef) error {
 	for _, p := range reportPayloads() {
 		head = append(head, p[0]+"_ebn0", p[0]+"_loss")
 	}
+	head = append(head, "false_hours", "false_upper95_per_hour")
 	_ = w.Write(head)
 	for _, r := range rows {
 		var fph, allocs string
@@ -642,6 +643,11 @@ func writeCSV(path string, rows []*row, floors map[string]floorRef) error {
 			}
 			rec = append(rec, fmtCross(c), ls)
 		}
+		var fh, fu string
+		if r.cost != nil {
+			fh, fu = strconv.FormatFloat(r.cost.FalseHours, 'f', 2, 64), strconv.FormatFloat(r.cost.FalseUpper95, 'f', 2, 64)
+		}
+		rec = append(rec, fh, fu)
 		_ = w.Write(rec)
 	}
 	w.Flush()

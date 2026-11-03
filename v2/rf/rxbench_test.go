@@ -117,6 +117,14 @@ type benchTier struct {
 	RAMBytes     int          `json:"ram_bytes"`
 	Allocs       float64      `json:"allocs"`
 	FalsePerHour float64      `json:"false_per_hour,omitempty"`
+	False        []benchFalse `json:"false,omitempty"`
+}
+
+type benchFalse struct {
+	Input   string  `json:"input"`
+	Hours   float64 `json:"hours"`
+	Bursts  int     `json:"bursts"`
+	Upper95 float64 `json:"upper95_per_hour"`
 }
 
 type benchData struct {
@@ -638,42 +646,109 @@ func (s benchShared) deepenWith(pts [][]benchPoint, run func([][]benchCase) [][]
 	}
 }
 
-func falsePerHour(e benchEntry, noise benchSignal) float64 {
-	const seconds = 300
-	n, total := 0, 0
-	t := e.tier
+func benchFalseInputs(e benchEntry) []string {
 	switch e.mode {
 	case benchAudio:
-		hz := benchAudioHz
-		r, err := NewAudioReceiver(&AudioRxConfig{Rate: hz, Tier: t, OnBursts: each(func(*Burst) { n++ })})
-		if err != nil {
-			panic(err)
-		}
-		for seed := uint64(1); total < seconds*hz; seed++ {
-			a := discAudio(noise.noisy(0, seed), hz)
-			must(r.writeAll(a))
-			total += len(a)
-		}
-		r.flushAll()
-		return float64(n) * 3600 * float64(hz) / float64(total)
+		return []string{"a9600", "a12000", "a24000", "a48000"}
 	case benchIQLow:
+		return []string{"cu8-9600"}
+	}
+	return []string{"cu8-48k", "cs16-48k", "cu8-2048k", "cs16-2048k"}
+}
+
+func benchNoiseSeconds() float64 {
+	if h, err := strconv.ParseFloat(os.Getenv("DMRRF_RXBENCH_NOISE_HOURS"), 64); err == nil && h > 0 {
+		return h * 3600
+	}
+	return 3600
+}
+
+func falseBursts(e benchEntry, input string, noise benchSignal, seconds float64) benchFalse {
+	n, total := 0, 0.0
+	switch {
+	case strings.HasPrefix(input, "a"):
+		hz, _ := strconv.Atoi(input[1:])
+		r := mustAudio(AudioRxConfig{Rate: hz, Tier: e.tier})
+		for seed := uint64(1); total < seconds; seed++ {
+			a := discAudio(noise.noisy(0, seed), hz)
+			n += len(r.AppendBursts(nil, a))
+			total += float64(len(a)) / float64(hz)
+		}
+		n += len(r.AppendFlush(nil))
+	case e.mode == benchIQLow:
 		r := mustNew(RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8})
-		for seed := uint64(1); total < seconds*iq0LowHz; seed++ {
+		for seed := uint64(1); total < seconds; seed++ {
 			y := lowIQ(noise.noisy(0, seed), iq0LowHz)
 			n += len(must(r.writeBB(y)))
-			total += len(y)
+			total += float64(len(y)) / iq0LowHz
 		}
 		n += len(r.flushAll())
-		return float64(n) * 3600 * iq0LowHz / float64(total)
+	default:
+		f, rate := IQFormatCU8, basebandRate
+		if strings.HasPrefix(input, "cs16") {
+			f = IQFormatCS16
+		}
+		if strings.HasSuffix(input, "-2048k") {
+			rate = 2048000
+		}
+		r := mustNew(RxConfig{Rate: rate, Tier: e.tier, Format: f})
+		for seed := uint64(1); total < seconds; seed++ {
+			x := noise.noisy(0, seed)
+			if rate != basebandRate {
+				x = dgUpsample(x, rate)
+			}
+			n += len(r.AppendBursts(nil, iqBytes(x, f)))
+			total += float64(len(x)) / float64(rate)
+		}
+		n += len(r.AppendFlush(nil))
 	}
-	r := mustNew(RxConfig{Rate: basebandRate, Tier: t, Format: IQFormatCU8})
-	for seed := uint64(1); total < seconds*basebandRate; seed++ {
-		x := noise.noisy(0, seed)
-		n += len(must(r.writeBB(x)))
-		total += len(x)
+	h := total / 3600
+	return benchFalse{Input: input, Hours: h, Bursts: n, Upper95: poissonUpper95(n) / h}
+}
+
+func benchFalseAll(pool *benchPool, wg *sync.WaitGroup, es []benchEntry, noise benchSignal, fph [][]benchFalse) {
+	secs := benchNoiseSeconds()
+	for j, e := range es {
+		ins := benchFalseInputs(e)
+		fph[j] = make([]benchFalse, len(ins))
+		for k, in := range ins {
+			wg.Add(1)
+			pool.do(benchFalsePrio, func() {
+				defer wg.Done()
+				fph[j][k] = falseBursts(e, in, noise, secs)
+			})
+		}
 	}
-	n += len(r.flushAll())
-	return float64(n) * 3600 * basebandRate / float64(total)
+}
+
+func falseRate(fs []benchFalse) float64 {
+	var n, h float64
+	for _, f := range fs {
+		n, h = n+float64(f.Bursts), h+f.Hours
+	}
+	return n / h
+}
+
+func poissonUpper95(n int) float64 {
+	cdf := func(m float64) float64 {
+		p, s := math.Exp(-m), 0.0
+		for k := range n + 1 {
+			if k > 0 {
+				p *= m / float64(k)
+			}
+			s += p
+		}
+		return s
+	}
+	lo, hi := 0.0, float64(n)+20+10*math.Sqrt(float64(n)+1)
+	for range 100 {
+		if mid := (lo + hi) / 2; cdf(mid) > 0.05 {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return hi
 }
 
 func receiverRAM(e benchEntry) int {
@@ -817,16 +892,10 @@ func TestRxBench(t *testing.T) {
 		}
 		es, at = append(es, e), append(at, i)
 	}
-	fph := make([]float64, len(es))
+	fph := make([][]benchFalse, len(es))
 	var wg sync.WaitGroup
 	if full {
-		for j, e := range es {
-			wg.Add(1)
-			pool.do(benchFalsePrio, func() {
-				defer wg.Done()
-				fph[j] = falsePerHour(e, noise)
-			})
-		}
+		benchFalseAll(pool, &wg, es, noise, fph)
 	}
 	fc := make([][]benchCase, len(es))
 	for j, e := range es {
@@ -842,7 +911,7 @@ func TestRxBench(t *testing.T) {
 	for j, e := range es {
 		bt := benchTier{Mode: e.mode, Tier: e.number(), Fast: fastPts[j]}
 		if full {
-			bt.Full, bt.FalsePerHour = deep[j], fph[j]
+			bt.Full, bt.False, bt.FalsePerHour = deep[j], fph[j], falseRate(fph[j])
 		}
 		tiers[at[j]] = bt
 	}
@@ -864,7 +933,7 @@ func TestRxBench(t *testing.T) {
 				checkBench(t, e, want.Fast, bt.Fast)
 			}
 			if !full {
-				bt.Full, bt.NsPerSecond, bt.FalsePerHour, bt.Allocs, bt.RAMBytes = want.Full, want.NsPerSecond, want.FalsePerHour, want.Allocs, want.RAMBytes
+				bt.Full, bt.NsPerSecond, bt.FalsePerHour, bt.False, bt.Allocs, bt.RAMBytes = want.Full, want.NsPerSecond, want.FalsePerHour, want.False, want.Allocs, want.RAMBytes
 				bt.WorstNs, bt.WorstCN = want.WorstNs, want.WorstCN
 			}
 		}

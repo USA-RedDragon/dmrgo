@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"slices"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -46,6 +47,8 @@ type sweepCost struct {
 	RAMBytes          int     `json:"ram_bytes"`
 	Allocs            float64 `json:"allocs"`
 	FalsePerHour      float64 `json:"false_per_hour"`
+	FalseHours        float64 `json:"false_hours"`
+	FalseUpper95      float64 `json:"false_upper95_per_hour"`
 	SearchNsPerSecond float64 `json:"search_ns_per_second"`
 }
 
@@ -312,16 +315,21 @@ func sweepCosts(t testing.TB, j *sweepJob, cfg RxConfig, o *options) *sweepCost 
 	cfg.OnBursts = func(bs []Burst) { count += len(bs) }
 	var r sweepRx
 	c.RAMBytes = int(allocstest.Bytes(t, nil, func() { r = j.newRx(cfg, o) }))
-	const seconds = 300
+	seconds := 300.0
+	if h, err := strconv.ParseFloat(os.Getenv("DMRRF_SWEEP_NOISE_HOURS"), 64); err == nil && h > 0 {
+		seconds = h * 3600
+	}
 	n := 0
 	var cpu float64
-	for seed := uint64(1); n < seconds*j.rate(); seed++ {
+	for seed := uint64(1); float64(n) < seconds*float64(j.rate()); seed++ {
 		in := r.convert(j, noisyBaseband(nil, 0, 0, seed))
 		cpu += threadCPUSeconds(func() { r.write(in, 0, in.len()) })
 		n += in.len()
 	}
 	r.flush()
 	c.FalsePerHour = float64(count) * 3600 * float64(j.rate()) / float64(n)
+	c.FalseHours = float64(n) / float64(j.rate()) / 3600
+	c.FalseUpper95 = poissonUpper95(count) / c.FalseHours
 	c.SearchNsPerSecond = cpu * 1e9 * float64(j.rate()) / float64(n)
 	slots, _ := benchStream(t, 6)
 	ar := j.newRx(cfg, o)

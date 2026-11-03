@@ -45,6 +45,8 @@ type costRecord struct {
 	RAMBytes          int                `json:"ram_bytes"`
 	Allocs            float64            `json:"allocs"`
 	FalsePerHour      float64            `json:"false_per_hour"`
+	FalseHours        float64            `json:"false_hours"`
+	FalseUpper95      float64            `json:"false_upper95_per_hour"`
 	SearchNsPerSecond float64            `json:"search_ns_per_second"`
 	LockedNsPerSecond map[string]float64 `json:"locked_ns_per_second"`
 }

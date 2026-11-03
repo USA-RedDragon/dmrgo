@@ -33,6 +33,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -232,14 +233,22 @@ type point struct {
 }
 
 type tier struct {
-	Mode         string  `json:"mode"`
-	Tier         int     `json:"tier"`
-	Full         []point `json:"full"`
-	NsPerSecond  float64 `json:"ns_per_second"`
-	WorstNs      float64 `json:"worst_ns_per_second"`
-	RAMBytes     int     `json:"ram_bytes"`
-	Allocs       float64 `json:"allocs"`
-	FalsePerHour float64 `json:"false_per_hour"`
+	Mode         string     `json:"mode"`
+	Tier         int        `json:"tier"`
+	Full         []point    `json:"full"`
+	NsPerSecond  float64    `json:"ns_per_second"`
+	WorstNs      float64    `json:"worst_ns_per_second"`
+	RAMBytes     int        `json:"ram_bytes"`
+	Allocs       float64    `json:"allocs"`
+	FalsePerHour float64    `json:"false_per_hour"`
+	False        []falseRun `json:"false"`
+}
+
+type falseRun struct {
+	Input   string  `json:"input"`
+	Hours   float64 `json:"hours"`
+	Bursts  int     `json:"bursts"`
+	Upper95 float64 `json:"upper95_per_hour"`
 }
 
 type bench struct {
@@ -438,6 +447,7 @@ func renderBlock(d data) []byte {
 		b.WriteString("\n")
 	}
 	renderSheetGraphs(&b, d)
+	renderFalse(&b, d)
 	renderSensitivity(&b, d)
 	var rec []tier
 	var cols []int
@@ -466,6 +476,23 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("\n")
 	return []byte(b.String())
+}
+
+func renderFalse(b *strings.Builder, d data) {
+	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return len(t.False) > 0 }) {
+		return
+	}
+	b.WriteString("<details><summary>False bursts on noise</summary>\n\n")
+	b.WriteString("Bursts that each tier reports from noise only, with no signal, for each input. The bound is the one-sided 95% upper bound on the rate.\n\n")
+	b.WriteString("| Tier | Input | Noise | False bursts | Per hour | 95% upper bound per hour |\n")
+	b.WriteString("|------|-------|-------|--------------|----------|--------------------------|\n")
+	for _, t := range d.bench.Tiers {
+		for _, f := range t.False {
+			b.WriteString("| " + shortName(t) + " | " + f.Input + " | " + f1(f.Hours) + " h | " + strconv.Itoa(f.Bursts) + " | " +
+				strconv.FormatFloat(float64(f.Bursts)/f.Hours, 'f', 2, 64) + " | " + strconv.FormatFloat(f.Upper95, 'f', 2, 64) + " |\n")
+		}
+	}
+	b.WriteString("\n</details>\n\n")
 }
 
 func renderSensitivity(b *strings.Builder, d data) {
