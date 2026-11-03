@@ -1042,6 +1042,9 @@ func (r *leanCore) searchHit(sym, mid bool) {
 	if mid && !r.locked && !r.dueLock() && r.ns > leanAcqSymbols {
 		r.searchMid()
 	}
+	if !r.locked && !r.dueLock() && r.ns > leanAcqSymbols && r.ns >= r.acqNext && r.rcSigns(r.midSigns) && r.lockMid(1, enums.SyncMSSourcedRC) {
+		r.rcLone = true
+	}
 }
 
 //go:noinline
@@ -1610,23 +1613,28 @@ func (r *leanCore) searchMid() {
 	if data {
 		p = dp
 	}
+	r.lockMid(src, p)
+}
+
+func (r *leanCore) lockMid(src int, p enums.SyncPattern) bool {
 	at := r.lastAt
 	r.lastAt = at - r.tm.step
 	var saved [syncSymbols]int8
 	d, c2, _, ok := r.resample(p, &saved, false, discLock)
 	r.lastAt = at
 	if !ok {
-		return
+		return false
 	}
 	d -= r.tm.step
 	if r.clipped(r.ns-1) || !r.fitLevels(r.ns-1, p, true, true) {
 		for i, q := range &saved {
 			r.ring[ringPos(r.ns-syncSymbols+int64(i))] = q
 		}
-		return
+		return false
 	}
 	r.resampleStart(d)
 	r.lockStream(src, d, c2, 0)
+	return r.locked
 }
 
 //go:noinline
