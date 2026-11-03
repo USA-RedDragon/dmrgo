@@ -10,6 +10,11 @@ import (
 
 const txHostBuilt = true
 
+const (
+	preZeroHz = 300
+	prePoleHz = 3000
+)
+
 type txHost struct {
 	iq  *fsktx.IQ
 	au  *fsktx.Audio
