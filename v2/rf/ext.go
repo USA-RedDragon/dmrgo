@@ -1611,7 +1611,7 @@ func (x *softExt) embFit(c *leanCore, b *Burst) {
 		k := (leanSyncEnd - cachSymbols - (syncSymbols - 1) + i) * 2
 		syms[i] = symbolOf(unpacked.Bit(b.Data[k/8]>>(7-k%8)&1), unpacked.Bit(b.Data[(k+1)/8]>>(7-(k+1)%8)&1))
 	}
-	sps := 2*c.tm.step + c.tm.drift
+	sps := 2*c.tm.step + c.tm.rate
 	end := c.lastAt - float32(back)*sps
 	var win syncWindow
 	c.fillWindow(&win, max(int32(-end-sps/2)-2, 0))
