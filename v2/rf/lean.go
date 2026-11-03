@@ -19,6 +19,7 @@ const (
 	leanSyncClip        = 2
 	leanSyncClipMax     = 4
 	levelRefit          = 5
+	levelRefitFloor     = discStepHz * discStepHz / 12
 	levelJumpZ          = 5
 	leanClipSyms        = 2
 	leanClipDrop        = 0.25
@@ -1900,7 +1901,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		if jump && !twice {
 			r.jumpZ = z
 		}
-		if first = old > levelRefit*res || twice; first {
+		if first = old > levelRefit*max(res, levelRefitFloor) || twice; first {
 			r.preDev, r.preOff, r.preStep = r.devScale, r.off-r.dcHz, !r.isReplaying()
 			k := max(g, leanMinScale) / r.devScale
 			gk := max(g, leanMinScale) * deviationHz
@@ -2409,7 +2410,7 @@ func (r *leanCore) shift(d float32) {
 
 func (r *leanCore) stepped(end int64, p enums.SyncPattern) bool {
 	g, dc, res := r.fitSync(end, p)
-	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz && r.syncRes(end, p, r.devScale, r.dcHz) > levelRefit*res && r.syncErrors(end, p, g, dc) <= discAnchorBits
+	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz && r.syncRes(end, p, r.devScale, r.dcHz) > levelRefit*max(res, levelRefitFloor) && r.syncErrors(end, p, g, dc) <= discAnchorBits
 }
 
 //go:noinline

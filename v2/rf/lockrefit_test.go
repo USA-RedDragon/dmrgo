@@ -90,3 +90,30 @@ func TestLevelsSkipClickedSymbols(t *testing.T) {
 		}
 	}
 }
+
+func TestLevelStepNeedsResidual(t *testing.T) {
+	t.Parallel()
+	var syms [syncSymbols]int8
+	syncSyms(enums.SyncBSSourcedVoice, &syms)
+	fired := 0
+	for i := range 64 {
+		g, dc := 0.5+0.005*float64(i), 100+3*float64(i)
+		r := &leanCore{ns: 500}
+		end := r.ns - 1
+		j := ringPos(end - syncSymbols + 1)
+		for k := range syncSymbols {
+			r.ring[j] = int8(math.Round((dc + g*deviationHz*float64(syms[k])) / discStepHz))
+			if j++; j == leanRing {
+				j = 0
+			}
+		}
+		r.devScale, r.dcHz, r.discVar = float32(g), float32(dc), 1
+		r.fitLevels(end, enums.SyncBSSourcedVoice, false, true)
+		if r.preDev != 0 {
+			fired++
+		}
+	}
+	if fired != 0 {
+		t.Errorf("a noise-free SYNC at the held levels fires a level step in %d of 64 cases", fired)
+	}
+}
