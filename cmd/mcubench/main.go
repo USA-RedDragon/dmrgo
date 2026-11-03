@@ -35,6 +35,7 @@ const (
 	progRxPE    = "rxaudiope"
 	progRxIQ    = "rxiq"
 	progTxAudio = "txaudio"
+	progTxPE    = "txaudiope"
 	progTxIQ    = "txiq"
 )
 
@@ -174,6 +175,8 @@ func txRows() []benchRow {
 		{prog: progTxIQ, rate: 96000, name: "I/Q at 96 kHz, CS16"},
 		{prog: progTxAudio, rate: 48000, name: "Audio at 48 kHz, 12-bit"},
 		{prog: progTxAudio, rate: 24000, name: "Audio at 24 kHz, 12-bit"},
+		{prog: progTxPE, rate: 48000, name: "Audio at 48 kHz, 12-bit, pre-emphasis"},
+		{prog: progTxPE, rate: 24000, name: "Audio at 24 kHz, 12-bit, pre-emphasis"},
 	}
 }
 
@@ -202,7 +205,7 @@ func run(ctx context.Context, root, work string, update bool) error {
 		}
 		rx.Rows = append(rx.Rows, rxRow{Mode: r.mode, Rate: r.rate, PreEmph: r.prog == progRxPE, MHz: m.mhz, RAMBytes: m.ram, FlashKB: m.flashKB})
 	}
-	tx := txData{Source: "Built with TinyGo " + t.version + " `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter` and the most stack under it. Flash is the code and constant data of the whole program."}
+	tx := txData{Source: "Built with TinyGo " + t.version + " `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter`, with its `PreEmphasis` when it has one, and the most stack under it. Flash is the code and constant data of the whole program."}
 	for _, r := range txRows() {
 		m, err := b.tx(ctx, r)
 		if err != nil {
@@ -307,14 +310,14 @@ func (b *bench) setup(ctx context.Context) error {
 		}
 	}
 	files := map[string]string{}
-	for _, n := range []string{"m4count.c", "startup.s", "common.go.txt", progRxAudio + ".go.txt", progRxPE + ".go.txt", progRxIQ + ".go.txt", progTxAudio + ".go.txt", progTxIQ + ".go.txt"} {
+	for _, n := range []string{"m4count.c", "startup.s", "common.go.txt", progRxAudio + ".go.txt", progRxPE + ".go.txt", progRxIQ + ".go.txt", progTxAudio + ".go.txt", progTxPE + ".go.txt", progTxIQ + ".go.txt"} {
 		data, err := benchFS.ReadFile("bench/" + n)
 		if err != nil {
 			return err
 		}
 		files[n] = string(data)
 	}
-	for _, prog := range []string{progRxAudio, progRxPE, progRxIQ, progTxAudio, progTxIQ} {
+	for _, prog := range []string{progRxAudio, progRxPE, progRxIQ, progTxAudio, progTxPE, progTxIQ} {
 		dir := filepath.Join(src, "zzmcubench", prog)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return err
@@ -543,7 +546,7 @@ func (b *bench) tx(ctx context.Context, r benchRow) (measure, error) {
 	secs := float64(txBursts) * 0.03
 	return measure{
 		mhz:     round1(float64(c.matched) / secs / 1e6),
-		ram:     img.symSize("main.mod") + o.depth,
+		ram:     img.symSize("main.mod") + img.symSize("main.pe") + o.depth,
 		flashKB: round1(float64(img.flash) / 1000),
 	}, nil
 }
