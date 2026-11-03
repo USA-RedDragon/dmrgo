@@ -583,8 +583,7 @@ func renderTxLowpass() string {
 
 func renderTxPreEmph() string {
 	return txPEBegin + "\nUse the flat modulator input (data port) of the radio when it has one. The microphone input pre-emphasizes the audio, with a zero near " + strconv.Itoa(preZeroHz) + " Hz and a pole near " + strconv.Itoa(prePoleHz) +
-		" Hz, and spreads a DMR signal into the adjacent channel. For it, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis` from `Init` or `NewPreEmphasis`, one for each transmitter. Only Tier 0 at " +
-		khz(peSamples*SymbolRate) + " kHz takes it, in the setups of the Tier 0 table of [Least sample rate](#least-sample-rate).\n" + txPEEnd
+		" Hz, and spreads a DMR signal into the adjacent channel. For it, set `AudioTxConfig.PreEmphasis` to a `PreEmphasis` from `Init` or `NewPreEmphasis`, one for each transmitter. Every tier takes it, in the setups of the pre-emphasis rows of [Least sample rate](#least-sample-rate).\n" + txPEEnd
 }
 
 func renderTxGraphList(graphs map[string][]byte) string {

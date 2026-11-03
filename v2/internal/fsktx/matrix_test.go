@@ -57,6 +57,8 @@ func (u txUnit) kind() string {
 		return "MCUAudio-PE"
 	case u.format == fmtAudio && u.mcu:
 		return "MCUAudio"
+	case u.format == fmtAudio && u.pe:
+		return fmt.Sprintf("Audio-T%d-PE", u.tier-Tier0)
 	case u.format == fmtAudio:
 		return fmt.Sprintf("Audio-T%d", u.tier-Tier0)
 	case u.mcu:
@@ -139,7 +141,7 @@ func (u txUnit) mod() (txMod, error) {
 	switch {
 	case u.audio() && u.mcu && u.pe:
 		m := &mcuAudioPEMod{}
-		return m, m.m.Init(u.level, u.offset)
+		return m, m.m.Init(u.rate, u.level, u.offset)
 	case u.audio() && u.mcu:
 		m := &mcuAudioMod{}
 		t := Table24k()
@@ -151,6 +153,9 @@ func (u txUnit) mod() (txMod, error) {
 		c := AudioConfig{Hz: u.rate, Level: u.level, Offset: u.offset, Tier: u.tier}
 		if u.hp > 0 && u.room > 0 {
 			c.Droop = HighpassDroop(float64(u.hp), u.room)
+		}
+		if u.pe {
+			c.PreEmphasisHz = [2]float64{preZeroHz, prePoleHz}
 		}
 		a, err := NewAudio(c)
 		return audioMod{a}, err
@@ -174,7 +179,7 @@ func (u txUnit) mustMod(t testing.TB) txMod {
 
 func (u txUnit) lag() int {
 	switch {
-	case u.audio() && u.pe:
+	case u.audio() && u.mcu && u.pe:
 		return peSpan
 	case u.audio() && (u.mcu || u.tier == Tier0) && u.rate == 48000:
 		return Table48k().Span()

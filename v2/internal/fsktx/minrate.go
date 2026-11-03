@@ -67,8 +67,9 @@ type Setup struct {
 	InputLowpassHz int
 	// PreEmphasis states that the radio pre-emphasizes its modulator
 	// input with a zero at 300 Hz and a pole at 3 kHz, and that the
-	// modulator is MCUAudioPE. It is measured for Tier0
-	// audio at 48000 Hz only.
+	// modulator inverts it: MCUAudioPE at Tier0, and AudioConfig
+	// PreEmphasisHz at Tier1 and Tier2. It is measured for audio on the
+	// rate grid of each tier.
 	PreEmphasis bool
 }
 
@@ -95,26 +96,29 @@ func (s Setup) MinRate() int {
 	if t == TierDefault {
 		t = Tier1
 	}
-	ti := int(t - Tier0)
-	if ti < 0 || ti >= len(minRateAudio) || s.Region < 0 || s.Region >= len(minRateIQ[0][0]) ||
-		s.Service < 0 || s.Service >= len(minRateIQ[0][0][0]) || s.Power < 0 || s.Power >= len(minRateRows[0]) {
+	if s.Region < 0 || s.Region >= LimitsJapan+1 || s.Service < 0 || s.Service >= LimitsServices ||
+		s.Power < 0 || s.Power >= len(minRateRow{}) || s.PreEmphasis && s.IQ {
 		return 0
 	}
-	if s.PreEmphasis && (s.IQ || t != Tier0) {
+	tab, ok := minRateTier0(), t == Tier0
+	if t != Tier0 {
+		tab, ok = minRateHost(int(t - Tier0))
+	}
+	if !ok {
 		return 0
 	}
 	if s.IQ {
 		var i uint8
 		switch s.Bits {
 		case 16:
-			i = minRateAt(minRateIQ[ti][0][s.Region][s.Service], s.Power)
+			i = tab.at(tab.iq[0][s.Region][s.Service], s.Power)
 		case 8:
-			i = minRateAt(minRateIQ[ti][1][s.Region][s.Service], s.Power)
+			i = tab.at(tab.iq[1][s.Region][s.Service], s.Power)
 		}
-		if i == 0 || int(i) > len(minRateIQRates) {
+		if i == 0 || int(i) > len(tab.iqRates) {
 			return 0
 		}
-		return int(minRateIQRates[i-1])
+		return int(tab.iqRates[i-1])
 	}
 	var c int
 	switch {
@@ -129,17 +133,35 @@ func (s Setup) MinRate() int {
 	default:
 		return 0
 	}
+	cell := tab.audio
 	if s.PreEmphasis {
-		return int(minRateAt(minRatePE[c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service], s.Power)) * minRateUnit
+		cell = tab.pe
 	}
-	return int(minRateAt(minRateAudio[ti][c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service], s.Power)) * minRateUnit
+	return int(tab.at(cell[c][lowpassClass(s.InputLowpassHz)][s.Region][s.Service], s.Power)) * minRateUnit
 }
 
-func minRateAt(row uint8, power int) uint8 {
-	if int(row) >= len(minRateRows) {
+type (
+	minRateRow   = [10]uint8
+	minRateAudio = [4][4][LimitsJapan + 1][LimitsServices]uint8
+	minRateIQ    = [2][LimitsJapan + 1][LimitsServices]uint8
+)
+
+type minRateTab struct {
+	rows      []minRateRow
+	audio, pe *minRateAudio
+	iq        *minRateIQ
+	iqRates   []int32
+}
+
+func minRateTier0() minRateTab {
+	return minRateTab{rows: minRateRows0[:], audio: &minRateAudio0, pe: &minRatePE0, iq: &minRateIQ0, iqRates: minRateIQRates0[:]}
+}
+
+func (t minRateTab) at(row uint8, power int) uint8 {
+	if int(row) >= len(t.rows) {
 		return 0
 	}
-	return minRateRows[row][power]
+	return t.rows[row][power]
 }
 
 // Allows reports whether the modulator of s may run at hz: a rate that
@@ -147,8 +169,7 @@ func minRateAt(row uint8, power int) uint8 {
 // to the top of the measured grid, 96000 Hz for audio and 20 MHz for I/Q.
 // Tier0 makes audio at 24000 and 48000 Hz and I/Q at 96000 Hz only: I/Q at
 // 192000 Hz takes 7.4 MHz of a Cortex-M4, over the 4 MHz budget, and
-// 48000 Hz is under the least rate of I/Q. With PreEmphasis, Tier0 makes
-// audio at 48000 Hz only.
+// 48000 Hz is under the least rate of I/Q.
 func (s Setup) Allows(hz int) bool {
 	t := s.Tier
 	if t == TierDefault {
@@ -160,7 +181,7 @@ func (s Setup) Allows(hz int) bool {
 			return false
 		}
 	case t == Tier0:
-		if hz != 24000 && hz != 48000 || s.PreEmphasis && hz != 48000 {
+		if hz != 24000 && hz != 48000 {
 			return false
 		}
 	case s.IQ:

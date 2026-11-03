@@ -407,7 +407,6 @@ func writeUnmeasured(b *strings.Builder) {
 	b.WriteString("No measurement covers these setups, so the transmitter refuses them:\n\n")
 	fmt.Fprintf(b, "- Audio over %s kHz and I/Q over %s MHz, the tops of the measured grids.\n", khz(audioRateTop), strconv.FormatFloat(float64(iqRateTop)/1e6, 'f', -1, 64))
 	fmt.Fprintf(b, "- A `Power` over %d dBm, the top breakpoint.\n", pw[len(pw)-1])
-	b.WriteString("- `AudioTxConfig.PreEmphasis` at Tier 1 and Tier 2, and at Tier 0 at a rate other than 48 kHz. The grid measures pre-emphasis for Tier 0 at 48 kHz only.\n")
 	b.WriteString("- An `AudioTxConfig.Level` under the level that the grid measures for `Bits`.\n")
 	b.WriteString("- Tier 3, which has no modulator.\n\n")
 	join := func(v []int) string {

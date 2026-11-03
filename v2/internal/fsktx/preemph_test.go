@@ -22,7 +22,7 @@ func TestPreEmphasisFit(t *testing.T) {
 		return (complex(d[0], 0) + complex(d[1], 0)*z + complex(d[2], 0)*z*z) / (1 + complex(d[3], 0)*z + complex(d[4], 0)*z*z)
 	}
 	for _, hz := range []int{8000, 11025, 16000, 22050, 48000, 96000} {
-		a, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier1, PreEmphasisHz: [2]float64{300, 3000}})
+		a, err := NewAudio(AudioConfig{Hz: hz, Level: 4000, Tier: Tier1, PreEmphasisHz: [2]float64{300, 3000}})
 		if err != nil {
 			t.Fatal(err)
 		}
