@@ -431,6 +431,115 @@ ddone:
 	VZEROUPPER
 	RET
 
+TEXT ·xcorrAVX2(SB), NOSPLIT, $0-68
+	MOVQ         seg+0(FP), SI
+	MOVQ         sps+8(FP), CX
+	MOVQ         tre+16(FP), R8
+	MOVQ         tim+24(FP), R9
+	MOVQ         nw+32(FP), R10
+	MOVQ         corr+56(FP), DI
+	VCVTSS2SD    rr+40(FP), X0, X0
+	VBROADCASTSD X0, Y12
+	VCVTSS2SD    ri+44(FP), X0, X0
+	VBROADCASTSD X0, Y13
+	VCVTSS2SD    scale+48(FP), X0, X0
+	VBROADCASTSD X0, Y14
+	VXORPS       X15, X15, X15
+	VXORPS       X11, X11, X11
+	XORQ         BX, BX
+
+cw:
+	CMPQ   BX, R10
+	JGE    cdone
+	VXORPS X0, X0, X0
+	VXORPS X1, X1, X1
+	XORQ   DX, DX
+	LEAQ   (R8)(BX*4), R11
+	LEAQ   (R9)(BX*4), R12
+
+cj:
+	CMPQ         DX, CX
+	JGE          cfin
+	VCVTSS2SD    (SI)(DX*8), X2, X2
+	VBROADCASTSD X2, Y2
+	VCVTSS2SD    4(SI)(DX*8), X3, X3
+	VBROADCASTSD X3, Y3
+	VCVTPS2PD    (R11), Y4
+	VCVTPS2PD    (R12), Y5
+	VMULPD       Y4, Y2, Y6
+	VMULPD       Y5, Y3, Y7
+	VSUBPD       Y7, Y6, Y6
+	VMULPD       Y5, Y2, Y7
+	VMULPD       Y4, Y3, Y8
+	VADDPD       Y8, Y7, Y7
+	VCVTPD2PSY   Y6, X6
+	VCVTPD2PSY   Y7, X7
+	VADDPS       X6, X0, X0
+	VADDPS       X7, X1, X1
+	LEAQ         (R11)(R10*4), R11
+	LEAQ         (R12)(R10*4), R12
+	INCQ         DX
+	JMP          cj
+
+cfin:
+	VCVTPS2PD  X0, Y2
+	VCVTPS2PD  X1, Y3
+	VMULPD     Y12, Y2, Y6
+	VMULPD     Y13, Y3, Y7
+	VSUBPD     Y7, Y6, Y6
+	VMULPD     Y13, Y2, Y7
+	VMULPD     Y12, Y3, Y8
+	VADDPD     Y8, Y7, Y7
+	VCVTPD2PSY Y6, X6
+	VCVTPD2PSY Y7, X7
+	VCVTPS2PD  X6, Y2
+	VCVTPS2PD  X7, Y3
+	VXORPD     Y9, Y9, Y9
+	VMULPD     Y14, Y2, Y6
+	VMULPD     Y9, Y3, Y7
+	VSUBPD     Y7, Y6, Y6
+	VMULPD     Y9, Y2, Y7
+	VMULPD     Y14, Y3, Y8
+	VADDPD     Y8, Y7, Y7
+	VCVTPD2PSY Y6, X6
+	VCVTPD2PSY Y7, X7
+	VUNPCKLPS  X7, X6, X8
+	VUNPCKHPS  X7, X6, X9
+	VMOVUPS    X8, (DI)(BX*8)
+	VMOVUPS    X9, 16(DI)(BX*8)
+	VMULPS     X6, X6, X6
+	VMULPS     X7, X7, X7
+	VADDPS     X7, X6, X6
+	VMOVUPS    xsign<>(SB), X10
+	VXORPS     X10, X11, X2
+	VXORPS     X10, X6, X3
+	VMINPS     X3, X2, X4
+	VMINPS     X2, X4, X5
+	VORPS      X4, X5, X11
+	VXORPS     X10, X11, X11
+	ADDQ       $4, BX
+	JMP        cw
+
+cdone:
+	VMOVUPS   xsign<>(SB), X10
+	VPERMILPS $0x4e, X11, X6
+	VXORPS    X10, X11, X2
+	VXORPS    X10, X6, X3
+	VMINPS    X3, X2, X4
+	VMINPS    X2, X4, X5
+	VORPS     X4, X5, X11
+	VXORPS    X10, X11, X11
+	VPERMILPS $0xb1, X11, X6
+	VXORPS    X10, X11, X2
+	VXORPS    X10, X6, X3
+	VMINPS    X3, X2, X4
+	VMINPS    X2, X4, X5
+	VORPS     X4, X5, X11
+	VXORPS    X10, X11, X11
+	VMOVSS    X11, ret+64(FP)
+	VZEROUPPER
+	RET
+
 TEXT ·xtISA(SB), NOSPLIT, $0-1
 	MOVB  $0, ret+0(FP)
 	XORL  AX, AX

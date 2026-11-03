@@ -17,3 +17,11 @@ func (t *xtrellis) backwardSIMD(_, _, _, _, _, _, _, _ []float32, _ *xlanes, _ f
 func (t *xtrellis) driftSIMD(_ []float32) bool {
 	return false
 }
+
+func (t *xtrellis) corrPrep() bool {
+	return false
+}
+
+func (t *xtrellis) corrSIMD(_, _ []complex64, _ complex64, _ float32) float32 {
+	return 0
+}

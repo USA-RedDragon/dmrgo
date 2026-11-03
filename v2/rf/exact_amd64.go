@@ -20,6 +20,29 @@ func xfwdLog512(src, d0, d1, d2, d3, cs, sn *float32, n int, l *xlanes, thr, top
 func xbwdLog512(src, e0, e1, e2, e3, dst, cs, sn *float32, n int, l *xlanes, thr float32, best *[4]float32)
 
 //go:noescape
+func xcorrAVX2(seg *complex64, sps int, tre, tim *float32, nw int, rr, ri, scale float32, corr *complex64) float32
+
+func (t *xtrellis) corrPrep() bool {
+	m := t.m
+	if t.isa == 0 || m.windows%4 != 0 {
+		return false
+	}
+	nw, sps := m.windows, m.sps
+	for w := range nw {
+		for j, v := range m.tpl[w*sps : (w+1)*sps] {
+			t.tre[j*nw+w], t.tim[j*nw+w] = real(v), imag(v)
+		}
+	}
+	return true
+}
+
+func (t *xtrellis) corrSIMD(seg, corr []complex64, rot complex64, scale float32) float32 {
+	nw := t.m.windows
+	corr = corr[:nw]
+	return xcorrAVX2(&seg[0], len(seg), &t.tre[0], &t.tim[0], nw, real(rot), imag(rot), scale, &corr[0])
+}
+
+//go:noescape
 func xdriftAVX2(b, ext *float32, n int, pen float32)
 
 func (t *xtrellis) driftSIMD(b []float32) bool {
