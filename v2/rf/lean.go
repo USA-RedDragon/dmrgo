@@ -2283,6 +2283,10 @@ func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
 	return !r.isReplaying() || !r.clipped(end)
 }
 
+func (r *leanCore) flatSync(g float32) bool {
+	return g < leanSyncScaleMin*r.devScale
+}
+
 func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 	out := float32(leanClickOut) / 2 * r.devScale * deviationHz
 	top := r.ns
@@ -2301,7 +2305,7 @@ func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 		}
 	}
 	g, _, res := r.fitSync(end, p)
-	if g < leanSyncScaleMin*r.devScale {
+	if r.flatSync(g) {
 		return true
 	}
 	if r.isReplaying() {
