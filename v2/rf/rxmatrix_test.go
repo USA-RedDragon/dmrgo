@@ -863,7 +863,7 @@ func (c *mxScorer) burst(b *Burst, j int) {
 	if b.BS != tr.bs {
 		c.note("bs", "#%d BS %v", j, b.BS)
 	}
-	if tr.hasCACH && (!b.HasCACH || b.CACH != tr.cach) {
+	if tr.hasCACH && (!b.HasCACH || b.CACH != tr.cach) || !tr.hasCACH && b.HasCACH {
 		c.note("cach", "%s has %v %d bits", c.tag(j), b.HasCACH, hamming(b.CACH[:], tr.cach[:]))
 	}
 	if tr.rc && b.Sync != enums.SyncMSSourcedRC {
