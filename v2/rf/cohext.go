@@ -1101,7 +1101,10 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	s.mineOK, s.mineSlot, s.fitReady = false, b.Slot, false
 	s.slotRadio(c, b.Slot)
 	s.t0 = s.ringTime(c, c.base) + s.dt
-	s.slotDrift = float64(c.tm.rate) * slotSymbols * 2 / s.div
+	s.slotDrift = 0
+	if c.tm.step > 0 {
+		s.slotDrift = float64(c.tm.rate) / (2 * float64(c.tm.step)) * slotSymbols * s.sps
+	}
 	if s.lost(lo) {
 		return false
 	}
