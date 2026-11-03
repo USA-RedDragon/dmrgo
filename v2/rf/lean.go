@@ -988,9 +988,9 @@ func midSignAt[_ any](r *leanCore) {
 
 func (r *leanCore) searchHit(sym, mid bool) {
 	switch {
-	case r.ns > leanSyncEnd+1 && sym:
+	case r.ns >= leanAcqSymbols && sym:
 		r.searchSym(false)
-	case r.ns > leanSyncEnd+1 && r.rcSigns(r.signs) && r.searchRC():
+	case r.ns >= leanAcqSymbols && r.rcSigns(r.signs) && r.searchRC():
 	case r.ns >= leanRing && r.hasExt():
 		if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 			r.forceLock(src, data, back)
@@ -998,7 +998,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 			r.ext.weakAt(r.ns - 1 - back)
 		}
 	}
-	if mid && !r.locked && r.ns > leanSyncEnd+2 {
+	if mid && !r.locked && r.ns > leanAcqSymbols {
 		r.searchMid()
 	}
 }
@@ -1032,7 +1032,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 	}
 	r.midSigns = b
 	sym, mid = signsMatch[site0](r, a, b)
-	hit = r.ns > leanSyncEnd+1 && (sym || r.rcSigns(a)) || r.ns >= leanRing && r.hasExt() || mid && r.ns > leanSyncEnd+2
+	hit = r.ns >= leanAcqSymbols && (sym || r.rcSigns(a)) || r.ns >= leanRing && r.hasExt() || mid && r.ns > leanAcqSymbols
 	return hit, sym, mid
 }
 
@@ -1518,6 +1518,9 @@ func (r *leanCore) searchSym(strict bool) {
 		}
 	}
 	if !ok && strict && rho2 >= discLock*discLock && r.held(0, src, data, p) {
+		return
+	}
+	if !ok && r.ns <= leanSyncEnd+1 {
 		return
 	}
 	verified := false

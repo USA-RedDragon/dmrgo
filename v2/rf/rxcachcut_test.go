@@ -36,7 +36,7 @@ func TestRxCACHCut(t *testing.T) {
 				}
 				r := &mxResult{}
 				mxScore(s, in, x.tier, got, dev, false, r)
-				if r.fail["cach"] || r.fail["bs"] {
+				if r.fail["missing"] || r.fail["bits"] || r.fail["cach"] || r.fail["bs"] {
 					t.Errorf("%s cut %v %s: %s: %s", format, cut, x.name(), r.symptoms(), strings.Join(r.detail, " | "))
 				}
 				for _, b := range got {
