@@ -333,8 +333,8 @@ type benchPool struct {
 	q    [][]func()
 }
 
-func newBenchPool(workers, levels int) *benchPool {
-	p := &benchPool{q: make([][]func(), levels)}
+func newBenchPool(workers int) *benchPool {
+	p := &benchPool{q: make([][]func(), benchLevels)}
 	p.cond = sync.NewCond(&p.mu)
 	for range workers {
 		go p.work()
@@ -507,7 +507,22 @@ func deepNeeds(sc *benchScore) bool {
 	return sc != nil && sc.Truth > 0 && sc.Truth-sc.Exact < deepErrors && sc.Truth < deepFrames
 }
 
-func (s benchShared) deepen(pts [][]benchPoint) {
+func benchDeep(sh benchShared) [][]benchPoint {
+	if os.Getenv("DMRRF_RXBENCH_DEEP") == "off" {
+		return make([][]benchPoint, len(sh.es))
+	}
+	cs := make([][]benchCase, len(sh.es))
+	for j := range cs {
+		cs[j] = fullCases()
+	}
+	deep := sh.run(cs)
+	sh.deepen(deep)
+	return deep
+}
+
+func (s benchShared) deepen(pts [][]benchPoint) { s.deepenWith(pts, s.run) }
+
+func (s benchShared) deepenWith(pts [][]benchPoint, run func([][]benchCase) [][]benchPoint) {
 	below := make([]map[string]int, len(s.es))
 	n := 0
 	for j := range s.es {
@@ -536,7 +551,7 @@ func (s benchShared) deepen(pts [][]benchPoint) {
 				break
 			}
 			seed += deepBatch
-			add := s.run(cases)
+			add := run(cases)
 			for j := range s.es {
 				if cases[j] == nil {
 					continue
@@ -742,7 +757,7 @@ func TestRxBench(t *testing.T) {
 	fs, ft := benchStream(t, 30)
 	sig, fsig, noise := cleanBaseband(slots, 1400), cleanBaseband(fs, 1400), cleanBaseband(nil, 0)
 	entries := benchEntries()
-	pool := newBenchPool(runtime.GOMAXPROCS(0), benchLevels)
+	pool := newBenchPool(runtime.GOMAXPROCS(0))
 	tiers := make([]benchTier, len(entries))
 	var es []benchEntry
 	var at []int
@@ -771,13 +786,7 @@ func TestRxBench(t *testing.T) {
 	fastPts := benchShared{t, pool, sig, truth, es}.run(fc)
 	var deep [][]benchPoint
 	if full {
-		sh := benchShared{t, pool, fsig, ft, es}
-		cs := make([][]benchCase, len(es))
-		for j := range cs {
-			cs[j] = fullCases()
-		}
-		deep = sh.run(cs)
-		sh.deepen(deep)
+		deep = benchDeep(benchShared{t, pool, fsig, ft, es})
 		benchFullChecks(t)
 	}
 	wg.Wait()

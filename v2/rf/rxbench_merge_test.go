@@ -15,7 +15,7 @@ func TestRxBenchMerge(t *testing.T) {
 	t.Parallel()
 	dir := os.Getenv("DMRRF_RXBENCH_MERGE")
 	if dir == "" {
-		t.Skip("set DMRRF_RXBENCH_MERGE to a directory of <tier>.json sweeps to merge them into " + rxbenchPath)
+		t.Skip("set DMRRF_RXBENCH_MERGE to a directory of <tier>.json sweeps, and <tier>-<k>.json deep shards of the tiers of benchShards(), to merge them into " + rxbenchPath)
 	}
 	var base benchData
 	if err := readBench(rxbenchPath, &base); err != nil {
@@ -34,6 +34,13 @@ func TestRxBenchMerge(t *testing.T) {
 		got, ok := shard.find(e)
 		if !ok {
 			t.Fatalf("%s.json has no %s", e.name(), e.name())
+		}
+		full, sharded, err := benchMergeShards(dir, e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if sharded {
+			got.Full = full
 		}
 		got.NsPerSecond, got.WorstNs, got.WorstCN = bt.NsPerSecond, bt.WorstNs, bt.WorstCN
 		base.Tiers[i] = got
