@@ -26,6 +26,9 @@ type leanExt interface {
 	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
 	lockFit(c *leanCore, sym, t int64, q float32)
 	syncFit(c *leanCore, sym, t int64, q float32)
+	liveFit(c *leanCore, sym, t int64, q float32)
+	rateSettled(c *leanCore) bool
+	rateAgrees(c *leanCore, base int64) bool
 	grid(c *leanCore, start int64) (int64, bool)
 }
 
@@ -1402,6 +1405,8 @@ const (
 	extAnchorJump  = 0.25
 	extAnchorSig   = 0.0034
 	extSyncMid     = -(syncSymbols - 1) / 2.0
+	extSettleFits  = 3
+	extSettleSpan  = 4 * slotSymbols
 )
 
 type extAnchor struct {
@@ -1515,4 +1520,51 @@ func keptMMZero(c *leanCore, syms *[syncSymbols]int8, end, off, sps float32) flo
 	}
 	c.fillWindow(&win, b0)
 	return min(win.mmZero(syms, end, off, sps), -end)
+}
+
+func (x *softExt) liveFit(c *leanCore, sym, t int64, q float32) {
+	x.syncFit(c, sym, t, q)
+	p := x.ancParity(c, sym-leanSyncEnd)
+	if c.bs || c.ms.anch[p^1] != leanNoSlot {
+		return
+	}
+	d, sig, ok := x.anc[p].rateError(c)
+	if !ok || d*d <= leanClockSig*leanClockSig*sig*sig {
+		return
+	}
+	tm := &c.tm
+	v := tm.rate + d/(float32(c.mfStep)*256)
+	tm.owed += (v - tm.rate) * leanClockLag
+	tm.baseN, tm.baseC = tm.baseN+tm.nall, tm.baseC+tm.corr
+	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
+	tm.rate = v
+	tm.mOK = false
+	tm.estS, tm.estW, tm.estN, tm.learned = 0, 0, 0, true
+}
+
+func (a *extAnchor) rateError(c *leanCore) (d, sig float32, ok bool) {
+	_, b, ok := a.line()
+	if !ok {
+		return 0, 0, false
+	}
+	v := a.sxx - a.sx*a.sx/a.n
+	return b - c.tm.rate*float32(c.mfStep)*256, extAnchorSig * samplesPerSy * 256 / sqrtf(v), true
+}
+
+func (x *softExt) rateSettled(c *leanCore) bool {
+	for i := range x.anc {
+		a := &x.anc[i]
+		if a.n < extSettleFits || a.hi-a.lo < extSettleSpan {
+			continue
+		}
+		if d, sig, ok := a.rateError(c); ok && d*d <= leanClockSig*leanClockSig*sig*sig {
+			return true
+		}
+	}
+	return false
+}
+
+func (x *softExt) rateAgrees(c *leanCore, base int64) bool {
+	d, sig, ok := x.anc[x.ancParity(c, base)].rateError(c)
+	return ok && d*d <= leanClockSig*leanClockSig*sig*sig
 }

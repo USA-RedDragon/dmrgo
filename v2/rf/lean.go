@@ -1634,7 +1634,7 @@ func (r *leanCore) retime(mid bool) {
 	var saved [syncSymbols]int8
 	if d, c2, z, ok := r.resample(p, &saved, true, discLock); ok {
 		if r.hasExt() && r.ns-1 == r.slotEnd-slotSymbols+leanSyncEnd {
-			r.ext.syncFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2)
+			r.ext.liveFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2)
 		}
 		if r.reEntry && !r.cohRefit && p != enums.SyncMSSourcedRC {
 			r.restoreSync(&saved)
@@ -2148,7 +2148,7 @@ func (r *leanCore) setHunt() {
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
-			if r.bs || r.tm.learned || r.isReplaying() || r.ms.anch[0] != leanNoSlot && r.ms.anch[1] != leanNoSlot {
+			if r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r)) || r.isReplaying() || r.ms.anch[0] != leanNoSlot && r.ms.anch[1] != leanNoSlot {
 				return
 			}
 			r.reEntry = true
@@ -2502,7 +2502,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 
 func (r *leanCore) burstTicks(base int64) int64 {
 	rate := float32(0)
-	if r.bs {
+	if r.bs || r.hasExt() && r.ext.rateAgrees(r, base) {
 		rate = r.tm.rate
 	}
 	back := float32(r.ns-1-(base+cachSymbols)) * (2*r.tm.step + rate)
