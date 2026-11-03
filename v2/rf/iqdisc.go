@@ -575,6 +575,7 @@ func (r *iqRx) tuneLean(hz, dc float32) {
 	d := hz*scale + dc - f.dc
 	if r.d.locked {
 		f.mean += dc - f.dc
+		r.d.refit = r.d.refit || abs32(hz) >= iqAFCPullHz
 	} else {
 		f.mean = dc
 	}

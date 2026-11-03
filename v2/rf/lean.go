@@ -351,6 +351,7 @@ type leanCore struct {
 	pairNs         int64
 	pairSrc        uint8
 	pairLv         bool
+	refit          bool
 	tuneHz         float32
 	offsetHz       float32
 	tunePrev       float32
@@ -1878,7 +1879,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	}
 	if first {
 		g = max(g, leanMinScale)
-		r.devScale, r.dcHz, r.discVar = g, dc, res
+		r.devScale, r.dcHz, r.discVar, r.refit = g, dc, res, false
 		if a := r.audio; a != nil {
 			t := r.tuneHz
 			if int32(uint32(end)-r.tuneNs) < 0 {
@@ -2206,7 +2207,7 @@ func (r *leanCore) swapClock(p, q int32) {
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
-	if r.pairLv && r.fitLevels(base+leanSyncEnd, anchor, true, true) {
+	if (r.pairLv || r.refit) && r.fitLevels(base+leanSyncEnd, anchor, true, true) {
 		r.pairLv = false
 	} else {
 		r.fitLevels(base+leanSyncEnd, anchor, false, true)
