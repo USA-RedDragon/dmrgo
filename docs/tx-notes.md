@@ -6,6 +6,10 @@ These notes record how parts of the transmitter were checked. [The transmitter d
 
 The `Corr` correction of Tier 1 and Tier 2 audio is fitted through the radio model of the audio optimizer: a hold converter and a two-pole low pass at 8 kHz. Applied as fitted, it drives the band from 9 to 12.5 kHz too hard by 1/h, where h is the response of that model (-8.7 dB at 12 kHz), and on a radio with a flat response there the content lands on the steep part of Emission Mask D. That was the cause of the 2.3 dB loss of Mask D on the ideal radio model against the external transmitters in the comparison of October 2026. The band pass of `Corr` now scales the correction by 2h/(1+h), which leaves the same error on a flat radio as on the hold radio. `TestCorrFlatRadio` in `v2/internal/fsktx` measures the Mask D margin from 5.625 to 12.5 kHz on both radios with and without `Corr`, and fails unless `Corr` raises it by at least 0.5 dB on each.
 
+## Accepted Tier 0 costs
+
+I/Q tier 0 needs more than 4 MHz on a Cortex-M4F; [Tier 0 on a Cortex-M4F](tx.md#tier-0-on-a-cortex-m4f) gives the measured cost. Its cost was accepted at 4.275 MHz in November 2026, with the `Transmitter` and its stack at 1,304 bytes.
+
 ## Transmitter pairs
 
 <!-- txpairs:begin -->
