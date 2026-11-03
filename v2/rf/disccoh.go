@@ -32,40 +32,45 @@ const (
 	discClickSyms   = 1
 	discClickWeight = 0.1
 	discHeldFits    = 8
+	discStepClicks  = 0.4
 )
 
 type discPhase struct {
-	c        *leanCore
-	sum      []int64
-	size     int64
-	sumN     int64
-	last     int64
-	raw      [discPhaseRing]complex64
-	rawN     int64
-	taps     [discPhaseTaps]float32
-	hist     []complex64
-	n        int64
-	lo       int64
-	num, den int64
-	wait     int64
-	a, b     float64
-	o, sumO  int64
-	unit     float64
-	dcU      float64
-	seen     bool
-	cal      bool
-	acc      complex64
-	accN     int
-	avg      complex64
-	fitUnit  float64
-	fitN     int
-	coh      *cohStage
-	clipAt   [discPhaseRaw / discClipBlock]int64
-	clicks   []uint64
-	held     float64
-	heldN    int
-	useHeld  bool
-	out      [discPhaseChunk + discPhaseLag + 4]int16
+	c          *leanCore
+	sum        []int64
+	size       int64
+	sumN       int64
+	last       int64
+	raw        [discPhaseRing]complex64
+	rawN       int64
+	taps       [discPhaseTaps]float32
+	hist       []complex64
+	n          int64
+	lo         int64
+	num, den   int64
+	wait       int64
+	a, b       float64
+	o, sumO    int64
+	unit       float64
+	dcU        float64
+	seen       bool
+	cal        bool
+	acc        complex64
+	accN       int
+	avg        complex64
+	fitUnit    float64
+	fitN       int
+	coh        *cohStage
+	clipAt     [discPhaseRaw / discClipBlock]int64
+	clicks     []uint64
+	held       float64
+	heldN      int
+	clickN     int64
+	clickAt    int64
+	prevClicks int64
+	prevN      int64
+	useHeld    bool
+	out        [discPhaseChunk + discPhaseLag + 4]int16
 }
 
 func newDiscPhase(r *discRx, hz int, size int64) *discPhase {
@@ -174,6 +179,7 @@ func (p *discPhase) click(u int16, lo, hi int32) {
 	i := p.sumN & (p.size - 1)
 	w, b := i/64, uint64(1)<<(i%64)
 	if v := int32(u); v < lo || v > hi {
+		p.clickN++
 		p.clicks[w] |= b
 	} else {
 		p.clicks[w] &^= b
@@ -316,6 +322,15 @@ func (p *discPhase) follow() {
 	}
 	est, avg := ringHz(acc), ringHz(p.avg)
 	c := p.c
+	if n := p.sumN - p.clickAt; n > 0 {
+		over := float64(p.clickN) > discStepClicks*float64(n)
+		pair := float64(p.clickN+p.prevClicks) > discStepClicks*float64(n+p.prevN)
+		if over && pair && p.cal && c.locked {
+			p.cal, p.fitN, p.heldN = false, 0, 0
+		}
+		p.prevClicks, p.prevN = p.clickN, n
+	}
+	p.clickN, p.clickAt = 0, p.sumN
 	switch {
 	case c.locked:
 		hz := p.coreHz()
@@ -355,6 +370,18 @@ func (p *discPhase) lock() {
 	p.acc, p.accN, p.avg = 0, 0, 0
 }
 
+func (p *discPhase) relevel(k float32) {
+	c := p.c
+	if p.unit <= 0 || k <= 0 || c.audio.gain <= 0 {
+		return
+	}
+	u := 1 / float64(k)
+	p.fitN, p.heldN = 0, 0
+	p.held, p.fitUnit = p.unit*u, p.unit*u
+	p.build(p.unit*u, float64(c.audio.dc+c.dcHz)/float64(c.audio.gain))
+	p.acc, p.accN, p.avg = 0, 0, 0
+}
+
 func (p *discPhase) build(unit, dc float64) {
 	if p.unit > 0 {
 		if q := p.coh; q != nil {
@@ -370,6 +397,7 @@ func (p *discPhase) build(unit, dc float64) {
 		p.acc, p.avg = rescaleTurn(p.acc, k, d), rescaleTurn(p.avg, k, d)
 	}
 	p.unit, p.dcU = unit, dc
+	p.clickN, p.clickAt, p.prevClicks, p.prevN = 0, p.sumN, 0, 0
 	p.a = 2 * math.Pi * unit / (float64(discRate) * float64(p.den) / float64(p.num))
 	p.b = p.a * dc
 	p.o = max(p.sumN-p.size, 0)

@@ -33,6 +33,7 @@ type leanExt interface {
 	rateAgrees(c *leanCore, base int64) bool
 	lineShift(c *leanCore, sym, fit int64) (float32, bool)
 	grid(c *leanCore, start int64) (int64, bool)
+	relevel(k float32)
 }
 
 const extQueue = 8
@@ -230,6 +231,9 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 }
 
 func (x *softExt) cohCACH(c *leanCore, b *Burst) {
+	if c.preCut {
+		return
+	}
 	if !x.coh.cachLLR(&x.cachLLR) {
 		return
 	}
@@ -974,6 +978,12 @@ func (x *softExt) replaySlots(c *leanCore, last int64, at, sps float32) int32 {
 		n++
 	}
 	return n
+}
+
+func (x *softExt) relevel(k float32) {
+	if x.ph != nil {
+		x.ph.relevel(k)
+	}
 }
 
 func (x *softExt) firstSlot(c *leanCore) {
