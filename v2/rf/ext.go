@@ -1435,6 +1435,7 @@ const (
 	extSyncMid     = -(syncSymbols - 1) / 2.0
 	extSettleFits  = 3
 	extEmbWeight   = 1.0 / 32
+	extEmbGate     = 4 * 4e-6 * symbolRate
 	extPullSig     = 3
 	extRateFits    = 3
 	extSettleSpan  = 4 * slotSymbols
@@ -1476,6 +1477,9 @@ func (x *softExt) syncFit(c *leanCore, sym, t int64, q, w float32) {
 	xs := x.ancSlot(sym-leanSyncEnd)*slotSymbols + leanSyncEnd
 	t -= (syncSymbols - 1) * samplesPerSy << 7
 	p := x.ancParity(c, sym-leanSyncEnd)
+	if w < 1 && !x.rate[p].fits(xs, t) {
+		return
+	}
 	x.rate[p].add(xs, t, w)
 	if w == 1 {
 		x.anc[p].add(xs, t, w)
@@ -1671,4 +1675,12 @@ func (x *softExt) lineShift(c *leanCore, sym, fit int64) (float32, bool) {
 		return 0, false
 	}
 	return float32(t-c.strobeTicks(c.lastAt)) / (float32(c.mfStep) * 256), true
+}
+
+func (a *extAnchor) fits(xs, t int64) bool {
+	if _, _, ok := a.line(); !ok {
+		return true
+	}
+	p, ok := a.at(xs, 0)
+	return ok && float32(abs64(t-p)) <= extEmbGate*samplesPerSy*256
 }
