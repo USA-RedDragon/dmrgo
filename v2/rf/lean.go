@@ -2386,6 +2386,8 @@ func (r *leanCore) shift(d float32) {
 			r.ring[i] = int8(scale8(int32(v), 256, a8))
 		}
 		r.rebuildSigns()
+		r.preOff -= k * discStepHz
+		r.llrOff -= int32(k) * (discStepHz / llrStepHz)
 	}
 	r.dcHz -= d
 	r.ms.lv[0].dcHz -= d
