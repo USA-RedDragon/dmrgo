@@ -17,6 +17,10 @@ const (
 	levelForget         = 0.8
 	leanSyncClip        = 2
 	leanSyncClipMax     = 4
+	levelRefit          = 5
+	levelJumpZ          = 5
+	leanClipSyms        = 2
+	leanClipDrop        = 0.25
 	discAnchorBits      = 12
 	discFirstSpread     = 0.35
 	leanRing            = slotSymbols + 2
@@ -381,6 +385,11 @@ type leanCore struct {
 	huntBuf        [leanHuntSamples / 2]int16
 	devHz          int16
 	devAtHz        int16
+	jumpZ          float32
+	preDev, preOff float32
+	stepHold       bool
+	preStep        bool
+	preCut         bool
 
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
@@ -1340,14 +1349,7 @@ func (r *leanCore) slotHolds(base int64) bool {
 }
 
 func (r *leanCore) fitScale() {
-	g := 1 / r.devScale
-	r.scaleAudio(g)
-	r.devScale, r.dcHz, r.discVar = 1, r.dcHz*g, r.discVar*g*g
-	r.tm.dc, r.tm.dev = r.dcHz, deviationHz
-	for i := range r.ms.lv {
-		l := &r.ms.lv[i]
-		l.devScale, l.dcHz, l.discVar = l.devScale*g, l.dcHz*g, l.discVar*g*g
-	}
+	r.relevel(1 / r.devScale)
 }
 
 func ringPos(k int64) uint32 {
@@ -1599,6 +1601,10 @@ func (r *leanCore) searchMid() {
 
 //go:noinline
 func (r *leanCore) clipped(end int64) bool {
+	return 2*r.clips(end) > syncSymbols
+}
+
+func (r *leanCore) clips(end int64) int {
 	n := 0
 	j := ringPos(end - syncSymbols + 1)
 	for range syncSymbols {
@@ -1609,7 +1615,22 @@ func (r *leanCore) clipped(end int64) bool {
 			j = 0
 		}
 	}
-	return 2*n > syncSymbols
+	return n
+}
+
+func (r *leanCore) overload(best float32, end int64) bool {
+	n := r.clips(end)
+	return n >= leanClipSyms && best >= discAnchor*discAnchor || 2*n >= syncSymbols
+}
+
+func (r *leanCore) relevel(g float32) {
+	g = r.scaleAudio(g)
+	r.devScale, r.dcHz, r.discVar = r.devScale*g, r.dcHz*g, r.discVar*g*g
+	for i := range r.ms.lv {
+		lv := &r.ms.lv[i]
+		lv.devScale, lv.dcHz, lv.discVar = lv.devScale*g, lv.dcHz*g, lv.discVar*g*g
+	}
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 }
 
 func (r *leanCore) retime(mid bool) {
@@ -1832,10 +1853,30 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 
 func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) bool {
 	g, dc, res := r.fitSync(end, p)
-	if first {
-		if check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
-			return false
+	r.stepHold = false
+	if first && check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
+		return false
+	}
+	var step float32
+	if !first && g > 0 {
+		old := r.syncRes(end, p, r.devScale, r.dcHz)
+		se := sqrtf(res/(syncSymbols-2)/9) / deviationHz
+		z := (g - r.devScale) / max(se, 1e-6)
+		jump := abs32(z) > levelJumpZ
+		twice := jump && r.jumpZ*z > 0
+		r.jumpZ = 0
+		if jump && !twice {
+			r.jumpZ = z
 		}
+		if first = old > levelRefit*res || twice; first {
+			r.preDev, r.preOff, r.preStep = r.devScale, r.off-r.dcHz, !r.isReplaying()
+			k := max(g, leanMinScale) / r.devScale
+			gk := max(g, leanMinScale) * deviationHz
+			r.tm.pow = 5*gk*gk + res
+			step = k
+		}
+	}
+	if first {
 		g = max(g, leanMinScale)
 		r.devScale, r.dcHz, r.discVar = g, dc, res
 		if a := r.audio; a != nil {
@@ -1846,6 +1887,9 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 			r.fitHz = (t + dc) / a.gain
 		}
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+		if step > 0 && r.hasExt() && !r.isReplaying() {
+			r.ext.relevel(step)
+		}
 		return true
 	}
 	if check {
@@ -1863,6 +1907,21 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	}
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	return true
+}
+
+func (r *leanCore) syncRes(end int64, p enums.SyncPattern, g, dc float32) float32 {
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	j := ringPos(end - syncSymbols + 1)
+	var res float32
+	for k := range syncSymbols {
+		e := float32(r.ring[j])*discStepHz + r.off - dc - g*deviationHz*float32(syms[k])
+		if j++; j == leanRing {
+			j = 0
+		}
+		res += e * e
+	}
+	return res / syncSymbols
 }
 
 func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) {
@@ -2012,13 +2071,18 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 			}
 		}
 	}
+	if a := r.audio; a != nil && a.maxGain == 0 && !r.isReplaying() && r.overload(best, base+leanSyncEnd+shift) {
+		r.relevel(leanClipDrop)
+		r.stepHold = true
+		return false, 0, 0
+	}
 	isAnchor := best >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+shift, anchor)
 	ms := !r.bs && (r.lastAnch != leanNoSlot || base+leanSyncEnd == r.lockNs-1)
 	if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
 		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
 	}
 	if isAnchor && r.isReplaying() {
-		if e := r.syncErrors(base+leanSyncEnd+shift, anchor); r.replayDeep && e > leanReplayFalse || seek && e > leanReplayErrors {
+		if e := r.syncErrors(base+leanSyncEnd+shift, anchor, r.devScale, r.dcHz); r.replayDeep && e > leanReplayFalse || seek && e > leanReplayErrors {
 			isAnchor = false
 		}
 	}
@@ -2030,6 +2094,7 @@ func (r *leanCore) holdNext(j int32, present bool) {
 	if !r.bs && r.lastAnch != leanNoSlot {
 		r.tm.hold = r.ms.anch[(j+1)&1] == leanNoSlot
 	}
+	r.tm.hold = r.tm.hold || r.stepHold
 }
 
 func (r *leanCore) slotFirst(j int32, base int64, anchor enums.SyncPattern) {
@@ -2170,7 +2235,7 @@ func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern
 	r.lastAnch = j
 	r.rcLone = r.rcLone && anchor == enums.SyncMSSourcedRC
 	if r.unproven && anchor != enums.SyncMSSourcedRC && r.ext.anchorProves(base+leanSyncEnd) &&
-		r.syncErrors(base+leanSyncEnd, anchor) <= layer2.DefaultSyncThreshold {
+		r.syncErrors(base+leanSyncEnd, anchor, r.devScale, r.dcHz) <= layer2.DefaultSyncThreshold {
 		r.unproven = false
 	}
 	if base > r.lockNs {
@@ -2211,7 +2276,7 @@ func (r *leanCore) seeking() bool {
 }
 
 func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
-	if r.syncErrors(end, p) > discAnchorBits || r.noCarrier(end, p) {
+	if r.syncErrors(end, p, r.devScale, r.dcHz) > discAnchorBits && !r.stepped(end, p) || r.noCarrier(end, p) {
 		return false
 	}
 	return !r.isReplaying() || !r.clipped(end)
@@ -2303,10 +2368,15 @@ func (r *leanCore) shift(d float32) {
 	}
 }
 
+func (r *leanCore) stepped(end int64, p enums.SyncPattern) bool {
+	g, dc, res := r.fitSync(end, p)
+	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz && r.syncRes(end, p, r.devScale, r.dcHz) > levelRefit*res && r.syncErrors(end, p, g, dc) <= discAnchorBits
+}
+
 //go:noinline
-func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
-	step := r.devScale * deviationHz
-	t0 := (r.dcHz - r.off) / discStepHz
+func (r *leanCore) syncErrors(end int64, p enums.SyncPattern, g, dc float32) int {
+	step := g * deviationHz
+	t0 := (dc - r.off) / discStepHz
 	hi, lo := t0+2*step/discStepHz, t0-2*step/discStepHz
 	n := 0
 	j := ringPos(end - syncSymbols + 1)
@@ -2350,7 +2420,7 @@ func (r *leanCore) unlock() {
 	if !r.hunt || !r.hasExt() || r.ext.kept() == nil {
 		r.acqFrom = r.n
 	}
-	r.locked, r.forced, r.hunt = false, false, false
+	r.locked, r.forced, r.hunt, r.stepHold, r.preStep = false, false, false, false, false
 	if a := r.audio; a != nil {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
@@ -2477,6 +2547,8 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.cancelISI(base)
 	}
 	thr, out := 2*r.llrDev, r.llrDev*leanClickOut/2
+	split, preOff, preThr := r.stepSplit(base)
+	r.preCut = split > 0
 	h := ringPos(base)
 	var acc byte
 	beyond := 0
@@ -2507,6 +2579,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		default:
 			b.Data[(k-cachSymbols)/4] = acc
 		}
+	}
+	if split > 0 {
+		r.sliceHead(b, base, split, preOff, preThr)
 	}
 	if r.clickSpan > 0 {
 		r.clickFloor(v)
@@ -2559,6 +2634,68 @@ func (r *leanCore) burstTicks(base int64) int64 {
 		}
 	}
 	return ticks
+}
+
+func (r *leanCore) stepSplit(base int64) (int, int32, int32) {
+	if !r.preStep {
+		return 0, 0, 0
+	}
+	r.preStep = false
+	off := int32(roundf(r.preOff / llrStepHz))
+	dev := int32(roundf(r.preDev * deviationHz / llrStepHz))
+	var c, best int32
+	split := 0
+	h := ringPos(base)
+	for k := range syncFirstSym {
+		v := int32(r.ring[h]) * (discStepHz / llrStepHz)
+		if h++; h == leanRing {
+			h = 0
+		}
+		if c += symRes(v+off, dev) - symRes(v+r.llrOff, r.llrDev); c < best {
+			best, split = c, k+1
+		}
+	}
+	return split, off, 2 * dev
+}
+
+//go:noinline
+func (r *leanCore) sliceHead(b *Burst, base int64, split int, off, thr int32) {
+	h := ringPos(base)
+	for k := range split {
+		x := int32(r.ring[h])*(discStepHz/llrStepHz) + off
+		if h++; h == leanRing {
+			h = 0
+		}
+		var d byte
+		if x < 0 {
+			d = 2
+			x = -x
+		}
+		if x > thr {
+			d |= 1
+		}
+		sh := uint(6 - 2*(k&3))
+		if k < cachSymbols {
+			b.CACH[k/4] = b.CACH[k/4]&^(3<<sh) | d<<sh
+		} else {
+			j := (k - cachSymbols) / 4
+			b.Data[j] = b.Data[j]&^(3<<sh) | d<<sh
+		}
+	}
+}
+
+func symRes(x, d int32) int32 {
+	if x < 0 {
+		x = -x
+	}
+	return min(abs32i(x-d), abs32i(x-3*d))
+}
+
+func abs32i(x int32) int32 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 func (r *leanCore) emit(b *Burst) {
