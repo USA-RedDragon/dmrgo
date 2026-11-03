@@ -60,6 +60,7 @@ const (
 	leanClickOut        = 9
 	leanNoCarrierClicks = 36
 	leanNoCarrierSpread = 1.2
+	leanSyncScaleMin    = 0.25
 	leanGapSpread       = 4
 	leanGapFloor        = 0.9
 	leanGapClicks       = 16
@@ -2230,6 +2231,9 @@ func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 		}
 	}
 	g, _, res := r.fitSync(end, p)
+	if g < leanSyncScaleMin*r.devScale {
+		return true
+	}
 	if r.isReplaying() {
 		return n >= leanNoCarrierClicks && (g <= 0 || sqrtf(res) > leanNoCarrierSpread*2*g*deviationHz && r.gapSpread(g, res))
 	}
