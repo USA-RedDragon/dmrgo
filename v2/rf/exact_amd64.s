@@ -52,6 +52,26 @@ DATA xupto<>+24(SB)/4, $127
 DATA xupto<>+28(SB)/4, $255
 GLOBL xupto<>(SB), RODATA|NOPTR, $32
 
+DATA x32z<>+0(SB)/8, $0x0000002000000020
+DATA x32z<>+8(SB)/8, $0x0000002000000020
+DATA x32z<>+16(SB)/8, $0x0000002000000020
+DATA x32z<>+24(SB)/8, $0x0000002000000020
+DATA x32z<>+32(SB)/8, $0x0000002000000020
+DATA x32z<>+40(SB)/8, $0x0000002000000020
+DATA x32z<>+48(SB)/8, $0x0000002000000020
+DATA x32z<>+56(SB)/8, $0x0000002000000020
+GLOBL x32z<>(SB), RODATA|NOPTR, $64
+
+DATA x64z<>+0(SB)/8, $0x0000004000000040
+DATA x64z<>+8(SB)/8, $0x0000004000000040
+DATA x64z<>+16(SB)/8, $0x0000004000000040
+DATA x64z<>+24(SB)/8, $0x0000004000000040
+DATA x64z<>+32(SB)/8, $0x0000004000000040
+DATA x64z<>+40(SB)/8, $0x0000004000000040
+DATA x64z<>+48(SB)/8, $0x0000004000000040
+DATA x64z<>+56(SB)/8, $0x0000004000000040
+GLOBL x64z<>(SB), RODATA|NOPTR, $64
+
 #define FWDM(RE, IM, B, OUT) \
 	VBROADCASTSS RE(DX), OUT \
 	VMULPS       Y1, OUT, OUT \
@@ -72,7 +92,7 @@ GLOBL xupto<>(SB), RODATA|NOPTR, $32
 	VADDPS       Y12, OUT, OUT \
 	VADDPS       E, OUT, OUT
 
-#define VLA(A, B, R, L) \
+#define VLAG(A, B, R, L) \
 	VSUBPS     B, A, Y7 \
 	VXORPS     Y14, Y14, Y14 \
 	VCMPPS     $0x11, Y14, Y7, Y8 \
@@ -102,6 +122,58 @@ GLOBL xupto<>(SB), RODATA|NOPTR, $32
 	VADDPS     Y14, Y12, Y12 \
 	VBLENDVPS  Y8, R, Y12, R \
 L:
+
+#define VLAZ(A, B, R, L) \
+	VSUBPS     B, A, Y7 \
+	VXORPS     Y14, Y14, Y14 \
+	VCMPPS     $0x11, Y14, Y7, Y8 \
+	VBLENDVPS  Y8, B, A, R \
+	VANDPS     xsign<>(SB), Y8, Y8 \
+	VXORPS     Y8, Y7, Y7 \
+	VMULPS     xeight<>(SB), Y7, Y7 \
+	VCMPPS     $0x1d, xn96<>(SB), Y7, Y8 \
+	VCVTTPS2DQ Y7, Y9 \
+	VCVTDQ2PS  Y9, Y10 \
+	VSUBPS     Y10, Y7, Y10 \
+	VPAND      xm127<>(SB), Y9, Y9 \
+	VPTESTMD   x32z<>(SB), Z9, K1 \
+	VPTESTMD   x64z<>(SB), Z9, K2 \
+	VMOVAPS    Z9, Z28 \
+	VPERMI2PS  Z17, Z16, Z28 \
+	VMOVAPS    Z9, Z29 \
+	VPERMI2PS  Z19, Z18, Z29 \
+	VMOVAPS    Z9, Z30 \
+	VPERMI2PS  Z21, Z20, Z30 \
+	VMOVAPS    Z29, K1, Z28 \
+	VMOVAPS    Z30, K2, Z28 \
+	VADDPS     Y28, R, Y12 \
+	VMOVAPS    Z9, Z28 \
+	VPERMI2PS  Z23, Z22, Z28 \
+	VMOVAPS    Z9, Z29 \
+	VPERMI2PS  Z25, Z24, Z29 \
+	VMOVAPS    Z9, Z30 \
+	VPERMI2PS  Z27, Z26, Z30 \
+	VMOVAPS    Z29, K1, Z28 \
+	VMOVAPS    Z30, K2, Z28 \
+	VMULPS     Y28, Y10, Y14 \
+	VADDPS     Y14, Y12, Y12 \
+	VBLENDVPS  Y8, R, Y12, R
+
+#define ZPRE \
+	LEAQ    ·jacobian(SB), AX \
+	VMOVUPS 0(AX), Z16 \
+	VMOVUPS 64(AX), Z17 \
+	VMOVUPS 128(AX), Z18 \
+	VMOVUPS 192(AX), Z19 \
+	VMOVUPS 256(AX), Z20 \
+	VMOVUPS 320(AX), Z21 \
+	LEAQ    ·jacobianSlope(SB), AX \
+	VMOVUPS 0(AX), Z22 \
+	VMOVUPS 64(AX), Z23 \
+	VMOVUPS 128(AX), Z24 \
+	VMOVUPS 192(AX), Z25 \
+	VMOVUPS 256(AX), Z26 \
+	VMOVUPS 320(AX), Z27
 
 #define FWDLANE(RE, IM, B, D, L) \
 	FWDM(RE, IM, B, Y4) \
@@ -203,8 +275,9 @@ L2:
 #define CHAIN(YOFF, POFF, LL, LD, L1, L2) \
 	VMOVMSKPS    Y3, R12 \
 	VMOVUPS      YOFF(SP), Y9 \
+	VMOVSS       POFF(SP), X12 \
 LL: \
-	VBROADCASTSS POFF(SP), Y10 \
+	VBROADCASTSS X12, Y10 \
 	VSUBPS       Y9, Y10, Y11 \
 	VMULPS       xeight<>(SB), Y11, Y11 \
 	VCMPPS       $0x1d, xn96<>(SB), Y11, Y11 \
@@ -216,12 +289,13 @@ LL: \
 	BSFL         AX, DX \
 	LEAQ         xupto<>(SB), AX \
 	ORL          (AX)(DX*4), R12 \
-	VMOVSS       POFF(SP), X4 \
+	VMOVAPS      X12, X4 \
 	VMOVSS       YOFF(SP)(DX*4), X5 \
 	SLOGADD(L1, L2) \
-	VMOVSS       X4, POFF(SP) \
+	VMOVAPS      X4, X12 \
 	JMP          LL \
-LD:
+LD: \
+	VMOVSS       X12, POFF(SP)
 
 #define BWDTAIL(LA1, LA2, LA3) \
 	VADDPS    Y4, Y0, Y7 \
@@ -251,35 +325,21 @@ LD:
 	VORPS  Y7, Y8, OUT \
 	VXORPS Y15, OUT, OUT
 
-TEXT ·xfwdLogAVX2(SB), NOSPLIT, $0-84
-	FWDARGS
+#define VLA(A, B, R, L) VLAG(A, B, R, L)
+#define KPRE
+#define KFWD ·xfwdLogAVX2
+#define KBWD ·xbwdLogAVX2
+#include "exact_kern_amd64.h"
+#undef VLA
+#undef KPRE
+#undef KFWD
+#undef KBWD
 
-fl:
-	LEAQ 8(BX), AX
-	CMPQ AX, CX
-	JGT  ft
-	FWDLOAD
-	FWDLANE(0, 16, 32, DI, fl0)
-	FWDLANE(4, 20, 36, R8, fl1)
-	FWDLANE(8, 24, 40, R9, fl2)
-	FWDLANE(12, 28, 44, R10, fl3)
-	ADDQ $8, BX
-	JMP  fl
-
-ft:
-	CMPQ BX, CX
-	JGE  fdone
-	TAILLOAD
-	FWDLANET(0, 16, 32, DI, ft0)
-	FWDLANET(4, 20, 36, R8, ft1)
-	FWDLANET(8, 24, 40, R9, ft2)
-	FWDLANET(12, 28, 44, R10, ft3)
-
-fdone:
-	HMAXRET
-	VMOVSS X15, ret+80(FP)
-	VZEROUPPER
-	RET
+#define VLA(A, B, R, L) VLAZ(A, B, R, L)
+#define KPRE ZPRE
+#define KFWD ·xfwdLog512
+#define KBWD ·xbwdLog512
+#include "exact_kern_amd64.h"
 
 TEXT ·xfwdFirstAVX2(SB), NOSPLIT, $0-84
 	FWDARGS
@@ -308,77 +368,6 @@ it:
 idone:
 	HMAXRET
 	VMOVSS X15, ret+80(FP)
-	VZEROUPPER
-	RET
-
-TEXT ·xbwdLogAVX2(SB), NOSPLIT, $144-96
-	MOVQ    src+0(FP), SI
-	MOVQ    e0+8(FP), DI
-	MOVQ    e1+16(FP), R8
-	MOVQ    e2+24(FP), R9
-	MOVQ    e3+32(FP), R10
-	MOVQ    dst+40(FP), R11
-	MOVQ    cs+48(FP), R13
-	MOVQ    sn+56(FP), R14
-	MOVQ    n+64(FP), CX
-	MOVQ    best+88(FP), AX
-	VMOVUPS (AX), X4
-	VMOVUPS X4, 128(SP)
-	XORQ    BX, BX
-
-bl:
-	LEAQ         8(BX), AX
-	CMPQ         AX, CX
-	JGT          bt
-	VMOVUPS      (SI)(BX*4), Y0
-	VMOVUPS      (R13)(BX*4), Y1
-	VMOVUPS      (R14)(BX*4), Y2
-	VBROADCASTSS thr+80(FP), Y3
-	VCMPPS       $0x11, Y3, Y0, Y3
-	MOVQ         l+72(FP), DX
-	BWDV(0, 16, 32, (DI)(BX*4), Y4)
-	BWDV(4, 20, 36, (R8)(BX*4), Y5)
-	BWDV(8, 24, 40, (R9)(BX*4), Y6)
-	BWDV(12, 28, 44, (R10)(BX*4), Y15)
-	BWDTAIL(bla, blb, blc)
-	VMOVUPS      Y4, (R11)(BX*4)
-	CHAINS(bc0, bd0, bs0, bx0, bc1, bd1, bs1, bx1, bc2, bd2, bs2, bx2, bc3, bd3, bs3, bx3)
-	ADDQ         $8, BX
-	JMP          bl
-
-bt:
-	CMPQ       BX, CX
-	JGE        bdone
-	MOVQ       CX, AX
-	SUBQ       BX, AX
-	NEGQ       AX
-	LEAQ       xtail<>+32(SB), DX
-	VMOVUPS    (DX)(AX*4), Y13
-	VMASKMOVPS (SI)(BX*4), Y13, Y0
-	VMASKMOVPS (R13)(BX*4), Y13, Y1
-	VMASKMOVPS (R14)(BX*4), Y13, Y2
-	VBROADCASTSS thr+80(FP), Y3
-	VCMPPS     $0x11, Y3, Y0, Y3
-	VPCMPEQD   Y4, Y4, Y4
-	VXORPS     Y4, Y13, Y4
-	VORPS      Y4, Y3, Y3
-	MOVQ       l+72(FP), DX
-	VMASKMOVPS (DI)(BX*4), Y13, Y11
-	BWDV(0, 16, 32, Y11, Y4)
-	VMASKMOVPS (R8)(BX*4), Y13, Y11
-	BWDV(4, 20, 36, Y11, Y5)
-	VMASKMOVPS (R9)(BX*4), Y13, Y11
-	BWDV(8, 24, 40, Y11, Y6)
-	VMASKMOVPS (R10)(BX*4), Y13, Y11
-	BWDV(12, 28, 44, Y11, Y15)
-	BWDTAIL(bta, btb, btc)
-	VMASKMOVPS Y4, Y13, (R11)(BX*4)
-	CHAINS(tc0, td0, ts0, tx0, tc1, td1, ts1, tx1, tc2, td2, ts2, tx2, tc3, td3, ts3, tx3)
-
-bdone:
-	MOVQ    best+88(FP), AX
-	VMOVUPS 128(SP), X4
-	VMOVUPS X4, (AX)
 	VZEROUPPER
 	RET
 
@@ -424,31 +413,39 @@ ddone:
 	VZEROUPPER
 	RET
 
-TEXT ·xtHasAVX2(SB), NOSPLIT, $0-1
+TEXT ·xtISA(SB), NOSPLIT, $0-1
+	MOVB  $0, ret+0(FP)
 	XORL  AX, AX
 	XORL  CX, CX
 	CPUID
 	CMPL  AX, $7
-	JLT   no
+	JLT   done
 	MOVL  $1, AX
 	XORL  CX, CX
 	CPUID
 	ANDL  $0x18000000, CX
 	CMPL  CX, $0x18000000
-	JNE   no
+	JNE   done
 	XORL  CX, CX
 	XGETBV
+	MOVL  AX, R8
 	ANDL  $6, AX
 	CMPL  AX, $6
-	JNE   no
+	JNE   done
 	MOVL  $7, AX
 	XORL  CX, CX
 	CPUID
 	BTL   $5, BX
-	JCC   no
+	JCC   done
 	MOVB  $1, ret+0(FP)
-	RET
+	ANDL  $0xe6, R8
+	CMPL  R8, $0xe6
+	JNE   done
+	BTL   $16, BX
+	JCC   done
+	BTL   $31, BX
+	JCC   done
+	MOVB  $2, ret+0(FP)
 
-no:
-	MOVB $0, ret+0(FP)
+done:
 	RET

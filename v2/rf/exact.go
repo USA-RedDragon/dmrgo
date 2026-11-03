@@ -31,7 +31,7 @@ type xtrellis struct {
 	below    float32
 	jk       []float32
 	beamW    float32
-	simd     bool
+	isa      uint8
 	ext      []float32
 }
 
@@ -61,7 +61,7 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 		corr: make([]complex64, maxSteps*m.windows), top: make([]float32, maxSteps+1), beam: make([]float32, maxSteps),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
 		pen: driftPenalty, drifts: 1, jk: make([]float32, maxSteps), beamW: exactBeam,
-		simd: xtHasAVX2(), ext: make([]float32, np+16),
+		isa: xtISA(), ext: make([]float32, np+16),
 	}
 	if np != phaseStates {
 		t.row = 1

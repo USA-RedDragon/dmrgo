@@ -2,8 +2,8 @@
 
 package rf
 
-func xtHasAVX2() bool {
-	return false
+func xtISA() uint8 {
+	return 0
 }
 
 func (t *xtrellis) forwardSIMD(_, _, _, _, _, _, _ []float32, _ *xlanes, _, top float32, _ bool) (float32, bool) {
