@@ -40,10 +40,7 @@ type extChan struct {
 	frag  [4][embBits]int16
 	have  uint8
 	b     int64
-	acc   [4][embBits]int16
-	accN  int
-	accLC [9]byte
-	es    elcStat
+	elc   elcState
 	late  [extLate]lateBurst
 	lateN int
 	raw   bool
@@ -59,6 +56,8 @@ type softExt struct {
 	work, work0     int64
 	passes          int
 	llr             [layer2.BurstBits]int16
+	pre             [layer2.BurstBits]int16
+	preOK           bool
 	cachLLR         [layer2.CACHBits]int16
 	ch              [2]extChan
 	q               [extQueue]Burst
@@ -190,11 +189,13 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 			hold = x.fragment(ch, b)
 		}
 	case known && kind == layer2.KindData:
-		ch.have, ch.accN = 0, 0
+		ch.have = 0
+		ch.elc.reset()
 		if x.stages&extOSD != 0 {
 			x.data(c, b)
 		}
 		noteCallLC(&ch.raw, out, x.checks[enums.DataTypeVoiceLCHeader])
+		ch.elc.callLC(out, x.checks[enums.DataTypeVoiceLCHeader])
 	default:
 		ch.have = 0
 	}
@@ -277,6 +278,7 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	if !x.coh.detect(c, b, &x.llr) {
 		return false
 	}
+	x.pre, x.preOK = x.llr, true
 	fixed, data := b.Fixed, b.Data
 	x.repairAll(c, b, cc, ccOK)
 	coh := b.Data
@@ -301,8 +303,10 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
 		hold = x.fragment(ch, b)
 	} else {
-		ch.have, ch.accN = 0, 0
+		ch.have = 0
+		ch.elc.reset()
 		noteCallLC(&ch.raw, &b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
+		ch.elc.callLC(&b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
 	}
 	i := x.push(c, b, hold)
 	x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
@@ -590,6 +594,13 @@ func (x *softExt) fragment(ch *extChan, b *Burst) bool {
 		return false
 	}
 	copy(ch.frag[i][:], x.llr[embFirstBit:embFirstBit+embBits])
+	pre := &x.llr
+	if x.preOK {
+		pre = &x.pre
+	}
+	x.preOK = false
+	copy(ch.elc.test[i][:], pre[embFirstBit:embFirstBit+embBits])
+	ch.elc.noteRef(pre, &b.Fixed, i)
 	ch.have |= 1 << i
 	return i < 3
 }
@@ -609,11 +620,7 @@ func (x *softExt) embeddedLC(ch *extChan, e int64) {
 		}
 		x.out[i] = b.Fixed
 	}
-	ch.es.rho = elcSpreadLean
-	if x.coh != nil {
-		ch.es.rho = elcSpreadCoh
-	}
-	lc, ok := x.soft.decodeELC(&ch.frag, &ch.acc, &x.sum, &ch.accN, &ch.accLC, &x.out, true, &ch.es)
+	lc, ok := x.soft.decodeELC(&ch.frag, &ch.elc, &x.sum, &x.out)
 	if ok {
 		if r, voice := rawVoiceLC(lc[:]); voice {
 			ch.raw = r
@@ -1295,10 +1302,9 @@ func (x *softExt) end(c *leanCore) {
 		x.held[i] = false
 	}
 	x.ch[0].have, x.ch[1].have = 0, 0
-	x.ch[0].accN, x.ch[1].accN = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.ch[0].raw, x.ch[1].raw = false, false
-	x.ch[0].es, x.ch[1].es = elcStat{}, elcStat{}
+	x.ch[0].elc, x.ch[1].elc = elcState{}, elcState{}
 	if c.unproven {
 		x.n = 0
 	}

@@ -28,30 +28,35 @@ func checkELCTalkerChange(t *testing.T, seeds map[float64][]uint64) {
 		name string
 		run  func(x []complex64) []Burst
 	}
-	rxs := []rx{
-		{"I/Q Tier 1", func(x []complex64) []Burst { return receiveBaseband(x, Tier1) }},
-		{"I/Q Tier 2", func(x []complex64) []Burst { return receiveBaseband(x, Tier2) }},
-		{"I/Q Tier 3", func(x []complex64) []Burst { return receiveBaseband(x, Tier3) }},
-		{"core I/Q Tier 3", func(x []complex64) []Burst { return receiveCore3(t, x) }},
-		{"audio Tier 2", func(x []complex64) []Burst { return receiveAudioTier(t, discAudio(x, benchAudioHz), Tier2) }},
+	var rxs []rx
+	for _, e := range benchEntries() {
+		rxs = append(rxs, rx{e.name(), func(x []complex64) []Burst { return benchReceive(t, x, e) }})
 	}
-	talkers := []callTalker{{src: 3191868, superframes: 3, header: true}, {src: 3140598, lead: -1, superframes: 3, term: true}}
-	old := map[enums.VoiceBurstType]layer2.RawBurst{}
-	pos := enums.VoiceBurstUnknown
-	for _, b := range callBursts(t, talkers[0]) {
-		x, err := layer2.NewBurstFromBytes(b)
-		switch {
-		case err == nil && x.Kind == layer2.KindVoice && x.SyncPattern != enums.SyncNone:
-			pos = enums.VoiceBurstA
-		case pos != enums.VoiceBurstUnknown && pos < enums.VoiceBurstF:
-			pos++
-			old[pos] = b
-		default:
-			pos = enums.VoiceBurstUnknown
+	rxs = append(rxs, rx{"core I/Q Tier 3", func(x []complex64) []Burst { return receiveCore3(t, x) }})
+	talkers := []callTalker{
+		{src: 3002068, superframes: 3, header: true},
+		{src: 990126, lead: -1, superframes: 3},
+		{src: 990023, lead: -1, superframes: 3, term: true},
+	}
+	old := make([]map[enums.VoiceBurstType]layer2.RawBurst, len(talkers))
+	for k, tk := range talkers {
+		old[k] = map[enums.VoiceBurstType]layer2.RawBurst{}
+		pos := enums.VoiceBurstUnknown
+		for _, b := range callBursts(t, tk) {
+			x, err := layer2.NewBurstFromBytes(b)
+			switch {
+			case err == nil && x.Kind == layer2.KindVoice && x.SyncPattern != enums.SyncNone:
+				pos = enums.VoiceBurstA
+			case pos != enums.VoiceBurstUnknown && pos < enums.VoiceBurstF:
+				pos++
+				old[k][pos] = b
+			default:
+				pos = enums.VoiceBurstUnknown
+			}
 		}
-	}
-	if len(old) != 5 {
-		t.Fatalf("first talker: %d of the bursts B to F", len(old))
+		if len(old[k]) != 5 {
+			t.Fatalf("talker %d: %d of the bursts B to F", k, len(old[k]))
+		}
 	}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -70,13 +75,16 @@ func checkELCTalkerChange(t *testing.T, seeds map[float64][]uint64) {
 					n := 0
 					for _, b := range r.run(s.x) {
 						j := int(math.Round((b.Seconds - first) / slotSeconds))
-						if j < 0 || j >= len(s.truth) || s.who[j] != 1 || b.Voice < enums.VoiceBurstB || b.Voice > enums.VoiceBurstE {
+						if j < 0 || j >= len(s.truth) || s.who[j] < 1 || b.Voice < enums.VoiceBurstB || b.Voice > enums.VoiceBurstE {
 							continue
 						}
 						d, _ := b.Decoded()
-						o := old[b.Voice]
-						if got, want := d.EmbeddedData(), s.truth[j].EmbeddedData(); got != want && got == o.EmbeddedData() {
-							n++
+						got, want := d.EmbeddedData(), s.truth[j].EmbeddedData()
+						for _, o := range old[:s.who[j]] {
+							if got != want && got == o[b.Voice].EmbeddedData() {
+								n++
+								break
+							}
 						}
 					}
 					mu.Lock()
@@ -91,7 +99,7 @@ func checkELCTalkerChange(t *testing.T, seeds map[float64][]uint64) {
 		for _, r := range rxs {
 			k := fmt.Sprintf("%s at %.0f dB", r.name, cn)
 			if n := stale[k]; n > 0 {
-				t.Errorf("%s: %d bursts of the second talker carry the first talker's embedded LC fragment", k, n)
+				t.Errorf("%s: %d bursts of a later talker carry an earlier talker's embedded LC fragment", k, n)
 			}
 		}
 	}
