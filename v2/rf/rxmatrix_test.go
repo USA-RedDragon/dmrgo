@@ -903,7 +903,7 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 		c.first[s.truth[j].who] = j
 	}
 	var worst, sum float64
-	n := 0
+	n, last := 0, -1
 	for i := range got {
 		b := &got[i]
 		at := b.Seconds + in.delay
@@ -912,7 +912,7 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 			c.note("extra", "%.4f s", b.Seconds)
 			continue
 		}
-		matched[j] = true
+		matched[j], last = true, j
 		d := at - s.truth[j].at
 		sum, n = sum+d, n+1
 		if math.Abs(d) > tol && math.Abs(d) > math.Abs(worst) {
@@ -939,15 +939,18 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 		res.add("seconds", "mean %+.1f us, worst %+.1f us", mean*1e6, worst*1e6)
 	}
 	if n > 0 {
-		mxDeviation(in, tier, dev, res)
+		mxDeviation(s, in, tier, dev, matched, last, res)
 	}
 }
 
-func mxDeviation(in mxInput, tier Tier, dev float64, res *mxResult) {
+func mxDeviation(s *mxSignal, in mxInput, tier Tier, dev float64, matched []bool, last int, res *mxResult) {
 	want, lo := mxOuterHz, mxDevIQ
 	switch {
 	case in.audio != nil:
 		want, lo = want*in.gain, mxDevLow
+		if g, ok := mxGenieMean(s, in, matched, last); ok && mxGenieRef(in.hz) > 0 {
+			want = mxOuterHz / deviationHz * g / mxGenieRef(in.hz)
+		}
 	case tier == Tier3:
 		lo = 1 - mxDevHigh
 	case in.rate == iq0LowHz:
@@ -957,6 +960,114 @@ func mxDeviation(in mxInput, tier Tier, dev float64, res *mxResult) {
 		res.add("deviation", "%.1f, want %.0f to %.0f", dev, want*lo, want*(1+mxDevHigh))
 	}
 }
+
+func mxGenieMean(s *mxSignal, in mxInput, matched []bool, last int) (float64, bool) {
+	if last < 0 {
+		return 0, false
+	}
+	span := float64(burstSymbols) / symbolRate / s.r
+	g0 := s.gainAt(s.truth[last].at)
+	var sum float64
+	n := 0
+	for j, tr := range s.truth {
+		if !matched[j] || tr.who != s.truth[last].who || s.gainAt(tr.at) != g0 || s.gainAt(tr.at+span) != g0 {
+			continue
+		}
+		if g, ok := mxGenieLevel(s, in, j); ok {
+			sum, n = sum+g, n+1
+		}
+	}
+	if n == 0 {
+		return 0, false
+	}
+	return sum / float64(n), true
+}
+
+func mxGenieLevel(s *mxSignal, in mxInput, j int) (float64, bool) {
+	tr := s.truth[j]
+	var sym [burstSymbols]float64
+	for k := range sym {
+		b := 2 * k
+		sym[k] = float64(dibitSymbol(tr.data[b/8]>>(7-b%8)&1, tr.data[(b+1)/8]>>(7-(b+1)%8)&1))
+	}
+	at := func(t float64) (float64, bool) {
+		x := t * float64(in.hz)
+		i := int(math.Floor(x))
+		if i < 0 || i+1 >= len(in.audio) {
+			return 0, false
+		}
+		w := x - float64(i)
+		return float64(in.audio[i])*(1-w) + float64(in.audio[i+1])*w, true
+	}
+	best, bg := math.Inf(1), 0.0
+	for tau := -8e-6; tau <= 8e-6; tau += 2e-6 {
+		var y [burstSymbols]float64
+		var sx, sy, sxx, sxy float64
+		ok := true
+		for k := range sym {
+			v, in := at(tr.at + float64(k)/symbolRate/s.r - in.delay + tau)
+			if !in {
+				ok = false
+				break
+			}
+			y[k] = v
+			sx, sy, sxx, sxy = sx+sym[k], sy+v, sxx+sym[k]*sym[k], sxy+sym[k]*v
+		}
+		if !ok {
+			return 0, false
+		}
+		const n = burstSymbols
+		g := (n*sxy - sx*sy) / (n*sxx - sx*sx)
+		dc := (sy - g*sx) / n
+		var res float64
+		for k := range sym {
+			e := y[k] - dc - g*sym[k]
+			res += e * e
+		}
+		if res < best {
+			best, bg = res, g
+		}
+	}
+	return bg, bg > 0
+}
+
+func mxGenieRef(hz int) float64 {
+	mxGenieRefOnce.Do(func() {
+		mxGenieRefs = map[int]float64{}
+		for _, f := range mxValues[mxFormat] {
+			r, ok := strings.CutPrefix(f, "a")
+			if !ok {
+				continue
+			}
+			rate, _ := strconv.Atoi(r)
+			var row mxRow
+			for d, want := range []string{"s0", "none", "+0", "bs", "voice", "0ppm", "nom", f, "inf"} {
+				row[d] = uint8(slices.Index(mxValues[d], want))
+			}
+			s, err := mxBuild(row)
+			if err != nil {
+				continue
+			}
+			in := mxInputOf(s, row)
+			var sum float64
+			n := 0
+			for j := range s.truth {
+				if g, ok := mxGenieLevel(s, in, j); ok {
+					sum, n = sum+g, n+1
+				}
+			}
+			if n > 0 {
+				mxGenieRefs[rate] = sum / float64(n) / (deviationHz * in.gain)
+			}
+		}
+	})
+	return mxGenieRefs[hz]
+}
+
+var (
+	mxGenieRefOnce sync.Once
+	mxGenieRefs    map[int]float64
+)
 
 func hamming(a, b []byte) int {
 	n := 0
