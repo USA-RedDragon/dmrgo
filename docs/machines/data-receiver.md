@@ -185,7 +185,7 @@ The next example answers a confirmed packet from a recording with its real times
 ```go
 func ExampleReceiver_respond() {
 	bursts := readTimedExample("testdata/anytone_sms_xpr.txt")
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3140598, Respond: true})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002198, Respond: true})
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -10,7 +10,7 @@ Radios put the text in the user data in more than one format. [Package sms](http
 
 ## The capture
 
-`v2/data/testdata/anytone_sms_xpr.txt` holds the bursts of a confirmed SMS from radio 3191868 to radio 3140598 at rate 3/4. A BTECH DA-7X2 with AnyTone D890UV firmware sent it, and a Motorola XPR 8400 repeater repeated it on time slot 2. An RTL-SDR recorded the output of the repeater. Each line holds the time of a burst in milliseconds and the burst in hex.
+`v2/data/testdata/anytone_sms_xpr.txt` holds the bursts of a confirmed SMS from radio 3191868 to radio 3002198 at rate 3/4. A BTECH DA-7X2 with AnyTone D890UV firmware sent it, and a Motorola XPR 8400 repeater repeated it on time slot 2. An RTL-SDR recorded the output of the repeater. Each line holds the time of a burst in milliseconds and the burst in hex. The destination ID of the captured radio is replaced by the fictional 3002198, with every CRC, checksum and FEC computed again.
 
 ## The code
 
@@ -24,7 +24,7 @@ func readText(path string) (sms.Text, error) {
 		return sms.Text{}, err
 	}
 	defer f.Close()
-	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3140598})
+	rx, err := data.NewReceiver(&data.ReceiverConfig{Address: 3002198})
 	if err != nil {
 		return sms.Text{}, err
 	}
@@ -117,8 +117,8 @@ It prints:
 
 <!-- dmrgo:output test=sms.Example_reply -->
 ```text
-AnyTone text from 3191868 to 3140598: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
-radio: "got it" from 3140598 <nil>
+AnyTone text from 3191868 to 3002198: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
+radio: "got it" from 3002198 <nil>
 sender: Delivered after 1 tries (ACK)
 ```
 <!-- /dmrgo:output -->

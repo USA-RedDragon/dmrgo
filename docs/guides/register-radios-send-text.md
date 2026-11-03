@@ -140,7 +140,7 @@ The text message from the capture:
 
 <!-- dmrgo:output test=tms.ExampleDecodeMessage -->
 ```text
-Text 1 from 3191868 to 3140598: "\r\nMOTO TEST"
+Text 1 from 3191868 to 3002198: "\r\nMOTO TEST"
 no acknowledgement requested
 ```
 <!-- /dmrgo:output -->
