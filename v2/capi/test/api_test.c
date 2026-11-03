@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1706,7 +1707,17 @@ static void test_rf_audio_transmitter(void) {
 	free(got);
 	free(s.p);
 	free(pcm);
-	printf("rf audio transmitter: %zu samples, %d of %d bursts back through the receiver\n", len, back, RF_SLOTS);
+	dmrgo_rf_audio_tx_config_t hc = {.size = sizeof hc, .tier = DMRGO_RF_TIER0, .rate = 48000, .region = DMRGO_RF_REGION_US, .service = DMRGO_SERVICE_LAND_MOBILE, .power = 40, .input_highpass_hz = 10};
+	dmrgo_rf_audio_transmitter_t *ht = NULL;
+	CHECK(dmrgo_rf_new_audio_transmitter(&hc, &ht) == DMRGO_ERR_CONFIG && ht == NULL);
+	hc.size = offsetof(dmrgo_rf_audio_tx_config_t, input_highpass_hz);
+	OK(dmrgo_rf_new_audio_transmitter(&hc, &ht));
+	OK(dmrgo_rf_audio_transmitter_free(ht));
+	hc.size = sizeof hc;
+	hc.tier = DMRGO_RF_TIER1;
+	OK(dmrgo_rf_new_audio_transmitter(&hc, &ht));
+	OK(dmrgo_rf_audio_transmitter_free(ht));
+	printf("rf audio transmitter: %zu samples, %d of %d bursts back through the receiver; a stated input high pass is refused at tier 0 and taken at tier 1, and a struct sized before it reads 0\n", len, back, RF_SLOTS);
 }
 
 int main(int argc, char **argv) {

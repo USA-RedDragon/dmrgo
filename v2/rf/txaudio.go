@@ -65,6 +65,16 @@ type AudioTxConfig struct {
 	Service Service
 	// Power is the most power of the station in dBm, as in TxConfig.
 	Power int
+	// InputHighpassHz states the corner in Hz of the AC coupling, a
+	// first-order high pass, that the radio puts before its modulator
+	// input; 0 means none stated, and the signal is the same as without
+	// the field. Tier1 and Tier2 then add back the low frequencies that the
+	// high pass takes away, as far as the room of the converter above the
+	// peak at Level allows, and a zero Level takes the level that the
+	// limits are measured at, which leaves that room at 16 bits and none
+	// at fewer. A corner over 20 Hz, a negative one, or a corner at Tier0
+	// gives a *dmrgo.ConfigError.
+	InputHighpassHz int
 }
 
 // AudioTransmitter turns DMR bursts into the deviation signal that drives
@@ -100,6 +110,7 @@ const (
 	minTxAudio        = 8000
 	maxTxAudio        = 96000
 	maxTxLevel        = 16000
+	maxHighpassHz     = fsktx.HighpassMaxHz
 )
 
 type audioPlan struct {
@@ -135,11 +146,19 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 	} else {
 		level, err = cfg.fitHost(avail)
 	}
+	measured := measuredLevel(cfg.Tier, cfg.Rate, cfg.Bits)
+	if cfg.InputHighpassHz > 0 && cfg.Level == 0 && measured > 0 {
+		level = min(level, measured)
+	}
 	if err == nil {
-		err = cfg.plan(&p, g, level, measuredLevel(cfg.Tier, cfg.Rate, cfg.Bits))
+		err = cfg.plan(&p, g, level, measured)
 	}
 	if err != nil {
 		return nil, err
+	}
+	var room float64
+	if cfg.InputHighpassHz > 0 {
+		room = highpassRoom(cfg.Tier, cfg.Rate, p.level, avail)
 	}
 	t := &AudioTransmitter{}
 	if p.tier == Tier0 {
@@ -147,7 +166,7 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 		return t, nil
 	}
 	sps := cfg.Rate/symbolRate + 2
-	if err := t.host.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset); err != nil {
+	if err := t.host.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset, cfg.InputHighpassHz, room); err != nil {
 		return nil, audioErrs.rate
 	}
 	if l := t.host.audioLag(); l > 0 {
@@ -227,6 +246,9 @@ func (c *AudioTxConfig) prepare() (audioPlan, int, error) {
 	}
 	if c.InputLowpassHz < 0 {
 		return audioPlan{}, 0, e.lowpass
+	}
+	if c.InputHighpassHz < 0 || c.InputHighpassHz > maxHighpassHz || c.InputHighpassHz != 0 && c.Tier == Tier0 {
+		return audioPlan{}, 0, e.highpass
 	}
 	if c.Level < 0 || c.Level > maxTxLevel {
 		return audioPlan{}, 0, e.level

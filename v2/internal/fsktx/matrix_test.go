@@ -47,6 +47,8 @@ type txUnit struct {
 	level, offset int
 	offHz         int
 	ramp          int
+	hp            int
+	room          float64
 }
 
 func (u txUnit) kind() string {
@@ -146,7 +148,11 @@ func (u txUnit) mod() (txMod, error) {
 		}
 		return m, m.m.Init(t, u.level, u.offset)
 	case u.audio():
-		a, err := NewAudio(AudioConfig{Hz: u.rate, Level: u.level, Offset: u.offset, Tier: u.tier})
+		c := AudioConfig{Hz: u.rate, Level: u.level, Offset: u.offset, Tier: u.tier}
+		if u.hp > 0 && u.room > 0 {
+			c.Droop = HighpassDroop(float64(u.hp), u.room)
+		}
+		a, err := NewAudio(c)
 		return audioMod{a}, err
 	case u.mcu:
 		m := &mcuIQMod{}

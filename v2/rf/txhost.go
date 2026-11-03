@@ -25,8 +25,12 @@ func (h *txHost) newIQ(t Tier, rate int, offsetHz float64) error {
 	return nil
 }
 
-func (h *txHost) newAudio(t Tier, rate, level, offset int) error {
-	a, err := fsktx.NewAudio(fsktx.AudioConfig{Hz: rate, Level: level, Offset: offset, Tier: fsktx.Tier(t)})
+func (h *txHost) newAudio(t Tier, rate, level, offset, highpass int, room float64) error {
+	c := fsktx.AudioConfig{Hz: rate, Level: level, Offset: offset, Tier: fsktx.Tier(t)}
+	if highpass > 0 && room > 0 {
+		c.Droop = fsktx.HighpassDroop(float64(highpass), room)
+	}
+	a, err := fsktx.NewAudio(c)
 	if err != nil {
 		return err
 	}
@@ -88,6 +92,18 @@ func measuredLevel(t Tier, rate, bits int) int {
 		}
 	}
 	return l << (bits - depth)
+}
+
+func highpassRoom(t Tier, rate, level, avail int) float64 {
+	ps, err := newAudioPeaks(t, rate)
+	if err != nil || level < 1 {
+		return 0
+	}
+	pk, err := ps.peak(level)
+	if err != nil || pk >= avail {
+		return 0
+	}
+	return float64(avail-pk) * 3 * deviationHz / float64(level)
 }
 
 func newChunk(n int) []byte { return make([]byte, n) }

@@ -12,7 +12,9 @@ var errTxHost error = iqErrs.tier
 
 func (*txHost) newIQ(Tier, int, float64) error { return errTxHost }
 
-func (*txHost) newAudio(Tier, int, int, int) error { return errTxHost }
+func (*txHost) newAudio(Tier, int, int, int, int, float64) error { return errTxHost }
+
+func highpassRoom(Tier, int, int, int) float64 { return 0 }
 
 func (*txHost) key(bool) {}
 

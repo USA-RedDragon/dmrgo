@@ -146,6 +146,7 @@ The configs, with the range and the default of each field:
 | `Region` | `Region` | zero value | Region is the regulatory region whose limits the signal keeps. |
 | `Service` | `Service` | zero value | Service is the radio service of the station, as in TxConfig. |
 | `Power` | `int` | `top` | Power is the most power of the station in dBm, as in TxConfig. |
+| `InputHighpassHz` | `int` | not machine-readable; see the description | InputHighpassHz states the corner in Hz of the AC coupling, a first-order high pass, that the radio puts before its modulator input; 0 means none stated, and the signal is the same as without the field. Tier1 and Tier2 then add back the low frequencies that the high pass takes away, as far as the room of the converter above the peak at Level allows, and a zero Level takes the level that the limits are measured at, which leaves that room at 16 bits and none at fewer. A corner over 20 Hz, a negative one, or a corner at Tier0 gives a *dmrgo.ConfigError. |
 <!-- /dmrgo:config -->
 
 The errors of the transmitters:

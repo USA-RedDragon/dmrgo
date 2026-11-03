@@ -401,6 +401,7 @@ var api = [...]any{
 	internal_fsktx.AudioTable.Peak,
 	internal_fsktx.AudioTable.Span,
 	internal_fsktx.Dibits,
+	internal_fsktx.HighpassDroop,
 	internal_fsktx.NewAudio,
 	internal_fsktx.NewIQ,
 	internal_fsktx.PeakPE,

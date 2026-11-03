@@ -1,0 +1,90 @@
+{
+	"worst": [
+		{
+			"new_failures": null,
+			"point": "Audio-T1/48000/L15000/O0/16bit/plain/lp0",
+			"key": "fcc_ea_far_47dbm_db",
+			"base_db": 10.124226399078623,
+			"stated_db": 10.128308376232141,
+			"room_hz": 156.0384,
+			"corner_hz": 1,
+			"lowpass_hz": 0
+		},
+		{
+			"new_failures": null,
+			"point": "Audio-T1/48000/L15000/O0/16bit/plain/lp0",
+			"key": "fcc_ea_far_47dbm_db",
+			"base_db": 10.124226399078623,
+			"stated_db": 10.152558069460753,
+			"room_hz": 156.0384,
+			"corner_hz": 10,
+			"lowpass_hz": 0
+		},
+		{
+			"new_failures": null,
+			"point": "Audio-T2/96000/L15000/O0/16bit/ideal/lp0",
+			"key": "cn_spur_50dbm_db",
+			"base_db": 10.651946959877776,
+			"stated_db": 10.09432176139238,
+			"room_hz": 171.3312,
+			"corner_hz": 20,
+			"lowpass_hz": 0
+		}
+	],
+	"eyes": [
+		{
+			"tier": 1,
+			"corner_hz": 1,
+			"off_mean": 0.06645394691282386,
+			"on_mean": 0.03189493114062714,
+			"rrc_mean": 0.06717956913462324,
+			"diff_mean": -0.03528463799399608,
+			"diff_se": 0.0010633793378608126
+		},
+		{
+			"tier": 1,
+			"corner_hz": 10,
+			"off_mean": 0.29054991249379397,
+			"on_mean": 0.25284555682127413,
+			"rrc_mean": 0.2906342404725153,
+			"diff_mean": -0.03778868365124113,
+			"diff_se": 0.0025146954442571727
+		},
+		{
+			"tier": 1,
+			"corner_hz": 20,
+			"off_mean": 0.43292058282637197,
+			"on_mean": 0.4042983192352977,
+			"rrc_mean": 0.4327602530655261,
+			"diff_mean": -0.028461933830228554,
+			"diff_se": 0.002186086183114905
+		},
+		{
+			"tier": 2,
+			"corner_hz": 1,
+			"off_mean": 0.06645235751086141,
+			"on_mean": 0.03189850138661974,
+			"rrc_mean": 0.06717956913462324,
+			"diff_mean": -0.035281067748003506,
+			"diff_se": 0.0010638222172601145
+		},
+		{
+			"tier": 2,
+			"corner_hz": 10,
+			"off_mean": 0.29054963940485745,
+			"on_mean": 0.252844140953718,
+			"rrc_mean": 0.2906342404725153,
+			"diff_mean": -0.0377900995187973,
+			"diff_se": 0.002514889072938432
+		},
+		{
+			"tier": 2,
+			"corner_hz": 20,
+			"off_mean": 0.43292242361898636,
+			"on_mean": 0.4042965740796574,
+			"rrc_mean": 0.4327602530655261,
+			"diff_mean": -0.028463678985868726,
+			"diff_se": 0.0021866471777162934
+		}
+	]
+}

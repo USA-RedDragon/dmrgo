@@ -266,6 +266,17 @@ type DroopConfig struct {
 	Floor, Bias, Own, Max float64
 }
 
+// HighpassMaxHz is the highest corner of a high pass in front of the
+// modulator that the limits are measured with HighpassDroop for.
+const HighpassMaxHz = 20
+
+// HighpassDroop returns the Droop that undoes a first-order high pass at
+// hz in front of the modulator, as far as a correction of at most maxHz:
+// the correction holds the mean deviation from hz down to hz/50.
+func HighpassDroop(hz, maxHz float64) DroopConfig {
+	return DroopConfig{Hz: hz, LowHz: hz / 50, Gain: 1, Max: maxHz}
+}
+
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
 type PulseConfig struct {
 	// Span is the half-length of the pulse in symbols; 0 means that of the
@@ -526,8 +537,14 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			return nil, errOffset
 		}
 		if d := cfg.Droop; d != (DroopConfig{}) {
-			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1 && d.Floor >= 0) {
+			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1 && d.Floor >= 0 && d.Max >= 0) {
 				return nil, errDroop
+			}
+			if d.Max > 0 {
+				a.peak += d.Max
+				if lo, hi := a.bounds(); hi > math.MaxInt16 || lo < math.MinInt16 {
+					return nil, errOffset
+				}
 			}
 			a.dr = droop{a1: math.Exp(-2 * math.Pi * d.Hz / SymbolRate), a2: math.Exp(-2 * math.Pi * d.LowHz / SymbolRate),
 				g: d.Gain, floor: d.Floor, bias: d.Bias, own: d.Own, max: d.Max, lag: min(a.Lag(), 62)}

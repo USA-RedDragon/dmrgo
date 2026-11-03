@@ -4158,6 +4158,8 @@ struct dmrgo_rf_audio_tx_config_t {
 	dmrgo_service_t service;
 	/* Power is the most power of the station in dBm, as in TxConfig. */
 	int64_t power;
+	/* InputHighpassHz states the corner in Hz of the AC coupling, a first-order high pass, that the radio puts before its modulator input; 0 means none stated, and the signal is the same as without the field. DMRGO_RF_TIER1 and DMRGO_RF_TIER2 then add back the low frequencies that the high pass takes away, as far as the room of the converter above the peak at Level allows, and a zero Level takes the level that the limits are measured at, which leaves that room at 16 bits and none at fewer. A corner over 20 Hz, a negative one, or a corner at DMRGO_RF_TIER0 gives a *dmrgo_config_error_t. */
+	int64_t input_highpass_hz;
 };
 
 struct dmrgo_rf_monitor_burst_t {

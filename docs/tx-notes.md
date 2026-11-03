@@ -10,6 +10,31 @@ The `Corr` correction of Tier 1 and Tier 2 audio is fitted through the radio mod
 
 I/Q tier 0 needs more than 4 MHz on a Cortex-M4F; [Tier 0 on a Cortex-M4F](tx.md#tier-0-on-a-cortex-m4f) gives the measured cost. Its cost was accepted at 4.275 MHz in November 2026, with the `Transmitter` and its stack at 1,304 bytes.
 
+## Input high pass
+
+<!-- txhighpass:begin -->
+
+`AudioTxConfig.InputHighpassHz` states the AC coupling of the modulator input of the radio. Tier 1 and Tier 2 then add the low frequencies that the high pass takes away, held to the room of the converter above the peak at the measured level. `TestHighpass` measures the limits at 16 bits with the stated high pass in the radio and the correction on, against the same points with neither, and the eye at 48 kHz through a radio with that high pass, each stream sent by both.
+
+| Corner | Limits that the stated high pass fails and the same point keeps without it | Least margin over the need, stated (dB) | Without (dB) | Limit | Point | Room (Hz) |
+| ---: | ---: | ---: | ---: | --- | --- | ---: |
+| 1 Hz | 0 | +0.13 | +0.12 | fcc_ea_far_47dbm_db | Audio-T1/48000/L15000/O0/16bit/plain/lp0 | 156 |
+| 10 Hz | 0 | +0.15 | +0.12 | fcc_ea_far_47dbm_db | Audio-T1/48000/L15000/O0/16bit/plain/lp0 | 156 |
+| 20 Hz | 0 | +0.09 | +0.65 | cn_spur_50dbm_db | Audio-T2/96000/L15000/O0/16bit/ideal/lp0 | 171 |
+
+| Tier | Corner | Eye error, not stated | Eye error, stated | Root raised cosine | Stated less root raised cosine, 64 streams |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1 Hz | 0.0665 | 0.0319 | 0.0672 | -0.0353 ± 0.0011 |
+| 1 | 10 Hz | 0.2905 | 0.2528 | 0.2906 | -0.0378 ± 0.0025 |
+| 1 | 20 Hz | 0.4329 | 0.4043 | 0.4328 | -0.0285 ± 0.0022 |
+| 2 | 1 Hz | 0.0665 | 0.0319 | 0.0672 | -0.0353 ± 0.0011 |
+| 2 | 10 Hz | 0.2905 | 0.2528 | 0.2906 | -0.0378 ± 0.0025 |
+| 2 | 20 Hz | 0.4329 | 0.4043 | 0.4328 | -0.0285 ± 0.0022 |
+
+`go test ./internal/fsktx -run TestHighpass -update-highpass` in v2 measures them into `v2/internal/fsktx/testdata/highpass.json` and writes this block.
+
+<!-- txhighpass:end -->
+
 ## Transmitter pairs
 
 <!-- txpairs:begin -->

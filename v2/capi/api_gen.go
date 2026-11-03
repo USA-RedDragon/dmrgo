@@ -3579,6 +3579,7 @@ func in_rf_AudioTxConfig(s *C.dmrgo_rf_audio_tx_config_t) (d g_rf.AudioTxConfig)
 	d.Region = g_rf.Region(s.region)
 	d.Service = g_rf.Service(s.service)
 	d.Power = int(s.power)
+	d.InputHighpassHz = int(s.input_highpass_hz)
 	return
 }
 
@@ -7059,6 +7060,7 @@ func out_rf_AudioTxConfig(d *C.dmrgo_rf_audio_tx_config_t, s *g_rf.AudioTxConfig
 	d.region = C.dmrgo_rf_region_t(s.Region)
 	d.service = C.dmrgo_service_t(s.Service)
 	d.power = C.int64_t(s.Power)
+	d.input_highpass_hz = C.int64_t(s.InputHighpassHz)
 }
 
 func fromC_rf_AudioTxConfig(s *C.dmrgo_rf_audio_tx_config_t) g_rf.AudioTxConfig {

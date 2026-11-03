@@ -92,8 +92,8 @@ var spurGate10 = [regions][services]bool{
 }
 
 type txErrs struct {
-	tier, rate, format, offset, power, bits, level, offsetCodes, onSamples, lowpass, preEmphSet *dmrgo.ConfigError
-	rateLimit, powerCeil, service, spur, preEmph, levelLow, region, svc                         *RegionError
+	tier, rate, format, offset, power, bits, level, offsetCodes, onSamples, lowpass, highpass, preEmphSet *dmrgo.ConfigError
+	rateLimit, powerCeil, service, spur, preEmph, levelLow, region, svc                                   *RegionError
 }
 
 var iqErrs = txErrs{
@@ -129,6 +129,7 @@ var audioErrs = txErrs{
 	offsetCodes: &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.Offset"},
 	onSamples:   &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.OnSamples"},
 	lowpass:     &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.InputLowpassHz"},
+	highpass:    &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.InputHighpassHz"},
 	preEmphSet:  &dmrgo.ConfigError{Type: "rf", Field: "AudioTxConfig.PreEmphasis"},
 	rateLimit:   &RegionError{Type: "rf", Field: "AudioTxConfig.Rate", Reason: "no measurement keeps the limits at this rate"},
 	powerCeil:   &RegionError{Type: "rf", Field: "AudioTxConfig.Power", Reason: "above the highest legal power of the service in the region"},

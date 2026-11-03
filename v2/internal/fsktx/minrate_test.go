@@ -164,6 +164,12 @@ func (p limPoint) audioSignal(raw []int16) ([]complex128, float64) {
 	if p.u.pe {
 		f = preEmph(f, ra)
 	}
+	if p.u.hp > 0 {
+		hp := shelf(0, float64(p.u.hp), ra)
+		for i, v := range f {
+			f[i] = hp.step(v)
+		}
+	}
 	if p.lowpass > 0 {
 		f = analogLowpass(f, ra, float64(p.lowpass))
 	}
