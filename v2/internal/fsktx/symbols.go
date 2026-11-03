@@ -9,11 +9,10 @@ package fsktx
 func Dibits(dst []int8, b []byte) []int8 {
 	b = b[:min(len(b), len(dst)/4)]
 	dst = dst[:4*len(b)]
+	sym := [4]int8{1, 3, -1, -3}
 	for i, v := range b {
-		for j := range 4 {
-			d := int8(v >> uint(6-2*j) & 3)
-			dst[4*i+j] = (1 + 2*(d&1)) * (1 - d&2)
-		}
+		d := dst[4*i : 4*i+4 : 4*i+4]
+		d[0], d[1], d[2], d[3] = sym[v>>6], sym[v>>4&3], sym[v>>2&3], sym[v&3]
 	}
 	return dst
 }
