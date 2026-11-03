@@ -279,8 +279,8 @@ v2/rf/cohext.go	949	927
 v2/rf/cohlate.go	7	7
 v2/rf/devgain.go	21	19
 v2/rf/disc48.go	33	33
-v2/rf/disccoh.go	289	284
-v2/rf/discrx.go	412	395
+v2/rf/disccoh.go	304	299
+v2/rf/discrx.go	416	398
 v2/rf/discsoft.go	49	48
 v2/rf/exact.go	254	251
 v2/rf/ext.go	732	718
@@ -292,7 +292,7 @@ v2/rf/iqdsp.go	13	13
 v2/rf/iqformat.go	15	15
 v2/rf/iqlow.go	139	137
 v2/rf/iqrefill.go	147	141
-v2/rf/lean.go	1298	1277
+v2/rf/lean.go	1353	1329
 v2/rf/leanfec.go	261	259
 v2/rf/leanfront.go	155	138
 v2/rf/monitor.go	71	70
