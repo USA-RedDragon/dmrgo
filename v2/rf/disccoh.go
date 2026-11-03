@@ -1,6 +1,9 @@
 package rf
 
-import "math"
+import (
+	"math"
+	"math/bits"
+)
 
 const (
 	discPhaseChunk = 256
@@ -33,6 +36,7 @@ const (
 	discClickWeight = 0.1
 	discHeldFits    = 8
 	discStepClicks  = 0.4
+	discStepBlock   = 256
 )
 
 type discPhase struct {
@@ -119,6 +123,9 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	for _, u := range x[:n] {
 		p.clip(u)
 		p.click(u, lo, hi)
+		if (p.sumN+1)%discStepBlock == 0 && p.cal && p.c.locked && p.c.bs && p.hotBlock() {
+			p.cal, p.fitN, p.heldN = false, 0, 0
+		}
 		i := p.sumN
 		s := p.last + int64(u)
 		p.sum[i&(p.size-1)] = s
@@ -161,6 +168,15 @@ func (p *discPhase) clip(u int16) {
 		b := p.sumN / discClipBlock
 		p.clipAt[b%int64(len(p.clipAt))] = b
 	}
+}
+
+func (p *discPhase) hotBlock() bool {
+	w := int((p.sumN & (p.size - 1)) / 64)
+	n := 0
+	for k := range discStepBlock / 64 {
+		n += bits.OnesCount64(p.clicks[(w-k+len(p.clicks))%len(p.clicks)])
+	}
+	return float64(n) > discStepClicks*discStepBlock
 }
 
 func (p *discPhase) clickBounds() (int32, int32) {
@@ -455,7 +471,7 @@ func (s *cohStage) fitDeviation(k0, k1 int, fit float64) {
 	s.totalHz += fit
 	e, rho := s.scaleFit(k0, k1, span, step)
 	s.totalHz = s.freq
-	if rho < discFitRho {
+	if rho < discFitRho || !p.cal && (rho < discSeedRho || indexEdge(e, span, rho) != 0) {
 		return
 	}
 	unit := p.unit * math.Exp(e)
