@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math"
 	"math/cmplx"
+
+	rs "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
 // Tier selects a modulator and its cost. The zero value TierDefault is
@@ -37,15 +39,12 @@ var (
 const polyMaxPhases = 1024
 
 type poly struct {
-	taps32 []float32
-	taps64 []float64
-	ring32 []float32
-	ring64 []float64
-	n      int
-	pos    int
-	l, m   int
-	acc    int
-	peak   float64
+	p32  rs.Poly[float32]
+	p64  rs.Poly[float64]
+	f32  bool
+	n    int
+	l, m int
+	peak float64
 }
 
 func polyRate(hz int) bool {
@@ -58,7 +57,7 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 		return nil, errHz
 	}
 	l, m := ratio(hz)
-	k := &poly{n: 2 * pu.span, l: l, m: m}
+	k := &poly{n: 2 * pu.span, l: l, m: m, f32: f32}
 	h := pu.taps(l, m)
 	g := pu.gain
 	if g == 0 {
@@ -67,16 +66,19 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 	for i := range h {
 		h[i] *= DeviationHz * g
 	}
+	var ok bool
 	if f32 {
-		k.taps32 = make([]float32, len(h))
+		t := make([]float32, len(h))
 		for i, v := range h {
-			k.taps32[i] = float32(v)
-			h[i] = float64(k.taps32[i])
+			t[i] = float32(v)
+			h[i] = float64(t[i])
 		}
-		k.ring32 = make([]float32, 2*k.n)
+		ok = k.p32.Init(t, k.n, l, m, make([]float32, 2*k.n))
 	} else {
-		k.taps64 = h
-		k.ring64 = make([]float64, 2*k.n)
+		ok = k.p64.Init(h, k.n, l, m, make([]float64, 2*k.n))
+	}
+	if !ok {
+		return nil, errHz
 	}
 	for p := range l {
 		var sum float64
@@ -93,82 +95,37 @@ func (k *poly) add(t []float64) {
 		return
 	}
 	k.peak = 0
+	t32, t64 := k.p32.Table(), k.p64.Table()
 	for p := range k.l {
 		var sum float64
 		for i := range k.n {
 			j := p*k.n + i
-			if k.taps32 != nil {
-				k.taps32[j] += float32(t[i*k.l+p])
-				sum += math.Abs(float64(k.taps32[j]))
+			if k.f32 {
+				t32[j] += float32(t[i*k.l+p])
+				sum += math.Abs(float64(t32[j]))
 			} else {
-				k.taps64[j] += t[i*k.l+p]
-				sum += math.Abs(k.taps64[j])
+				t64[j] += t[i*k.l+p]
+				sum += math.Abs(t64[j])
 			}
 		}
 		k.peak = max(k.peak, 3*sum)
 	}
 }
 
-func (k *poly) push(s int8) {
+func (k *poly) symbol(dst []float64, s int8) int {
 	switch s {
 	case -3, -1, 1, 3:
 	default:
 		s = 0
 	}
-	k.pushf(float64(s))
-}
-
-func (k *poly) pushf(v float64) {
-	k.pos--
-	if k.pos < 0 {
-		k.pos = k.n - 1
-	}
-	if k.taps32 != nil {
-		k.ring32[k.pos] = float32(v)
-		k.ring32[k.pos+k.n] = float32(v)
-	} else {
-		k.ring64[k.pos] = v
-		k.ring64[k.pos+k.n] = v
-	}
-}
-
-func (k *poly) symbol(dst []float64, s int8) int {
-	k.push(s)
-	return k.emit(dst)
+	return k.symbolf(dst, float64(s))
 }
 
 func (k *poly) symbolf(dst []float64, v float64) int {
-	k.pushf(v)
-	return k.emit(dst)
-}
-
-func (k *poly) emit(dst []float64) int {
-	n := 0
-	if k.taps32 != nil {
-		w := k.ring32[k.pos : k.pos+k.n]
-		for ; k.acc < k.l; k.acc += k.m {
-			t := k.taps32[k.acc*k.n : k.acc*k.n+k.n]
-			var y float32
-			for i, c := range t {
-				y += c * w[i]
-			}
-			dst[n] = float64(y)
-			n++
-		}
-	} else {
-		w := k.ring64[k.pos : k.pos+k.n]
-		for ; k.acc < k.l; k.acc += k.m {
-			t := k.taps64[k.acc*k.n : k.acc*k.n+k.n]
-			var y float64
-			for i, c := range t {
-				y += c * w[i]
-			}
-			dst[n] = y
-			n++
-		}
+	if k.f32 {
+		return k.p32.Push(float32(v), dst)
 	}
-	k.acc -= k.l
-	return n
+	return k.p64.Push(v, dst)
 }
 
 // AudioConfig sets up an Audio.

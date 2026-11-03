@@ -489,10 +489,10 @@ func (u txUnit) worst() (w []int8, ph, l, m int) {
 		for p := range k.l {
 			row := make([]float64, k.n)
 			for i := range row {
-				if k.taps64 != nil {
-					row[i] = k.taps64[p*k.n+i]
+				if k.f32 {
+					row[i] = float64(k.p32.Table()[p*k.n+i])
 				} else {
-					row[i] = float64(k.taps32[p*k.n+i])
+					row[i] = k.p64.Table()[p*k.n+i]
 				}
 			}
 			taps = append(taps, row)

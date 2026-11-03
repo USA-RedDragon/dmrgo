@@ -12,10 +12,13 @@ func TestAllocsPush(t *testing.T) {
 	var r Real
 	c.Init(h, 32, 64, true, 44100.0/48000, make([]complex64, 64))
 	r.Init(h, 32, 64, true, 44100.0/48000, make([]int16, 32))
-	bc, br := make([]complex64, 4), make([]int16, 4)
+	var p Poly[float32]
+	p.Init(make([]float32, 30), 3, 10, 1, make([]float32, 6))
+	bc, br, bp := make([]complex64, 4), make([]int16, 4), make([]float64, 10)
 	if n := allocstest.PerRun(t, 1000, func() {
 		c.Push(1, bc)
 		r.Push(1, br)
+		p.Push(1, bp)
 	}); n != 0 {
 		t.Errorf("%v allocations per Push", n)
 	}
