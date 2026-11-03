@@ -13,14 +13,13 @@ const (
 
 // MCUAudioPE is the Tier0 modulator of MCUAudio for a radio that
 // pre-emphasizes its modulator input with a zero at 300 Hz and a pole at
-// 3 kHz, at 48 kHz: the pulse at 24 kHz with the inverse of that
+// 3 kHz, at 24 or 48 kHz: the pulse at 24 kHz with the inverse of that
 // pre-emphasis folded in, its tail past 8 symbols as a one-pole recursion,
 // then a 4-tap half-band interpolation by 2 and a correction table fitted
 // so that the output through the radio matches that of MCUAudio with
-// Table48k through a flat radio. It is a type of its own so that a program
-// of MCUAudio links none of it. Built by TinyGo 0.43 at -opt z for a
-// Cortex-M4 it takes 3.4 MHz in 23.8 KB of flash, with 132 bytes of
-// state. It allocates nothing and is not safe for concurrent use.
+// Table48k through a flat radio. At 24 kHz it keeps every other sample.
+// It is a type of its own so that a program of MCUAudio links none of it.
+// It allocates nothing and is not safe for concurrent use.
 type MCUAudioPE struct {
 	ring         [2 * maxTaps]int8
 	pos          int
@@ -32,6 +31,7 @@ type MCUAudioPE struct {
 	codes, zeros uint32
 	rerr, rerr2  int32
 	shape32      bool
+	half         bool
 }
 
 func peBounds(scale int32) (lo, hi int) {
@@ -48,11 +48,15 @@ func PeakPE(level int) int {
 	return max(-lo, hi)
 }
 
-// Init sets up m at level units for a run of symbol +3 around offset
-// units, as MCUAudio.Init does. On an error m stays as it was; otherwise
-// it starts with no modulation.
-func (m *MCUAudioPE) Init(level, offset int) error {
-	if level < 1 || level > 16000 {
+// Init sets up m for hz, 24000 or 48000, at level units for a run of
+// symbol +3 around offset units, as MCUAudio.Init does. At 24000 Hz it
+// writes every other sample of the output at 48000 Hz. On an error m
+// stays as it was; otherwise it starts with no modulation.
+func (m *MCUAudioPE) Init(hz, level, offset int) error {
+	switch {
+	case hz != 24000 && hz != 48000:
+		return errRate
+	case level < 1 || level > 16000:
 		return errLevel
 	}
 	scale := int32((level<<15 + tableUnits/2) / tableUnits)
@@ -60,25 +64,32 @@ func (m *MCUAudioPE) Init(level, offset int) error {
 	if offset > math.MaxInt16-hi || offset < math.MinInt16-lo {
 		return errOffset
 	}
-	*m = MCUAudioPE{scale: scale, offset: int32(offset), zeros: ^uint32(0)}
+	*m = MCUAudioPE{scale: scale, offset: int32(offset), zeros: ^uint32(0), half: hz == 24000}
 	m.shape32 = 4*int64(pePeak)*int64(scale)+1<<(15+tapShift) < math.MaxInt32
 	return nil
 }
 
-// Samples returns the number of samples of each symbol, 10.
-func (m *MCUAudioPE) Samples() int { return peSamples }
+// Samples returns the number of samples of each symbol: 5 at 24000 Hz
+// and 10 at 48000 Hz.
+func (m *MCUAudioPE) Samples() int {
+	if m.half {
+		return peSamples / 2
+	}
+	return peSamples
+}
 
 // Span returns the lag of the output behind its symbols, in symbol
 // periods: 9.
 func (m *MCUAudioPE) Span() int { return peSpan }
 
 // Symbol shapes the symbol s, -3, -1, +1, +3 or 0 for no modulation, and
-// writes the 10 samples of the symbol period that it completes to dst. It
-// returns the number it wrote. With a dst shorter than 10, or before Init,
-// it writes nothing, does not take the symbol and returns 0. The output
-// lags the symbols by Span symbol periods.
+// writes the Samples samples of the symbol period that it completes to
+// dst. It returns the number it wrote. With a dst shorter than Samples, or
+// before Init, it writes nothing, does not take the symbol and returns 0.
+// The output lags the symbols by Span symbol periods.
 func (m *MCUAudioPE) Symbol(dst []int16, s int8) int {
-	if len(dst) < peSamples || m.scale == 0 {
+	k := m.Samples()
+	if len(dst) < k || m.scale == 0 {
 		return 0
 	}
 	switch s {
@@ -100,15 +111,19 @@ func (m *MCUAudioPE) Symbol(dst []int16, s int8) int {
 	}
 	i, ok := m.corrIdx(s)
 	m.interp(i, ok)
-	if tier0Shape && m.shape32 {
-		m.shaped((*[peSamples]int16)(dst))
-		return peSamples
+	b := &m.buf
+	if m.half {
+		b[1], b[2], b[3], b[4] = b[2], b[4], b[6], b[8]
 	}
-	sc, off, b := int64(m.scale), m.offset, &m.buf
-	for p := range dst[:peSamples] {
+	if tier0Shape && m.shape32 {
+		m.shaped(dst[:k])
+		return k
+	}
+	sc, off := int64(m.scale), m.offset
+	for p := range dst[:k] {
 		dst[p] = int16(int32((int64(b[p])*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
 	}
-	return peSamples
+	return k
 }
 
 func (m *MCUAudioPE) interp(i uint32, ok bool) {
@@ -140,7 +155,7 @@ func corrPE(b *[maxSamples]int32, i uint32) {
 	b[9] += int32(t[9])
 }
 
-func (m *MCUAudioPE) shaped(d *[peSamples]int16) {
+func (m *MCUAudioPE) shaped(d []int16) {
 	const sh = 15 + tapShift
 	const half = 1 << (sh - 1)
 	sc, off, b, e1, e2 := m.scale, m.offset, &m.buf, m.rerr, m.rerr2

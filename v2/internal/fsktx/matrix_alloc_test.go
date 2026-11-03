@@ -36,7 +36,7 @@ func TestAllocsMatrix(t *testing.T) {
 	if n := allocstest.PerRun(t, 20, func() {
 		_ = a.Init(Table24k(), 1080, 2048)
 		_ = a.Init(Table48k(), 0, 0)
-		_ = pe.Init(15000, 0)
+		_ = pe.Init(48000, 15000, 0)
 		_ = q.Init(192000, -47999, 1<<15)
 		_ = q.Init(1, 0, 0)
 	}); n != 0 {

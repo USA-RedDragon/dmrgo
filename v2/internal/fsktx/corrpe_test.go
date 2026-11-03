@@ -54,7 +54,7 @@ func TestCorrPEFit(t *testing.T) {
 	if err := mf.Init(Table48k(), 15000, 0); err != nil {
 		t.Fatal(err)
 	}
-	if err := mc.Init(15000, 0); err != nil {
+	if err := mc.Init(48000, 15000, 0); err != nil {
 		t.Fatal(err)
 	}
 	xf := make([]float64, 0, nsym*spp)
@@ -196,7 +196,7 @@ func TestMCUAudioPELag(t *testing.T) {
 	if err := mf.Init(Table48k(), 15000, 0); err != nil {
 		t.Fatal(err)
 	}
-	if err := mp.Init(15000, 0); err != nil {
+	if err := mp.Init(48000, 15000, 0); err != nil {
 		t.Fatal(err)
 	}
 	var bf, bp [maxSamples]int16
