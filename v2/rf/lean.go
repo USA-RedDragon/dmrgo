@@ -2116,6 +2116,8 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 	if isAnchor && r.isReplaying() {
 		if e := r.syncErrors(base+leanSyncEnd+shift, anchor, r.devScale, r.dcHz); r.replayDeep && e > leanReplayFalse || seek && e > leanReplayErrors {
 			isAnchor = false
+		} else if g, _, res := r.fitSync(base+leanSyncEnd+shift, anchor); g <= 0 || sqrtf(res) > r.ext.replaySpread()*2*g*deviationHz {
+			isAnchor = false
 		}
 	}
 	return isAnchor, shift, anchor

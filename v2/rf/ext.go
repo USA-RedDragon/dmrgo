@@ -35,6 +35,7 @@ type leanExt interface {
 	grid(c *leanCore, start int64) (int64, bool)
 	relevel(k float32)
 	lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool
+	replaySpread() float32
 }
 
 const extQueue = 8
@@ -81,6 +82,7 @@ type softExt struct {
 	timing          bool
 	atN             int64
 	anc, rate       [2]extAnchor
+	spread          float32
 	ancBase         int64
 	proofCC         enums.ColorCode
 	weakEnd         int64
@@ -907,6 +909,13 @@ func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float
 
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
+	x.spread = float32(math.Inf(1))
+	voice, dp, _ := sourceAt(int(c.src)).SyncPatterns()
+	for _, p := range [2]enums.SyncPattern{voice, dp} {
+		if g, _, res := c.fitSync(c.ns-1, p); g > 0 {
+			x.spread = min(x.spread, sqrtf(res)/(2*g*deviationHz))
+		}
+	}
 	x.early, x.timing, x.stretch = [extQueue]bool{}, !c.bs, 0
 	x.vOK = false
 	x.proofs = 0
@@ -1424,18 +1433,20 @@ func (x *softExt) coreCleaner() bool {
 const extPayloadHalf = 98
 
 const (
-	extAnchorSpan  = 16 * slotSymbols
-	extAnchorReach = 2 * slotSymbols
-	extAnchorRho2  = 0.985
-	extAnchorJump  = 0.25
-	extAnchorSig   = 0.0034
-	extSyncMid     = -(syncSymbols - 1) / 2.0
-	extSettleFits  = 3
-	extEmbWeight   = 1.0 / 32
-	extEmbGate     = 4 * 4e-6 * symbolRate
-	extPullSig     = 3
-	extRateFits    = 3
-	extSettleSpan  = 4 * slotSymbols
+	extAnchorSpan      = 16 * slotSymbols
+	extAnchorReach     = 2 * slotSymbols
+	extAnchorRho2      = 0.985
+	extAnchorJump      = 0.25
+	extAnchorSig       = 0.0034
+	extSyncMid         = -(syncSymbols - 1) / 2.0
+	extSettleFits      = 3
+	extEmbWeight       = 1.0 / 32
+	extReplaySpread    = 8
+	extReplaySpreadMin = 0.5
+	extEmbGate         = 4 * 4e-6 * symbolRate
+	extPullSig         = 3
+	extRateFits        = 3
+	extSettleSpan      = 4 * slotSymbols
 )
 
 type extAnchor struct {
@@ -1680,4 +1691,8 @@ func (a *extAnchor) fits(xs, t int64) bool {
 	}
 	p, ok := a.at(xs, 0)
 	return ok && float32(abs64(t-p)) <= extEmbGate*samplesPerSy*256
+}
+
+func (x *softExt) replaySpread() float32 {
+	return max(extReplaySpread*x.spread, extReplaySpreadMin)
 }
