@@ -68,6 +68,7 @@ type txSheetData struct {
 	Spectra []txSheetSpectrum `json:"spectra"`
 	Eyes    []txSheetEye      `json:"eyes"`
 	FSK     []txSheetFSK      `json:"fsk"`
+	Inputs  string            `json:"inputs"`
 }
 
 type txSheetCostData struct {
@@ -621,6 +622,7 @@ func txSheetDoc(t *testing.T, doc []byte, margins map[string]map[string]float64)
 	var d txSheetData
 	if *updateTxDoc {
 		d = measureTxSheet(t)
+		d.Inputs = txDocInputsDigest(t)
 		js, err := json.Marshal(d)
 		if err != nil {
 			t.Fatal(err)

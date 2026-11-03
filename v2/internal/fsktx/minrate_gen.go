@@ -2,6 +2,8 @@
 
 package fsktx
 
+const minRateInputs = "d734b73e9cfe28a60f9b43dfc7eff661c692d9d96091b67ffdd313c79d79f0ae"
+
 var minRateRows0 = [24]minRateRow{
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{96, 96, 0, 0, 0, 0, 0, 0, 0, 0},
