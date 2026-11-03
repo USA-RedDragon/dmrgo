@@ -958,7 +958,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	}
 	x.stretch = stretch
 	if stretch != 0 {
-		c.tm.rate, c.tm.drift = stretch*sps, stretch*sps
+		c.tm.rate = stretch * sps
 	}
 	x.ring = c.ring
 	first, eAcc, eSyms, hold, slotEnd := c.first, c.eAcc, c.eSyms, c.tm.hold, c.slotEnd

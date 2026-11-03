@@ -40,7 +40,7 @@ func TestLeanClockRateApplied(t *testing.T) {
 					continue
 				}
 				locked++
-				if got := float64(tm.drift/(2*tm.step)) * 1e6; math.Abs(got-ppm) < math.Abs(ppm)/2 {
+				if got := float64(tm.rate/(2*tm.step)) * 1e6; math.Abs(got-ppm) < math.Abs(ppm)/2 {
 					applied++
 				}
 			}

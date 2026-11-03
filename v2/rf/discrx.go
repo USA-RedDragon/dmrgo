@@ -396,7 +396,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				}
 				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
 				tm.last, tm.half = xv, d
-				t += 2*tm.step + tm.drift
+				t += 2*tm.step + tm.rate
 				tm.nall++
 				tm.lastC = 0
 				if !tm.hold && tm.pow > 0 {

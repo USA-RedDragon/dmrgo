@@ -114,10 +114,10 @@ type leanTiming struct {
 }
 
 type leanClock struct {
-	rate, drift, corr, corr2 float32
-	owed, estS, estW, fresh  float32
-	nc, nall, estN           int32
-	learned                  bool
+	rate, corr, corr2       float32
+	owed, estS, estW, fresh float32
+	nc, nall, estN          int32
+	learned                 bool
 }
 
 func (tm *leanTiming) newTalker() {
@@ -198,7 +198,6 @@ func (tm *leanTiming) settle(lagN float32) {
 	} else if tm.estN*leanClockBlock >= leanClockSpan*slotSymbols {
 		tm.learned = true
 	}
-	tm.drift = tm.rate
 }
 
 func (tm *leanTiming) strobe(x float32) bool {
@@ -217,7 +216,7 @@ func (tm *leanTiming) strobe(x float32) bool {
 		}
 		tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
 		tm.last, tm.half = x, d
-		tm.t += 2*tm.step + tm.drift
+		tm.t += 2*tm.step + tm.rate
 		tm.nall++
 		tm.lastC = 0
 		if !tm.hold && tm.pow > 0 {
@@ -1780,7 +1779,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
 	r.ms.fresh, r.ms.clkAt = [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 1
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 1
 	r.tm.learned = false
 	r.tm.baseN, r.tm.baseC, r.tm.mOK = 0, 0, false
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
@@ -2284,7 +2283,7 @@ func (r *leanCore) unlock() {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}
 	r.rebuildSigns()
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed = false, r.acqGain, 0, 0, 0, 0
+	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed = false, r.acqGain, 0, 0, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.tm.mm {
