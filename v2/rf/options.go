@@ -71,6 +71,7 @@ type options struct {
 	ExtOSDOrder           int
 	IQHalfband            int
 	IQTuneMaxHz           float32
+	IQStopHz              float32
 	IQAFCAvg              int
 	IQBuf                 int
 	CohDataPasses         int
@@ -173,11 +174,12 @@ func tierOptions(t Tier) options {
 	case Tier1:
 		o = tier1Options(o)
 		o.IQDisc, o.IQHz, o.IQPullAgree, o.IQSpecHunt = true, 12000, true, true
-		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = iqHuntMaxHz, true, 2
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg, o.IQStopHz = iqHuntMaxHz, true, 2, iqStopHz
 	case Tier2:
 		o = tier2Options(o)
 		o.IQDisc, o.IQHz, o.CohNoCross, o.CohNoNext, o.CohBudget = true, 24000, true, true, 300
 		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg, o.IQSpecHunt = iqHuntMaxHz, true, 5, true
+		o.IQStopHz = iqStopHz
 	case Tier3:
 		o = exactOptions(tierOptions(Tier2))
 		o.ExtLookback, o.CohSlotFit, o.CohWarm, o.CohRing, o.IQSpecFine = 16, true, true, 14, true
@@ -194,6 +196,7 @@ func exactOptions(o options) options {
 const (
 	iqHuntMaxHz = 2500
 	iqTuneMaxHz = 6250
+	iqStopHz    = 8000
 )
 
 func (o *options) signMiss() uint8 {

@@ -16,6 +16,8 @@ const (
 	iqAFCAvgGain   = 0.25
 	iqAFCJumpHz    = 1000
 	iqAFCCoherence = 0.48
+	iqStopTaps     = 33
+	iqStopKaiser   = 8
 )
 
 type iqDisc struct {
@@ -87,6 +89,7 @@ type iqFilter struct {
 	cutHz float64
 	half  int
 	afc   int
+	stop  float32
 }
 
 type iqHalf struct {
@@ -169,16 +172,31 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	if f.afc > 1 {
 		d.afc = make([]complex64, f.afc)
 	}
+	w := windowTaps(n, fc/rate, f.beta)
+	if f.stop > 0 {
+		w = convolveTaps(w, windowTaps(iqStopTaps, float64(f.stop)/rate, iqStopKaiser))
+		n = len(w)
+	}
 	d.taps = make([]float32, n)
 	d.hist = make([]complex64, 2*n)
 	var sum float64
-	for i, v := range windowTaps(n, fc/rate, f.beta) {
+	for i, v := range w {
 		d.taps[i] = float32(v)
 		sum += v
 	}
 	for i := range d.taps {
 		d.taps[i] /= float32(sum)
 	}
+}
+
+func convolveTaps(a, b []float64) []float64 {
+	out := make([]float64, len(a)+len(b)-1)
+	for i, x := range a {
+		for j, y := range b {
+			out[i+j] += x * y
+		}
+	}
+	return out
 }
 
 func (d *iqDisc) lagTicks() int32 {
@@ -368,7 +386,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	if hz == 0 {
 		hz = discRate
 	}
-	r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
+	r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg, stop: opt.IQStopHz})
 	r.maxHz, r.syncOnly, r.pullAgree = opt.IQTuneMaxHz, opt.IQTuneSyncOnly, opt.IQPullAgree
 	r.specPull = iqAFCPullHz
 	if opt.IQSpecFine {

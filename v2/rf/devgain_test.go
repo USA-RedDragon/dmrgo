@@ -142,7 +142,7 @@ func devGainIdeal(s *devGainSignal, fs float64) []float64 {
 func devGainTier(s *devGainSignal, t Tier, offHz float64) float64 {
 	o := tierOptions(t)
 	var d iqDisc
-	d.init(basebandRate/o.IQHz, iqFilter{taps: o.IQTaps, beta: o.IQKaiser, cutHz: o.IQCutHz, half: o.IQHalfband})
+	d.init(basebandRate/o.IQHz, iqFilter{taps: o.IQTaps, beta: o.IQKaiser, cutHz: o.IQCutHz, half: o.IQHalfband, stop: o.IQStopHz})
 	var f []float64
 	for _, v := range s.iq(offHz) {
 		if y, _, ok := d.push(complex64(v)); ok {
