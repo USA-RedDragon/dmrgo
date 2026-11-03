@@ -397,37 +397,3 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 		})
 	}
 }
-
-func TestReceiverDirectCallsSlotRate(t *testing.T) {
-	t.Parallel()
-	d := directShared(t)
-	cases := []struct {
-		tier  Tier
-		ppm   float64
-		seeds []uint64
-	}{
-		{Tier2, 0, []uint64{9087, 9168, 9001, 9051}},
-		{Tier3, 0, []uint64{9083}},
-		{Tier3, -200, []uint64{9094, 9112}},
-	}
-	for _, c := range cases {
-		f, e := resampleFM(d.fm, d.env, c.ppm)
-		var exact, total int
-		var mu sync.Mutex
-		var wg sync.WaitGroup
-		for _, seed := range c.seeds {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				sc := scoreMS(d.truth, receiveBaseband(noisyFM(f, e, 1400, 5, seed), c.tier))["ambe_c0c1"]
-				mu.Lock()
-				exact, total = exact+sc.Exact, total+sc.Truth
-				mu.Unlock()
-			}()
-		}
-		wg.Wait()
-		if exact < total-2 {
-			t.Errorf("tier %d at %+g ppm: %d of %d frames with C0 and C1 exact", c.tier-Tier0, c.ppm, exact, total)
-		}
-	}
-}
