@@ -3,13 +3,20 @@ package rf
 const disc48Out = 32
 
 type disc48 struct {
-	odd  bool
-	head uint8
-	hist [halfTaps]int16
-	buf  [disc48Out]int16
+	odd    bool
+	primed bool
+	head   uint8
+	hist   [halfTaps]int16
+	buf    [disc48Out]int16
 }
 
 func (d *disc48) push(v int16) (int16, bool) {
+	if !d.primed {
+		d.primed = true
+		for i := range d.hist {
+			d.hist[i] = v
+		}
+	}
 	h := int(d.head)
 	d.hist[h] = v
 	if h++; h == halfTaps {

@@ -9,7 +9,7 @@ func halve48(x []int16) []int16 {
 	out := make([]int16, 0, len(x)/2)
 	at := func(i int) int32 {
 		if i < 0 {
-			return 0
+			return int32(x[0])
 		}
 		return int32(x[i])
 	}
@@ -115,6 +115,16 @@ func TestDisc48InitAppend(t *testing.T) {
 	for i := range got {
 		if !sameHalved(got[i], want[i]) {
 			t.Fatalf("burst %d differs", i)
+		}
+	}
+}
+
+func TestDisc48HoldsTheFirstLevel(t *testing.T) {
+	t.Parallel()
+	var d disc48
+	for i := range 4 * halfTaps {
+		if y, ok := d.push(320); ok && y != 320 {
+			t.Fatalf("output %d is %d for a constant 320 input", i/2, y)
 		}
 	}
 }
