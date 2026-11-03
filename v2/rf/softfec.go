@@ -1004,6 +1004,8 @@ func (e *elcStat) bound(n int) int {
 // measured against that LC, or a changed LC would pass as the old one. The
 // first superframe out of the bound yields no LC and leaves acc as it is, so
 // one superframe of bad luck costs one LC; a second one in a row resets acc.
+// When neither decode works before the first LC of the channel decodes, acc
+// takes cur as well, up to maxCombine superframes.
 // keep false leaves acc and st unchanged.
 func (d *softDecoder) decodeELC(cur, acc, sum *[4][embBits]int16, accN *int, accLC *[9]byte, out *[4]layer2.RawBurst, keep bool, st *elcStat) ([9]byte, bool) {
 	fit := true
@@ -1049,6 +1051,12 @@ func (d *softDecoder) decodeELC(cur, acc, sum *[4][embBits]int16, accN *int, acc
 		}
 		st.miss = false
 		l, res = d.decodeEmbeddedFrags(cur, out)
+		switch {
+		case !res.Uncorrectable:
+		case !st.prevOK && *accN < maxCombine:
+			*acc, *accN = *sum, *accN+1
+			return l, false
+		}
 	}
 	if keep {
 		*acc, *accN, *accLC = *cur, 1, l
