@@ -825,18 +825,22 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 
 func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
 	const h = leanLockMMStep
-	if end+d+h > 0 {
+	lo, hi := d-h, d+h
+	if end+hi > 0 {
+		lo, hi = d-2*h, d
+	}
+	if end+hi > 0 {
 		return d
 	}
-	a, b := win.mmSum(syms, end+d-h, sps), win.mmSum(syms, end+d+h, sps)
+	a, b := win.mmSum(syms, end+lo, sps), win.mmSum(syms, end+hi, sps)
 	if a == b {
 		return d
 	}
-	z := d - h - a*2*h/(b-a)
-	if z <= d-2*h || z >= d+2*h || end+z > 0 {
+	z := lo - a*(hi-lo)/(b-a)
+	if z <= d-2*h || z >= d+2*h {
 		return d
 	}
-	return z
+	return min(z, -end)
 }
 
 func (win *syncWindow) mmSum(syms *[syncSymbols]int8, end, sps float32) float32 {
