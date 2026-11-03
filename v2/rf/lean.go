@@ -108,6 +108,11 @@ type leanTiming struct {
 	stale          bool
 	fresh          float32
 	learned        bool
+	baseN          int32
+	baseC          float32
+	mK             int32
+	mS, mC, mVar   float32
+	mOK            bool
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -127,6 +132,17 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 		at--
 	}
 	return v, at, ok
+}
+
+func (tm *leanTiming) measure(s, v float32) {
+	n, c := tm.baseN+tm.nall, tm.baseC+tm.corr
+	if tm.mOK && n > tm.mK {
+		k := float32(n - tm.mK)
+		res := (c - tm.mC + s - tm.mS) / k
+		w := k * k / (tm.mVar + v)
+		tm.estS, tm.estW = tm.estS+w*res, tm.estW+w
+	}
+	tm.mK, tm.mC, tm.mS, tm.mVar, tm.mOK = n, c, s, v, true
 }
 
 func (tm *leanTiming) settle(lagN float32) {
@@ -149,6 +165,7 @@ func (tm *leanTiming) settle(lagN float32) {
 	res := (tm.corr - share + lag*tm.rate) / span
 	tm.owed -= share
 	tm.fresh *= keep
+	tm.baseN, tm.baseC = tm.baseN+tm.nall, tm.baseC+tm.corr
 	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
 	if tm.rateK == 0 || v <= 0 {
 		return
@@ -165,6 +182,7 @@ func (tm *leanTiming) settle(lagN float32) {
 		old := tm.rate
 		tm.rate = max32(min32(tm.rate+e, lim), -lim)
 		tm.owed += (tm.rate - old) * lagN
+		tm.mOK = false
 		tm.estS, tm.estW, tm.estN, tm.learned = 0, 0, 0, true
 	} else if tm.estN*leanClockBlock >= leanClockSpan*slotSymbols {
 		tm.learned = true
@@ -345,7 +363,7 @@ type leanCore struct {
 
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
-	suspect, hunt, rcOnly, cohRefit    bool
+	suspect, hunt, cohRefit            bool
 	reEntry                            bool
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
@@ -1005,9 +1023,6 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	r.pushSym(x)
-	if r.rcOnly {
-		return false, false, r.rcHit()
-	}
 	if r.hunt && !r.hasExt() && r.midTiming && r.linHunt {
 		return r.lockHunt(at)
 	}
@@ -1091,9 +1106,6 @@ func (r *leanCore) huntSym(at float32) {
 }
 
 func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
-	if r.rcOnly {
-		return false, false, r.rcHit()
-	}
 	if !r.huntMid(at) {
 		return false, false, false
 	}
@@ -1144,10 +1156,6 @@ func (r *leanCore) huntMid(at float32) bool {
 
 //go:noinline
 func (r *leanCore) huntMatch(again, mid bool) {
-	if r.rcOnly {
-		r.retime(false)
-		return
-	}
 	if d := r.gridMiss(); r.ms.seek && d >= -leanSeekSyms && d <= leanSeekSyms {
 		r.seekMatch(d, again && mid)
 		return
@@ -1436,7 +1444,7 @@ func (r *leanCore) retime(mid bool) {
 	if data {
 		p = dp
 	}
-	if r.rcOnly || !mid && (rho2 < leanExtRho*leanExtRho || src != int(r.src)) {
+	if !mid && (rho2 < leanExtRho*leanExtRho || src != int(r.src)) {
 		if !r.rcSource() || r.rcAt(r.ns-1) < leanExtRho*leanExtRho {
 			return
 		}
@@ -1450,6 +1458,12 @@ func (r *leanCore) retime(mid bool) {
 	}
 	var saved [syncSymbols]int8
 	if d, c2, ok := r.resample(p, &saved, true, discLock); ok {
+		if r.reEntry && !r.cohRefit && p != enums.SyncMSSourcedRC {
+			r.restoreSync(&saved)
+			sps := 2 * r.tm.step
+			r.tm.measure(d-r.tm.lastC, leanRefitVar*(1-c2)/c2*sps*sps)
+			return
+		}
 		if r.reEntry {
 			s := d - r.tm.lastC
 			sps := 2 * r.tm.step
@@ -1600,7 +1614,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	if r.unproven && r.hasExt() {
 		r.ext.end(r)
 	}
-	r.locked, r.forced, r.suspect, r.hunt, r.rcOnly, r.src, r.bs = true, false, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
+	r.locked, r.forced, r.suspect, r.hunt, r.src, r.bs = true, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.suspectRun = 0
 	r.pairSrc = 0
 	r.lockNs = r.ns
@@ -1614,6 +1628,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.drift, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 0, 1
 	r.tm.learned = false
+	r.tm.baseN, r.tm.baseC, r.tm.mOK = 0, 0, false
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.mmOK && !r.tm.mm {
@@ -1939,14 +1954,14 @@ func (r *leanCore) setHunt() {
 		r.suspectRun++
 	}
 	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
-	r.rcOnly, r.reEntry = false, false
+	r.reEntry = false
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
 			if r.bs || r.tm.learned || r.isReplaying() || r.ms.anch[0] != leanNoSlot && r.ms.anch[1] != leanNoSlot {
 				return
 			}
-			r.rcOnly, r.reEntry = !r.cohRefit, true
+			r.reEntry = true
 		}
 	}
 	if !r.hunt {
@@ -2100,7 +2115,7 @@ func (r *leanCore) unlock() {
 	if !r.hunt || !r.hasExt() || r.ext.kept() == nil {
 		r.acqFrom = r.n
 	}
-	r.locked, r.forced, r.hunt, r.rcOnly = false, false, false, false
+	r.locked, r.forced, r.hunt = false, false, false
 	if a := r.audio; a != nil {
 		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
 	}

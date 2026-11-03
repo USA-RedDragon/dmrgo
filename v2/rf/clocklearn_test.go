@@ -10,7 +10,17 @@ import (
 
 func clockRunErrors(t *testing.T, cn, ppm float64, seeds int) [8]int {
 	t.Helper()
-	cfg := testConfig()
+	var errs [8]int
+	for _, e := range clockRuns(t, testConfig(), cn, ppm, seeds) {
+		for i := range errs {
+			errs[i] += e[i]
+		}
+	}
+	return errs
+}
+
+func clockRuns(t *testing.T, cfg rftx.SeqConfig, cn, ppm float64, seeds int) [][8]int {
+	t.Helper()
 	cfg.Superframes = 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -20,8 +30,9 @@ func clockRunErrors(t *testing.T, cn, ppm float64, seeds int) [8]int {
 	pad := int(0.2 * basebandRate)
 	fm, env := append(make([]float64, pad), fm0...), append(make([]float64, pad), env0...)
 	tx := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
-	var errs [8]int
+	runs := make([][8]int, seeds)
 	for seed := range seeds {
+		errs := &runs[seed]
 		iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, 0, cn-22.1, uint64(seed+1))
 		r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: Tier1, Format: IQFormatCU8})
 		if err != nil {
@@ -40,7 +51,7 @@ func clockRunErrors(t *testing.T, cn, ppm float64, seeds int) [8]int {
 			errs[i] += best
 		}
 	}
-	return errs
+	return runs
 }
 
 func TestRxClockLearnLowCN(t *testing.T) {
@@ -54,6 +65,29 @@ func TestRxClockLearnLowCN(t *testing.T) {
 		if late > 25 {
 			t.Errorf("12 dB %+.0f ppm: %d raw bit errors in bursts 5 to 7 over 16 seeds, want at most 25 (%v)", ppm, late, errs)
 		}
+	}
+}
+
+// TestRxClockLearnPayloads checks that an MS call at 12 dB with a -500 ppm
+// clock decodes its late bursts for other source IDs than the one of
+// TestRxClockLearnLowCN: how fast the clock rate is learned depends on the
+// bits of the call, and a call whose rate is not learned in time drifts off
+// its symbols. It fails when more than 1 of the 32 runs has more than 10 raw
+// bit errors in bursts 5 to 7.
+func TestRxClockLearnPayloads(t *testing.T) {
+	t.Parallel()
+	bad := 0
+	for _, src := range []uint32{3005511, 3007342} {
+		cfg := testConfig()
+		cfg.Source = src
+		for _, e := range clockRuns(t, cfg, 12, -500, 16) {
+			if e[5]+e[6]+e[7] > 10 {
+				bad++
+			}
+		}
+	}
+	if bad > 1 {
+		t.Errorf("%d of 32 runs with more than 10 raw bit errors in bursts 5 to 7", bad)
 	}
 }
 
