@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        shard: [audio0, audio1, audio2, audio3, iqlow0, iq0, iq1, iq2, iq3, floor, aware]
+        shard: [audio3-0, audio3-1, audio3-2, audio3-3, audio3-4, audio3-5, audio3-6, audio3-7, audio3-8, audio3-9, audio3-10, audio3-11, audio3-12, audio3-13, audio3-14, audio3-15, audio3-16, floor-0, floor-1, floor-2, floor-3, floor-4, aware-0, aware-1, aware-2, aware-3, iq3-0, iq3-1, iq3-2, iq3-3, iq3-4, iq3-5, iq3-6, iq3-7, audio3, iq3, audio2, iq2, audio1, iq1, iqlow0, iq0, audio0]
 
     steps:
       - name: Checkout repository
@@ -54,13 +54,15 @@ jobs:
         run: |
           mkdir -p out
           case "$SHARD" in
-          floor)
-            DMRRF_FLOOR=full go test -C v2 -count=1 -run '^TestRxFloor$' -timeout 6h ./rf
-            cp v2/rf/testdata/rxbench_floor.json out/floor.json
+          floor-*|aware-*)
+            DMRRF_FLOOR_SHARD="$SHARD" DMRRF_FLOOR_SHARD_OUT="$PWD/out/$SHARD.json" go test -C v2 -count=1 -run '^TestRxFloorShard$' -timeout 6h ./rf
             ;;
-          aware)
-            DMRRF_AWARE=full go test -C v2 -count=1 -run '^TestRxAware$' -timeout 6h ./rf
-            cp v2/rf/testdata/rxbench_aware.json out/aware.json
+          *-*)
+            DMRRF_RXBENCH_SHARD="$SHARD" DMRRF_RXBENCH_SHARD_OUT="$PWD/out/$SHARD.json" go test -C v2 -count=1 -run '^TestRxBenchShard$' -timeout 6h ./rf
+            ;;
+          audio3|iq3)
+            DMRRF_RXBENCH=full DMRRF_RXBENCH_DEEP=off DMRRF_RXBENCH_TIERS="$SHARD" go test -C v2 -count=1 -run '^TestRxBench$' -timeout 6h ./rf
+            cp v2/rf/testdata/rxbench.json "out/$SHARD.json"
             ;;
           *)
             DMRRF_RXBENCH=full DMRRF_RXBENCH_TIERS="$SHARD" go test -C v2 -count=1 -run '^TestRxBench$' -timeout 6h ./rf
@@ -143,8 +145,7 @@ jobs:
 
       - name: Merge the receiver sweep
         run: |
-          cp sweep/floor.json v2/rf/testdata/rxbench_floor.json
-          cp sweep/aware.json v2/rf/testdata/rxbench_aware.json
+          DMRRF_FLOOR_MERGE="$PWD/sweep" go test -C v2 -count=1 -run '^TestRxFloorMerge$' ./rf
           DMRRF_RXBENCH_MERGE="$PWD/sweep" go test -C v2 -count=1 -run '^TestRxBenchMerge$' ./rf
 
       - name: Least sample rates
