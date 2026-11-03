@@ -90,25 +90,25 @@ func benchAddPoint(p *benchPoint, d benchPoint) {
 	}
 }
 
-func benchWantsBatch(e benchEntry, p *benchPoint, live func(int) bool) bool {
+func benchWantsBatch(e benchEntry, p *benchPoint, live func(int) bool, need func(*benchScore) bool) bool {
 	if p.Seeds >= deepStreams(e) {
 		return false
 	}
 	for i, k := range deepPayloads() {
-		if live(i) && deepNeeds(p.Payloads[k]) {
+		if live(i) && need(p.Payloads[k]) {
 			return true
 		}
 	}
 	return false
 }
 
-func benchStop(e benchEntry, live func(int) bool, batch func(int) (benchPoint, bool)) (benchPoint, bool) {
+func benchStop(e benchEntry, live func(int) bool, batch func(int) (benchPoint, bool), need func(*benchScore) bool) (benchPoint, bool) {
 	b0, ok := batch(0)
 	if !ok {
 		return benchPoint{}, false
 	}
 	p := benchClonePoint(b0)
-	for b := 1; benchWantsBatch(e, &p, live); b++ {
+	for b := 1; benchWantsBatch(e, &p, live, need); b++ {
 		d, ok := batch(b)
 		if !ok {
 			return benchPoint{}, false
@@ -133,8 +133,8 @@ func benchNext(st []uint8, p *benchPoint) []uint8 {
 	return next
 }
 
-func benchStep(e benchEntry, st []uint8, batch func(int) (benchPoint, bool)) (benchPoint, []uint8, bool) {
-	p, ok := benchStop(e, func(i int) bool { return st[i] < 2 }, batch)
+func benchStep(e benchEntry, st []uint8, batch func(int) (benchPoint, bool), need func(*benchScore) bool) (benchPoint, []uint8, bool) {
+	p, ok := benchStop(e, func(i int) bool { return st[i] < 2 }, batch, need)
 	if !ok {
 		return benchPoint{}, nil, false
 	}
@@ -159,6 +159,10 @@ func benchAllStates() []string {
 }
 
 func benchShardRun(e benchEntry, cns []float64, pieces []benchPiece, run func([]benchCase) benchPoint) []benchShardPoint {
+	return benchShardRunRule(e, cns, pieces, run, deepNeeds)
+}
+
+func benchShardRunRule(e benchEntry, cns []float64, pieces []benchPiece, run func([]benchCase) benchPoint, need func(*benchScore) bool) []benchShardPoint {
 	zero := string(make([]byte, len(deepPayloads())))
 	var states []string
 	if len(pieces) > 0 && pieces[0].Point == 0 && pieces[0].Lo == 0 {
@@ -186,7 +190,7 @@ func benchShardRun(e benchEntry, cns []float64, pieces []benchPiece, run func([]
 		p := benchClonePoint(sp.Batches[0])
 		done := false
 		for b := 1; ; b++ {
-			if !benchWantsBatch(e, &p, live) {
+			if !benchWantsBatch(e, &p, live, need) {
 				done = true
 				break
 			}
@@ -215,7 +219,7 @@ func benchShardRun(e benchEntry, cns []float64, pieces []benchPiece, run func([]
 			q, seen := stops[mask]
 			if !seen {
 				var ok bool
-				if q, ok = benchStop(e, func(i int) bool { return mask[i] == 0 }, batch); !ok {
+				if q, ok = benchStop(e, func(i int) bool { return mask[i] == 0 }, batch, need); !ok {
 					next = nil
 					break
 				}
@@ -231,6 +235,10 @@ func benchShardRun(e benchEntry, cns []float64, pieces []benchPiece, run func([]
 }
 
 func benchMergeDeep(e benchEntry, points int, files []benchShardFile) ([]benchPoint, error) {
+	return benchMergeDeepRule(e, points, files, deepNeeds)
+}
+
+func benchMergeDeepRule(e benchEntry, points int, files []benchShardFile, need func(*benchScore) bool) ([]benchPoint, error) {
 	have := make([]map[int]benchPoint, points)
 	for i := range have {
 		have[i] = map[int]benchPoint{}
@@ -257,7 +265,7 @@ func benchMergeDeep(e benchEntry, points int, files []benchShardFile) ([]benchPo
 			miss = b
 			return d, ok
 		}
-		p, next, ok := benchStep(e, st, batch)
+		p, next, ok := benchStep(e, st, batch, need)
 		if !ok {
 			return nil, fmt.Errorf("%s: no shard has point %d batch %d", e.name(), i, miss)
 		}

@@ -504,6 +504,10 @@ func deepStreams(e benchEntry) int {
 }
 
 func deepNeeds(sc *benchScore) bool {
+	return deepCounting(sc) && sc.Truth < deepUnderFloor()[sc.Truth-sc.Exact]
+}
+
+func deepCounting(sc *benchScore) bool {
 	return sc != nil && sc.Truth > 0 && sc.Truth-sc.Exact < deepErrors && sc.Truth < deepFrames
 }
 
@@ -518,6 +522,51 @@ func benchDeep(sh benchShared) [][]benchPoint {
 	deep := sh.run(cs)
 	sh.deepen(deep)
 	return deep
+}
+
+var deepUnderFloor = sync.OnceValue(deepUnderFloorFrames)
+
+func deepUnderFloorFrames() [deepErrors]int {
+	var out [deepErrors]int
+	for k := range out {
+		lo, hi := k, 1<<30
+		for lo < hi {
+			if mid := lo + (hi-lo)/2; binomUpper95(k, mid) < deepFloor {
+				hi = mid
+			} else {
+				lo = mid + 1
+			}
+		}
+		out[k] = lo
+	}
+	return out
+}
+
+func binomUpper95(k, n int) float64 {
+	lo, hi := 0.0, 1.0
+	for range 100 {
+		p := (lo + hi) / 2
+		if binomAtMost(k, n, p) > 0.05 {
+			lo = p
+		} else {
+			hi = p
+		}
+	}
+	return hi
+}
+
+func binomAtMost(k, n int, p float64) float64 {
+	if k >= n {
+		return 1
+	}
+	ln, _ := math.Lgamma(float64(n) + 1)
+	s := 0.0
+	for i := 0; i <= k; i++ {
+		a, _ := math.Lgamma(float64(i) + 1)
+		b, _ := math.Lgamma(float64(n-i) + 1)
+		s += math.Exp(ln - a - b + float64(i)*math.Log(p) + float64(n-i)*math.Log1p(-p))
+	}
+	return s
 }
 
 func (s benchShared) deepen(pts [][]benchPoint) { s.deepenWith(pts, s.run) }
