@@ -526,6 +526,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				return nil, errPreEmph
 			}
 			a.de = fitPreInverse(z, p, float64(cfg.Hz))
+			a.peak *= preInverseGain(a.de)
 		}
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
@@ -1402,6 +1403,18 @@ func fitPreInverse(zHz, pHz, hz float64) [5]float64 {
 		return [5]float64{(1 + 1/tp) / a0, (1 - 1/tp) / a0, 0, (1 - 1/tz) / a0, 0}
 	}
 	return c
+}
+
+func preInverseGain(d [5]float64) float64 {
+	var g, z0, z1, z2, z3 float64
+	x := 1.0
+	for range 1 << 14 {
+		y := d[0]*x + d[1]*z0 + d[2]*z1 - d[3]*z2 - d[4]*z3
+		z1, z0, z3, z2 = z0, x, z2, y
+		g += math.Abs(y)
+		x = 0
+	}
+	return g
 }
 
 func reIm(v complex128, im int) float64 {
