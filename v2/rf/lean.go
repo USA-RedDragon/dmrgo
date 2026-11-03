@@ -71,6 +71,7 @@ const (
 	leanClockBlock      = 64
 	leanClockSpan       = 4
 	leanClockSig        = 5
+	leanRefitVar        = 0.02
 	leanClockLag        = 120
 	leanClockLagBS      = leanClockLag / 2
 )
@@ -1448,9 +1449,11 @@ func (r *leanCore) retime(mid bool) {
 		return
 	}
 	var saved [syncSymbols]int8
-	if d, _, ok := r.resample(p, &saved, true, discLock); ok {
+	if d, c2, ok := r.resample(p, &saved, true, discLock); ok {
 		if r.reEntry {
-			r.tm.corr, r.tm.fresh = r.tm.corr+d-r.tm.lastC, 0
+			s := d - r.tm.lastC
+			sps := 2 * r.tm.step
+			r.tm.corr, r.tm.corr2, r.tm.fresh = r.tm.corr+s, r.tm.corr2+leanRefitVar*(1-c2)/c2*sps*sps, 0
 		}
 		r.resampleStart(d)
 		r.ms.moved = true
