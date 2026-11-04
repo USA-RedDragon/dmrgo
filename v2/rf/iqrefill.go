@@ -284,6 +284,9 @@ func (r *iqRx) toNarrow() {
 	c.hist, f.conv.hist = f.conv.hist, c.hist
 	c.head, c.phase, c.prev, c.ncoRot = f.conv.head, f.conv.phase, f.conv.prev, f.conv.ncoRot
 	r.outN -= f.dd
+	if r.pow != nil {
+		r.pow.lag += float64(f.dd) / r.pow.rate
+	}
 	f.narrowOn = true
 }
 
@@ -320,6 +323,9 @@ func (r *iqRx) toWide() {
 	copy(c.hist, h[n-m:])
 	copy(c.hist[m:], c.hist[:m])
 	c.taps, c.head, c.span = w, 0, c.span-n+m
+	if r.pow != nil {
+		r.pow.lag -= float64(f.dd) / r.pow.rate
+	}
 	f.narrowOn = false
 }
 
