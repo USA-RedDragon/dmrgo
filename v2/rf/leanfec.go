@@ -447,7 +447,10 @@ func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 		switch dt := pdu.SlotTypeInfo(info & 0xff).DataType(); dt {
 		case enums.DataTypeRate34:
 			r.fixRate34(f, out)
-		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
+		case enums.DataTypeIdle:
+			p := pdu.PRFillBits()
+			putBPTC(out, &p, 0)
+		case enums.DataTypeRate1, enums.DataTypeReserved:
 		default:
 			r.fecOK = !r.fixBPTC(f, dt, out) && crcType(dt)
 		}

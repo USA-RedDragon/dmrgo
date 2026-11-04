@@ -38,7 +38,10 @@ func exactBurst(t *testing.T, rng *rand.Rand, i int, cc enums.ColorCode) (layer2
 			for k := range p {
 				p[k] = byte(rng.IntN(256))
 			}
-			if softBPTCCheck(dt) != nil {
+			switch {
+			case dt == enums.DataTypeIdle:
+				p = pdu.PRFillBits()
+			case softBPTCCheck(dt) != nil:
 				if err := pdu.Seal(&p, dt); err != nil {
 					t.Fatal(err)
 				}

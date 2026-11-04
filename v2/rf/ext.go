@@ -595,7 +595,10 @@ func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool
 		switch dt := st.DataType(); dt {
 		case enums.DataTypeRate34:
 			x.soft.decodeRate34(&x.llr, out)
-		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
+		case enums.DataTypeIdle:
+			p := pdu.PRFillBits()
+			putBPTC(out, &p, 0)
+		case enums.DataTypeRate1, enums.DataTypeReserved:
 		default:
 			_ = x.decodeBPTC(dt, out)
 		}
