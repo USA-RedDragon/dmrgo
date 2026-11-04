@@ -1723,7 +1723,7 @@ func keptMMZero(c *leanCore, syms *[syncSymbols]int8, end, off, sps float32) flo
 func (x *softExt) liveFit(c *leanCore, sym, t int64, q, w float32) {
 	x.syncFit(c, sym, t, q, w)
 	p := x.ancParity(c, sym-leanSyncEnd)
-	if c.bs || c.ms.anch[p^1] != leanNoSlot {
+	if c.bs {
 		return
 	}
 	d, sig, ok := x.rate[p].rateError(c)

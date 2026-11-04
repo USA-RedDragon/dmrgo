@@ -123,12 +123,7 @@ type leanTiming struct {
 	lastC          float32
 	stale          bool
 	leanClock
-	baseN        int32
-	baseC        float32
-	mK           int32
-	mS, mC, mVar float32
-	jit          float32
-	mOK          bool
+	jit float32
 }
 
 type leanClock struct {
@@ -136,7 +131,9 @@ type leanClock struct {
 	owed, estS, estW, fresh float32
 	lag0                    float32
 	nc, nall, estN          int32
-	learned                 bool
+	baseN, mK               int32
+	baseC, mS, mC, mVar     float32
+	learned, mOK            bool
 }
 
 func (tm *leanTiming) newTalker() {
@@ -2442,7 +2439,6 @@ func (r *leanCore) swapClock(p, q int32) {
 	r.tm.leanClock, m.clk = m.clk, r.tm.leanClock
 	m.clkAt, m.clkNs = uint8(p)+1, uint16(r.ns)
 	r.tm.nall += gap
-	r.tm.mOK = false
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
@@ -2499,7 +2495,7 @@ func (r *leanCore) setHunt() {
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
-			if r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r)) || r.isReplaying() || r.ms.anch[0] != leanNoSlot && r.ms.anch[1] != leanNoSlot {
+			if r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r)) || r.isReplaying() {
 				return
 			}
 			r.reEntry = true
