@@ -2109,6 +2109,10 @@ func (r *leanCore) slot() {
 	present := isAnchor || r.powered(energy, floor, known, measured)
 	noisy := present && !isAnchor && r.eyeNoise(base)
 	missedA := !isAnchor && sf != leanNoSlot && j-sf >= 2*layer2.VoiceBurstsPerSuperframe
+	if seek && !isAnchor && present && r.embSeek(base) {
+		seek = false
+		r.ms.anch[j&1] = j
+	}
 	if seek && !isAnchor {
 		present = false
 		if known || measured {
@@ -3108,6 +3112,42 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 	pos, ok := r.embPosition(b)
 	return pos, ok && (!r.isReplaying() || r.ext.replayFits(r, j, pos))
 }
+
+// embSeek tells whether the MS slot at base, in the slot parity of a talker
+// that has no SYNC anchor yet, holds a voice burst B or E of the stream: its
+// EMB, sliced at the grid of the locked talker, carries the stream's color
+// code and the LCSS of burst B or E with at most one corrected bit.
+func (r *leanCore) embSeek(base int64) bool {
+	if !r.hasExt() {
+		return false
+	}
+	cc, ok := r.colorCode()
+	if !ok {
+		return false
+	}
+	r.setLLR()
+	thr := 2 * r.llrDev
+	var cw uint16
+	for _, k := range [2]int64{cachSymbols + embSymbol, cachSymbols + embSymbol + 20} {
+		for i := range int64(4) {
+			x := int32(r.ring[ringPos(base+k+i)])*(discStepHz/llrStepHz) + r.llrOff
+			var d uint16
+			if x < 0 {
+				d = 2
+				x = -x
+			}
+			if x > thr {
+				d |= 1
+			}
+			cw = cw<<2 | d
+		}
+	}
+	emb := embOfCW(cw)
+	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && emb.ColorCode == cc &&
+		(emb.LCSS == enums.LCSSFirstFragment || emb.LCSS == enums.LCSSLastFragment)
+}
+
+const embSymbol = 54
 
 func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	cc, ok := r.colorCode()
