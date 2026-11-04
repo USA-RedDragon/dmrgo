@@ -12,17 +12,17 @@ This page gives the implementation and test status of the clauses of ETSI TS 102
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 233 |
-| Verified (tests pass) | 199 |
+| Total sections | 234 |
+| Verified (tests pass) | 200 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
 | Unimplemented | 31 |
 
-**Overall: 199/233 verified (85.4%)**
+**Overall: 200/234 verified (85.5%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
-73 sections: 70 verified, 0 failing, 0 untested, 3 unimplemented.
+74 sections: 71 verified, 0 failing, 0 untested, 3 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -49,6 +49,7 @@ This page gives the implementation and test status of the clauses of ETSI TS 102
 | 8.2.1 | Header block structure | verified | 7/7 passed | `v2/layer2/pdu/data_header.go`, `v2/layer2/pdu/data_header_bytes.go` |
 | 8.2.2 | Data block structure | verified | 13/13 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go`, `v2/layer2/packet/bursts.go` |
 | 8.2.2.3 | Response packet format | verified | 3/3 passed | `v2/layer2/packet/response.go` |
+| 8.2.2.5 | Unified Data Transport (UDT) last data block structure | verified | 6/6 passed | `v2/layer2/packet/packet.go`, `v2/data/receiver.go`, `v2/data/sender.go` |
 | 8.2.3.1 | Unified Single Block Data block structure | verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
 | 9.1.1 | Synchronization (SYNC) PDU | verified | 19/19 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go`, `v2/layer2/decode_options.go`, `v2/layer2/framer/framer.go` |
 | 9.1.2 | Embedded signalling (EMB) PDU | verified | 9/9 passed | `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/pdu/emb_info.go` |
@@ -273,12 +274,12 @@ This page gives the implementation and test status of the clauses of ETSI TS 102
 | B.3.1 | Appended Data Binary Format | verified | 1/1 passed | `v2/trunk/appended.go` |
 | B.3.2 | Appended Data Addressing Format | verified | 1/1 passed | `v2/trunk/appended.go` |
 | B.3.3 | Appended Data BCD Format | verified | 2/2 passed | `v2/trunk/appended.go` |
-| B.3.4 | Appended Data ISO 7 bit character set Format | verified | 2/2 passed | `v2/trunk/appended.go` |
-| B.3.5 | Appended Data ISO 8 bit Character Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.4 | Appended Data ISO 7 bit character set Format | verified | 4/4 passed | `v2/trunk/appended.go`, `v2/internal/udttext/udttext.go`, `v2/sms/sms.go` |
+| B.3.5 | Appended Data ISO 8 bit Character Format | verified | 4/4 passed | `v2/trunk/appended.go`, `v2/internal/udttext/udttext.go`, `v2/sms/sms.go` |
 | B.3.6 | Appended Data NMEA (IEC 61162-1) Format | verified | 1/1 passed | `v2/trunk/appended.go`, `v2/trunk/appended_formats.go` |
 | B.3.7 | UDT DMR IP Format | verified | 1/1 passed | `v2/trunk/appended.go` |
-| B.3.8 | Appended Data Unicode 16 bit UTF-16BE Character Format | verified | 2/2 passed | `v2/trunk/appended.go` |
-| B.3.9 | Appended Data Mixed Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.8 | Appended Data Unicode 16 bit UTF-16BE Character Format | verified | 4/4 passed | `v2/trunk/appended.go`, `v2/internal/udttext/udttext.go`, `v2/sms/sms.go` |
+| B.3.9 | Appended Data Mixed Format | verified | 2/2 passed | `v2/trunk/appended.go`, `v2/internal/udttext/udttext.go` |
 | B.3.10 | Location Information Protocol (LIP) | verified | 9/9 passed | `v2/trunk/appended.go`, `v2/trunk/appended_formats.go`, `v2/lip/control.go`, `v2/lip/element.go`, `v2/lip/errors.go`, `v2/lip/lip.go`, `v2/lip/report.go` |
 
 <!-- END ETSI COVERAGE -->

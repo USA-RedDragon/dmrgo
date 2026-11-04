@@ -712,6 +712,24 @@ documents:
               - TestResponseData
               - TestResponseCodes
 
+      - section: "8.2.2.5"
+        title: "Unified Data Transport (UDT) last data block structure"
+        source_files:
+          - v2/layer2/packet/packet.go
+          - v2/data/receiver.go
+          - v2/data/sender.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/packet
+            names:
+              - TestSegment_UDT
+              - TestSegment_UDTErrors
+          - package: github.com/USA-RedDragon/dmrgo/v2/data
+            names:
+              - TestReceiverUDT
+              - TestSenderUDT
+              - TestSenderUDTOddPadNibble
+              - TestSenderUDTErrors
+
       - section: "8.2.3.1"
         title: "Unified Single Block Data block structure"
         source_files:
@@ -3335,21 +3353,33 @@ documents:
         title: "Appended Data ISO 7 bit character set Format"
         source_files:
           - v2/trunk/appended.go
+          - v2/internal/udttext/udttext.go
+          - v2/sms/sms.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestAppended_PadNibbleTables
               - TestAppended_DigitsAndText
+          - package: github.com/USA-RedDragon/dmrgo/v2/sms
+            names:
+              - TestAppendPacketUDTTables
+              - TestUDTRoundTripAndReply
 
       - section: "B.3.5"
         title: "Appended Data ISO 8 bit Character Format"
         source_files:
           - v2/trunk/appended.go
+          - v2/internal/udttext/udttext.go
+          - v2/sms/sms.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestAppended_PadNibbleTables
               - TestAppended_DigitsAndText
+          - package: github.com/USA-RedDragon/dmrgo/v2/sms
+            names:
+              - TestAppendPacketUDTTables
+              - TestUDTRoundTripAndReply
 
       - section: "B.3.6"
         title: "Appended Data NMEA (IEC 61162-1) Format"
@@ -3374,16 +3404,23 @@ documents:
         title: "Appended Data Unicode 16 bit UTF-16BE Character Format"
         source_files:
           - v2/trunk/appended.go
+          - v2/internal/udttext/udttext.go
+          - v2/sms/sms.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestAppended_PadNibbleTables
               - TestAppended_DigitsAndText
+          - package: github.com/USA-RedDragon/dmrgo/v2/sms
+            names:
+              - TestAppendPacketUDTTables
+              - TestUDTRoundTripAndReply
 
       - section: "B.3.9"
         title: "Appended Data Mixed Format"
         source_files:
           - v2/trunk/appended.go
+          - v2/internal/udttext/udttext.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
