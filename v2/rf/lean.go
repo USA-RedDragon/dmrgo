@@ -134,6 +134,7 @@ type leanTiming struct {
 type leanClock struct {
 	rate, corr, corr2, gain float32
 	owed, estS, estW, fresh float32
+	lag0                    float32
 	nc, nall, estN          int32
 	learned                 bool
 }
@@ -141,7 +142,7 @@ type leanClock struct {
 func (tm *leanTiming) newTalker() {
 	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
 	tm.estS, tm.estW, tm.estN = 0, 0, 0
-	tm.owed, tm.fresh, tm.learned, tm.mOK = 0, 1, false, false
+	tm.owed, tm.fresh, tm.learned, tm.mOK, tm.lag0 = 0, 1, false, false, 0
 }
 
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
@@ -189,11 +190,12 @@ func (tm *leanTiming) settle(lagN float32) float32 {
 		q *= q
 	}
 	share := tm.owed * (1 - keep)
-	lag := lagN * tm.fresh * (1 - keep)
+	lag := (lagN*tm.fresh - tm.lag0) * (1 - keep)
 	span := nall - lag
 	res := (tm.corr - share + lag*tm.rate) / span
 	tm.owed -= share
 	tm.fresh *= keep
+	tm.lag0 *= keep
 	tm.baseN, tm.baseC = tm.baseN+tm.nall, tm.baseC+tm.corr
 	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
 	if tm.rateK == 0 || v <= 0 {
@@ -1976,6 +1978,7 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 1
 	r.tm.learned = false
+	r.tm.lag0 = float32(back) + (syncSymbols-1)/2
 	r.tm.baseN, r.tm.baseC, r.tm.mOK = 0, 0, false
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
