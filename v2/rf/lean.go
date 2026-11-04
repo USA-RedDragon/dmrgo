@@ -3060,14 +3060,11 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 		if t, lever, b, ok := r.ext.replayTicks(r, base+cachSymbols); ok {
 			return t - int64(r.lagTicks), lever, b
 		}
+		at, n = r.fitAt(base, at, n)
 		e, learned = r.ext.rateBound(r, base)
 		e *= n
 	default:
-		if r.fitNs == int32(base+leanSyncEnd) {
-			w := r.fitWeight()
-			at = r.fitT - int64(int32(roundf((1-w)*float32(r.fitT-at))))
-			n += w * (leanSyncEnd - cachSymbols - n)
-		}
+		at, n = r.fitAt(base, at, n)
 		e, learned = r.tm.rateKnown(n)
 		e *= float32(int32(r.mfStep)) * 256
 	}
@@ -3082,6 +3079,17 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 	return ticks, int16(roundf(n)), 0
 }
 
+// fitAt moves the anchor at and the symbols n it projects back over toward
+// the SYNC fit of the burst at base, when the burst has one, by the weight
+// of the fit.
+func (r *leanCore) fitAt(base, at int64, n float32) (int64, float32) {
+	if r.fitNs != int32(base+leanSyncEnd) {
+		return at, n
+	}
+	w := r.fitWeight()
+	return r.fitT - int64(int32(roundf((1-w)*float32(r.fitT-at)))), n + w*(leanSyncEnd-cachSymbols-n)
+}
+
 // fitWeight gives the weight of the SYNC fit against the newest strobe in
 // the stamp of a burst, each inversely as its timing variance: the fit's from
 // its sync correlation (leanRefitVar), the strobe's from the spread of the
@@ -3090,7 +3098,7 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 // are linear in the symbols projected.
 func (r *leanCore) fitWeight() float32 {
 	tm := &r.tm
-	if !tm.mm || tm.gain <= 0 || tm.jit <= 0 || r.fitQ <= 0 || r.fitQ >= 1 {
+	if !tm.mm || tm.gain <= 0 || tm.jit <= 0 || r.fitQ <= 0 || r.fitQ >= 1 || !r.bs && r.ms.fresh[(r.next-1)&1] != 0 {
 		return 1
 	}
 	vf := leanRefitVar * 2 * (1 - r.fitQ) * leanMMGain * tm.gain * leanMMSlope * 2 * tm.step
@@ -3400,6 +3408,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if !r.isReplaying() {
 		r.ms.fresh[j&1] = 2
 		r.saveClock(o)
+		r.fitNs, r.fitT, r.fitQ = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps), sxy*sxy/(sxx*pp)
 		r.tm.t += d
 		if !strong {
 			r.seekBackfill(j-2, base-2*slotSymbols, d, sps)
