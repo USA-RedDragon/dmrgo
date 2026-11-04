@@ -419,6 +419,7 @@ type iqRx struct {
 	pullAgree bool
 	spec      *spectrum
 	specLock  bool
+	wasLocked bool
 	outBand   bool
 	center    float32
 	devTab    uint8
@@ -585,7 +586,7 @@ func (r *iqRx) hunt(v complex64) {
 		if !r.specLock {
 			r.spec.reset()
 		}
-		r.specLock = true
+		r.specLock, r.wasLocked = true, true
 		return
 	}
 	r.specLock = false
@@ -597,7 +598,7 @@ func (r *iqRx) hunt(v complex64) {
 	if !r.spec.OK {
 		return
 	}
-	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 || abs32(hz-r.conv.hz) < r.specPull {
+	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
 	r.writeAudio()
