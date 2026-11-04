@@ -1,5 +1,3 @@
-//go:build !tinygo
-
 package rf
 
 import (
@@ -8,25 +6,33 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
 )
 
-const txHostBuilt = true
-
 const (
 	preZeroHz = 300
 	prePoleHz = 3000
 )
 
 type txHost struct {
-	iq  *fsktx.IQ
-	au  *fsktx.Audio
-	s16 []int16
+	iq   *fsktx.IQ
+	au   *fsktx.Audio
+	s16  []int16
+	tier Tier
 }
+
+func hostOf(h *txHost) *txHost {
+	if !txHostOn() {
+		return nil
+	}
+	return h
+}
+
+func (t *Transmitter) host() *txHost { return hostOf(t.hp) }
 
 func (h *txHost) newIQ(t Tier, rate int, offsetHz float64) error {
 	q, err := fsktx.NewIQ(fsktx.IQConfig{Rate: rate, OffsetHz: offsetHz, RampSeconds: txRampSec, Tier: fsktx.Tier(t)})
 	if err != nil {
 		return err
 	}
-	*h = txHost{iq: q}
+	*h = txHost{iq: q, tier: t}
 	return nil
 }
 
@@ -46,7 +52,7 @@ func (h *txHost) newAudio(t Tier, rate, level, offset, highpass int, room float6
 	if err != nil {
 		return err
 	}
-	*h = txHost{au: a, s16: make([]int16, a.MaxSamples())}
+	*h = txHost{au: a, s16: make([]int16, a.MaxSamples()), tier: t}
 	return nil
 }
 

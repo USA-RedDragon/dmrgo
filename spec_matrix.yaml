@@ -39,6 +39,9 @@ ignore_files:
   - v2/internal/fsktx/shapepred.go
   - v2/internal/fsktx/symbols.go
   - v2/internal/fsktx/tierpulse.go
+  - v2/internal/fsktx/minrate_host.go
+  - v2/internal/fsktx/minrate_hosttab.go
+  - v2/internal/fsktx/minrate_tinygo.go
   - v2/internal/rftx/channel.go
   - v2/internal/rftx/modem.go
   - v2/internal/rftx/seq.go
@@ -77,6 +80,7 @@ ignore_files:
   - v2/internal/pcg/pcg.go
   - v2/internal/fmath/fmath.go
   - v2/internal/resample/resample.go
+  - v2/internal/resample/poly.go
   - v2/internal/allocgate/apigen/apigen.go
   - v2/internal/allocgate/apigen/gen/main.go
   - v2/internal/allocgate/testdata/cases/cases.go
@@ -148,9 +152,14 @@ ignore_files:
   - v2/rf/txendian_be.go
   - v2/rf/txendian_le.go
   - v2/rf/txhost.go
-  - v2/rf/txhost_tinygo.go
   - v2/rf/txregion.go
   - v2/rf/xstage.go
+  - v2/rf/audioflag.go
+  - v2/rf/audioflag_tinygo.go
+  - v2/rf/iqpower.go
+  - v2/rf/leanpow.go
+  - v2/rf/leanpow_tinygo.go
+  - v2/rf/leanretune.go
   - v2/transport/dmrd/alias.go
   - v2/transport/dmrd/alias_lc.go
   - v2/transport/dmrd/dmrdauth/auth.go
@@ -295,6 +304,7 @@ ignore_files:
   - v2/hytera/hdap/services.go
   - v2/internal/appcapture/appcapture.go
   - v2/internal/wire/wire.go
+  - v2/internal/c2mode/c2mode.go
   - v2/location/append.go
   - v2/location/errors.go
   - v2/location/location.go

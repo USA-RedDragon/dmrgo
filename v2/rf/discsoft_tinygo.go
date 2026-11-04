@@ -2,6 +2,8 @@
 
 package rf
 
+import "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
+
 const discDefaultTier = Tier0
 
 func (r *discRx) addSoft(opt *options) error {
@@ -20,6 +22,15 @@ func (r *discRx) writeIQ(x []int16) {
 var extRx bool //nolint:gochecknoglobals // set where a receiver attaches its soft stages, so builds without one drop them
 
 func setExtOn() { extRx = true }
+
+var txHostRx bool //nolint:gochecknoglobals // set where a transmitter builds its host modulator, so builds without one drop it
+
+func setTxHostOn() {
+	txHostRx = true
+	fsktx.EnableHost()
+}
+
+func txHostOn() bool { return txHostRx }
 
 func (r *leanCore) hasExt() bool { return extRx && r.ext != nil }
 

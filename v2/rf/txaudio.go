@@ -10,8 +10,10 @@ import (
 type AudioTxConfig struct {
 	// Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value
 	// TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and
-	// under TinyGo. Tier3 has no modulator of its own yet and gives a
-	// *dmrgo.ConfigError.
+	// for NewAudioTransmitter under TinyGo. Under TinyGo too,
+	// NewAudioTransmitter takes every modulator, and a program that calls
+	// only Init links none but Tier0. Tier3 has no modulator of its own yet
+	// and gives a *dmrgo.ConfigError.
 	Tier Tier
 	// Rate is the sample rate of the converter, in Hz. 0 means 48000.
 	// Tier0 makes 24000 and 48000. Tier1 and Tier2 make any rate from
@@ -88,7 +90,6 @@ type AudioTxConfig struct {
 // copied after Init or NewAudioTransmitter.
 type AudioTransmitter struct {
 	core   txCore
-	host   txHost
 	mcu    fsktx.MCUAudio
 	small  [tier0AudioSamples]int16
 	chunk  []int16
@@ -101,7 +102,7 @@ type AudioTransmitter struct {
 	dc     int32
 	rate   int32
 	sps    int32
-	tier   Tier
+	hp     *txHost
 	set    bool
 }
 
@@ -134,6 +135,7 @@ func NewAudioTransmitter(c *AudioTxConfig) (*AudioTransmitter, error) {
 }
 
 func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error) {
+	setTxHostOn()
 	if cfg.Tier == TierDefault {
 		cfg.Tier = discDefaultTier
 	}
@@ -163,17 +165,18 @@ func newAudioTransmitter(cfg AudioTxConfig, g *txGate) (*AudioTransmitter, error
 	}
 	t := &AudioTransmitter{}
 	if p.tier == Tier0 {
-		t.setup(&cfg, &p)
+		t.setup(&cfg, &p, nil)
 		return t, nil
 	}
 	sps := cfg.Rate/symbolRate + 2
-	if err := t.host.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset, cfg.InputHighpassHz, room, cfg.PreEmphasis != nil); err != nil {
+	h := &txHost{}
+	if err := h.newAudio(p.tier, cfg.Rate, p.level, cfg.Offset, cfg.InputHighpassHz, room, cfg.PreEmphasis != nil); err != nil {
 		return nil, audioErrs.rate
 	}
-	if l := t.host.audioLag(); l > 0 {
+	if l := h.audioLag(); l > 0 {
 		p.lag = l
 	}
-	t.setup(&cfg, &p)
+	t.setup(&cfg, &p, h)
 	t.sps = int32(sps)
 	if cfg.OnSamples != nil {
 		t.chunk = newChunk16(t.MaxOutput(0))
@@ -210,13 +213,13 @@ func (t *AudioTransmitter) init(c AudioTxConfig, g *txGate) error {
 	if err != nil {
 		return err
 	}
-	t.setup(&c, &p)
+	t.setup(&c, &p, nil)
 	return nil
 }
 
 func (c *AudioTxConfig) prepare() (audioPlan, int, error) {
 	e := &audioErrs
-	if c.Tier < Tier0 || c.Tier > Tier2 || c.Tier != Tier0 && !txHostBuilt {
+	if c.Tier < Tier0 || c.Tier > Tier2 {
 		return audioPlan{}, 0, e.tier
 	}
 	if c.Rate == 0 {
@@ -350,11 +353,10 @@ func hostFits(ps audioPeaks, level, avail int) bool {
 	return err == nil && pk <= avail
 }
 
-func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {
-	h := t.host
+func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan, h *txHost) {
 	*t = AudioTransmitter{}
 	t.core.reset(p.lag)
-	t.level, t.offset, t.rate, t.tier, t.on, t.set = int16(p.level), int16(c.Offset), int32(p.rate), p.tier, c.OnSamples, true
+	t.level, t.offset, t.rate, t.on, t.set = int16(p.level), int16(c.Offset), int32(p.rate), c.OnSamples, true
 	if c.Unsigned {
 		t.bias = 1 << (p.bits - 1)
 	}
@@ -373,7 +375,7 @@ func (t *AudioTransmitter) setup(c *AudioTxConfig, p *audioPlan) {
 			t.sps = int32(t.mcu.Samples())
 		}
 	} else {
-		t.host = h
+		t.hp = h
 	}
 	if t.on != nil && p.tier == Tier0 {
 		t.chunk = t.small[:t.sps]
@@ -495,7 +497,7 @@ func (t *AudioTransmitter) symbol(s int8) {
 		}
 	}
 	l := len(t.out)
-	if t.tier == Tier0 {
+	if t.hp == nil {
 		d := t.out[l : l+int(t.sps)]
 		var n int
 		if t.pe != nil {
@@ -504,8 +506,8 @@ func (t *AudioTransmitter) symbol(s int8) {
 			n = t.mcu.Symbol(d, s)
 		}
 		t.out = t.out[:l+n]
-	} else {
-		v := t.host.audio(s)
+	} else if h := hostOf(t.hp); h != nil {
+		v := h.audio(s)
 		t.out = t.out[:l+copy(t.out[l:l+len(v)], v)]
 	}
 	if t.bias != 0 {

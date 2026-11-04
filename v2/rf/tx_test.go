@@ -227,7 +227,7 @@ func TestTxAccepts(t *testing.T) {
 		if c.Bits == 0 {
 			bits = 16
 		}
-		if tx.Level() < measuredLevel(tx.tier, int(tx.rate), bits, false) {
+		if tx.Level() < measuredLevel(txTierOf(tx.hp), int(tx.rate), bits, false) {
 			t.Errorf("%+v: level %d", c, tx.Level())
 		}
 		want := c.Offset
@@ -606,4 +606,11 @@ func TestTxPowerStricter(t *testing.T) {
 			}
 		}
 	}
+}
+
+func txTierOf(h *txHost) Tier {
+	if h != nil {
+		return h.tier
+	}
+	return Tier0
 }

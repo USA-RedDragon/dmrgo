@@ -662,7 +662,7 @@ func renderMinRates(tb *minRateTable, inputs string) (tier0, host []byte, err er
 	if err != nil {
 		return nil, nil, err
 	}
-	host, err = renderMinRateGroup(tb, []int{1, 2}, "H", head+"//go:build !tinygo\n\npackage fsktx\n\n")
+	host, err = renderMinRateGroup(tb, []int{1, 2}, "H", head+"package fsktx\n\n")
 	return tier0, host, err
 }
 

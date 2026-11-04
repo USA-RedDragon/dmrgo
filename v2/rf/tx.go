@@ -15,8 +15,10 @@ import (
 // accepted.
 type TxConfig struct {
 	// Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value
-	// TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and under
-	// TinyGo. Tier3 has no modulator of its own yet and gives a
+	// TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and for
+	// NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes
+	// every modulator, and a program that calls only Init links none but
+	// Tier0. Tier3 has no modulator of its own yet and gives a
 	// *dmrgo.ConfigError.
 	Tier Tier
 	// Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier1
@@ -65,7 +67,6 @@ type TxConfig struct {
 // after Init or NewTransmitter.
 type Transmitter struct {
 	core   txCore
-	host   txHost
 	mcu    fsktx.MCUIQ
 	s16    [2 * tier0IQSamples]int16
 	small  [tier0IQSamples * 24]byte
@@ -76,7 +77,7 @@ type Transmitter struct {
 	rate   int32
 	sps    int32
 	format IQFormat
-	tier   Tier
+	hp     *txHost
 	set    bool
 }
 
@@ -114,6 +115,7 @@ func NewTransmitter(c *TxConfig) (*Transmitter, error) {
 }
 
 func newTransmitter(cfg TxConfig, g *txGate) (*Transmitter, error) {
+	setTxHostOn()
 	if cfg.Tier == TierDefault {
 		cfg.Tier = discDefaultTier
 	}
@@ -123,14 +125,15 @@ func newTransmitter(cfg TxConfig, g *txGate) (*Transmitter, error) {
 	}
 	t := &Transmitter{}
 	if p.tier == Tier0 {
-		t.setup(&cfg, &p)
+		t.setup(&cfg, &p, nil)
 		return t, nil
 	}
 	sps := cfg.Rate/symbolRate + 2
-	if err := t.host.newIQ(p.tier, cfg.Rate, cfg.OffsetHz); err != nil {
+	h := &txHost{}
+	if err := h.newIQ(p.tier, cfg.Rate, cfg.OffsetHz); err != nil {
 		return nil, iqErrs.rate
 	}
-	t.setup(&cfg, &p)
+	t.setup(&cfg, &p, h)
 	t.sps = int32(sps)
 	if cfg.OnSamples != nil {
 		t.chunk = newChunk(t.MaxOutput(0) * p.sb)
@@ -162,7 +165,7 @@ func (t *Transmitter) init(c TxConfig, g *txGate) error {
 	if err != nil {
 		return err
 	}
-	t.setup(&c, &p)
+	t.setup(&c, &p, nil)
 	return nil
 }
 
@@ -171,7 +174,7 @@ func (c *TxConfig) plan(g *txGate) (txPlan, error) {
 	if g == nil {
 		g = &txGate{}
 	}
-	if c.Tier < Tier0 || c.Tier > Tier2 || c.Tier != Tier0 && !txHostBuilt {
+	if c.Tier < Tier0 || c.Tier > Tier2 {
 		return txPlan{}, e.tier
 	}
 	if c.Format == IQFormatDefault {
@@ -224,18 +227,17 @@ func (c *TxConfig) plan(g *txGate) (txPlan, error) {
 	return p, nil
 }
 
-func (t *Transmitter) setup(c *TxConfig, p *txPlan) {
-	h := t.host
+func (t *Transmitter) setup(c *TxConfig, p *txPlan, h *txHost) {
 	*t = Transmitter{}
 	if p.tier == Tier0 {
 		_ = t.mcu.Init(p.rate, int(math.Round(c.OffsetHz)), int(math.Round(txRampSec*float64(p.rate))))
 		t.sps = int32(t.mcu.Samples())
 		t.offHz = math.Round(c.OffsetHz)
 	} else {
-		t.host, t.offHz = h, c.OffsetHz
+		t.hp, t.offHz = h, c.OffsetHz
 	}
 	t.core.reset(p.lag)
-	t.rate, t.format, t.tier, t.on, t.set = int32(p.rate), c.Format, p.tier, c.OnSamples, true
+	t.rate, t.format, t.on, t.set = int32(p.rate), c.Format, c.OnSamples, true
 	if t.on != nil && p.tier == Tier0 {
 		n := int(t.sps) * p.sb
 		t.chunk = t.small[:len(t.small)/n*n]
@@ -342,11 +344,11 @@ func (t *Transmitter) deliver() {
 }
 
 func (t *Transmitter) key(on bool) {
-	if t.tier == Tier0 {
-		t.mcu.Key(on)
+	if h := t.host(); h != nil {
+		h.key(on)
 		return
 	}
-	t.host.key(on)
+	t.mcu.Key(on)
 }
 
 func (t *Transmitter) symbols(ss []int8) {
@@ -362,22 +364,24 @@ func (t *Transmitter) symbols(ss []int8) {
 			}
 		}
 		k := 1
+		h := t.host()
 		switch {
-		case t.tier == Tier0 && t.format == IQFormatCS16 && txLittle && uintptr(unsafe.Pointer(unsafe.SliceData(t.out)))&1 == 0:
+		case h == nil && t.format == IQFormatCS16 && txLittle && uintptr(unsafe.Pointer(unsafe.SliceData(t.out)))&1 == 0:
 			l := len(t.out)
 			k = min(len(ss), (cap(t.out)-l)/sb)
 			d := t.out[l : l+k*sb]
 			n := t.mcu.Symbols(unsafe.Slice((*int16)(unsafe.Pointer(unsafe.SliceData(d))), len(d)/2), ss[:k])
 			t.out = t.out[:l+2*n]
-		case t.tier == Tier0:
+		case h == nil:
 			t.put16(t.s16[:t.mcu.Symbol(t.s16[:], ss[0])])
 		default:
-			t.put16(t.host.iqS16(ss[0]))
+			t.put16(h.iqS16(ss[0]))
 		}
 		ss = ss[k:]
 	}
 }
 
+//go:noinline
 func (t *Transmitter) put16(v []int16) {
 	l := len(t.out)
 	switch t.format {

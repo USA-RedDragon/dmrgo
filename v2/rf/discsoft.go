@@ -20,6 +20,10 @@ func (r *discRx) writeIQ(x []int16) { r.write(x) }
 
 func setExtOn() {}
 
+func setTxHostOn() {}
+
+func txHostOn() bool { return true }
+
 func (r *leanCore) hasExt() bool { return r.ext != nil }
 
 func (r *leanCore) isReplaying() bool { return r.replaying }
