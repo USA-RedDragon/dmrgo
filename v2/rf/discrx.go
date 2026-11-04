@@ -18,10 +18,10 @@ const (
 	discEdgeRatio  = 16
 	discIQMaxGain  = 1
 	discEdgeHot    = 0.5
-	audioMaxK      = 1<<15 - 1
+	audioMaxK      = 1<<16 - 1
 	audioMaxGain   = audioMaxK * rrcStepHz / 65536.0
 	discMeanJump   = 2 * discInputRMSHz
-	audioMaxOff    = 1<<30 - 1<<16
+	audioMaxOff    = 1<<29 - 1<<15
 	audioStartGain = math.MaxInt8 * rrcStepHz / -float32(math.MinInt16)
 )
 
@@ -416,7 +416,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 						k, off = f.k, f.off
 					}
 				}
-				u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+				u := int8(max(min((int32(v)*k>>1-off)>>15, 127), -128))
 				p := unsafe.Add(unsafe.Pointer(hist), h)
 				*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
 				acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(p, 1)))
@@ -882,7 +882,7 @@ func (f *audioFront) refresh() {
 	} else {
 		f.k = int32(max32(min32(k+0.5, audioMaxK), 0))
 	}
-	f.off = int32(max32(min32(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
+	f.off = int32(max32(min32(f.dc/rrcStepHz*32768, audioMaxOff), -audioMaxOff)) - 16384
 }
 
 func (f *audioFront) scale(g float32) {
@@ -917,7 +917,7 @@ func (f *audioFront) shiftHist(d float32) {
 }
 
 func (f *audioFront) quantize(u int16) int8 {
-	return int8(max(min((int32(u)*f.k-f.off)>>16, 127), -128))
+	return int8(max(min((int32(u)*f.k>>1-f.off)>>15, 127), -128))
 }
 
 func (f *audioFront) halfBand(v int8) (int8, bool) {
