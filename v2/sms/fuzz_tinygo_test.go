@@ -10,4 +10,7 @@ func TestFuzzSeeds(t *testing.T) {
 	decodeSeeds(func(defined bool, code uint8, data []byte, from, to uint8, repeat uint16) {
 		fuzzDecode(t, defined, code, data, from, to, repeat)
 	})
+	udtSeeds(func(format, uab, pad uint8, data []byte) {
+		fuzzDecodeUDT(t, format, uab, pad, data)
+	})
 }

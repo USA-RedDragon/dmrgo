@@ -5,6 +5,7 @@ package sms_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/allocstest"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/sms"
@@ -24,6 +25,24 @@ func TestAllocs(t *testing.T) {
 			panic(err)
 		}
 		if _, err := sms.AppendAck(out, &text, &h); err != nil {
+			panic(err)
+		}
+	})
+	if n != 0 {
+		t.Errorf("%.1f allocations per run, want 0", n)
+	}
+}
+
+func TestAllocsUDT(t *testing.T) {
+	in := udtText(enums.UDTUTF16BE, "dmrgo UDT text")
+	buf := make([]byte, 0, 512)
+	var h sms.Header
+	n := allocstest.PerRun(t, 50, func() {
+		p, err := sms.AppendPacket(buf[:0], &in, &h)
+		if err != nil {
+			panic(err)
+		}
+		if _, _, err := sms.Decode(p, &h.Data, p); err != nil {
 			panic(err)
 		}
 	})

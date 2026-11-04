@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/udttext"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
@@ -48,6 +49,12 @@ const (
 	// sends one UTF-16 NUL after the text, as AnyTone radios do in H-SMS
 	// mode.
 	FormatHytera
+	// FormatUDT is a UDT packet (UDT_HEAD) whose UDT Format gives the
+	// coding of the text: ISO 7-bit characters, ISO 8-bit characters read
+	// as ISO/IEC 8859-1, or UTF-16BE. Text.UDT holds its header.
+	// AppendPacket sends no NUL after the text. (ETSI TS 102 361-4 clauses
+	// B.3.4, B.3.5 and B.3.8)
+	FormatUDT
 )
 
 // String returns the name of f. It allocates only for a value without a
@@ -64,6 +71,8 @@ func (f Format) String() string {
 		return "Defined Data"
 	case FormatHytera:
 		return "Hytera"
+	case FormatUDT:
+		return "UDT"
 	}
 	return "Format(" + text.Int(int64(f)) + ")"
 }
@@ -80,7 +89,8 @@ type Text struct {
 	// Confirmed reports a message that requests a response from the
 	// data link layer: a C_HEAD packet for the formats on IP, and a DD_HEAD with
 	// the Response Requested flag (A) for FormatDefinedData and
-	// FormatHytera (ETSI TS 102 361-3 clause 6.4, Table 6.5). Decode sets
+	// FormatHytera (ETSI TS 102 361-3 clause 6.4, Table 6.5), and the
+	// Response Requested flag (A) of the UDT_HEAD of FormatUDT. Decode sets
 	// it from the header and AppendPacket builds that header.
 	Confirmed bool
 	// Network is the network ID of the IPv4 radio addresses of a FormatTMS,
@@ -104,6 +114,14 @@ type Text struct {
 	// AppendPacket adds one only for FormatAnyTone and FormatHytera, and
 	// sends a NUL that Body ends with.
 	Body []byte
+	// UDT is the UDT_HEAD of a FormatUDT message, which Decode sets from
+	// the packet. AppendPacket sends its UDT Format, SAP, Emergency and
+	// option flags, Supplementary Flag, Protect Flag and UDT Opcode as they
+	// are, so that a reply that copies the UDT of a received text has its
+	// format. It takes the addresses, Group and the Response Requested
+	// flag (A) from the other fields, and sets the UAB and the Pad Nibble
+	// from Body. (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D)
+	UDT pdu.UDTHeader
 }
 
 // Decode appends the text of a data packet, with header h and user data
@@ -120,7 +138,13 @@ type Text struct {
 // least 6 octets, 2 octets and then a UTF-16LE text of at least one
 // character that ends in 00 00, with only 00 octets after it. Other BCD
 // data is FormatDefinedData; BCD digits that end in six or more 0 digits
-// can have that layout too. It returns ErrNotText for a packet in none of
+// can have that layout too. A UDT packet is FormatUDT when its UDT Format
+// is ISO 7-bit, ISO 8-bit or UTF-16BE characters. Its data is the Payload
+// of the data.Message, the appended data without the pad octets, and the
+// text ends before the pad nibbles or at the first NUL character, without
+// its trailing DEL characters. It returns ErrLength for a UDT whose Pad
+// Nibble counts more nibbles than its blocks hold, and ErrNotText for a
+// UDT in another UDT Format. It returns ErrNotText for a packet in none of
 // these formats and for defined data with DD format binary, the errors of
 // the ip, tms and shortdata packages for a message that does not decode,
 // the Text with ip.ErrChecksum for a text whose IPv4 or UDP checksum does
@@ -161,11 +185,61 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		t.Group = u.Group
 		return decodeIP(dst, u.SAP, data, t)
 	}
+	if u, ok := h.AsUDT(); ok {
+		return decodeUDT(dst, &u, data, t)
+	}
 	if c, ok := h.AsConfirmed(); ok {
 		t.Group, t.Confirmed = c.Group, true
 		return decodeIP(dst, c.SAP, data, t)
 	}
 	return dst, Text{}, ErrNotText
+}
+
+func udtText(f enums.UDTFormat) bool {
+	return f == enums.UDTISO7 || f == enums.UDTISO8 || f == enums.UDTUTF16BE
+}
+
+func decodeUDT(dst []byte, u *pdu.UDTHeader, data []byte, t Text) ([]byte, Text, error) {
+	if !udtText(u.UDTFormat) {
+		return dst, Text{}, ErrNotText
+	}
+	var buf [udttext.MaxOctets]byte
+	k := copy(buf[:], data)
+	room := udttext.Bits(int(u.UAB&3)+1) - 4*int(u.PadNibble)
+	if room < 0 {
+		return dst, Text{}, ErrLength
+	}
+	n := len(dst)
+	dst = udttext.Append(dst, buf[:], 0, min(room, 8*k), udttext.Width(u.UDTFormat))
+	t.Format, t.Group, t.Confirmed, t.UDT = FormatUDT, u.Group, u.ResponseRequested, *u
+	t.Body = dst[n:]
+	return dst, t, nil
+}
+
+func appendUDT(dst []byte, t *Text, h *Header) ([]byte, error) {
+	u := t.UDT
+	if !udtText(u.UDTFormat) {
+		return dst, ErrFormat
+	}
+	w := udttext.Width(u.UDTFormat)
+	c := udttext.Count(t.Body, w)
+	blocks := udttext.Blocks(w * c)
+	if c == 0 || blocks == 0 {
+		return dst, ErrTextLength
+	}
+	var buf [udttext.MaxOctets]byte
+	end, ok := udttext.Set(buf[:], 0, w, t.Body)
+	if !ok {
+		return dst, shortdata.ErrCharacter
+	}
+	total := udttext.Bits(blocks)
+	udttext.Fill(buf[:], end, total)
+	u.PadNibble, u.UAB = udttext.PadNibbles(total-end), uint8((blocks-1)&3)
+	u.Group, u.ResponseRequested, u.LLIDDestination, u.LLIDSource = t.Group, t.Confirmed, t.Destination, t.Source
+	if err := h.Data.SetUDT(u); err != nil {
+		return dst, err
+	}
+	return append(dst, buf[:total/8-int(u.PadNibble)/2]...), nil
 }
 
 func hyteraLayout(data []byte) bool {
@@ -257,9 +331,16 @@ type Header struct {
 // FormatAnyTone and FormatHytera end the text with a NUL; the Format values
 // give the cause. BCD digits that would have the HyteraText layout get an octet
 // FF, the end of the digits, so that Decode reads them as
-// FormatDefinedData. It returns dst unchanged and ErrFormat for an unknown
-// format, for FormatDefinedData with DD format binary, which holds no text,
-// and for a FormatHytera text without the HyteraText layout, which Decode
+// FormatDefinedData. A FormatUDT text takes the UDT Format and other
+// fields of t.UDT, as Text.UDT gives, and its user data is the appended
+// data that the UAB and Pad Nibble count, without the pad octets, as
+// data.Sender sends it: the characters, then 1 bits to the end of the
+// octet (ETSI TS 102 361-4 Annex B.3). It returns ErrTextLength for a
+// FormatUDT text that is empty or too long, and shortdata.ErrCharacter for
+// a character that its UDT Format cannot hold. It returns dst unchanged
+// and ErrFormat for an unknown format, for FormatDefinedData with DD
+// format binary, which holds no text, for a FormatUDT text with a UDT
+// Format that holds no text, and for a FormatHytera text without the HyteraText layout, which Decode
 // reads as FormatDefinedData: a Body that is empty, starts with a NUL, or
 // has a character other than NUL after a NUL, and for a FormatIP text with
 // a Body that starts with CR LF, which Decode reads as FormatAnyTone. Such
@@ -304,6 +385,8 @@ func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 			return dst[:n], err
 		}
 		return dst[:n+k], nil
+	case FormatUDT:
+		return appendUDT(dst, t, h)
 	case FormatTMS, FormatIP, FormatAnyTone:
 	default:
 		return dst, ErrFormat
