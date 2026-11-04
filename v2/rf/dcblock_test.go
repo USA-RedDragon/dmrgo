@@ -5,7 +5,51 @@ import (
 	"math/cmplx"
 	"math/rand/v2"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
+
+// TestDCBlockAdjacentStart feeds the DC blocker an adjacent channel that is
+// on from the first sample and checks the part of the DC estimate inside
+// 1 kHz of 0 Hz. EN 300 113 asks for 60 dB of adjacent channel selectivity,
+// so the estimate must stay 80 dB under the adjacent channel to keep the
+// step it leaves 20 dB under a wanted signal 60 dB weaker. The rates are the
+// 48 kHz baseband and the rate the 2048 kHz front end runs the blocker at.
+func TestDCBlockAdjacentStart(t *testing.T) {
+	t.Parallel()
+	const bar = 1e-4
+	wide := float64(2048000 / newFrontEnd(2048000, IQFormatCS16, basebandRate).dec)
+	for _, rate := range []float64{basebandRate, wide} {
+		taps := int(rate*0.006) | 1
+		h := make([]float32, taps)
+		resample.Design(h, taps, 1, 1000/rate, 12)
+		var sum float64
+		for _, v := range h {
+			sum += float64(v)
+		}
+		for _, hz := range []float64{-14000, -12500, -11000, 11000, 12500, 14000} {
+			var d dcBlock
+			d.init(rate)
+			n := int(rate * 0.06)
+			est := make([]complex128, n)
+			for i := range n {
+				d.remove(complex64(cmplx.Rect(1, 2*math.Pi*hz*float64(i)/rate)))
+				est[i] = complex128(d.dc)
+			}
+			var worst float64
+			for k := taps; k < n; k++ {
+				var acc complex128
+				for j, v := range h {
+					acc += complex(float64(v), 0) * est[k-j]
+				}
+				worst = max(worst, cmplx.Abs(acc)/sum)
+			}
+			if worst > bar {
+				t.Errorf("%.0f Hz rate, adjacent channel at %+.0f Hz: DC estimate within 1 kHz of 0 Hz reaches %.2g of the adjacent channel, want at most %.0g", rate, hz, worst, bar)
+			}
+		}
+	}
+}
 
 func TestDCBlockCarrierLead(t *testing.T) {
 	t.Parallel()

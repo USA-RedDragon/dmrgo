@@ -15,6 +15,7 @@ const (
 	wideHz         = 17000.0
 	dcSeconds      = 1
 	dcStartSeconds = 0.01
+	dcRampSeconds  = 0.001
 	dcFastSeconds  = 0.05
 	dcMove         = 0.1
 	dcEdgeSeconds  = 0.002
@@ -31,6 +32,7 @@ type dcBlock struct {
 	n, m        float32
 	slow, quick float32
 	start, cap  float32
+	ramp        float32
 }
 
 func (d *dcBlock) init(rate float64) {
@@ -39,6 +41,22 @@ func (d *dcBlock) init(rate float64) {
 	d.start = float32(dcStartSeconds * rate)
 	d.cap = float32(dcSeconds * rate)
 	d.edge = float32(1 / (dcEdgeSeconds * rate))
+	d.ramp = float32(dcRampSeconds * rate)
+}
+
+// gain returns the gain of update n of a running mean that starts from a
+// prior of d.start samples at zero and weights the first d.ramp samples by a
+// smoothstep from zero to one. A mean with full weight from the first sample
+// takes in a signal f Hz away as a step at 0 Hz of about
+// 1/(2*pi*f*(n+d.start)) of that signal, which next to an adjacent channel
+// 60 dB stronger is larger than the wanted signal; with the smoothstep the
+// step from a signal 9 to 16 kHz away stays under 5e-6 of it after 4 ms.
+func (d *dcBlock) gain(n float32) float32 {
+	if n >= d.ramp {
+		return 1 / (n - d.ramp/2 + d.start)
+	}
+	x := n / d.ramp
+	return x * x * (3 - 2*x) / (d.ramp*x*x*x*(1-x/2) + d.start)
 }
 
 func (d *dcBlock) remove(v complex64) complex64 {
@@ -51,14 +69,14 @@ func (d *dcBlock) remove(v complex64) complex64 {
 	}
 	d.n = min32(d.n+1, d.cap)
 	d.m = min32(d.m+1, d.cap)
-	g := max32(d.slow, 1/(d.n+d.start))
-	q := max32(d.quick, 1/(d.m+d.start))
+	g := max32(d.slow, d.gain(d.n))
+	q := max32(d.quick, d.gain(d.m))
 	d.dc += (v - d.dc) * complex(g, 0)
 	d.fast += (v - d.fast) * complex(q, 0)
 	e := v - d.fast
 	d.pow += (real(e)*real(e) + imag(e)*imag(e) - d.pow) * q
 	if x := d.fast - d.dc; real(x)*real(x)+imag(x)*imag(x) > dcMove*d.pow {
-		d.dc, d.n = d.fast, min32(d.m, 1/d.quick-d.start)
+		d.dc, d.n = d.fast, min32(d.m, 1/d.quick+d.ramp/2-d.start)
 	}
 	return v - d.dc
 }

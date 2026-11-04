@@ -57,7 +57,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.none.+0.ms.pi.+500ppm.high.a9600.40dB/t1":             {checks: "bits"},
 	"gap.none.+0.ms.pi.+500ppm.high.a9600.40dB/t2":             {checks: "bits"},
 	"gap.none.+0.ms.pi.+500ppm.high.a9600.40dB/t3":             {checks: "bits"},
-	"gap.none.+1500.ms.csbk.+500ppm.nom.cu8-48k.40dB/t1":       {checks: "missing"},
 	"gap.none.+2500.ms.csbk.+500ppm.high.cs16-48k.40dB/t0":     {checks: "missing"},
 	"gap.none.+2500.ms.csbk.+500ppm.high.cs16-48k.40dB/t1":     {checks: "missing"},
 	"gap.none.+2500.ms2.pi.-500ppm.nom.a12000.40dB/t0":         {checks: "bits"},
@@ -126,7 +125,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"s0.none.-3000.ms.csbk.0ppm.low.a9600.40dB/t2":             {checks: "missing"},
 	"s0.none.-3000.ms.csbk.0ppm.low.a9600.40dB/t3":             {checks: "missing"},
 
-	"agc.noise.-2500.ms.rc.0ppm.low.cs16-2048k.40dB.dc/t0":            {checks: "bits"},
 	"gap.cw2s.+3000.ms.data1.+500ppm.nom.a9600.inf.step10dB/t0":       {checks: "bits,seconds"},
 	"gap.cw2s.+3000.ms.data1.+500ppm.nom.a9600.inf.step10dB/t1":       {checks: "bits,seconds"},
 	"gap.cw2s.+700.ms2.pi.0ppm.low.cs16-48k.inf.dc.step10dB/t0":       {checks: "missing"},
