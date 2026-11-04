@@ -27,3 +27,5 @@ func (r *leanCore) isReplayDry() bool { return false }
 type acStage struct{}
 
 func (r *leanCore) cohVerify() bool { return false }
+
+func (r *leanCore) earlyOK(b *Burst) bool { return r.fecOK && b.HasFixed }

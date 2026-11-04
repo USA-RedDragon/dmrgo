@@ -2,7 +2,12 @@
 
 package rf
 
-import "math"
+import (
+	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+)
 
 const discDefaultTier = Tier1
 
@@ -102,4 +107,28 @@ func (r *leanCore) isReplayDry() bool { return r.replayDry }
 func (r *leanCore) cohVerify() bool {
 	x, ok := r.ext.(*softExt)
 	return ok && x.coh != nil
+}
+
+func (r *leanCore) earlyOK(b *Burst) bool { return checkedData(b) }
+
+// checkedData reports whether a burst is a data burst whose slot type
+// decodes clean, whose BPTC(196,96) block is a codeword, and whose type
+// carries a CRC that passes. Only such a burst may start before the input:
+// a guessed symbol there cannot get past the CRC.
+func checkedData(b *Burst) bool {
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	if !known || kind != layer2.KindData {
+		return false
+	}
+	d, _ := b.Decoded()
+	st := d.SlotType()
+	if st.FEC.Uncorrectable || st.FEC.ErrorsCorrected != 0 {
+		return false
+	}
+	info, _, res := bptc.Decode196(d.Info())
+	if res.Uncorrectable || res.ErrorsCorrected != 0 {
+		return false
+	}
+	ok, checked := bptcCheck(st.DataType, &info)
+	return ok && checked
 }

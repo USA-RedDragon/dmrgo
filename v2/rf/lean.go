@@ -398,6 +398,7 @@ type leanCore struct {
 	stepHold       bool
 	preStep        bool
 	preCut         bool
+	fecOK          bool
 
 	signMiss                           uint8
 	suspectRun, bsSuspectRun           uint8
@@ -2865,6 +2866,13 @@ func abs32i(x int32) int32 {
 }
 
 func (r *leanCore) emit(b *Burst) {
+	if !payloadInInput(b.Seconds) {
+		if !r.earlyOK(b) {
+			return
+		}
+		b.Data, _ = b.Decoded()
+		b.HasCACH = false
+	}
 	if a := r.audio; a != nil {
 		a.observe(b)
 	}

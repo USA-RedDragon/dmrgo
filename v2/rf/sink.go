@@ -14,7 +14,7 @@ type burstSink struct {
 }
 
 func (s *burstSink) put(b *Burst) {
-	if s == nil || !payloadInInput(b.Seconds) {
+	if s == nil {
 		return
 	}
 	s.seeShortLC(b)
@@ -37,7 +37,7 @@ func (s *burstSink) put(b *Burst) {
 // starts at seconds, on the time axis of Burst.Seconds, has its center inside
 // the input. Each front gives Seconds net of its own lag, so the rule holds
 // for every front. Before that point the input holds no sample of the
-// symbol, and the receiver emits no burst rather than guessed bits.
+// symbol, and the receiver emits such a burst only when a CRC confirms it.
 func payloadInInput(seconds float64) bool {
 	b := math.Float64bits(seconds)
 	return b>>63 == 0 || b <= payloadEdgeBits

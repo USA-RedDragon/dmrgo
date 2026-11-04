@@ -186,6 +186,11 @@ func decodeGathered(f *leanFEC, id softSmallID, hard, fixed, want uint32) (info,
 	return uint32(f.top.info), f.top.cw, bits.OnesCount32(f.top.cw ^ hard)
 }
 
+func crcType(dt enums.DataType) bool {
+	return dt.CarriesFullLC() || dt == enums.DataTypePIHeader || dt == enums.DataTypeCSBK || dt == enums.DataTypeMBCHeader ||
+		dt == enums.DataTypeDataHeader || dt == enums.DataTypeUnifiedSingleBlock
+}
+
 func bptcCheck(dt enums.DataType, data *[12]byte) (ok, checked bool) {
 	p := *data
 	switch {
@@ -416,6 +421,7 @@ func putTACT(b *Burst, cw uint32) {
 //go:noinline
 func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 	b.Fixed, b.FixedCACH, b.HasFixed = b.Data, b.CACH, true
+	r.fecOK = false
 	out := &b.Fixed
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	switch {
@@ -443,7 +449,7 @@ func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 			r.fixRate34(f, out)
 		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
 		default:
-			r.fixBPTC(f, dt, out)
+			r.fecOK = !r.fixBPTC(f, dt, out) && crcType(dt)
 		}
 	}
 	if known && r.anchor == b.Sync {
