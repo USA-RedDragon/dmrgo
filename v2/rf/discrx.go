@@ -265,6 +265,7 @@ func (r *discRx) runAll(x []int16) int {
 	buf, an := r.acqBuf()
 	cubic, half, slow := tm.cubic, f.half, f.slow
 	search, keep := !r.locked, !r.locked || r.hunt
+	fit := r.hasExt()
 	r.startRaw(0)
 	for i, v := range x {
 		if search {
@@ -305,6 +306,9 @@ func (r *discRx) runAll(x []int16) int {
 			if kh++; kh == an {
 				kh = 0
 			}
+		}
+		if fit {
+			r.ext.keepFit(int8((acc + 1<<13) >> 14))
 		}
 		t--
 		for t <= 0 {
@@ -391,6 +395,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
 	st := r.state96()
+	fit := r.hasExt()
 	r.startRaw(i0)
 	k, off := f.k, f.off
 	hist := &f.rrcHist
@@ -425,6 +430,9 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				}
 				y := float32(acc) * (rrcStepHz / 32768.0)
 				sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
+				if fit {
+					r.ext.keepFit(int8((acc + 1<<13) >> 14))
+				}
 				if st&st96Keep != 0 {
 					q := int16(int8((acc + 1<<13) >> 14))
 					if kh&1 == 0 {

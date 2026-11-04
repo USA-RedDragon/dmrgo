@@ -277,6 +277,9 @@ func (r *leanRx) sample(v complex64) {
 	if !r.locked || r.hunt {
 		r.keep(s)
 	}
+	if r.hasExt() {
+		r.ext.keepFit(int8(max32(min32(roundf(s*(1.0/discStepHz)), math.MaxInt8), math.MinInt8)))
+	}
 	r.push(s)
 }
 

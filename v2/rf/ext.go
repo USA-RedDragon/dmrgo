@@ -12,6 +12,7 @@ import (
 )
 
 type leanExt interface {
+	keepFit(q int8)
 	noteStrobe(c *leanCore)
 	noteGrid(c *leanCore, d float32, n int)
 	burst(c *leanCore, b *Burst)
@@ -70,6 +71,8 @@ type extChan struct {
 }
 
 type softExt struct {
+	fit             [extFitSamples]int8
+	fitHead, fitN   int32
 	seekPend        [2]seekNote
 	strobes         *[extStrobes]int64
 	vP              enums.SyncPattern
@@ -786,6 +789,31 @@ func (x *softExt) drain(c *leanCore, one bool, keep int) {
 }
 
 func (x *softExt) kept() []int16 { return x.acq }
+
+// extFitSamples is the size of the ring of recent samples that the EMB
+// timing fit of a burst reads. The core keeps its acquisition samples only
+// while it searches or hunts, so the fit has its own ring, written at every
+// sample, apart from the replay lookback.
+const extFitSamples = 256
+
+func (x *softExt) keepFit(q int8) {
+	x.fit[x.fitHead] = q
+	x.fitHead = (x.fitHead + 1) & (extFitSamples - 1)
+	x.fitN = min(x.fitN+1, extFitSamples)
+}
+
+func (x *softExt) fitKept(c *leanCore, n int) bool {
+	return float32(n)*2*c.tm.step+4-c.lastAt <= float32(x.fitN)
+}
+
+func (x *softExt) fillFit(c *leanCore, win *syncWindow, b0 int32) {
+	win.b0, win.off = b0, c.off*(1.0/discStepHz)
+	h := x.fitHead - 1 - b0
+	for k := range win.w {
+		win.w[k] = x.fit[h&(extFitSamples-1)]
+		h--
+	}
+}
 
 func (x *softExt) unplaced(c *leanCore, b *Burst) {
 	ch := &x.ch[b.Slot&1]
@@ -1789,7 +1817,7 @@ func (x *softExt) embTiming(c *leanCore, b *Burst, data *layer2.RawBurst) (int64
 		return 0, 0, 0, false
 	}
 	const back = slotSymbols - 1 - leanSyncEnd
-	if c.ns-1 != c.base+slotSymbols-1 || !c.keptSymbols(back+syncSymbols+4) {
+	if c.ns-1 != c.base+slotSymbols-1 || !x.fitKept(c, back+syncSymbols+4) {
 		return 0, 0, 0, false
 	}
 	var syms [syncSymbols]int8
@@ -1800,7 +1828,7 @@ func (x *softExt) embTiming(c *leanCore, b *Burst, data *layer2.RawBurst) (int64
 	sps := 2*c.tm.step + c.tm.rate
 	end := c.lastAt - float32(back)*sps
 	var win syncWindow
-	c.fillWindow(&win, max(int32(-end-sps/2)-2, 0))
+	x.fillFit(c, &win, max(int32(-end-sps/2)-2, 0))
 	var cv [7]float32
 	best := win.peak(&syms, &cv, end, sps, true)
 	if best == 0 || best == len(cv)-1 {
