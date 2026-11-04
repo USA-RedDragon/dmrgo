@@ -5,13 +5,12 @@ package rf
 import "math"
 
 const (
-	iqRefillScale = 8192
-	iqRefillHz    = 1000
+	iqRefillHz = 1000
 )
 
 type iqRefill struct {
 	soft     *softExt
-	raw      [][2]int16
+	raw      []complex64
 	head     int
 	n        int64
 	from     int64
@@ -36,7 +35,7 @@ func (r *iqRx) attachRefill(x *softExt) {
 	}
 	warm := len(r.conv.taps) + (2*audio12Taps+halfTaps)*h*r.conv.decim
 	lag := min(cap(r.audio)*r.conv.decim, iqAFCBlock) + slotSamplesN + 512
-	f := &iqRefill{raw: make([][2]int16, 2*len(x.acq)*h*r.conv.decim+warm+lag), tuned: -1}
+	f := &iqRefill{raw: make([]complex64, 2*len(x.acq)*h*r.conv.decim+warm+lag), tuned: -1}
 	f.conv.hist = make([]complex64, 2*len(r.conv.taps))
 	r.refill = f
 	x.refill, x.rt.want = r.refillKept, r.retuneWanted
@@ -128,7 +127,7 @@ func (r *iqRx) keepRaw(v complex64) {
 		f.idle, f.from = false, f.n
 		fallthrough
 	default:
-		f.raw[f.head] = [2]int16{refillQ(real(v)), refillQ(imag(v))}
+		f.raw[f.head] = v
 	}
 	if f.wide != nil {
 		f.wide[f.n%int64(len(f.wide))] = v
@@ -137,10 +136,6 @@ func (r *iqRx) keepRaw(v complex64) {
 		f.head = 0
 	}
 	f.n++
-}
-
-func refillQ(x float32) int16 {
-	return int16(max(min(roundf(x*iqRefillScale), math.MaxInt16), math.MinInt16))
 }
 
 func (r *iqRx) noteTune(hz float32) {
@@ -202,7 +197,7 @@ func (r *iqRx) regenAudio(rest []int16) bool {
 		if p++; p == len(f.raw) {
 			p = 0
 		}
-		v, _, ok := cv.push(complex(float32(w[0])*(1.0/iqRefillScale), float32(w[1])*(1.0/iqRefillScale)))
+		v, _, ok := cv.push(w)
 		if !ok {
 			continue
 		}
@@ -273,7 +268,7 @@ func (r *iqRx) refillKept(c *leanCore, m int64) {
 		if p++; p == len(f.raw) {
 			p = 0
 		}
-		v, _, ok := cv.push(complex(float32(w[0])*(1.0/iqRefillScale), float32(w[1])*(1.0/iqRefillScale)))
+		v, _, ok := cv.push(w)
 		if !ok {
 			continue
 		}
