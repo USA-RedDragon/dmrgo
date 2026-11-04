@@ -41,7 +41,14 @@ type benchSlot struct {
 
 func benchStream(t testing.TB, n int) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Message: "DMRGO RXBENCH", Superframes: n, BSSourced: true, Slot: 1, Preambles: 2}
+	return benchStreamMsg(t, n, "DMRGO RXBENCH")
+}
+
+// benchStreamMsg builds the stream of benchStream with msg as the text of
+// its data calls.
+func benchStreamMsg(t testing.TB, n int, msg string) ([]rftx.BSSlot, []benchSlot) {
+	t.Helper()
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Message: msg, Superframes: n, BSSourced: true, Slot: 1, Preambles: 2}
 	voice, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

@@ -16,7 +16,14 @@ import (
 
 func msStream(t testing.TB, n int, jitter float64) ([]float64, []float64, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Wakeups: 1, Message: "DMRGO TIER ORDER", Superframes: 2, Preambles: 2, Slot: 1}
+	return msStreamMsg(t, n, jitter, "DMRGO TIER ORDER")
+}
+
+// msStreamMsg builds the stream of msStream with msg as the text of its data
+// calls.
+func msStreamMsg(t testing.TB, n int, jitter float64, msg string) ([]float64, []float64, []benchSlot) {
+	t.Helper()
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Wakeups: 1, Message: msg, Superframes: 2, Preambles: 2, Slot: 1}
 	const slotN = slotSeconds * basebandRate
 	gap := int(0.3 * basebandRate)
 	var freq, env []float64
@@ -99,45 +106,62 @@ func tierOrderPayloads() []string {
 	return []string{"ambe_c0c1", "ambe", "rate12", "rate34", "csbk", "lc", "elc"}
 }
 
-type tierOrderCase struct {
-	scenario string
-	truth    []benchSlot
-	x        []complex64
+// tierOrderMessage gives the text of the data calls of payload draw d: 16
+// letters and spaces from a fixed generator, so every run takes the same set.
+func tierOrderMessage(d uint64) string {
+	rng := rand.New(rand.NewPCG(0x7071, d))
+	b := make([]byte, 16)
+	for i := range b {
+		b[i] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "[rng.IntN(27)]
+	}
+	return string(b)
 }
 
+// TestTierOrder checks that no tier recovers fewer bursts than the tier below
+// it. Recovery varies with the payload as much as with the noise, so each
+// scenario runs over a fixed set of payload draws, each at every C/N with its
+// own noise, and a tier fails when its mean deficit per draw is over 3
+// standard errors of that mean.
 func TestTierOrder(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
-		t.Skip("receives 54 streams with 6 receivers")
+		t.Skip("receives 108 streams with 6 receivers")
 	}
-	type scenario struct {
-		name  string
-		cns   []float64
-		seeds int
+	scenarios := []struct {
+		name string
+		cns  []float64
+	}{
+		{"bs", []float64{3, 5, 7}},
+		{"ms", []float64{4, 6, 8, 10}},
+		{"ms-jitter", []float64{6, 10}},
 	}
-	scenarios := []scenario{
-		{"bs", []float64{3, 5, 7}, 8},
-		{"ms", []float64{4, 6, 8, 10}, 6},
-		{"ms-jitter", []float64{6, 10}, 3},
+	// Under -race 1 draw runs the code paths; the bars hold for the full set only.
+	draws := uint64(testmode.N(12, 12, 1))
+	type stream struct {
+		scenario string
+		draw     uint64
+		truth    []benchSlot
+		x        []complex64
 	}
-	slots, bsTruth := benchStream(t, 6)
-	fm, env, msTruth := msStream(t, 3, 0)
-	jfm, jenv, jTruth := msStream(t, 3, 0.37)
-	var cases []tierOrderCase
-	for _, sc := range scenarios {
-		for _, cn := range sc.cns {
-			// Under -race 1 seed runs the code paths; the bars hold for the full seed count only.
-			for seed := range uint64(testmode.N(sc.seeds, sc.seeds, 1)) {
-				c := tierOrderCase{scenario: sc.name}
+	var streams []stream
+	for d := range draws {
+		msg := tierOrderMessage(d)
+		slots, bsTruth := benchStreamMsg(t, 6, msg)
+		fm, env, msTruth := msStreamMsg(t, 3, 0, msg)
+		jfm, jenv, jTruth := msStreamMsg(t, 3, 0.37, msg)
+		for _, sc := range scenarios {
+			for k, cn := range sc.cns {
+				seed := 100 + d*uint64(len(sc.cns)) + uint64(k)
+				s := stream{scenario: sc.name, draw: d}
 				switch sc.name {
 				case "bs":
-					c.truth, c.x = bsTruth, noisyBaseband(slots, 1400, cn, 100+seed)
+					s.truth, s.x = bsTruth, noisyBaseband(slots, 1400, cn, seed)
 				case "ms":
-					c.truth, c.x = msTruth, noisyFM(fm, env, 1400, cn, 100+seed)
+					s.truth, s.x = msTruth, noisyFM(fm, env, 1400, cn, seed)
 				default:
-					c.truth, c.x = jTruth, noisyFM(jfm, jenv, 1400, cn, 100+seed)
+					s.truth, s.x = jTruth, noisyFM(jfm, jenv, 1400, cn, seed)
 				}
-				cases = append(cases, c)
+				streams = append(streams, s)
 			}
 		}
 	}
@@ -149,27 +173,28 @@ func TestTierOrder(t *testing.T) {
 		scenario string
 		e        benchEntry
 		payload  string
+		draw     uint64
 	}
 	sum := map[key]*benchScore{}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
-	for _, c := range cases {
+	for _, s := range streams {
 		for _, e := range entries {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				sem <- struct{}{}
 				defer func() { <-sem }()
-				got := benchReceive(t, c.x, e)
-				sc := scoreBench(c.truth, got)
-				if c.scenario != "bs" {
-					sc = scoreMS(c.truth, got)
+				got := benchReceive(t, s.x, e)
+				sc := scoreBench(s.truth, got)
+				if s.scenario != "bs" {
+					sc = scoreMS(s.truth, got)
 				}
 				mu.Lock()
 				defer mu.Unlock()
 				for _, p := range tierOrderPayloads() {
-					k := key{c.scenario, e, p}
+					k := key{s.scenario, e, p, s.draw}
 					if sum[k] == nil {
 						sum[k] = &benchScore{}
 					}
@@ -184,15 +209,22 @@ func TestTierOrder(t *testing.T) {
 		for _, mode := range []string{benchAudio, benchIQ} {
 			for _, p := range tierOrderPayloads() {
 				for _, tier := range []Tier{Tier1, Tier2} {
-					lo := sum[key{sc.name, benchEntry{mode, tier - 1}, p}]
-					hi := sum[key{sc.name, benchEntry{mode, tier}, p}]
-					if lo.Truth == 0 {
-						t.Fatalf("%s: no %s in the stream", sc.name, p)
+					diffs := make([]float64, 0, draws)
+					var lo, hi, truth int
+					for d := range draws {
+						l := sum[key{sc.name, benchEntry{mode, tier - 1}, p, d}]
+						h := sum[key{sc.name, benchEntry{mode, tier}, p, d}]
+						if l.Truth == 0 {
+							t.Fatalf("%s: no %s in draw %d", sc.name, p, d)
+						}
+						diffs = append(diffs, float64(h.Exact-l.Exact))
+						lo, hi, truth = lo+l.Exact, hi+h.Exact, truth+l.Truth
 					}
-					if testmode.Race || hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
+					mean, se := meanSE(diffs)
+					if testmode.Race || mean+3*se >= 0 {
 						continue
 					}
-					t.Errorf("%s %s %s: Tier%d recovers %d of %d, Tier%d %d", sc.name, mode, p, tier-Tier0, hi.Exact, hi.Truth, tier-1-Tier0, lo.Exact)
+					t.Errorf("%s %s %s: Tier%d recovers %d of %d, Tier%d %d; %+.2f per draw, SE %.2f", sc.name, mode, p, tier-Tier0, hi, truth, tier-1-Tier0, lo, mean, se)
 				}
 			}
 		}
@@ -202,8 +234,12 @@ func TestTierOrder(t *testing.T) {
 			for _, e := range entries {
 				line := sc.name + " " + e.name()
 				for _, p := range tierOrderPayloads() {
-					s := sum[key{sc.name, e, p}]
-					line += " " + p + "=" + strconv.Itoa(s.Exact) + "/" + strconv.Itoa(s.Truth)
+					var ex, tr int
+					for d := range draws {
+						s := sum[key{sc.name, e, p, d}]
+						ex, tr = ex+s.Exact, tr+s.Truth
+					}
+					line += " " + p + "=" + strconv.Itoa(ex) + "/" + strconv.Itoa(tr)
 				}
 				t.Log(line)
 			}
