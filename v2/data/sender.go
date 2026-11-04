@@ -467,6 +467,13 @@ func (s *Sender) State() SenderState {
 // message of a window only. A DD_HEAD or R_HEAD message is confirmed when
 // its Response Requested flag (A) is set, and Send sets A when SARQ is set,
 // as A 0 with SARQ 1 is reserved (ETSI TS 102 361-3 clause 6.4, Table 6.5).
+// m.Header can also be a UDT_HEAD with the UDT Format, Pad Nibble and other
+// fields of the caller, and m.Payload its 0 to 46 octets of appended data
+// at rate 1/2. Send sets its UAB and builds the blocks as
+// packet.NewPacket does, and sends the message once, unconfirmed, as the
+// Response Requested flag (A) of a UDT_HEAD is 0 (ETSI TS 102 361-1 clause
+// 9.2.13, Table 9.17D): the message ends with ResultSent after its last
+// block, whatever its A flag.
 // With SenderConfig.Window above 1, a C_HEAD message of the IP bearer
 // service to the link of the messages in progress joins them while fewer
 // than Window are in progress: it goes in the window on air when the last
@@ -478,8 +485,9 @@ func (s *Sender) State() SenderState {
 // group (Field "Header.Group"), dmrgo.ErrZeroValue on a zero Sender,
 // packet.ErrTooLong for a message with a P_HEAD that needs 127 blocks, and
 // the errors of packet.Builder.Segment, such as packet.ErrNoRoom for a
-// message of more than SenderConfig.MaxBlocks blocks and packet.ErrRate.
-// (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)
+// message of more than SenderConfig.MaxBlocks blocks, packet.ErrRate and
+// packet.ErrPadNibble. (ETSI TS 102 361-1 clause 8.2.2.5, ETSI TS 102 361-3
+// clauses 5.4 and 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -580,6 +588,10 @@ func sendHeader(h *pdu.DataHeader, e *slot) (pdu.ConfirmedDataHeader, error) {
 		r.ResponseRequested = r.ResponseRequested || r.SARQ
 		e.confirmed = r.ResponseRequested
 		return pdu.ConfirmedDataHeader{}, h.SetRawData(r)
+	}
+	if _, ok := h.AsUDT(); ok {
+		e.confirmed = false
+		return pdu.ConfirmedDataHeader{}, nil
 	}
 	return pdu.ConfirmedDataHeader{}, errHeader
 }

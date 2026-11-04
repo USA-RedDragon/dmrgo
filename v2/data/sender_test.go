@@ -429,7 +429,6 @@ func TestSenderErrors(t *testing.T) {
 	s := newSender(t, &data.SenderConfig{Slot: enums.Slot1, Preambles: -1, MaxBlocks: 2})
 	group := message(t, 10)
 	editConfirmed(t, &group.Header, func(c *pdu.ConfirmedDataHeader) { c.Group = true })
-	udt := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{})}
 	prop := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{AppendedBlocks: 1}), Payload: payload(10)}
 	prop.Proprietary = &pdu.ProprietaryHeader{}
 	for _, c := range []struct {
@@ -438,7 +437,6 @@ func TestSenderErrors(t *testing.T) {
 		want error
 	}{
 		{"group", group, &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}},
-		{"UDT", udt, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
 		{"P_HEAD after a DD_HEAD", prop, &dmrgo.ConfigError{Type: "data", Field: "Proprietary"}},
 		{"too long", message(t, 200), packet.ErrNoRoom},
 		{"rate", &data.Message{Header: confirmedHeader(t, 0), Rate: enums.DataTypeCSBK}, packet.ErrRate},
