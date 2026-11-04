@@ -58,10 +58,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.none.+3000.ms.data12.-500ppm.low.a48000.40dB/t0":      {checks: "bits"},
 	"gap.none.+3000.ms.data34.+500ppm.nom.cs16-2048k.40dB/t0":  {checks: "missing"},
 	"gap.none.+4000.ms.data1.0ppm.low.cs16-2048k.inf/t0":       {checks: "missing"},
-	"gap.none.+700.ms.pi.+500ppm.low.a24000.inf/t0":            {checks: "missing"},
-	"gap.none.+700.ms.pi.+500ppm.low.a24000.inf/t1":            {checks: "bits"},
-	"gap.none.+700.ms.pi.+500ppm.low.a24000.inf/t2":            {checks: "bits"},
-	"gap.none.+700.ms.pi.+500ppm.low.a24000.inf/t3":            {checks: "bits"},
 	"gap.none.+700.ms.rc.+500ppm.low.a48000.inf/t0":            {checks: "missing"},
 	"gap.none.+700.ms.rc.+500ppm.low.a48000.inf/t1":            {checks: "bits,seconds"},
 	"gap.none.+700.ms.rc.+500ppm.low.a48000.inf/t2":            {checks: "bits,seconds"},
@@ -144,6 +140,4 @@ var rxMatrixXFail = map[string]mxXFail{
 	"s0.none.+3000.ms2.rc.-500ppm.low.cu8-2048k.40dB.dc/t2":           {checks: "bits"},
 	"s0.none.-1500.ms.rc.0ppm.nom.cs16-9600.inf.dc/t0":                {checks: "missing"},
 	"agc.cw2s.-1500.ms.rc.0ppm.high.a12000.40dB/t2":                   {checks: "bits"},
-	"agc.none.+700.ms2.data1.0ppm.high.a9600.40dB/t0":                 {checks: "seconds"},
-	"agc.none.+700.ms2.data1.0ppm.high.a9600.40dB/t1":                 {checks: "seconds"},
 }

@@ -16,6 +16,7 @@ import (
 const (
 	discAnchor          = 0.6
 	levelForget         = 0.8
+	levelWarm           = 1/(1-levelForget) - 1
 	leanSyncClip        = 2
 	leanSyncClipMax     = 4
 	levelRefit          = 5
@@ -373,12 +374,15 @@ type leanCore struct {
 	signs    uint32
 	cb       Burst
 
-	acqGain        float32
-	trackGain      float32
-	pairNs         int64
-	pairSrc        uint8
-	pairLv         bool
-	refit          bool
+	acqGain   float32
+	trackGain float32
+	pairNs    int64
+	pairSrc   uint8
+	pairLv    bool
+	refit     bool
+	// levelN counts down the SYNC fits after a lock that the level average
+	// still weighs as a running mean.
+	levelN         uint8
 	tuneHz         float32
 	offsetHz       float32
 	tunePrev       float32
@@ -415,6 +419,7 @@ type leanCore struct {
 	huntBuf        [leanHuntSamples / 2]int16
 	devHz          int16
 	devAtHz        int16
+	levelEnd       uint16
 	jumpZ          float32
 	preDev, preOff float32
 	stepHold       bool
@@ -460,6 +465,7 @@ type leanSlots struct {
 	retry bool
 	late  bool
 	fresh [2]uint8
+	lvN   [2]uint8
 	clk   leanClock
 	clkNs uint16
 	clkAt uint8
@@ -2019,6 +2025,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	if first {
 		g = max32(g, leanMinScale)
 		r.devScale, r.dcHz, r.discVar, r.refit = g, dc, res, false
+		r.levelN, r.levelEnd = levelWarm, uint16(end)
 		r.syncFitRes = res
 		if a := r.audio; a != nil {
 			t := r.tuneHz
@@ -2036,16 +2043,22 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	if check {
 		g, dc = r.inlierLevels(end, p, g, dc)
 	}
-	r.devScale = levelForget*r.devScale + (1-levelForget)*g
-	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
-	r.discVar = levelForget*r.discVar + (1-levelForget)*res
+	f := float32(levelForget)
+	if r.levelN > 0 && uint16(end) != r.levelEnd {
+		f = 1 - 1/float32(levelWarm+2-r.levelN)
+		r.levelN--
+	}
+	r.levelEnd = uint16(end)
+	r.devScale = f*r.devScale + (1-f)*g
+	r.dcHz = f*r.dcHz + (1-f)*dc
+	r.discVar = f*r.discVar + (1-f)*res
 	r.syncFitRes = res
 	if a := r.audio; a != nil {
 		t := r.tuneHz
 		if int32(uint32(end)-r.tuneNs) < 0 {
 			t = r.tunePrev
 		}
-		r.fitHz = levelForget*r.fitHz + (1-levelForget)*(t+dc)/a.gain
+		r.fitHz = f*r.fitHz + (1-f)*(t+dc)/a.gain
 	}
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	return true
@@ -2299,7 +2312,7 @@ func (r *leanCore) holdNext(j int32, present bool) {
 
 func (r *leanCore) slotFirst(j int32, base int64, anchor enums.SyncPattern) {
 	o := (j + 1) & 1
-	r.ms.lv[o] = r.levels()
+	r.ms.lv[o], r.ms.lvN[o] = r.levels(), r.levelN
 	r.fitLevels(base+leanSyncEnd, anchor, true, false)
 	r.amp = 0
 	if !r.isReplaying() {
@@ -2340,7 +2353,7 @@ func (r *leanCore) slotSwitch(j int32) {
 		if live {
 			r.savePhase(p)
 		}
-		m.lv[p] = r.levels()
+		m.lv[p], m.lvN[p] = r.levels(), r.levelN
 	}
 	if m.fresh[p] > 0 {
 		m.fresh[p]--
@@ -2361,6 +2374,7 @@ func (r *leanCore) slotSwitch(j int32) {
 	}
 	if m.anch[p] != leanNoSlot {
 		r.setLevels(&m.lv[q])
+		r.levelN = m.lvN[q]
 	}
 	if !live {
 		return
@@ -3298,9 +3312,10 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		return 0, false
 	}
 	o := (j + 1) & 1
-	r.ms.lv[o] = r.levels()
+	r.ms.lv[o], r.ms.lvN[o] = r.levels(), r.levelN
 	g = max32(g, leanMinScale)
 	r.devScale, r.dcHz, r.discVar, r.amp = g, dc, res, 0
+	r.levelN, r.levelEnd = levelWarm, uint16(end)
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	k := sh + int64(r.ms.off[j&1])
 	r.first += k

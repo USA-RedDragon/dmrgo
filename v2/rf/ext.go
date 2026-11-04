@@ -1147,7 +1147,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	ms.anch[0], ms.anch[1] = leanNoSlot, leanNoSlot
 	for i := range rs.anch {
 		if a := rs.anch[i]; a != leanNoSlot && a != n32 {
-			ms.anch[i], ms.lv[i] = a, rs.lv[i]
+			ms.anch[i], ms.lv[i], ms.lvN[i] = a, rs.lv[i], rs.lvN[i]
 		}
 	}
 	c.ms = ms
