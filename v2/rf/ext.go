@@ -232,7 +232,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	default:
 		ch.have = 0
 	}
-	x.embFit(c, b, &b.Data, true)
+	x.embFit(c, b)
 	x.push(c, b, hold, c.base+cachSymbols)
 	if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
 		x.embeddedLC(ch, b.Slot)
@@ -345,10 +345,10 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 		noteCallLC(&ch.raw, &b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
 		ch.elc.callLC(&b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
 	}
-	alt := x.coh.ex != nil && data != b.Data
-	if !x.embFit(c, b, &b.Data, !alt) && alt {
-		x.embFit(c, b, &data, true)
+	if x.coh.ex != nil && data != b.Data && x.embPick(c, b, &data) {
+		takeEmb(b, &data)
 	}
+	x.embFit(c, b)
 	i := x.push(c, b, hold, c.base+cachSymbols)
 	x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
 	if x.coh.nextOK {
@@ -1745,20 +1745,31 @@ func (x *softExt) rateAgrees(c *leanCore, base int64) bool {
 	return d*d <= leanClockSig*leanClockSig*sig*sig
 }
 
-func (x *softExt) embFit(c *leanCore, b *Burst, data *layer2.RawBurst, last bool) bool {
-	if c.bs || c.isReplaying() || b.Voice <= enums.VoiceBurstA || b.Voice > enums.VoiceBurstF || !x.timing {
-		return false
+func (x *softExt) embFit(c *leanCore, b *Burst) {
+	if e := embOf(&b.Data); e.FEC.Uncorrectable || e.FEC.ErrorsCorrected != 0 {
+		return
 	}
-	if e := embOf(data); e.FEC.Uncorrectable || e.FEC.ErrorsCorrected != 0 {
-		return false
+	if sym, t, q, ok := x.embTiming(c, b, &b.Data); ok {
+		x.liveFit(c, sym, t, q, extEmbWeight)
+	}
+}
+
+const syncFieldBit = (leanSyncEnd - cachSymbols - (syncSymbols - 1)) * 2
+
+// embTiming fits the timing of the SYNC field of the voice burst b, which
+// holds the EMB and an embedded signalling fragment, to the symbols of data,
+// and gives the symbol of the fit, its time in ticks and its rho2.
+func (x *softExt) embTiming(c *leanCore, b *Burst, data *layer2.RawBurst) (int64, int64, float32, bool) {
+	if c.bs || c.isReplaying() || b.Voice <= enums.VoiceBurstA || b.Voice > enums.VoiceBurstF || !x.timing {
+		return 0, 0, 0, false
 	}
 	const back = slotSymbols - 1 - leanSyncEnd
 	if c.ns-1 != c.base+slotSymbols-1 || !c.keptSymbols(back+syncSymbols+4) {
-		return false
+		return 0, 0, 0, false
 	}
 	var syms [syncSymbols]int8
 	for i := range syncSymbols {
-		k := (leanSyncEnd - cachSymbols - (syncSymbols - 1) + i) * 2
+		k := syncFieldBit + i*2
 		syms[i] = symbolOf(unpacked.Bit(data[k/8]>>(7-k%8)&1), unpacked.Bit(data[(k+1)/8]>>(7-(k+1)%8)&1))
 	}
 	sps := 2*c.tm.step + c.tm.rate
@@ -1768,7 +1779,7 @@ func (x *softExt) embFit(c *leanCore, b *Burst, data *layer2.RawBurst, last bool
 	var cv [7]float32
 	best := win.peak(&syms, &cv, end, sps, true)
 	if best == 0 || best == len(cv)-1 {
-		return false
+		return 0, 0, 0, false
 	}
 	d := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
 	z := min(win.mmZero(&syms, end, d, sps), -end)
@@ -1780,14 +1791,43 @@ func (x *softExt) embFit(c *leanCore, b *Burst, data *layer2.RawBurst, last bool
 	const n = syncSymbols
 	sxy, sxx, pp := sxv-sp*sv/n, svv-sv*sv/n, spp-sp*sp/n
 	if sxy <= 0 || sxx <= 0 || pp <= 0 {
+		return 0, 0, 0, false
+	}
+	return c.ns - 1 - back, c.strobeTicks(end + z), sxy * sxy / (sxx * pp), true
+}
+
+// embPick reports whether the SYNC field of alt, the other detection of the
+// voice burst b, is the better one: its EMB decodes with fewer corrected
+// bits, or as few and the field fits the received symbols closer. Fixed
+// cannot judge the embedded signalling bits of a single burst.
+func (x *softExt) embPick(c *leanCore, b *Burst, alt *layer2.RawBurst) bool {
+	if b.Voice <= enums.VoiceBurstA || b.Voice > enums.VoiceBurstF {
 		return false
 	}
-	q := sxy * sxy / (sxx * pp)
-	if q < extAnchorRho2 && !last {
+	e, a := embOf(&b.Data), embOf(alt)
+	switch {
+	case a.FEC.Uncorrectable:
 		return false
+	case e.FEC.Uncorrectable:
+		return true
+	case a.FEC.ErrorsCorrected != e.FEC.ErrorsCorrected:
+		return a.FEC.ErrorsCorrected < e.FEC.ErrorsCorrected
 	}
-	x.liveFit(c, c.ns-1-back, c.strobeTicks(end+z), q, extEmbWeight)
-	return true
+	_, _, qa, okA := x.embTiming(c, b, alt)
+	_, _, qe, okE := x.embTiming(c, b, &b.Data)
+	return okA && (!okE || qa > qe)
+}
+
+// takeEmb copies the SYNC field of src, the EMB and the embedded signalling
+// fragment, into b.Data, and into b.Fixed where it held the field of b.Data.
+func takeEmb(b *Burst, src *layer2.RawBurst) {
+	for k := syncFieldBit; k < syncFieldBit+2*syncSymbols; k++ {
+		m := byte(0x80) >> (k % 8)
+		if b.Fixed[k/8]&m == b.Data[k/8]&m {
+			b.Fixed[k/8] = b.Fixed[k/8]&^m | src[k/8]&m
+		}
+		b.Data[k/8] = b.Data[k/8]&^m | src[k/8]&m
+	}
 }
 
 func (x *softExt) lineShift(c *leanCore, sym, fit int64) (float32, bool) {
