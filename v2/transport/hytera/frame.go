@@ -43,8 +43,8 @@ type Frame struct {
 	// Pad is octet 58, the octet after the burst in the payload.
 	Pad uint8
 	// CallType is octet 62: 0x01 for a group call and 0x00 for a private
-	// call from a Hytera repeater, 0x0A on wakeup packets. BrandMeister
-	// sends 0x00 on group calls too. Call and SetCall read and write it.
+	// call from a Hytera repeater, 0x0A on wakeup packets. Some masters
+	// send 0x00 on group calls too. Call and SetCall read and write it.
 	CallType uint8
 	// Destination is the talkgroup or radio ID that is called (octets 64
 	// to 66, little-endian).
@@ -130,13 +130,13 @@ func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
 
 // Call returns the call of the frame: target is Destination and source is
 // Source. The FLCO of the burst sets group when it is a voice LC header
-// or terminator with a correctable LC, so that the group calls that
-// BrandMeister sends with CallType 0x00 read as group. Otherwise CallType
+// or terminator with a correctable LC, so that the group calls that some
+// masters send with CallType 0x00 read as group. Otherwise CallType
 // sets it: 0x01 is a group call, as Hytera repeaters send it, and any other
 // value is not. A nil f gives zero values.
 //
 // (OK-DMR Hytera_Homebrew_Bridge captures ea5gvk_1.pcapng and
-// do1kbl_BM_Connect.pcapng; OK-DMR dmr-kaitai ip_site_connect_protocol.ksy)
+// HYTERA_IPSC/do1kbl.pcapng; OK-DMR dmr-kaitai ip_site_connect_protocol.ksy)
 func (f *Frame) Call() (group bool, target, source uint32) {
 	if f == nil {
 		return false, 0, 0

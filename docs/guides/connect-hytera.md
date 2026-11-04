@@ -172,7 +172,7 @@ Data Voice LC Header
 
 ## How it works
 
-A Frame holds the slot, the slot type, which gives the kind of burst, the color code, the 33-octet burst, the call type and the source and destination IDs. The octet pairs of the burst are swapped in the packet, and `DecodeFrame` and `AppendBinary` swap them back. The call type is 0x01 for a group call from a Hytera repeater, but BrandMeister sends 0x00 on group calls too, so `Frame.Call` takes the group flag from the LC of a voice LC header or terminator when it decodes. `Frame.Hint` takes the data type from the slot type field of the burst when the burst has a data SYNC, because Hytera_Homebrew_Bridge sends CSBK and data bursts with the terminator slot type.
+A Frame holds the slot, the slot type, which gives the kind of burst, the color code, the 33-octet burst, the call type and the source and destination IDs. The octet pairs of the burst are swapped in the packet, and `DecodeFrame` and `AppendBinary` swap them back. The call type is 0x01 for a group call from a Hytera repeater, but some masters send 0x00 on group calls too, so `Frame.Call` takes the group flag from the LC of a voice LC header or terminator when it decodes. `Frame.Hint` takes the data type from the slot type field of the burst when the burst has a data SYNC, because Hytera_Homebrew_Bridge sends CSBK and data bursts with the terminator slot type.
 
 The RDAC service and the Hytera application protocols HRNP and HSTRP are not in the package. HDAP is in package [hytera/hdap](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/hytera/hdap). (OK-DMR dmr-kaitai 7489ff1 ip_site_connect_protocol.ksy and ip_site_connect_heartbeat.ksy; OK-DMR Hytera_Homebrew_Bridge 05e1bf9 and its captures)
 

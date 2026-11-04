@@ -4553,7 +4553,7 @@ struct dmrgo_hytera_frame_t {
 	dmrgo_layer2_raw_burst_t burst;
 	/* Pad is octet 58, the octet after the burst in the payload. */
 	uint8_t pad;
-	/* CallType is octet 62: 0x01 for a group call and 0x00 for a private call from a Hytera repeater, 0x0A on wakeup packets. BrandMeister sends 0x00 on group calls too. Call and SetCall read and write it. */
+	/* CallType is octet 62: 0x01 for a group call and 0x00 for a private call from a Hytera repeater, 0x0A on wakeup packets. Some masters send 0x00 on group calls too. Call and SetCall read and write it. */
 	uint8_t call_type;
 	/* Destination is the talkgroup or radio ID that is called (octets 64 to 66, little-endian). */
 	uint32_t destination;
