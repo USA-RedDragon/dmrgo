@@ -50,7 +50,6 @@ const (
 	leanFloorRise       = 1.01
 	leanPresent         = 2
 	leanSearchHz        = 200
-	leanHeldHz          = 1000
 	leanLockMMStep      = 0.1
 	leanMMSteps         = 4
 	leanSignMiss        = 5
@@ -2552,11 +2551,12 @@ func (r *leanCore) ended(j int32, base int64) bool {
 		r.forced && base-r.lockNs > 6*slotSymbols
 }
 
-// heldTune notes a tune of hz before the lock. A tune of leanHeldHz or more
-// moves the carrier far enough that the symbols taken before it are off, as
-// the replay threshold of the refill tiers holds.
+// heldTune notes a tune of hz before the lock. A tune of more than
+// iqHuntMaxHz moved a carrier that was outside the range the lean core pulls
+// in, so the symbols taken before it are off; inside that range the lean core
+// follows the carrier untuned.
 func (r *leanCore) heldTune(hz float32) {
-	if !r.locked && abs32(hz) >= leanHeldHz {
+	if !r.locked && abs32(hz) > iqHuntMaxHz {
 		r.heldNs = r.ns
 	}
 }
@@ -3129,16 +3129,19 @@ func abs32i(x int32) int32 {
 // emit hands b out. A burst whose payload starts before the input holds
 // symbols that the receiver did not take; it goes out only as a data burst
 // whose CRC passes. At a tier that keeps no samples to replay, a burst whose
-// payload starts before a tune of leanHeldHz or more ahead of the lock holds
+// payload starts before a tune of more than iqHuntMaxHz ahead of the lock holds
 // symbols taken off the carrier; it goes out when its own coding vouches for
-// it, and otherwise under the same rule.
+// it, and otherwise under the same rule; it goes out as the codewords its
+// coding vouched for.
 func (r *leanCore) emit(b *Burst) {
-	if !payloadInInput(b.Seconds) || !r.hasExt() && r.base < r.heldNs && !r.vouched(b) {
+	if in := payloadInInput(b.Seconds); !in || !r.hasExt() && r.base < r.heldNs && !r.vouched(b) {
 		if !r.earlyOK(b) {
 			return
 		}
 		b.Data, _ = b.Decoded()
-		b.HasCACH = false
+		b.HasCACH = b.HasCACH && in
+	} else if !r.hasExt() && r.base < r.heldNs && b.HasFixed {
+		b.Data = b.Fixed
 	}
 	if a := r.audio; a != nil {
 		a.observe(b)
