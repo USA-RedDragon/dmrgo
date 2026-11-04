@@ -17,7 +17,11 @@
 // entry, from the embedded LC of bursts B to E, and ends the call on a
 // terminator, a data or idle burst, a transport end flag, the loss of the
 // signal, or a time without bursts. It does not check whether a call is for
-// the user: the consumer filters on Call.Target.
+// the user: the consumer filters on Call.Target. A voice LC whose target or
+// source is ADRNULL (0) is not a valid call (ETSI TS 102 361-1 Annex A,
+// table A.1): the Receiver drops it as it drops an LC that does not decode,
+// so it does not start, end or replace a call or a session, and gives no
+// EventEmbedded. An all-zero embedded LC passes the 5-bit checksum.
 // (ETSI TS 102 361-1 clause 5.1.2, Annex G, ETSI TS 102 361-2 clause 5.2)
 //
 // A burst without a SYNC is voice only by elimination, so a voice burst that

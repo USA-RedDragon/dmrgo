@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -48,6 +49,12 @@ func callOf(lc pdu.LCBytes, origin Origin) (c Call, ok bool) {
 		LC:      lc,
 		Origin:  origin,
 	}, true
+}
+
+// ADRNULL is not a valid source or destination address (ETSI TS 102 361-1
+// Annex A, table A.1).
+func (c *Call) addressed() bool {
+	return c.Target != constants.AddressNull && c.Source != constants.AddressNull
 }
 
 func (c *Call) sameParties(o *Call) bool {

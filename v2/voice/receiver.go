@@ -446,7 +446,7 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 			return out
 		}
 		c, ok := callOf(lc, OriginHeader)
-		if !ok {
+		if !ok || !c.addressed() {
 			return out
 		}
 		out = r.callLC(now, &c, out)
@@ -524,7 +524,7 @@ func (r *Receiver) terminator(now time.Duration, b *layer2.Burst, out []Event) [
 		out = r.abandon(now, out)
 	case StateIdle, StateHang:
 	}
-	if !lcOK || !ok {
+	if !lcOK || !ok || !c.addressed() {
 		return out
 	}
 	if r.state == StateHang {
@@ -904,10 +904,12 @@ func (r *Receiver) take(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 	lc, done := r.collect(b, idx, lost)
 	callChanged := false
 	if done {
-		c, ok := callOf(lc, OriginEmbedded)
-		if ok {
-			out = r.callLC(now, &c, out)
-			callChanged = true
+		if c, ok := callOf(lc, OriginEmbedded); ok {
+			done = c.addressed()
+			if done {
+				out = r.callLC(now, &c, out)
+				callChanged = true
+			}
 		}
 	}
 
