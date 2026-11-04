@@ -19,6 +19,7 @@ type leanExt interface {
 	firstSlot(c *leanCore)
 	place(c *leanCore, b *Burst, j int32) bool
 	unplaced(c *leanCore, b *Burst)
+	dropped(c *leanCore)
 	verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool
 	scan(c *leanCore) (src int, data bool, back int64, ok bool)
 	lockShift(c *leanCore, p enums.SyncPattern, back int64) (float32, bool)
@@ -778,6 +779,10 @@ func (x *softExt) unplaced(c *leanCore, b *Burst) {
 	l := &ch.late[ch.lateN]
 	ch.lateN++
 	l.b, l.ring, l.base = *b, c.ring, c.base
+	x.drain(c, false, 0)
+}
+
+func (x *softExt) dropped(c *leanCore) {
 	x.drain(c, false, 0)
 }
 

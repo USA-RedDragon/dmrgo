@@ -71,7 +71,7 @@ func (r *discRx) setup(cfg discSetup, dec bool) {
 	r.f.gain, r.f.up = audioStartGain, opt.LevelUp
 	r.f.idleHold = uint8((2*slotSymbols-burstSymbols)*r.hz()/(symbolRate*frontBlock) + 1)
 	if cfg.iq || cfg.lowIQ {
-		r.f.gain, r.f.maxGain, r.f.idleHold, r.f.leveled = 1, discIQMaxGain, 1, true
+		r.f.gain, r.f.maxGain, r.f.idleHold, r.f.leveled, r.f.iq = 1, discIQMaxGain, 1, true, true
 	}
 	if cfg.iq && opt.CohExt {
 		r.f.gain = float32(discInputRMSHz / (iqUnitsPerHz * deviationHz * math.Sqrt(5)))
@@ -855,6 +855,7 @@ type audioFront struct {
 	up       bool
 	dec      bool
 	leveled  bool
+	iq       bool
 	idle     uint8
 	idleHold uint8
 	polSum   int8

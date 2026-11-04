@@ -371,6 +371,7 @@ type leanCore struct {
 	devScale       float32
 	fitHz          float32
 	discVar        float32
+	syncFitRes     float32
 	amp            float32
 	noise          float32
 	eAcc           float32
@@ -1950,6 +1951,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	if first {
 		g = max32(g, leanMinScale)
 		r.devScale, r.dcHz, r.discVar, r.refit = g, dc, res, false
+		r.syncFitRes = res
 		if a := r.audio; a != nil {
 			t := r.tuneHz
 			if int32(uint32(end)-r.tuneNs) < 0 {
@@ -1969,6 +1971,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	r.devScale = levelForget*r.devScale + (1-levelForget)*g
 	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
 	r.discVar = levelForget*r.discVar + (1-levelForget)*res
+	r.syncFitRes = res
 	if a := r.audio; a != nil {
 		t := r.tuneHz
 		if int32(uint32(end)-r.tuneNs) < 0 {
@@ -2100,6 +2103,8 @@ func (r *leanCore) slot() {
 		r.anchorAt(j, base, shift, anchor, energy)
 	}
 	present := isAnchor || r.powered(energy, floor, known, measured)
+	noisy := present && !isAnchor && r.eyeNoise(base)
+	missedA := !isAnchor && sf != leanNoSlot && j-sf >= 2*layer2.VoiceBurstsPerSuperframe
 	if seek && !isAnchor {
 		present = false
 		if known || measured {
@@ -2107,6 +2112,7 @@ func (r *leanCore) slot() {
 		}
 	}
 	r.holdNext(j, present)
+	lost := r.lost
 	switch {
 	case present && (isAnchor || r.lastAnch != leanNoSlot && j-r.lastAnch < lostSlots):
 		r.lost = 0
@@ -2117,7 +2123,9 @@ func (r *leanCore) slot() {
 		if !isAnchor {
 			anchor = 0
 		}
-		r.burst(j, base, anchor)
+		if !r.burst(j, base, anchor, noisy, missedA) {
+			r.lost = lost + 1
+		}
 	}
 	if !r.isReplaying() {
 		switch {
@@ -2134,6 +2142,43 @@ func (r *leanCore) slot() {
 	if !r.isReplaying() && r.ended(j, base) {
 		r.unlock()
 	}
+}
+
+const (
+	leanEyeSpreadIQ    = 9
+	leanEyeNearIQ      = 0.47
+	leanEyeSpreadAudio = 23
+	leanEyeNearAudio   = 0.46
+)
+
+//go:noinline
+func (r *leanCore) eyeNoise(base int64) bool {
+	dev := max(r.devScale, leanMinScale) * deviationHz
+	inv := 1 / dev
+	var e float32
+	near := 0
+	j := ringPos(base + cachSymbols)
+	for range slotSymbols - cachSymbols {
+		y := abs32((float32(r.ring[j])*discStepHz + r.off - r.dcHz) * inv)
+		if j++; j == leanRing {
+			j = 0
+		}
+		if y < 2 {
+			y--
+		} else {
+			y -= 3
+		}
+		if abs32(y) < 0.5 {
+			near++
+		}
+		e += y * y
+	}
+	ref := max(r.discVar, r.syncFitRes, 1)
+	spread, eye := float32(leanEyeSpreadIQ), float32(leanEyeNearIQ)
+	if r.audio != nil && !r.audio.iq {
+		spread, eye = leanEyeSpreadAudio, leanEyeNearAudio
+	}
+	return e*dev*dev > spread*(slotSymbols-cachSymbols)*ref && float32(near) < eye*(slotSymbols-cachSymbols)
 }
 
 func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPattern) {
@@ -2624,11 +2669,15 @@ func llrAtS[_ any](r *leanCore, p int) int16 {
 }
 
 //go:noinline
+func (r *leanCore) pastEnd(ticks int64) bool {
+	return r.endTicks != 0 && ticks+(slotSymbols-cachSymbols)*samplesPerSy<<8 > r.endTicks
+}
+
 func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) bool {
 	return anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
 }
 
-func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
+func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, missedA bool) bool {
 	r.base, r.anchor = base, anchor
 	v := max32(r.discVar, 1)
 	r.ll = -1 / (2 * v)
@@ -2643,8 +2692,8 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
 	ticks := r.burstTicks(base)
-	if r.endTicks != 0 && ticks+(slotSymbols-cachSymbols)*samplesPerSy<<8 > r.endTicks {
-		return
+	if r.pastEnd(ticks) {
+		return true
 	}
 	b.Seconds = tickSeconds(ticks)
 	b.HasCACH = r.bs && ticks >= cachSymbols*samplesPerSy<<8
@@ -2692,13 +2741,16 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.clickFloor(v)
 	}
 	if r.unreported(b, anchor, lo, hi) {
-		return
+		return true
+	}
+	if noisy && r.dropNoise(b, missedA) {
+		return false
 	}
 	if !r.classify(b, j) && (!r.hasExt() || !r.ext.place(r, b, j)) && !r.dataSync(b) {
 		if r.hasExt() && !r.isReplayDry() {
 			r.ext.unplaced(r, b)
 		}
-		return
+		return true
 	}
 	if r.isReplayDry() {
 		r.ext.replayLock(j, b)
@@ -2713,13 +2765,25 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	if r.hasExt() {
 		r.ext.burst(r, b)
-		return
+		return true
 	}
 	if r.softFEC {
 		cc, ok := r.colorCode()
 		r.repair(&r.fec, b, cc, ok)
 	}
 	r.emit(b)
+	return true
+}
+
+//go:noinline
+func (r *leanCore) dropNoise(b *Burst, missedA bool) bool {
+	if emb := embOf(&b.Data); !missedA && r.embOK(&emb) {
+		return false
+	}
+	if r.hasExt() && !r.isReplayDry() {
+		r.ext.dropped(r)
+	}
+	return true
 }
 
 func (r *leanCore) burstTicks(base int64) int64 {
