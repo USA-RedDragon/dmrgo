@@ -1580,7 +1580,7 @@ func (r *leanCore) searchSym(strict bool) {
 	}
 	ok, verified := false, false
 	var d, c2 float32
-	if !weak && (strict || r.ns >= r.acqNext) {
+	if !weak && (strict || r.ns >= r.acqNext || rho2 >= discLock*discLock) {
 		var hold bool
 		if d, c2, ok, hold = r.searchFit(p, src, data, strict); hold {
 			return
