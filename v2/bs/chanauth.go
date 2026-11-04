@@ -163,6 +163,9 @@ func (r *Repeater) chanAuthPDU(b *layer2.Burst, raw *layer2.RawBurst) (out layer
 		if source, ok = r.burstSource(b, raw); !ok {
 			return out, 0, false, false
 		}
+		if target, _, _ := r.lc.Addresses(); !addressed(target, source) {
+			return out, 0, false, false
+		}
 		cw, err := r.lc.Codeword(enums.DataTypeVoiceLCHeader)
 		if err != nil {
 			return out, 0, false, false
@@ -175,7 +178,8 @@ func (r *Repeater) chanAuthPDU(b *layer2.Burst, raw *layer2.RawBurst) (out layer
 		if res.Uncorrectable || b.SlotType.FEC.Uncorrectable || !c.CRCOK() || c.FID() != enums.FIDStandardized || c.Opcode() != pdu.CSBKPreamble {
 			return out, 0, false, false
 		}
-		if _, source, ok = c.Addresses(); !ok {
+		var target uint32
+		if target, source, ok = c.Addresses(); !ok || !addressed(target, source) {
 			return out, 0, false, false
 		}
 		out, err := layer2.BuildDataBurst(p, enums.DataTypeCSBK, r.cc, layer2.SyncSourceBS)
@@ -185,4 +189,10 @@ func (r *Repeater) chanAuthPDU(b *layer2.Burst, raw *layer2.RawBurst) (out layer
 		enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
 	}
 	return out, 0, false, false
+}
+
+// ADRNULL is not a valid source or destination address (ETSI TS 102 361-1
+// Annex A, table A.1).
+func addressed(target, source uint32) bool {
+	return target != constants.AddressNull && source != constants.AddressNull
 }
