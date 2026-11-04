@@ -37,6 +37,7 @@ const (
 	mxCN
 	mxDC
 	mxGain
+	mxAdj
 	mxDims
 	mxBaseDims = mxDC
 )
@@ -53,6 +54,7 @@ var mxValues = [mxDims][]string{
 	{"inf", "40dB"},
 	{"none", "dc"},
 	{"none", "step10dB"},
+	{"none", "dmr40", "am3-60"},
 }
 
 const (
@@ -73,6 +75,12 @@ const (
 	mxDCRe        = -0.7123
 	mxDCIm        = -0.7019
 	mxStepDB      = 10.0
+	mxAdjHz       = 12500.0
+	mxAdjMaxOffHz = 1500.0
+	mxAdjDMRdB    = 40.0
+	mxAdjAM3dB    = 60.0
+	mxAM3DevHz    = 1500.0
+	mxAM3ToneHz   = 400.0
 )
 
 type mxRow [mxDims]uint8
@@ -90,7 +98,7 @@ func (r mxRow) name() string {
 }
 
 func (r mxRow) seed() uint64 {
-	r[mxDC], r[mxGain] = 0, 0
+	r[mxDC], r[mxGain], r[mxAdj] = 0, 0, 0
 	return rxSeed(r.name())
 }
 
@@ -104,6 +112,16 @@ func mxPairOK(d1 int, v1 uint8, d2 int, v2 uint8) bool {
 		return (lead != "noise" || start != "gap" && start != "mid") && (lead == "none" || start != "mid")
 	case d1 == mxSource && d2 == mxContent:
 		return mxValues[mxSource][v1] != "bs" || mxValues[mxContent][v2] != "rc"
+	case d1 == mxFormat && d2 == mxAdj:
+		f := mxValues[mxFormat][v1]
+		return v2 == 0 || f == "cs16-48k" || f == "cs16-2048k"
+	case d1 == mxOffset && d2 == mxAdj:
+		off, _ := strconv.ParseFloat(mxValues[mxOffset][v1], 64)
+		return v2 == 0 || math.Abs(off) <= mxAdjMaxOffHz
+	case d1 == mxLevel && d2 == mxAdj:
+		return v2 == 0 || mxValues[mxLevel][v1] != "low"
+	case d1 == mxDC && d2 == mxAdj:
+		return v1 == 0 || v2 == 0
 	case d1 == mxFormat && d2 == mxDC:
 		return v2 == 0 || !strings.HasPrefix(mxValues[mxFormat][v1], "a")
 	}
@@ -418,15 +436,16 @@ type mxPart struct {
 }
 
 type mxSignal struct {
-	parts []mxPart
-	r     float64
-	end   float64
-	sigma float64
-	seed  uint64
-	truth []mxTruth
-	what  string
-	step  float64
-	gain  [2]float64
+	parts  []mxPart
+	r      float64
+	end    float64
+	sigma  float64
+	seed   uint64
+	truth  []mxTruth
+	what   string
+	step   float64
+	gain   [2]float64
+	adjAmp float64
 }
 
 func (s *mxSignal) gainAt(t float64) float64 {
@@ -446,6 +465,7 @@ type mxParams struct {
 	agc       int
 	stepUp    bool
 	stepIn    bool
+	adjBelow  bool
 }
 
 func mxParamsOf(row mxRow) mxParams {
@@ -460,6 +480,7 @@ func mxParamsOf(row mxRow) mxParams {
 		agc:       int(h>>13) % mxAGCSteps,
 		stepUp:    (h>>16)&1 == 1,
 		stepIn:    (h>>17)&1 == 1,
+		adjBelow:  (h>>18)&1 == 1,
 	}
 }
 
@@ -576,6 +597,11 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 		s.end = max(s.end, q.t0+float64(len(q.f))/basebandRate/s.r)
 	}
 	s.end += mxTail
+	if adj := row.val(mxAdj); adj != "none" {
+		if err := mxAdjacent(s, adj, p); err != nil {
+			return nil, err
+		}
+	}
 	burst := float64(burstSymbols) / symbolRate / s.r
 	cach := float64(cachSymbols) / symbolRate / s.r
 	s.truth = slices.DeleteFunc(s.truth, func(tr mxTruth) bool { return tr.at < 0 || tr.at+burst > s.end })
@@ -589,6 +615,40 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 		mxStep(s, p, burst)
 	}
 	return s, nil
+}
+
+func mxAdjacent(s *mxSignal, adj string, p mxParams) error {
+	hz := mxAdjHz
+	if p.adjBelow {
+		hz = -hz
+	}
+	n := int(s.end*basebandRate) + 1
+	part := mxPart{hz: hz}
+	switch adj {
+	case "dmr40":
+		cfg := rftx.SeqConfig{ColorCode: 5, Source: 3190077, Dest: 9990, BS: 310077, Message: "DMRGO NEIGHBOR", Superframes: 1 + int(s.end/(6*2*slotSeconds)), BSSourced: true}
+		built, err := rftx.Sequence("voice", cfg)
+		if err != nil {
+			return err
+		}
+		part.f, part.e = rftx.ModulateBS(built.Slots)
+		part.amp = math.Pow(10, mxAdjDMRdB/20)
+	default:
+		part.f, part.e = make([]float64, n), make([]float64, n)
+		for i := range part.f {
+			part.f[i] = mxAM3DevHz * math.Sin(2*math.Pi*mxAM3ToneHz*float64(i)/basebandRate)
+			part.e[i] = 1
+		}
+		part.amp = math.Pow(10, mxAdjAM3dB/20)
+	}
+	s.parts = append(s.parts, part)
+	s.adjAmp = part.amp
+	what := fmt.Sprintf("%s neighbor at %+.0f Hz", adj, hz)
+	if s.what != "" {
+		what = s.what + ", " + what
+	}
+	s.what = what
+	return nil
 }
 
 func mxStep(s *mxSignal, p mxParams, burst float64) {
@@ -751,7 +811,7 @@ func mxInputOf(s *mxSignal, row mxRow) mxInput {
 		in.gain *= s.gain[1]
 		return in
 	}
-	a := mxIQLevel(format, level)
+	a := mxIQLevel(format, level) / (1 + s.adjAmp)
 	in := mxInput{iqFmt: IQFormatCS16}
 	u8 := strings.HasPrefix(format, "cu8")
 	if u8 {
@@ -1221,5 +1281,5 @@ func TestRxMatrix(t *testing.T) {
 }
 
 func mxDimName(d int) string {
-	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn", "dc", "gain"}[d]
+	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn", "dc", "gain", "adj"}[d]
 }
