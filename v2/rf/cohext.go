@@ -1470,7 +1470,7 @@ const cohRhoSlope = 49
 
 const (
 	cohSumSlots = 8
-	cohSumGate  = 0.75
+	cohSumGate  = leanResample
 )
 
 func (s *cohStage) verifySum(c *leanCore, p enums.SyncPattern, base int64) bool {
