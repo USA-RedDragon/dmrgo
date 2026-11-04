@@ -920,16 +920,20 @@ func (c *mxScorer) note(check, f string, args ...any) {
 	c.found[check] = append(c.found[check], fmt.Sprintf(f, args...))
 }
 
+// burst scores b against truth j on what the caller decodes: the corrected
+// copy when b has one, so FEC fields count after FEC and unprotected fields
+// by their detected bits. The bench measures the raw bit decisions.
 func (c *mxScorer) burst(b *Burst, j int) {
 	tr := c.s.truth[j]
-	if b.Data != tr.data {
-		c.note("bits", "%s %d bits", c.tag(j), hamming(b.Data[:], tr.data[:]))
+	data, cach := b.Decoded()
+	if data != tr.data {
+		c.note("bits", "%s %d bits", c.tag(j), hamming(data[:], tr.data[:]))
 	}
 	if b.BS != tr.bs {
 		c.note("bs", "#%d BS %v", j, b.BS)
 	}
-	if tr.hasCACH && (!b.HasCACH || b.CACH != tr.cach) || !tr.hasCACH && b.HasCACH {
-		c.note("cach", "%s has %v %d bits", c.tag(j), b.HasCACH, hamming(b.CACH[:], tr.cach[:]))
+	if tr.hasCACH && (!b.HasCACH || cach != tr.cach) || !tr.hasCACH && b.HasCACH {
+		c.note("cach", "%s has %v %d bits", c.tag(j), b.HasCACH, hamming(cach[:], tr.cach[:]))
 	}
 	if tr.rc && b.Sync != enums.SyncMSSourcedRC {
 		c.note("rc", "#%d sync %v", j, b.Sync)
