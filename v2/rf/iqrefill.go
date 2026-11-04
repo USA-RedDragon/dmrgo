@@ -309,7 +309,12 @@ func (r *iqRx) toWide() {
 		y := complex(re, im)
 		p := y * complex(real(c.prev), -imag(c.prev))
 		c.prev = y
-		r.audio = append(r.audio, int16(max(min(roundf(atan2f(imag(p), real(p))*scale*iqUnitsPerHz), math.MaxInt16), math.MinInt16)))
+		if len(r.audio) == cap(r.audio) {
+			r.writeAudio()
+		}
+		k := len(r.audio)
+		r.audio = r.audio[:k+1]
+		r.audio[k] = int16(max(min(roundf(atan2f(imag(p), real(p))*scale*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
 		r.outN++
 	}
 	copy(c.hist, h[n-m:])
