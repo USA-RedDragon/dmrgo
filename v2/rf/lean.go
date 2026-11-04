@@ -2681,8 +2681,13 @@ func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) b
 	return anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
 }
 
-func (r *leanCore) blindLevels(base int64, anchor enums.SyncPattern) {
-	if anchor != 0 {
+// blindLevels refits the levels of a flywheel burst from its own symbols after
+// a level step of an audio input. The discriminator of an I/Q input measures
+// Hz at any input level, so a level step there does not move the levels. The
+// step scales the whole input, so the held levels of the other slot take the
+// same step.
+func (r *leanCore) blindLevels(slot int32, base int64, anchor enums.SyncPattern) {
+	if a := r.audio; anchor != 0 || a == nil || a.iq {
 		return
 	}
 	const n = slotSymbols - cachSymbols
@@ -2719,8 +2724,54 @@ func (r *leanCore) blindLevels(base int64, anchor enums.SyncPattern) {
 	if float32(fresh) < leanBlindNear*n || float32(fresh-held) < leanBlindGain*n {
 		return
 	}
+	g, dc = r.eyeFit(j0, g, dc)
+	k = g / r.devScale
+	held0 := r.dcHz
 	r.devScale, r.dcHz, r.discVar = g, dc, r.discVar*k*k
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+	if !r.bs {
+		lv := &r.ms.lv[(slot+1)&1]
+		lv.devScale, lv.dcHz, lv.discVar = lv.devScale*k, dc+k*(lv.dcHz-held0), lv.discVar*k*k
+	}
+}
+
+// eyeFit refits the levels g and dc of the burst at ring position j by least
+// squares on the symbols sliced with g and dc. The mean and the mean absolute
+// deviation of a burst follow its symbols: a burst with more symbols on one
+// side or more outer symbols moves them. With inner and outer symbols in the
+// burst, the mean absolute deviation is off by at most a factor of 1.5 or 2;
+// a refit beyond a factor of 2 comes from a slicing with one kind of symbol
+// only, and the levels stay.
+func (r *leanCore) eyeFit(j uint32, g, dc float32) (float32, float32) {
+	const n = slotSymbols - cachSymbols
+	var s1, s2, sv, svs float32
+	for range n {
+		v := float32(r.ring[j])*discStepHz + r.off
+		if j++; j == leanRing {
+			j = 0
+		}
+		y := (v - dc) / (g * deviationHz)
+		s := float32(1)
+		if abs32(y) >= 2 {
+			s = 3
+		}
+		if y < 0 {
+			s = -s
+		}
+		s1 += s
+		s2 += s * s
+		sv += v
+		svs += v * s
+	}
+	d := n*s2 - s1*s1
+	if d <= 0 {
+		return g, dc
+	}
+	gd := (n*svs - s1*sv) / d / deviationHz
+	if k := gd / g; gd < leanMinScale || k < leanBlindStep || k > 1/leanBlindStep {
+		return g, dc
+	}
+	return gd, (sv - gd*deviationHz*s1) / n
 }
 
 func (r *leanCore) eyeNear(j uint32, g, dc float32) int {
@@ -2744,7 +2795,7 @@ func (r *leanCore) eyeNear(j uint32, g, dc float32) int {
 
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, missedA bool) bool {
 	r.base, r.anchor = base, anchor
-	r.blindLevels(base, anchor)
+	r.blindLevels(j, base, anchor)
 	v := max32(r.discVar, 1)
 	r.ll = -1 / (2 * v)
 	r.dev = r.devScale * deviationHz
