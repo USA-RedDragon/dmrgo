@@ -292,7 +292,9 @@ func renderSpecs(d data) []byte {
 	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
 		b.WriteString(" No tier allocates after it starts.")
 	}
-	b.WriteString("\n\n")
+	b.WriteString("\n")
+	renderACS(&b, d.acs)
+	b.WriteString("\n")
 	renderMCU(&b, d)
 	return []byte(b.String())
 }

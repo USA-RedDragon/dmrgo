@@ -1,15 +1,23 @@
 package rf
 
 import (
+	"encoding/json"
 	"math"
 	"math/bits"
+	"os"
+	"slices"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
 const (
+	acsPath     = "testdata/rxbench_acs.json"
+	acsStartDB  = 60
+	acsStepDB   = 2
+	acsTopDB    = 120
 	acsMarginDB = 70
 	acsMaxBER   = 1e-2
 	acsToneHz   = 400
@@ -109,5 +117,71 @@ func TestIQAdjacentPull(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+type acsPoint struct {
+	Tier   int     `json:"tier"`
+	SideHz float64 `json:"side_hz"`
+	DB     float64 `json:"acs_db"`
+}
+
+type acsData struct {
+	MaxBER float64            `json:"max_ber"`
+	Seeds  int                `json:"seeds"`
+	StepDB float64            `json:"step_db"`
+	CN     map[string]float64 `json:"wanted_cn"`
+	Points []acsPoint         `json:"points"`
+}
+
+// TestRxACS measures the adjacent channel selectivity of every I/Q tier as
+// in TestIQAdjacentSelectivity: the highest A-M3 level, in steps of
+// acsStepDB from acsStartDB, at which the BER over acsSeeds draws stays at
+// most acsMaxBER; acsStartDB - acsStepDB stands for a tier that fails at
+// acsStartDB. It writes testdata/rxbench_acs.json for cmd/rxbench.
+func TestRxACS(t *testing.T) {
+	t.Parallel()
+	if os.Getenv("DMRRF_RXACS") != "1" {
+		t.Skip("set DMRRF_RXACS=1 to measure testdata/rxbench_acs.json")
+	}
+	d := acsData{MaxBER: acsMaxBER, Seeds: acsSeeds, StepDB: acsStepDB, CN: map[string]float64{}}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+		d.CN[strconv.Itoa(int(tier-Tier0))] = acsWantedCN[tier]
+		for _, side := range []float64{-12500, 12500} {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				best := float64(acsStartDB - acsStepDB)
+				for db := float64(acsStartDB); db <= acsTopDB; db += acsStepDB {
+					var ber float64
+					for s := range uint64(acsSeeds) {
+						ber += acsBER(t, tier, tierOptions(tier), acsWantedCN[tier], db, side, 100+s) / acsSeeds
+					}
+					if ber > acsMaxBER {
+						break
+					}
+					best = db
+				}
+				mu.Lock()
+				d.Points = append(d.Points, acsPoint{Tier: int(tier - Tier0), SideHz: side, DB: best})
+				mu.Unlock()
+			}()
+		}
+	}
+	wg.Wait()
+	slices.SortFunc(d.Points, func(a, b acsPoint) int {
+		if a.Tier != b.Tier {
+			return a.Tier - b.Tier
+		}
+		return int(a.SideHz - b.SideHz)
+	})
+	b, err := json.MarshalIndent(d, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(acsPath, append(b, '\n'), 0o600); err != nil {
+		t.Fatal(err)
 	}
 }

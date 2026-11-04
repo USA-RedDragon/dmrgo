@@ -3,7 +3,8 @@
 // v2/rf/testdata. With -update-readme it first runs the long sweep
 // (DMRRF_RXBENCH=full go test -run TestRxBench in v2/rf) and the tests of
 // the eye diagrams, carrier offset, clock error and late entry
-// (DMRRF_RXSHEET=1 go test -run TestRxSheet), then rewrites the blocks
+// (DMRRF_RXSHEET=1 go test -run TestRxSheet) and the adjacent channel
+// selectivity (DMRRF_RXACS=1 go test -run TestRxACS), then rewrites the blocks
 // between the rxbench markers and the SVG files. -sheet runs only the
 // second set, and -no-sweep runs neither. With -check-readme it renders
 // the committed data and fails when a block or a graph differs. The Short LC block
@@ -164,6 +165,9 @@ func run(ctx context.Context, root string, update bool, sweep int) error {
 		if err := goTest(ctx, root, "TestRxSheet", "DMRRF_RXSHEET=1"); err != nil {
 			return err
 		}
+		if err := goTest(ctx, root, "TestRxACS", "DMRRF_RXACS=1"); err != nil {
+			return err
+		}
 	}
 	d, err := load(filepath.Join(root, "v2/rf/testdata"))
 	if err != nil {
@@ -310,12 +314,13 @@ type data struct {
 	ext        extData
 	sheet      sheet
 	mcu        mcuData
+	acs        acsData
 }
 
 func load(dir string) (data, error) {
 	var d data
 	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings,
-		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet, "rxbench_mcu.json": &d.mcu} {
+		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet, "rxbench_mcu.json": &d.mcu, "rxbench_acs.json": &d.acs} {
 		if err := loadJSON(filepath.Join(dir, name), v); err != nil {
 			return d, err
 		}

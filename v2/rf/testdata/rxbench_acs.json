@@ -1,0 +1,53 @@
+{
+  "max_ber": 0.01,
+  "seeds": 4,
+  "step_db": 2,
+  "wanted_cn": {
+    "0": 11,
+    "1": 11,
+    "2": 7,
+    "3": 7
+  },
+  "points": [
+    {
+      "tier": 0,
+      "side_hz": -12500,
+      "acs_db": 88
+    },
+    {
+      "tier": 0,
+      "side_hz": 12500,
+      "acs_db": 88
+    },
+    {
+      "tier": 1,
+      "side_hz": -12500,
+      "acs_db": 96
+    },
+    {
+      "tier": 1,
+      "side_hz": 12500,
+      "acs_db": 94
+    },
+    {
+      "tier": 2,
+      "side_hz": -12500,
+      "acs_db": 102
+    },
+    {
+      "tier": 2,
+      "side_hz": 12500,
+      "acs_db": 102
+    },
+    {
+      "tier": 3,
+      "side_hz": -12500,
+      "acs_db": 88
+    },
+    {
+      "tier": 3,
+      "side_hz": 12500,
+      "acs_db": 86
+    }
+  ]
+}

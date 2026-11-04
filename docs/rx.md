@@ -64,6 +64,17 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 - Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
 - CPU per second of signal on an AMD Ryzen 9 7950X 16-Core Processor, worst over C/N 0 to 40 dB. RAM is the state of the receiver. No tier allocates after it starts.
 
+### Adjacent channel selectivity
+
+| Tier | Wanted C/N (dB) | Channel below (dB) | Channel above (dB) |
+|:---|---:|---:|---:|
+| I/Q tier 0 | 11.0 | 88 | 88 |
+| I/Q tier 1 | 11.0 | 96 | 94 |
+| I/Q tier 2 | 7.0 | 102 | 102 |
+| I/Q tier 3 | 7.0 | 88 | 86 |
+
+- EN 300 113 V2.2.1 clause 8.6: an A-M3 signal (FM, 400 Hz tone, 1.5 kHz deviation) 12.5 kHz above or below the wanted signal, which sits 3 dB above the sensitivity limit. The value is the highest A-M3 level over the wanted signal, in steps of 2 dB, at which the bit error rate over 4 noise draws stays at or under 0.01. The standard asks for 60 dB.
+
 ### Tier 0 on a Cortex-M4F
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
