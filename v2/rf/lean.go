@@ -50,6 +50,7 @@ const (
 	leanPresent         = 2
 	leanSearchHz        = 200
 	leanLockMMStep      = 0.1
+	leanMMSteps         = 4
 	leanSignMiss        = 5
 	leanBurstSec        = float64(slotSymbols-cachSymbols) / symbolRate
 	leanFadeBursts      = 2
@@ -783,7 +784,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		r.again = true
 		return 0, 0, 0, false
 	}
-	bestD := float32(best-3)*sps/4 + edgeVertex(&c, best)*sps/4
+	v := edgeVertex(&c, best)
+	walk := v == 0.5 || v == -0.5
+	bestD := float32(best-3)*sps/4 + v*sps/4
 	if best == 0 || best == len(c)-1 {
 		k := float32(-4)
 		if best > 0 {
@@ -801,14 +804,16 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 			lo, hi = in, out
 		}
 		if den := lo - 2*c[best] + hi; den < 0 {
-			bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
+			e := max32(min32(0.5*(lo-hi)/den, 0.5), -0.5)
+			walk = e == 0.5 || e == -0.5
+			bestD += e * sps / 4
 		}
 	}
 	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
-		bestD = win.mmZero(&syms, end, bestD, sps)
+		bestD = win.mmZero(&syms, end, bestD, sps, walk)
 		z = bestD
 	} else if z = bestD; r.hasExt() {
-		z = win.mmZero(&syms, end, bestD, sps)
+		z = win.mmZero(&syms, end, bestD, sps, walk)
 	}
 	bestD = min(bestD, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
@@ -823,24 +828,39 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	return bestD, sxy * sxy / (sxx * spp), min(z, -end), true
 }
 
-func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
+func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32, walk bool) float32 {
 	const h = leanLockMMStep
-	lo, hi := d-h, d+h
-	if end+hi > 0 {
-		lo, hi = d-2*h, d
+	c := d
+	steps := 1
+	if walk {
+		steps = leanMMSteps
 	}
-	if end+hi > 0 {
-		return d
+	for range steps {
+		lo, hi := c-h, c+h
+		if end+hi > 0 {
+			lo, hi = c-2*h, c
+		}
+		if end+hi > 0 {
+			return d
+		}
+		a, b := win.mmSum(syms, end+lo, sps), win.mmSum(syms, end+hi, sps)
+		if a == b {
+			return d
+		}
+		z := lo - a*(hi-lo)/(b-a)
+		if z > c-2*h && z < c+2*h {
+			return min(z, -end)
+		}
+		if z > c {
+			c += 2 * h
+		} else {
+			c -= 2 * h
+		}
+		if abs32(c-d) > sps/4 {
+			return d
+		}
 	}
-	a, b := win.mmSum(syms, end+lo, sps), win.mmSum(syms, end+hi, sps)
-	if a == b {
-		return d
-	}
-	z := lo - a*(hi-lo)/(b-a)
-	if z <= d-2*h || z >= d+2*h {
-		return d
-	}
-	return min(z, -end)
+	return d
 }
 
 func (win *syncWindow) mmSum(syms *[syncSymbols]int8, end, sps float32) float32 {
