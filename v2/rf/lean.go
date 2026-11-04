@@ -423,6 +423,7 @@ type leanCore struct {
 	devHz          int16
 	devAtHz        int16
 	levelEnd       uint16
+	clipNs         uint16
 	jumpZ          float32
 	preDev, preOff float32
 	stepHold       bool
@@ -972,6 +973,9 @@ func (r *leanCore) symbol(x, at float32) {
 	if !r.locked {
 		r.searchHit(r.searchSigns())
 		return
+	}
+	if r.ns&7 == 0 {
+		r.clipHot()
 	}
 	if r.pendEnd != 0 && r.ns >= r.pendEnd+int64(r.pendWait) {
 		r.decidePend()
@@ -1754,6 +1758,20 @@ func (r *leanCore) clips(end int64) int {
 		}
 	}
 	return n
+}
+
+// clipHot drops the audio gain when half of the newest SYNC span of symbols
+// clip the ring, as overload does at a SYNC, so that a level rise between two
+// SYNCs costs the symbols before it and not the next SYNC. It waits a SYNC
+// span after each drop, as the ring keeps the clipped symbols.
+func (r *leanCore) clipHot() {
+	if a := r.audio; !audioOn() || a == nil || a.maxGain != 0 || r.isReplaying() || int16(uint16(r.ns)-r.clipNs) < syncSymbols {
+		return
+	}
+	if 2*r.clips(r.ns-1) >= syncSymbols {
+		r.relevel(leanClipDrop)
+		r.clipNs = uint16(r.ns)
+	}
 }
 
 func (r *leanCore) overload(best float32, end int64) bool {

@@ -277,3 +277,22 @@ func TestRxTwoTalkerSyncLevelStep(t *testing.T) {
 		}
 	}
 }
+
+// TestRxTwoTalkerClipStep raises the level of an audio input by 10 dB just
+// before the first burst of the second talker, enough to clip the symbol ring
+// of Tiers 0 and 1. The gain drops before the SYNC of that burst, so the burst
+// is found.
+func TestRxTwoTalkerClipStep(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "gap.none.+2500.ms2.data1.-500ppm.nom.a12000.40dB.step10dB")
+	rxs := []mxRx{{row.val(mxFormat), Tier0}, {row.val(mxFormat), Tier1}}
+	res, err := mxRun(row, rxs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, x := range rxs {
+		if r := res[x]; r.fail["bits"] || r.fail["missing"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
+		}
+	}
+}
