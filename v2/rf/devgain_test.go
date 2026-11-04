@@ -3,9 +3,12 @@ package rf
 import (
 	"math"
 	"math/cmplx"
+	"math/rand/v2"
+	"sync"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 type devGainSignal struct {
@@ -13,16 +16,27 @@ type devGainSignal struct {
 	syncs []float64
 }
 
+const devGainPayloads = 8
+
 func devGainBursts() (*devGainSignal, error) {
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, Message: "DMRGO DEVIATION", Superframes: 1}
-	built, err := rftx.Sequence("data12", cfg)
-	if err != nil {
-		return nil, err
+	r := rand.New(rand.NewPCG(1, 2))
+	var bursts []layer2.RawBurst
+	for range devGainPayloads {
+		msg := make([]byte, len("DMRGO DEVIATION"))
+		for i := range msg {
+			msg[i] = byte('A' + r.IntN(26))
+		}
+		cfg := rftx.SeqConfig{ColorCode: 1, Source: 1 + r.Uint32N(0xFFFFFE), Dest: 1 + r.Uint32N(0xFFFFFE), Message: string(msg), Superframes: 1}
+		built, err := rftx.Sequence("data12", cfg)
+		if err != nil {
+			return nil, err
+		}
+		bursts = append(bursts, built.Bursts...)
 	}
 	s := &devGainSignal{}
-	s.f, s.e = rftx.Modulate(built.Bursts, rftx.Schedule{})
+	s.f, s.e = rftx.Modulate(bursts, rftx.Schedule{})
 	ramp := (slotSeconds - burstSeconds) / 2
-	for i := range built.Bursts {
+	for i := range bursts {
 		s.syncs = append(s.syncs, float64(2*i)*slotSeconds+ramp+float64(burstSymbols/2-syncSymbols/2)/symbolRate)
 	}
 	return s, nil
@@ -208,6 +222,18 @@ func deriveDevGain() (iq [devGainTiers][devGainN]uint16, low [devGainRates]uint1
 	if err != nil {
 		return iq, low, err
 	}
+	var g [devGainTiers][devGainN]float64
+	var wg sync.WaitGroup
+	for k, t := range []Tier{Tier0, Tier1, Tier2} {
+		for i := range devGainN {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				g[k][i] = devGainTier(s, t, devGainHz(i))
+			}()
+		}
+	}
+	wg.Wait()
 	for k, t := range []Tier{Tier0, Tier1, Tier2} {
 		fs := float64(tierOptions(t).IQHz)
 		if fs == discRate {
@@ -215,7 +241,7 @@ func deriveDevGain() (iq [devGainTiers][devGainN]uint16, low [devGainRates]uint1
 		}
 		ideal := devGainMean(s, devGainFilter(devGainIdeal(s, fs), devGainIdealRRC(fs), 1), fs)
 		for i := range devGainN {
-			iq[k][i] = devGainQ(devGainTier(s, t, devGainHz(i)), ideal)
+			iq[k][i] = devGainQ(g[k][i], ideal)
 		}
 		devGainClamp(&iq[k])
 	}
