@@ -30,7 +30,7 @@ type leanExt interface {
 	replayLock(j int32, b *Burst)
 	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
 	replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool)
-	seekAgrees(j int32, emb *pdu.EmbeddedSignalling) bool
+	seekAgrees(j int32, cc enums.ColorCode, lcss enums.LCSS) bool
 	lockFit(c *leanCore, sym, t int64, q float32)
 	syncFit(c *leanCore, sym, t int64, q, w float32)
 	liveFit(c *leanCore, sym, t int64, q, w float32)
@@ -1234,10 +1234,10 @@ type seekNote struct {
 // corrected bit, or no color code vote yet) and tells whether the EMB of the
 // same talker's slot before it, two slots back, carries the same color code
 // and an LCSS that the voice superframe can follow with this one.
-func (x *softExt) seekAgrees(j int32, emb *pdu.EmbeddedSignalling) bool {
+func (x *softExt) seekAgrees(j int32, cc enums.ColorCode, lcss enums.LCSS) bool {
 	p := &x.seekPend[j&1]
-	ok := p.ok && p.j == j-2 && p.cc == emb.ColorCode && lcssFollows(p.lcss, emb.LCSS)
-	*p = seekNote{j: j, cc: emb.ColorCode, lcss: emb.LCSS, ok: !ok}
+	ok := p.ok && p.j == j-2 && p.cc == cc && lcssFollows(p.lcss, lcss)
+	*p = seekNote{j: j, cc: cc, lcss: lcss, ok: !ok}
 	return ok
 }
 

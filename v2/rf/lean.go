@@ -3264,7 +3264,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		return 0, false
 	}
 	if !strong {
-		if !r.ext.seekAgrees(j, &emb) {
+		if !r.ext.seekAgrees(j, emb.ColorCode, emb.LCSS) {
 			return 0, false
 		}
 		cc = emb.ColorCode
