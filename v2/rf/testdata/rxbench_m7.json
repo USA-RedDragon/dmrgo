@@ -7,15 +7,15 @@
 			"rate": 9600,
 			"mhz": 53.6,
 			"ram_bytes": 57072,
-			"flash_kb": 264.7
+			"flash_kb": 264.9
 		},
 		{
 			"mode": "audio",
 			"tier": 2,
 			"rate": 9600,
-			"mhz": 498.9,
-			"ram_bytes": 621776,
-			"flash_kb": 264.7
+			"mhz": 464.1,
+			"ram_bytes": 343344,
+			"flash_kb": 264.9
 		}
 	]
 }

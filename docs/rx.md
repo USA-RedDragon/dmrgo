@@ -52,13 +52,13 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 |:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 59 | 62 | 0.36 | 0.41 | 1.8 |
 | Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 47 | 45 | 0.87 | 2.6 | 48 |
-| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 8.3 | 14 | 589 |
-| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 46 | 45 | 60 | 207 | 1,296 |
+| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 8.3 | 14 | 315 |
+| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 46 | 45 | 60 | 207 | 911 |
 | Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 60 | 61 | 0.38 | 0.47 | 1.8 |
 | I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 61 | 1.3 | 1.6 | 19 |
 | I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 1.9 | 3.9 | 165 |
-| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 8.3 | 10 | 686 |
-| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 107 | 140 | 2,340 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 8.3 | 10 | 461 |
+| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 107 | 140 | 2,126 |
 
 - Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
 - Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
@@ -89,8 +89,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 53.6 | 57,072 | 264.7 |
-| Audio tier 2 | 9.6 | 498.9 | 621,776 | 264.7 |
+| Audio tier 1 | 9.6 | 53.6 | 57,072 | 264.9 |
+| Audio tier 2 | 9.6 | 464.1 | 343,344 | 264.9 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
@@ -108,7 +108,7 @@ Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 F
 | `RxConfig.OnBursts` | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
 | `RxConfig.LookbackSlots` | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
 | `RxConfig.OnShortLC` | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo.ConfigError for it. |
-| `AudioRxConfig.Tier` | Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is Tier1 for NewAudioReceiver, Tier0 for it under TinyGo, and Tier0 for Init, which does not allocate the stages of the higher tiers. Under TinyGo too, NewAudioReceiver takes every tier and allocates its stages once, and a program that calls only Init links none of them. Tier2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of Tier1. Tier3 detects the bursts of Tier2 again over 52 carrier phases with no compute budget and makes four passes over each data burst, at about 10 times the CPU time of Tier2, 1.3 MB and the delay of Tier2. |
+| `AudioRxConfig.Tier` | Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is Tier1 for NewAudioReceiver, Tier0 for it under TinyGo, and Tier0 for Init, which does not allocate the stages of the higher tiers. Under TinyGo too, NewAudioReceiver takes every tier and allocates its stages once, and a program that calls only Init links none of them. Tier2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of Tier1. Tier3 detects the bursts of Tier2 again over 52 carrier phases with no compute budget and makes four passes over each data burst, at about 10 times the CPU time of Tier2, 935 KB and the delay of Tier2. |
 | `AudioRxConfig.Rate` | Rate is the sample rate of the discriminator samples, in Hz, from 8000 to 1000000, and for Tier0 to 48000. 0 means 48000. The receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600: at Rate when it is one of them, else at the lowest of them at or above Rate, or 48000 above 48000, through a resampler. Tier0 resamples in fixed point with a table in flash. A lower rate costs less: the receiver halves 48 kHz and then 24 kHz with a half-band filter before its matched filter, which runs at 12 kHz or 9.6 kHz. |
 | `AudioRxConfig.Bits` | Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. |
 | `AudioRxConfig.Unsigned` | Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. |

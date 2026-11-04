@@ -41,8 +41,8 @@ const (
 	// phase with each survivor, from the SYNC or EMB of the burst, within a
 	// compute budget per slot: on I/Q from the samples at 24 kHz, on audio
 	// from the carrier phase that it sums from the discriminator samples.
-	// It holds each burst one slot longer and keeps about 550 KB on audio
-	// and 565 KB on I/Q, 75 KB of that for the input samples.
+	// It holds each burst one slot longer and keeps about 320 KB on audio
+	// and 470 KB on I/Q, 75 KB of that for the input samples.
 	Tier2
 	// Tier3 detects the bursts of Tier2 again by log-MAP over a window of
 	// three symbols with one of 52 carrier phases in the trellis state and
@@ -51,7 +51,7 @@ const (
 	// trellis to the channel width, fits the burst timing over slots and
 	// keeps 16 lookback slots; on audio it makes four passes over each data
 	// burst. It needs about 20 times the compute of Tier2 on I/Q and 10
-	// times on audio, and keeps about 2.3 MB on I/Q and 1.3 MB on audio, for
+	// times on audio, and keeps about 2.2 MB on I/Q and 935 KB on audio, for
 	// decoding on a PC.
 	Tier3
 )

@@ -22,7 +22,7 @@ type AudioRxConfig struct {
 	// phase that it rebuilds from the samples, at about 5 times the CPU
 	// time of Tier1. Tier3 detects the bursts of Tier2 again over 52
 	// carrier phases with no compute budget and makes four passes over
-	// each data burst, at about 10 times the CPU time of Tier2, 1.3 MB and
+	// each data burst, at about 10 times the CPU time of Tier2, 935 KB and
 	// the delay of Tier2.
 	Tier Tier
 	// Rate is the sample rate of the discriminator samples, in Hz, from
