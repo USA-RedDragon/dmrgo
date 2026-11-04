@@ -43,10 +43,11 @@ const (
 
 type discPhase struct {
 	c          *leanCore
-	sum        []int64
+	sum        []int32
 	size       int64
 	sumN       int64
 	last       int64
+	last32     int32
 	raw        [discPhaseRing]complex64
 	rawN       int64
 	taps       [discPhaseTaps]float32
@@ -81,7 +82,7 @@ type discPhase struct {
 }
 
 func newDiscPhase(r *discRx, hz int, size int64) *discPhase {
-	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, clicks: make([]uint64, (size+63)/64)}
+	p := &discPhase{c: &r.leanCore, sum: make([]int32, size), size: size, clicks: make([]uint64, (size+63)/64)}
 	for i := range p.clipAt {
 		p.clipAt[i] = -1
 	}
@@ -131,7 +132,8 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 		}
 		i := p.sumN
 		s := p.last + int64(u)
-		p.sum[i&(p.size-1)] = s
+		p.last32 += int32(u)
+		p.sum[i&(p.size-1)] = p.last32
 		p.sumN++
 		p.last = s
 		for p.rawN*p.den <= (i-p.wait)*p.num {
@@ -239,8 +241,8 @@ func (p *discPhase) rawAt(m int64) int16 {
 	at := func(x float64) float64 {
 		i := int64(math.Floor(x))
 		mu := x - float64(i)
-		s0 := float64(p.sum[i&(p.size-1)] - p.sumO)
-		s1 := float64(p.sum[(i+1)&(p.size-1)] - p.sumO)
+		s0 := float64(p.sumAt(i) - p.sumO)
+		s1 := s0 + float64(p.sum[(i+1)&(p.size-1)]-p.sum[i&(p.size-1)])
 		return s0 + mu*(s1-s0)
 	}
 	x := float64(m) * r
@@ -266,18 +268,24 @@ func (p *discPhase) filter(m int64) {
 	p.hist[m&(p.size-1)] = complex(re, im)
 }
 
+func (p *discPhase) sumAt(k int64) int64 {
+	return p.last + int64(p.sum[k&(p.size-1)]-p.last32)
+}
+
 func (p *discPhase) phase(m int64) float64 {
 	q := m * p.den
 	i, r := q/p.num, q%p.num
 	if r == 0 {
-		return p.a*float64(p.sum[i&(p.size-1)]-p.sumO) - p.b*float64(i-p.o)
+		return p.a*float64(p.sumAt(i)-p.sumO) - p.b*float64(i-p.o)
 	}
 	return p.between(i, float64(r)/float64(p.num))
 }
 
 func (p *discPhase) between(i int64, mu float64) float64 {
-	at := func(k int64) float64 { return float64(p.sum[k&(p.size-1)] - p.sumO) }
-	s0, s1, s2, s3 := at(i-1), at(i), at(i+1), at(i+2)
+	k := p.size - 1
+	v := p.sum[i&k]
+	s1 := float64(p.sumAt(i) - p.sumO)
+	s0, s2, s3 := s1+float64(p.sum[(i-1)&k]-v), s1+float64(p.sum[(i+1)&k]-v), s1+float64(p.sum[(i+2)&k]-v)
 	s := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
 	return p.a*s - p.b*(float64(i-p.o)+mu)
 }
@@ -431,7 +439,7 @@ func (p *discPhase) build(unit, dc float64) {
 	p.o = max(p.sumN-p.size, 0)
 	p.sumO = 0
 	if p.sumN > 0 {
-		p.sumO = p.sum[p.o&(p.size-1)]
+		p.sumO = p.sumAt(p.o)
 	}
 	lo := max(((p.o+p.wait)*p.num+p.den-1)/p.den, p.rawN-p.size)
 	p.lo = lo + discPhaseLag
