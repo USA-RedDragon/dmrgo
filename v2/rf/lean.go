@@ -127,6 +127,7 @@ type leanTiming struct {
 	baseC        float32
 	mK           int32
 	mS, mC, mVar float32
+	jit          float32
 	mOK          bool
 }
 
@@ -180,6 +181,7 @@ func (tm *leanTiming) settle(lagN float32) float32 {
 	}
 	n := float32(tm.nc)
 	v := tm.corr2/n - tm.corr*tm.corr/(n*n)
+	tm.jit = v
 	nall := float32(tm.nall)
 	q, keep := 1-1/lagN, float32(1)
 	for k := tm.nall; k > 0; k >>= 1 {
@@ -396,6 +398,7 @@ type leanCore struct {
 	lost           int32
 	lagTicks       int32
 	fitNs          int32
+	fitQ           float32
 	dcHz           float32
 	devScale       float32
 	fitHz          float32
@@ -1813,7 +1816,7 @@ func (r *leanCore) retime(mid bool) {
 	}
 	var saved [syncSymbols]int8
 	if d, c2, z, ok := r.resample(p, &saved, true, discLock); ok {
-		r.fitNs, r.fitT = int32(r.ns-1), r.strobeTicks(r.lastAt+z)
+		r.fitNs, r.fitT, r.fitQ = int32(r.ns-1), r.strobeTicks(r.lastAt+z), c2
 		if r.hasExt() && r.ns-1 == r.slotEnd-slotSymbols+leanSyncEnd {
 			r.ext.liveFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2, 1)
 		}
@@ -1996,7 +1999,7 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 1
 	r.tm.learned = false
 	r.tm.lag0 = float32(back) + (syncSymbols-1)/2
-	r.tm.baseN, r.tm.baseC, r.tm.mOK = 0, 0, false
+	r.tm.baseN, r.tm.baseC, r.tm.mOK, r.tm.jit = 0, 0, false, 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	gk := max32(r.devScale, leanMinScale) * deviationHz
@@ -2012,7 +2015,7 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	}
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
-	r.fitNs, r.fitT = int32(r.ns-1-back), r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step)
+	r.fitNs, r.fitT, r.fitQ = int32(r.ns-1-back), r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step), q
 	if r.hasExt() {
 		r.ext.locked(r, d)
 		r.ext.lockFit(r, r.ns-1-back, r.fitT, q)
@@ -3045,7 +3048,7 @@ func (r *leanCore) dropNoise(b *Burst, missedA bool) bool {
 // learner of a continuous stream only moves toward the clock error, so the
 // nominal bound still holds.
 func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
-	n := r.ns - 1 - (base + cachSymbols)
+	n := float32(r.ns - 1 - (base + cachSymbols))
 	at := (r.mfStep*(r.n-1)+r.center)<<8 + int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256)))
 	var learned bool
 	var e float32
@@ -3058,23 +3061,41 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 			return t - int64(r.lagTicks), lever, b
 		}
 		e, learned = r.ext.rateBound(r, base)
-		e *= float32(n)
+		e *= n
 	default:
 		if r.fitNs == int32(base+leanSyncEnd) {
-			n, at = leanSyncEnd-cachSymbols, r.fitT
+			w := r.fitWeight()
+			at = r.fitT - int64(int32(roundf((1-w)*float32(r.fitT-at))))
+			n += w * (leanSyncEnd - cachSymbols - n)
 		}
-		e, learned = r.tm.rateKnown(float32(n))
+		e, learned = r.tm.rateKnown(n)
 		e *= float32(int32(r.mfStep)) * 256
 	}
 	rate := float32(0)
 	if learned || r.bs {
 		rate = r.tm.rate
 	}
-	ticks := at - int64(int32(roundf(float32(int32(r.mfStep))*float32(n)*(2*r.tm.step+rate)*256))) - int64(r.lagTicks)
+	ticks := at - int64(int32(roundf(float32(int32(r.mfStep))*n*(2*r.tm.step+rate)*256))) - int64(r.lagTicks)
 	if learned {
 		return ticks, 0, e
 	}
-	return ticks, int16(n), 0
+	return ticks, int16(roundf(n)), 0
+}
+
+// fitWeight gives the weight of the SYNC fit against the newest strobe in
+// the stamp of a burst, each inversely as its timing variance: the fit's from
+// its sync correlation (leanRefitVar), the strobe's from the spread of the
+// loop corrections over the last block, v/(2K) for a first-order loop of gain
+// K per symbol. The lever and the rate bound of the stamp mix alike, as both
+// are linear in the symbols projected.
+func (r *leanCore) fitWeight() float32 {
+	tm := &r.tm
+	if !tm.mm || tm.gain <= 0 || tm.jit <= 0 || r.fitQ <= 0 || r.fitQ >= 1 {
+		return 1
+	}
+	vf := leanRefitVar * 2 * (1 - r.fitQ) * leanMMGain * tm.gain * leanMMSlope * 2 * tm.step
+	vs := tm.jit * r.fitQ
+	return vs / (vf + vs)
 }
 
 // stampSeconds converts the error of a stamp from ticks to seconds.
