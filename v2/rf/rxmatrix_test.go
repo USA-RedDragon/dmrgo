@@ -1294,11 +1294,7 @@ func mxDimName(d int) string {
 }
 
 // stampBound gives the timing bound of the stamp of b, in seconds, for a
-// clock error of clock: the projection at the nominal period times clock, or
-// the error that the receiver gave the stamp.
+// clock error of clock.
 func (b *Burst) stampBound(clock float64) float64 {
-	if b.stamp > 0 {
-		return float64(b.stamp) / symbolRate * clock
-	}
-	return float64(-b.stamp) * 1e-8
+	return float64(b.SecondsSymbols)/symbolRate*clock + float64(b.SecondsError)
 }

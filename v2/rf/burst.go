@@ -10,14 +10,23 @@ type Burst struct {
 	// Data is the 264 burst bits as detected, in transmit order. Tier3
 	// detects a burst twice, with the discriminator and coherently, and
 	// gives the detection nearer to Fixed.
-	Data  layer2.RawBurst
-	stamp int16
+	Data layer2.RawBurst
 	// Seconds is the time of the first burst bit from the first sample,
-	// within 2 µs on a clean signal at every tier, input and rate. An MS
-	// burst stamped before the Receiver knows the clock rate of the call
-	// is projected from its timing anchor at the nominal symbol period, so
-	// the clock error times up to one burst adds to that.
+	// within 2 µs on a clean signal at every tier, input and rate, plus the
+	// bound that SecondsSymbols and SecondsError give.
 	Seconds float64
+	// SecondsSymbols is the number of symbols over which Seconds was
+	// projected at the nominal symbol period (4800 symbols per second, ETSI
+	// TS 102 361-1 clause 10.2) because the clock rate of the transmitter
+	// was not yet known well enough: Seconds can then be off by up to
+	// SecondsSymbols/4800 times the relative clock error. It is 0 once the
+	// rate is known.
+	SecondsSymbols int
+	// SecondsError is the error of Seconds, in seconds, that the uncertainty
+	// of the clock rate estimate gives over the projection: the rate error
+	// of the timing loop, or the slope uncertainty of the line through the
+	// SYNC fits, times the symbols from the timing anchor to the burst.
+	SecondsError float32
 	// Distance is the Hamming distance of the SYNC field from Sync, or -1
 	// for a burst placed by timing without a SYNC (voice bursts B to F).
 	Distance int

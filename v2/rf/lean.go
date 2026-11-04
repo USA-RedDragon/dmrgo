@@ -2886,7 +2886,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 	if r.pastEnd(ticks) {
 		return true
 	}
-	b.Seconds, b.stamp = tickSeconds(ticks), stampOf(lever, e)
+	b.Seconds, b.SecondsSymbols, b.SecondsError = tickSeconds(ticks), int(lever), stampSeconds(e)
 	b.HasCACH = r.bs && ticks >= cachSymbols*samplesPerSy<<8
 	if r.iqLow && iqLowISI > 0 {
 		r.cancelISI(base)
@@ -3018,14 +3018,9 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 	return ticks, int16(n), 0
 }
 
-// stampOf packs the timing bound of a burst stamp: the symbols projected at
-// the nominal period when positive, else the error of the stamp in units of
-// 10 ns, negated.
-func stampOf(lever int16, ticks float32) int16 {
-	if lever > 0 {
-		return lever
-	}
-	return -int16(min32(ticks*(1e8/(samplesPerSy*symbolRate*256))+0.5, math.MaxInt16))
+// stampSeconds converts the error of a stamp from ticks to seconds.
+func stampSeconds(ticks float32) float32 {
+	return ticks * (1.0 / (samplesPerSy * symbolRate * 256))
 }
 
 func (r *leanCore) stepSplit(base int64) (int, int32, int32) {

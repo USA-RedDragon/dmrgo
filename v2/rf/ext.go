@@ -763,7 +763,7 @@ func (x *softExt) retime(c *leanCore) {
 		}
 		start := x.earlyStart[i]
 		if t, e, ok := x.grid(c, start); ok {
-			x.q[i].Seconds, x.q[i].stamp = tickSeconds(t-int64(c.lagTicks)), stampOf(0, e)
+			x.q[i].Seconds, x.q[i].SecondsSymbols, x.q[i].SecondsError = tickSeconds(t-int64(c.lagTicks)), 0, stampSeconds(e)
 		} else if !x.timed(x.ancParity(c, start-cachSymbols)) && c.ns-start <= extEarlySymbols {
 			continue
 		}
