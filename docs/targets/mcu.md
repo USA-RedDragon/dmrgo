@@ -138,7 +138,7 @@ rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: 9600, Tier: rf.Tier1, OnB
 
 - The constructors allocate the stages of the tier once. After that, `Write` and `Flush` do not allocate. Build with a heap, for example `-gc=leaking` or `-gc=conservative`, not `-gc=none`.
 - A program that calls only `Init` links none of the higher tiers. Its size is the size of a Tier 0 build.
-- The transmitters have Tier 0 only under TinyGo.
+- The transmitters take tiers 1 and 2 the same way, through `rf.NewTransmitter` and `rf.NewAudioTransmitter`.
 - Use a target with a hardware FPU. The `cortex-m7` target of TinyGo uses soft float. `cmd/mcubench` builds for a Cortex-M7 with an FPv5-D16 FPU.
 
 The sample rates that each tier takes:
@@ -193,4 +193,4 @@ func main() {
 ## Other limits
 
 - [vocoder/codec2](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2) always uses its stub under TinyGo, so [codec2.New](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#New) returns [codec2.ErrUnavailable](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#ErrUnavailable).
-- CI does not run the tests of `rf` under TinyGo. The `feather-m4` builds above check that its Tier 0 code builds and links without a heap, and `internal/rxtiers` checks under TinyGo that tiers 1 and 2 decode the same bursts as with gc.
+- CI does not run the tests of `rf` under TinyGo. The `feather-m4` builds above check that its Tier 0 code builds and links without a heap, `internal/rxtiers` checks under TinyGo that tiers 1 and 2 decode the same bursts as with gc, and `internal/txtiers` that the transmitters of tiers 1 and 2 give the same samples.
