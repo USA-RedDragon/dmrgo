@@ -100,6 +100,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "packet: response data flags no block to resend";
 	case -140:
 		return "packet: packet has more blocks than the storage holds";
+	case -245:
+		return "packet: UDT pad nibbles cover the payload";
 	case -141:
 		return "packet: data type is not rate 1/2, 3/4 or 1 coded";
 	case -142:
@@ -210,6 +212,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "sms: payload too short";
 	case -179:
 		return "sms: AnyTone text without its prefix";
+	case -246:
+		return "sms: text length out of range for its format";
 	case -180:
 		return "dmrd: packet is not a message of this kind";
 	case -181:

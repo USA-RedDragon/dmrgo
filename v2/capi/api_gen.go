@@ -3699,6 +3699,7 @@ func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
 	d.Sequence = uint8(s.sequence)
 	d.AckRequired = bool(s.ack_required)
 	d.Body = cSlice[byte](unsafe.Pointer(s.body), s.body_len)
+	d.UDT = in_layer2_pdu_UDTHeader(&s.udt)
 	return
 }
 
@@ -3721,6 +3722,7 @@ func out_sms_Text(d *C.dmrgo_sms_text_t, s *g_sms.Text, oc *outc) {
 	d.ack_required = C.bool(s.AckRequired)
 	d.body = (*C.uint8_t)(arenaCopy(oc, s.Body))
 	d.body_len = C.size_t(len(s.Body))
+	out_layer2_pdu_UDTHeader(&d.udt, &s.UDT, oc)
 }
 
 func out_sms_AnyToneText(d *C.dmrgo_sms_anytone_text_t, s *g_sms.AnyToneText, oc *outc) {
@@ -55187,6 +55189,8 @@ func errCode1(e error) C.int {
 		return -139
 	case g_layer2_packet.ErrNoRoom:
 		return -140
+	case g_layer2_packet.ErrPadNibble:
+		return -245
 	case g_layer2_packet.ErrRate:
 		return -141
 	case g_layer2_packet.ErrRateChange:
@@ -55295,6 +55299,8 @@ func errCode1(e error) C.int {
 		return -178
 	case g_sms.ErrSignature:
 		return -179
+	case g_sms.ErrTextLength:
+		return -246
 	case g_transport_dmrd.ErrCommand:
 		return -180
 	case g_transport_dmrd.ErrLength:
@@ -55543,6 +55549,8 @@ func codeErr(code C.int) error {
 		return g_layer2_packet.ErrNoRetryBlocks
 	case -140:
 		return g_layer2_packet.ErrNoRoom
+	case -245:
+		return g_layer2_packet.ErrPadNibble
 	case -141:
 		return g_layer2_packet.ErrRate
 	case -142:
@@ -55651,6 +55659,8 @@ func codeErr(code C.int) error {
 		return g_sms.ErrShort
 	case -179:
 		return g_sms.ErrSignature
+	case -246:
+		return g_sms.ErrTextLength
 	case -180:
 		return g_transport_dmrd.ErrCommand
 	case -181:
@@ -55842,6 +55852,8 @@ func knownCode(code C.int) bool {
 		return true
 	case -140:
 		return true
+	case -245:
+		return true
 	case -141:
 		return true
 	case -142:
@@ -55951,6 +55963,8 @@ func knownCode(code C.int) bool {
 	case -178:
 		return true
 	case -179:
+		return true
+	case -246:
 		return true
 	case -180:
 		return true

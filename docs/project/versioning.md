@@ -38,7 +38,7 @@ The ABI number of each release:
 
 <!-- dmrgo:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
 ```c
-#define DMRGO_ABI_VERSION 4
+#define DMRGO_ABI_VERSION 5
 ```
 <!-- /dmrgo:code -->
 

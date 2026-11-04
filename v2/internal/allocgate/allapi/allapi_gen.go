@@ -29,6 +29,7 @@ import (
 	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	internal_resample "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+	internal_udttext "github.com/USA-RedDragon/dmrgo/v2/internal/udttext"
 	internal_wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 	ip "github.com/USA-RedDragon/dmrgo/v2/ip"
 	layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -441,6 +442,14 @@ var api = [...]any{
 	internal_text.Hex,
 	internal_text.Int,
 	internal_text.Uint,
+	internal_udttext.Append,
+	internal_udttext.Bits,
+	internal_udttext.Blocks,
+	internal_udttext.Count,
+	internal_udttext.Fill,
+	internal_udttext.PadNibbles,
+	internal_udttext.Set,
+	internal_udttext.Width,
 	internal_wire.AppendRune,
 	internal_wire.AppendSfloatvar,
 	internal_wire.AppendSintvar,

@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#define DMRGO_ABI_VERSION 4
+#define DMRGO_ABI_VERSION 5
 
 /* DMRGO_USER_T is the type of the user value of a callback or vtable. The library builds with uintptr_t, which has the same size and passing. */
 #ifndef DMRGO_USER_T
@@ -4257,7 +4257,7 @@ struct dmrgo_sms_text_t {
 	uint32_t destination;
 	/* Group reports a message to a talkgroup. */
 	bool group;
-	/* Confirmed reports a message that requests a response from the data link layer: a C_HEAD packet for the formats on IP, and a DD_HEAD with the Response Requested flag (A) for DMRGO_SMS_FORMAT_DEFINED_DATA and DMRGO_SMS_FORMAT_HYTERA (ETSI TS 102 361-3 clause 6.4, Table 6.5). Decode sets it from the header and AppendPacket builds that header. */
+	/* Confirmed reports a message that requests a response from the data link layer: a C_HEAD packet for the formats on IP, and a DD_HEAD with the Response Requested flag (A) for DMRGO_SMS_FORMAT_DEFINED_DATA and DMRGO_SMS_FORMAT_HYTERA (ETSI TS 102 361-3 clause 6.4, Table 6.5), and the Response Requested flag (A) of the UDT_HEAD of DMRGO_SMS_FORMAT_UDT. Decode sets it from the header and AppendPacket builds that header. */
 	bool confirmed;
 	/* Network is the network ID of the IPv4 radio addresses of a DMRGO_SMS_FORMAT_TMS, DMRGO_SMS_FORMAT_IP or DMRGO_SMS_FORMAT_ANYTONE message, Network.x.y.z. The zero value means DMRGO_IP_DEFAULT_NETWORK. Decode sets it from the source address, and leaves it 0 for a compressed header. */
 	uint8_t network;
@@ -4272,6 +4272,8 @@ struct dmrgo_sms_text_t {
 	/* Body is the text in UTF-8, without the CR LF that MOTOTRBO radios put before it. Decode drops a NUL after the text in every format. AppendPacket adds one only for DMRGO_SMS_FORMAT_ANYTONE and DMRGO_SMS_FORMAT_HYTERA, and sends a NUL that Body ends with. */
 	uint8_t *body;
 	size_t body_len;
+	/* UDT is the UDT_HEAD of a DMRGO_SMS_FORMAT_UDT message, which Decode sets from the packet. AppendPacket sends its UDT Format, SAP, Emergency and option flags, Supplementary Flag, Protect Flag and UDT Opcode as they are, so that a reply that copies the UDT of a received text has its format. It takes the addresses, Group and the Response Requested flag (A) from the other fields, and sets the UAB and the Pad Nibble from Body. (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D) */
+	dmrgo_pdu_udt_header_t udt;
 };
 
 struct dmrgo_sms_header_t {
@@ -6043,6 +6045,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_PACKET_NO_HEADER (-138)
 #define DMRGO_ERR_PACKET_NO_RETRY_BLOCKS (-139)
 #define DMRGO_ERR_PACKET_NO_ROOM (-140)
+#define DMRGO_ERR_PACKET_PAD_NIBBLE (-245)
 #define DMRGO_ERR_PACKET_RATE (-141)
 #define DMRGO_ERR_PACKET_RATE_CHANGE (-142)
 #define DMRGO_ERR_PACKET_RESPONSE_DATA (-143)
@@ -6079,6 +6082,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_SMS_NOT_TEXT (-177)
 #define DMRGO_ERR_SMS_SHORT (-178)
 #define DMRGO_ERR_SMS_SIGNATURE (-179)
+#define DMRGO_ERR_SMS_TEXT_LENGTH (-246)
 #define DMRGO_ERR_TMS_LENGTH (-166)
 #define DMRGO_ERR_TMS_SHORT (-167)
 #define DMRGO_ERR_TRUNK_BUSY (-195)
@@ -7677,6 +7681,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_SMS_FORMAT_IP ((dmrgo_sms_format_t)2)
 /* Go: sms.FormatTMS. FormatTMS is a MOTOTRBO text message to UDP port 4007, as AnyTone radios send in M-SMS mode. */
 #define DMRGO_SMS_FORMAT_TMS ((dmrgo_sms_format_t)1)
+/* Go: sms.FormatUDT. FormatUDT is a UDT packet (UDT_HEAD) whose UDT Format gives the coding of the text: ISO 7-bit characters, ISO 8-bit characters read as ISO/IEC 8859-1, or UTF-16BE. */
+#define DMRGO_SMS_FORMAT_UDT ((dmrgo_sms_format_t)6)
 /* Go: dmrd.CommandBCKA. FreeDMR OpenBridge keepalive */
 #define DMRGO_DMRD_COMMAND_BCKA ((dmrgo_dmrd_command_t)25)
 /* Go: dmrd.CommandBCSQ. FreeDMR OpenBridge squelch of a stream */
@@ -8870,7 +8876,7 @@ int dmrgo_data_sender_lost_need(dmrgo_data_sender_t *self, dmrgo_duration_t now,
 int dmrgo_data_sender_lost(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: data.Sender.Reset. Reset ends every message without outputs and clears the sequence numbers of every link and the channel state. */
 int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
-/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a NULL m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m->proprietary after another header or with a field out of range (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, DMRGO_ERR_PACKET_TOO_LONG for a message with a P_HEAD that needs 127 blocks, and the errors of dmrgo_packet_builder_segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than dmrgo_data_sender_config_t.max_blocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
+/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a NULL m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m->proprietary after another header or with a field out of range (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, DMRGO_ERR_PACKET_TOO_LONG for a message with a P_HEAD that needs 127 blocks, and the errors of dmrgo_packet_builder_segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than dmrgo_data_sender_config_t.max_blocks blocks, DMRGO_ERR_PACKET_RATE and DMRGO_ERR_PACKET_PAD_NIBBLE. m may be NULL. */
 int dmrgo_data_sender_send(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_data_message_t *m);
 /* Go: data.Sender.State. State returns the state of the Sender. */
 int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
@@ -9516,7 +9522,7 @@ int dmrgo_packet_message_udp_ipv4(const dmrgo_packet_message_t *self, dmrgo_pdu_
 int dmrgo_packet_new_assembler(int64_t max_blocks, dmrgo_packet_assembler_t **out);
 /* Go: packet.NewBuilder. NewBuilder returns a Builder for packets of up to maxBlocks data blocks of any rate. */
 int dmrgo_packet_new_builder(int64_t max_blocks, dmrgo_packet_builder_t **out);
-/* Go: packet.NewPacket. NewPacket splits payload into the data blocks of one packet at the given rate and returns them with a copy of header. It returns an error that wraps DMRGO_ERR_PACKET_RATE, DMRGO_ERR_PACKET_FORMAT or DMRGO_ERR_PACKET_TOO_LONG. */
+/* Go: packet.NewPacket. NewPacket splits payload into the data blocks of one packet at the given rate and returns them with a copy of header. It keeps the Pad Nibble of the header, whose count depends on the UDT Format, and returns DMRGO_ERR_PACKET_PAD_NIBBLE when the pad nibbles cover more of payload than the low nibble of its last octet. It returns an error that wraps DMRGO_ERR_PACKET_RATE, DMRGO_ERR_PACKET_FORMAT, DMRGO_ERR_PACKET_TOO_LONG or DMRGO_ERR_PACKET_PAD_NIBBLE. */
 int dmrgo_packet_new_packet(const dmrgo_pdu_data_header_t *header, const uint8_t *payload, size_t payload_len, dmrgo_enums_data_type_t rate, dmrgo_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: packet.NewResponse. NewResponse builds the response packet a recipient sends for the confirmed packet with header to. It returns a DMRGO_ERR_FIELD_RANGE when the Class of r does not fit in 2 bits or a field of to does not fit in the response header, and an error for a NULL to. to and data may be NULL. */
 int dmrgo_packet_new_response(const dmrgo_pdu_confirmed_data_header_t *to, dmrgo_packet_response_t r, const dmrgo_packet_response_data_t *data, dmrgo_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -10994,9 +11000,9 @@ int dmrgo_sms_anytone_text_string(const dmrgo_sms_anytone_text_t *self, char *ou
 int dmrgo_sms_anytone_text_text_utf8(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: sms.AppendAck. AppendAck appends to dst the TMS acknowledgement of the DMRGO_SMS_FORMAT_TMS text t, as Decode returns it, sets h to the data header to send it with, and returns dst. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for another format and for a group text, which gets no acknowledgement, DMRGO_ERR_NIL_ARGUMENT for a NULL t or h, or the errors of the packages that build the message. t and h may be NULL. */
 int dmrgo_sms_append_ack(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, dmrgo_sms_header_t *h);
-/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for an unknown format, for DMRGO_SMS_FORMAT_DEFINED_DATA with DD format binary, which holds no text, and for a DMRGO_SMS_FORMAT_HYTERA text without the HyteraText layout, which Decode reads as DMRGO_SMS_FORMAT_DEFINED_DATA: a Body that is empty, starts with a NUL, or has a character other than NUL after a NUL, and for a DMRGO_SMS_FORMAT_IP text with a Body that starts with CR LF, which Decode reads as DMRGO_SMS_FORMAT_ANYTONE. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL t or h, or the errors of the packages that build the message. t and h may be NULL. */
+/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. It returns DMRGO_ERR_SMS_TEXT_LENGTH for a DMRGO_SMS_FORMAT_UDT text that is empty or too long, and DMRGO_ERR_SHORTDATA_CHARACTER for a character that its UDT Format cannot hold. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for an unknown format, for DMRGO_SMS_FORMAT_DEFINED_DATA with DD format binary, which holds no text, for a DMRGO_SMS_FORMAT_UDT text with a UDT Format that holds no text, and for a DMRGO_SMS_FORMAT_HYTERA text without the HyteraText layout, which Decode reads as DMRGO_SMS_FORMAT_DEFINED_DATA: a Body that is empty, starts with a NUL, or has a character other than NUL after a NUL, and for a DMRGO_SMS_FORMAT_IP text with a Body that starts with CR LF, which Decode reads as DMRGO_SMS_FORMAT_ANYTONE. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL t or h, or the errors of the packages that build the message. t and h may be NULL. */
 int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, dmrgo_sms_header_t *h);
-/* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. It returns DMRGO_ERR_SMS_NOT_TEXT for a packet in none of these formats and for defined data with DD format binary, the errors of the ip, tms and shortdata packages for a message that does not decode, the Text with DMRGO_ERR_IP_CHECKSUM for a text whose IPv4 or UDP checksum does not match, as the block CRCs of the packet already checked its octets, and DMRGO_ERR_NIL_ARGUMENT for a NULL h. h may be NULL. */
+/* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. It returns DMRGO_ERR_SMS_LENGTH for a UDT whose Pad Nibble counts more nibbles than its blocks hold, and DMRGO_ERR_SMS_NOT_TEXT for a UDT in another UDT Format. It returns DMRGO_ERR_SMS_NOT_TEXT for a packet in none of these formats and for defined data with DD format binary, the errors of the ip, tms and shortdata packages for a message that does not decode, the Text with DMRGO_ERR_IP_CHECKSUM for a text whose IPv4 or UDP checksum does not match, as the block CRCs of the packet already checked its octets, and DMRGO_ERR_NIL_ARGUMENT for a NULL h. h may be NULL. */
 int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *text, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.DecodeAnyToneText. DecodeAnyToneText decodes an AnyToneText from data. It returns DMRGO_ERR_SMS_SHORT when data ends inside a field and DMRGO_ERR_SMS_SIGNATURE when a fixed field does not hold its value. */
 int dmrgo_sms_decode_anytone_text(const uint8_t *data, size_t data_len, dmrgo_sms_anytone_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
