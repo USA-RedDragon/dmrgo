@@ -86,7 +86,7 @@ func relockCheck(t *testing.T, label string, x []complex64, want []float64) {
 
 func TestLeanPayloadSync(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123, Superframes: 1}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
 	v, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -118,8 +118,8 @@ func TestLeanPayloadSync(t *testing.T) {
 
 func TestLeanTalkerAfterDrop(t *testing.T) {
 	t.Parallel()
-	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123, Superframes: 1}
-	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 310123, Message: "TALKER TWO DATA"}
+	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
+	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"}
 	v, err := rftx.Sequence("voice", c1)
 	if err != nil {
 		t.Fatal(err)
@@ -140,7 +140,7 @@ func TestLeanTalkerAfterDrop(t *testing.T) {
 
 func TestLeanLoneRCProof(t *testing.T) {
 	t.Parallel()
-	b, err := rftx.Sequence("rc", rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123})
+	b, err := rftx.Sequence("rc", rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestLeanLoneRCProof(t *testing.T) {
 
 func TestLeanFadeNoBursts(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 310123, Superframes: 1}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
 	v, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

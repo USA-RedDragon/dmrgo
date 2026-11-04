@@ -251,8 +251,8 @@ func TestSecondsLockBurstOffset(t *testing.T) {
 
 func TestSecondsTalkerSwitch(t *testing.T) {
 	t.Parallel()
-	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 310123, Superframes: 1}
-	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 310123, Message: "TALKER TWO DATA"}
+	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 990911, Superframes: 1}
+	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"}
 	v, err := rftx.Sequence("voice", c1)
 	if err != nil {
 		t.Fatal(err)
