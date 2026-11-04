@@ -1586,9 +1586,10 @@ func (x *softExt) syncFit(c *leanCore, sym, t int64, q, w float32) {
 	if w < 1 && !x.rate[p].fits(xs, t) {
 		return
 	}
-	x.rate[p].add(xs, t, w)
+	v := q / (leanRefitVar*(1-q) + q*extAnchorSig*extAnchorSig)
+	x.rate[p].add(xs, t, v)
 	if w == 1 {
-		x.anc[p].add(xs, t, w)
+		x.anc[p].add(xs, t, v)
 	}
 }
 
@@ -1634,7 +1635,7 @@ func (a *extAnchor) at(xs int64, frac float32) (int64, bool) {
 func (a *extAnchor) clocked() bool {
 	_, b, ok := a.line()
 	v := a.sxx - a.sx*a.sx/a.w
-	sig := float32(extAnchorSig * samplesPerSy * 256)
+	sig := float32(samplesPerSy * 256)
 	return ok && b*b*v > leanClockSig*leanClockSig*sig*sig
 }
 
@@ -1682,7 +1683,7 @@ func (x *softExt) replayTicks(c *leanCore, start int64) (int64, int16, float32, 
 }
 
 func (a *extAnchor) slopeSig() float32 {
-	return extAnchorSig * samplesPerSy * 256 / sqrtf(max32(a.sxx-a.sx*a.sx/a.w, 1e-6))
+	return samplesPerSy * 256 / sqrtf(max32(a.sxx-a.sx*a.sx/a.w, 1e-6))
 }
 
 func (x *softExt) rateBound(c *leanCore, base int64) (float32, bool) {
@@ -1742,7 +1743,7 @@ func (a *extAnchor) rateError(c *leanCore) (d, sig float32, ok bool) {
 		return 0, 0, false
 	}
 	v := a.sxx - a.sx*a.sx/a.w
-	return b - c.tm.rate*float32(c.mfStep)*256, extAnchorSig * samplesPerSy * 256 / sqrtf(v), true
+	return b - c.tm.rate*float32(c.mfStep)*256, samplesPerSy * 256 / sqrtf(v), true
 }
 
 func (x *softExt) rateSettled(c *leanCore) bool {
