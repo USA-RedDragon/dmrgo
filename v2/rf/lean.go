@@ -2005,6 +2005,10 @@ func (r *leanCore) syncRes(end int64, p enums.SyncPattern, g, dc float32) float3
 func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
+	return r.fitSyms(end, &syms)
+}
+
+func (r *leanCore) fitSyms(end int64, syms *[syncSymbols]int8) (g, dc, res float32) {
 	j0 := ringPos(end - syncSymbols + 1)
 	var mp, mx float32
 	j := j0
@@ -2109,9 +2113,9 @@ func (r *leanCore) slot() {
 	present := isAnchor || r.powered(energy, floor, known, measured)
 	noisy := present && !isAnchor && r.eyeNoise(base)
 	missedA := !isAnchor && sf != leanNoSlot && j-sf >= 2*layer2.VoiceBurstsPerSuperframe
-	if seek && !isAnchor && present && r.embSeek(base) {
+	if seek && !isAnchor && (present || !known && !measured) && r.embAnchor(j, base) {
+		present = true
 		seek = false
-		r.ms.anch[j&1] = j
 	}
 	if seek && !isAnchor {
 		present = false
@@ -3113,11 +3117,15 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 	return pos, ok && (!r.isReplaying() || r.ext.replayFits(r, j, pos))
 }
 
-// embSeek tells whether the MS slot at base, in the slot parity of a talker
-// that has no SYNC anchor yet, holds a voice burst B or E of the stream: its
-// EMB, sliced at the grid of the locked talker, carries the stream's color
-// code and the LCSS of burst B or E with at most one corrected bit.
-func (r *leanCore) embSeek(base int64) bool {
+// embAnchor takes the MS slot at base, in the slot parity of a talker that
+// has no SYNC anchor yet, as that talker's voice burst B or E when its EMB,
+// sliced at the grid of the locked talker, carries the stream's color code
+// and the LCSS of burst B or E with at most one corrected bit (ETSI TS 102
+// 361-1 clause 7.1.3). The 24 sliced symbols of the SYNC field then stand in
+// for a SYNC pattern: their timing fit on the kept samples resamples the slot
+// and moves the talker's strobe phase, and their level fit gives the
+// talker's levels, as a SYNC anchor's fit does.
+func (r *leanCore) embAnchor(j int32, base int64) bool {
 	if !r.hasExt() {
 		return false
 	}
@@ -3125,29 +3133,98 @@ func (r *leanCore) embSeek(base int64) bool {
 	if !ok {
 		return false
 	}
+	end := base + leanSyncEnd
+	var syms [syncSymbols]int8
+	r.sliceSyms(end, &syms)
+	if !embBurstBE(&syms, cc) {
+		return false
+	}
+	back := r.ns - 1 - end
+	sps := 2*r.tm.step + r.tm.rate
+	at := r.lastAt - float32(back)*sps
+	if back < 0 || !r.keptSymbols(int(back)+syncSymbols+4) {
+		return false
+	}
+	var win syncWindow
+	r.fillWindow(&win, max(int32(-at-sps/2)-2, 0))
+	var cv [7]float32
+	best := win.peak(&syms, &cv, at, sps, true)
+	if best == 0 || best == len(cv)-1 {
+		return false
+	}
+	d := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
+	sv, svv, sxv, sp := win.sums(&syms, at+d, sps)
+	var spp float32
+	for _, q := range syms {
+		spp += float32(q) * float32(q)
+	}
+	const n = syncSymbols
+	sxy, sxx, pp := sxv-sp*sv/n, svv-sv*sv/n, spp-sp*sp/n
+	if sxy <= 0 || sxx <= 0 || pp <= 0 || sxy*sxy < discAnchor*discAnchor*sxx*pp {
+		return false
+	}
+	kept := r.ns - int64((float32(r.acqKept())-4+r.lastAt)/sps)
+	for k := max(base-1, kept); k <= base+slotSymbols && k < r.ns; k++ {
+		v := r.keptAt(r.lastAt + d - float32(r.ns-1-k)*sps)
+		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
+	}
+	r.sliceSyms(end, &syms)
+	g, dc, res := r.fitSyms(end, &syms)
+	if !embBurstBE(&syms, cc) || g <= 0 {
+		return false
+	}
+	o := (j + 1) & 1
+	r.ms.lv[o] = r.levels()
+	g = max32(g, leanMinScale)
+	r.devScale, r.dcHz, r.discVar, r.amp = g, dc, res, 0
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+	r.ms.anch[j&1] = j
+	if !r.isReplaying() {
+		r.ms.fresh[j&1] = 2
+		r.saveClock(o)
+		r.tm.t += d
+	}
+	return true
+}
+
+func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
 	r.setLLR()
 	thr := 2 * r.llrDev
-	var cw uint16
-	for _, k := range [2]int64{cachSymbols + embSymbol, cachSymbols + embSymbol + 20} {
-		for i := range int64(4) {
-			x := int32(r.ring[ringPos(base+k+i)])*(discStepHz/llrStepHz) + r.llrOff
-			var d uint16
-			if x < 0 {
-				d = 2
-				x = -x
-			}
-			if x > thr {
-				d |= 1
-			}
-			cw = cw<<2 | d
+	k0 := end - (syncSymbols - 1)
+	for i := range syncSymbols {
+		x := int32(r.ring[ringPos(k0+int64(i))])*(discStepHz/llrStepHz) + r.llrOff
+		v := int8(1)
+		if x > thr || -x > thr {
+			v = 3
 		}
+		if x < 0 {
+			v = -v
+		}
+		syms[i] = v
+	}
+}
+
+func embBurstBE(syms *[syncSymbols]int8, cc enums.ColorCode) bool {
+	var cw uint16
+	for _, i := range [8]int{0, 1, 2, 3, syncSymbols - 4, syncSymbols - 3, syncSymbols - 2, syncSymbols - 1} {
+		cw = cw<<2 | dibitOf(syms[i])
 	}
 	emb := embOfCW(cw)
 	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && emb.ColorCode == cc &&
 		(emb.LCSS == enums.LCSSFirstFragment || emb.LCSS == enums.LCSSLastFragment)
 }
 
-const embSymbol = 54
+func dibitOf(v int8) uint16 {
+	var d uint16
+	if v < 0 {
+		d = 2
+		v = -v
+	}
+	if v > 1 {
+		d |= 1
+	}
+	return d
+}
 
 func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	cc, ok := r.colorCode()
