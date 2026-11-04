@@ -224,9 +224,18 @@ func newCohStageOf(opt *options) *cohStage {
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
-	s.tr = newTrellis(m, cohMaxRun, cohMaxRun, 0)
 	if opt.CohExact {
 		s.ex = newExactStage(m, opt, cohMaxRun+2*m.d)
+	} else {
+		lens := cohRunLens(opt)
+		steps := 0
+		for i, n := range lens {
+			if n > 0 {
+				s.runs[i].corr = make([]complex64, (n-2*m.d)*m.windows)
+				steps = max(steps, n-2*m.d)
+			}
+		}
+		s.tr = newTrellis(m, steps, steps, 0)
 	}
 	s.size = opt.cohRing()
 	s.setRing(2)
@@ -240,9 +249,6 @@ func newCohStageOf(opt *options) *cohStage {
 	s.follow = make([]float64, cohFollowPre+slotSymbols)
 	s.symX = make([]complex64, cohSymN*sps)
 	s.symAt = make([]uint32, cohSymN)
-	for i := range s.runs {
-		s.runs[i].corr = make([]complex64, cohMaxRun*m.windows)
-	}
 	s.frontCut = discCutHz
 	if opt.IQCutHz > 0 {
 		s.frontCut = opt.IQCutHz
@@ -1317,6 +1323,17 @@ const (
 
 const cohMaxRun = slotSymbols + syncSymbols + cohShift + runMargin
 
+func cohRunLens(opt *options) [cohRuns]int {
+	n := [cohRuns]int{slotSymbols - syncFirstSym + runMargin, syncFirstSym + syncSymbols - cachSymbols + runMargin}
+	if !opt.CohNoNext {
+		n[1] = slotSymbols + runMargin
+	}
+	if !opt.CohNoCross {
+		n[2] = cohMaxRun
+	}
+	return n
+}
+
 const cohNext = slotSymbols - syncFirstSym - syncSymbols
 
 func (s *cohStage) nextInto(llr *[layer2.BurstBits]int16) {
@@ -1718,6 +1735,9 @@ func (s *cohStage) run(g, n, dir int, scale float32) {
 	s.work += int64(s.steps)
 	r := &s.runs[s.runAt]
 	s.tr.rows, s.tr.rowsOK = r.corr, r.holds(s, 0, s.steps)
+	if len(r.corr) < s.steps*m.windows {
+		s.tr.rows, s.tr.rowsOK = nil, false
+	}
 	s.tr.run(s, s.steps, rot, scale, s.mu)
 }
 
