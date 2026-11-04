@@ -26,3 +26,23 @@ func TestPair(t *testing.T) {
 	p.Raise(SideB)
 	_ = hold
 }
+
+func TestAllocs(t *testing.T) {
+	l, err := NewLamp(Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var c Counter
+	var p Pair
+	n := testing.AllocsPerRun(10, func() {
+		_ = l.Start(0)
+		l.Tick(DefaultWait)
+		_ = l.Stop()
+		c.Add()
+		c.Clear()
+		p.Raise(SideB)
+	})
+	if n != 0 {
+		t.Errorf("%v allocations per run", n)
+	}
+}

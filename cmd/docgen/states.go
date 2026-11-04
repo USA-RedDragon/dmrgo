@@ -203,29 +203,39 @@ func resolveView(pkg *types.Package, name string, im *imports) (*machine, error)
 	return m, nil
 }
 
-func (m *machine) stateExprs() []string {
+// stateComps returns, for each state component of m, a Go expression of
+// type uint64 on the receiver r and a Go expression of type string that
+// appends a value v of that component to b as the record holds it.
+func (m *machine) stateComps() (vals, fmts []string) {
 	if m.stateType != nil {
-		if len(m.args) == 0 {
-			return []string{fmt.Sprintf("strconv.FormatUint(uint64(r.%s()), 10)", m.accessor)}
+		args := m.args
+		if len(args) == 0 {
+			args = []string{""}
 		}
-		var out []string
-		for _, a := range m.args {
-			out = append(out, fmt.Sprintf("strconv.FormatUint(uint64(r.%s(%s)), 10)", m.accessor, a))
+		for _, a := range args {
+			vals = append(vals, fmt.Sprintf("uint64(r.%s(%s))", m.accessor, a))
+			fmts = append(fmts, "strconv.AppendUint(b, v, 10)")
 		}
-		return out
+		return vals, fmts
 	}
-	var parts []string
-	for _, o := range m.observers {
+	var bits, strs []string
+	for i, o := range m.observers {
+		var b string
 		switch o.kind {
 		case obsBool:
-			parts = append(parts, fmt.Sprintf("strconv.FormatBool(r.%s())", o.name))
+			b = fmt.Sprintf("r.%s()", o.name)
 		case obsOK:
-			parts = append(parts, fmt.Sprintf("func() string { _, ok := r.%s(); return strconv.FormatBool(ok) }()", o.name))
+			b = fmt.Sprintf("func() bool { _, ok := r.%s(); return ok }()", o.name)
 		case obsLen:
-			parts = append(parts, fmt.Sprintf("strconv.FormatBool(r.%s() > 0)", o.name))
+			b = fmt.Sprintf("r.%s() > 0", o.name)
 		}
+		bits = append(bits, fmt.Sprintf("__dgBit(%s)<<%d", b, i))
+		if i > 0 {
+			strs = append(strs, "append(b, ',')")
+		}
+		strs = append(strs, fmt.Sprintf("strconv.AppendBool(b, v>>%d&1 != 0)", i))
 	}
-	return []string{strings.Join(parts, ` + "," + `)}
+	return []string{strings.Join(bits, " | ")}, []string{strings.Join(strs, "\n\t\tb = ")}
 }
 
 type edit struct {
@@ -235,76 +245,123 @@ type edit struct {
 
 const hookCommon = `var __dgMu sync.Mutex
 
-var __dgSeen = map[string]bool{}
+type __dgKey struct {
+	edge     bool
+	view     string
+	from, to uint64
+	method   string
+}
 
-func __dgEmit(fields ...string) {
-	line := ""
-	for i, f := range fields {
-		if i > 0 {
-			line += "\t"
-		}
-		line += f
+var __dgSeen = make(map[__dgKey]bool, 1<<16)
+
+var __dgLine = make([]byte, 0, 1<<12)
+
+var __dgOut *os.File
+
+func init() {
+	if p := os.Getenv("DOCGEN_STATES_OUT"); p != "" {
+		__dgOut, _ = os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	}
-	if __dgSeen[line] {
-		return
+}
+
+func __dgBit(b bool) uint64 {
+	if b {
+		return 1
 	}
-	__dgSeen[line] = true
-	f, err := os.OpenFile(os.Getenv("DOCGEN_STATES_OUT"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return
+	return 0
+}
+
+func __dgWrite(line []byte) {
+	if __dgOut != nil {
+		_, _ = __dgOut.Write(line)
 	}
-	_, _ = f.WriteString(line + "\n")
-	_ = f.Close()
 }
 
 var _ = strconv.Itoa
 `
 
 const hookType = `
-var __dgDepthT_ = map[*T_]int{}
+type __dgCompsT_ = [NCOMPS]uint64
 
-var __dgFromT_ = map[*T_][]string{}
+type __dgViewNamesT_ = [NCOMPS]string
 
-var __dgKnownT_ = map[*T_]bool{}
+var __dgDepthT_ = make(map[*T_]int, 1<<12)
 
-var __dgViewsT_ = []string{VIEWS}
+var __dgKnownT_ = make(map[*T_]bool, 1<<12)
 
-func __dgStateT_(r *T_) []string { return []string{COMPS} }
+var __dgViewsT_ = __dgViewNamesT_{VIEWS}
 
-func __dgInT_(r *T_) bool {
+func __dgStateT_(r *T_) __dgCompsT_ { return __dgCompsT_{COMPS} }
+
+func __dgFmtT_(b []byte, i int, v uint64) []byte {
+	switch i {
+FMTS	}
+	return b
+}
+
+func __dgSeenT_(edge bool, i int, from uint64, m string, to uint64) {
+	k := __dgKey{edge: edge, view: __dgViewsT_[i], from: from, to: to, method: m}
+	if __dgSeen[k] {
+		return
+	}
+	__dgSeen[k] = true
+	b := __dgLine[:0]
+	if edge {
+		b = append(b, "edge\t"...)
+	} else {
+		b = append(b, "init\t"...)
+	}
+	b = append(b, __dgViewsT_[i]...)
+	b = append(b, '\t')
+	b = __dgFmtT_(b, i, from)
+	if edge {
+		b = append(b, '\t')
+		b = append(b, m...)
+		b = append(b, '\t')
+		b = __dgFmtT_(b, i, to)
+	}
+	b = append(b, '\n')
+	__dgWrite(b)
+	__dgLine = b[:0]
+}
+
+func __dgInT_(r *T_) (*T_, __dgCompsT_, bool) {
+	var s __dgCompsT_
 	if r == nil {
-		return false
+		return nil, s, false
 	}
 	__dgMu.Lock()
 	defer __dgMu.Unlock()
-	if __dgDepthT_[r] == 0 {
-		s := __dgStateT_(r)
-		__dgFromT_[r] = s
-		if !__dgKnownT_[r] {
-			__dgKnownT_[r] = true
-			for i, v := range s {
-				__dgEmit("init", __dgViewsT_[i], v)
-			}
+	d := __dgDepthT_[r]
+	__dgDepthT_[r] = d + 1
+	if d > 0 {
+		return r, s, false
+	}
+	s = __dgStateT_(r)
+	if !__dgKnownT_[r] {
+		__dgKnownT_[r] = true
+		for i, v := range s {
+			__dgSeenT_(false, i, v, "", 0)
 		}
 	}
-	__dgDepthT_[r]++
-	return true
+	return r, s, true
 }
 
-func __dgOutT_(r *T_, m string) {
+func __dgOutT_(r *T_, from __dgCompsT_, m string) {
 	__dgMu.Lock()
 	defer __dgMu.Unlock()
 	__dgDepthT_[r]--
-	if __dgDepthT_[r] > 0 {
-		return
-	}
-	delete(__dgDepthT_, r)
-	from := __dgFromT_[r]
 	for i, v := range __dgStateT_(r) {
 		if v != from[i] {
-			__dgEmit("edge", __dgViewsT_[i], from[i], m, v)
+			__dgSeenT_(true, i, from[i], m, v)
 		}
 	}
+}
+
+func __dgDownT_(r *T_) {
+	__dgMu.Lock()
+	__dgDepthT_[r]--
+	__dgMu.Unlock()
 }
 `
 

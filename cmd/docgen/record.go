@@ -98,7 +98,7 @@ func resolveAll(pi *pkgInfo, want map[string]string) (*recording, error) {
 func (r *recording) instrument(pi *pkgInfo, typ string) string {
 	views := r.byType[typ]
 	observed := map[string]bool{"String": true}
-	var comps, viewOf []string
+	var comps, fmts, viewOf []string
 	for _, m := range views {
 		if m.accessor != "" {
 			observed[m.accessor] = true
@@ -106,8 +106,10 @@ func (r *recording) instrument(pi *pkgInfo, typ string) string {
 		for _, o := range m.observers {
 			observed[o.name] = true
 		}
-		for _, e := range m.stateExprs() {
-			comps = append(comps, e)
+		vals, fs := m.stateComps()
+		for i := range vals {
+			comps = append(comps, vals[i])
+			fmts = append(fmts, fmt.Sprintf("\tcase %d:\n\t\tb = %s\n", len(fmts), fs[i]))
 			viewOf = append(viewOf, strconv.Quote(m.name))
 		}
 	}
@@ -128,7 +130,7 @@ func (r *recording) instrument(pi *pkgInfo, typ string) string {
 			}
 			rv := fd.Recv.List[0].Names[0].Name
 			off := pi.pkg.Fset.Position(fd.Body.Lbrace).Offset + 1
-			r.edits[file] = append(r.edits[file], edit{off, fmt.Sprintf(" if __dgIn%s(%s) { defer __dgOut%s(%s, %q) };", typ, rv, typ, rv, fd.Name.Name)})
+			r.edits[file] = append(r.edits[file], edit{off, fmt.Sprintf(" if __dgR, __dgS, __dgOK := __dgIn%s(%s); __dgOK { defer __dgOut%s(__dgR, __dgS, %q) } else if __dgR != nil { defer __dgDown%s(__dgR) };", typ, rv, typ, fd.Name.Name, typ)})
 			methods = append(methods, fd.Name.Name)
 		}
 	}
@@ -137,7 +139,9 @@ func (r *recording) instrument(pi *pkgInfo, typ string) string {
 		m.methods, m.skipped = methods, skipped
 	}
 	hk := strings.ReplaceAll(hookType, "T_", typ)
+	hk = strings.ReplaceAll(hk, "NCOMPS", strconv.Itoa(len(comps)))
 	hk = strings.Replace(hk, "VIEWS", strings.Join(viewOf, ", "), 1)
+	hk = strings.Replace(hk, "FMTS", strings.Join(fmts, ""), 1)
 	return strings.Replace(hk, "COMPS", strings.Join(comps, ", "), 1)
 }
 
