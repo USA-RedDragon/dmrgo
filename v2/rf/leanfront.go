@@ -169,6 +169,8 @@ type leanRx struct {
 	bN       int32
 	floor    float32
 	noiseCoh complex64
+	bHold    uint8
+	bOff     bool
 }
 
 func (f *leanFront) retuneFront(hz, d float32) {
@@ -260,7 +262,11 @@ func (r *leanRx) flush() {
 }
 
 func (r *leanRx) sample(v complex64) {
+	g := r.df.gain
 	s, p, ok := r.df.push(v)
+	if v == 0 || r.df.gain > g {
+		r.bHold = preTaps
+	}
 	if !ok {
 		return
 	}
@@ -274,14 +280,28 @@ func (r *leanRx) sample(v complex64) {
 	r.push(s)
 }
 
+// block adds p to the power of the current block and, at the end of the
+// block, tunes onto a carrier that stands above the noise floor. A block that
+// holds output of a gated (zero) input or of a front-end gain rise does not
+// measure the floor: the int8 front rounds a weak input to zero until its gain
+// rises, so such a block reads far under the noise and would put the floor
+// there.
 func (r *leanRx) block(p float32) {
+	if r.bHold > 0 {
+		r.bHold--
+		r.bOff = true
+	}
 	r.bPow += p
 	r.bLag += r.df.lag
 	if r.bN++; r.bN < leanBlock {
 		return
 	}
 	pw, lag := r.bPow/leanBlock, r.bLag/leanBlock
-	r.bPow, r.bLag, r.bN = 0, 0, 0
+	off := r.bOff
+	r.bPow, r.bLag, r.bN, r.bOff = 0, 0, 0, false
+	if off {
+		return
+	}
 	if r.floor == 0 || pw < r.floor {
 		r.floor = pw
 	} else {
