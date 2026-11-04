@@ -1671,7 +1671,7 @@ struct dmrgo_data_stats_t {
 	uint16_t duplicates;
 	/* OutOfSequence is the number of confirmed packets refused for an N(S) that is neither VI nor VI + 1. */
 	uint16_t out_of_sequence;
-	/* Dropped is the number of other bursts dropped: blocks without a header, packets over DMRGO_DATA_MAX_BLOCKS, headers that the Assembler refused, and the packets of a sliding window after one that failed or was lost. */
+	/* Dropped is the number of other bursts dropped: blocks without a header, packets over DMRGO_DATA_MAX_BLOCKS, headers that the Assembler refused, headers with a null target or source address, and the packets of a sliding window after one that failed or was lost. */
 	uint16_t dropped;
 	/* Duration is the time from the start of the call to its end. */
 	dmrgo_duration_t duration;

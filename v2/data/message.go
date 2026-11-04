@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -72,6 +73,12 @@ type Call struct {
 func callOf(h *pdu.DataHeader) Call {
 	target, source, _ := h.Addresses()
 	return Call{Group: groupOf(h), Target: target, Source: source}
+}
+
+// ADRNULL is not a valid source or destination address (ETSI TS 102 361-1
+// Annex A, table A.1).
+func (c *Call) addressed() bool {
+	return c.Target != constants.AddressNull && c.Source != constants.AddressNull
 }
 
 func sapOf(h *pdu.DataHeader) enums.SAP {

@@ -546,6 +546,10 @@ func (r *Receiver) preamble(now time.Duration, b *layer2.Burst, out []Event) []E
 		return out
 	}
 	call := Call{Group: p.Group, Target: p.TargetAddress, Source: p.SourceAddress}
+	if !call.addressed() {
+		r.touch(now)
+		return out
+	}
 	return r.begin(now, &call, out)
 }
 
@@ -573,6 +577,11 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 		return out
 	}
 	c := callOf(dh)
+	if !c.addressed() {
+		r.stats.Dropped++
+		r.touch(now)
+		return out
+	}
 	out = r.begin(now, &c, out)
 	prev := r.cur
 	r.cur = current{
