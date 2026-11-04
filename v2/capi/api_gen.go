@@ -3375,6 +3375,8 @@ func out_rf_Burst(d *C.dmrgo_rf_burst_t, s *g_rf.Burst, oc *outc) {
 	_ = oc
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.data)) = s.Data
 	d.seconds = C.double(s.Seconds)
+	d.seconds_symbols = C.int64_t(s.SecondsSymbols)
+	d.seconds_error = C.float(s.SecondsError)
 	d.distance = C.int64_t(s.Distance)
 	d.sync = C.dmrgo_enums_sync_pattern_t(s.Sync)
 	d.voice = C.dmrgo_enums_voice_burst_type_t(s.Voice)
@@ -3392,6 +3394,8 @@ func out_rf_Burst(d *C.dmrgo_rf_burst_t, s *g_rf.Burst, oc *outc) {
 func in_rf_Burst(s *C.dmrgo_rf_burst_t) (d g_rf.Burst) {
 	d.Data = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.data))
 	d.Seconds = float64(s.seconds)
+	d.SecondsSymbols = int(s.seconds_symbols)
+	d.SecondsError = float32(s.seconds_error)
 	d.Distance = int(s.distance)
 	d.Sync = g_enums.SyncPattern(s.sync)
 	d.Voice = g_enums.VoiceBurstType(s.voice)
