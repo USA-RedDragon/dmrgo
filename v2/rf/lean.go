@@ -2980,17 +2980,18 @@ func (r *leanCore) dropNoise(b *Burst, missedA bool) bool {
 // burstTicks gives the start of the burst at base and, for a burst projected
 // at the nominal period because the clock rate of the call is not yet known
 // well enough, the number of symbols of that projection. Without the timing
-// line of the extension, the projection starts at the SYNC fit of the burst
-// when it has one, else at the newest strobe.
+// line of the extension, which holds MS streams only, the projection starts
+// at the SYNC fit of the burst when it has one, else at the newest strobe. A
+// BS stream projects at the loop rate even before it is known, as the rate
+// learner of a continuous stream only moves toward the clock error, so the
+// nominal bound still holds.
 func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 	n := r.ns - 1 - (base + cachSymbols)
 	at := (r.mfStep*(r.n-1)+r.center)<<8 + int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256)))
 	var learned bool
 	var e float32
 	switch {
-	case r.bs:
-		learned = true
-	case r.hasExt():
+	case r.hasExt() && !r.bs:
 		if t, b, ok := r.ext.grid(r, base+cachSymbols); ok {
 			return t - int64(r.lagTicks), 0, b
 		}
@@ -3007,7 +3008,7 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 		e *= float32(int32(r.mfStep)) * 256
 	}
 	rate := float32(0)
-	if learned {
+	if learned || r.bs {
 		rate = r.tm.rate
 	}
 	ticks := at - int64(int32(roundf(float32(int32(r.mfStep))*float32(n)*(2*r.tm.step+rate)*256))) - int64(r.lagTicks)
