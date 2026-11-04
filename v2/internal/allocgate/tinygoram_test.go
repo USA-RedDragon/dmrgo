@@ -5,10 +5,14 @@ package allocgate_test
 import (
 	"bytes"
 	"debug/elf"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -19,6 +23,8 @@ const ramTableLimit = 1024
 const mcuCorrSym = "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx.mcuCorr"
 
 var heaplessExamples = []string{"txaudio", "txiq"}
+
+var radioTypes = map[string]bool{"Transmitter": true, "AudioTransmitter": true, "Receiver": true, "AudioReceiver": true}
 
 func TestTinyGoTablesInFlash(t *testing.T) {
 	t.Parallel()
@@ -46,14 +52,89 @@ func TestTinyGoTablesInFlash(t *testing.T) {
 	board := build("ramstub").ram
 	for _, ex := range heaplessExamples {
 		syms := build(ex)
-		for name, size := range syms.ram {
-			if board[name] != size {
-				t.Errorf("%s: %s takes %d bytes of RAM", ex, name, size)
-			}
+		radios, err := radioVars(filepath.Join(dir, "examples", ex))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range ramTablesOf(syms.ram, board, radios) {
+			t.Errorf("%s: %s takes %d bytes of RAM", ex, name, syms.ram[name])
 		}
 		if ex == "txaudio" && syms.flash[mcuCorrSym] < ramTableLimit && syms.ram[mcuCorrSym] == 0 {
 			t.Errorf("%s: %s is not in flash", ex, mcuCorrSym)
 		}
+	}
+}
+
+// ramTablesOf returns the RAM symbols of a build that the board stub does not
+// have, less the radio objects of the example. A radio object is mutable
+// state, so only a table can be a fault.
+func ramTablesOf(ram, board map[string]uint64, radios map[string]bool) []string {
+	var out []string
+	for name, size := range ram {
+		if board[name] != size && !radios[name] {
+			out = append(out, name)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// radioVars returns the symbols of the package-level variables of the main
+// package in dir whose type is an rf transmitter or receiver.
+func radioVars(dir string) (map[string]bool, error) {
+	pkgs, err := parser.ParseDir(token.NewFileSet(), dir, nil, parser.SkipObjectResolution)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]bool{}
+	for _, f := range pkgs["main"].Files {
+		for _, d := range f.Decls {
+			g, ok := d.(*ast.GenDecl)
+			if !ok || g.Tok != token.VAR {
+				continue
+			}
+			for _, sp := range g.Specs {
+				v, ok := sp.(*ast.ValueSpec)
+				if !ok || !isRadioType(v.Type) {
+					continue
+				}
+				for _, n := range v.Names {
+					out["main."+n.Name] = true
+				}
+			}
+		}
+	}
+	return out, nil
+}
+
+func isRadioType(e ast.Expr) bool {
+	if st, ok := e.(*ast.StarExpr); ok {
+		e = st.X
+	}
+	sel, ok := e.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	pkg, ok := sel.X.(*ast.Ident)
+	return ok && pkg.Name == "rf" && radioTypes[sel.Sel.Name]
+}
+
+func TestRAMTablesOfKeepsTables(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	src := "package main\n\nimport \"github.com/USA-RedDragon/dmrgo/v2/rf\"\n\nvar (\n\ttx rf.Transmitter\n\trx *rf.AudioReceiver\n\tlut [2048]int16\n)\n\nfunc main() {}\n"
+	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	radios, err := radioVars(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ram := map[string]uint64{"main.tx": 1040, "main.rx": 4096, "main.lut": 4096, "runtime.stack": 2048}
+	board := map[string]uint64{"runtime.stack": 2048}
+	if got := ramTablesOf(ram, board, radios); !slices.Equal(got, []string{"main.lut"}) {
+		t.Errorf("RAM tables %q, want [main.lut]", got)
 	}
 }
 
