@@ -100,3 +100,31 @@ func TestDCBlockCarrierLead(t *testing.T) {
 		}
 	}
 }
+
+// TestDCBlockFitStart starts the DC blocker on a weak 4FSK carrier 2.5 kHz
+// off with an I/Q offset as strong as the carrier, as an RTL-SDR gives on a
+// weak signal. The circle fit must find the offset within the first 10 ms;
+// the running mean alone still misses about half of it then.
+func TestDCBlockFitStart(t *testing.T) {
+	t.Parallel()
+	for _, rate := range []float64{basebandRate, 204800} {
+		const amp = 0.01
+		offset := complex64(complex(-0.7123*amp, -0.7019*amp))
+		var d dcBlock
+		d.init(rate)
+		rng := rand.New(rand.NewPCG(3, 4))
+		sps := int(rate / 4800)
+		var ph, dev float64
+		for n := range int(rate / 100) {
+			if n%sps == 0 {
+				dev = []float64{-1944, -648, 648, 1944}[rng.IntN(4)]
+			}
+			ph += 2 * math.Pi * (2500 + dev) / rate
+			v := offset + complex64(cmplx.Rect(amp, ph)) + complex(float32(rng.NormFloat64()*amp/100), float32(rng.NormFloat64()*amp/100))
+			d.remove(v)
+		}
+		if e := cmplx.Abs(complex128(d.dc-offset)) / amp; e > 0.05 {
+			t.Errorf("%.0f Hz rate: DC estimate off by %.3f of the carrier 10 ms after the start, want at most 0.05", rate, e)
+		}
+	}
+}
