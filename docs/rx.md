@@ -36,29 +36,29 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 | Tier | Voice | Rate 1/2 | Rate 3/4 | CSBK | Embedded LC |
 |:---|---:|---:|---:|---:|---:|
 | 4FSK floor | -1.0 | -3.0 | 0.3 | -4.1 | < -6.9 |
-| Audio tier 0 | 9.6 | 6.5 | 8.3 | 6.4 | 9.5 |
-| Audio tier 1 | 8.2 | 6.4 | 7.9 | 5.4 | 4.3 |
-| Audio tier 2 | 4.9 | 4.4 | 6.2 | 3.8 | 2.4 |
-| Audio tier 3 | 4.4 | 3.5 | 5.7 | 2.7 | 2.4 |
-| Low-rate I/Q tier 0 | 10.3 | 6.6 | 8.3 | 6.5 | 9.6 |
+| Audio tier 0 | 9.6 | 6.5 | 8.2 | 6.4 | 9.5 |
+| Audio tier 1 | 8.2 | 6.4 | 7.9 | 5.4 | 4.1 |
+| Audio tier 2 | 4.9 | 4.4 | 6.2 | 3.9 | 2.2 |
+| Audio tier 3 | 4.3 | 3.5 | 5.7 | 2.6 | 2.2 |
+| Low-rate I/Q tier 0 | 10.3 | 6.5 | 8.3 | 6.5 | 9.6 |
 | I/Q tier 0 | 9.3 | 5.4 | 7.6 | 5.4 | 9.2 |
-| I/Q tier 1 | 8.0 | 5.4 | 7.0 | 3.6 | 2.5 |
-| I/Q tier 2 | 4.9 | 4.4 | 5.5 | 3.2 | 2.0 |
-| I/Q tier 3 | 2.5 | 1.8 | 4.8 | 1.1 | 0.1 |
+| I/Q tier 1 | 8.0 | 5.3 | 7.0 | 3.6 | 2.5 |
+| I/Q tier 2 | 4.9 | 4.4 | 5.5 | 3.2 | 1.5 |
+| I/Q tier 3 | 2.5 | 1.8 | 4.8 | 1.1 | 0.0 |
 
 ### Operating characteristics
 
 | Tier | Input | Rate (kHz) | Carrier offset (kHz) | Clock error (ppm) | Late entry, C/N 8 dB (ms) | Late entry, C/N 20 dB (ms) | CPU, C/N 6 dB (ms/s) | CPU, worst (ms/s) | RAM (KiB) |
 |:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 59 | 62 | 0.34 | 0.41 | 1.7 |
-| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 47 | 45 | 0.93 | 2.5 | 48 |
-| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 8.6 | 13 | 589 |
-| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 46 | 45 | 168 | 320 | 1,292 |
-| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 60 | 61 | 0.39 | 0.44 | 1.6 |
-| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 61 | 1.3 | 1.5 | 19 |
-| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 1.7 | 3.5 | 106 |
-| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 8.4 | 11 | 603 |
-| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 284 | 386 | 2,336 |
+| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 59 | 62 | 0.36 | 0.41 | 1.7 |
+| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 47 | 45 | 0.87 | 2.6 | 48 |
+| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 8.3 | 14 | 589 |
+| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 46 | 45 | 60 | 207 | 1,296 |
+| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 60 | 61 | 0.38 | 0.47 | 1.7 |
+| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 61 | 1.3 | 1.6 | 19 |
+| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 1.9 | 3.9 | 106 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 8.3 | 10 | 603 |
+| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 107 | 140 | 2,340 |
 
 - Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
 - Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
@@ -68,9 +68,9 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0 | 9.6 | 5.0 | 2,296 | 39.4 |
-| Audio tier 0, `PreEmphasis` | 9.6 | 5.3 | 2,352 | 39.6 |
-| Low-rate I/Q tier 0 | 9.6 | 5.3 | 2,304 | 39.9 |
+| Audio tier 0 | 9.6 | 5.0 | 2,344 | 40.0 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 5.3 | 2,400 | 40.2 |
+| Low-rate I/Q tier 0 | 9.6 | 5.3 | 2,360 | 40.6 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
@@ -204,18 +204,18 @@ Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) d
 
 | Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.4 | 10.3 | 9.3 | 8.0 | 4.9 | 2.5 |
-| Voice frame, protected bits (C0 and C1) | 5.9 | 5.2 | 3.9 | 3.2 | 5.4 | 4.6 | 3.7 | 3.1 | 1.6 |
-| Data block, rate 1/2 | 6.5 | 6.4 | 4.4 | 3.5 | 6.6 | 5.4 | 5.4 | 4.4 | 1.8 |
-| Data block, rate 3/4 | 8.3 | 7.9 | 6.2 | 5.7 | 8.3 | 7.6 | 7.0 | 5.5 | 4.8 |
+| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.3 | 10.3 | 9.3 | 8.0 | 4.9 | 2.5 |
+| Voice frame, protected bits (C0 and C1) | 5.8 | 5.2 | 3.9 | 3.2 | 5.4 | 4.6 | 3.7 | 3.1 | 1.6 |
+| Data block, rate 1/2 | 6.5 | 6.4 | 4.4 | 3.5 | 6.5 | 5.4 | 5.3 | 4.4 | 1.8 |
+| Data block, rate 3/4 | 8.2 | 7.9 | 6.2 | 5.7 | 8.3 | 7.6 | 7.0 | 5.5 | 4.8 |
 | Data block, rate 1 | 11.3 | 11.3 | 8.3 | 8.0 | 12.4 | 11.1 | 11.3 | 7.8 | 7.6 |
-| CSBK | 6.4 | 5.4 | 3.8 | 2.7 | 6.5 | 5.4 | 3.6 | 3.2 | 1.1 |
-| Voice LC header and terminator | 6.4 | 5.5 | 4.3 | 3.3 | 6.5 | 5.7 | 4.1 | 3.4 | 1.1 |
-| Data header | 6.4 | 5.1 | 3.9 | 2.8 | 6.5 | 5.5 | 3.8 | 3.3 | 1.1 |
-| Embedded LC | 9.5 | 4.3 | 2.4 | 2.4 | 9.6 | 9.2 | 2.5 | 2.0 | 0.1 |
-| EMB | 3.9 | 3.8 | 2.0 | 1.4 | 2.7 | 2.4 | 1.9 | 1.0 | -0.1 |
-| Slot type | 4.0 | 4.0 | 1.3 | 1.5 | 3.1 | 2.7 | 2.5 | 0.7 | -0.2 |
-| SYNC detection | 3.7 | 3.6 | 0.8 | 0.9 | 2.6 | 2.2 | 2.0 | -0.7 | -1.5 |
+| CSBK | 6.4 | 5.4 | 3.9 | 2.6 | 6.5 | 5.4 | 3.6 | 3.2 | 1.1 |
+| Voice LC header and terminator | 6.6 | 5.5 | 4.3 | 3.3 | 6.4 | 5.7 | 3.9 | 3.4 | 1.4 |
+| Data header | 6.4 | 5.2 | 4.0 | 2.7 | 6.4 | 5.5 | 3.7 | 3.3 | 1.1 |
+| Embedded LC | 9.5 | 4.1 | 2.2 | 2.2 | 9.6 | 9.2 | 2.5 | 1.5 | 0.0 |
+| EMB | 3.8 | 3.6 | 2.1 | 1.4 | 2.4 | 2.0 | 1.6 | 1.0 | -0.1 |
+| Slot type | 4.0 | 3.9 | 1.6 | 1.5 | 3.0 | 2.5 | 2.4 | 1.0 | -0.2 |
+| SYNC detection | 3.5 | 3.4 | 1.1 | 1.1 | 2.3 | 1.7 | 1.6 | -0.8 | -1.5 |
 
 ### Real recordings
 
@@ -223,16 +223,16 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 | Recording | C/N (dB) | Frames | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |:---|---:|---:|---:|---:|---:|---:|
-| MS voice relayed, HackRF on the uplink | 9.3 | 2013 | 1474 | 1520 | 1828 | 1865 |
-| Late entry voice relayed, HackRF on the uplink | 11.1 | 1890 | 1463 | 1499 | 1622 | 1632 |
+| MS voice relayed, HackRF on the uplink | 9.3 | 2013 | 1480 | 1519 | 1828 | 1864 |
+| Late entry voice relayed, HackRF on the uplink | 11.1 | 1890 | 1467 | 1503 | 1622 | 1632 |
 | Voice with PI header relayed, HackRF on the uplink | 17.3 | 1818 | 1818 | 1818 | 1818 | 1818 |
 | Mixed voice and data, network to air, run 1 | 9.7 | 144 | 114 | 119 | 122 | 126 |
 | Mixed voice and data, network to air, run 2 | 10.6 | 144 | 117 | 121 | 125 | 126 |
-| Voice, network to air | 10.0 | 90 | 88 | 90 | 90 | 90 |
-| Voice, network to air | 11.6 | 90 | 82 | 82 | 90 | 90 |
+| Voice, network to air | 10.0 | 90 | 89 | 90 | 90 | 90 |
+| Voice, network to air | 11.6 | 90 | 83 | 81 | 90 | 90 |
 | Gain sweep, RTL gain 0 dB | 9.9 | 51 | 41 | 47 | 50 | 50 |
-| Gain sweep, RTL gain 9.7 dB | 7.3 | 51 | 33 | 44 | 48 | 48 |
-| Gain sweep, RTL gain 19.7 dB | 10.4 | 51 | 50 | 51 | 51 | 51 |
+| Gain sweep, RTL gain 9.7 dB | 7.3 | 51 | 33 | 43 | 48 | 48 |
+| Gain sweep, RTL gain 19.7 dB | 10.4 | 51 | 51 | 51 | 51 | 51 |
 | Gain sweep, RTL gain 29.7 dB | 11.2 | 51 | 44 | 50 | 50 | 50 |
 
 <!-- rxbench:end -->
