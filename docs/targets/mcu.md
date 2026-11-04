@@ -1,6 +1,6 @@
 # Microcontrollers
 
-This page shows how to build dmrgo with TinyGo for a microcontroller, which boards CI builds, and the memory and CPU limits of the Tier 0 radio code.
+This page shows how to build dmrgo with TinyGo for a microcontroller, which boards CI builds, and the memory and CPU limits of the radio code.
 
 ## What you need
 
@@ -111,7 +111,7 @@ Init sets up r for c, in place of any state it holds, in Tier0 at a Rate of 9600
 [rf.AudioReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioReceiver), for the output of an FM discriminator:
 
 <!-- dmrgo:doc pkg=rf name=AudioReceiver -->
-AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 5.0 MHz and 2,296 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
+AudioReceiver recovers DMR bursts from the output of an FM discriminator, as the radio chips of hotspots and MMDVM modems give it: real samples in any units, with any gain and DC offset, which the receiver measures itself. It takes audio of either polarity. Above Tier0, an AudioReceiver from NewAudioReceiver also takes audio that a high-pass filter cut below about 300 Hz, as the speaker output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier also takes the de-emphasized audio of the speaker or accessory output of a radio. With Tier0 it keeps about 1.4 KB of state, for microcontrollers; on a Cortex-M4F at 9.6 kHz it needs up to 5.0 MHz and 2,296 B with its stack, built with TinyGo -opt z, over 2 KB by the accepted cost of the detection of standalone RC bursts and of the MS bursts of both TDMA slots and of the clock rate tracking. An AudioReceiver that Init sets up in memory of the caller, such as a package variable, uses no heap in stream mode. An AudioReceiver is not safe for concurrent use, and it must not be copied after Init or NewAudioReceiver.
 <!-- /dmrgo:doc -->
 
 [rf.Transmitter.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Transmitter.Init), for I/Q:
@@ -127,6 +127,28 @@ Init sets up t for c, in place of any state it holds, in Tier0 at a Rate of 2400
 <!-- /dmrgo:doc -->
 
 The [Receiver](../rx.md) datasheet gives the sensitivity of each tier, and the [Transmitter](../tx.md#key-specifications) datasheet gives the CPU, RAM and flash of the Tier 0 modulators on a Cortex-M4F.
+
+## Higher tiers
+
+Tier 0 is the tier for the smallest boards. A board with more RAM and CPU, such as an STM32H7 or an ESP32-S3, can run a higher tier. Set `Tier` in the config of [rf.NewAudioReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewAudioReceiver) or [rf.NewReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewReceiver):
+
+```go
+rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: 9600, Tier: rf.Tier1, OnBursts: onBursts})
+```
+
+- The constructors allocate the stages of the tier once. After that, `Write` and `Flush` do not allocate. Build with a heap, for example `-gc=leaking` or `-gc=conservative`, not `-gc=none`.
+- A program that calls only `Init` links none of the higher tiers. Its size is the size of a Tier 0 build.
+- The transmitters have Tier 0 only under TinyGo.
+- Use a target with a hardware FPU. The `cortex-m7` target of TinyGo uses soft float. `cmd/mcubench` builds for a Cortex-M7 with an FPv5-D16 FPU.
+
+The sample rates that each tier takes:
+
+| Input | Tier 0 | Tier 1 | Tier 2 | Tier 3 |
+|:---|:---|:---|:---|:---|
+| FM discriminator audio | 8 kHz to 48 kHz | 8 kHz to 1 MHz | 8 kHz to 1 MHz | 8 kHz to 1 MHz |
+| I/Q | 9.6 kHz, 12 kHz, and 24 kHz up | 24 kHz up | 48 kHz up | 48 kHz up |
+
+The [Receiver](../rx.md) datasheet gives the CPU, RAM and flash of tiers 1 and 2 on a Cortex-M7, and the RAM of each tier on a PC. An STM32H743 links 512 KB of RAM for TinyGo, and an ESP32-S3 has 416 KB of data RAM under TinyGo.
 
 ## Heap rules
 
@@ -171,4 +193,4 @@ func main() {
 ## Other limits
 
 - [vocoder/codec2](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2) always uses its stub under TinyGo, so [codec2.New](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#New) returns [codec2.ErrUnavailable](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2#ErrUnavailable).
-- CI does not run the tests of `rf` under TinyGo. The `feather-m4` builds above check that its Tier 0 code builds and links without a heap.
+- CI does not run the tests of `rf` under TinyGo. The `feather-m4` builds above check that its Tier 0 code builds and links without a heap, and `internal/rxtiers` checks under TinyGo that tiers 1 and 2 decode the same bursts as with gc.
