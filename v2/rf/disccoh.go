@@ -124,7 +124,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	for _, u := range x[:n] {
 		p.clip(u)
 		p.click(u, lo, hi)
-		if (p.sumN+1)%discStepBlock == 0 && p.cal && p.c.locked && p.c.bs && p.hotBlock() {
+		if (p.sumN+1)%64 == 0 && p.cal && p.c.locked && p.c.bs && p.hotBlock() {
 			p.cal, p.fitN, p.heldN = false, 0, 0
 		}
 		i := p.sumN
