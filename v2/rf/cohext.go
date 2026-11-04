@@ -189,6 +189,9 @@ const (
 func newCohStage(r *iqRx, opt *options) *cohStage {
 	s := newCohStageOf(opt)
 	s.src = r
+	s.refR = make([]complex64, slotSymbols*samplesPerSy)
+	s.refPh = make([]float64, slotSymbols*samplesPerSy)
+	s.refC = make([]complex64, slotSymbols*cohSPS)
 	s.setRing(float64(r.conv.decim))
 	if s.div == 2 {
 		s.scanTpl = new([4][2][cohScanLen]complex64)
@@ -240,10 +243,8 @@ func newCohStageOf(opt *options) *cohStage {
 	s.size = opt.cohRing()
 	s.setRing(2)
 	s.buf = make([]complex64, (syncSymbols+2)*sps)
-	s.refPh = make([]float64, slotSymbols*samplesPerSy)
-	s.refC = make([]complex64, slotSymbols*sps)
+	s.refPh = make([]float64, slotSymbols*sps)
 	s.pp48 = newPhasePulse(samplesPerSy)
-	s.refR = make([]complex64, slotSymbols*samplesPerSy)
 	s.refX = make([]complex64, slotSymbols*sps)
 	s.refIn = make([]int, slotSymbols)
 	s.follow = make([]float64, cohFollowPre+slotSymbols)
