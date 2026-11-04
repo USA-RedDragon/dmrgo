@@ -297,7 +297,7 @@ func resampleFM(freq, env []float64, ppm float64) ([]float64, []float64) {
 
 func directCalls(t testing.TB, n int) ([]float64, []float64, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Superframes: 2, Slot: 1}
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 2, Slot: 1}
 	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

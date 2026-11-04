@@ -399,7 +399,7 @@ func TestReceiverOffsetHzTransmitters(t *testing.T) {
 
 func TestReceiverStartLevels(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -474,7 +474,7 @@ func TestReceiverStartLevels(t *testing.T) {
 
 func TestReceiverClockStart(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 2}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 2}
 	type job struct {
 		bs   bool
 		ppm  float64
@@ -530,7 +530,7 @@ func TestReceiverClockStart(t *testing.T) {
 
 func TestReceiverDeviationAfterSilence(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -561,7 +561,7 @@ func TestReceiverDeviationAfterSilence(t *testing.T) {
 
 func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
