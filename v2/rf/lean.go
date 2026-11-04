@@ -807,7 +807,6 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		return 0, 0, 0, false
 	}
 	v := edgeVertex(&c, best)
-	walk := v == 0.5 || v == -0.5
 	bestD := float32(best-3)*sps/4 + v*sps/4
 	if best == 0 || best == len(c)-1 {
 		k := float32(-4)
@@ -827,11 +826,10 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		}
 		if den := lo - 2*c[best] + hi; den < 0 {
 			e := max32(min32(0.5*(lo-hi)/den, 0.5), -0.5)
-			walk = e == 0.5 || e == -0.5
 			bestD += e * sps / 4
 		}
 	}
-	z = win.mmZero(&syms, end, bestD, sps, walk)
+	z = win.mmZero(&syms, end, bestD, sps)
 	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
 		bestD = z
 	}
@@ -848,14 +846,10 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	return bestD, sxy * sxy / (sxx * spp), min(z, -end), true
 }
 
-func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32, walk bool) float32 {
+func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
 	const h = leanLockMMStep
 	c := d
-	steps := 1
-	if walk {
-		steps = leanMMSteps
-	}
-	for range steps {
+	for range leanMMSteps {
 		lo, hi := c-h, c+h
 		if end+hi > 0 {
 			lo, hi = c-2*h, c

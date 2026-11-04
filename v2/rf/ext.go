@@ -1689,7 +1689,7 @@ func keptMMZero(c *leanCore, syms *[syncSymbols]int8, end, off, sps float32) flo
 		return off
 	}
 	c.fillWindow(&win, b0)
-	return min(win.mmZero(syms, end, off, sps, false), -end)
+	return min(win.mmZero(syms, end, off, sps), -end)
 }
 
 func (x *softExt) liveFit(c *leanCore, sym, t int64, q, w float32) {
@@ -1768,7 +1768,7 @@ func (x *softExt) embFit(c *leanCore, b *Burst) {
 		return
 	}
 	d := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
-	z := min(win.mmZero(&syms, end, d, sps, false), -end)
+	z := min(win.mmZero(&syms, end, d, sps), -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+z, sps)
 	var spp float32
 	for _, q := range syms {
