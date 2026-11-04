@@ -13,12 +13,12 @@ const (
 	// tags. No other call takes it.
 	DialectUnknown Dialect = iota
 	// DialectMMDVM is the protocol that DMRGateway speaks to a master and
-	// that BrandMeister, DMR+, HBlink, FreeDMR and DMRHub masters accept:
+	// that DMR+, HBlink, FreeDMR, DMRHub and other masters accept:
 	// binary repeater IDs, RPTACK, RPTPING and MSTPONG, RPTO, RPTG and a
 	// 302-octet RPTC with the ID at octets 4 to 7.
 	DialectMMDVM
 	// DialectHBRP is the HomeBrew Repeater Protocol in the form of the
-	// examples of its specification and of BrandMeister's Homebrew port:
+	// examples of its specification and of the Homebrew port of other masters:
 	// repeater IDs, salt and token as hex text, MSTACK, MSTPING and RPTPONG,
 	// and a 306-octet RPTC with the ID after the callsign.
 	DialectHBRP

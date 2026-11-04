@@ -7915,11 +7915,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRD_COMMAND_RPTSBKN ((dmrgo_dmrd_command_t)17)
 /* Go: dmrd.CommandUnknown. not a message of the dialect */
 #define DMRGO_DMRD_COMMAND_UNKNOWN ((dmrgo_dmrd_command_t)0)
-/* Go: dmrd.DialectHBRP. DialectHBRP is the HomeBrew Repeater Protocol in the form of the examples of its specification and of BrandMeister's Homebrew port: repeater IDs, salt and token as hex text, MSTACK, MSTPING and RPTPONG, and a 306-octet RPTC with the ID after the callsign. */
+/* Go: dmrd.DialectHBRP. DialectHBRP is the HomeBrew Repeater Protocol in the form of the examples of its specification and of the Homebrew port of other masters: repeater IDs, salt and token as hex text, MSTACK, MSTPING and RPTPONG, and a 306-octet RPTC with the ID after the callsign. */
 #define DMRGO_DMRD_DIALECT_HBRP ((dmrgo_dmrd_dialect_t)2)
 /* Go: dmrd.DialectLocal. DialectLocal is the link between MMDVMHost and DMRGateway on one host: no login, DMRP and DMRB, DMRT, and DMRA and DMRG without the repeater ID. */
 #define DMRGO_DMRD_DIALECT_LOCAL ((dmrgo_dmrd_dialect_t)3)
-/* Go: dmrd.DialectMMDVM. DialectMMDVM is the protocol that DMRGateway speaks to a master and that BrandMeister, DMR+, HBlink, FreeDMR and DMRHub masters accept: binary repeater IDs, RPTACK, RPTPING and MSTPONG, RPTO, RPTG and a 302-octet RPTC with the ID at octets 4 to 7. */
+/* Go: dmrd.DialectMMDVM. DialectMMDVM is the protocol that DMRGateway speaks to a master and that DMR+, HBlink, FreeDMR, DMRHub and other masters accept: binary repeater IDs, RPTACK, RPTPING and MSTPONG, RPTO, RPTG and a 302-octet RPTC with the ID at octets 4 to 7. */
 #define DMRGO_DMRD_DIALECT_MMDVM ((dmrgo_dmrd_dialect_t)1)
 /* Go: dmrd.DialectUnknown. DialectUnknown is the zero value. */
 #define DMRGO_DMRD_DIALECT_UNKNOWN ((dmrgo_dmrd_dialect_t)0)

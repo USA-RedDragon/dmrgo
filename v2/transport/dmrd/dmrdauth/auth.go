@@ -5,7 +5,7 @@
 //
 // (DMRGateway ee79d38 DMRNetwork.cpp writeAuthorisation; DL5DI, G4KLX and
 // DG1HT, IPSC Protocol Specs for homebrew DMR repeater, 2015-07-26;
-// BrandMeister Open Bridge; HBlink3 1db2730; FreeDMR 546165eb)
+// HBlink3 1db2730; FreeDMR 546165eb)
 package dmrdauth
 
 import (

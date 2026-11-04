@@ -6,8 +6,8 @@ import "github.com/USA-RedDragon/dmrgo/v2"
 // no login: each packet carries its own signature, which package dmrdauth
 // computes and checks.
 //
-// Version 1 is the form of BrandMeister, HBlink3, DMRHub and FreeDMR without
-// enhanced OpenBridge: the 53-octet DMRD with the network ID in the
+// Version 1 is the form of HBlink3, DMRHub, other masters and FreeDMR
+// without enhanced OpenBridge: the 53-octet DMRD with the network ID in the
 // repeater field and the slot bit clear, then a 20-octet HMAC-SHA1
 // signature (73 octets). Versions 4 and 5 are the DMRE packets of FreeDMR's
 // enhanced OpenBridge (85 and 89 octets): DMRD with BER and RSSI, the

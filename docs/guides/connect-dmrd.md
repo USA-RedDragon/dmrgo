@@ -11,8 +11,8 @@ Run the repeater side (Peer) and the master side (Master) of a session over UDP,
 - Go and a checkout of dmrgo. The example runs offline: both sides use UDP on the loopback interface, and it contacts no network.
 - The packages [transport/dmrd](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd) and [transport/dmrd/dmrdsession](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession).
 - The dialect of your master. Package dmrd covers four protocols built around the same DMRD packet. They differ in the login, keepalive and other control messages:
-  - [dmrd.DialectMMDVM](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Dialect): the MMDVM network protocol of MMDVMHost and DMRGateway. BrandMeister, DMR+, HBlink, FreeDMR and DMRHub masters accept it. It has binary repeater IDs, RPTACK, RPTPING and MSTPONG.
-  - `dmrd.DialectHBRP`: the HomeBrew Repeater Protocol, in the form of its 2015 specification and of the Homebrew port of BrandMeister. It has repeater IDs, salt and token as hex text, MSTACK, MSTPING and RPTPONG, and no RPTO.
+  - [dmrd.DialectMMDVM](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Dialect): the MMDVM network protocol of MMDVMHost and DMRGateway. DMR+, HBlink, FreeDMR, DMRHub and other masters accept it. It has binary repeater IDs, RPTACK, RPTPING and MSTPONG.
+  - `dmrd.DialectHBRP`: the HomeBrew Repeater Protocol, in the form of its 2015 specification and of the Homebrew port of other masters. It has repeater IDs, salt and token as hex text, MSTACK, MSTPING and RPTPONG, and no RPTO.
   - `dmrd.DialectLocal`: the link between MMDVMHost and DMRGateway on one host, without a login.
   - OpenBridge, the link between two masters. A [dmrdsession.Bridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge) checks its signatures.
 

@@ -4,11 +4,11 @@ This page covers the dmrdsession Bridge, the state machine of one OpenBridge lin
 
 ## What it does
 
-A [Bridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge) is one end of an OpenBridge link. OpenBridge carries DMRD packets between masters, signed with a key that both ends share; it has no login. The Bridge checks the signature of each packet that it takes, signs the packets that you send with [SignInPlace](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.SignInPlace), and tracks whether the other end is alive from the packets with a good signature. With the enhanced OpenBridge of FreeDMR, it also sends the BCKA keepalive. The Bridge is not a dialect of the MMDVM network protocol or HBRP: OpenBridge is a separate protocol built on the same DMRD packet. It does no I/O. (BrandMeister Open Bridge; FreeDMR 546165eb hblink.py and bridge_master.py; HBlink3 1db2730)
+A [Bridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge) is one end of an OpenBridge link. OpenBridge carries DMRD packets between masters, signed with a key that both ends share; it has no login. The Bridge checks the signature of each packet that it takes, signs the packets that you send with [SignInPlace](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.SignInPlace), and tracks whether the other end is alive from the packets with a good signature. With the enhanced OpenBridge of FreeDMR, it also sends the BCKA keepalive. The Bridge is not a dialect of the MMDVM network protocol or HBRP: OpenBridge is a separate protocol built on the same DMRD packet. It does no I/O. (FreeDMR 546165eb hblink.py and bridge_master.py; HBlink3 1db2730)
 
 ## When to use it
 
-Use a Bridge in a master that links to another master over OpenBridge, such as a BrandMeister, HBlink3 or FreeDMR server. Use one Bridge for each link. Turn on the enhanced mode only when the other end runs the enhanced OpenBridge of FreeDMR. Use [dmrd.DecodeBridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DecodeBridge) to read the data packets that the Bridge passes on.
+Use a Bridge in a master that links to another master over OpenBridge, such as an HBlink3 or FreeDMR server or the master of a large public DMR network. Use one Bridge for each link. Turn on the enhanced mode only when the other end runs the enhanced OpenBridge of FreeDMR. Use [dmrd.DecodeBridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DecodeBridge) to read the data packets that the Bridge passes on.
 
 ## Config
 
