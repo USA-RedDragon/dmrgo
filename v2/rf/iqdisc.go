@@ -22,6 +22,7 @@ const (
 	iqZeroQuiet    = int(basebandRate * iqZeroSeconds)
 	iqStopTaps     = 33
 	iqStopKaiser   = 8
+	iqQuickErrHz   = 235
 	iqNarrowTaps   = 89
 	iqNarrowKaiser = 3.4
 	iqNarrowHz     = 4900
@@ -594,7 +595,7 @@ func (r *iqRx) hunt(v complex64) {
 		return
 	}
 	hz := float32(r.spec.Hz)
-	ok := r.spec.OK || r.spec.Seen && abs32(hz-r.center) > r.maxHz
+	ok := r.spec.OK || r.spec.Seen && abs32(hz-r.center) > r.maxHz-iqQuickErrHz
 	r.outBand = ok && abs32(hz-r.center) > iqTuneMaxHz
 	if !ok {
 		return
