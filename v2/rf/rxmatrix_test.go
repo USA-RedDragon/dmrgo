@@ -926,7 +926,7 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 		}
 	}
 	for j, ok := range matched {
-		if !ok {
+		if !ok && payloadInInput(s.truth[j].at-in.delay) {
 			c.note("missing", "%s at %.4f s", c.tag(j), s.truth[j].at)
 		}
 	}

@@ -3,6 +3,8 @@
 package rf
 
 import (
+	"math"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -22,6 +24,7 @@ func TestAudioColdStart(t *testing.T) {
 			t.Fatal(err)
 		}
 		in := mxInputOf(s, row)
+		s.truth = slices.DeleteFunc(s.truth, func(tr mxTruth) bool { return !payloadInInput(tr.at - in.delay) })
 		n := 5 * in.hz / 1000
 		pre := make([]int16, n, n+len(in.audio))
 		for i := range pre {
@@ -39,6 +42,21 @@ func TestAudioColdStart(t *testing.T) {
 			if res.fail["missing"] || res.fail["bits"] {
 				t.Errorf("%s t%d: %s", name, tier-Tier0, strings.Join(res.detail, " | "))
 			}
+		}
+	}
+}
+
+func TestPayloadInInputEdge(t *testing.T) {
+	t.Parallel()
+	if payloadEdgeBits != math.Float64bits(-0.5/symbolRate) {
+		t.Fatalf("payloadEdgeBits %#x, want %#x", uint64(payloadEdgeBits), math.Float64bits(-0.5/symbolRate))
+	}
+	for _, c := range []struct {
+		s  float64
+		in bool
+	}{{1, true}, {0, true}, {math.Copysign(0, -1), true}, {-0.5 / symbolRate, true}, {-0.6 / symbolRate, false}, {-1, false}} {
+		if got := payloadInInput(c.s); got != c.in {
+			t.Errorf("payloadInInput(%g) = %v, want %v", c.s, got, c.in)
 		}
 	}
 }

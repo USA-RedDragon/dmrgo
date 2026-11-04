@@ -1,6 +1,11 @@
 package rf
 
-import "unsafe"
+import (
+	"math"
+	"unsafe"
+)
+
+const payloadEdgeBits = 0xbf1b4e81b4e81b4f
 
 type burstSink struct {
 	slcHook
@@ -9,7 +14,7 @@ type burstSink struct {
 }
 
 func (s *burstSink) put(b *Burst) {
-	if s == nil {
+	if s == nil || !payloadInInput(b.Seconds) {
 		return
 	}
 	s.seeShortLC(b)
@@ -26,6 +31,16 @@ func (s *burstSink) put(b *Burst) {
 		s.out = s.out[:n+1]
 		s.out[n] = *b
 	}
+}
+
+// payloadInInput reports whether the first payload symbol of a burst that
+// starts at seconds, on the time axis of Burst.Seconds, has its center inside
+// the input. Each front gives Seconds net of its own lag, so the rule holds
+// for every front. Before that point the input holds no sample of the
+// symbol, and the receiver emits no burst rather than guessed bits.
+func payloadInInput(seconds float64) bool {
+	b := math.Float64bits(seconds)
+	return b>>63 == 0 || b <= payloadEdgeBits
 }
 
 func (s *burstSink) deliver() {
