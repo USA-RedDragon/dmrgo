@@ -1,17 +1,15 @@
 package trunk
 
 import (
-	"unicode/utf8"
-
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/wire"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/udttext"
 )
 
 // MaxAppendedOctets is the most octets of appended data in a UDT: four
 // blocks of 12 octets, less the CRC of the last block.
-const MaxAppendedOctets = 4*12 - 2
+const MaxAppendedOctets = udttext.MaxOctets
 
 const maxBinaryBits = 4*96 - 16 - 1
 
@@ -46,7 +44,7 @@ type AddressList struct {
 }
 
 func appendedBits(blocks int) int {
-	return 96*blocks - 16
+	return udttext.Bits(blocks)
 }
 
 func address(b []byte) uint32 {
@@ -54,19 +52,11 @@ func address(b []byte) uint32 {
 }
 
 func padNibbles(free int) uint8 {
-	if free < 0 || free >= 4*32 {
-		return 0
-	}
-	return uint8(free / 4)
+	return udttext.PadNibbles(free)
 }
 
 func blocksFor(n int) int {
-	for b := 1; b <= 4; b++ {
-		if n <= appendedBits(b) {
-			return b
-		}
-	}
-	return 0
+	return udttext.Blocks(n)
 }
 
 func (a *Appended) reset(f enums.UDTFormat, blocks int) {
@@ -91,9 +81,7 @@ func (a *Appended) check(f enums.UDTFormat) (int, error) {
 }
 
 func (a *Appended) pad(from int) {
-	for i := from; i < appendedBits(a.Blocks); i++ {
-		bits.SetBit(a.Data[:], i, 1)
-	}
+	udttext.Fill(a.Data[:], from, appendedBits(a.Blocks))
 }
 
 // SetBinary sets a to the first n bits of b, packed most significant bit
@@ -268,33 +256,6 @@ func (a *Appended) Digits(dst []byte) ([]byte, error) {
 	return dst, nil
 }
 
-func symbolBits(f enums.UDTFormat) int {
-	switch f {
-	case enums.UDTISO7:
-		return 7
-	case enums.UDTISO8, enums.UDTLIP:
-		return 8
-	case enums.UDTUTF16BE, enums.UDTMixed:
-		return 16
-	case enums.UDTBinary, enums.UDTAddress, enums.UDTBCD, enums.UDTNMEA, enums.UDTIP, enums.UDTManufacturer1,
-		enums.UDTManufacturer2:
-	}
-	return 0
-}
-
-func symbolCount(text []byte, w int) int {
-	n := 0
-	for i := 0; i < len(text); {
-		r, k := utf8.DecodeRune(text[i:])
-		i += k
-		n++
-		if w == 16 && r >= 0x10000 {
-			n++
-		}
-	}
-	return n
-}
-
 // SetText sets a to the UTF-8 text in the format f: enums.UDTISO7 (up to
 // 52 characters of ISO/IEC 646), enums.UDTISO8 (up to 46 characters of
 // ISO/IEC 8859-1) or enums.UDTUTF16BE (up to 23 UTF-16 code units). It
@@ -339,29 +300,16 @@ func (a *Appended) SetMixed(oneKey bool, addr uint32, text []byte) error {
 }
 
 func (a *Appended) setSymbols(f enums.UDTFormat, start int, text []byte) error {
-	w := symbolBits(f)
-	n := symbolCount(text, w)
+	w := udttext.Width(f)
+	n := udttext.Count(text, w)
 	b := blocksFor(start + w*n)
 	if n == 0 || b == 0 {
 		return ErrUDTLength
 	}
 	a.reset(f, b)
-	o := start
-	for i := 0; i < len(text); {
-		r, k := utf8.DecodeRune(text[i:])
-		i += k
-		switch {
-		case r < 0, w == 7 && r >= 0x80, w == 8 && r > 0xFF:
-			return ErrUDTCharacter
-		case w == 16 && r >= 0x10000:
-			r -= 0x10000
-			bits.SetField(a.Data[:], o, 16, uint64(0xD800+r>>10))
-			bits.SetField(a.Data[:], o+16, 16, uint64(0xDC00+r&0x3FF))
-			o += 32
-			continue
-		}
-		bits.SetField(a.Data[:], o, w, uint64(r))
-		o += w
+	o, ok := udttext.Set(a.Data[:], start, w, text)
+	if !ok {
+		return ErrUDTCharacter
 	}
 	a.PadNibble = padNibbles(appendedBits(b) - o)
 	a.pad(o)
@@ -382,7 +330,7 @@ func (a *Appended) Text(dst []byte) ([]byte, error) {
 		return dst, dmrgo.ErrNilReceiver
 	}
 
-	w := symbolBits(a.Format)
+	w := udttext.Width(a.Format)
 	if w == 0 || a.Format == enums.UDTLIP {
 		return dst, ErrUDTFormat
 	}
@@ -398,26 +346,7 @@ func (a *Appended) Text(dst []byte) ([]byte, error) {
 	if room < 0 {
 		return dst, ErrUDTLength
 	}
-	n := room / w
-	from := len(dst)
-	if w == 16 {
-		return trimDEL(wire.AppendUTF8(dst, a.Data[start/8:start/8+2*n], true), from), nil
-	}
-	for i := range n {
-		c := bits.Field(a.Data[:], start+w*i, w) & 0xFF
-		if c == 0 {
-			break
-		}
-		dst = wire.AppendRune(dst, rune(c))
-	}
-	return trimDEL(dst, from), nil
-}
-
-func trimDEL(dst []byte, from int) []byte {
-	for len(dst) > from && dst[len(dst)-1] == 0x7F {
-		dst = dst[:len(dst)-1]
-	}
-	return dst
+	return udttext.Append(dst, a.Data[:], start, room, w), nil
 }
 
 // Mixed returns the address of a in the mixed format, and whether it is

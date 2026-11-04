@@ -357,7 +357,7 @@ func appendAlias(dst []byte, a *[2 * aliasUnits]byte) []byte {
 	for n < aliasUnits && (a[2*n] != 0 || a[2*n+1] != 0) {
 		n++
 	}
-	return trimDEL(wire.AppendUTF8(dst, a[:2*n], true), len(dst))
+	return wire.TrimDEL(wire.AppendUTF8(dst, a[:2*n], true), len(dst))
 }
 
 func uab(blocks int) uint8 {
