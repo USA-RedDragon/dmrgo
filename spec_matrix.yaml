@@ -106,6 +106,8 @@ ignore_files:
   - v2/rf/discsoft.go
   - v2/rf/discsoft_tinygo.go
   - v2/rf/exact.go
+  - v2/rf/exact_amd64.go
+  - v2/rf/exact_generic.go
   - v2/rf/ext.go
   - v2/rf/fastmath.go
   - v2/rf/fir96.go
