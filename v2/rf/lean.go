@@ -932,6 +932,9 @@ func (r *leanCore) resampleStart(d float32) {
 			j = 0
 		}
 	}
+	if r.hasExt() {
+		r.ext.noteGrid(r, d, n)
+	}
 	r.shiftStrobe(d)
 }
 
@@ -954,6 +957,9 @@ func roundBits(v float32) int32 {
 func (r *leanCore) symbol(x, at float32) {
 	r.lastAt = at
 	r.pushSym(x)
+	if r.hasExt() {
+		r.ext.noteStrobe(r)
+	}
 	if !r.locked {
 		r.searchHit(r.searchSigns())
 		return

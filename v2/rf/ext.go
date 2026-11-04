@@ -12,6 +12,8 @@ import (
 )
 
 type leanExt interface {
+	noteStrobe(c *leanCore)
+	noteGrid(c *leanCore, d float32, n int)
 	burst(c *leanCore, b *Burst)
 	end(c *leanCore)
 	kept() []int16
@@ -70,6 +72,7 @@ type extChan struct {
 
 type softExt struct {
 	seekPend        [2]seekNote
+	strobes         *[extStrobes]int64
 	vP              enums.SyncPattern
 	vEnd            int64
 	vHz             float64
@@ -878,8 +881,33 @@ func lateLCSS(v enums.VoiceBurstType) enums.LCSS {
 	return enums.LCSSContinuationFragment
 }
 
+const extStrobes = 256
+
+// noteStrobe keeps the strobe time of the newest symbol, for the coherent
+// stage to place the symbols of a burst where the timing loop sampled them.
+func (x *softExt) noteStrobe(c *leanCore) {
+	if x.strobes != nil {
+		x.strobes[(c.ns-1)&(extStrobes-1)] = c.strobeTicks(c.lastAt)
+	}
+}
+
+// noteGrid keeps the times of the n newest symbols after resampleStart has
+// sliced them again on the nominal grid that ends at the strobe moved by d.
+func (x *softExt) noteGrid(c *leanCore, d float32, n int) {
+	if x.strobes == nil {
+		return
+	}
+	sps := 2 * c.tm.step
+	for i := range n {
+		j := c.ns - int64(n) + int64(i)
+		x.strobes[j&(extStrobes-1)] = c.strobeTicks(c.lastAt + d - float32(n-1-i)*sps)
+	}
+}
+
 func (x *softExt) setCoh(s *cohStage) {
 	x.coh = s
+	x.strobes = new([extStrobes]int64)
+	s.strobes = x.strobes
 	if cohSaveHeap {
 		x.saver.save = new(cohStage)
 	}

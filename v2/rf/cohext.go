@@ -16,6 +16,9 @@ const (
 )
 
 type cohStage struct {
+	strobes         *[extStrobes]int64
+	follow          []float64
+	followOK        bool
 	src             cohRing
 	ph              *discPhase
 	trial           float64
@@ -233,6 +236,7 @@ func newCohStageOf(opt *options) *cohStage {
 	s.refR = make([]complex64, slotSymbols*samplesPerSy)
 	s.refX = make([]complex64, slotSymbols*sps)
 	s.refIn = make([]int, slotSymbols)
+	s.follow = make([]float64, cohFollowPre+slotSymbols)
 	s.symX = make([]complex64, cohSymN*sps)
 	s.symAt = make([]uint32, cohSymN)
 	for i := range s.runs {
@@ -359,6 +363,39 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 	}
 	s.peakOK = false
 	return s.peakSrc, s.peakData, back, true
+}
+
+// followStrobe keeps, for each symbol from cohFollowPre before c.base to the
+// newest, how far the strobe that sliced it lay from the grid of ringTime,
+// which steps back from the newest strobe at the nominal period, so that the
+// coherent grid follows the corrections of the timing loop over the burst.
+func (s *cohStage) followStrobe(c *leanCore, b *Burst) {
+	s.followOK = false
+	if s.strobes == nil || c.bs || c.replaying || c.lateTime || c.ns-1-(c.base-cohFollowPre) >= extStrobes {
+		return
+	}
+	end := float64(s.strobes[(c.ns-1)&(extStrobes-1)]) / 256
+	for i := range s.follow {
+		j := min(c.base+int64(i-cohFollowPre), c.ns-1)
+		t := float64(s.strobes[j&(extStrobes-1)]) / 256
+		s.follow[i] = (t - (end - float64(c.ns-1-j)*samplesPerSy)) / s.div
+	}
+	if b.Voice <= enums.VoiceBurstA || b.Voice > enums.VoiceBurstF {
+		mid := s.follow[cohFollowPre+syncFirstSym+syncSymbols/2]
+		for i := range s.follow {
+			s.follow[i] -= mid
+		}
+	}
+	s.followOK = true
+}
+
+const cohFollowPre = 16
+
+func (s *cohStage) followAt(k int) float64 {
+	if !s.followOK {
+		return 0
+	}
+	return s.follow[min(max(k+cohFollowPre, 0), len(s.follow)-1)]
 }
 
 func symTime(c *leanCore, k int64) float64 {
@@ -561,7 +598,7 @@ func (s *cohStage) fill(k0, k1 int, x []complex64) {
 		return
 	}
 	_, n, lo := s.ring()
-	key := cohSymKey{gen: s.gen, t0: s.t0, hz: s.totalHz, n: n, lo: lo, acq: s.acq}
+	key := cohSymKey{gen: s.gen, t0: s.t0, hz: s.totalHz, n: n, lo: lo, acq: s.acq, follow: s.followOK}
 	key.tunes, key.unit, key.dc = s.src.cohKey()
 	if key != s.symKey {
 		s.symKey = key
@@ -591,11 +628,12 @@ type cohSymKey struct {
 	unit, dc float64
 	tunes    int
 	acq      bool
+	follow   bool
 }
 
 func (s *cohStage) fillSym(k int, x []complex64) {
 	sps := s.model.sps
-	tc := s.t0 + float64(k)*s.sps
+	tc := s.t0 + float64(k)*s.sps + s.followAt(k)
 	step := s.step
 	start := tc - float64(sps/2)*step
 	if s.dir < 0 {
@@ -810,6 +848,7 @@ func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
 	f[4] *= cohSlotForget
 	if t, ok := s.slotPredict(slot); ok {
 		s.t0 = t
+		s.followOK = false
 	}
 }
 
@@ -840,6 +879,7 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 		var sum float64
 		for j := 0; j <= n; j++ {
 			s.t0 = s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt
+			s.followOK = false
 			if s.t0-s.sps < float64(lo) {
 				continue
 			}
@@ -851,6 +891,7 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 		}
 	}
 	s.t0 = s.ringTime(c, first) + s.dt
+	s.followOK = false
 	s.totalHz = bestHz
 	if s.syncRho(&syms) < cohPlaceRho {
 		s.t0, s.totalHz = t0, hz
@@ -866,6 +907,7 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 		top, tau := 0.0, 0.0
 		for u := -cohWarmSpanSym; u <= cohWarmSpanSym+1e-9; u += cohWarmStepSym / 2 {
 			s.t0 = at + u*s.sps
+			s.followOK = false
 			if r := s.syncRho(&syms); r > top {
 				top, tau = r, u
 			}
@@ -903,6 +945,7 @@ func (s *cohStage) slotHold(slot int64) {
 	}
 	if pt, ok := s.slotPredict(slot); ok && math.Abs(pt-s.t0) <= cohSlotSpan {
 		s.t0 = pt
+		s.followOK = false
 	}
 }
 
@@ -1101,6 +1144,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	s.mineOK, s.mineSlot, s.fitReady = false, b.Slot, false
 	s.slotRadio(c, b.Slot)
 	s.t0 = s.ringTime(c, c.base) + s.dt
+	s.followStrobe(c, b)
 	s.slotDrift = 0
 	if c.tm.step > 0 {
 		s.slotDrift = float64(c.tm.rate) / (2 * float64(c.tm.step)) * slotSymbols * s.sps
@@ -1298,6 +1342,7 @@ const (
 
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	s.slotRadio(c, int64(j))
+	s.followOK = false
 	if s.src.cohScale() <= 0 || !s.freqOK {
 		return false
 	}
@@ -1388,6 +1433,7 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	_, _, lo := s.ring()
 	base := c.ns - 1 - leanSyncEnd
 	s.t0 = s.ringTime(c, base) + s.dt
+	s.followOK = false
 	if s.t0-s.sps < float64(lo) {
 		return false
 	}
@@ -1466,6 +1512,7 @@ func (s *cohStage) syncSum(t0 *[cohSumSlots]float64, n int, voice, data enums.Sy
 			var sum float64
 			for j := range n {
 				s.t0 = t0[j] + tau*s.sps
+				s.followOK = false
 				top := 0.0
 				for q := range syms {
 					for i, v := range syms[q] {
@@ -1524,7 +1571,7 @@ func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (floa
 	for k := -steps; k <= steps; k++ {
 		s.totalHz = hz0 + float64(k)*cohWarmStepHz
 		for tau := -cohWarmSpanSym; tau <= cohWarmSpanSym; tau += cohWarmStepSym {
-			if s.t0 = t0 + tau*s.sps; s.t0-s.sps < float64(lo) {
+			if s.t0, s.followOK = t0+tau*s.sps, false; s.t0-s.sps < float64(lo) {
 				continue
 			}
 			if r := s.rho(k0, k1); r > best {
@@ -1537,6 +1584,7 @@ func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (floa
 	}
 	s.totalHz = bestHz
 	s.t0 = t0 + bestTau*s.sps
+	s.followOK = false
 	s.fineTime(k0, k1)
 	taus := math.Floor(2*cohWarmSpanSym/cohWarmStepSym) + 1
 	if s.rho(k0, k1) < cohPlaceRho+math.Log(float64(2*steps+1)*taus)/cohRhoSlope {
@@ -1722,7 +1770,7 @@ func (s *cohStage) runExact(rot complex64, scale float32) {
 	s.steps = n - 2*d
 	s.fill(0, n, e.buf[:n*sps])
 	for i := range n {
-		tc := s.t0 + float64(s.g0+s.dir*i)*s.sps
+		tc := s.t0 + float64(s.g0+s.dir*i)*s.sps + s.followAt(s.g0+s.dir*i)
 		if w := s.src.cohWeight(tc-s.sps/2, tc+s.sps/2); w == 0 {
 			for j := i * sps; j < (i+1)*sps; j++ {
 				e.buf[j] *= complex(w, 0)
