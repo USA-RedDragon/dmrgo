@@ -49,16 +49,16 @@ func (d *dcBlock) remove(v complex64) complex64 {
 	if c := real(d.dc)*real(d.dc) + imag(d.dc)*imag(d.dc); c > dcCarrierShare*d.env && d.env2 < dcFlat*d.env*d.env && d.proj < dcTurn*c {
 		d.dc, d.fast, d.n, d.m, d.proj = 0, 0, 0, 0, 0
 	}
-	d.n = min(d.n+1, d.cap)
-	d.m = min(d.m+1, d.cap)
-	g := max(d.slow, 1/(d.n+d.start))
-	q := max(d.quick, 1/(d.m+d.start))
+	d.n = min32(d.n+1, d.cap)
+	d.m = min32(d.m+1, d.cap)
+	g := max32(d.slow, 1/(d.n+d.start))
+	q := max32(d.quick, 1/(d.m+d.start))
 	d.dc += (v - d.dc) * complex(g, 0)
 	d.fast += (v - d.fast) * complex(q, 0)
 	e := v - d.fast
 	d.pow += (real(e)*real(e) + imag(e)*imag(e) - d.pow) * q
 	if x := d.fast - d.dc; real(x)*real(x)+imag(x)*imag(x) > dcMove*d.pow {
-		d.dc, d.n = d.fast, min(d.m, 1/d.quick-d.start)
+		d.dc, d.n = d.fast, min32(d.m, 1/d.quick-d.start)
 	}
 	return v - d.dc
 }

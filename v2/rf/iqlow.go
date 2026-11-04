@@ -92,7 +92,7 @@ func iqLowWord(s []byte, f IQFormat) uint32 {
 func (r *iqLowRx) block() int { return iqAFCBlock * r.d.hz() / basebandRate }
 
 func q15(v float32) int32 {
-	return roundBits(min(max(v*iqLowScale, -32767), 32767))
+	return roundBits(min32(max32(v*iqLowScale, -32767), 32767))
 }
 
 func (r *iqLowRx) run(x []uint32) {

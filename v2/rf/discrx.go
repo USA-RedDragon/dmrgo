@@ -638,7 +638,7 @@ func (r *discRx) levels() {
 	if f.n == frontQuarter {
 		f.qmin, f.qmax = qv, qv
 	} else {
-		f.qmin, f.qmax = min(f.qmin, qv), max(f.qmax, qv)
+		f.qmin, f.qmax = min32(f.qmin, qv), max32(f.qmax, qv)
 	}
 	if f.n != frontBlock {
 		return
@@ -655,7 +655,7 @@ func (r *discRx) levels() {
 		f.mean += discMeanGain * (m - f.mean)
 	}
 	f.idle = min(f.idle+1, f.idleHold)
-	if rms := sqrtf(max(v, 0)); rms > 0 {
+	if rms := sqrtf(max32(v, 0)); rms > 0 {
 		g := discInputRMSHz / rms
 		quiet := !edge && g*g > discEdgeRatio
 		if !quiet {
@@ -672,7 +672,7 @@ func (r *discRx) levels() {
 		case !edge && (g > 2 || g < 0.5 || f.up && g > discLevelUp):
 			f.idle = 0
 			if f.maxGain > 0 {
-				g = min(g, f.maxGain/f.gain)
+				g = min32(g, f.maxGain/f.gain)
 			}
 			if g != 1 {
 				g = r.scaleAudio(g)
@@ -681,7 +681,7 @@ func (r *discRx) levels() {
 				}
 			}
 		case edge:
-			if hot := discInputRMSHz / (sqrtf(max(f.qmax, 0)) * abs32(f.gain)); hot < discEdgeHot {
+			if hot := discInputRMSHz / (sqrtf(max32(f.qmax, 0)) * abs32(f.gain)); hot < discEdgeHot {
 				r.scaleAudio(hot)
 			}
 		}
@@ -869,11 +869,11 @@ func (f *audioFront) jumps(m float32) bool {
 
 func (f *audioFront) refresh() {
 	if k := f.gain / rrcStepHz * 65536; k < 0 {
-		f.k = -int32(min(0.5-k, audioMaxK))
+		f.k = -int32(min32(0.5-k, audioMaxK))
 	} else {
-		f.k = int32(max(min(k+0.5, audioMaxK), 0))
+		f.k = int32(max32(min32(k+0.5, audioMaxK), 0))
 	}
-	f.off = int32(max(min(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
+	f.off = int32(max32(min32(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
 }
 
 func (f *audioFront) scale(g float32) {

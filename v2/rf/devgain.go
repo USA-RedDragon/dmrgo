@@ -27,7 +27,7 @@ func (r *iqRx) deviation() float64 {
 	if !(u > 0) {
 		u = 0
 	}
-	u = min(u, devGainN-1)
+	u = min32(u, devGainN-1)
 	i := min(int(u), devGainN-2)
 	w := u - float32(i)
 	t := r.devTab - 1

@@ -494,7 +494,7 @@ func (r *iqRx) sample(v complex64) {
 	}
 	n := len(r.audio)
 	r.audio = r.audio[:n+1]
-	r.audio[n] = int16(max(min(roundf(f*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
+	r.audio[n] = int16(max32(min32(roundf(f*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
 	if n+1 == cap(r.audio) {
 		r.writeAudio()
 	}
@@ -527,7 +527,7 @@ func (r *iqRx) follow() {
 		case abs32(avg) >= iqAFCPullHz && !r.syncOnly && abs32(hz) >= iqAFCLockHz && hz*avg > 0:
 			r.afcAvg = 0
 			r.tune(avg, f.dc-avg*scale)
-		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < max(iqAFCPullHz, abs32(hz)/2):
+		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < max32(iqAFCPullHz, abs32(hz)/2):
 			r.tune(hz, f.dc-hz*scale)
 		}
 		return
@@ -589,7 +589,7 @@ func (r *iqRx) hunt(v complex64) {
 
 func (r *iqRx) tuneLimit() float32 {
 	if r.d.locked && r.maxHz > 0 {
-		return max(r.maxHz, iqTuneMaxHz)
+		return max32(r.maxHz, iqTuneMaxHz)
 	}
 	return r.maxHz
 }

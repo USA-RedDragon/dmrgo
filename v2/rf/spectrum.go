@@ -157,9 +157,9 @@ func (s *spectrum) estimateBlocks() {
 
 func (s *spectrum) dropDC() {
 	lo, hi := s.power[fftSize-2], s.power[2]
-	s.power[fftSize-1] = min(s.power[fftSize-1], lo+(hi-lo)/4)
-	s.power[0] = min(s.power[0], (lo+hi)/2)
-	s.power[1] = min(s.power[1], hi-(hi-lo)/4)
+	s.power[fftSize-1] = min32(s.power[fftSize-1], lo+(hi-lo)/4)
+	s.power[0] = min32(s.power[0], (lo+hi)/2)
+	s.power[1] = min32(s.power[1], hi-(hi-lo)/4)
 }
 
 func (s *spectrum) estimate() {

@@ -36,12 +36,12 @@ func (q *npml) fitSync(c *leanCore, p enums.SyncPattern, base int64) {
 	if sxx <= 0 {
 		return
 	}
-	q.add(max(min(sxy/sxx*syncSymbols/(syncSymbols-1), npmlMax), -npmlMax))
+	q.add(max32(min32(sxy/sxx*syncSymbols/(syncSymbols-1), npmlMax), -npmlMax))
 }
 
 func (q *npml) add(rho float32) {
 	q.n++
-	q.rho += max(npmlGain, 1/float32(q.n)) * (rho - q.rho)
+	q.rho += max32(npmlGain, 1/float32(q.n)) * (rho - q.rho)
 }
 
 func (q *npml) end() { q.n = 0 }
@@ -51,7 +51,7 @@ func (q *npml) fill(c *leanCore, llr *[layer2.BurstBits]int16) {
 	if q.n < npmlMin || c.discVar < npmlQuiet*c.dev*c.dev {
 		rho = 0
 	}
-	k := -1 / (2 * max(c.discVar, 1) * (1 - rho*rho))
+	k := -1 / (2 * max32(c.discVar, 1) * (1 - rho*rho))
 	floor := float32(-math.MaxFloat32)
 	if c.llrFloor > math.MinInt32/2 {
 		floor = float32(c.llrFloor) / 8
@@ -67,14 +67,14 @@ func (q *npml) fill(c *leanCore, llr *[layer2.BurstBits]int16) {
 	}
 	for d := range 4 {
 		e := x[0] - lv[d]
-		q.alpha[0][d] = max(e*e*k*(1-rho*rho), floor)
+		q.alpha[0][d] = max32(e*e*k*(1-rho*rho), floor)
 	}
 	for i := 1; i <= burstSymbols; i++ {
 		for d1 := range 4 {
 			best := float32(-math.MaxFloat32)
 			for d0 := range 4 {
 				e := (x[i] - lv[d1]) - rho*(x[i-1]-lv[d0])
-				best = max(best, q.alpha[i-1][d0]+max(e*e*k, floor))
+				best = max32(best, q.alpha[i-1][d0]+max32(e*e*k, floor))
 			}
 			q.alpha[i][d1] = best
 		}
@@ -92,7 +92,7 @@ func (q *npml) fill(c *leanCore, llr *[layer2.BurstBits]int16) {
 			best := float32(-math.MaxFloat32)
 			for d1 := range 4 {
 				e := (x[i] - lv[d1]) - rho*(x[i-1]-lv[d0])
-				best = max(best, max(e*e*k, floor)+beta[d1])
+				best = max32(best, max32(e*e*k, floor)+beta[d1])
 			}
 			nb[d0] = best
 		}

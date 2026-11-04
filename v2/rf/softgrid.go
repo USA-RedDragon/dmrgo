@@ -27,7 +27,7 @@ func (g *softGrid) component(col bool) {
 		m := in[k] / 2
 		ak, an := &a[k], &a[k+1]
 		for s := range gridStates {
-			an[s] = max(ak[s]+m, ak[(uint8(s)^x)&(gridStates-1)]-m)
+			an[s] = max32(ak[s]+m, ak[(uint8(s)^x)&(gridStates-1)]-m)
 		}
 	}
 	var beta, nb [gridStates]float32
@@ -42,9 +42,9 @@ func (g *softGrid) component(col bool) {
 		b0, b1 := negInf, negInf
 		for s := range gridStates {
 			t := (uint8(s) ^ x) & (gridStates - 1)
-			b0 = max(b0, ak[s]+m+beta[s])
-			b1 = max(b1, ak[s]-m+beta[t])
-			nb[s] = max(beta[s]+m, beta[t]-m)
+			b0 = max32(b0, ak[s]+m+beta[s])
+			b1 = max32(b1, ak[s]-m+beta[t])
+			nb[s] = max32(beta[s]+m, beta[t]-m)
 		}
 		out[k] = b0 - b1 - in[k]
 		beta = nb

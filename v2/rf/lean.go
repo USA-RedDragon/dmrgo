@@ -815,7 +815,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	} else if z = bestD; r.hasExt() {
 		z = win.mmZero(&syms, end, bestD, sps, walk)
 	}
-	bestD = min(bestD, -end)
+	bestD = min32(bestD, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
 	const n = syncSymbols
 	sxy := sxv - sp*sv/n
@@ -880,7 +880,7 @@ func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols
 	j := ringPos(r.ns - syncSymbols)
 	for i := range syncSymbols {
 		v := win.at(t - float32(syncSymbols-1-i)*sps)
-		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
+		saved[i], r.ring[j] = r.ring[j], int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
 		if j++; j == leanRing {
 			j = 0
 		}
@@ -908,7 +908,7 @@ func (r *leanCore) resampleStart(d float32) {
 	j := ringPos(r.ns - int64(n))
 	for i := range n - syncSymbols {
 		x := r.keptAt(r.lastAt + d - float32(n-1-i)*sps)
-		r.ring[j] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
+		r.ring[j] = int8(max32(min32(roundf(x), math.MaxInt8), math.MinInt8))
 		if j++; j == leanRing {
 			j = 0
 		}
@@ -1830,7 +1830,7 @@ const (
 func (r *leanCore) seekMatch(d int32, mid bool) {
 	rho2, _, _ := r.syncAt(r.ns - 1)
 	if !mid && r.rcSource() {
-		rho2 = max(rho2, r.rcAt(r.ns-1))
+		rho2 = max32(rho2, r.rcAt(r.ns-1))
 	}
 	if !mid && rho2 < leanSeekRho*leanSeekRho {
 		return
@@ -2092,7 +2092,7 @@ func (r *leanCore) slot() {
 	if seek && !isAnchor {
 		present = false
 		if known || measured {
-			r.noise = min(r.noise, energy)
+			r.noise = min32(r.noise, energy)
 		}
 	}
 	r.holdNext(j, present)
@@ -2615,7 +2615,7 @@ func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) b
 
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.base, r.anchor = base, anchor
-	v := max(r.discVar, 1)
+	v := max32(r.discVar, 1)
 	r.ll = -1 / (2 * v)
 	r.dev = r.devScale * deviationHz
 	r.lfloor = float32(math.Inf(-1))
@@ -2794,7 +2794,7 @@ func (r *leanCore) emit(b *Burst) {
 }
 
 func (r *leanCore) clickFloor(v float32) {
-	po := max(r.clicks, leanMinClicks)
+	po := max32(r.clicks, leanMinClicks)
 	lf := log32(po/r.clickSpan) - log32(1-po) + 0.5*log32(2*math.Pi*v)
 	r.llrFloor = int32(roundf(lf * 8))
 }
