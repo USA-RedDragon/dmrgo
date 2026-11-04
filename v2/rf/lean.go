@@ -1883,6 +1883,10 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	r.tm.baseN, r.tm.baseC, r.tm.mOK = 0, 0, false
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
+	if q > 0 && !r.bs {
+		sps := 2 * r.tm.step
+		r.tm.measure(0, leanRefitVar*(1-q)/q*sps*sps)
+	}
 	if r.mmOK && !r.tm.mm {
 		r.tm.mm, r.tm.mid = true, false
 		r.tm.t += r.tm.step
