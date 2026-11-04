@@ -475,7 +475,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		r.attachRefill(x)
 	}
 	if r.spec != nil {
-		r.spec.fast = !opt.SoftExt
+		r.spec.fast = !opt.SoftExt || !opt.CohExt
 	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Format, float64(cfg.BasebandHz))
@@ -598,7 +598,7 @@ func (r *iqRx) hunt(v complex64) {
 	if !r.spec.OK {
 		return
 	}
-	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
+	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
 	r.writeAudio()
