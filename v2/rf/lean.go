@@ -2786,7 +2786,7 @@ func (r *leanCore) blindLevels(slot int32, base int64, anchor enums.SyncPattern)
 	}
 	g := a / n / (2 * deviationHz)
 	k := g / r.devScale
-	if g < leanMinScale || k > 1/leanBlindStep && k < leanBlindStep || k < leanBlindStep*leanBlindStep || k > 1/(leanBlindStep*leanBlindStep) {
+	if g < leanMinScale || k > leanBlindStep && k < 1/leanBlindStep || k < leanBlindStep*leanBlindStep || k > 1/(leanBlindStep*leanBlindStep) {
 		return
 	}
 	fresh, held := r.eyeNear(j0, g, dc), r.eyeNear(j0, r.devScale, r.dcHz)
