@@ -349,6 +349,10 @@ func (p *discPhase) follow() {
 	}
 	p.clickN, p.clickAt = 0, p.sumN
 	switch {
+	case c.locked && !c.bs:
+		if hz := p.coreHz(); abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz {
+			p.move(hz)
+		}
 	case c.locked:
 		hz := p.coreHz()
 		switch {
