@@ -113,7 +113,6 @@ type leanTiming struct {
 	last           float32
 	half           float32
 	pow            float32
-	gain           float32
 	dc, dev        float32
 	cubic, six     bool
 	mid            bool
@@ -131,7 +130,7 @@ type leanTiming struct {
 }
 
 type leanClock struct {
-	rate, corr, corr2       float32
+	rate, corr, corr2, gain float32
 	owed, estS, estW, fresh float32
 	nc, nall, estN          int32
 	learned                 bool
@@ -2383,6 +2382,7 @@ func (r *leanCore) saveClock(i int32) {
 	m := &r.ms
 	m.clk, m.clkAt, m.clkNs = r.tm.leanClock, uint8(i)+1, uint16(r.ns)
 	r.tm.newTalker()
+	r.tm.gain = r.trackGain
 }
 
 func (r *leanCore) swapClock(p, q int32) {
