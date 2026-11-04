@@ -3,6 +3,7 @@ package rf
 import (
 	"math"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
@@ -160,7 +161,7 @@ func windowTaps(n int, fc, beta float64) []float64 {
 		w := 0.54 - 0.46*math.Cos(2*math.Pi*float64(i)/float64(n-1))
 		if beta > 0 {
 			r := 2*float64(i)/float64(n-1) - 1
-			w = resample.Bessel0(beta*math.Sqrt(max(0, 1-r*r))) / resample.Bessel0(beta)
+			w = resample.Bessel0(beta*math.Sqrt(fmath.Max(0, 1-r*r))) / resample.Bessel0(beta)
 		}
 		h[i] = s * w
 	}

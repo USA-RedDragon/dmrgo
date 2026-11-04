@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/cmplx"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 	rs "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
 )
 
@@ -85,7 +86,7 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 		for _, v := range h[p*k.n : p*k.n+k.n] {
 			sum += math.Abs(v)
 		}
-		k.peak = max(k.peak, 3*sum)
+		k.peak = fmath.Max(k.peak, 3*sum)
 	}
 	return k, nil
 }
@@ -108,7 +109,7 @@ func (k *poly) add(t []float64) {
 				sum += math.Abs(t64[j])
 			}
 		}
-		k.peak = max(k.peak, 3*sum)
+		k.peak = fmath.Max(k.peak, 3*sum)
 	}
 }
 
@@ -322,7 +323,7 @@ func pulseOf(t Tier, c PulseConfig) pulse {
 	pu.flat, pu.flatGain = c.Flat, c.FlatGain
 	if len(c.Shape) == 2*pu.span*c.PerSymbol+1 && c.PerSymbol > 0 {
 		pu.tab, pu.per = c.Shape, c.PerSymbol
-		pu.edge = max(c.EndTaper, 0)
+		pu.edge = fmath.Max(c.EndTaper, 0)
 	}
 	return pu
 }
@@ -399,11 +400,11 @@ func (d *droop) symbol(s int8) {
 	d.n++
 	w := d.y1 - d.y2 - d.bias - d.own*v
 	if d.floor > 0 {
-		w = math.Copysign(max(0, math.Abs(w)-d.floor), w)
+		w = math.Copysign(fmath.Max(0, math.Abs(w)-d.floor), w)
 	}
 	c := d.g * w
 	if d.max > 0 {
-		c = math.Copysign(min(math.Abs(c), d.max), c)
+		c = math.Copysign(fmath.Min(math.Abs(c), d.max), c)
 	}
 	d.c[d.n&63] = c
 }
@@ -513,7 +514,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				a.cbp = corrBandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), fitHz, taps)
 				var cm, g float64
 				for _, v := range t {
-					cm = max(cm, math.Abs(float64(v)))
+					cm = fmath.Max(cm, math.Abs(float64(v)))
 				}
 				for _, v := range a.cbp {
 					g += math.Abs(v)
@@ -724,7 +725,7 @@ func (a *Audio) addCorr(s int8, n int) {
 		a.buf[i] = a.cf[(a.cn-h)&m] + acc
 		a.cn++
 	}
-	a.pos = max(0, a.pos-float64(a.spp))
+	a.pos = fmath.Max(0, a.pos-float64(a.spp))
 }
 
 const corrUnits = 128
@@ -757,7 +758,7 @@ func bandPass(lo, hi, hz float64, n int) []float64 {
 				v = math.Sin(2*math.Pi*fc*t) / (math.Pi * t)
 			}
 			u := t / float64(c+1)
-			v *= besselI0(optLPBeta*math.Sqrt(max(0, 1-u*u))) / besselI0(optLPBeta)
+			v *= besselI0(optLPBeta*math.Sqrt(fmath.Max(0, 1-u*u))) / besselI0(optLPBeta)
 			h[i] = v
 			sum += v
 		}
@@ -807,7 +808,7 @@ func corrBandPass(lo, hi, hz, fitHz float64, n int) []float64 {
 			v += gk * math.Cos(2*math.Pi*(float64(k)+0.5)*df*t/hz)
 		}
 		u := t / float64(c+1)
-		h[i] = v * besselI0(optLPBeta*math.Sqrt(max(0, 1-u*u))) / besselI0(optLPBeta)
+		h[i] = v * besselI0(optLPBeta*math.Sqrt(fmath.Max(0, 1-u*u))) / besselI0(optLPBeta)
 		sum += h[i]
 	}
 	for i := range h {
@@ -845,7 +846,7 @@ func ntfPeak(fb []float64) float64 {
 			re += f * c
 			im += f * s
 		}
-		top = max(top, math.Hypot(re, im))
+		top = fmath.Max(top, math.Hypot(re, im))
 	}
 	return top
 }
@@ -870,7 +871,7 @@ func ntfFarPeak(fb, fbp []float64, rate float64) float64 {
 			dr += fbp[i] * c
 			di += fbp[i] * s
 		}
-		top = max(top, math.Hypot(nr, ni)/math.Hypot(dr, di))
+		top = fmath.Max(top, math.Hypot(nr, ni)/math.Hypot(dr, di))
 	}
 	return top
 }
@@ -1070,7 +1071,7 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	q.step = (1 << 32) / float64(cfg.Rate)
 	q.amp = 0.9 * 32767
 	if cfg.Amplitude > 0 {
-		q.amp = min(cfg.Amplitude, 0.995) * 32767
+		q.amp = fmath.Min(cfg.Amplitude, 0.995) * 32767
 	}
 	q.off, q.prev = cfg.OffsetHz, cfg.OffsetHz
 	if cfg.Shape > 0 && cfg.Tier == Tier2 {
@@ -1134,7 +1135,7 @@ func (q *IQ) AppendS8(dst []byte, s int8) []byte {
 		for i, f := range q.fb[:2*q.shape] {
 			x += f * e[i]
 		}
-		c := min(max(math.Floor(x+0.5), -128), 127)
+		c := fmath.Min(fmath.Max(math.Floor(x+0.5), -128), 127)
 		d := c - x
 		if d > 1 || d < -1 {
 			d = 0
@@ -1154,7 +1155,7 @@ func (q *IQ) appendPole(dst []byte, n int) []byte {
 		for i := range m {
 			u += (q.fb[i] - q.fbp[i]) * e[i]
 		}
-		c := min(max(math.Floor(u+0.5), -128), 127)
+		c := fmath.Min(fmath.Max(math.Floor(u+0.5), -128), 127)
 		d := c - u
 		if d > 1 || d < -1 {
 			d = 0
@@ -1363,7 +1364,7 @@ func (a *Audio) boosted(s int8) float64 {
 const preFitBandHz = 6000
 
 func fitPreInverse(zHz, pHz, hz float64) [5]float64 {
-	band := min(preFitBandHz, 0.45*hz)
+	band := fmath.Min(preFitBandHz, 0.45*hz)
 	step := hz / 2 / 960
 	var c [5]float64
 	ap := [2]float64{}

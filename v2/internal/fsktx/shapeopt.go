@@ -1,6 +1,10 @@
 package fsktx
 
-import "math"
+import (
+	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
+)
 
 const (
 	optWin   = 1024
@@ -66,7 +70,7 @@ func newOptimizerACP(iters int, acp, alt float64) *optimizer {
 			v = math.Sin(2*math.Pi*fc*t) / (math.Pi * t)
 		}
 		x := t / float64(h+1)
-		v *= besselI0(optLPBeta*math.Sqrt(max(0, 1-x*x))) / besselI0(optLPBeta)
+		v *= besselI0(optLPBeta*math.Sqrt(fmath.Max(0, 1-x*x))) / besselI0(optLPBeta)
 		o.lp[i] = v
 		sum += v
 	}
@@ -291,9 +295,9 @@ func (o *optimizer) block(w0 int) {
 		} else {
 			var mx float64
 			for _, v := range o.g {
-				mx = max(mx, math.Abs(v))
+				mx = fmath.Max(mx, math.Abs(v))
 			}
-			gamma = 1e-3 / max(mx, 1e-300)
+			gamma = 1e-3 / fmath.Max(mx, 1e-300)
 		}
 		for i := range o.d {
 			o.d[i] *= gamma

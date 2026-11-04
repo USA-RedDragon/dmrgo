@@ -1,6 +1,10 @@
 package fsktx
 
-import "math"
+import (
+	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
+)
 
 const (
 	radioHz        = 96000
@@ -134,7 +138,7 @@ func newAudioOptWin(iters, hz, win, anchor int) *aoptimizer {
 			v = math.Sin(2*math.Pi*fc*t) / (math.Pi * t)
 		}
 		u := t / float64(aoptH+1)
-		v *= besselI0(optLPBeta*math.Sqrt(max(0, 1-u*u))) / besselI0(optLPBeta)
+		v *= besselI0(optLPBeta*math.Sqrt(fmath.Max(0, 1-u*u))) / besselI0(optLPBeta)
 		o.lp[i] = v
 		sum += v
 	}
@@ -387,9 +391,9 @@ func (o *aoptimizer) solve(w0 int) {
 		} else {
 			var mx float64
 			for _, v := range o.g {
-				mx = max(mx, math.Abs(v))
+				mx = fmath.Max(mx, math.Abs(v))
 			}
-			gamma = 1 / max(mx, 1e-300)
+			gamma = 1 / fmath.Max(mx, 1e-300)
 		}
 		for i := range o.d {
 			o.d[i] *= gamma

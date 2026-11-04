@@ -5,6 +5,7 @@ import (
 	"math/cmplx"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -261,7 +262,7 @@ const (
 
 func scanPair(x []complex64, tpl *[cohScanLen]complex64, rest, thr float64) (mv, md float64, ok bool) {
 	for g := range cohScanSegs {
-		if g == cohScanSegs-1 && max(mv, md)+rest < thr {
+		if g == cohScanSegs-1 && fmath.Max(mv, md)+rest < thr {
 			return 0, 0, false
 		}
 		var cv, cd complex64
@@ -333,7 +334,7 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 		k := cohScanSegs / (e * cohScanLen)
 		ns := -1.0
 		for i := range s.nsrc {
-			mv, md, ok := scanPair(x, &s.scanTpl[i][0], rest, max(cohScanRho, best)/k)
+			mv, md, ok := scanPair(x, &s.scanTpl[i][0], rest, fmath.Max(cohScanRho, best)/k)
 			if !ok {
 				continue
 			}
@@ -774,7 +775,7 @@ func (s *cohStage) syncTime(k0, k1 int) float64 {
 
 func (s *cohStage) rho(k0, k1 int) float64 {
 	a, n := s.levels(k0, k1)
-	return a * a / (a*a + max(n, 0))
+	return a * a / (a*a + fmath.Max(n, 0))
 }
 
 const cohRelockRho = 0.5
@@ -933,7 +934,7 @@ func (s *cohStage) syncRho(syms *[2][syncSymbols]int8) float64 {
 			s.known[syncFirstSym+i] = v
 		}
 		if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
-			top = max(top, a*a/(a*a+max(v, 0)))
+			top = fmath.Max(top, a*a/(a*a+fmath.Max(v, 0)))
 		}
 	}
 	return top
@@ -1121,7 +1122,7 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 	}
 	g := s.fitVar / (s.fitVar + cohFitVar/(snr*snr)/float64(n))
 	s.fitVar *= 1 - g
-	s.freq += max(cohFreqGain, g) * fit
+	s.freq += fmath.Max(cohFreqGain, g) * fit
 	s.totalHz = s.freq
 }
 
@@ -1177,7 +1178,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		ok := amp > 0 && noise > 0 && math.Abs(fit) < cohFreqFirst
 		if ok && math.Abs(fit) >= cohFreqSpan {
 			rho := amp * amp / (amp*amp + noise)
-			ok = rho >= cohPlaceRho && rho > a0*a0/(a0*a0+max(n0, 0))
+			ok = rho >= cohPlaceRho && rho > a0*a0/(a0*a0+fmath.Max(n0, 0))
 			if ok {
 				s.nFit, s.fitVar = 0, cohFreqVar
 			}
@@ -1187,7 +1188,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 			g := s.fitVar / (s.fitVar + cohFitVar/(snr*snr))
 			s.fitVar *= 1 - g
 			s.nFit++
-			s.freq += max(cohFreqGain, g) * fit
+			s.freq += fmath.Max(cohFreqGain, g) * fit
 			s.totalHz = s.freq
 		}
 		s.fitDeviation(segs[0][0], segs[0][1], f0+fit-s.freq)
@@ -1287,7 +1288,7 @@ func (s *cohStage) spend(j int64) bool {
 		return true
 	}
 	if d := j - s.budgetSlot; d > 0 {
-		s.credit = min(s.credit+s.budget*float64(d), cohBudgetMax*s.budget)
+		s.credit = fmath.Min(s.credit+s.budget*float64(d), cohBudgetMax*s.budget)
 	}
 	s.budgetSlot = j
 	return s.credit > 0
@@ -1363,7 +1364,7 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 		s.t0 = t0
 		d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 		amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-		if rho := amp * amp / (amp*amp + max(noise, 0)); amp > 0 && rho > best {
+		if rho := amp * amp / (amp*amp + fmath.Max(noise, 0)); amp > 0 && rho > best {
 			best, bestP, bestD = rho, p, d
 		}
 	}
@@ -1403,7 +1404,7 @@ func noiseShare(x []complex64) float64 {
 	}
 	p /= float64(len(x))
 	p2 /= float64(len(x))
-	return 1 - math.Sqrt(max(2*p*p-p2, 0))/p
+	return 1 - math.Sqrt(fmath.Max(2*p*p-p2, 0))/p
 }
 
 func (s *cohStage) leanInBand() bool {
@@ -1446,12 +1447,12 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	if s.seedDeviation(c, syncFirstSym, syncFirstSym+syncSymbols-1) {
 		s.verifyHz()
 	}
-	if amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); amp <= 0 || amp*amp/(amp*amp+max(noise, 0)) < cohVerifyPre {
+	if amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); amp <= 0 || amp*amp/(amp*amp+fmath.Max(noise, 0)) < cohVerifyPre {
 		return false
 	}
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-	rho := amp * amp / (amp*amp + max(noise, 0))
+	rho := amp * amp / (amp*amp + fmath.Max(noise, 0))
 	if amp <= 0 || rho < cohVerifyRho || s.src.cohResidual() && 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
 		return false
 	}
@@ -1519,7 +1520,7 @@ func (s *cohStage) syncSum(t0 *[cohSumSlots]float64, n int, voice, data enums.Sy
 						s.known[syncFirstSym+i] = v
 					}
 					if a, v := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); a > 0 {
-						top = max(top, a*a/(a*a+max(v, 0)))
+						top = fmath.Max(top, a*a/(a*a+fmath.Max(v, 0)))
 					}
 				}
 				sum += top
@@ -1547,7 +1548,12 @@ func cohSumBar(n int) float64 {
 
 func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float64, bool) {
 	s.acq = true
-	defer func() { s.acq = false }()
+	d, ok := s.lockShiftAcq(c, p, back)
+	s.acq = false
+	return d, ok
+}
+
+func (s *cohStage) lockShiftAcq(c *leanCore, p enums.SyncPattern, back int64) (float64, bool) {
 	if s.src.cohScale() <= 0 {
 		return 0, false
 	}

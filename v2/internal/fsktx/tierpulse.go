@@ -4,6 +4,8 @@ import (
 	"math"
 	"math/cmplx"
 	"slices"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 )
 
 func (c *AudioConfig) designZero() bool {
@@ -77,7 +79,7 @@ func (c AudioConfig) toneBoost() (float64, bool) {
 				pl := (t[1][k] - t[0][k]) / probe
 				y += real(((1+complex(b, 0))*pl + t[0][k] - pl) * cmplx.Rect(1, 2*math.Pi*float64((k+1)*j)/720))
 			}
-			top = max(top, math.Abs(y))
+			top = fmath.Max(top, math.Abs(y))
 		}
 		return top
 	}

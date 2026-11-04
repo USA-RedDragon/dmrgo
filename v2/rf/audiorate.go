@@ -2,7 +2,10 @@
 
 package rf
 
-import "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/resample"
+)
 
 type audioRate struct {
 	rs   resample.Real
@@ -50,7 +53,7 @@ func (r *AudioReceiver) designResample(t Tier) {
 		rows++
 	}
 	h := make([]float32, rows*d.taps)
-	resample.Design(h, d.taps, d.phases, audioUpCut*min(1, 1/step), audioUpBeta)
+	resample.Design(h, d.taps, d.phases, audioUpCut*fmath.Min(1, 1/step), audioUpBeta)
 	r.rsOn = r.rs.Init(h, d.taps, d.phases, d.lerp, step, make([]int16, d.taps))
 	r.rs0 = rate0{}
 }

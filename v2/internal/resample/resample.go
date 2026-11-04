@@ -5,7 +5,11 @@
 // blend of the two phases around it, so that a table of few phases serves.
 package resample
 
-import "math"
+import (
+	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
+)
 
 // Design fills h with len(h)/taps rows of taps coefficients of a low pass
 // with its cutoff at fc cycles per input sample and a Kaiser window of
@@ -23,7 +27,7 @@ func Design(h []float32, taps, phases int, fc, beta float64) {
 				v = math.Sin(2*math.Pi*fc*u) / (math.Pi * u)
 			}
 			r := u / float64(taps/2)
-			v *= Bessel0(beta*math.Sqrt(max(0, 1-r*r))) / Bessel0(beta)
+			v *= Bessel0(beta*math.Sqrt(fmath.Max(0, 1-r*r))) / Bessel0(beta)
 			h[p*taps+j] = float32(v)
 		}
 	}

@@ -3,6 +3,8 @@ package rf
 import (
 	"math"
 	"math/bits"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 )
 
 const (
@@ -189,7 +191,7 @@ func (p *discPhase) clickBounds() (int32, int32) {
 		return math.MinInt32, math.MaxInt32
 	}
 	d := discClickHz / unit
-	return int32(max(math.Floor(p.dcU-d), math.MinInt32)), int32(min(math.Ceil(p.dcU+d), math.MaxInt32))
+	return int32(fmath.Max(math.Floor(p.dcU-d), math.MinInt32)), int32(fmath.Min(math.Ceil(p.dcU+d), math.MaxInt32))
 }
 
 func (p *discPhase) click(u int16, lo, hi int32) {
@@ -209,8 +211,8 @@ func (p *discPhase) clickSpan() int64 {
 
 func (p *discPhase) clicked(t0, t1 float64) bool {
 	span := p.clickSpan()
-	i0 := int64(math.Floor(max(t0, 0)*float64(p.den)/float64(p.num))) - span
-	i1 := int64(math.Ceil(max(t1, 0)*float64(p.den)/float64(p.num))) + span
+	i0 := int64(math.Floor(fmath.Max(t0, 0)*float64(p.den)/float64(p.num))) - span
+	i1 := int64(math.Ceil(fmath.Max(t1, 0)*float64(p.den)/float64(p.num))) + span
 	i0, i1 = max(i0, p.sumN-p.size, 0), min(i1, p.sumN-1)
 	for i := i0; i <= i1; i++ {
 		k := i & (p.size - 1)
@@ -222,8 +224,8 @@ func (p *discPhase) clicked(t0, t1 float64) bool {
 }
 
 func (p *discPhase) clipped(t0, t1 float64) bool {
-	b0 := int64(max(t0, 0)*float64(p.den)/float64(p.num)) / discClipBlock
-	b1 := int64(max(t1, 0)*float64(p.den)/float64(p.num)) / discClipBlock
+	b0 := int64(fmath.Max(t0, 0)*float64(p.den)/float64(p.num)) / discClipBlock
+	b1 := int64(fmath.Max(t1, 0)*float64(p.den)/float64(p.num)) / discClipBlock
 	for b := b0; b <= b1; b++ {
 		if p.clipAt[b%int64(len(p.clipAt))] == b {
 			return true
@@ -246,7 +248,7 @@ func (p *discPhase) rawAt(m int64) int16 {
 		return 0
 	}
 	v := (at(x) - at(x-r)) / r
-	return int16(max(min(math.Round(v), math.MaxInt16), math.MinInt16))
+	return int16(fmath.Max(fmath.Min(math.Round(v), math.MaxInt16), math.MinInt16))
 }
 
 func (p *discPhase) emit(m int64) {
@@ -553,7 +555,7 @@ func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 			e += 0.5 * (a - c) / d * step
 		}
 	}
-	return e, a2 / (a2 + max(noise[best], 0))
+	return e, a2 / (a2 + fmath.Max(noise[best], 0))
 }
 
 func indexEdge(e, span, rho float64) int8 {
@@ -598,7 +600,7 @@ func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 		s.hFit *= math.Exp(g * e)
 		s.hNew = false
 		if s.ex != nil && math.Abs(e) >= span-discFitStep/2 {
-			s.hNew, s.hVar = true, max(s.hVar, cohIndexStart)
+			s.hNew, s.hVar = true, fmath.Max(s.hVar, cohIndexStart)
 		}
 		f := s.hFit / cohSyncIndex
 		if math.Abs(f/cohIndex-1) < cohIndexNear {

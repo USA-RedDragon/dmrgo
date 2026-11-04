@@ -4,6 +4,8 @@ import (
 	"math"
 	"math/bits"
 	"slices"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 )
 
 const (
@@ -208,13 +210,13 @@ func (s *spectrum) estimate() {
 	for lo < len(win)-1 && win[lo] < specCutLevel*win[len(win)/2] {
 		lo++
 	}
-	floor = max(floor, float64(win[lo+(len(win)-lo)*specFloorQ/100]))
+	floor = fmath.Max(floor, float64(win[lo+(len(win)-lo)*specFloorQ/100]))
 	var num, den, det float64
 	for k := center - half; k <= center+half; k++ {
-		e := max(pass(k)-floor, 0)
+		e := fmath.Max(pass(k)-floor, 0)
 		num += e * float64(k)
 		den += e
-		det += max(pass(k)-out, 0)
+		det += fmath.Max(pass(k)-out, 0)
 	}
 	noise := floor * float64(2*half+1)
 	s.ready = s.frames == specFrames

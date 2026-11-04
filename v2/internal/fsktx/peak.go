@@ -1,6 +1,10 @@
 package fsktx
 
-import "math"
+import (
+	"math"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
+)
 
 // Peak returns the most that the output of an MCUAudio of t at level
 // reaches from its offset, in codes, over every run of symbols.
@@ -17,7 +21,7 @@ func (a *Audio) Peak() float64 {
 		return 0
 	}
 	lo, hi := a.bounds()
-	return max(-lo, hi)
+	return fmath.Max(-lo, hi)
 }
 
 // PeakAt returns the Peak of an Audio of the config of a with Level
@@ -40,7 +44,7 @@ func (a *Audio) PeakAt(level int) (float64, error) {
 	if hi > math.MaxInt16 || lo < math.MinInt16 {
 		return 0, errOffset
 	}
-	return max(-lo, hi), nil
+	return fmath.Max(-lo, hi), nil
 }
 
 type levelDesign struct {

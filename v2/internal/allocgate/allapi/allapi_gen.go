@@ -25,6 +25,7 @@ import (
 	internal_fec_quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	internal_fec_reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
+	internal_fmath "github.com/USA-RedDragon/dmrgo/v2/internal/fmath"
 	internal_fsktx "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
 	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	internal_resample "github.com/USA-RedDragon/dmrgo/v2/internal/resample"
@@ -376,6 +377,8 @@ var api = [...]any{
 	internal_fec_reedsolomon.Encode,
 	internal_fec_trellis.Decode,
 	internal_fec_trellis.Encode,
+	internal_fmath.Max,
+	internal_fmath.Min,
 	(*internal_fsktx.Audio).AppendSymbol,
 	(*internal_fsktx.Audio).Lag,
 	(*internal_fsktx.Audio).MaxSamples,
