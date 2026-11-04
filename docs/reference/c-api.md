@@ -4336,7 +4336,7 @@ struct dmrgo_rf_audio_tx_config_t {
 	int64_t level;
 	/* Offset is added to the center code, 0 or 1<<(Bits-1) when Unsigned. */
 	int64_t offset;
-	/* PreEmphasis, when not NULL, states that the radio pre-emphasizes its modulator input from 300 Hz to 3 kHz, so that the transmitter inverts it with the modulator that it holds: a PreEmphasis of this transmitter alone, set up by Init or NewPreEmphasis. NULL is a radio with no pre-emphasis. Only DMRGO_RF_TIER0 at Rate 48000 takes it, and only in the regions, services and powers where the limits keep their margin with it; elsewhere it gives a *RegionError. */
+	/* PreEmphasis, when not NULL, states that the radio pre-emphasizes its modulator input from 300 Hz to 3 kHz, so that the transmitter inverts it with the modulator that it holds: a PreEmphasis of this transmitter alone, set up by Init or NewPreEmphasis. DMRGO_RF_TIER1 and DMRGO_RF_TIER2 invert it with a filter of their own. NULL is a radio with no pre-emphasis. The limits are measured with it as without it, and a setup whose limits do not keep their margin with it gives a *RegionError. */
 	dmrgo_rf_pre_emphasis_t *pre_emphasis;
 	/* InputLowpassHz states the cutoff in Hz of a low pass of at least two poles that the radio puts before its modulator input; 0 means none, a converter that drives the modulator with no filter. The limits are measured with a two-pole Butterworth low pass at 8000, 5000 and 3000 Hz, and a stated cutoff takes the next looser of these, so 6000 counts as 8000 and a cutoff above 8000 as none. A low pass lowers the least Rate that keeps the limits. A negative cutoff gives a *dmrgo_config_error_t. */
 	int64_t input_lowpass_hz;
