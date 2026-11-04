@@ -61,6 +61,7 @@ type spectrum struct {
 	armed   bool
 	settled int
 	fast    bool
+	Seen    bool
 	Frames  int
 }
 
@@ -197,6 +198,7 @@ func (s *spectrum) estimate() {
 	if n > 8 {
 		floor = sum / float64(n)
 	}
+	out := floor
 	win := s.sorted[:2*half+1]
 	for k := range win {
 		win[k] = s.power[(center-half+k+fftSize)%fftSize]
@@ -207,15 +209,17 @@ func (s *spectrum) estimate() {
 		lo++
 	}
 	floor = max(floor, float64(win[lo+(len(win)-lo)*specFloorQ/100]))
-	var num, den float64
+	var num, den, det float64
 	for k := center - half; k <= center+half; k++ {
 		e := max(pass(k)-floor, 0)
 		num += e * float64(k)
 		den += e
+		det += max(pass(k)-out, 0)
 	}
 	noise := floor * float64(2*half+1)
 	s.ready = s.frames == specFrames
 	s.OK = den > 6*noise/math.Sqrt(float64(s.frames))
+	s.Seen = det > 6*out*float64(2*half+1)/math.Sqrt(float64(s.frames))
 	if den > 0 {
 		s.Hz = num / den * bin
 		s.CN = 10 * math.Log10(den/noise)

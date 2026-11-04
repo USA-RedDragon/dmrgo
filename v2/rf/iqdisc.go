@@ -594,8 +594,9 @@ func (r *iqRx) hunt(v complex64) {
 		return
 	}
 	hz := float32(r.spec.Hz)
-	r.outBand = r.spec.OK && abs32(hz-r.center) > iqTuneMaxHz
-	if !r.spec.OK {
+	ok := r.spec.OK || r.spec.Seen && abs32(hz-r.center) > r.maxHz
+	r.outBand = ok && abs32(hz-r.center) > iqTuneMaxHz
+	if !ok {
 		return
 	}
 	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
