@@ -2036,7 +2036,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		}
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		if step > 0 && r.hasExt() && !r.isReplaying() {
-			r.ext.relevel(step)
+			r.ext.stepped()
 		}
 		return true
 	}
@@ -2421,10 +2421,14 @@ func (r *leanCore) swapClock(p, q int32) {
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
+	g0, dc0, step := r.devScale, r.dcHz, r.preStep
 	if (r.pairLv || r.refit) && r.fitLevels(base+leanSyncEnd, anchor, true, true) {
 		r.pairLv = false
 	} else {
 		r.fitLevels(base+leanSyncEnd, anchor, false, true)
+	}
+	if a := r.audio; r.preStep && !step && a != nil && !a.iq && g0 > 0 {
+		r.stepOther(j, r.devScale/g0, dc0)
 	}
 	d := r.dcHz
 	if o := (j + 1) & 1; !r.bs && r.ms.anch[o] != leanNoSlot {
@@ -2814,13 +2818,21 @@ func (r *leanCore) blindLevels(slot int32, base int64, anchor enums.SyncPattern)
 	held0 := r.dcHz
 	r.devScale, r.dcHz, r.discVar = g, dc, r.discVar*k*k
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-	if !r.bs {
-		lv := &r.ms.lv[(slot+1)&1]
-		lv.devScale, lv.dcHz, lv.discVar = lv.devScale*k, dc+k*(lv.dcHz-held0), lv.discVar*k*k
-	}
+	r.stepOther(slot, k, held0)
 	if r.hasExt() && !r.isReplaying() {
 		r.ext.stepped()
 	}
+}
+
+// stepOther gives the held levels of the slot after slot the level step k
+// that the levels of slot took from dc0 to r.dcHz. The step scales the whole
+// input, so the offset between the two talkers scales with it.
+func (r *leanCore) stepOther(slot int32, k, dc0 float32) {
+	if r.bs {
+		return
+	}
+	lv := &r.ms.lv[(slot+1)&1]
+	lv.devScale, lv.dcHz, lv.discVar = lv.devScale*k, r.dcHz+k*(lv.dcHz-dc0), lv.discVar*k*k
 }
 
 // eyeFit refits the levels g and dc of the burst at ring position j by least

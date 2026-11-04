@@ -259,3 +259,21 @@ func TestRxAudioTwoTalkerLevelStep(t *testing.T) {
 		}
 	}
 }
+
+// TestRxTwoTalkerSyncLevelStep steps the level of an audio input by 10 dB
+// between two talkers whose bursts all carry a SYNC. The SYNC of each talker
+// sees the step, but the phase stage of Tiers 2 and 3 takes it once.
+func TestRxTwoTalkerSyncLevelStep(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "mid.none.+700.ms2.data12.+500ppm.nom.a12000.40dB.step10dB")
+	rxs := []mxRx{{row.val(mxFormat), Tier2}, {row.val(mxFormat), Tier3}}
+	res, err := mxRun(row, rxs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, x := range rxs {
+		if r := res[x]; r.fail["bits"] || r.fail["missing"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
+		}
+	}
+}

@@ -391,19 +391,6 @@ func (p *discPhase) lock() {
 	p.acc, p.accN, p.avg = 0, 0, 0
 }
 
-func (p *discPhase) relevel(k float32) {
-	c := p.c
-	if p.unit <= 0 || k <= 0 || c.audio.gain <= 0 {
-		return
-	}
-	u := 1 / float64(k)
-	p.fitN, p.heldN = 0, 0
-	p.held, p.fitUnit = p.unit*u, p.unit*u
-	p.build(p.unit*u, float64(c.audio.dc+c.dcHz)/float64(c.audio.gain))
-	p.acc, p.accN, p.avg = 0, 0, 0
-	p.ref = p.unit * float64(c.devScale) / float64(c.audio.gain)
-}
-
 // stepped takes the levels of a burst that the core refitted after a level
 // step of the input. The unit keeps the ratio to the levels of the core that
 // the last fit measured, so a second refit of the same step, as on the other
