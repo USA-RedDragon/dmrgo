@@ -335,6 +335,7 @@ func (x *softExt) warm(c *leanCore, b *Burst) {
 }
 
 func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCode, ccOK bool) bool {
+	x.preOK = false
 	if !x.coh.detect(c, b, &x.llr) {
 		return false
 	}
