@@ -55,6 +55,9 @@ const (
 	leanBurstSec        = float64(slotSymbols-cachSymbols) / symbolRate
 	leanCachSec         = float64(cachSymbols) / symbolRate
 	leanSlotContrast    = 10
+	leanBlindNear       = 0.9
+	leanBlindStep       = 0.5
+	leanBlindGain       = 0.2
 	leanFadeBursts      = 2
 	leanFlatSyms        = 1
 	leanInBurst         = cachSymbols + syncSymbols - 1
@@ -2678,8 +2681,70 @@ func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) b
 	return anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
 }
 
+func (r *leanCore) blindLevels(base int64, anchor enums.SyncPattern) {
+	if anchor != 0 {
+		return
+	}
+	const n = slotSymbols - cachSymbols
+	j0 := ringPos(base + cachSymbols)
+	var sum, spread float32
+	j := j0
+	for range n {
+		v := float32(r.ring[j])*discStepHz + r.off
+		sum += v
+		spread += abs32(v - r.dcHz)
+		if j++; j == leanRing {
+			j = 0
+		}
+	}
+	dc := sum / n
+	unit := r.devScale * deviationHz
+	if q := spread / (n * 2 * unit); abs32(dc-r.dcHz) < unit && q > leanBlindStep && q < 1/leanBlindStep {
+		return
+	}
+	var a float32
+	j = j0
+	for range n {
+		a += abs32(float32(r.ring[j])*discStepHz + r.off - dc)
+		if j++; j == leanRing {
+			j = 0
+		}
+	}
+	g := a / n / (2 * deviationHz)
+	k := g / r.devScale
+	if g < leanMinScale || k > 1/leanBlindStep && k < leanBlindStep || k < leanBlindStep*leanBlindStep || k > 1/(leanBlindStep*leanBlindStep) {
+		return
+	}
+	fresh, held := r.eyeNear(j0, g, dc), r.eyeNear(j0, r.devScale, r.dcHz)
+	if float32(fresh) < leanBlindNear*n || float32(fresh-held) < leanBlindGain*n {
+		return
+	}
+	r.devScale, r.dcHz, r.discVar = g, dc, r.discVar*k*k
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+}
+
+func (r *leanCore) eyeNear(j uint32, g, dc float32) int {
+	c := 0
+	for range slotSymbols - cachSymbols {
+		y := abs32((float32(r.ring[j])*discStepHz + r.off - dc) / (g * deviationHz))
+		if j++; j == leanRing {
+			j = 0
+		}
+		if y < 2 {
+			y--
+		} else {
+			y -= 3
+		}
+		if abs32(y) < 0.5 {
+			c++
+		}
+	}
+	return c
+}
+
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, missedA bool) bool {
 	r.base, r.anchor = base, anchor
+	r.blindLevels(base, anchor)
 	v := max32(r.discVar, 1)
 	r.ll = -1 / (2 * v)
 	r.dev = r.devScale * deviationHz
