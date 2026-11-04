@@ -4298,9 +4298,9 @@ struct dmrgo_rf_audio_rx_config_on_short_lc_fn_t {
 struct dmrgo_rf_audio_rx_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Tier is DMRGO_RF_TIER0, DMRGO_RF_TIER1, DMRGO_RF_TIER2 or DMRGO_RF_TIER3. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewAudioReceiver, and DMRGO_RF_TIER0 for Init, which does not allocate the stages of the higher tiers, and under TinyGo, which has neither. DMRGO_RF_TIER2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of DMRGO_RF_TIER1. DMRGO_RF_TIER3 detects the bursts of DMRGO_RF_TIER2 again over 52 carrier phases with no compute budget and makes four passes over each data burst, at about 10 times the CPU time of DMRGO_RF_TIER2, 1.3 MB and the delay of DMRGO_RF_TIER2. */
+	/* Tier is DMRGO_RF_TIER0, DMRGO_RF_TIER1, DMRGO_RF_TIER2 or DMRGO_RF_TIER3. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewAudioReceiver, DMRGO_RF_TIER0 for it under TinyGo, and DMRGO_RF_TIER0 for Init, which does not allocate the stages of the higher tiers. Under TinyGo too, NewAudioReceiver takes every tier and allocates its stages once, and a program that calls only Init links none of them. DMRGO_RF_TIER2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of DMRGO_RF_TIER1. DMRGO_RF_TIER3 detects the bursts of DMRGO_RF_TIER2 again over 52 carrier phases with no compute budget and makes four passes over each data burst, at about 10 times the CPU time of DMRGO_RF_TIER2, 1.3 MB and the delay of DMRGO_RF_TIER2. */
 	dmrgo_rf_tier_t tier;
-	/* Rate is the sample rate of the discriminator samples, in Hz, from 8000 to 1000000, and for DMRGO_RF_TIER0 to 48000. 0 means 48000. The receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600: at Rate when it is one of them, else at the lowest of them at or above Rate, or 48000 above 48000, through a resampler. DMRGO_RF_TIER0, also under TinyGo, resamples in fixed point with a table in flash. A lower rate costs less: the receiver halves 48 kHz and then 24 kHz with a half-band filter before its matched filter, which runs at 12 kHz or 9.6 kHz. */
+	/* Rate is the sample rate of the discriminator samples, in Hz, from 8000 to 1000000, and for DMRGO_RF_TIER0 to 48000. 0 means 48000. The receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600: at Rate when it is one of them, else at the lowest of them at or above Rate, or 48000 above 48000, through a resampler. DMRGO_RF_TIER0 resamples in fixed point with a table in flash. A lower rate costs less: the receiver halves 48 kHz and then 24 kHz with a half-band filter before its matched filter, which runs at 12 kHz or 9.6 kHz. */
 	int64_t rate;
 	/* Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. */
 	int64_t bits;
@@ -4310,7 +4310,7 @@ struct dmrgo_rf_audio_rx_config_t {
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
 	/* PreEmphasis, when not NULL, states that the radio de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, so that the receiver inverts it with the filter that it holds before it detects the bursts: a RxPreEmphasis of this receiver alone, set up by Init or NewRxPreEmphasis. NULL is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it. Every Tier and Rate takes it. A RxPreEmphasis that is not set up gives a *dmrgo_config_error_t. */
 	dmrgo_rf_rx_pre_emphasis_t *pre_emphasis;
-	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo_config_error_t for it. */
+	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo_config_error_t for it. */
 	dmrgo_rf_audio_rx_config_on_short_lc_fn_t on_short_lc;
 };
 
@@ -4322,7 +4322,7 @@ struct dmrgo_rf_audio_tx_config_on_samples_fn_t {
 struct dmrgo_rf_audio_tx_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Tier selects the modulator: DMRGO_RF_TIER0, DMRGO_RF_TIER1 or DMRGO_RF_TIER2. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewAudioTransmitter, and DMRGO_RF_TIER0 for Init and under TinyGo. DMRGO_RF_TIER3 has no modulator of its own yet and gives a *dmrgo_config_error_t. */
+	/* Tier selects the modulator: DMRGO_RF_TIER0, DMRGO_RF_TIER1 or DMRGO_RF_TIER2. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewAudioTransmitter, and DMRGO_RF_TIER0 for Init and for NewAudioTransmitter under TinyGo. Under TinyGo too, NewAudioTransmitter takes every modulator, and a program that calls only Init links none but DMRGO_RF_TIER0. DMRGO_RF_TIER3 has no modulator of its own yet and gives a *dmrgo_config_error_t. */
 	dmrgo_rf_tier_t tier;
 	/* Rate is the sample rate of the converter, in Hz. 0 means 48000. DMRGO_RF_TIER0 makes 24000 and 48000. DMRGO_RF_TIER1 and DMRGO_RF_TIER2 make any rate from 8000 whose ratio to 4800 has a numerator of at most 1024 in lowest terms, such as 8000, 22050 or 44100, and the limits are measured to 96000. */
 	int64_t rate;
@@ -4366,7 +4366,7 @@ struct dmrgo_rf_monitor_burst_t {
 struct dmrgo_rf_rx_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Tier selects the detection. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewReceiver, and DMRGO_RF_TIER0 for Init and under TinyGo. */
+	/* Tier selects the detection. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewReceiver, and DMRGO_RF_TIER0 for Init and for NewReceiver under TinyGo. Under TinyGo too, NewReceiver takes every tier. */
 	dmrgo_rf_tier_t tier;
 	/* Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. DMRGO_RF_TIER0 to DMRGO_RF_TIER3 take a Rate from 48000 to 1e9, and DMRGO_RF_TIER0 and DMRGO_RF_TIER1 also one from 24000, which runs their receiver with a complex front end in place of the FM discriminator, with about 2 KB of state for DMRGO_RF_TIER0. DMRGO_RF_TIER0 also takes 9600 and 12000, for I/Q that a radio chip filtered to the channel, with about 1.4 KB of state; Init sets up only these. */
 	int64_t rate;
@@ -4378,7 +4378,7 @@ struct dmrgo_rf_rx_config_t {
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
 	/* LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for DMRGO_RF_TIER1, 8 for DMRGO_RF_TIER2, and 16 for DMRGO_RF_TIER3, and at most DMRGO_RF_MAX_LOOKBACK_SLOTS. DMRGO_RF_TIER0 keeps none, and loses the start of a stream that it enters late. */
 	int64_t lookback_slots;
-	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo_config_error_t for it. */
+	/* OnShortLC, when not NULL, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as dmrgo_layer2_short_lc_assembler_t does, and from DMRGO_RF_TIER1 up decodes those that fail again from their soft values. DMRGO_RF_TIER0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo_config_error_t for it. */
 	dmrgo_rf_audio_rx_config_on_short_lc_fn_t on_short_lc;
 };
 
@@ -4390,7 +4390,7 @@ struct dmrgo_rf_tx_config_on_samples_fn_t {
 struct dmrgo_rf_tx_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Tier selects the modulator: DMRGO_RF_TIER0, DMRGO_RF_TIER1 or DMRGO_RF_TIER2. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewTransmitter, and DMRGO_RF_TIER0 for Init and under TinyGo. DMRGO_RF_TIER3 has no modulator of its own yet and gives a *dmrgo_config_error_t. */
+	/* Tier selects the modulator: DMRGO_RF_TIER0, DMRGO_RF_TIER1 or DMRGO_RF_TIER2. The zero value DMRGO_RF_TIER_DEFAULT is DMRGO_RF_TIER1 for NewTransmitter, and DMRGO_RF_TIER0 for Init and for NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes every modulator, and a program that calls only Init links none but DMRGO_RF_TIER0. DMRGO_RF_TIER3 has no modulator of its own yet and gives a *dmrgo_config_error_t. */
 	dmrgo_rf_tier_t tier;
 	/* Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. DMRGO_RF_TIER1 and DMRGO_RF_TIER2 make any Rate from 48000 to 20000000, and DMRGO_RF_TIER0 makes 96000. Under 62500 the image of the main lobe falls within two channels of the carrier, where no limit can count on a filter of the radio, so it gives a *RegionError. */
 	int64_t rate;
@@ -7857,7 +7857,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_RF_TIER2 ((dmrgo_rf_tier_t)3)
 /* Go: rf.Tier3. Tier3 detects the bursts of DMRGO_RF_TIER2 again by log-MAP over a window of three symbols with one of 52 carrier phases in the trellis state and no compute budget, and detects each voice burst once more with the bits that its FEC fixed. */
 #define DMRGO_RF_TIER3 ((dmrgo_rf_tier_t)4)
-/* Go: rf.TierDefault. TierDefault is the zero value: DMRGO_RF_TIER1 for NewReceiver and NewAudioReceiver, and DMRGO_RF_TIER0 for Init and under TinyGo. */
+/* Go: rf.TierDefault. TierDefault is the zero value: DMRGO_RF_TIER1 for NewReceiver and NewAudioReceiver, and DMRGO_RF_TIER0 for Init and for the constructors under TinyGo. */
 #define DMRGO_RF_TIER_DEFAULT ((dmrgo_rf_tier_t)0)
 /* Go: sms.FormatAnyTone. FormatAnyTone is the text to UDP port 5016 that AnyTone radios send in DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE. */
 #define DMRGO_SMS_FORMAT_ANYTONE ((dmrgo_sms_format_t)3)

@@ -121,7 +121,7 @@ The configs, with the range and the default of each field:
 <!-- dmrgo:config pkg=rf type=TxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and for NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
 | `Rate` | `int` | `defaultTxRate` (2400000) | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier1 and Tier2 make any Rate from 48000 to 20000000, and Tier0 makes 96000. Under 62500 the image of the main lobe falls within two channels of the carrier, where no limit can count on a filter of the radio, so it gives a *RegionError. |
 | `Format` | `IQFormat` | `IQFormatCS16` (3) | Format is the layout of the I/Q samples. 0 means IQFormatCS16. IQFormatCF32 values lie on the grid of IQFormatCS16. |
 | `OffsetHz` | `float64` | zero value | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, under Rate/4 in size. Tier0 rounds it to whole Hz. |
@@ -134,7 +134,7 @@ The configs, with the range and the default of each field:
 <!-- dmrgo:config pkg=rf type=AudioTxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and for NewAudioTransmitter under TinyGo. Under TinyGo too, NewAudioTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
 | `Rate` | `int` | `defaultTxAudio` (48000) | Rate is the sample rate of the converter, in Hz. 0 means 48000. Tier0 makes 24000 and 48000. Tier1 and Tier2 make any rate from 8000 whose ratio to 4800 has a numerator of at most 1024 in lowest terms, such as 8000, 22050 or 44100, and the limits are measured to 96000. |
 | `Bits` | `int` | `16` | Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. |
 | `Unsigned` | `bool` | zero value | Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. |

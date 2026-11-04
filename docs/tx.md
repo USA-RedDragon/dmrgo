@@ -51,11 +51,11 @@ Least margin in dB to the limits of each region and service at 1 W (30 dBm), les
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0, 12-bit | 48 | 3.7 | 700 | 27.6 |
-| Audio tier 0, 12-bit | 24 | 3.6 | 740 | 27.4 |
-| Audio tier 0, 12-bit, pre-emphasis | 48 | 4.7 | 924 | 49.1 |
-| Audio tier 0, 12-bit, pre-emphasis | 24 | 4.1 | 924 | 49.1 |
-| I/Q tier 0, CS16 | 96 | 4.8 | 944 | 33.1 |
+| Audio tier 0, 12-bit | 48 | 3.5 | 708 | 27.6 |
+| Audio tier 0, 12-bit | 24 | 3.4 | 748 | 27.5 |
+| Audio tier 0, 12-bit, pre-emphasis | 48 | 4.4 | 932 | 49.1 |
+| Audio tier 0, 12-bit, pre-emphasis | 24 | 3.9 | 932 | 49.1 |
+| I/Q tier 0, CS16 | 96 | 4.3 | 1304 | 30.2 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter`, with its `PreEmphasis` when it has one, and the most stack under it. Flash is the code and constant data of the whole program.
 
@@ -75,7 +75,7 @@ Under 62.5 kHz, I/Q puts the image of the main lobe within two channels of the c
 
 | Field | Rule |
 |-------|------|
-| `TxConfig.Tier` | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `TxConfig.Tier` | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and for NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
 | `TxConfig.Rate` | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier1 and Tier2 make any Rate from 48000 to 20000000, and Tier0 makes 96000. Under 62500 the image of the main lobe falls within two channels of the carrier, where no limit can count on a filter of the radio, so it gives a *RegionError. |
 | `TxConfig.Format` | Format is the layout of the I/Q samples. 0 means IQFormatCS16. IQFormatCF32 values lie on the grid of IQFormatCS16. |
 | `TxConfig.OffsetHz` | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, under Rate/4 in size. Tier0 rounds it to whole Hz. |
@@ -83,7 +83,7 @@ Under 62.5 kHz, I/Q puts the image of the main lobe within two channels of the c
 | `TxConfig.Region` | Region is the regulatory region whose limits the signal keeps. |
 | `TxConfig.Service` | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. The transmitter refuses ServiceLicenseFree. |
 | `TxConfig.Power` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. |
-| `AudioTxConfig.Tier` | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `AudioTxConfig.Tier` | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and for NewAudioTransmitter under TinyGo. Under TinyGo too, NewAudioTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
 | `AudioTxConfig.Rate` | Rate is the sample rate of the converter, in Hz. 0 means 48000. Tier0 makes 24000 and 48000. Tier1 and Tier2 make any rate from 8000 whose ratio to 4800 has a numerator of at most 1024 in lowest terms, such as 8000, 22050 or 44100, and the limits are measured to 96000. |
 | `AudioTxConfig.Bits` | Bits is the resolution of the converter, from 8 to 16. 0 means 16. Each sample holds one code of Bits bits in its low bits. |
 | `AudioTxConfig.Unsigned` | Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. |

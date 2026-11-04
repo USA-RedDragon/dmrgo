@@ -12,7 +12,8 @@ The tiers are the constants of [rf.Tier](https://pkg.go.dev/github.com/USA-RedDr
 ```go
 const (
 	// TierDefault is the zero value: Tier1 for NewReceiver and
-	// NewAudioReceiver, and Tier0 for Init and under TinyGo.
+	// NewAudioReceiver, and Tier0 for Init and for the constructors
+	// under TinyGo.
 	TierDefault Tier = iota
 	// Tier0 slices the output of an FM discriminator and its matched
 	// filter. On I/Q from 48 kHz an FM discriminator at 12 kHz comes before
@@ -75,13 +76,13 @@ The `Tier` field of [rf.RxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dm
 <!-- dmrgo:config pkg=rf type=RxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `Tier` | `Tier` | `Tier0` (1) or `discDefaultTier` (2) | Tier selects the detection. The zero value TierDefault is Tier1 for NewReceiver, and Tier0 for Init and under TinyGo. |
+| `Tier` | `Tier` | `Tier0` (1) or `discDefaultTier` (2) | Tier selects the detection. The zero value TierDefault is Tier1 for NewReceiver, and Tier0 for Init and for NewReceiver under TinyGo. Under TinyGo too, NewReceiver takes every tier. |
 | `Rate` | `int` | `defaultRxRate` (2400000) | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier0 to Tier3 take a Rate from 48000 to 1e9, and Tier0 and Tier1 also one from 24000, which runs their receiver with a complex front end in place of the FM discriminator, with about 2 KB of state for Tier0. Tier0 also takes 9600 and 12000, for I/Q that a radio chip filtered to the channel, with about 1.4 KB of state; Init sets up only these. |
 | `Format` | `IQFormat` | `IQFormatCS16` (3) | Format is the layout of the I/Q samples. 0 means IQFormatCS16. |
 | `OffsetHz` | `float64` | not machine-readable; see the description | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. |
 | `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
 | `LookbackSlots` | `int` | not machine-readable; see the description | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
-| `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init and TinyGo builds take no OnShortLC and return a *dmrgo.ConfigError for it. |
+| `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo.ConfigError for it. |
 <!-- /dmrgo:config -->
 
 [rf.AudioRxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioRxConfig) has the same `Tier` field for a receiver of discriminator audio. On audio, Tier3 is Tier2 with more passes over each data burst.
@@ -93,7 +94,7 @@ The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.
 <!-- dmrgo:config pkg=rf type=TxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and under TinyGo. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
+| `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and for NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
 | `Rate` | `int` | `defaultTxRate` (2400000) | Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier1 and Tier2 make any Rate from 48000 to 20000000, and Tier0 makes 96000. Under 62500 the image of the main lobe falls within two channels of the carrier, where no limit can count on a filter of the radio, so it gives a *RegionError. |
 | `Format` | `IQFormat` | `IQFormatCS16` (3) | Format is the layout of the I/Q samples. 0 means IQFormatCS16. IQFormatCF32 values lie on the grid of IQFormatCS16. |
 | `OffsetHz` | `float64` | zero value | OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, under Rate/4 in size. Tier0 rounds it to whole Hz. |
