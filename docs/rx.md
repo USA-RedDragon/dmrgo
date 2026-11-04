@@ -85,6 +85,15 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
+### Higher tiers on a Cortex-M7
+
+| Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
+|:---|---:|---:|---:|---:|
+| Audio tier 1 | 9.6 | 62.3 | 52,160 | 230.6 |
+| Audio tier 2 | 9.6 | 481.6 | 614,496 | 230.6 |
+
+Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
+
 <!-- rxbench:specs:end -->
 
 ## Absolute limits and operating conditions
@@ -336,7 +345,7 @@ Keep the audio of the strongest signal and the CU8 and CS8 samples from clipping
 
 ### Short LC
 
-Set `OnShortLC` of the config to receive the Short LCs of the CACH. From tier 1 up, the receiver decodes a Short LC that fails again from its soft values and sets `ShortLC.Soft`. Tier 0, `Init` and TinyGo builds give the hard decode only.
+Set `OnShortLC` of the config to receive the Short LCs of the CACH. From tier 1 up, the receiver decodes a Short LC that fails again from its soft values and sets `ShortLC.Soft`. Tier 0 gives the hard decode only, and `Init` takes no `OnShortLC`.
 
 ## Comparison with other receivers
 

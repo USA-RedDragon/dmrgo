@@ -19,6 +19,7 @@ import (
 type mcuHash struct {
 	h  uint32
 	nb uint32
+	us bool
 }
 
 func (m *mcuHash) mix(b byte) { m.h = (m.h ^ uint32(b)) * 16777619 }
@@ -41,7 +42,11 @@ func (m *mcuHash) on(bs []Burst) {
 		for _, c := range b.CACH {
 			m.mix(c)
 		}
-		m.mix64(math.Float64bits(b.Seconds))
+		if m.us {
+			m.mix64(uint64(int64(math.Round(b.Seconds * 1e6))))
+		} else {
+			m.mix64(math.Float64bits(b.Seconds))
+		}
 		m.mix64(uint64(b.Distance))
 		m.mix64(uint64(b.Stream))
 		m.mix64(uint64(b.Slot))
@@ -130,6 +135,22 @@ func TestMCUBenchSignals(t *testing.T) {
 				}
 				_ = r.Flush()
 				ref = append(ref, fmt.Sprintf("%s %d %d %x %d", name, len(a), m.nb, m.h, rate))
+				if pe {
+					continue
+				}
+				for _, k := range strings.Fields(os.Getenv("DMRGO_MCUBENCH_TIERS")) {
+					n, _ := strconv.Atoi(k)
+					m := mcuHash{h: 2166136261, us: true}
+					r, err := NewAudioReceiver(&AudioRxConfig{Rate: rate, Tier: Tier0 + Tier(n), OnBursts: m.on})
+					if err != nil {
+						t.Fatal(err)
+					}
+					for k := 0; k < len(a); k += 256 {
+						_, _ = r.Write(a[k:min(k+256, len(a))])
+					}
+					_ = r.Flush()
+					ref = append(ref, fmt.Sprintf("%s-t%d %d %d %x %d", name, n, len(a), m.nb, m.h, rate))
+				}
 			}
 		}
 	}

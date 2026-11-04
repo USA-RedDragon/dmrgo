@@ -315,12 +315,13 @@ type data struct {
 	sheet      sheet
 	mcu        mcuData
 	acs        acsData
+	m7         mcuData
 }
 
 func load(dir string) (data, error) {
 	var d data
 	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings,
-		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet, "rxbench_mcu.json": &d.mcu, "rxbench_acs.json": &d.acs} {
+		"rxbench_shortlc.json": &d.shortLC, "extcmp.json": &d.ext, "extcmp_m4.json": &d.ext.m4, "rxsheet.json": &d.sheet, "rxbench_mcu.json": &d.mcu, "rxbench_acs.json": &d.acs, "rxbench_m7.json": &d.m7} {
 		if err := loadJSON(filepath.Join(dir, name), v); err != nil {
 			return d, err
 		}

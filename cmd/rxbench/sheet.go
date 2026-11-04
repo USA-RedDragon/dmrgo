@@ -97,6 +97,15 @@ func renderMCU(b *strings.Builder, d data) {
 		b.WriteString(tableRow(name, strconv.FormatFloat(float64(r.Rate)/1000, 'f', -1, 64), f1(r.MHz), grouped(int64(r.RAMBytes)), f1(r.FlashKB)))
 	}
 	b.WriteString("\n" + d.mcu.Source + "\n\n")
+	if len(d.m7.Rows) == 0 {
+		return
+	}
+	b.WriteString("### Higher tiers on a Cortex-M7\n\n")
+	b.WriteString(tableHead("Tier", "Rate (kHz)", "CPU (MHz)", "RAM with heap and stack (B)", "Flash (KB)"))
+	for _, r := range d.m7.Rows {
+		b.WriteString(tableRow(shortName(tier{Mode: r.Mode, Tier: r.Tier}), strconv.FormatFloat(float64(r.Rate)/1000, 'f', -1, 64), f1(r.MHz), grouped(int64(r.RAMBytes)), f1(r.FlashKB)))
+	}
+	b.WriteString("\n" + d.m7.Source + "\n\n")
 }
 
 func loadJSON(path string, v any) error {
