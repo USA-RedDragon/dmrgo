@@ -236,10 +236,12 @@ func (r *Receiver) State() State {
 // such as after a Tier III grant, or a network stream that starts without
 // a header. The first voice burst then starts the call with
 // OriginExpected. A header or embedded LC with the same addresses that
-// comes later sets Call.LC without an event, and one with other addresses
-// ends the call and starts a new one.
+// comes later sets Call.LC without an event, and one with other valid
+// addresses ends the call and starts a new one. Expect ignores a c whose
+// Target or Source is ADRNULL (0), which is not a valid address (ETSI TS
+// 102 361-1 Annex A, table A.1), and keeps the expected call it had.
 func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
-	if r == nil || r.b == nil {
+	if r == nil || r.b == nil || !c.addressed() {
 		return
 	}
 

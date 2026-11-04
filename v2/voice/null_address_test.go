@@ -2,6 +2,7 @@ package voice_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -98,6 +99,28 @@ func TestReceiver_EdgeAddressesStartCalls(t *testing.T) {
 			if len(starts) != 1 || starts[0].Call.Target != p.target || starts[0].Call.Source != p.source {
 				t.Errorf("%06X from %06X, from %d: starts %+v", p.target, p.source, from, starts)
 			}
+		}
+	}
+}
+
+func TestReceiver_ExpectNullAddress(t *testing.T) {
+	t.Parallel()
+
+	bursts := transmission(t, groupLC(t, 91, 1001), 1, nil)
+	for _, p := range nullParties {
+		rx := newReceiver(t, nil)
+		rx.Expect(0, voice.Call{Group: true, Target: p.target, Source: p.source}, time.Second)
+		got := feed(t, rx, timed(bursts[1:3], 0, layer2.Hint{}), -1)
+		if k := kinds(got); k != "VV" || got[0].Call.Origin != voice.OriginUnknown {
+			t.Errorf("%s: events %s, call %+v", p.name, k, got[0].Call)
+		}
+
+		rx = newReceiver(t, nil)
+		rx.Expect(0, voice.Call{Group: true, Target: 91, Source: 1001}, time.Second)
+		rx.Expect(0, voice.Call{Group: true, Target: p.target, Source: p.source}, time.Second)
+		got = feed(t, rx, timed(bursts[1:3], 0, layer2.Hint{}), -1)
+		if len(got) == 0 || got[0].Kind != voice.EventCallStart || got[0].Call.Origin != voice.OriginExpected || got[0].Call.Target != 91 {
+			t.Errorf("%s after a valid Expect: events %s", p.name, kinds(got))
 		}
 	}
 }

@@ -444,7 +444,7 @@ func TestReceiver_Fuzz(t *testing.T) {
 		case 1:
 			out = rx.Tick(now, out[:0])
 		case 2:
-			rx.Expect(now, voice.Call{Target: uint32(r.Intn(3))}, now+time.Duration(r.Intn(500))*time.Millisecond)
+			rx.Expect(now, voice.Call{Target: uint32(1 + r.Intn(3)), Source: 1}, now+time.Duration(r.Intn(500))*time.Millisecond)
 			continue
 		default:
 			out = rx.Burst(now, &raw, h, out[:0])
