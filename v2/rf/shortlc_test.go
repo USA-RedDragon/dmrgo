@@ -240,17 +240,25 @@ func TestShortLCConfig(t *testing.T) {
 	}
 	for tier := Tier0; tier <= Tier3; tier++ {
 		r, err := NewReceiver(&RxConfig{Tier: tier, OnShortLC: on})
-		if err != nil || r.sink.slc == nil || (r.sink.slc.soft != nil) != (tier != Tier0) {
+		if err != nil || !slcHooked(r.core(), tier) {
 			t.Errorf("NewReceiver %v: %v", tier, err)
 		}
 		ar, err := NewAudioReceiver(&AudioRxConfig{Tier: tier, OnShortLC: on})
-		if err != nil || ar.bursts.slc == nil || (ar.bursts.slc.soft != nil) != (tier != Tier0) {
+		if err != nil || !slcHooked(&ar.leanCore, tier) {
 			t.Errorf("NewAudioReceiver %v: %v", tier, err)
 		}
 	}
-	if r, _ := NewReceiver(nil); r.sink.slc != nil {
+	if r, _ := NewReceiver(nil); r.core().onBurst != nil {
 		t.Error("NewReceiver(nil) set up a Short LC output")
 	}
+}
+
+func slcHooked(c *leanCore, t Tier) bool {
+	x, _ := c.ext.(*softExt)
+	if t == Tier0 {
+		return c.onBurst != nil && x == nil
+	}
+	return x != nil && x.slc != nil && x.slc.soft != nil
 }
 
 func TestShortLCBurstsSame(t *testing.T) {
@@ -457,11 +465,7 @@ func TestShortLCTierCost(t *testing.T) {
 		{Tier1, true, 100, true}, {Tier2, true, 100, true}, {Tier3, false, 100, true},
 		{Tier3, true, 100, false}, {Tier3, true, 40, true}, {Tier1, true, 160, false},
 	} {
-		var s burstSink
-		if err := s.attachShortLC(func([]ShortLC) {}, tc.tier, tc.iq, nil); err != nil {
-			t.Fatal(err)
-		}
-		o := s.slc
+		o := newShortLCOut(func([]ShortLC) {}, tc.tier, tc.iq)
 		info := softShortLCInfoBits(rng)
 		cach, _ := softCACH(t, rng, info)
 		flipped := map[int]bool{}

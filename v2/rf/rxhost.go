@@ -51,10 +51,15 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.sink.out = make([]Burst, 0, n)
 	}
-	if err := r.sink.attachShortLC(cfg.OnShortLC, cfg.Tier, true, errRxShortLC); err != nil {
-		return nil, err
-	}
+	r.core().hookShortLC(newShortLCOut(cfg.OnShortLC, cfg.Tier, true))
 	return r, nil
+}
+
+func (r *Receiver) core() *leanCore {
+	if h, ok := r.full.(*rxHost); ok && h.lean != nil {
+		return &h.lean.leanCore
+	}
+	return &r.low.d.leanCore
 }
 
 func (r *rxHost) build(s rxSetup, opt options) {

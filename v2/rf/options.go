@@ -12,7 +12,8 @@ type Tier int
 // levels and carrier offset.
 const (
 	// TierDefault is the zero value: Tier1 for NewReceiver and
-	// NewAudioReceiver, and Tier0 for Init and under TinyGo.
+	// NewAudioReceiver, and Tier0 for Init and for the constructors
+	// under TinyGo.
 	TierDefault Tier = iota
 	// Tier0 slices the output of an FM discriminator and its matched
 	// filter. On I/Q from 48 kHz an FM discriminator at 12 kHz comes before

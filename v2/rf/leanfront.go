@@ -209,6 +209,7 @@ func newLean(cfg rxSetup, opt options) *leanRx {
 	}
 	if opt.SoftExt {
 		r.ext = softExtOf(&opt, float32(discSPS)/2)
+		setExtOn()
 	}
 	return r
 }

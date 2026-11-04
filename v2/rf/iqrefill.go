@@ -1,5 +1,3 @@
-//go:build !tinygo
-
 package rf
 
 import "math"
@@ -83,14 +81,14 @@ func (r *iqRx) settleCoh() {
 	r.tuneLean(d, r.d.f.dc-d*r.d.f.gain*iqUnitsPerHz)
 }
 
-func (r *iqRx) unsettled() float32 {
+func (r *iqRx) unsettledExt() float32 {
 	if f := r.refill; f != nil && f.settle {
 		return f.settleHz
 	}
 	return 0
 }
 
-func (r *iqRx) noteOut() {
+func (r *iqRx) noteOutExt() {
 	if f := r.refill; f != nil {
 		f.out = f.n
 	}
@@ -130,21 +128,22 @@ func (r *iqRx) refillCoh(hz float64) {
 		s, c := math.Sincos(w * float64(f.n-i))
 		f.mixed[i-i0] = complex128(f.wide[i%int64(len(f.wide))]) * rot * complex(c, s)
 	}
-	fir := func(taps []float32, e int64) complex64 {
-		var y complex128
-		for j, t := range taps {
-			y += complex(float64(t), 0) * f.mixed[e-int64(len(taps)-1-j)-i0]
-		}
-		return complex64(y)
-	}
 	for k := k0; k < r.yN; k++ {
 		e := f.out - 1 - per*(r.yN-1-k)
-		r.yHist[k&int64(len(r.yHist)-1)] = fir(main, e)
-		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = fir(coh, e)
+		r.yHist[k&int64(len(r.yHist)-1)] = f.fir(main, e-i0)
+		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = f.fir(coh, e-i0)
 	}
 }
 
-func (r *iqRx) keepRaw(v complex64) {
+func (f *iqRefill) fir(taps []float32, e int64) complex64 {
+	var y complex128
+	for j, t := range taps {
+		y += complex(float64(t), 0) * f.mixed[e-int64(len(taps)-1-j)]
+	}
+	return complex64(y)
+}
+
+func (r *iqRx) keepRawExt(v complex64) {
 	f := r.refill
 	switch {
 	case r.d.locked && !r.d.hunt:
@@ -164,7 +163,7 @@ func (r *iqRx) keepRaw(v complex64) {
 	f.n++
 }
 
-func (r *iqRx) noteTune(hz float32) {
+func (r *iqRx) noteTuneExt(hz float32) {
 	if f := r.refill; f != nil && !r.d.locked {
 		if f.tuned < 0 {
 			f.hz0 = r.conv.hz - hz
@@ -329,7 +328,7 @@ func (r *iqRx) toWide() {
 	f.narrowOn = false
 }
 
-func (r *iqRx) endNarrow() bool {
+func (r *iqRx) endNarrowExt() bool {
 	if f := r.refill; f != nil && f.narrowOn {
 		r.toWide()
 		return true
@@ -337,7 +336,7 @@ func (r *iqRx) endNarrow() bool {
 	return false
 }
 
-func (r *iqRx) writeAudio() {
+func (r *iqRx) writeAudioExt() {
 	x := r.audio
 	f := r.refill
 	for len(x) > 0 {

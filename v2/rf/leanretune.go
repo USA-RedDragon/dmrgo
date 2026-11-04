@@ -1,5 +1,3 @@
-//go:build !tinygo
-
 package rf
 
 import "github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -11,7 +9,7 @@ type lockRetune struct {
 	verified bool
 }
 
-func (r *leanCore) dueLock() bool { return r.lockDue }
+func (r *leanCore) dueLock() bool { return r.hasExt() && r.lockDue }
 
 func (r *leanCore) wantRetune(p enums.SyncPattern, src int, verified bool) bool {
 	return !r.locked && r.hasExt() && r.ext.lockTune(r, p, src, verified)

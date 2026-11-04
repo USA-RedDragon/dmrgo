@@ -9,7 +9,8 @@ import (
 // RxConfig sets up a Receiver.
 type RxConfig struct {
 	// Tier selects the detection. The zero value TierDefault is Tier1 for
-	// NewReceiver, and Tier0 for Init and under TinyGo.
+	// NewReceiver, and Tier0 for Init and for NewReceiver under TinyGo.
+	// Under TinyGo too, NewReceiver takes every tier.
 	Tier Tier
 	// Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier0 to
 	// Tier3 take a Rate from 48000 to 1e9, and Tier0 and Tier1 also one
@@ -48,7 +49,7 @@ type RxConfig struct {
 	// slice of AppendBursts. It decodes the fragments of the Decoded CACH
 	// as layer2.ShortLCAssembler does, and from Tier1 up decodes those
 	// that fail again from their soft values. Tier0 gives the hard
-	// decode only. Init and TinyGo builds take no OnShortLC and return a
+	// decode only. Init takes no OnShortLC and returns a
 	// *dmrgo.ConfigError for it.
 	OnShortLC func([]ShortLC)
 }

@@ -4,30 +4,34 @@ package rf
 
 const discDefaultTier = Tier0
 
-func (r *discRx) addSoft(*options) error {
-	return errAudioTier
+func (r *discRx) addSoft(opt *options) error {
+	r.addExt(opt)
+	return nil
 }
 
-func (r *discRx) attachFix(bool) {}
+func (r *discRx) writeIQ(x []int16) {
+	if r.hasExt() {
+		r.write(x)
+		return
+	}
+	r.runN(x)
+}
 
-func (r *discRx) fixLag() float64 { return 0 }
+var extRx bool //nolint:gochecknoglobals // set where a receiver attaches its soft stages, so builds without one drop them
 
-func (r *discRx) write(x []int16) { r.run(x) }
+func setExtOn() { extRx = true }
 
-func (r *discRx) writeIQ(x []int16) { r.runN(x) }
+func (r *leanCore) hasExt() bool { return extRx && r.ext != nil }
 
-func (r *discRx) inputHz() int { return r.hz() }
+func (r *leanCore) isReplaying() bool { return r.hasExt() && r.replaying }
 
-func (r *leanCore) hasExt() bool { return false }
+func (r *leanCore) isReplayDry() bool { return r.hasExt() && r.replayDry }
 
-func (r *leanCore) isReplaying() bool { return false }
-
-func (r *leanCore) isReplayDry() bool { return false }
-
-type acStage struct{}
-
-func (r *leanCore) cohVerify() bool { return false }
-
-func (r *leanCore) earlyOK(b *Burst) bool { return r.fecOK && b.HasFixed }
+func (r *leanCore) earlyOK(b *Burst) bool {
+	if r.hasExt() {
+		return checkedData(b)
+	}
+	return r.fecOK && b.HasFixed
+}
 
 func (r *leanCore) vouched(b *Burst) bool { return b.Voice != 0 || r.earlyOK(b) }

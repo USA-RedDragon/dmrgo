@@ -14,9 +14,11 @@ var ErrNotSetUp = errors.New("rf: not set up; make it with its constructor or In
 // AudioRxConfig sets up an AudioReceiver.
 type AudioRxConfig struct {
 	// Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is
-	// Tier1 for NewAudioReceiver, and Tier0 for Init, which does not
-	// allocate the stages of the higher tiers, and under TinyGo, which has
-	// neither. Tier2 detects the bursts again coherently, on the carrier
+	// Tier1 for NewAudioReceiver, Tier0 for it under TinyGo, and Tier0 for
+	// Init, which does not allocate the stages of the higher tiers. Under
+	// TinyGo too, NewAudioReceiver takes every tier and allocates its
+	// stages once, and a program that calls only Init links none of them.
+	// Tier2 detects the bursts again coherently, on the carrier
 	// phase that it rebuilds from the samples, at about 5 times the CPU
 	// time of Tier1. Tier3 detects the bursts of Tier2 again over 52
 	// carrier phases with no compute budget and makes four passes over
@@ -28,10 +30,10 @@ type AudioRxConfig struct {
 	// receiver runs at 48000, as sound cards sample, 24000, as MMDVM modems
 	// sample, 12000 or 9600: at Rate when it is one of them, else at the
 	// lowest of them at or above Rate, or 48000 above 48000, through a
-	// resampler. Tier0, also under TinyGo, resamples in fixed point with
-	// a table in flash. A lower rate costs less: the receiver halves 48 kHz
-	// and then 24 kHz with a half-band filter before its matched filter,
-	// which runs at 12 kHz or 9.6 kHz.
+	// resampler. Tier0 resamples in fixed point with a table in flash. A
+	// lower rate costs less: the receiver halves 48 kHz and then 24 kHz
+	// with a half-band filter before its matched filter, which runs at 12
+	// kHz or 9.6 kHz.
 	Rate int
 	// Bits is the resolution of the converter, from 8 to 16. 0 means 16.
 	// Each sample holds one code of Bits bits in its low bits.
@@ -63,7 +65,7 @@ type AudioRxConfig struct {
 	// slice of AppendBursts. It decodes the fragments of the Decoded CACH
 	// as layer2.ShortLCAssembler does, and from Tier1 up decodes those
 	// that fail again from their soft values. Tier0 gives the hard
-	// decode only. Init and TinyGo builds take no OnShortLC and return a
+	// decode only. Init takes no OnShortLC and returns a
 	// *dmrgo.ConfigError for it.
 	OnShortLC func([]ShortLC)
 }
@@ -72,7 +74,7 @@ type AudioRxConfig struct {
 // discriminator, as the radio chips of hotspots and MMDVM modems give it:
 // real samples in any units, with any gain and DC offset, which the
 // receiver measures itself. It takes audio of either polarity. Above
-// Tier0, an AudioReceiver from NewAudioReceiver outside TinyGo also takes
+// Tier0, an AudioReceiver from NewAudioReceiver also takes
 // audio that a high-pass filter cut below about 300 Hz, as the speaker
 // output of a scanner gives it. With AudioRxConfig.PreEmphasis, every tier
 // also takes the de-emphasized audio of the speaker or accessory output of
@@ -86,11 +88,10 @@ type AudioRxConfig struct {
 // after Init or NewAudioReceiver.
 type AudioReceiver struct {
 	discRx
-	d48    disc48
-	rs0    rate0
-	bursts burstSink
-	pe     *RxPreEmphasis
-	audioRate
+	d48      disc48
+	rs0      rate0
+	bursts   burstSink
+	pe       *RxPreEmphasis
 	rate     int32
 	bits     uint8
 	unsigned bool
@@ -134,18 +135,19 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	}
 	r := &AudioReceiver{}
 	r.configure(cfg, &opt)
-	r.designResample(cfg.Tier)
-	if o == nil && opt.SoftExt {
+	soft := o == nil && opt.SoftExt
+	if soft {
 		if err := r.addSoft(&opt); err != nil {
 			return nil, err
 		}
+		r.designResample(cfg.Tier)
+	}
+	r.hookShortLC(newShortLCOut(cfg.OnShortLC, cfg.Tier, false))
+	if soft {
 		r.attachFix(cfg.Tier != Tier0)
 	}
 	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.bursts.out = make([]Burst, 0, n)
-	}
-	if err := r.bursts.attachShortLC(cfg.OnShortLC, cfg.Tier, false, errAudioShortLC); err != nil {
-		return nil, err
 	}
 	return r, nil
 }

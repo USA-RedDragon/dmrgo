@@ -1,5 +1,3 @@
-//go:build !tinygo
-
 package rf
 
 import (
@@ -8,13 +6,24 @@ import (
 )
 
 type audioRate struct {
-	rs   resample.Real
-	rsOn bool
+	rs resample.Real
 }
 
-func (a *audioRate) resampling() bool { return a.rsOn }
+func (r *AudioReceiver) floatRate() *audioRate {
+	if x, ok := r.ext.(*softExt); ok && r.hasExt() {
+		return x.rs
+	}
+	return nil
+}
 
-func (a *audioRate) resampleTaps() int { return a.rs.Taps() }
+func (r *AudioReceiver) resampling() bool { return r.floatRate() != nil }
+
+func (r *AudioReceiver) resampleTaps() int {
+	if a := r.floatRate(); a != nil {
+		return a.rs.Taps()
+	}
+	return 0
+}
 
 type audioDesign struct {
 	taps, phases int
@@ -43,7 +52,8 @@ func audioRateOK(rate int, t Tier) bool {
 }
 
 func (r *AudioReceiver) designResample(t Tier) {
-	if !r.rs0.on() || t <= Tier0 {
+	x, ok := r.ext.(*softExt)
+	if !ok || !r.hasExt() || !r.rs0.on() || t <= Tier0 {
 		return
 	}
 	step := float64(r.rate) / float64(audioNative(int(r.rate)))
@@ -54,16 +64,25 @@ func (r *AudioReceiver) designResample(t Tier) {
 	}
 	h := make([]float32, rows*d.taps)
 	resample.Design(h, d.taps, d.phases, audioUpCut*fmath.Min(1, 1/step), audioUpBeta)
-	r.rsOn = r.rs.Init(h, d.taps, d.phases, d.lerp, step, make([]int16, d.taps))
+	a := &audioRate{}
+	if !a.rs.Init(h, d.taps, d.phases, d.lerp, step, make([]int16, d.taps)) {
+		return
+	}
+	x.rs = a
 	r.rs0 = rate0{}
 }
 
 func (r *AudioReceiver) resampled(x []int16) {
 	var buf [32]int16
 	m := 0
-	most := r.rs.MaxOut()
+	a := r.floatRate()
+	if a == nil {
+		r.input(x)
+		return
+	}
+	most := a.rs.MaxOut()
 	for _, v := range x {
-		m += r.rs.Push(v, buf[m:])
+		m += a.rs.Push(v, buf[m:])
 		if m+most > len(buf) {
 			r.input(buf[:m])
 			m = 0

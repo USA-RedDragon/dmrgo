@@ -144,6 +144,7 @@ func (j *sweepJob) newRx(cfg RxConfig, o *options) sweepRx {
 			if err := d.addSoft(o); err != nil {
 				panic(err)
 			}
+			d.designResample(c.Tier)
 			d.attachFix(c.Tier != Tier0)
 		}
 		return sweepRx{d: d}

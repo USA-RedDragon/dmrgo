@@ -1,5 +1,3 @@
-//go:build !tinygo
-
 package rf
 
 const (
@@ -15,6 +13,10 @@ type iqPower struct {
 	n    int64
 	rate float64
 	lag  float64
+}
+
+func newIQPower(hz int, lag float64) *iqPower {
+	return &iqPower{per: max(hz*iqPowerUs/1000000, 1), rate: float64(hz), lag: lag}
 }
 
 func (p *iqPower) push(y complex64) {

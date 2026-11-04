@@ -1,5 +1,3 @@
-//go:build !tinygo
-
 package rf
 
 import (
@@ -40,11 +38,7 @@ type shortLCOut struct {
 	cost   int64
 }
 
-type slcHook struct {
-	slc *shortLCOut
-}
-
-func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, iq bool, _ error) error {
+func newShortLCOut(on func([]ShortLC), t Tier, iq bool) *shortLCOut {
 	if on == nil {
 		return nil
 	}
@@ -57,15 +51,43 @@ func (s *burstSink) attachShortLC(on func([]ShortLC), t Tier, iq bool, _ error) 
 		o.soft.OSDOrder, o.soft.OSDWindow, o.soft.ShortLCList = 2, 0, 2
 		o.notes = make([]slcNote, slcNotes)
 	}
-	s.slc = o
-	return nil
+	return o
 }
 
-func (s *burstSink) noted() *slcNote {
-	if s == nil || s.slc == nil || s.slc.notes == nil {
+func (r *leanCore) hookShortLC(o *shortLCOut) {
+	if o == nil {
+		return
+	}
+	if x, ok := r.ext.(*softExt); ok {
+		x.slc = o
+	}
+	next := r.onBurst
+	if next == nil {
+		next = r.sink.put
+	}
+	r.onBurst = (&slcOut{o: o, next: next}).put
+}
+
+type slcOut struct {
+	o    *shortLCOut
+	next func(*Burst)
+}
+
+func (s *slcOut) put(b *Burst) {
+	s.o.put(b)
+	s.next(b)
+}
+
+func (r *leanCore) noteShortLC(b *Burst) {
+	if x, ok := r.ext.(*softExt); ok && r.hasExt() && x.slc != nil {
+		x.slc.noteLean(r, b)
+	}
+}
+
+func (o *shortLCOut) noted() *slcNote {
+	if o.notes == nil {
 		return nil
 	}
-	o := s.slc
 	n := &o.notes[o.head]
 	if o.head++; o.head == len(o.notes) {
 		o.head = 0
@@ -74,8 +96,8 @@ func (s *burstSink) noted() *slcNote {
 	return n
 }
 
-func (s *burstSink) noteLean(r *leanCore, b *Burst) {
-	n := s.noted()
+func (o *shortLCOut) noteLean(r *leanCore, b *Burst) {
+	n := o.noted()
 	if n == nil {
 		return
 	}
@@ -85,15 +107,9 @@ func (s *burstSink) noteLean(r *leanCore, b *Burst) {
 	}
 }
 
-func (s *burstSink) noteCoh(seconds float64, cach [3]byte, llr *[layer2.CACHBits]int16) {
-	if n := s.noted(); n != nil {
+func (o *shortLCOut) noteCoh(seconds float64, cach [3]byte, llr *[layer2.CACHBits]int16) {
+	if n := o.noted(); n != nil {
 		n.seconds, n.cach, n.llr, n.coh = seconds, cach, *llr, true
-	}
-}
-
-func (s *burstSink) seeShortLC(b *Burst) {
-	if s.slc != nil {
-		s.slc.put(b)
 	}
 }
 

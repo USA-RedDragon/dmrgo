@@ -108,6 +108,9 @@ type softExt struct {
 	acq             []int16
 	refill          func(*leanCore, int64)
 	rt              lockRetune
+	pow             *iqPower //nolint:unused // the I/Q power of the soft stages under TinyGo
+	rs              *audioRate
+	slc             *shortLCOut
 	refillCoh       func(float64)
 	settleCoh       func()
 	lookback        int
@@ -275,7 +278,9 @@ func (x *softExt) cohCACH(c *leanCore, b *Burst) {
 	b.CACH, b.FixedCACH = hard, hard
 	_, cw, _ := decodeGathered(f, softTACTCode, tact, 0, 0)
 	putTACT(b, cw)
-	c.sink.noteCoh(b.Seconds, b.CACH, &x.cachLLR)
+	if x.slc != nil {
+		x.slc.noteCoh(b.Seconds, b.CACH, &x.cachLLR)
+	}
 }
 
 func (x *softExt) checkedData(c *leanCore, b *Burst) {

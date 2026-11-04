@@ -459,8 +459,6 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.d.sink = cfg.sink
 	r.devTab = devTabOf(&opt)
 	r.d.lagTicks += r.conv.lagTicks()
-	r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())))
-	r.d.setPower(r.pow)
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
@@ -474,7 +472,12 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 			r.d.signMiss = opt.signMiss()
 		}
 		r.d.ext = x
+		setExtOn()
 		r.attachRefill(x)
+	}
+	if wantPower(&opt) {
+		r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())))
+		r.d.setPower(r.pow)
 	}
 	if r.spec != nil {
 		r.spec.fast = !opt.SoftExt || !opt.CohExt

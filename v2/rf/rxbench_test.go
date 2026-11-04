@@ -778,7 +778,7 @@ func poissonUpper95(n int) float64 {
 func receiverRAM(e benchEntry) int {
 	switch {
 	case e.mode == benchAudio && e.tier == Tier0:
-		return int(unsafe.Sizeof(AudioReceiver{}) - unsafe.Sizeof(audioRate{}))
+		return int(unsafe.Sizeof(AudioReceiver{}))
 	case e.mode == benchIQLow:
 		return int(unsafe.Sizeof(Receiver{}))
 	}
