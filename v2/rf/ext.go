@@ -27,6 +27,7 @@ type leanExt interface {
 	anchorProves(end int64) bool
 	replayLock(j int32, b *Burst)
 	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
+	replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool)
 	lockFit(c *leanCore, sym, t int64, q float32)
 	syncFit(c *leanCore, sym, t int64, q, w float32)
 	liveFit(c *leanCore, sym, t int64, q, w float32)
@@ -1145,6 +1146,29 @@ func (x *softExt) replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) boo
 	}
 	voice, _, _ := sourceAt(int(c.src)).SyncPatterns()
 	return x.replayP == voice && d%int32(2*(enums.VoiceBurstF-enums.VoiceBurstA+1)) == 2*int32(enums.VoiceBurstF-pos+1)
+}
+
+// replayPos gives the voice position of a replayed burst in the slot
+// parity of a lock on the stream's data SYNC, as the voice terminator that
+// follows burst F has: burst F two slots before it, back to burst B ten slots
+// before it. The burst counts only when its EMB carries the stream's color
+// code and the LCSS of that position (ETSI TS 102 361-1 clause 7.1.3), with
+// at most one corrected bit, so the slots before a data lock that is not a
+// terminator take no position.
+func (x *softExt) replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool) {
+	_, data, _ := sourceAt(int(c.src)).SyncPatterns()
+	d := x.replayN - j
+	if c.replayDry || x.replayP != data || d&1 != 0 || d < 2 || d > 2*int32(enums.VoiceBurstF-enums.VoiceBurstB+1) {
+		return 0, false
+	}
+	pos := enums.VoiceBurstF - enums.VoiceBurstType(d/2-1)
+	want, _ := pos.LCSS()
+	cc, ok := c.colorCode()
+	emb := embOf(&b.Data)
+	if !ok || emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected > 1 || emb.ColorCode != cc || emb.LCSS != want {
+		return 0, false
+	}
+	return pos, true
 }
 
 func replayFlat(c *leanCore, base int64) bool {

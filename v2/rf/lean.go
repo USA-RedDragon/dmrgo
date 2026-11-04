@@ -2944,7 +2944,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		c.sf, c.data = j, false
 		return true
 	}
-	if pos, ok := r.embPosition(b); ok && !c.data && (!r.isReplaying() || r.ext.replayFits(r, j, pos)) {
+	if pos, ok := r.voicePosition(b, j, c); ok {
 		b.Voice = pos
 		c.sf = j - 2*int32(pos-enums.VoiceBurstA)
 		return true
@@ -2975,6 +2975,19 @@ func (r *leanCore) dataSync(b *Burst) bool {
 	}
 	b.Distance, b.Sync = dd, data
 	return true
+}
+
+func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBurstType, bool) {
+	if c.data {
+		return 0, false
+	}
+	if r.isReplaying() {
+		if pos, ok := r.ext.replayPos(r, j, b); ok {
+			return pos, true
+		}
+	}
+	pos, ok := r.embPosition(b)
+	return pos, ok && (!r.isReplaying() || r.ext.replayFits(r, j, pos))
 }
 
 func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
