@@ -1305,7 +1305,7 @@ func (r *leanCore) held(d float32, src int, data bool, p enums.SyncPattern) bool
 
 func (r *leanCore) fitOK(end int64, p enums.SyncPattern) bool {
 	g, _, res := r.fitSync(end, p)
-	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz
+	return tightSync(g, res)
 }
 
 //go:noinline
@@ -1899,30 +1899,29 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) bool {
 	g, dc, res := r.fitSync(end, p)
 	r.stepHold = false
-	if first && check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
+	if first && check && !tightSync(g, res) {
 		return false
 	}
 	var step float32
 	if !first && g > 0 {
-		old := r.syncRes(end, p, r.devScale, r.dcHz)
 		se := sqrtf(res/(syncSymbols-2)/9) / deviationHz
-		z := (g - r.devScale) / max(se, 1e-6)
+		z := (g - r.devScale) / max32(se, 1e-6)
 		jump := abs32(z) > levelJumpZ
 		twice := jump && r.jumpZ*z > 0
 		r.jumpZ = 0
 		if jump && !twice {
 			r.jumpZ = z
 		}
-		if first = old > levelRefit*max(res, levelRefitFloor) || twice; first {
+		if first = twice || r.heldOff(end, p, res); first {
 			r.preDev, r.preOff, r.preStep = r.devScale, r.off-r.dcHz, !r.isReplaying()
-			k := max(g, leanMinScale) / r.devScale
-			gk := max(g, leanMinScale) * deviationHz
+			k := max32(g, leanMinScale) / r.devScale
+			gk := max32(g, leanMinScale) * deviationHz
 			r.tm.pow = 5*gk*gk + res
 			step = k
 		}
 	}
 	if first {
-		g = max(g, leanMinScale)
+		g = max32(g, leanMinScale)
 		r.devScale, r.dcHz, r.discVar, r.refit = g, dc, res, false
 		if a := r.audio; a != nil {
 			t := r.tuneHz
@@ -2421,7 +2420,15 @@ func (r *leanCore) shift(d float32) {
 
 func (r *leanCore) stepped(end int64, p enums.SyncPattern) bool {
 	g, dc, res := r.fitSync(end, p)
-	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz && r.syncRes(end, p, r.devScale, r.dcHz) > levelRefit*max(res, levelRefitFloor) && r.syncErrors(end, p, g, dc) <= discAnchorBits
+	return tightSync(g, res) && r.heldOff(end, p, res) && r.syncErrors(end, p, g, dc) <= discAnchorBits
+}
+
+func tightSync(g, res float32) bool {
+	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz
+}
+
+func (r *leanCore) heldOff(end int64, p enums.SyncPattern, res float32) bool {
+	return r.syncRes(end, p, r.devScale, r.dcHz) > levelRefit*max32(res, levelRefitFloor)
 }
 
 //go:noinline

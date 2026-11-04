@@ -71,6 +71,8 @@ func (r *discRx) writeN(x []int16) int {
 	return r.runN(x)
 }
 
+func (r *discRx) writeIQ(x []int16) { r.write(x) }
+
 func (r *discRx) writeCore(x []int16) {
 	e, _ := r.ext.(*softExt)
 	if e == nil || e.ph == nil {

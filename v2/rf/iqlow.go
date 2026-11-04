@@ -117,7 +117,7 @@ func (r *iqLowRx) run(x []uint32) {
 		r.n += uint8(m)
 		r.afcN += int16(m)
 		if r.n == iqLowBuf || int(r.afcN) == block {
-			r.d.write(r.buf[:r.n])
+			r.d.writeIQ(r.buf[:r.n])
 			r.n = 0
 		}
 		if int(r.afcN) == block {
@@ -252,8 +252,8 @@ func (r *iqLowRx) tune(hz, dc float32) {
 
 func (r *iqLowRx) flush() {
 	if !r.d.iqLow || !r.d.front96 {
-		r.d.write(r.buf[:r.n])
+		r.d.writeIQ(r.buf[:r.n])
 	}
 	r.n = 0
-	r.d.flush()
+	r.d.flushIQ()
 }

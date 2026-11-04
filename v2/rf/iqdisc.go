@@ -700,7 +700,7 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 
 func (r *iqRx) flush() {
 	r.writeAudio()
-	r.d.flush()
+	r.d.flushIQ()
 }
 
 func zeroRunOf(v complex64, n int) int {

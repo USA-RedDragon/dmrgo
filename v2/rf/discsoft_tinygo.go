@@ -14,6 +14,8 @@ func (r *discRx) fixLag() float64 { return 0 }
 
 func (r *discRx) write(x []int16) { r.run(x) }
 
+func (r *discRx) writeIQ(x []int16) { r.runN(x) }
+
 func (r *discRx) inputHz() int { return r.hz() }
 
 func (r *leanCore) hasExt() bool { return false }

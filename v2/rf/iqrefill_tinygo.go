@@ -15,6 +15,6 @@ func (r *iqRx) noteOut() {}
 func (r *iqRx) unsettled() float32 { return 0 }
 
 func (r *iqRx) writeAudio() {
-	r.d.write(r.audio)
+	r.d.writeIQ(r.audio)
 	r.audio = r.audio[:0]
 }

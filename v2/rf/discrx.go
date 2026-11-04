@@ -114,15 +114,30 @@ func (r *discRx) flushBursts() int {
 
 func (r *discRx) flush() {
 	var idle [16]int16
-	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
-	for i := range idle {
-		idle[i] = v
-	}
+	r.idle(&idle)
 	for range slotSymbols * discSPS &^ 63 / len(idle) {
 		r.write(idle[:])
 	}
 	if r.locked {
 		r.unlock()
+	}
+}
+
+func (r *discRx) flushIQ() {
+	var idle [16]int16
+	r.idle(&idle)
+	for range slotSymbols * discSPS &^ 63 / len(idle) {
+		r.writeIQ(idle[:])
+	}
+	if r.locked {
+		r.unlock()
+	}
+}
+
+func (r *discRx) idle(idle *[16]int16) {
+	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
+	for i := range idle {
+		idle[i] = v
 	}
 }
 
@@ -164,7 +179,7 @@ func (r *discRx) warm(x []int16) int {
 		f.nHeld = 0
 		return n
 	}
-	m, v := (m0+m1)/2, max(v0, v1)
+	m, v := (m0+m1)/2, max32(v0, v1)
 	if v0 > discEdgeRatio*v1 {
 		m = m0
 	}
@@ -178,19 +193,18 @@ func (r *discRx) warm(x []int16) int {
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
 		r.retune(d)
 	}
+	var q int8
 	if f.ran {
-		q := sat8((f.quiet*f.gain - f.dc) / rrcStepHz)
-		for i := range f.rrcHist {
-			f.rrcHist[i] = q
-		}
-		for i := range f.hbHist {
-			f.hbHist[i] = q
-		}
+		q = sat8((f.quiet*f.gain - f.dc) / rrcStepHz)
 	} else {
-		clear(f.rrcHist[:])
-		clear(f.hbHist[:])
 		tm := &r.tm
 		tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.last, tm.half = 0, 0, 0, 0, 0, 0, 0, 0
+	}
+	for i := range f.rrcHist {
+		f.rrcHist[i] = q
+	}
+	for i := range f.hbHist {
+		f.hbHist[i] = q
 	}
 	r.runN(held)
 	return n
@@ -794,7 +808,7 @@ func sq32(x int64) float32 {
 func (r *leanCore) scaleAudio(g float32) float32 {
 	f := r.audio
 	if g > 0 {
-		if g = min(g, audioMaxGain/abs32(f.gain)); abs32(g-1) < 1e-6 {
+		if g = min32(g, audioMaxGain/abs32(f.gain)); abs32(g-1) < 1e-6 {
 			return 1
 		}
 	}
