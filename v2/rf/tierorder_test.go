@@ -106,17 +106,6 @@ func tierOrderPayloads() []string {
 	return []string{"ambe_c0c1", "ambe", "rate12", "rate34", "csbk", "lc", "elc"}
 }
 
-// tierOrderMessage gives the text of the data calls of payload draw d: 16
-// letters and spaces from a fixed generator, so every run takes the same set.
-func tierOrderMessage(d uint64) string {
-	rng := rand.New(rand.NewPCG(0x7071, d))
-	b := make([]byte, 16)
-	for i := range b {
-		b[i] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "[rng.IntN(27)]
-	}
-	return string(b)
-}
-
 // TestTierOrder checks that no tier recovers fewer bursts than the tier below
 // it. Recovery varies with the payload as much as with the noise, so each
 // scenario runs over a fixed set of payload draws, each at every C/N with its
@@ -145,7 +134,7 @@ func TestTierOrder(t *testing.T) {
 	}
 	var streams []stream
 	for d := range draws {
-		msg := tierOrderMessage(d)
+		msg := benchMessage(d)
 		slots, bsTruth := benchStreamMsg(t, 6, msg)
 		fm, env, msTruth := msStreamMsg(t, 3, 0, msg)
 		jfm, jenv, jTruth := msStreamMsg(t, 3, 0.37, msg)

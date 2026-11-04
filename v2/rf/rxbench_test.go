@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	mbits "math/bits"
+	"math/rand/v2"
 	"os"
 	"reflect"
 	"runtime"
@@ -48,7 +49,23 @@ func benchStream(t testing.TB, n int) ([]rftx.BSSlot, []benchSlot) {
 // its data calls.
 func benchStreamMsg(t testing.TB, n int, msg string) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Message: msg, Superframes: n, BSSourced: true, Slot: 1, Preambles: 2}
+	return benchStreamOf(t, rftx.SeqConfig{Source: 3191868, BS: 314926, Message: msg}, 3140598, n)
+}
+
+// benchMessage gives the text of the data calls of payload draw d: 16
+// letters and spaces from a fixed generator, so every run takes the same set.
+func benchMessage(d uint64) string {
+	rng := rand.New(rand.NewPCG(0x7071, d))
+	b := make([]byte, 16)
+	for i := range b {
+		b[i] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "[rng.IntN(27)]
+	}
+	return string(b)
+}
+
+func benchStreamOf(t testing.TB, ids rftx.SeqConfig, dest uint32, n int) ([]rftx.BSSlot, []benchSlot) {
+	t.Helper()
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: ids.Source, Dest: 9, BS: ids.BS, Group: true, Wakeups: 1, Message: ids.Message, Superframes: n, BSSourced: true, Slot: 1, Preambles: 2}
 	voice, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -58,7 +75,7 @@ func benchStreamMsg(t testing.TB, n int, msg string) ([]rftx.BSSlot, []benchSlot
 	for len(data) < len(slots)/2+1 {
 		for _, seq := range []string{"data12", "data34", "data1", "preamble"} {
 			c := cfg
-			c.Slot, c.Group, c.Dest = 0, false, 3140598
+			c.Slot, c.Group, c.Dest = 0, false, dest
 			b, err := rftx.Sequence(seq, c)
 			if err != nil {
 				t.Fatal(err)

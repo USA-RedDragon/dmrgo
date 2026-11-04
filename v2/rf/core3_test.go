@@ -85,15 +85,30 @@ func TestCohSlotFit(t *testing.T) {
 	}
 }
 
+// TestCoreTier3EarlySlots checks the AMBE frames core Tier 3 recovers in
+// the first 12 slots at +5000 Hz. The share varies with the payload as much
+// as with the noise, so the test takes 12 fixed payload draws with 2 noise
+// seeds each. Over 32 draws of 24 seeds the share was 0.842 (SD 0.035 per 24
+// streams) at 1 dB and 0.562 (SD 0.051) at 0 dB. It fails under the measured
+// mean less 3 SD, 0.74 and 0.41, so a loss of 0.14 at 1 dB or 0.20 at 0 dB
+// fails 98% of the time.
 func TestCoreTier3EarlySlots(t *testing.T) {
 	t.Parallel()
-	slots, truth := benchStream(t, 6)
-	sig := clockSignal{clockBaseband(slots, 5000, 0), 0}
-	if rate, _ := earlyExact(truth, 1, sig); rate < 0.78 {
-		t.Errorf("core Tier 3 at +5000 Hz, 1 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
-	}
-	if rate, _ := earlyExact(truth, 0, sig); rate < 0.6 {
-		t.Errorf("core Tier 3 at +5000 Hz, 0 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
+	const draws, seeds = 12, 2
+	for _, c := range []struct{ cn, min float64 }{{1, 0.74}, {0, 0.41}} {
+		var exact, total int
+		for d := range uint64(draws) {
+			slots, truth := benchDraw(t, 6, d)
+			ss := make([]uint64, seeds)
+			for i := range ss {
+				ss[i] = 7000 + d*seeds + uint64(i)
+			}
+			e, n, _ := earlyCount(truth, c.cn, ss, clockSignal{clockBaseband(slots, 5000, 0), 0})
+			exact, total = exact+e, total+n
+		}
+		if rate := float64(exact) / float64(total); rate < c.min {
+			t.Errorf("core Tier 3 at +5000 Hz, %v dB: %.3f of the AMBE frames in the first 12 slots exact, want at least %.2f", c.cn, rate, c.min)
+		}
 	}
 }
 
@@ -130,6 +145,15 @@ func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
 }
 
 func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss float64) {
+	seeds := make([]uint64, 24)
+	for i := range seeds {
+		seeds[i] = 7000 + uint64(i)
+	}
+	e, n, miss := earlyCount(truth, cn, seeds, sigs...)
+	return float64(e) / float64(n), miss
+}
+
+func earlyCount(truth []benchSlot, cn float64, seeds []uint64, sigs ...clockSignal) (exactN, totalN int, miss float64) {
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	n := int((start + 16*slotSeconds) * basebandRate)
 	lookback := float64(tierOptions(Tier3).ExtLookback * slotSymbols)
@@ -139,12 +163,12 @@ func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss 
 	for _, c := range sigs {
 		sig := c.sig
 		sig.re, sig.im = sig.re[:n], sig.im[:n]
-		for seed := range uint64(24) {
+		for _, seed := range seeds {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
-				x := sig.noisy(cn, 7000+seed)
+				x := sig.noisy(cn, seed)
 				var got []Burst
 				for k := 0; k < len(x); k += 4096 {
 					got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
@@ -166,7 +190,7 @@ func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss 
 		}
 	}
 	wg.Wait()
-	return float64(exact.Load()) / float64(total.Load()), miss
+	return int(exact.Load()), int(total.Load()), miss
 }
 
 func ambeInSlots(truth []benchSlot, got []Burst, n int) (exact, total int) {
