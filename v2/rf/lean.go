@@ -50,6 +50,7 @@ const (
 	leanFloorRise       = 1.01
 	leanPresent         = 2
 	leanSearchHz        = 200
+	leanHeldHz          = 1000
 	leanLockMMStep      = 0.1
 	leanMMSteps         = 4
 	leanSignMiss        = 5
@@ -387,6 +388,7 @@ type leanCore struct {
 	offsetHz       float32
 	tunePrev       float32
 	tuneNs         uint32
+	heldNs         int64
 	lastAt         float32
 	next           int32
 	lastAnch       int32
@@ -2547,7 +2549,17 @@ func (r *leanCore) ended(j int32, base int64) bool {
 		r.forced && base-r.lockNs > 6*slotSymbols
 }
 
+// heldTune notes a tune of hz before the lock. A tune of leanHeldHz or more
+// moves the carrier far enough that the symbols taken before it are off, as
+// the replay threshold of the refill tiers holds.
+func (r *leanCore) heldTune(hz float32) {
+	if !r.locked && abs32(hz) >= leanHeldHz {
+		r.heldNs = r.ns
+	}
+}
+
 func (r *leanCore) retune(d float32) {
+	r.heldTune(d)
 	r.tuneHz += d
 	if r.audio != nil {
 		r.audio.retuneFront(r.tuneHz, d)
@@ -3111,8 +3123,14 @@ func abs32i(x int32) int32 {
 	return x
 }
 
+// emit hands b out. A burst whose payload starts before the input holds
+// symbols that the receiver did not take; it goes out only as a data burst
+// whose CRC passes. At a tier that keeps no samples to replay, a burst whose
+// payload starts before a tune of leanHeldHz or more ahead of the lock holds
+// symbols taken off the carrier; it goes out when its own coding vouches for
+// it, and otherwise under the same rule.
 func (r *leanCore) emit(b *Burst) {
-	if !payloadInInput(b.Seconds) {
+	if !payloadInInput(b.Seconds) || !r.hasExt() && r.base < r.heldNs && !r.vouched(b) {
 		if !r.earlyOK(b) {
 			return
 		}

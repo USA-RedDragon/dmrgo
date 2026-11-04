@@ -229,6 +229,7 @@ func (r *iqLowRx) follow() {
 }
 
 func (r *iqLowRx) tune(hz, dc float32) {
+	r.d.heldTune(hz)
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
 	r.hz += hz

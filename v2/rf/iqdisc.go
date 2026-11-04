@@ -639,6 +639,7 @@ func (r *iqRx) tuneConv(hz float32) {
 }
 
 func (r *iqRx) tuneLean(hz, dc float32) {
+	r.d.heldTune(hz)
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
 	r.afcPull -= hz

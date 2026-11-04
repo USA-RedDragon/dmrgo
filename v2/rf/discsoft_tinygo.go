@@ -29,3 +29,5 @@ type acStage struct{}
 func (r *leanCore) cohVerify() bool { return false }
 
 func (r *leanCore) earlyOK(b *Burst) bool { return r.fecOK && b.HasFixed }
+
+func (r *leanCore) vouched(b *Burst) bool { return b.Voice != 0 || r.earlyOK(b) }
