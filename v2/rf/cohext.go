@@ -84,6 +84,7 @@ type cohStage struct {
 	slotDrift       float64
 	slotFit         bool
 	warm            bool
+	sumWide         bool
 	acq             bool
 	vHz             float64
 	vOK             bool
@@ -223,7 +224,7 @@ func newCohStageOf(opt *options) *cohStage {
 	sps := cohSPS
 	m := newCPMModel(1, sps)
 	s := &cohStage{radio: -1, model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, symNoise: opt.CohSymNoise, slotFit: opt.CohSlotFit, warm: opt.CohWarm, sumWide: opt.CohSumWide}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -1443,7 +1444,11 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern, rho2 float32) bool {
 	s.vOK, s.vTauOK = false, false
 	s.acq = true
 	ok := s.verifyAcq(c, p)
-	if !ok && rho2 >= cohSumGate*cohSumGate {
+	gate := float32(cohSumGate)
+	if s.wideSum(p) {
+		gate = cohSumGateWide
+	}
+	if !ok && rho2 >= gate*gate {
 		ok = s.verifySum(c, p, c.ns-1-leanSyncEnd)
 	}
 	s.acq = false
@@ -1517,7 +1522,7 @@ func (s *cohStage) verifySum(c *leanCore, p enums.SyncPattern, base int64) bool 
 	}
 	voice, data, _ := src.SyncPatterns()
 	best, bestHz, bestTau := s.syncSum(&t0, int(n), voice, data, s.totalHz)
-	if best < cohSumBar(int(n)) {
+	if best < cohSumBar(int(n), s.wideSum(p)) {
 		return false
 	}
 	s.vHz, s.vOK, s.vTau, s.vTauOK = bestHz, true, bestTau, true
@@ -1562,11 +1567,29 @@ const (
 	cohSumBarMS = 0.57
 )
 
-func cohSumBar(n int) float64 {
-	if n == cohSumSlots {
-		return cohSumBarBS
+// cohSumGateWide and cohSumBarWide are the gate and bar of the past-sync sum
+// for a BS search SYNC on a tier with no time budget. At 0 dB over 16 payload
+// draws of 24 seeds and on 192 noise streams of 60 s, gate 0.7 with bar 0.83
+// and gate 0.6 with bar 0.94 lock on noise equally often (15 times), and the
+// second locks 0.6 to 0.7 slot sooner for twice the CPU on noise.
+const (
+	cohSumGateWide = 0.6
+	cohSumBarWide  = 0.94
+)
+
+func (s *cohStage) wideSum(p enums.SyncPattern) bool {
+	src, _, ok := layer2.SyncSourceOf(p)
+	return s.sumWide && ok && src == layer2.SyncSourceBS
+}
+
+func cohSumBar(n int, wide bool) float64 {
+	switch {
+	case n != cohSumSlots:
+		return cohSumBarMS
+	case wide:
+		return cohSumBarWide
 	}
-	return cohSumBarMS
+	return cohSumBarBS
 }
 
 func (s *cohStage) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float64, bool) {

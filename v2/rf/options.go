@@ -95,6 +95,7 @@ type options struct {
 	CohSlotFit            bool
 	CohWarm               bool
 	CohWide               bool
+	CohSumWide            bool
 	IQSpecFine            bool
 	CohSymNoise           uint8
 	MidTiming             bool
@@ -190,7 +191,7 @@ func tierOptions(t Tier) options {
 }
 
 func exactOptions(o options) options {
-	o.CohExact, o.PhaseStates, o.LogMAP, o.CohBudget = true, 52, true, 0
+	o.CohExact, o.PhaseStates, o.LogMAP, o.CohBudget, o.CohSumWide = true, 52, true, 0, true
 	return o
 }
 
