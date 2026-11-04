@@ -2113,14 +2113,12 @@ func (r *leanCore) slot() {
 	present := isAnchor || r.powered(energy, floor, known, measured)
 	noisy := present && !isAnchor && r.eyeNoise(base)
 	missedA := !isAnchor && sf != leanNoSlot && j-sf >= 2*layer2.VoiceBurstsPerSuperframe
-	if seek && !isAnchor && (present || !known && !measured) && r.embAnchor(j, base) {
-		present = true
-		seek = false
-	}
 	if seek && !isAnchor {
-		present = false
-		if known || measured {
-			r.noise = min32(r.noise, energy)
+		if sh, ok := r.embSeek(j, base, present, known, measured); ok {
+			base, present = base+sh, true
+		} else {
+			present = false
+			r.seekNoise(energy, known, measured)
 		}
 	}
 	r.holdNext(j, present)
@@ -3125,43 +3123,69 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 // for a SYNC pattern: their timing fit on the kept samples resamples the slot
 // and moves the talker's strobe phase, and their level fit gives the
 // talker's levels, as a SYNC anchor's fit does.
-func (r *leanCore) embAnchor(j int32, base int64) bool {
+func (r *leanCore) embSeek(j int32, base int64, present, known, measured bool) (int64, bool) {
+	if !present && (known || measured) {
+		return 0, false
+	}
+	return r.embAnchor(j, base)
+}
+
+func (r *leanCore) seekNoise(energy float32, known, measured bool) {
+	if known || measured {
+		r.noise = min32(r.noise, energy)
+	}
+}
+
+func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if !r.hasExt() {
-		return false
+		return 0, false
 	}
 	cc, ok := r.colorCode()
 	if !ok {
-		return false
+		return 0, false
 	}
 	end := base + leanSyncEnd
-	var syms [syncSymbols]int8
-	r.sliceSyms(end, &syms)
-	if !embBurstBE(&syms, cc) {
-		return false
-	}
 	back := r.ns - 1 - end
 	sps := 2*r.tm.step + r.tm.rate
 	at := r.lastAt - float32(back)*sps
 	if back < 0 || !r.keptSymbols(int(back)+syncSymbols+4) {
-		return false
+		return 0, false
+	}
+	var syms [syncSymbols]int8
+	found := false
+	for _, k := range [5]float32{0, -1, 1, -2, 2} {
+		r.sliceKept(at+k*sps/4, sps, &syms)
+		if embBurstBE(&syms, cc) {
+			at += k * sps / 4
+			found = true
+			break
+		}
+	}
+	if !found {
+		return 0, false
 	}
 	var win syncWindow
 	r.fillWindow(&win, max(int32(-at-sps/2)-2, 0))
 	var cv [7]float32
 	best := win.peak(&syms, &cv, at, sps, true)
 	if best == 0 || best == len(cv)-1 {
-		return false
+		return 0, false
 	}
 	d := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
 	sv, svv, sxv, sp := win.sums(&syms, at+d, sps)
+	d += at - (r.lastAt - float32(back)*sps)
+	sh := int64(roundf(d / sps))
+	d -= float32(sh) * sps
+	base += sh
+	end += sh
 	var spp float32
 	for _, q := range syms {
 		spp += float32(q) * float32(q)
 	}
 	const n = syncSymbols
 	sxy, sxx, pp := sxv-sp*sv/n, svv-sv*sv/n, spp-sp*sp/n
-	if sxy <= 0 || sxx <= 0 || pp <= 0 || sxy*sxy < discAnchor*discAnchor*sxx*pp {
-		return false
+	if sxy <= 0 || sxx <= 0 || pp <= 0 || sxy*sxy < discLock*discLock*sxx*pp {
+		return 0, false
 	}
 	kept := r.ns - int64((float32(r.acqKept())-4+r.lastAt)/sps)
 	for k := max(base-1, kept); k <= base+slotSymbols && k < r.ns; k++ {
@@ -3171,20 +3195,41 @@ func (r *leanCore) embAnchor(j int32, base int64) bool {
 	r.sliceSyms(end, &syms)
 	g, dc, res := r.fitSyms(end, &syms)
 	if !embBurstBE(&syms, cc) || g <= 0 {
-		return false
+		return 0, false
 	}
 	o := (j + 1) & 1
 	r.ms.lv[o] = r.levels()
 	g = max32(g, leanMinScale)
 	r.devScale, r.dcHz, r.discVar, r.amp = g, dc, res, 0
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+	k := sh + int64(r.ms.off[j&1])
+	r.first += k
+	r.ms.off[(j+1)&1] -= int16(k)
+	r.ms.off[j&1] = 0
 	r.ms.anch[j&1] = j
 	if !r.isReplaying() {
 		r.ms.fresh[j&1] = 2
 		r.saveClock(o)
 		r.tm.t += d
 	}
-	return true
+	return sh, true
+}
+
+func (r *leanCore) sliceKept(at, sps float32, syms *[syncSymbols]int8) {
+	r.setLLR()
+	thr := 2 * r.llrDev
+	for i := range syncSymbols {
+		v := r.keptAt(at - float32(syncSymbols-1-i)*sps)
+		x := int32(roundf(v))*(discStepHz/llrStepHz) + r.llrOff
+		q := int8(1)
+		if x > thr || -x > thr {
+			q = 3
+		}
+		if x < 0 {
+			q = -q
+		}
+		syms[i] = q
+	}
 }
 
 func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
@@ -3210,8 +3255,8 @@ func embBurstBE(syms *[syncSymbols]int8, cc enums.ColorCode) bool {
 		cw = cw<<2 | dibitOf(syms[i])
 	}
 	emb := embOfCW(cw)
-	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && emb.ColorCode == cc &&
-		(emb.LCSS == enums.LCSSFirstFragment || emb.LCSS == enums.LCSSLastFragment)
+	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected == 0 && emb.ColorCode == cc &&
+		emb.LCSS != enums.LCSSSingleFragment
 }
 
 func dibitOf(v int8) uint16 {
