@@ -228,19 +228,9 @@ func (g *gen) runRecorded(ip, ovPath string, runRe []string, rec string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 	out, errOut, err := g.goCmd(ctx, g.v2, offlineEnv("DOCGEN_STATES_OUT="+rec), args...)
-	if err == nil {
-		return nil
+	if err != nil {
+		return fmt.Errorf("go test with the state hook: %w\n%s%s", err, out, errOut)
 	}
-	var fails []string
-	for _, l := range strings.Split(out, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(l), "--- FAIL") {
-			fails = append(fails, strings.TrimSpace(l))
-		}
-	}
-	if len(fails) == 0 {
-		return fmt.Errorf("go test: %w\n%s%s", err, out, errOut)
-	}
-	fmt.Fprintf(g.log, "docgen: %s: tests that fail with the state hook (their transitions up to the failure still count):\n  %s\n", shortPath(ip), strings.Join(fails, "\n  "))
 	return nil
 }
 
