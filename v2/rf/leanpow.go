@@ -30,5 +30,11 @@ func (r *leanCore) slotPower(base int64) (on, off float32, ok bool) {
 			off = min32(off, p)
 		}
 	}
+	for k := 1; k <= 3; k++ {
+		t := t0 + leanBurstSec + float64(k)*iqPowerUs/1e6
+		if p, ok := r.pow.p.mean(t, t); ok {
+			off = min32(off, p)
+		}
+	}
 	return on, off, true
 }
