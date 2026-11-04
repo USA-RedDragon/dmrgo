@@ -520,7 +520,9 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				if tm.stale {
 					tm.stale, e = false, 0
 				}
-				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
+				if !tm.hold {
+					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
+				}
 				tm.last, tm.half = xv, d
 				t += 2*tm.step + tm.rate
 				tm.nall++
@@ -536,7 +538,9 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				t += tm.step
 				sym = false
 			default:
-				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
+				if !tm.hold {
+					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
+				}
 				e := tm.half * (tm.last - xv)
 				if tm.stale {
 					tm.stale, e = false, 0

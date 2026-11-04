@@ -81,6 +81,7 @@ const (
 	leanMMSPS           = 2.5
 	leanMMSign          = 1
 	leanMMGain          = 2
+	leanMMSlope         = 1.926
 	leanStampSec        = 2e-6
 	leanClockGain       = leanClockBudget / (slotSymbols * leanPhaseRatio * leanPhaseRatio)
 	leanClockBudget     = 0.01
@@ -172,9 +173,9 @@ func (tm *leanTiming) measure(s, v float32) {
 	tm.mK, tm.mC, tm.mS, tm.mVar, tm.mOK = n, c, s, v, true
 }
 
-func (tm *leanTiming) settle(lagN float32) {
+func (tm *leanTiming) settle(lagN float32) float32 {
 	if tm.nc < leanClockBlock {
-		return
+		return 0
 	}
 	n := float32(tm.nc)
 	v := tm.corr2/n - tm.corr*tm.corr/(n*n)
@@ -195,7 +196,7 @@ func (tm *leanTiming) settle(lagN float32) {
 	tm.baseN, tm.baseC = tm.baseN+tm.nall, tm.baseC+tm.corr
 	tm.corr, tm.corr2, tm.nc, tm.nall = 0, 0, 0, 0
 	if tm.rateK == 0 || v <= 0 {
-		return
+		return v
 	}
 	w := span * span / (n * v)
 	if tm.estN >= leanClockAvg {
@@ -214,6 +215,7 @@ func (tm *leanTiming) settle(lagN float32) {
 	} else if tm.estN*leanClockBlock >= leanClockSpan*slotSymbols {
 		tm.learned = true
 	}
+	return v
 }
 
 // rateKnown gives the error, in samples, that the error of the clock rate,
@@ -241,7 +243,9 @@ func (tm *leanTiming) strobe(x float32) bool {
 		if tm.stale {
 			tm.stale, e = false, 0
 		}
-		tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
+		if !tm.hold {
+			tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
+		}
 		tm.last, tm.half = x, d
 		tm.t += 2*tm.step + tm.rate
 		tm.nall++
@@ -259,7 +263,9 @@ func (tm *leanTiming) strobe(x float32) bool {
 		tm.t += tm.step
 		return false
 	}
-	tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*x*x
+	if !tm.hold {
+		tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*x*x
+	}
 	e := tm.half * (tm.last - x)
 	if tm.stale {
 		tm.stale, e = false, 0
@@ -1228,10 +1234,13 @@ func (r *leanCore) lockPush(x, at float32) (more bool) {
 
 func (r *leanCore) endSlot() {
 	lagN := float32(leanClockLag)
-	if r.bs {
+	switch {
+	case r.tm.mm && r.tm.gain > 0:
+		lagN = 2 * r.tm.step / (leanMMGain * r.trackGain * leanMMSlope)
+	case r.bs:
 		lagN = leanClockLagBS
 	}
-	r.tm.settle(lagN)
+	r.gearShift(r.tm.settle(lagN))
 	first := r.next == 0
 	if r.hasExt() && first {
 		r.ext.firstSlot(r)
@@ -1316,6 +1325,45 @@ func (r *leanCore) huntMatch(again, mid bool) {
 			r.forced = true
 		}
 	}
+}
+
+// gearShift sets the gain of the timing loop at the end of a slot. While the
+// clock rate is unknown the loop runs at trackGain, wide enough to follow the
+// clock error. Once rateKnown holds over a burst, the drift left per symbol
+// is at most d, the rate error, and a loop of gain K per symbol has a strobe
+// error with a lag of d/K and a jitter variance of K·σ²/2, where σ² is the
+// variance per symbol of the timing error that the detector reads. The sum
+// of their squares is least at K = (2d/σ)^(2/3). K0, the gain at trackGain,
+// is leanMMGain·trackGain·leanMMSlope/sps, with leanMMSlope = 2·|h'(T)|·T =
+// 2·cos(0.2π)/(1−0.2²·4) for the raised cosine pulse of roll-off 0.2, and σ²
+// is v/K², with v the variance of the corrections of the last block, taken
+// at the gain K in use. The loop never runs wider than trackGain, and a step
+// of the signal level sets it back to trackGain until the next block.
+func (r *leanCore) gearShift(v float32) {
+	if v <= 0 {
+		return
+	}
+	g := r.trackGain
+	const n = slotSymbols - cachSymbols
+	if e, ok := r.tm.rateKnown(n); ok && r.tm.mm && r.tm.gain > 0 {
+		k0 := leanMMGain * r.trackGain * leanMMSlope / (2 * r.tm.step)
+		k := k0 * r.tm.gain / r.trackGain
+		d := e / n
+		g *= cbrt1(4 * d * d * k * k / (v * k0 * k0 * k0))
+	}
+	r.tm.gain = g
+}
+
+// cbrt1 gives the cube root of x, capped at 1.
+func cbrt1(x float32) float32 {
+	if x >= 1 {
+		return 1
+	}
+	y := float32(1)
+	for range 12 {
+		y -= (y - x/(y*y)) / 3
+	}
+	return y
 }
 
 func (r *leanCore) holding() bool {
@@ -1957,6 +2005,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 			k := max32(g, leanMinScale) / r.devScale
 			gk := max32(g, leanMinScale) * deviationHz
 			r.tm.pow = 5*gk*gk + res
+			r.tm.gain = r.trackGain
 			step = k
 		}
 	}
