@@ -412,7 +412,7 @@ type leanCore struct {
 	lockDue                            bool
 	mid96                              uint8
 	replaying, replayDry, replayDeep   bool
-	lateTime                           bool
+	lateTime, backfill                 bool
 	iqLow, linHunt                     bool
 	mmOK                               bool
 	chase                              uint8
@@ -3140,10 +3140,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if !r.hasExt() {
 		return 0, false
 	}
-	cc, ok := r.colorCode()
-	if !ok {
-		return 0, false
-	}
+	cc, known := r.colorCode()
 	end := base + leanSyncEnd
 	back := r.ns - 1 - end
 	sps := 2*r.tm.step + r.tm.rate
@@ -3152,10 +3149,12 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		return 0, false
 	}
 	var syms [syncSymbols]int8
-	found := false
+	found, strong := false, false
+	var emb pdu.EmbeddedSignalling
 	for _, k := range [5]float32{0, -1, 1, -2, 2} {
 		r.sliceKept(at+k*sps/4, sps, &syms)
-		if embBurstBE(&syms, cc) {
+		emb = embOfSyms(&syms)
+		if strong = known && embStrong(&emb, cc); strong || embWeak(&emb, known, cc) {
 			at += k * sps / 4
 			found = true
 			break
@@ -3163,6 +3162,12 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	}
 	if !found {
 		return 0, false
+	}
+	if !strong {
+		if !r.ext.seekAgrees(j, &emb) {
+			return 0, false
+		}
+		cc = emb.ColorCode
 	}
 	var win syncWindow
 	r.fillWindow(&win, max(int32(-at-sps/2)-2, 0))
@@ -3194,7 +3199,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	}
 	r.sliceSyms(end, &syms)
 	g, dc, res := r.fitSyms(end, &syms)
-	if !embBurstBE(&syms, cc) || g <= 0 {
+	if emb = embOfSyms(&syms); !embWeak(&emb, true, cc) || g <= 0 {
 		return 0, false
 	}
 	o := (j + 1) & 1
@@ -3211,6 +3216,9 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		r.ms.fresh[j&1] = 2
 		r.saveClock(o)
 		r.tm.t += d
+		if !strong {
+			r.seekBackfill(j-2, base-2*slotSymbols, d, sps)
+		}
 	}
 	return sh, true
 }
@@ -3249,14 +3257,41 @@ func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
 	}
 }
 
-func embBurstBE(syms *[syncSymbols]int8, cc enums.ColorCode) bool {
+// seekBackfill decodes the talker's slot two slots before the one where
+// its EMB seek closed, from the kept samples at the talker's fitted timing,
+// for the slot whose EMB the seek noted first. The seek kept the samples of
+// that slot, as the hunt keeps them for every seeked slot, so it reads them
+// back from the whole kept buffer, past the start of the current hunt. The burst goes to the late
+// queue until a later EMB or SYNC of the talker gives its position.
+func (r *leanCore) seekBackfill(j int32, base int64, d, sps float32) {
+	_, an := r.acqBuf()
+	if j < 0 || float32(r.ns-base+1)*sps+4-r.lastAt > float32(an) {
+		return
+	}
+	saved := r.ring
+	for k := base - 1; k <= base+slotSymbols; k++ {
+		v := r.keptAt(r.lastAt + d - float32(r.ns-1-k)*sps)
+		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
+	}
+	r.backfill = true
+	r.burst(j, base, 0, false, false)
+	r.ring, r.backfill = saved, false
+}
+
+func embOfSyms(syms *[syncSymbols]int8) pdu.EmbeddedSignalling {
 	var cw uint16
 	for _, i := range [8]int{0, 1, 2, 3, syncSymbols - 4, syncSymbols - 3, syncSymbols - 2, syncSymbols - 1} {
 		cw = cw<<2 | dibitOf(syms[i])
 	}
-	emb := embOfCW(cw)
-	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected == 0 && emb.ColorCode == cc &&
-		emb.LCSS != enums.LCSSSingleFragment
+	return embOfCW(cw)
+}
+
+func embStrong(emb *pdu.EmbeddedSignalling, cc enums.ColorCode) bool {
+	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected == 0 && emb.ColorCode == cc && emb.LCSS != enums.LCSSSingleFragment
+}
+
+func embWeak(emb *pdu.EmbeddedSignalling, known bool, cc enums.ColorCode) bool {
+	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && (!known || emb.ColorCode == cc) && emb.LCSS != enums.LCSSSingleFragment
 }
 
 func dibitOf(v int8) uint16 {

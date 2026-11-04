@@ -28,6 +28,7 @@ type leanExt interface {
 	replayLock(j int32, b *Burst)
 	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
 	replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool)
+	seekAgrees(j int32, emb *pdu.EmbeddedSignalling) bool
 	lockFit(c *leanCore, sym, t int64, q float32)
 	syncFit(c *leanCore, sym, t int64, q, w float32)
 	liveFit(c *leanCore, sym, t int64, q, w float32)
@@ -51,6 +52,7 @@ type lateBurst struct {
 	b    Burst
 	ring [leanRing]int8
 	base int64
+	lean bool
 }
 
 type extChan struct {
@@ -65,6 +67,7 @@ type extChan struct {
 }
 
 type softExt struct {
+	seekPend        [2]seekNote
 	vP              enums.SyncPattern
 	vEnd            int64
 	vHz             float64
@@ -780,7 +783,7 @@ func (x *softExt) unplaced(c *leanCore, b *Burst) {
 	}
 	l := &ch.late[ch.lateN]
 	ch.lateN++
-	l.b, l.ring, l.base = *b, c.ring, c.base
+	l.b, l.ring, l.base, l.lean = *b, c.ring, c.base, c.backfill
 	x.drain(c, false, 0)
 }
 
@@ -823,7 +826,7 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 			_ = lb.Fixed.SetEMB(pdu.EmbeddedSignalling{ColorCode: cc, PreemptionAndPowerControlIndicator: pi, LCSS: lateLCSS(lb.Voice)})
 		}
 		data := lb.Data
-		late := x.coh != nil && x.cohLate(c, lb)
+		late := x.coh != nil && !l.lean && x.cohLate(c, lb)
 		if !late {
 			x.fill(c, &lb.Data)
 		}
@@ -1181,6 +1184,29 @@ func (x *softExt) replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstTyp
 		return 0, false
 	}
 	return pos, true
+}
+
+type seekNote struct {
+	j    int32
+	cc   enums.ColorCode
+	lcss enums.LCSS
+	ok   bool
+}
+
+// seekAgrees notes the EMB of a seeked MS slot that is not enough alone (one
+// corrected bit, or no color code vote yet) and tells whether the EMB of the
+// same talker's slot before it, two slots back, carries the same color code
+// and an LCSS that the voice superframe can follow with this one.
+func (x *softExt) seekAgrees(j int32, emb *pdu.EmbeddedSignalling) bool {
+	p := &x.seekPend[j&1]
+	ok := p.ok && p.j == j-2 && p.cc == emb.ColorCode && lcssFollows(p.lcss, emb.LCSS)
+	*p = seekNote{j: j, cc: emb.ColorCode, lcss: emb.LCSS, ok: !ok}
+	return ok
+}
+
+func lcssFollows(a, b enums.LCSS) bool {
+	return a == enums.LCSSFirstFragment && b == enums.LCSSContinuationFragment ||
+		a == enums.LCSSContinuationFragment && (b == enums.LCSSContinuationFragment || b == enums.LCSSLastFragment)
 }
 
 func replayFlat(c *leanCore, base int64) bool {
