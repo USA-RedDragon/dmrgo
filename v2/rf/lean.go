@@ -2146,7 +2146,7 @@ func (r *leanCore) slot() {
 
 const (
 	leanEyeSpreadIQ    = 9
-	leanEyeNearIQ      = 0.47
+	leanEyeNearIQ      = 0.46
 	leanEyeSpreadAudio = 23
 	leanEyeNearAudio   = 0.46
 )

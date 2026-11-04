@@ -57,8 +57,8 @@ func TestRxStreamEndKeepsFades(t *testing.T) {
 				}
 				return 1
 			})
-		}, map[string]int{"iq0": 395, "iq3": 432, "audio0": 325, "audio2": 422}},
-		{"Rayleigh 5 Hz", func(seed uint64) []complex64 { return fadedBaseband(fm, env, 5, 10, seed) }, map[string]int{"iq0": 360, "iq3": 387, "audio0": 344, "audio2": 377}},
+		}, map[string]int{"iq0": 395, "iq3": 432, "audio0": 323, "audio2": 421}},
+		{"Rayleigh 5 Hz", func(seed uint64) []complex64 { return fadedBaseband(fm, env, 5, 10, seed) }, map[string]int{"iq0": 360, "iq3": 387, "audio0": 346, "audio2": 375}},
 	}
 	for _, c := range cases {
 		for _, e := range []benchEntry{{benchIQ, Tier0}, {benchIQ, Tier3}, {benchAudio, Tier0}, {benchAudio, Tier2}} {
