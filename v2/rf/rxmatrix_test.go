@@ -464,7 +464,7 @@ func mxParamsOf(row mxRow) mxParams {
 }
 
 func mxTransmission(row mxRow, src uint32, slot int, bs bool) (f, e []float64, truth []mxTruth, first float64, err error) {
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: src, Dest: 9990, BS: 310123, Message: "DMRGO MATRIX", Superframes: 1, Slot: slot, BSSourced: bs}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: src, Dest: 9990, BS: 990911, Message: "DMRGO MATRIX", Superframes: 1, Slot: slot, BSSourced: bs}
 	seq := row.val(mxContent)
 	switch seq {
 	case "voice":
@@ -503,7 +503,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 		s.sigma = math.Sqrt(1/(math.Pow(10, 4)*12500)) / math.Sqrt2
 	}
 	src := row.val(mxSource)
-	f, e, truth, first, err := mxTransmission(row, 3191868, p.slot, src == "bs")
+	f, e, truth, first, err := mxTransmission(row, 3009101, p.slot, src == "bs")
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +559,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 		s.truth = append(s.truth, tr)
 	}
 	if src == "ms2" {
-		f2, e2, truth2, _, err := mxTransmission(row, 3191869, 1-p.slot, false)
+		f2, e2, truth2, _, err := mxTransmission(row, 3009102, 1-p.slot, false)
 		if err != nil {
 			return nil, err
 		}
