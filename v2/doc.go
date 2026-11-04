@@ -251,8 +251,8 @@
 //   - packet.ErrNoHeader, packet.ErrRateChange, packet.ErrRate,
 //     packet.ErrFormat, packet.ErrTooLong, packet.ErrNoRoom,
 //     packet.ErrResponseData, packet.ErrUnexpectedRetry,
-//     packet.ErrNoFirstTry, packet.ErrNoRetryBlocks: returned by packet
-//     segmentation and reassembly.
+//     packet.ErrNoFirstTry, packet.ErrNoRetryBlocks, packet.ErrPadNibble:
+//     returned by packet segmentation, reassembly and UDT packet building.
 //   - pdu.ErrTalkerAliasIncomplete, pdu.ErrTalkerAliasLength,
 //     pdu.ErrTalkerAliasInvalidUTF8, pdu.ErrTalkerAliasCharacter: returned
 //     by the talker alias functions.
@@ -297,7 +297,7 @@
 //   - ip.ErrNoICMP: returned by ip.AppendICMPPacket for a packet that must
 //     not get an ICMP error message.
 //   - sms.ErrShort, sms.ErrLength, sms.ErrSignature, sms.ErrNotText,
-//     sms.ErrFormat: returned by package sms, which also returns the errors
+//     sms.ErrFormat, sms.ErrTextLength: returned by package sms, which also returns the errors
 //     of the ip, tms and shortdata packages.
 //   - shortdata.ErrShort, shortdata.ErrLength, shortdata.ErrFormat,
 //     shortdata.ErrCharacter: returned by package shortdata.
