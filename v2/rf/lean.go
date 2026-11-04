@@ -53,6 +53,8 @@ const (
 	leanMMSteps         = 4
 	leanSignMiss        = 5
 	leanBurstSec        = float64(slotSymbols-cachSymbols) / symbolRate
+	leanCachSec         = float64(cachSymbols) / symbolRate
+	leanSlotContrast    = 10
 	leanFadeBursts      = 2
 	leanFlatSyms        = 1
 	leanInBurst         = cachSymbols + syncSymbols - 1
@@ -2061,21 +2063,29 @@ func (r *leanCore) inlierLevels(end int64, p enums.SyncPattern, g, dc float32) (
 	return gd / deviationHz, (sx - gd*sp) / n
 }
 
+func (r *leanCore) slotEnergy(base int64) (energy, floor float32, known, measured bool) {
+	energy = r.eAcc / float32(max(r.eSyms, 1))
+	known = r.eSyms > 0
+	r.eAcc, r.eSyms = 0, 0
+	if !r.bs {
+		var e float32
+		if e, floor, measured = r.slotPower(base); measured {
+			energy = e
+		}
+	}
+	return energy, floor, known, measured
+}
+
+func (r *leanCore) powered(energy, floor float32, known, measured bool) bool {
+	return !known && !measured || r.noise == 0 && !measured || energy > 1.5*r.noise || measured && energy > leanSlotContrast*floor
+}
+
 //go:noinline
 func (r *leanCore) slot() {
 	j := r.next
 	r.next++
 	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
-	energy := r.eAcc / float32(max(r.eSyms, 1))
-	known := r.eSyms > 0
-	r.eAcc, r.eSyms = 0, 0
-	measured := false
-	if !r.bs {
-		var e float32
-		if e, measured = r.slotPower(base); measured {
-			energy = e
-		}
-	}
+	energy, floor, known, measured := r.slotEnergy(base)
 	_, dp, _ := sourceAt(int(r.src)).SyncPatterns()
 	seek := !r.bs && r.lastAnch != leanNoSlot && r.ms.anch[j&1] == leanNoSlot
 	isAnchor, shift, anchor := r.slotAnchor(base, seek)
@@ -2088,7 +2098,7 @@ func (r *leanCore) slot() {
 		}
 		r.anchorAt(j, base, shift, anchor, energy)
 	}
-	present := isAnchor || !known && !measured || r.noise == 0 && !measured || energy > 1.5*r.noise
+	present := isAnchor || r.powered(energy, floor, known, measured)
 	if seek && !isAnchor {
 		present = false
 		if known || measured {

@@ -3,8 +3,8 @@
 package rf
 
 const (
-	iqPowerBlocks = 64
-	iqPowerMs     = 2
+	iqPowerBlocks = 256
+	iqPowerUs     = 500
 )
 
 type iqPower struct {

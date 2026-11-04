@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -221,6 +222,21 @@ func TestLeanFadeNoBursts(t *testing.T) {
 					}
 				}
 			}
+		}
+	}
+}
+
+func TestRxTwoTalkerLevelStep(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "mid.none.-1500.ms2.pi.-500ppm.nom.cs16-48k.40dB.step10dB")
+	rxs := mxReceivers(row.val(mxFormat), true)
+	res, err := mxRun(row, rxs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, x := range rxs {
+		if r := res[x]; r.fail["missing"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
 		}
 	}
 }
