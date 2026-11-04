@@ -1027,16 +1027,22 @@ func (s *cohStage) freqAcc(k0, k1 int) (complex128, complex128) {
 	s.g0, s.dir = lo, 1
 	x := s.refX[:n*m.sps]
 	s.fill(0, n, x)
-	ref := s.refC[:n*m.sps]
-	s.refWave(syms, ref)
+	ref, ph := s.refWave(syms)
 	var prev, acc, w, wPrev, accL complex128
 	nw := 0
 	have := false
 	for k := k0 - lo; k <= k1-lo; k++ {
 		var c complex128
 		if s.refNear(lo + k) {
-			for j := k * m.sps; j < (k+1)*m.sps; j++ {
-				c += complex128(x[j]) * complex128(ref[j])
+			if ref != nil {
+				for j := k * m.sps; j < (k+1)*m.sps; j++ {
+					c += complex128(x[j]) * complex128(ref[j])
+				}
+			} else {
+				for j := k * m.sps; j < (k+1)*m.sps; j++ {
+					sn, cs := math.Sincos(ph[j])
+					c += complex128(x[j]) * complex128(complex(float32(cs), float32(-sn)))
+				}
 			}
 		}
 		if have && c != 0 {
@@ -1063,19 +1069,17 @@ func (s *cohStage) refNear(k int) bool {
 	return true
 }
 
-func (s *cohStage) refWave(syms []int, out []complex64) {
+func (s *cohStage) refWave(syms []int) ([]complex64, []float64) {
 	m := s.model
 	taps := s.src.cohTaps(s.acq)
-	if taps == nil || 2*m.sps != samplesPerSy {
-		ph := s.refPh[:len(out)]
-		m.pp.refPhaseInto(syms, m.sps, m.h, ph)
-		for i, v := range ph {
-			sn, cs := math.Sincos(v)
-			out[i] = complex(float32(cs), float32(-sn))
-		}
-		return
-	}
 	n := len(syms) * samplesPerSy
+	k := len(syms) * m.sps
+	if taps == nil || 2*m.sps != samplesPerSy || len(s.refR) < n || len(s.refPh) < n || len(s.refC) < k {
+		ph := s.refPh[:k]
+		m.pp.refPhaseInto(syms, m.sps, m.h, ph)
+		return nil, ph
+	}
+	out := s.refC[:k]
 	ph := s.refPh[:n]
 	s.pp48.refPhaseInto(syms, samplesPerSy, m.h, ph)
 	r := s.refR[:n]
@@ -1098,6 +1102,7 @@ func (s *cohStage) refWave(syms []int, out []complex64) {
 		}
 		out[i] = complex(real(y)/2, -imag(y)/2)
 	}
+	return out, nil
 }
 
 func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
