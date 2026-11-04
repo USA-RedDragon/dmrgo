@@ -10,7 +10,7 @@ import (
 func TestRxLateEntryOffsetCarrier(t *testing.T) {
 	t.Parallel()
 
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)

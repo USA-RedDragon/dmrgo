@@ -9,7 +9,7 @@ import (
 
 func TestRxNoBurstsFromCarrier(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Message: "DMRGO TEST MESSAGE", Superframes: 1, LateEntry: true}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Message: "DMRGO TEST MESSAGE", Superframes: 1, LateEntry: true}
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

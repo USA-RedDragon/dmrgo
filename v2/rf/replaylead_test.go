@@ -28,7 +28,7 @@ func TestRxNoBurstsInNoiseLead(t *testing.T) {
 	bad := map[string][]string{}
 	for seed := range seeds {
 		s := uint64(9100 + seed)
-		x := callMix(t, 25, s, 0, callTalker{src: 3191868, superframes: 2, header: true, term: true}).x
+		x := callMix(t, 25, s, 0, callTalker{src: 3009101, superframes: 2, header: true, term: true}).x
 		for _, r := range rxs {
 			wg.Add(1)
 			go func() {

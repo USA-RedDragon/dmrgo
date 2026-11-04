@@ -53,7 +53,7 @@ func msMix(t testing.TB, cn float64, seed uint64, talkers ...msTalker) ([]comple
 	var who []int
 	n := 0
 	for i, k := range talkers {
-		f, e, bs := talkerFM(t, k, 3191868+uint32(i))
+		f, e, bs := talkerFM(t, k, 3009101+uint32(i))
 		fs, es = append(fs, f), append(es, e)
 		n = max(n, len(f))
 		for m, b := range bs {

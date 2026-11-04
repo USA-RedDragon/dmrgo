@@ -146,7 +146,7 @@ func extTruth(bursts []layer2.RawBurst, voiceSync enums.SyncPattern) []benchSlot
 
 func extMSBursts(t testing.TB, n int) []layer2.RawBurst {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Message: "DMRGO RXBENCH", Superframes: n, Preambles: 2}
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Message: "DMRGO RXBENCH", Superframes: n, Preambles: 2}
 	v, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func extMSBursts(t testing.TB, n int) []layer2.RawBurst {
 	for range 2 {
 		for _, seq := range []string{"data12", "data34", "data1", "preamble"} {
 			c := cfg
-			c.Group, c.Dest = false, 3140598
+			c.Group, c.Dest = false, 3009201
 			b, err := rftx.Sequence(seq, c)
 			if err != nil {
 				t.Fatal(err)

@@ -11,7 +11,7 @@ import (
 
 func proofBurst(t *testing.T, cc enums.ColorCode, breakSlotType bool) Burst {
 	t.Helper()
-	raw, err := rftx.WakeupBurst(rftx.SeqConfig{ColorCode: cc, Source: 3191868, BS: 310123})
+	raw, err := rftx.WakeupBurst(rftx.SeqConfig{ColorCode: cc, Source: 3009101, BS: 990911})
 	if err != nil {
 		t.Fatal(err)
 	}

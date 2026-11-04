@@ -110,7 +110,7 @@ func TestDiscPolarityStays(t *testing.T) {
 
 func msVoiceAudio(t *testing.T, hz int, inv bool) []int16 {
 	t.Helper()
-	b, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Superframes: 12, Slot: 1})
+	b, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 12, Slot: 1})
 	if err != nil {
 		t.Fatal(err)
 	}

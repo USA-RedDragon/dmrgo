@@ -16,7 +16,7 @@ import (
 
 func msStream(t testing.TB, n int, jitter float64) ([]float64, []float64, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Wakeups: 1, Message: "DMRGO TIER ORDER", Superframes: 2, Preambles: 2, Slot: 1}
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Wakeups: 1, Message: "DMRGO TIER ORDER", Superframes: 2, Preambles: 2, Slot: 1}
 	const slotN = slotSeconds * basebandRate
 	gap := int(0.3 * basebandRate)
 	var freq, env []float64
@@ -27,7 +27,7 @@ func msStream(t testing.TB, n int, jitter float64) ([]float64, []float64, []benc
 		for _, seq := range []string{"voice", "data12", "data34", "preamble"} {
 			c := cfg
 			if seq != "voice" {
-				c.Group, c.Dest = false, 3140598
+				c.Group, c.Dest = false, 3009201
 			}
 			b, err := rftx.Sequence(seq, c)
 			if err != nil {

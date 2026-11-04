@@ -12,7 +12,7 @@ import (
 
 func monitorBursts(t *testing.T, slot int) []Burst {
 	t.Helper()
-	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1,
+	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, BS: 990913, Group: true, Wakeups: 1,
 		Superframes: 2, BSSourced: true, Slot: slot})
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestMonitorCall(t *testing.T) {
 				}
 			}
 			if r.HasLC {
-				if g, dst, src, ok := r.LC.Call(); !ok || !g || dst != 9 || src != 3191868 {
+				if g, dst, src, ok := r.LC.Call(); !ok || !g || dst != 9 || src != 3009101 {
 					t.Errorf("slot %d: LC %x", slot, r.LC)
 				}
 			}

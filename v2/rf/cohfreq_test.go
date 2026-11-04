@@ -14,7 +14,7 @@ import (
 func TestCohFreqSlotType(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 8)
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 3140598, BS: 314926, Message: "DMRGO RXBENCH", BSSourced: true}
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 3009201, BS: 990913, Message: "DMRGO RXBENCH", BSSourced: true}
 	hz := map[enums.DataType]float64{}
 	for _, name := range []string{"data12", "data34"} {
 		b, err := rftx.Sequence(name, cfg)

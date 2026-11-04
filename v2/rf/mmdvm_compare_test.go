@@ -30,7 +30,7 @@ func TestMMDVMCompare(t *testing.T) {
 	if bin == "" {
 		t.Skip("DMRGO_MMDVM names the mmdvmrx host build")
 	}
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9, Group: true, Superframes: 20}
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9, Group: true, Superframes: 20}
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
