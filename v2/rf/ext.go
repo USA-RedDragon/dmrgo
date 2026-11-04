@@ -1305,80 +1305,87 @@ func blindMixed(k, m int) bool {
 	return 5*k >= m && 5*k <= 4*m
 }
 
+type blindFit struct {
+	c            *leanCore
+	first, last  int64
+	room, d, ofs float32
+	at, sps      float32
+	good         uint32
+	j0, n        int64
+}
+
+func (f *blindFit) eye(j int64, s float32) (e float32, m, outer, pos int) {
+	base := f.first + j*slotSymbols
+	for k := base + cachSymbols; k < base+slotSymbols; k++ {
+		back := float32(f.last-k) * f.sps * (1 + s)
+		if back > f.room {
+			continue
+		}
+		v := f.c.keptAt(f.at-back)*discStepHz + f.ofs
+		y := abs32(v)
+		e += min32(abs32(y-f.d), abs32(y-3*f.d))
+		m++
+		if y > 2*f.d {
+			outer++
+		}
+		if v > 0 {
+			pos++
+		}
+	}
+	return e / f.d, m, outer, pos
+}
+
+func (f *blindFit) total(s float32) float32 {
+	var t float32
+	for j := f.j0; j < f.n; j++ {
+		if f.good>>(j-f.j0)&1 != 0 {
+			e, _, _, _ := f.eye(j, s)
+			t += e
+		}
+	}
+	return t
+}
+
 func blindStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
-	first := c.first - int64(n)*slotSymbols
-	room := float32(c.acqKept()-4) - at
-	d := c.devScale * deviationHz
-	if d <= 0 {
+	f := blindFit{c: c, first: c.first - int64(n)*slotSymbols, last: last, room: float32(c.acqKept()-4) - at, d: c.devScale * deviationHz, ofs: c.off - c.dcHz, at: at, sps: sps, n: int64(n)}
+	if f.d <= 0 {
 		return 0
 	}
-	ofs := c.off - c.dcHz
-	eye := func(j int64, s float32) (e float32, m, outer, pos int) {
-		base := first + j*slotSymbols
-		for k := base + cachSymbols; k < base+slotSymbols; k++ {
-			back := float32(last-k) * sps * (1 + s)
-			if back > room {
-				continue
-			}
-			v := c.keptAt(at-back)*discStepHz + ofs
-			y := abs32(v)
-			e += min32(abs32(y-d), abs32(y-3*d))
-			m++
-			if y > 2*d {
-				outer++
-			}
-			if v > 0 {
-				pos++
-			}
-		}
-		return e / d, m, outer, pos
-	}
-	var good uint32
 	near, far := float32(0), float32(0)
-	j0 := max(int64(n)-32, 0)
-	for j := j0; j < int64(n); j++ {
+	f.j0 = max(int64(n)-32, 0)
+	for j := f.j0; j < int64(n); j++ {
 		if !c.bs && (int64(n)-j)&1 != 0 {
 			continue
 		}
-		span := float32(last - first - j*slotSymbols)
+		span := float32(last - f.first - j*slotSymbols)
 		step := blindStep / span
 		top := float32(math.MaxFloat32)
 		cnt, out, pos := 0, 0, 0
 		for s := -float32(leanClockMax); s <= leanClockMax; s += step {
-			if e, m, o, p := eye(j, s); m > 0 && e/float32(m) < top {
+			if e, m, o, p := f.eye(j, s); m > 0 && e/float32(m) < top {
 				top, cnt, out, pos = e/float32(m), m, o, p
 			}
 		}
 		if cnt >= slotSymbols/2 && top < blindEye && blindMixed(out, cnt) && blindMixed(pos, cnt) {
-			good |= 1 << (j - j0)
+			f.good |= 1 << (j - f.j0)
 			near, far = span, max(far, span)
 		}
 	}
-	if good == 0 {
+	if f.good == 0 {
 		return 0
 	}
 	lim := min32(leanClockMax, blindSlip/near)
-	total := func(s float32) float32 {
-		var t float32
-		for j := j0; j < int64(n); j++ {
-			if good>>(j-j0)&1 != 0 {
-				e, _, _, _ := eye(j, s)
-				t += e
-			}
-		}
-		return t
-	}
 	step := blindStep / far
-	best, top := float32(0), total(0)
+	best, top := float32(0), f.total(0)
 	for s := -lim; s <= lim; s += step {
-		if v := total(s); v < top {
+		if v := f.total(s); v < top {
 			best, top = s, v
 		}
 	}
 	lo := best - step
 	for i := range 17 {
 		s := lo + float32(i)*step/8
-		if v := total(s); v < top {
+		if v := f.total(s); v < top {
 			best, top = s, v
 		}
 	}
