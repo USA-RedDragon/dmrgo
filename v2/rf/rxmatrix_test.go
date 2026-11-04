@@ -626,7 +626,7 @@ func mxAdjacent(s *mxSignal, adj string, p mxParams) error {
 	part := mxPart{hz: hz}
 	switch adj {
 	case "dmr40":
-		cfg := rftx.SeqConfig{ColorCode: 5, Source: 3190077, Dest: 9990, BS: 310077, Message: "DMRGO NEIGHBOR", Superframes: 1 + int(s.end/(6*2*slotSeconds)), BSSourced: true}
+		cfg := rftx.SeqConfig{ColorCode: 5, Source: 3009103, Dest: 9990, BS: 990912, Message: "DMRGO NEIGHBOR", Superframes: 1 + int(s.end/(6*2*slotSeconds)), BSSourced: true}
 		built, err := rftx.Sequence("voice", cfg)
 		if err != nil {
 			return err
