@@ -55,7 +55,7 @@ const (
 	leanBurstSec        = float64(slotSymbols-cachSymbols) / symbolRate
 	leanCachSec         = float64(cachSymbols) / symbolRate
 	leanSlotContrast    = 10
-	leanBlindNear       = 0.9
+	leanBlindNear       = 0.75
 	leanBlindStep       = 0.5
 	leanBlindGain       = 0.2
 	leanFadeBursts      = 2
@@ -2732,6 +2732,9 @@ func (r *leanCore) blindLevels(slot int32, base int64, anchor enums.SyncPattern)
 	if !r.bs {
 		lv := &r.ms.lv[(slot+1)&1]
 		lv.devScale, lv.dcHz, lv.discVar = lv.devScale*k, dc+k*(lv.dcHz-held0), lv.discVar*k*k
+	}
+	if r.hasExt() && !r.isReplaying() {
+		r.ext.stepped()
 	}
 }
 

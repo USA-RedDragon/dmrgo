@@ -36,6 +36,7 @@ type leanExt interface {
 	lineShift(c *leanCore, sym, fit int64) (float32, bool)
 	grid(c *leanCore, start int64) (int64, bool)
 	relevel(k float32)
+	stepped()
 	lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool
 	replaySpread() float32
 }
@@ -1000,6 +1001,17 @@ func (x *softExt) replaySlots(c *leanCore, last int64, at, sps float32) int32 {
 func (x *softExt) relevel(k float32) {
 	if x.ph != nil {
 		x.ph.relevel(k)
+	}
+}
+
+func (x *softExt) stepped() {
+	if x.ph == nil || x.coh == nil {
+		return
+	}
+	x.ph.stepped()
+	x.coh.freqOK = false
+	for i := range x.coh.radios {
+		x.coh.radios[i].freqOK = false
 	}
 }
 

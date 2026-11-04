@@ -74,6 +74,7 @@ type discPhase struct {
 	prevClicks int64
 	prevN      int64
 	useHeld    bool
+	ref        float64
 	out        [discPhaseChunk + discPhaseLag + 4]int16
 }
 
@@ -381,7 +382,7 @@ func (p *discPhase) lock() {
 	if !p.cal {
 		unit = g / float64(max(c.devScale, 0.1))
 	}
-	p.held, p.heldN = unit, 0
+	p.held, p.heldN, p.ref = unit, 0, 1
 	p.build(unit, float64(c.audio.dc+c.dcHz)/g)
 	p.acc, p.accN, p.avg = 0, 0, 0
 }
@@ -395,6 +396,24 @@ func (p *discPhase) relevel(k float32) {
 	p.fitN, p.heldN = 0, 0
 	p.held, p.fitUnit = p.unit*u, p.unit*u
 	p.build(p.unit*u, float64(c.audio.dc+c.dcHz)/float64(c.audio.gain))
+	p.acc, p.accN, p.avg = 0, 0, 0
+	p.ref = p.unit * float64(c.devScale) / float64(c.audio.gain)
+}
+
+// stepped takes the levels of a burst that the core refitted after a level
+// step of the input. The unit keeps the ratio to the levels of the core that
+// the last fit measured, so a second refit of the same step, as on the other
+// slot, gives the same unit.
+func (p *discPhase) stepped() {
+	c := p.c
+	g := float64(c.audio.gain)
+	if p.unit <= 0 || p.ref <= 0 || g <= 0 || c.devScale <= 0 {
+		return
+	}
+	u := p.ref * g / float64(c.devScale)
+	p.fitN, p.heldN = 0, 0
+	p.held, p.fitUnit = u, u
+	p.build(u, float64(c.audio.dc+c.dcHz)/g)
 	p.acc, p.accN, p.avg = 0, 0, 0
 }
 
@@ -490,6 +509,7 @@ func (s *cohStage) fitDeviation(k0, k1 int, fit float64) {
 	if p.useHeld && p.heldN >= discHeldFits {
 		u = p.held
 	}
+	p.ref = u * float64(p.c.devScale) / float64(p.c.audio.gain)
 	if math.Abs(u/p.unit-1) >= discPhaseDev {
 		p.build(u, p.dcU)
 		s.totalHz = s.freq

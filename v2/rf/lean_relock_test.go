@@ -240,3 +240,22 @@ func TestRxTwoTalkerLevelStep(t *testing.T) {
 		}
 	}
 }
+
+// TestRxAudioTwoTalkerLevelStep steps the level of an audio input by 10 dB
+// between two SYNCs of two talkers on a 2500 Hz offset. Every tier decodes the
+// flywheel bursts after the step: the step refits the levels of both slots
+// once and gives the phase stage of Tiers 2 and 3 its new unit.
+func TestRxAudioTwoTalkerLevelStep(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "gap.none.+2500.ms2.pi.-500ppm.nom.a12000.40dB.step10dB")
+	rxs := mxReceivers(row.val(mxFormat), true)
+	res, err := mxRun(row, rxs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, x := range rxs {
+		if r := res[x]; r.fail["bits"] || r.fail["missing"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
+		}
+	}
+}
