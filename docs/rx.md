@@ -69,7 +69,7 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 | Tier | Wanted C/N (dB) | Channel below (dB) | Channel above (dB) |
 |:---|---:|---:|---:|
 | I/Q tier 0 | 11.0 | 88 | 88 |
-| I/Q tier 1 | 11.0 | 96 | 94 |
+| I/Q tier 1 | 11.0 | 100 | 102 |
 | I/Q tier 2 | 7.0 | 102 | 102 |
 | I/Q tier 3 | 7.0 | 88 | 86 |
 

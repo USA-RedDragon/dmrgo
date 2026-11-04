@@ -22,6 +22,9 @@ const (
 	iqZeroQuiet    = int(basebandRate * iqZeroSeconds)
 	iqStopTaps     = 33
 	iqStopKaiser   = 8
+	iqNarrowTaps   = 89
+	iqNarrowKaiser = 3.4
+	iqNarrowHz     = 4900
 )
 
 type iqDisc struct {
@@ -199,6 +202,26 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	if d.halfOn {
 		d.span = len(d.half.hist)/2 + 2*len(d.taps)
 	}
+}
+
+// narrowTaps convolves the wide channel filter with a Kaiser low-pass, so the
+// narrow filter passes the same response up to 4 kHz and stops 52 dB at
+// 5.5 kHz.
+func narrowTaps(wide []float32) []float32 {
+	w := make([]float64, len(wide))
+	for i, t := range wide {
+		w[i] = float64(t)
+	}
+	n := convolveTaps(w, windowTaps(iqNarrowTaps, float64(iqNarrowHz)/basebandRate, iqNarrowKaiser))
+	var sum float64
+	for _, v := range n {
+		sum += v
+	}
+	t := make([]float32, len(n))
+	for i, v := range n {
+		t[i] = float32(v / sum)
+	}
+	return t
 }
 
 func convolveTaps(a, b []float64) []float64 {
@@ -466,9 +489,6 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 }
 
 func (r *iqRx) sample(v complex64) {
-	if r.refill != nil {
-		r.keepRaw(v)
-	}
 	if r.spec != nil {
 		r.hunt(v)
 	}
@@ -477,6 +497,9 @@ func (r *iqRx) sample(v complex64) {
 		r.follow()
 	}
 	f, y, ok := r.conv.push(v)
+	if r.refill != nil {
+		r.keepRaw(v)
+	}
 	if !ok {
 		return
 	}
@@ -700,6 +723,9 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 
 func (r *iqRx) flush() {
 	r.writeAudio()
+	if r.endNarrow() {
+		r.writeAudio()
+	}
 	r.d.flushIQ()
 }
 

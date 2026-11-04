@@ -27,7 +27,7 @@ func TestIQRegenAudioAligned(t *testing.T) {
 		}
 		live := append([]int16(nil), q.audio...)
 		got := append([]int16(nil), live...)
-		if len(live) == 0 || !q.regenAudio(got) {
+		if n, ok := q.regenAudio(got, q.conv.taps, 0); len(live) == 0 || !ok || n != len(live) {
 			t.Fatalf("no audio to regenerate (%d pending)", len(live))
 		}
 		worst := 0
@@ -45,4 +45,63 @@ func abs(v int) int {
 		return -v
 	}
 	return v
+}
+
+func TestIQNarrowReplayAligned(t *testing.T) {
+	t.Parallel()
+	x := make([]complex64, basebandRate/2)
+	for i := range x {
+		p := -900 / 700.0 * math.Cos(2*math.Pi*700*float64(i)/basebandRate)
+		x[i] = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+	}
+	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier1, Format: IQFormatCF32})
+	q := r.host().iqd
+	f := q.refill
+	if f.narrow == nil {
+		t.Fatal("Tier 1 has no narrow filter")
+	}
+	ref := func(taps []float32) []int16 {
+		d := iqDisc{decim: q.conv.decim, step: q.conv.step, taps: taps, hist: make([]complex64, 2*len(taps)), ncoRot: 1, ncoStep: 1}
+		var out []int16
+		for _, v := range x {
+			if a, _, ok := d.push(v); ok {
+				out = append(out, int16(max(min(roundf(a*iqUnitsPerHz), math.MaxInt16), math.MinInt16)))
+			}
+		}
+		return out
+	}
+	narrow, wide := ref(f.narrow), ref(f.wideTaps)
+	n := 4003
+	for _, v := range x[:n] {
+		q.sample(v)
+	}
+	rest := append([]int16(nil), q.audio...)
+	k0 := int(q.outN) - len(rest)
+	m, ok := q.regenAudio(rest, f.narrow, f.dd)
+	if !ok {
+		t.Fatal("no audio to regenerate")
+	}
+	got := append(make([]int16, k0), rest[:m]...)
+	q.toNarrow()
+	q.afcN, q.audio = 0, make([]int16, 0, 4096)
+	for _, v := range x[n : n+2000] {
+		q.sample(v)
+	}
+	got = append(got, q.audio...)
+	sw := len(got)
+	q.afcN, q.audio = 0, q.audio[:0]
+	q.toWide()
+	for _, v := range x[n+2000 : n+3000] {
+		q.sample(v)
+	}
+	got = append(got, q.audio...)
+	for i := k0; i < len(got); i++ {
+		want := wide[i]
+		if i < sw {
+			want = narrow[i+int(f.dd)]
+		}
+		if d := abs(int(got[i]) - int(want)); d > 12 || i != sw && d > 2 {
+			t.Fatalf("output %d (narrow up to %d): %d, want %d", i, sw, got[i], want)
+		}
+	}
 }

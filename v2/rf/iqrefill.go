@@ -23,6 +23,11 @@ type iqRefill struct {
 	settle   bool
 	settleHz float32
 	conv     iqDisc
+	narrow   []float32
+	wideTaps []float32
+	dd       int64
+	drop     int
+	narrowOn bool
 }
 
 func (r *iqRx) attachRefill(x *softExt) {
@@ -37,6 +42,9 @@ func (r *iqRx) attachRefill(x *softExt) {
 	lag := min(cap(r.audio)*r.conv.decim, iqAFCBlock) + slotSamplesN + 512
 	f := &iqRefill{raw: make([]complex64, 2*len(x.acq)*h*r.conv.decim+warm+lag), tuned: -1}
 	f.conv.hist = make([]complex64, 2*len(r.conv.taps))
+	if r.tunes == nil {
+		f.setNarrow(r)
+	}
 	r.refill = f
 	x.refill, x.rt.want = r.refillKept, r.retuneWanted
 	f.soft = x
@@ -45,6 +53,24 @@ func (r *iqRx) attachRefill(x *softExt) {
 		f.mixed = make([]complex128, len(f.wide)+2*max(len(r.conv.coh.taps), len(r.conv.taps)))
 		x.refillCoh, x.settleCoh = r.refillCoh, r.settleCoh
 	}
+}
+
+// setNarrow makes the narrow channel filter that the receiver decodes through
+// once it locks. The wide filter takes a carrier anywhere in the tuning range
+// while the receiver hunts; on the tuned carrier, the narrow filter keeps out
+// the edge of a DMR channel 12.5 kHz away, whose power 4.5 to 6.25 kHz from
+// the carrier is not limited by the adjacent channel power of EN 300 113. It
+// is longer by 2*dd outputs, so its output for a sample index comes dd outputs
+// later.
+func (f *iqRefill) setNarrow(r *iqRx) {
+	n := narrowTaps(r.conv.taps)
+	d := (len(n) - len(r.conv.taps)) / 2
+	if r.conv.step != r.conv.decim || d%r.conv.step != 0 {
+		return
+	}
+	f.narrow, f.wideTaps, f.dd = n, r.conv.taps, int64(d/r.conv.step)
+	r.conv.hist = make([]complex64, 2*len(n))
+	f.conv.hist = make([]complex64, 2*len(n))
 }
 
 func (r *iqRx) settleCoh() {
@@ -159,40 +185,81 @@ func (r *iqRx) retuneWanted(*leanCore) bool {
 	if r.refill == nil || r.tunes != nil || r.d.locked {
 		return false
 	}
+	return r.refill.narrow != nil || r.lockTuned()
+}
+
+func (r *iqRx) lockTuned() bool {
 	hz := r.lockOffset()
 	lim := r.tuneLimit()
 	return abs32(hz) >= iqRefillHz && (lim <= 0 || abs32(r.conv.hz+hz-r.center) <= lim)
 }
 
-func (r *iqRx) lockRetune(rest []int16) {
-	hz := r.lockOffset()
+// lockRetune tunes onto the carrier the receiver locks on, puts the narrow
+// filter in place of the wide one, and replays the kept acquisition and the
+// rest of the audio through the converter at the new tune and filter, so the
+// lock burst is decoded the same way as the bursts after it. It returns the
+// part of rest that is ready: the narrow filter needs dd more samples for each
+// output, so the last dd outputs of rest come from the live converter.
+func (r *iqRx) lockRetune(rest []int16) []int16 {
+	f := r.refill
+	tuned := r.lockTuned()
 	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
-	r.tuneWith(hz, 0, r.tuneLimit())
-	r.refillKept(&r.d.leanCore, r.d.n)
-	r.regenAudio(rest)
-	r.refill.soft.relock(&r.d.leanCore)
+	if tuned {
+		r.tuneWith(r.lockOffset(), 0, r.tuneLimit())
+	}
+	taps, dd, swap := r.conv.taps, int64(0), false
+	if f.narrowOn {
+		dd = f.dd
+	} else if f.narrow != nil && r.canRegen(rest, f.narrow, f.dd) {
+		taps, dd, swap = f.narrow, f.dd, true
+	}
+	r.refillWith(&r.d.leanCore, r.d.n, taps, dd, swap)
+	if tuned || swap {
+		if n, ok := r.regenAudio(rest, taps, dd); ok {
+			rest = rest[:n]
+		}
+	}
+	if swap {
+		r.toNarrow()
+	}
+	f.soft.relock(&r.d.leanCore)
+	return rest
 }
 
-func (r *iqRx) regenAudio(rest []int16) bool {
+func (r *iqRx) canRegen(rest []int16, taps []float32, dd int64) bool {
+	f := r.refill
+	per := int64(r.conv.step)
+	k0 := min(r.outN-int64(len(rest)), r.outN-dd)
+	warm := (int64(len(taps)) + per - 1) / per
+	s := (k0 - warm + dd) * per
+	return s >= 0 && s >= max(f.n-int64(len(f.raw)), f.from)
+}
+
+// regenAudio runs the kept raw samples through a fresh converter with taps,
+// whose output for index j comes dd outputs late, and writes its outputs over
+// rest, which holds the outputs from r.outN-len(rest) on. It runs up to the
+// newest kept sample, so the converter ends where the live one stands, and
+// returns how many outputs of rest it wrote.
+func (r *iqRx) regenAudio(rest []int16, taps []float32, dd int64) (int, bool) {
 	f := r.refill
 	per := int64(r.conv.step)
 	k0 := r.outN - int64(len(rest))
-	warm := (int64(len(r.conv.taps)) + per - 1) / per
-	s := (k0 - warm) * per
-	if s < max(f.n-int64(len(f.raw)), f.from) || k0 < 0 {
-		return false
+	warm := (int64(len(taps)) + per - 1) / per
+	s := (min(k0, r.outN-dd) - warm + dd) * per
+	if s < max(f.n-int64(len(f.raw)), f.from) || s < 0 {
+		return 0, false
 	}
 	cv := &f.conv
 	hist := cv.hist
 	clear(hist)
-	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
 	p := f.head - int(f.n-s)
 	if p < 0 {
 		p += len(f.raw)
 	}
-	j := s / per
-	for i := s; i < f.n && j < k0+int64(len(rest)); i++ {
+	j := s/per - dd
+	for i := s; i < f.n; i++ {
 		w := f.raw[p]
 		if p++; p == len(f.raw) {
 			p = 0
@@ -201,34 +268,106 @@ func (r *iqRx) regenAudio(rest []int16) bool {
 		if !ok {
 			continue
 		}
-		if j >= k0 {
+		if j >= k0 && j < k0+int64(len(rest)) {
 			rest[j-k0] = int16(max(min(roundf(v*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
 		}
 		j++
 	}
-	return true
+	f.drop = int(max(0, k0-j))
+	return int(min(int64(len(rest)), max(0, j-k0))), true
+}
+
+func (r *iqRx) toNarrow() {
+	f := r.refill
+	c := &r.conv
+	c.taps, c.span = f.narrow, c.span+len(f.narrow)-len(f.wideTaps)
+	c.hist, f.conv.hist = f.conv.hist, c.hist
+	c.head, c.phase, c.prev, c.ncoRot = f.conv.head, f.conv.phase, f.conv.prev, f.conv.ncoRot
+	r.outN -= f.dd
+	f.narrowOn = true
+}
+
+// toWide puts the wide filter back when the receiver loses the lock. The
+// wide filter has the outputs of the next dd indexes already in its reach, so
+// toWide writes them from the narrow history before the live converter goes on.
+func (r *iqRx) toWide() {
+	f := r.refill
+	c := &r.conv
+	n := len(c.taps)
+	h := c.hist[c.head : c.head+n]
+	w := f.wideTaps
+	m := len(w)
+	scale := float32(basebandRate/c.decim) / (2 * math.Pi)
+	for t := range f.dd {
+		e := n - 1 - c.phase - int(f.dd-1-t)*c.step
+		var re, im float32
+		for k, v := range w {
+			x := h[e-(m-1)+k]
+			re += v * real(x)
+			im += v * imag(x)
+		}
+		y := complex(re, im)
+		p := y * complex(real(c.prev), -imag(c.prev))
+		c.prev = y
+		r.audio = append(r.audio, int16(max(min(roundf(atan2f(imag(p), real(p))*scale*iqUnitsPerHz), math.MaxInt16), math.MinInt16)))
+		r.outN++
+	}
+	copy(c.hist, h[n-m:])
+	copy(c.hist[m:], c.hist[:m])
+	c.taps, c.head, c.span = w, 0, c.span-n+m
+	f.narrowOn = false
+}
+
+func (r *iqRx) endNarrow() bool {
+	if f := r.refill; f != nil && f.narrowOn {
+		r.toWide()
+		return true
+	}
+	return false
 }
 
 func (r *iqRx) writeAudio() {
 	x := r.audio
+	f := r.refill
 	for len(x) > 0 {
+		if f != nil && f.drop > 0 {
+			k := min(f.drop, len(x))
+			x, f.drop = x[k:], f.drop-k
+			continue
+		}
 		n := r.d.writeN(x)
 		x = x[n:]
 		if !r.d.lockDue {
 			break
 		}
-		r.lockRetune(x)
+		x = r.lockRetune(x)
 		r.d.lockDue = false
 	}
 	r.audio = r.audio[:0]
+	if f != nil && f.narrowOn && !r.d.locked {
+		r.toWide()
+	}
 }
 
 func (r *iqRx) refillKept(c *leanCore, m int64) {
+	var dd int64
+	if r.refill.narrowOn {
+		dd = r.refill.dd
+	}
+	r.refillWith(c, m, r.conv.taps, dd, false)
+}
+
+// refillWith runs the kept raw samples through a fresh converter with taps,
+// whose output for index j comes dd outputs late, and through a copy of the
+// lean front, and writes the result over the kept acquisition up to lean
+// sample m. It runs when the converter tuned since the samples were kept, or
+// when force is set.
+func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force bool) {
 	f := r.refill
-	if f == nil || f.tuned < 0 {
+	if f == nil || f.tuned < 0 && !force {
 		return
 	}
-	if abs32(r.conv.hz-f.hz0) < iqRefillHz {
+	if abs32(r.conv.hz-f.hz0) < iqRefillHz && !force {
 		f.tuned = -1
 		return
 	}
@@ -242,16 +381,16 @@ func (r *iqRx) refillKept(c *leanCore, m int64) {
 	if end > f.n || k <= 0 {
 		return
 	}
-	warm := int64(len(r.conv.taps)) + int64(2*audio12Taps+halfTaps)*per
+	warm := int64(len(taps)) + int64(2*audio12Taps+halfTaps)*per
 	s := max((m-k)*per-warm, f.n-int64(len(f.raw)), f.from)
 	s = (s + per - 1) / per * per
-	if f.tuned <= s {
+	if f.tuned <= s && !force {
 		return
 	}
 	cv := &f.conv
 	hist := cv.hist
 	clear(hist)
-	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: r.conv.taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
 	fr := r.d.f
 	fr.rrcHist, fr.hbHist, fr.rrcHead, fr.hbHead, fr.odd = [2 * audio12Taps]int8{}, [halfTaps]int8{}, 0, 0, false
 	j := s / per
@@ -263,13 +402,18 @@ func (r *iqRx) refillKept(c *leanCore, m int64) {
 	if p < 0 {
 		p += len(f.raw)
 	}
-	for i := s; i < end; i++ {
+	stop := min(end+dd*int64(r.conv.step), f.n)
+	for i := s; i < stop; i++ {
 		w := f.raw[p]
 		if p++; p == len(f.raw) {
 			p = 0
 		}
 		v, _, ok := cv.push(w)
 		if !ok {
+			continue
+		}
+		if dd > 0 {
+			dd--
 			continue
 		}
 		u := fr.quantize(int16(max(min(roundf(v*iqUnitsPerHz), math.MaxInt16), math.MinInt16)))
