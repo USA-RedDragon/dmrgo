@@ -15,10 +15,10 @@ func TestIQLowHalfAsmLayout(t *testing.T) {
 	q := unsafe.Offsetof(r.q)
 	got := [...]uintptr{
 		unsafe.Offsetof(r.ar) - q, unsafe.Offsetof(r.ai) - q, unsafe.Offsetof(r.pow) - q,
-		unsafe.Offsetof(r.step) - q, unsafe.Offsetof(r.n) - q, unsafe.Offsetof(r.buf) - q,
+		unsafe.Offsetof(r.step) - q, unsafe.Offsetof(r.n) - q, unsafe.Offsetof(r.buf) - q, unsafe.Offsetof(r.dcm) - q,
 	}
-	if want := [...]uintptr{4, 8, 12, 24, 34, 36}; got != want {
-		t.Fatalf("offsets from q of ar, ai, pow, step, n, buf: got %v, want %v", got, want)
+	if want := [...]uintptr{4, 8, 12, 24, 34, 36, 68}; got != want {
+		t.Fatalf("offsets from q of ar, ai, pow, step, n, buf, dcm: got %v, want %v", got, want)
 	}
 	if iqLowBuf != 16 || 2*iq0LowHz != 19200 {
 		t.Fatal("the assembly of iqlowhalf_dsp.go takes the reciprocal path, 16 samples and 2*9600")

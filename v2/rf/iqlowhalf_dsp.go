@@ -45,6 +45,9 @@ dmrgo_iqlow_half:
 	b 5f
 1:
 	ldr r4, [r0], #4
+	ldr r12, [sp, #4]
+	ldr r12, [r12, #68]
+	qsub16 r4, r4, r12
 	smuad r10, r4, r3
 	smusdx r11, r3, r4
 	smuad r12, r4, r4
@@ -86,6 +89,9 @@ dmrgo_iqlow_half:
 	smmulr r12, r12, r9
 	strh r12, [r2], #2
 5:
+	ldr r12, [sp, #4]
+	ldr r12, [r12, #68]
+	qsub16 r3, r3, r12
 	smuad r10, r3, r4
 	smusdx r11, r4, r3
 	smuad r12, r3, r3

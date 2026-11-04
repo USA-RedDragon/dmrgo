@@ -7,6 +7,11 @@ import (
 )
 
 const (
+	iqLowDCShift = 14
+	iqLowDCStart = 5
+	iqLowDCEvery = 1
+	iqLowDCBlock = 16
+	iqLowDCDelay = 16
 	iqLowBuf     = 16
 	iqLowPack    = 16
 	iqLowScale   = 4096
@@ -37,6 +42,14 @@ type iqLowRx struct {
 	afcN        int16
 	n           uint8
 	buf         [iqLowBuf]int16
+	dcm         uint32
+	dcI, dcQ    float32
+	env, env2   float32
+	proj, edge  float32
+	dcN         uint16
+	sub, dHead  uint8
+	dly         [iqLowDCDelay]uint32
+	out         [iqLowDCBlock]uint32
 }
 
 func (r *iqLowRx) center(hz float32) {
@@ -48,14 +61,15 @@ func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) {
 	*r = iqLowRx{}
 	r.d.setup(discSetup{Hz: hz, OnBurst: on, opt: opt, lowIQ: true}, false)
 	r.d.iqLow = hz == iq0LowHz
-	r.d.lagTicks = int32((basebandRate / hz) << 7)
+	r.d.lagTicks = int32((basebandRate/hz)<<7 + iqLowDCDelay*(basebandRate/hz)<<8)
+	r.edge = float32(iqLowDCEvery / (dcEdgeSeconds * float64(hz)))
 }
 
 func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {
 	size := f.bytes()
 	if f == IQFormatCS16 && littleEndian() && uintptr(unsafe.Pointer(unsafe.SliceData(iq)))%4 == 0 {
 		if n := len(iq) / 4; n > 0 {
-			r.run(unsafe.Slice((*uint32)(unsafe.Pointer(unsafe.SliceData(iq))), n))
+			r.feed16(unsafe.Slice((*uint32)(unsafe.Pointer(unsafe.SliceData(iq))), n))
 		}
 		return
 	}
@@ -64,9 +78,63 @@ func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {
 		for i := range m {
 			words[i] = iqLowWord(iq[i*size:], f)
 		}
-		r.run(words[:m])
+		r.feed16(words[:m])
 		iq = iq[m*size:]
 	}
+}
+
+// feed16 runs x through the receiver in blocks of up to iqLowDCBlock
+// samples, iqLowDCDelay samples late. dcUpdate takes each block into the DC
+// estimate first, and the kernels subtract the packed estimate dcm from the
+// delayed samples, so a reset of the estimate also reaches the samples taken
+// while the carrier test decided.
+func (r *iqLowRx) feed16(x []uint32) {
+	for len(x) > 0 {
+		m := min(len(x), iqLowDCBlock)
+		r.dcUpdate(x[:m])
+		for i, w := range x[:m] {
+			r.out[i], r.dly[r.dHead] = r.dly[r.dHead], w
+			r.dHead = (r.dHead + 1) & (iqLowDCDelay - 1)
+		}
+		r.run(r.out[:m])
+		x = x[m:]
+	}
+}
+
+// dcUpdate takes the packed samples x into the running mean of I and Q,
+// which the kernels subtract as dcm. An RTL-SDR adds a constant I/Q offset
+// that, on a weak carrier, is as strong as the carrier; the discriminator
+// then reads the phase of the sum. The mean has a window of 2^iqLowDCShift
+// samples and starts again from a window of 2^iqLowDCStart on a level step
+// of 1/leanBlindStep^2 in power. A carrier on the tuned frequency also reads
+// as a mean: when the mean holds most of the input power, the input envelope
+// is flat and the input turns away from the mean (the carrier test of
+// dcBlock), the mean is a carrier that has started to move, and it starts
+// again from zero with the full window.
+func (r *iqLowRx) dcUpdate(x []uint32) {
+	var si, sq int32
+	for _, w := range x {
+		i, q := int32(int16(w)), int32(w)>>16
+		si, sq = si+i, sq+q
+		if r.sub++; r.sub < iqLowDCEvery {
+			continue
+		}
+		r.sub = 0
+		fx, fy := float32(i), float32(q)
+		p := fx*fx + fy*fy
+		r.env += (p - r.env) * r.edge
+		r.env2 += (p*p - r.env2) * r.edge
+		r.proj += (fx*r.dcI + fy*r.dcQ - r.proj) * r.edge
+		if c := r.dcI*r.dcI + r.dcQ*r.dcQ; c > dcCarrierShare*r.env && r.env2 < dcFlat*r.env*r.env && r.proj < dcTurn*c {
+			r.dcN, r.dcI, r.dcQ, r.proj = 1<<iqLowDCShift, 0, 0, 0
+		}
+	}
+	n := float32(len(x))
+	g := min(n/float32(max(r.dcN, 1<<iqLowDCStart)), 1)
+	r.dcI += g * (float32(si)/n - r.dcI)
+	r.dcQ += g * (float32(sq)/n - r.dcQ)
+	r.dcN = uint16(min(int(r.dcN)+len(x), 1<<iqLowDCShift))
+	r.dcm = uint32(uint16(int16(roundBits(r.dcI)))) | uint32(uint16(int16(roundBits(r.dcQ))))<<16
 }
 
 func littleEndian() bool {
@@ -154,8 +222,9 @@ func (r *iqLowRx) halfRunGo(x []uint32) {
 	if len(x) == 0 {
 		return
 	}
+	dcm := r.dcm
 	for i := 0; ; {
-		y := x[i]
+		y := qsub16(x[i], dcm)
 		d := smuad(y, q)
 		ar = addRound10(ar, d)
 		c := smusdx(q, y)
@@ -252,9 +321,19 @@ func (r *iqLowRx) tune(hz, dc float32) {
 }
 
 func (r *iqLowRx) flush() {
+	for i := range r.out[:iqLowDCDelay] {
+		r.out[i] = r.dly[(int(r.dHead)+i)&(iqLowDCDelay-1)]
+	}
+	r.run(r.out[:iqLowDCDelay])
 	if !r.d.iqLow || !r.d.front96 {
 		r.d.writeIQ(r.buf[:r.n])
 	}
 	r.n = 0
 	r.d.flushIQ()
+}
+
+func qsub16(a, b uint32) uint32 {
+	lo := max(min(int32(int16(a))-int32(int16(b)), 32767), -32768)
+	hi := max(min(int32(a)>>16-int32(b)>>16, 32767), -32768)
+	return uint32(uint16(lo)) | uint32(hi)<<16
 }
