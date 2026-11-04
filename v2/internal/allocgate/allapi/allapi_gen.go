@@ -372,6 +372,7 @@ var api = [...]any{
 	internal_fec_trellis.Decode,
 	internal_fec_trellis.Encode,
 	(*internal_fsktx.Audio).AppendSymbol,
+	(*internal_fsktx.Audio).Lag,
 	(*internal_fsktx.Audio).MaxSamples,
 	(*internal_fsktx.Audio).Peak,
 	(*internal_fsktx.Audio).PeakAt,
