@@ -2187,7 +2187,7 @@
    "ns_per_second": 362045.6310741485,
    "worst_ns_per_second": 413148.11570223677,
    "worst_cn": 4,
-   "ram_bytes": 1752,
+   "ram_bytes": 1872,
    "allocs": 0
   },
   {
@@ -10641,7 +10641,7 @@
    "ns_per_second": 381899.11880684266,
    "worst_ns_per_second": 466835.4449150528,
    "worst_cn": 4,
-   "ram_bytes": 1728,
+   "ram_bytes": 1848,
    "allocs": 0
   },
   {
@@ -14973,7 +14973,7 @@
    ],
    "ns_per_second": 1856252.1390825917,
    "worst_ns_per_second": 3900801.4313859306,
-   "ram_bytes": 108528,
+   "ram_bytes": 168672,
    "allocs": 0
   },
   {
@@ -17001,7 +17001,7 @@
    ],
    "ns_per_second": 8303322.623562877,
    "worst_ns_per_second": 10340252.922541846,
-   "ram_bytes": 617408,
+   "ram_bytes": 701616,
    "allocs": 0
   },
   {
