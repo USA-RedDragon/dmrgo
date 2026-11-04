@@ -35,7 +35,9 @@ type leanExt interface {
 	rateSettled(c *leanCore) bool
 	rateAgrees(c *leanCore, base int64) bool
 	lineShift(c *leanCore, sym, fit int64) (float32, bool)
-	grid(c *leanCore, start int64) (int64, bool)
+	grid(c *leanCore, start int64) (int64, float32, bool)
+	rateBound(c *leanCore, base int64) (float32, bool)
+	replayTicks(c *leanCore, start int64) (int64, int16, float32, bool)
 	relevel(k float32)
 	stepped()
 	lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool
@@ -87,6 +89,7 @@ type softExt struct {
 	earlyStart      [extQueue]int64
 	timing          bool
 	atN             int64
+	atAt            float32
 	anc, rate       [2]extAnchor
 	spread          float32
 	ancBase         int64
@@ -109,6 +112,7 @@ type softExt struct {
 	replayP         enums.SyncPattern
 	lockAt          float32
 	stretch         float32
+	stretchSig      float32
 	lockN           int64
 	stages          uint8
 	coh             *cohStage
@@ -752,8 +756,8 @@ func (x *softExt) retime(c *leanCore) {
 			continue
 		}
 		start := x.earlyStart[i]
-		if t, ok := x.grid(c, start); ok {
-			x.q[i].Seconds = tickSeconds(t - int64(c.lagTicks))
+		if t, e, ok := x.grid(c, start); ok {
+			x.q[i].Seconds, x.q[i].stamp = tickSeconds(t-int64(c.lagTicks)), stampOf(0, e)
 		} else if !x.timed(x.ancParity(c, start-cachSymbols)) && c.ns-start <= extEarlySymbols {
 			continue
 		}
@@ -1037,6 +1041,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 		at -= float32(c.n - x.lockN)
 		x.atN = c.n
 	}
+	x.atAt = at
 	n32 := x.replaySlots(c, last, at, sps)
 	n := int(n32)
 	if n == 0 {
@@ -1046,6 +1051,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	if x.coh != nil {
 		x.coh.warmFreq(c, c.first, n)
 	}
+	x.stretchSig = 0
 	stretch := x.clockStretch(c, n, last, at, sps)
 	if stretch == 0 && x.coh != nil {
 		stretch = float32(x.coh.warmStretch)
@@ -1376,6 +1382,7 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 	}
 	b := (sxy - sx*sy/sw) / vx
 	if e := -b; b*b*vx > leanClockSig*leanClockSig && abs32(e) <= leanClockMax {
+		x.stretchSig = 1 / sqrtf(vx)
 		return e, m
 	}
 	return 0, m
@@ -1607,24 +1614,59 @@ func (a *extAnchor) clocked() bool {
 	return ok && b*b*v > leanClockSig*leanClockSig*sig*sig
 }
 
-func (x *softExt) grid(c *leanCore, start int64) (int64, bool) {
+// grid gives the start of the burst at start from the timing line of its
+// slot parity, and the error of that start that the uncertainty of the line
+// slope gives over the distance from the centroid of the fits, in ticks.
+func (x *softExt) grid(c *leanCore, start int64) (int64, float32, bool) {
 	p := x.ancParity(c, start-cachSymbols)
 	a := &x.anc[p]
 	xs := x.ancSlot(start-cachSymbols)*slotSymbols + leanSyncEnd
 	if v := float32(xs - a.ref); a.n == 0 || v > a.hi+extAnchorReach || v < a.lo-extAnchorReach {
-		return 0, false
+		return 0, 0, false
 	}
+	k := xs - a.ref
+	u := float32(k) + cachSymbols - leanSyncEnd - extSyncMid
+	lever := abs32(u - a.sx/a.w)
 	if a.clocked() {
-		return a.at(xs, cachSymbols-leanSyncEnd-extSyncMid)
+		t, ok := a.at(xs, cachSymbols-leanSyncEnd-extSyncMid)
+		return t, a.slopeSig() * lever, ok
 	}
 	r := &x.rate[p]
 	if r.n < extRateFits || !r.clocked() {
-		return 0, false
+		return 0, 0, false
 	}
 	_, b, _ := r.line()
-	k := xs - a.ref
-	u := float32(k) + cachSymbols - leanSyncEnd - extSyncMid
-	return a.tref + k*samplesPerSy<<8 + int64(roundf((cachSymbols-leanSyncEnd-extSyncMid)*samplesPerSy*256+a.sy/a.w+b*(u-a.sx/a.w))), true
+	return a.tref + k*samplesPerSy<<8 + int64(roundf((cachSymbols-leanSyncEnd-extSyncMid)*samplesPerSy*256+a.sy/a.w+b*(u-a.sx/a.w))), r.slopeSig() * lever, true
+}
+
+// replayTicks gives the start of a burst that the late-entry replay detects,
+// from the strobe of the lock that the replay resamples from, at the period
+// the replay resamples at. With a stretch fitted to the replayed SYNCs it
+// also gives the error that the uncertainty of that fit makes, in ticks;
+// without one, the symbols projected at a period of unknown error.
+func (x *softExt) replayTicks(c *leanCore, start int64) (int64, int16, float32, bool) {
+	if !c.replaying {
+		return 0, 0, 0, false
+	}
+	k := float32(x.lockSym - start)
+	sps := 2 * c.tm.step
+	t := c.ticksAt(x.atN, x.atAt-k*sps*(1+x.stretch))
+	if x.stretch == 0 || x.stretchSig == 0 {
+		return t, int16(k), 0, true
+	}
+	return t, 0, x.stretchSig * k * sps * float32(c.mfStep) * 256, true
+}
+
+func (a *extAnchor) slopeSig() float32 {
+	return extAnchorSig * samplesPerSy * 256 / sqrtf(max32(a.sxx-a.sx*a.sx/a.w, 1e-6))
+}
+
+func (x *softExt) rateBound(c *leanCore, base int64) (float32, bool) {
+	d, sig, ok := x.rate[x.ancParity(c, base)].rateError(c)
+	if !ok {
+		return x.stretchSig * 2 * c.tm.step * float32(c.mfStep) * 256, x.stretch != 0 && c.tm.rate == x.stretch*2*c.tm.step
+	}
+	return abs32(d) + sig, d*d <= leanClockSig*leanClockSig*sig*sig
 }
 
 func (x *softExt) timed(p int) bool {

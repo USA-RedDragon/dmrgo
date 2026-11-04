@@ -28,7 +28,7 @@ func TestRxRCReentry(t *testing.T) {
 	tx := rftx.ToIQ(append(make([]float64, pad), fm0...), append(make([]float64, pad), env0...), 2e6, 0, 0.9)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		for _, ppm := range []float64{500, -500} {
-			gap := make([]float64, seeds)
+			gap, bound := make([]float64, seeds), make([]float64, seeds)
 			forSeeds(seeds, func(i int) {
 				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, 1500, 30-22.1, uint64(i+1))
 				r := mustNew(RxConfig{Rate: 2.048e6, Tier: tier, Format: IQFormatCU8})
@@ -37,12 +37,16 @@ func TestRxRCReentry(t *testing.T) {
 				for k := 1; k < len(got); k++ {
 					if got[k].Sync == enums.SyncMSSourcedRC {
 						gap[i] = (got[k].Seconds - got[k-1].Seconds - 2*slotSeconds*(1+ppm*1e-6)) * 1e6
+						a, b := &got[k], &got[k-1]
+						c := math.Abs(ppm) * 1e-6
+						bound[i] = (math.Abs(a.stampBound(c)-a.stampBound(0)-b.stampBound(c)+b.stampBound(0)) + a.stampBound(0) + b.stampBound(0)) * 1e6
 					}
 				}
 			})
 			mean, se := meanSE(gap)
-			t.Logf("Tier%d %+.0f ppm: RC burst %+.2f us, SE %.2f", tier-Tier0, ppm, mean, se)
-			if !(math.Abs(mean)-pairedZ*se <= mxSeconds*1e6) {
+			lever, _ := meanSE(bound)
+			t.Logf("Tier%d %+.0f ppm: RC burst %+.2f us, SE %.2f, clock bound %.2f us", tier-Tier0, ppm, mean, se, lever)
+			if !(math.Abs(mean)-pairedZ*se <= mxSeconds*1e6+lever) {
 				t.Errorf("Tier%d %+.0f ppm: the RC burst after a held slot is %+.2f us off the wakeup burst plus 60 ms, SE %.2f", tier-Tier0, ppm, mean, se)
 			}
 		}

@@ -18,7 +18,8 @@ func (r *leanCore) slotPower(base int64) (on, off float32, ok bool) {
 	if r.pow.p == nil {
 		return 0, 0, false
 	}
-	t0 := tickSeconds(r.burstTicks(base))
+	ticks, _, _ := r.burstTicks(base)
+	t0 := tickSeconds(ticks)
 	if on, ok = r.pow.p.mean(t0+leanBurstSec/4, t0+3*leanBurstSec/4); !ok {
 		return 0, 0, false
 	}

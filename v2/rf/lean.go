@@ -81,6 +81,7 @@ const (
 	leanMMSPS           = 2.5
 	leanMMSign          = 1
 	leanMMGain          = 2
+	leanStampSec        = 2e-6
 	leanClockGain       = leanClockBudget / (slotSymbols * leanPhaseRatio * leanPhaseRatio)
 	leanClockBudget     = 0.01
 	leanPhaseRatio      = 0.88
@@ -215,6 +216,17 @@ func (tm *leanTiming) settle(lagN float32) {
 	}
 }
 
+// rateKnown gives the error, in samples, that the error of the clock rate,
+// the pending estimate plus one standard deviation, makes over n symbols, and
+// whether it is under leanStampSec.
+func (tm *leanTiming) rateKnown(n float32) (float32, bool) {
+	if tm.estW <= 0 {
+		return 0, false
+	}
+	e := (abs32(tm.estS/tm.estW) + 1/sqrtf(tm.estW)) * n
+	return e, e < leanStampSec*symbolRate*2*tm.step
+}
+
 func (tm *leanTiming) strobe(x float32) bool {
 	if tm.mm {
 		y := x - tm.dc
@@ -320,6 +332,7 @@ type leanTuner interface {
 type leanCore struct {
 	center   int64
 	endTicks int64
+	fitT     int64
 	mfStep   int64
 	n        int64
 	first    int64
@@ -370,6 +383,7 @@ type leanCore struct {
 	lastAnch       int32
 	lost           int32
 	lagTicks       int32
+	fitNs          int32
 	dcHz           float32
 	devScale       float32
 	fitHz          float32
@@ -817,11 +831,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 			bestD += e * sps / 4
 		}
 	}
+	z = win.mmZero(&syms, end, bestD, sps, walk)
 	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
-		bestD = win.mmZero(&syms, end, bestD, sps, walk)
-		z = bestD
-	} else if z = bestD; r.hasExt() {
-		z = win.mmZero(&syms, end, bestD, sps, walk)
+		bestD = z
 	}
 	bestD = min32(bestD, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
@@ -1727,6 +1739,7 @@ func (r *leanCore) retime(mid bool) {
 	}
 	var saved [syncSymbols]int8
 	if d, c2, z, ok := r.resample(p, &saved, true, discLock); ok {
+		r.fitNs, r.fitT = int32(r.ns-1), r.strobeTicks(r.lastAt+z)
 		if r.hasExt() && r.ns-1 == r.slotEnd-slotSymbols+leanSyncEnd {
 			r.ext.liveFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2, 1)
 		}
@@ -1922,9 +1935,10 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	}
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
+	r.fitNs, r.fitT = int32(r.ns-1-back), r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step)
 	if r.hasExt() {
 		r.ext.locked(r, d)
-		r.ext.lockFit(r, r.ns-1-back, r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step), q)
+		r.ext.lockFit(r, r.ns-1-back, r.fitT, q)
 	}
 }
 
@@ -2817,11 +2831,11 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 	b.Distance, b.BS, b.Stream, b.Slot = -1, r.bs, int(r.streams), int64(j)
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
-	ticks := r.burstTicks(base)
+	ticks, lever, e := r.burstTicks(base)
 	if r.pastEnd(ticks) {
 		return true
 	}
-	b.Seconds = tickSeconds(ticks)
+	b.Seconds, b.stamp = tickSeconds(ticks), stampOf(lever, e)
 	b.HasCACH = r.bs && ticks >= cachSymbols*samplesPerSy<<8
 	if r.iqLow && iqLowISI > 0 {
 		r.cancelISI(base)
@@ -2912,20 +2926,54 @@ func (r *leanCore) dropNoise(b *Burst, missedA bool) bool {
 	return true
 }
 
-func (r *leanCore) burstTicks(base int64) int64 {
+// burstTicks gives the start of the burst at base and, for a burst projected
+// at the nominal period because the clock rate of the call is not yet known
+// well enough, the number of symbols of that projection. Without the timing
+// line of the extension, the projection starts at the SYNC fit of the burst
+// when it has one, else at the newest strobe.
+func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
+	n := r.ns - 1 - (base + cachSymbols)
+	at := (r.mfStep*(r.n-1)+r.center)<<8 + int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256)))
+	var learned bool
+	var e float32
+	switch {
+	case r.bs:
+		learned = true
+	case r.hasExt():
+		if t, b, ok := r.ext.grid(r, base+cachSymbols); ok {
+			return t - int64(r.lagTicks), 0, b
+		}
+		if t, lever, b, ok := r.ext.replayTicks(r, base+cachSymbols); ok {
+			return t - int64(r.lagTicks), lever, b
+		}
+		e, learned = r.ext.rateBound(r, base)
+		e *= float32(n)
+	default:
+		if r.fitNs == int32(base+leanSyncEnd) {
+			n, at = leanSyncEnd-cachSymbols, r.fitT
+		}
+		e, learned = r.tm.rateKnown(float32(n))
+		e *= float32(int32(r.mfStep)) * 256
+	}
 	rate := float32(0)
-	if r.bs || r.hasExt() && r.ext.rateAgrees(r, base) {
+	if learned {
 		rate = r.tm.rate
 	}
-	back := float32(r.ns-1-(base+cachSymbols)) * (2*r.tm.step + rate)
-	ticks := (r.mfStep*(r.n-1)+r.center)<<8 +
-		int64(int32(roundf(float32(int32(r.mfStep))*(r.lastAt-back)*256))) - int64(r.lagTicks)
-	if r.hasExt() && !r.bs {
-		if t, ok := r.ext.grid(r, base+cachSymbols); ok {
-			ticks = t - int64(r.lagTicks)
-		}
+	ticks := at - int64(int32(roundf(float32(int32(r.mfStep))*float32(n)*(2*r.tm.step+rate)*256))) - int64(r.lagTicks)
+	if learned {
+		return ticks, 0, e
 	}
-	return ticks
+	return ticks, int16(n), 0
+}
+
+// stampOf packs the timing bound of a burst stamp: the symbols projected at
+// the nominal period when positive, else the error of the stamp in units of
+// 10 ns, negated.
+func stampOf(lever int16, ticks float32) int16 {
+	if lever > 0 {
+		return lever
+	}
+	return -int16(min32(ticks*(1e8/(samplesPerSy*symbolRate*256))+0.5, math.MaxInt16))
 }
 
 func (r *leanCore) stepSplit(base int64) (int, int32, int32) {

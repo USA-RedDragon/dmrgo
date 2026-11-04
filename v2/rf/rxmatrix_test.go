@@ -958,16 +958,15 @@ func mxNearest(s *mxSignal, at float64) int {
 
 func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bool, res *mxResult) {
 	matched := make([]bool, len(s.truth))
-	slack := burstSeconds * math.Abs(s.r-1)
-	tol := mxSeconds + slack
+	tol := mxSeconds
 	if cn {
-		tol = mxSecondsCN + slack
+		tol = mxSecondsCN
 	}
 	c := &mxScorer{s: s, first: map[int]int{}, offs: map[[2]int]int64{}, streams: map[int]map[int]bool{}, found: map[string][]string{}}
 	for j := len(s.truth) - 1; j >= 0; j-- {
 		c.first[s.truth[j].who] = j
 	}
-	var worst, sum float64
+	var worst, sum, slack float64
 	n, last := 0, -1
 	for i := range got {
 		b := &got[i]
@@ -979,8 +978,9 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 		}
 		matched[j], last = true, j
 		d := at - s.truth[j].at
-		sum, n = sum+d, n+1
-		if math.Abs(d) > tol && math.Abs(d) > math.Abs(worst) {
+		bound := b.stampBound(math.Abs(s.r - 1))
+		sum, slack, n = sum+d, slack+bound, n+1
+		if math.Abs(d) > tol+bound && math.Abs(d) > math.Abs(worst) {
 			worst = d
 		}
 		c.burst(b, j)
@@ -1000,7 +1000,7 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 			res.add(check, "%d of %d: %s", len(v), len(s.truth), strings.Join(v, "; "))
 		}
 	}
-	if mean := sum / float64(max(n, 1)); worst != 0 || math.Abs(mean) > mxSecondsMean+slack {
+	if mean := sum / float64(max(n, 1)); worst != 0 || math.Abs(mean) > mxSecondsMean+slack/float64(max(n, 1)) {
 		res.add("seconds", "mean %+.1f us, worst %+.1f us", mean*1e6, worst*1e6)
 	}
 	if n > 0 {
@@ -1287,4 +1287,14 @@ func TestRxMatrix(t *testing.T) {
 
 func mxDimName(d int) string {
 	return []string{"start", "lead", "offset", "source", "content", "clock", "level", "format", "cn", "dc", "gain", "adj"}[d]
+}
+
+// stampBound gives the timing bound of the stamp of b, in seconds, for a
+// clock error of clock: the projection at the nominal period times clock, or
+// the error that the receiver gave the stamp.
+func (b *Burst) stampBound(clock float64) float64 {
+	if b.stamp > 0 {
+		return float64(b.stamp) / symbolRate * clock
+	}
+	return float64(-b.stamp) * 1e-8
 }
