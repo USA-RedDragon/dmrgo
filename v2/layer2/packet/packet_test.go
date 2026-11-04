@@ -399,9 +399,6 @@ func TestSegment_Errors(t *testing.T) {
 	if _, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetStatusPrecoded, pdu.StatusPrecodedHeader{}), nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("SP_HEAD: %v", err)
 	}
-	if _, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{}), nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
-		t.Errorf("UDT_HEAD: %v", err)
-	}
 	if _, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetProprietary, pdu.ProprietaryHeader{}), nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("proprietary: %v", err)
 	}

@@ -12,6 +12,11 @@ import (
 
 const maxBlocks = 127
 
+const (
+	maxUDTBlocks = 4
+	udtCRCOctets = 2
+)
+
 const maxBlocksPerPacket = maxBlocks
 
 const maxBlockOctets = 24
@@ -72,10 +77,23 @@ func layout(n, per int) (blocks, pad int) {
 // 102 361-1 clause 9.3.44), gives confirmed blocks DBSN 0, 1, 2 and so on,
 // and keeps the other header fields. A C_HEAD, and a DD_HEAD or R_HEAD with
 // Response Requested (A) or SARQ set, has confirmed blocks, with a DBSN and
-// a CRC-9 (ETSI TS 102 361-3 clause 6.0, Table 6.5). It returns an error that wraps
-// ErrRate, ErrFormat or ErrTooLong. It allocates the storage of the Packet;
-// Builder.Segment builds into the storage of a Builder.
+// a CRC-9 (ETSI TS 102 361-3 clause 6.0, Table 6.5). A UDT_HEAD takes up
+// to 46 octets in 1 to 4 rate 1/2 blocks: NewPacket sets its UAB to the
+// blocks less one, fills the octets after payload with 1 bits, as the pad
+// nibbles 1111 and the fill of variable length binary data are, and ends
+// the last block with the CRC-CCITT of the blocks. It keeps the Pad Nibble
+// of the header, whose count depends on the UDT Format, and returns
+// ErrPadNibble when the pad nibbles cover more of payload than the low
+// nibble of its last octet. A UDT_HEAD of a text whose last character ends
+// in the high nibble of an octet counts the low nibble as a pad nibble
+// (ETSI TS 102 361-1 clauses 8.2.2.5 and 9.2.14, ETSI TS 102 361-4 Annex
+// B.3). It returns an error that wraps ErrRate, ErrFormat, ErrTooLong or
+// ErrPadNibble. It allocates the storage of the Packet; Builder.Segment
+// builds into the storage of a Builder.
 func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
+	if _, ok := header.AsUDT(); ok {
+		return NewBuilder(maxUDTBlocks).Segment(header, payload, rate)
+	}
 	confirmed, ok := isConfirmed(&header)
 	if !ok {
 		return Packet{}, ErrFormat
@@ -135,6 +153,9 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 	if b == nil {
 		return Packet{}, dmrgo.ErrNilReceiver
 	}
+	if u, ok := header.AsUDT(); ok {
+		return b.segmentUDT(u, payload, rate)
+	}
 	confirmed, err := b.setLayout(&header, len(payload), rate)
 	if err != nil {
 		return Packet{}, err
@@ -151,6 +172,41 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 		b.blocks[i] = b.block(i, b.buf[i*per:(i+1)*per], confirmed)
 	}
 	return Packet{Header: header, Blocks: b.blocks[:n]}, nil
+}
+
+func (b *Builder) segmentUDT(u pdu.UDTHeader, payload []byte, rate enums.DataType) (Packet, error) {
+	if rate != enums.DataTypeRate12 {
+		return Packet{}, ErrRate
+	}
+	n := max((len(payload)+udtCRCOctets+11)/12, 1)
+	switch {
+	case n > maxUDTBlocks:
+		return Packet{}, ErrTooLong
+	case n > len(b.blocks):
+		return Packet{}, ErrNoRoom
+	case int(u.PadNibble) > 2*(12*n-udtCRCOctets-len(payload))+1:
+		return Packet{}, ErrPadNibble
+	}
+	u.UAB = uint8(n-1) & 3
+	var h pdu.DataHeader
+	if err := h.SetUDT(u); err != nil {
+		return Packet{}, err
+	}
+	var blk [maxUDTBlocks][12]byte
+	for i := range n {
+		for j := range blk[i] {
+			blk[i][j] = 0xFF
+		}
+		if k := 12 * i; k < len(payload) {
+			copy(blk[i][:], payload[k:])
+		}
+	}
+	pdu.SetMBCLastBlockCRC(blk[:n])
+	for i := range n {
+		b.rate12[i].Data = blk[i]
+		b.blocks[i] = &b.rate12[i]
+	}
+	return Packet{Header: h, Blocks: b.blocks[:n]}, nil
 }
 
 // Retry builds the later try of the confirmed packet p that a SACK with

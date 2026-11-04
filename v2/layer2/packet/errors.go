@@ -10,13 +10,15 @@ import (
 
 // Errors returned by the package. Match them with errors.Is.
 var (
-	// ErrRate is returned for a data type other than rate 1/2, 3/4 or 1.
+	// ErrRate is returned for a data type other than rate 1/2, 3/4 or 1,
+	// and for one other than rate 1/2 for a UDT_HEAD.
 	ErrRate = errors.New("packet: data type is not rate 1/2, 3/4 or 1 coded")
 	// ErrFormat is returned by NewPacket and Builder.Segment for a header
-	// that is not U_HEAD, C_HEAD, DD_HEAD or R_HEAD.
+	// that is not U_HEAD, C_HEAD, DD_HEAD, R_HEAD or UDT_HEAD.
 	ErrFormat = errors.New("packet: header format does not carry segmented data")
 	// ErrTooLong is returned when the payload needs more than 127 blocks,
-	// or more than the header can count.
+	// or more than the header can count, such as more than 4 for a
+	// UDT_HEAD.
 	ErrTooLong = errors.New("packet: payload needs too many blocks")
 	// ErrNoRoom is returned by Assembler.Add and AddBurst, and by
 	// Builder.Segment and Retry, for a packet with more data blocks than
@@ -55,6 +57,11 @@ var (
 	// ErrNoRetryBlocks is returned by Builder.Retry when the response data
 	// flags no block of the packet.
 	ErrNoRetryBlocks = errors.New("packet: response data flags no block to resend")
+	// ErrPadNibble is returned by NewPacket and Builder.Segment for a
+	// UDT_HEAD whose Pad Nibble counts more nibbles than the payload leaves
+	// free in its blocks, plus the low nibble of its last octet. (ETSI TS
+	// 102 361-1 clause 9.3.42)
+	ErrPadNibble = errors.New("packet: UDT pad nibbles cover the payload")
 	// ErrResponseData is returned for C_RDATA blocks of the wrong count or with
 	// a bad CRC.
 	ErrResponseData = errors.New("packet: invalid response data blocks")

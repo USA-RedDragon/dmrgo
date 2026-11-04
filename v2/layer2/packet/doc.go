@@ -2,7 +2,7 @@
 // received data blocks into a Message. It handles the header block, the rate
 // 1/2, 3/4 or 1 data blocks, the pad octets, the 32-bit message CRC,
 // confirmed delivery with a DBSN and a CRC-9 per block, and the response
-// packets.
+// packets. NewPacket and Builder.Segment also build UDT packets.
 //
 // An Assembler takes one packet at a time. It drops a header whose CRC failed
 // and returns ErrHeaderCRC, and the packet in progress stays as it was. A
