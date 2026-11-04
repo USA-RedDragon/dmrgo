@@ -1344,7 +1344,7 @@ func (r *leanCore) gearShift(v float32) {
 	}
 	g := r.trackGain
 	const n = slotSymbols - cachSymbols
-	if e, ok := r.tm.rateKnown(n); ok && r.tm.mm && r.tm.gain > 0 {
+	if e, ok := r.tm.rateKnown(n); ok && !r.bs && r.tm.mm && r.tm.gain > 0 {
 		k0 := leanMMGain * r.trackGain * leanMMSlope / (2 * r.tm.step)
 		k := k0 * r.tm.gain / r.trackGain
 		d := e / n
