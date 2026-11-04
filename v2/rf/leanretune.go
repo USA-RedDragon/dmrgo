@@ -33,7 +33,7 @@ func (r *leanCore) relock(p enums.SyncPattern, src int, verified bool) {
 	}
 	var saved [syncSymbols]int8
 	d, c2, _, ok := r.resample(p, &saved, false, discLock)
-	if ok && c2 >= discLock*discLock && r.fitLevels(r.ns-1, p, true, true) {
+	if ok && c2 >= discLock*discLock && (r.fitLevels(r.ns-1, p, true, true) || r.pairLv && r.fitLevels(r.ns-1, p, true, false)) {
 		r.resampleStart(d)
 		r.lockStream(src, d, c2, 0)
 		return
