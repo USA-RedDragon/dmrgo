@@ -641,6 +641,11 @@ func mxAdjacent(s *mxSignal, adj string, p mxParams) error {
 		}
 		part.amp = math.Pow(10, mxAdjAM3dB/20)
 	}
+	weakest := math.Inf(1)
+	for _, q := range s.parts {
+		weakest = min(weakest, q.amp)
+	}
+	part.amp *= weakest
 	s.parts = append(s.parts, part)
 	s.adjAmp = part.amp
 	what := fmt.Sprintf("%s neighbor at %+.0f Hz", adj, hz)
