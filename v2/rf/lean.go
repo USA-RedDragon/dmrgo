@@ -1237,6 +1237,10 @@ func (r *leanCore) searchRC() bool {
 //go:noinline
 func (r *leanCore) rcProof(d *layer2.RawBurst) bool {
 	emb := d.StandaloneRCEMB()
+	return r.rcEMBOK(&emb)
+}
+
+func (r *leanCore) rcEMBOK(emb *pdu.EmbeddedSignalling) bool {
 	if emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected > leanProofErrors {
 		return false
 	}
@@ -1532,11 +1536,46 @@ func (r *leanCore) rcAnchor(base int64, try bool) (int64, bool) {
 		return 0, false
 	}
 	for d := int64(-1); d <= 1; d++ {
-		if r.rcAt(base+leanSyncEnd+d) >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+d, enums.SyncMSSourcedRC) {
+		if end := base + leanSyncEnd + d; r.rcAt(end) >= discAnchor*discAnchor && r.anchors(end, enums.SyncMSSourcedRC) && r.rcEMBProof(end) {
 			return d, true
 		}
 	}
 	return 0, false
+}
+
+// rcEMBProof reports whether the EMB of the standalone RC burst whose SYNC
+// ends at end passes rcProof: burst symbols 42 to 45 and 86 to 89 (bits 84
+// to 91 and 172 to 179) of ETSI TS 102 361-1, sliced at the levels of a fit
+// to its SYNC. At the slot of a lock on the RC SYNC the second half is not
+// in yet, and unreported checks the EMB of the burst.
+func (r *leanCore) rcEMBProof(end int64) bool {
+	if end+12 >= r.ns {
+		return true
+	}
+	g, dc, _ := r.fitSync(end, enums.SyncMSSourcedRC)
+	if g <= 0 {
+		return false
+	}
+	inv := 1 / (g * deviationHz)
+	var cw uint16
+	k := end - 35
+	for i := range 8 {
+		if i == 4 {
+			k = end + 9
+		}
+		y := (float32(r.ring[ringPos(k)])*discStepHz + r.off - dc) * inv
+		k++
+		v := int8(1)
+		if y > 2 || y < -2 {
+			v = 3
+		}
+		if y < 0 {
+			v = -v
+		}
+		cw = cw<<2 | dibitOf(v)
+	}
+	emb := embOfCW(cw)
+	return r.rcEMBOK(&emb)
 }
 
 func (r *leanCore) rcAt(end int64) float32 {

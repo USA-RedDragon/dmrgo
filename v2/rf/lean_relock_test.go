@@ -138,6 +138,40 @@ func TestLeanTalkerAfterDrop(t *testing.T) {
 	}
 }
 
+// TestLeanRCAnchorProof pins a standalone RC SYNC with a bad EMB in the
+// flywheel after an MS voice call: the receiver took it as an anchor and
+// moved its slot grid onto noise.
+func TestLeanRCAnchorProof(t *testing.T) {
+	t.Parallel()
+	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, Superframes: 2}
+	call, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := rftx.Sequence("rc", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rc := b.Bursts[len(b.Bursts)-1]
+	for k := 84; k < 92 && !rc.StandaloneRCEMB().FEC.Uncorrectable; k++ {
+		rc[k/8] ^= 0x80 >> (k % 8)
+	}
+	voice := call.Bursts[:len(call.Bursts)-1]
+	const lead = 0.05
+	for gap := 1; gap <= 3; gap++ {
+		at := lead + float64(2*(len(voice)+gap))*slotSeconds
+		x := relockSynth([]relockPart{{voice, lead, 0}, {[]layer2.RawBurst{rc}, at, 0}}, nil, at+slotSeconds+0.2)
+		for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+			r := mustNew(RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCS16})
+			for _, g := range r.AppendFlush(r.AppendBursts(nil, iqBytes(x, IQFormatCS16))) {
+				if g.Sync == enums.SyncMSSourcedRC {
+					t.Errorf("gap %d, Tier%d: RC burst with a bad EMB at %.4f s", gap, tier-Tier0, g.Seconds)
+				}
+			}
+		}
+	}
+}
+
 func TestLeanLoneRCProof(t *testing.T) {
 	t.Parallel()
 	b, err := rftx.Sequence("rc", randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911}))
