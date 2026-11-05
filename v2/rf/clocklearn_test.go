@@ -2,14 +2,14 @@ package rf
 
 import (
 	"fmt"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 	"math"
 	"math/bits"
 	"strconv"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 )
 
 func clockRunErrors(t testing.TB, g *testseed.Gen, cn, ppm float64, seeds int) [8]int {

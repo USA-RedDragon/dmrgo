@@ -149,10 +149,3 @@ func (sharedTB) Name() string { return "shared" }
 // sharedRun stands for the tests that share a cached random input: its
 // noise seeds come from the run seed only.
 var sharedRun testing.TB = sharedTB{}
-
-func mxDraw(t testing.TB, row mxRow) uint64 {
-	if t == nil || fixedPayload(t) {
-		return 0
-	}
-	return runMix(noiseSeed(t, nameHash(row.name())), 1)
-}

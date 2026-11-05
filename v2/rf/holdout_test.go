@@ -3,6 +3,7 @@ package rf
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -48,7 +49,7 @@ func holdoutRuns() int {
 	fails := map[string][]uint64{}
 	for i := range runs {
 		seed := runMix(base, uint64(i))
-		cmd := exec.Command(os.Args[0], args...)
+		cmd := exec.CommandContext(context.Background(), os.Args[0], args...)
 		cmd.Env = append(os.Environ(), testseed.EnvHoldout+"="+holdoutChild, fmt.Sprintf("%s=%d", testseed.EnvSeed, seed))
 		var out bytes.Buffer
 		cmd.Stdout, cmd.Stderr = &out, &out

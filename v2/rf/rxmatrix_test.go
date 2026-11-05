@@ -1299,3 +1299,10 @@ func mxDimName(d int) string {
 func (b *Burst) stampBound(clock float64) float64 {
 	return float64(b.SecondsSymbols)/symbolRate*clock + float64(b.SecondsError)
 }
+
+func mxDraw(t testing.TB, row mxRow) uint64 {
+	if t == nil || fixedPayload(t) {
+		return 0
+	}
+	return runMix(noiseSeed(t, nameHash(row.name())), 1)
+}
