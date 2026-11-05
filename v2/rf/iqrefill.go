@@ -49,7 +49,7 @@ func (r *iqRx) attachRefill(x *softExt) {
 	if r.cHist != nil {
 		f.wide = make([]complex64, int64(r.conv.decim)*int64(len(r.cHist))+2*int64(len(r.conv.coh.taps)))
 		f.mixed = make([]complex128, len(f.wide)+2*max(len(r.conv.coh.taps), len(r.conv.taps)))
-		x.refillCoh, x.settleCoh = r.refillCoh, r.settleCoh
+		x.refillCoh = r.refillCoh
 	}
 }
 
@@ -358,6 +358,7 @@ func (r *iqRx) writeAudioExt() {
 		x = r.lockRetune(x)
 		r.d.lockDue = false
 	}
+	r.settleCoh()
 	r.audio = r.audio[:0]
 	if f != nil && f.narrowOn && !r.d.locked {
 		r.toWide()

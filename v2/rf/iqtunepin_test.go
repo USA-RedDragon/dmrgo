@@ -129,3 +129,23 @@ func TestIQHuntAfterLock(t *testing.T) {
 		}
 	}
 }
+
+// TestIQRefillSettle pins Tier 3 locks where the converter moved to the
+// coherent lock frequency while the audio taken before that tune was still
+// to be read, and the next SYNC fit tuned it again by the same offset.
+func TestIQRefillSettle(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		run  uint64
+		name string
+		spur float32
+	}{
+		{2146918402700525728, "TestCoreTier3LockOffset", -0.5},
+		{373987276557011745, "TestCoreTier3LockOffset", -0.5},
+		{10339290622464889001, "TestIQLockOffsetDCSpur", -0.5},
+	} {
+		if at := lockOffsetPin(t, c.run, c.name, 1400, 10, c.spur, Tier3); math.Abs(at-1400) > iqAFCPullHz {
+			t.Errorf("%s %d: converter at %.0f Hz at the lock, carrier at 1400 Hz", c.name, c.run, at)
+		}
+	}
+}

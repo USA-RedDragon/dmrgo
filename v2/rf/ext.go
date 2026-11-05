@@ -124,7 +124,6 @@ type softExt struct {
 	rs              *audioRate
 	slc             *shortLCOut
 	refillCoh       func(float64)
-	settleCoh       func()
 	lookback        int
 	ring            [leanRing]int8
 	lockSym         int64
@@ -1228,7 +1227,6 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.first = live
 	c.slotEnd = slotEnd
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
-	x.settleLock()
 	x.lockHz(c)
 	x.vOK = false
 }
@@ -1268,12 +1266,6 @@ func (x *softExt) refillLock(c *leanCore) {
 		hz, _ = x.coh.src.cohLockHz()
 	}
 	x.refillCoh(hz)
-}
-
-func (x *softExt) settleLock() {
-	if x.settleCoh != nil {
-		x.settleCoh()
-	}
 }
 
 func (x *softExt) replayLock(j int32, b *Burst) {
