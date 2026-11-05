@@ -4,14 +4,16 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 )
 
+// TestSoftExtEmbeddedLC checks at 5 dB that softExt recovers at least 80% of
+// the embedded LCs and more than the Tier0 receiver without it, as rates at
+// level testseed.Alpha.
 func TestSoftExtEmbeddedLC(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)
-	x := noisyBaseband(t, slots, 1400, 5, 41)
-	a := discAudio(x, benchAudioHz)
-	elc := func(soft bool) float64 {
+	elc := func(a []int16, soft bool) (int, int) {
 		var out []Burst
 		r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: Tier0, OnBursts: each(func(b *Burst) { out = append(out, *b) })})
 		if err != nil {
@@ -23,12 +25,18 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 		must(r.writeAll(a))
 		r.flushAll()
 		s := scoreBench(truth, out)["elc"]
-		return float64(s.Exact) / float64(max(s.Truth, 1))
+		return s.Exact, s.Truth
 	}
-	hard, soft := elc(false), elc(true)
-	t.Logf("embedded LC recovered: %.2f hard, %.2f with softExt", hard, soft)
-	if soft < 0.8 || soft <= hard {
-		t.Errorf("embedded LC recovered %.2f with softExt, %.2f without", soft, hard)
+	var hard, soft, n int
+	for seed := uint64(41); seed < 49; seed++ {
+		a := discAudio(noisyBaseband(t, slots, 1400, 5, seed), benchAudioHz)
+		h, _ := elc(a, false)
+		s, m := elc(a, true)
+		hard, soft, n = hard+h, soft+s, n+m
+	}
+	t.Logf("embedded LCs recovered: %d hard, %d with softExt, of %d", hard, soft, n)
+	if testseed.RateBelow(soft, n, 0.8) || !testseed.RateHigher(soft, n, hard, n) {
+		t.Errorf("embedded LCs recovered: %d with softExt, %d without, of %d", soft, hard, n)
 	}
 }
 
