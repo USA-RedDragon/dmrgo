@@ -2678,11 +2678,14 @@ func (r *leanCore) setHunt() {
 	}
 	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
 	r.reEntry = false
+	if r.isReplaying() {
+		return
+	}
 	was := r.hunt
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
-			settled := r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r)) || r.isReplaying()
+			settled := r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r))
 			if settled && !r.syncDue() {
 				return
 			}

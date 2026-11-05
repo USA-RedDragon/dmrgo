@@ -39,6 +39,17 @@ func TestRxReplaySeekEMBTiming(t *testing.T) {
 	}
 }
 
+// TestRxReplayKeepsHunt pins a payload on which a replayed slot restarted
+// the kept samples, so the replay found no samples left for the EMB seeks of
+// the second talker and lost its first five bursts.
+func TestRxReplayKeepsHunt(t *testing.T) {
+	t.Parallel()
+	s := testscen.Of(runMix(3266862871274688850, nameHash("TestRxReplaySeek")))
+	replaySeek(t, func(src uint32, cfg rftx.SeqConfig) rftx.SeqConfig {
+		return testscen.Of(runMix(s.VoiceSeed, uint64(src))).Apply(cfg)
+	})
+}
+
 func replaySeek(t *testing.T, payload func(uint32, rftx.SeqConfig) rftx.SeqConfig) {
 	row := mxRowNamed(t, "mid.none.+0.ms2.voice.0ppm.nom.cs16-48k.inf")
 	s := &mxSignal{r: 1, seed: row.seed(), step: math.Inf(1), gain: [2]float64{1, 1}}
