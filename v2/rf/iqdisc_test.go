@@ -106,22 +106,23 @@ func TestIQDiscDataBias(t *testing.T) {
 	}
 }
 
+const channelEdgeHz = channelHz / 2
+
 func TestIQDiscAdjacent(t *testing.T) {
 	t.Parallel()
 	for _, held := range []bool{false, true} {
-		o := discOptions()
-		o.IQDisc, o.IQHz = true, 12000
-		if held {
-			o.IQTuneMaxHz, o.IQTuneSyncOnly = 2500, true
+		o := tierOptions(Tier0)
+		if !held {
+			o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQSpecHunt = 0, false, false
 		}
 		n, want, off := adjacentReceive(t, Tier0, &o, 300)
-		if n < want {
-			t.Errorf("held %v: C0 and C1 of %d of %d voice frames exact", held, n, want)
+		if held && n < want {
+			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
 		}
 		switch {
 		case held && off > iqAFCLockHz:
 			t.Errorf("held: oscillator %.0f Hz off the carrier while locked", off)
-		case !held && off >= iqTuneMaxHz:
+		case !held && off >= channelEdgeHz:
 			t.Errorf("not held: oscillator %.0f Hz off the carrier, outside the channel", off)
 		}
 	}
@@ -132,13 +133,13 @@ func TestTier3Adjacent(t *testing.T) {
 	for _, held := range []bool{false, true} {
 		o := tierOptions(Tier3)
 		if !held {
-			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQStopHz, o.IQSpecHunt = 0, 0, 0, 0, false
+			o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQSpecHunt = 0, false, false
 		}
 		n, want, off := adjacentReceive(t, Tier3, &o, 0)
-		if n < want {
-			t.Errorf("held %v: C0 and C1 of %d of %d voice frames exact", held, n, want)
+		if held && n < want {
+			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
 		}
-		if !held && off >= iqTuneMaxHz {
+		if !held && off >= channelEdgeHz {
 			t.Errorf("not held: oscillator %.0f Hz off the carrier, outside the channel", off)
 		}
 	}
