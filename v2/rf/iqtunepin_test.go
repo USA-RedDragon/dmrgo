@@ -298,13 +298,15 @@ func TestIQLowDCStart(t *testing.T) {
 	t.Parallel()
 	name := "s0.none.+0.ms.voice.0ppm.low.cs16-9600.40dB.dc"
 	row := mxRowOf(t, name)
-	res, err := mxRun(pinnedRun{t, 3, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, r := range res {
-		if s := r.symptoms(); s != "" {
-			t.Errorf("%s: %s", name, s)
+	for _, run := range []uint64{3, 17135660685592486755} {
+		res, err := mxRun(pinnedRun{t, run, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range res {
+			if s := r.symptoms(); s != "" {
+				t.Errorf("run %d %s: %s", run, name, s)
+			}
 		}
 	}
 }
@@ -338,3 +340,4 @@ func TestRxLockFarHeld(t *testing.T) {
 		}
 	}
 }
+

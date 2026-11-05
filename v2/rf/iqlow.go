@@ -11,7 +11,7 @@ const (
 	iqLowDCStart = 5
 	iqLowDCEvery = 1
 	iqLowDCBlock = 16
-	iqLowDCDelay = 16
+	iqLowDCDelay = 32
 	iqLowBuf     = 16
 	iqLowPack    = 16
 	iqLowScale   = 4096
@@ -351,10 +351,12 @@ func (r *iqLowRx) tune(hz, dc float32) {
 }
 
 func (r *iqLowRx) flush() {
-	for i := range r.out[:iqLowDCDelay] {
-		r.out[i] = r.dly[(int(r.dHead)+i)&(iqLowDCDelay-1)]
+	for k := 0; k < iqLowDCDelay; k += iqLowDCBlock {
+		for i := range r.out {
+			r.out[i] = r.dly[(int(r.dHead)+k+i)&(iqLowDCDelay-1)]
+		}
+		r.run(r.out[:])
 	}
-	r.run(r.out[:iqLowDCDelay])
 	if !r.d.iqLow || !r.d.front96 {
 		r.d.writeIQ(r.buf[:r.n])
 	}
