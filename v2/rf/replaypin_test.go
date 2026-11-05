@@ -119,3 +119,21 @@ func TestRxSeekAfterCohTune(t *testing.T) {
 		t.Error(strings.Join(r.detail, " | "))
 	}
 }
+
+// TestRxEMBNotDataSync pins a payload whose EMB and embedded LC in the SYNC
+// field of a voice burst lie 12 bits from the MS data SYNC: every tier
+// anchored the burst as data and rewrote its slot type and SYNC bits.
+func TestRxEMBNotDataSync(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.+0.ms2.voice.0ppm.nom.cs16-48k.inf")
+	rxs := mxReceivers(row.val(mxFormat), true)
+	out, err := mxRun(pinnedTB{t, 3117808035017486951}, row, rxs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, x := range rxs {
+		if r := out[x]; r.fail["bits"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
+		}
+	}
+}

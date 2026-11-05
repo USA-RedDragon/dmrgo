@@ -2423,6 +2423,9 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 	if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
 		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
 	}
+	if end := base + leanSyncEnd + shift; isAnchor && anchor == dp && r.embBeats(end, r.syncErrors(end, dp, r.devScale, r.dcHz)) {
+		isAnchor = false
+	}
 	if isAnchor && r.isReplaying() {
 		if e := r.syncErrors(base+leanSyncEnd+shift, anchor, r.devScale, r.dcHz); r.replayDeep && e > leanReplayFalse || seek && e > leanReplayErrors {
 			isAnchor = false
@@ -2448,6 +2451,40 @@ func (r *leanCore) holdGuard() {
 	if !r.bs && !r.tm.hold && !r.isReplaying() {
 		r.tm.hold, r.tm.wake = true, cachSymbols
 	}
+}
+
+// embBeats reports whether the 48 bits in the SYNC field at end read better
+// as the EMB of a voice burst of the stream (ETSI TS 102 361-1 clause 9.1.2)
+// than as a data SYNC with errs bit errors: the EMB must carry the stream's
+// color code, and each reading pays its errors at the error rate that fits
+// them best, the EMB reading also 1 bit for each of its 32 free bits.
+func (r *leanCore) embBeats(end int64, errs int) bool {
+	data := bitsCost(errs, 2*syncSymbols)
+	cc, ok := r.colorCode()
+	if !ok || data <= embFreeBits*math.Ln2 {
+		return false
+	}
+	r.setLLR()
+	var cw uint16
+	for i := range int64(8) {
+		k := end - syncSymbols + 1 + i
+		if i >= 4 {
+			k += syncSymbols - 8
+		}
+		cw = cw<<2 | dibitOf(r.sliceLevel(int32(r.ring[ringPos(k)])))
+	}
+	emb := embOfCW(cw)
+	return embWeak(&emb, true, cc) && data > bitsCost(emb.FEC.ErrorsCorrected, 2*syncSymbols-embFreeBits)+embFreeBits*math.Ln2
+}
+
+const embFreeBits = 32
+
+func bitsCost(k, n int) float32 {
+	if k <= 0 || k >= n {
+		return 0
+	}
+	p := float32(k) / float32(n)
+	return -float32(k)*log32(p) - float32(n-k)*log32(1-p)
 }
 
 func (r *leanCore) holdNext(j int32, present bool) {
