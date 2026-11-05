@@ -31,6 +31,9 @@ type SeqConfig struct {
 	Superframes int
 	// AMBESilence sends AMBE+2 silence instead of the test pattern.
 	AMBESilence bool
+	// VoiceSeed selects the voice pattern: 0 is the TestAMBEFrame pattern,
+	// and any other value a pattern of the same kind drawn from it.
+	VoiceSeed uint64
 	// LateEntry leaves out the voice LC and PI headers, so a receiver gets
 	// the call only from the embedded LC.
 	LateEntry bool
@@ -311,10 +314,16 @@ func motorolaCSBKBursts(alert bool, cfg SeqConfig) ([]layer2.RawBurst, error) {
 // known 49-bit value per frame, so the relayed frames can be compared bit
 // for bit.
 func TestAMBEFrame(i int) vocoder.AMBEFrame {
+	return VoiceFrame(0, i)
+}
+
+// VoiceFrame returns frame i of the voice pattern of seed. Seed 0 is the
+// TestAMBEFrame pattern.
+func VoiceFrame(seed uint64, i int) vocoder.AMBEFrame {
 	if i < 0 {
 		i = 0
 	}
-	z := (uint64(i) + 1) * 0x9E3779B97F4A7C15
+	z := (uint64(i)+1)*0x9E3779B97F4A7C15 + seed*0xD1B54A32D192ED03
 	z = (z ^ z>>30) * 0xBF58476D1CE4E5B9
 	z = (z ^ z>>27) * 0x94D049BB133111EB
 	z ^= z >> 31
@@ -358,7 +367,7 @@ func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, erro
 	}
 	n := cfg.Superframes * layer2.VoiceBurstsPerSuperframe * layer2.VoiceSlotsPerBurst
 	for i := range n {
-		f := TestAMBEFrame(i)
+		f := VoiceFrame(cfg.VoiceSeed, i)
 		if cfg.AMBESilence {
 			f = vocoder.AMBESilence()
 		}
