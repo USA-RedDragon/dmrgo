@@ -1161,11 +1161,16 @@ func (x *softExt) firstSlot(c *leanCore) {
 		return
 	}
 	x.refillLock(c)
+	x.stretchSig = 0
+	stretch, m, a := x.replayStretch(c, n, last, at, sps)
+	at += a
+	x.atAt = at
 	if x.coh != nil {
 		x.coh.warmFreq(c, c.first, n)
 	}
-	x.stretchSig = 0
-	stretch := x.clockStretch(c, n, last, at, sps)
+	if stretch == 0 && m < 2 {
+		stretch = blindStretch(c, n, last, at, sps)
+	}
 	if stretch == 0 && x.coh != nil {
 		stretch = float32(x.coh.warmStretch)
 	}
@@ -1369,14 +1374,6 @@ const (
 	replayTimeVarMS = 0.01924
 )
 
-func (x *softExt) clockStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
-	e, m := x.replayStretch(c, n, last, at, sps)
-	if e == 0 && m < 2 {
-		e = blindStretch(c, n, last, at, sps)
-	}
-	return e
-}
-
 const (
 	blindSlip = 0.45
 	blindStep = 0.2
@@ -1477,7 +1474,7 @@ func blindStretch(c *leanCore, n int, last int64, at, sps float32) float32 {
 	return best
 }
 
-func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) (float32, int) {
+func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32) (e float32, m int, a float32) {
 	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
 	var syms [2][syncSymbols]int8
 	syncSyms(voice, &syms[0])
@@ -1488,7 +1485,6 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 	if c.bs {
 		tv = replayTimeVarBS
 	}
-	m := 0
 	for j := int64(-1); j < int64(n); j++ {
 		span := float32(0)
 		if j >= 0 {
@@ -1501,7 +1497,7 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 		best, p, r := keptSyncPeak(c, &syms, at-span, sps, reach)
 		if best <= -reach || best >= reach {
 			if j < 0 {
-				return 0, m
+				return 0, 0, 0
 			}
 			continue
 		}
@@ -1512,24 +1508,24 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 		off := keptMMZero(c, &syms[p], at-span, (float32(best)+edgeVertex3(&cv))*sps/8, sps)
 		if j >= 0 {
 			x.syncFit(c, first+j*slotSymbols+leanSyncEnd, c.ticksAt(x.atN, at-span+off), r, 1)
+		} else if t := c.ticksAt(x.atN, at+off); c.fitNs == int32(c.first+leanSyncEnd) {
+			c.fitT, c.fitQ = t, r
+			x.lockFit(c, c.first+leanSyncEnd, t, r)
 		}
 		w := r / (max32(1-r, 1e-6) * tv * sps * sps)
 		sw, sx, sy, sxx, sxy = sw+w, sx+w*span, sy+w*off, sxx+w*span*span, sxy+w*span*off
 		m++
 	}
-	if m < 2 {
-		return 0, m
-	}
 	vx := sxx - sx*sx/sw
-	if vx <= 0 {
-		return 0, m
+	if m < 2 || vx <= 0 {
+		return 0, m, sy / sw
 	}
 	b := (sxy - sx*sy/sw) / vx
-	if e := -b; b*b*vx > leanClockSig*leanClockSig && abs32(e) <= leanClockMax {
+	if b*b*vx > leanClockSig*leanClockSig && abs32(b) <= leanClockMax {
 		x.stretchSig = 1 / sqrtf(vx)
-		return e, m
+		return -b, m, (sy - b*sx) / sw
 	}
-	return 0, m
+	return 0, m, sy / sw
 }
 
 func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32, w int) (best, pat int, top float32) {

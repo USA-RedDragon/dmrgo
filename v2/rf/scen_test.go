@@ -90,6 +90,7 @@ var bugPinTests = map[string]string{
 	"TestRxEMBSeekSliceTie":              "a payload whose first EMB of the second talker decoded exactly at two slice timings",
 	"TestRxReplayKeepsHunt":              "a payload whose replay restarted the kept samples before its EMB seeks",
 	"TestRxEMBNotRCSync":                 "a payload whose voice EMB field reads as an MS reverse channel SYNC",
+	"TestRxReplayLockOffset":             "a payload whose forced lock left the lock strobe 0.1 symbol off its SYNC",
 	"TestRxEMBNotDataSync":               "a payload whose voice EMB field lies 12 bits from the MS data SYNC",
 	"TestRxReplaySeekEMBTiming":          "payloads whose EMB seek the 24-symbol peak timed 7 to 9 us off",
 	"TestLeanFadeKeepsPhase":             "a payload whose burst after a fade was stamped early (loop on the faded slots)",

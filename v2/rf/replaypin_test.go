@@ -176,3 +176,24 @@ func TestRxEMBNotRCSync(t *testing.T) {
 		}
 	}
 }
+
+// TestRxReplayLockOffset pins a payload on which a forced lock left the lock
+// strobe 0.1 symbol off its SYNC: the replay kept that origin, fitted a
+// false stretch to the eye of the slots before, and placed them up to 20 us
+// off.
+func TestRxReplayLockOffset(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.none.+0.ms.voice.0ppm.nom.cu8-48k.inf")
+	s := lateEntryOf(t, randomizedN(pinnedTB{t, 5419008064897867668}, 3190001, lateEntryConfig()), 0, 0.008)
+	in := mxInputOf(s, row)
+	x := mxRx{"cu8-48k", Tier2}
+	got, dev, err := mxReceive(in, x)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := &mxResult{}
+	mxScore(s, in, x.tier, got, dev, false, r)
+	if r.fail["seconds"] || r.fail["bits"] {
+		t.Error(strings.Join(r.detail, " | "))
+	}
+}
