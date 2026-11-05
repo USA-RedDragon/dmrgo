@@ -77,7 +77,7 @@ func TestRxClockLearnLowCN(t *testing.T) {
 func TestRxClockLearnPayloads(t *testing.T) {
 	t.Parallel()
 	bad := 0
-	for _, src := range []uint32{3005511, 3007342} {
+	for _, src := range []uint32{3009104, 3009105} {
 		cfg := testConfig()
 		cfg.Source = src
 		for _, e := range clockRuns(t, cfg, 12, -500, 16) {

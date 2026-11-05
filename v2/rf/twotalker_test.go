@@ -20,7 +20,7 @@ func twoTalkers(t testing.TB, ppm [2]float64, sf int) (f, e [2][]float64, tk [2]
 	ramp := (slotSeconds - burstSeconds) / 2
 	for k := range 2 {
 		cfg := testConfig()
-		cfg.Source, cfg.Superframes = []uint32{3005511, 3007342}[k], sf
+		cfg.Source, cfg.Superframes = []uint32{3009104, 3009105}[k], sf
 		b, err := rftx.Sequence("voice", cfg)
 		if err != nil {
 			t.Fatal(err)

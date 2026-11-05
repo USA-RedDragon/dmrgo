@@ -49,7 +49,7 @@ func benchStream(t testing.TB, n int) ([]rftx.BSSlot, []benchSlot) {
 // its data calls.
 func benchStreamMsg(t testing.TB, n int, msg string) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
-	return benchStreamOf(t, rftx.SeqConfig{Source: 3191868, BS: 314926, Message: msg}, 3140598, n)
+	return benchStreamOf(t, rftx.SeqConfig{Source: 3009101, BS: 990913, Message: msg}, 3009201, n)
 }
 
 // benchMessage gives the text of the data calls of payload draw d: 16
