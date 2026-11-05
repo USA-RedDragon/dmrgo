@@ -14,7 +14,7 @@ import (
 
 func TestIQDiscBurstyOffset(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -31,7 +31,7 @@ func TestIQDiscBurstyOffset(t *testing.T) {
 		}
 		fmAll, envAll = append(fmAll, fm...), append(envAll, env...)
 		for i := range 18 * cfg.Superframes {
-			want = append(want, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
+			want = append(want, rftx.AMBEValue(rftx.VoiceFrame(cfg.VoiceSeed, i)))
 		}
 	}
 	for _, tier := range []Tier{Tier0, Tier1} {
@@ -49,7 +49,7 @@ func TestIQDiscBurstyOffset(t *testing.T) {
 
 func TestIQDiscDataBias(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Wakeups, cfg.Slot, cfg.Preambles = 1, 0, 1, 2
 	cfg.Message = "DMRGO SIMCMP CALL 11 THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789"
 	built, err := rftx.Sequence("data1", cfg)
@@ -151,7 +151,7 @@ func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, 
 
 func adjacentReceiveSeed(t *testing.T, tier Tier, o *options, offsetHz float64, seed uint64) (n, want int, off float32) {
 	t.Helper()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -168,10 +168,10 @@ func adjacentReceiveSeed(t *testing.T, tier Tier, o *options, offsetHz float64, 
 		}
 		fmAll, envAll = append(fmAll, fm...), append(envAll, env...)
 		for i := range 18 * cfg.Superframes {
-			frames = append(frames, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
+			frames = append(frames, rftx.AMBEValue(rftx.VoiceFrame(cfg.VoiceSeed, i)))
 		}
 	}
-	ic := testConfig()
+	ic := testConfig(t)
 	ic.ColorCode, ic.Superframes, ic.Wakeups, ic.Slot, ic.BSSourced = 5, 4, 0, 0, true
 	ib, err := rftx.Sequence("voice", ic)
 	if err != nil {
@@ -211,7 +211,7 @@ func iqDiscReceive(x []complex64, hz int) []Burst {
 func TestIQDiscLoopback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 30, 3)
+	x := noisyBaseband(t, slots, 1400, 30, 3)
 	for _, hz := range []int{discRate, discRate / 2} {
 		sc := scoreBench(truth, iqDiscReceive(x, hz))
 		for _, k := range []string{"ambe", "rate12", "rate34", "csbk", "emb", "slottype"} {
@@ -233,7 +233,7 @@ func TestIQSpecHunt(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
 	for _, off := range []float64{-6000, -5000, 5000, 6000} {
-		x := noisyBaseband(slots, off, 10, 4)
+		x := noisyBaseband(t, slots, off, 10, 4)
 		for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 			if exact, total := exactFrames(slots, receiveBaseband(x, tier)); exact < total*8/10 {
 				t.Errorf("tier %d at %.0f Hz: %d of %d voice frames exact", tier-Tier0, off, exact, total)
@@ -246,7 +246,7 @@ func TestReceiverOffsetHz(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
 	for _, c := range []struct{ off, set float64 }{{11400, 11000}, {-11000, -11300}} {
-		x := noisyBaseband(slots, c.off, 15, 5)
+		x := noisyBaseband(t, slots, c.off, 15, 5)
 		for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 			for _, set := range []float64{0, c.set} {
 				r := mustNew(RxConfig{Tier: tier, OffsetHz: set, Rate: basebandRate, Format: IQFormatCU8})
@@ -267,7 +267,7 @@ func TestReceiverOffsetHz(t *testing.T) {
 			}
 		}
 	}
-	y := lowIQ(noisyBaseband(slots, 1700, 25, 6), iq0LowHz)
+	y := lowIQ(noisyBaseband(t, slots, 1700, 25, 6), iq0LowHz)
 	for _, set := range []float64{0, 1500} {
 		var r Receiver
 		var got []Burst
@@ -294,7 +294,7 @@ func TestIQAFCAvgNoise(t *testing.T) {
 		o.IQAFCAvg = m
 		r := mustNewOpt(RxConfig{Tier: Tier0, Rate: basebandRate, Format: IQFormatCU8}, o)
 		for seed := uint64(1); seed <= 20; seed++ {
-			must(r.writeBB(noisyBaseband(nil, 0, 0, seed)))
+			must(r.writeBB(noisyBaseband(t, nil, 0, 0, seed)))
 		}
 		if hz := r.host().iqd.conv.hz; hz != 0 {
 			t.Errorf("IQAFCAvg %d: oscillator at %.0f Hz after noise alone", m, hz)
@@ -339,7 +339,7 @@ func TestReceiverOffsetHzTransmitters(t *testing.T) {
 	for i, s := range slots {
 		bs[i] = Burst{Data: s.Burst, CACH: s.CACH, HasCACH: true, BS: true, Stream: 1, Slot: int64(i)}
 	}
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.BSSourced = false
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
@@ -351,10 +351,10 @@ func TestReceiverOffsetHzTransmitters(t *testing.T) {
 	}
 	signal := func(src string, base bool, hz float64) []byte {
 		if src == "rrc" {
-			x := cleanBaseband(slots, hz).noisy(60, 1)
+			x := cleanBaseband(slots, hz).noisy(t, 60, 1)
 			if !base {
 				f, e := rftx.Modulate(built.Bursts, rftx.Schedule{})
-				x = noisyFM(f, e, hz, 60, 1)
+				x = noisyFM(t, f, e, hz, 60, 1)
 			}
 			return iqBytes(dgUpsample(x, rate), IQFormatCF32)
 		}
@@ -399,7 +399,7 @@ func TestReceiverOffsetHzTransmitters(t *testing.T) {
 
 func TestReceiverStartLevels(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -447,7 +447,7 @@ func TestReceiverStartLevels(t *testing.T) {
 			for i := range fm {
 				f[n+i], e[n+i] = fm[i]*j.dev, env[i]
 			}
-			iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
+			iq := channel(t, rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
 			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 				if !slices.Contains(devs[tier], j.dev) {
 					continue
@@ -474,7 +474,7 @@ func TestReceiverStartLevels(t *testing.T) {
 
 func TestReceiverClockStart(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 2}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 2})
 	type job struct {
 		bs   bool
 		ppm  float64
@@ -515,7 +515,7 @@ func TestReceiverClockStart(t *testing.T) {
 			f, e := make([]float64, n+len(fm)), make([]float64, n+len(fm))
 			copy(f[n:], fm)
 			copy(e[n:], env)
-			iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6/(1+j.ppm*1e-6), 2.048e6, 3000, 25, 5)
+			iq := channel(t, rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6/(1+j.ppm*1e-6), 2.048e6, 3000, 25, 5)
 			r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: Tier3})
 			got := r.AppendFlush(r.AppendBursts(nil, iq))
 			for i, w := range want {
@@ -530,7 +530,7 @@ func TestReceiverClockStart(t *testing.T) {
 
 func TestReceiverDeviationAfterSilence(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -545,7 +545,7 @@ func TestReceiverDeviationAfterSilence(t *testing.T) {
 		for i := range fm {
 			f[n+i], e[n+i] = fm[i]*c.dev, env[i]
 		}
-		iq := rftx.Channel(rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, c.seed)
+		iq := channel(t, rftx.ToIQ(f, e, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, c.seed)
 		r := mustNew(RxConfig{Rate: 2048000, Format: IQFormatCU8, Tier: Tier3})
 		got := r.AppendFlush(r.AppendBursts(nil, iq))
 		if len(got) != len(built.Bursts) {
@@ -561,7 +561,7 @@ func TestReceiverDeviationAfterSilence(t *testing.T) {
 
 func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	built, err := rftx.Sequence("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -586,7 +586,7 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 					fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 				}
 				n := len(fm)
-				head := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
+				head := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
 				fm, env = append(fm, make([]float64, 4*n)...), append(env, make([]float64, 4*n)...)
 				if tail != "no carrier" {
 					for i := n; i < len(env); i++ {
@@ -598,7 +598,7 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 						fm[i] = 2000
 					}
 				}
-				iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
+				iq := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 3000, 25, 1)
 				for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 					c, cn := receive(tier, head)
 					r, rn := receive(tier, iq)

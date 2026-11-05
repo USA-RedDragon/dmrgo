@@ -48,7 +48,7 @@ func TestIQLockOffsetDCSpur(t *testing.T) {
 	slots, _ := benchStream(t, 1)
 	for _, off := range []float64{1400, -1400} {
 		for _, cn := range []float64{10, 20} {
-			iq := cu8Spur(noisyBaseband(slots, off, cn, 7), 32, -0.5)
+			iq := cu8Spur(noisyBaseband(t, slots, off, cn, 7), 32, -0.5)
 			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 				at, after, ok := lockNCO(t, iq, basebandRate, tier)
 				switch {
@@ -68,7 +68,7 @@ func TestCoreTier3LockOffset(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 1)
 	for _, off := range []float64{1400, -1400} {
-		iq := cu8Spur(noisyBaseband(slots, off, 10, 7), 32, -0.5)
+		iq := cu8Spur(noisyBaseband(t, slots, off, 10, 7), 32, -0.5)
 		r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 		at, _, ok := lockNCOOf(iq, r, basebandRate)
 		if !ok || math.Abs(at-off) > iqAFCPullHz {

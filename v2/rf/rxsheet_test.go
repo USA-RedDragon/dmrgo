@@ -228,7 +228,7 @@ type sheetFold struct {
 }
 
 func sheetFoldOf(t testing.TB, sig benchSignal, e benchEntry, cn float64) sheetFold {
-	x := sig.noisy(cn, 21)
+	x := sig.noisy(t, cn, 21)
 	f, rate, lag := sheetEyeSignal(e, x)
 	return sheetFold{f: f, rate: rate, lag: lag, got: sheetReceive(t, x, e)}
 }
@@ -364,7 +364,7 @@ func sheetAcqOf(t testing.TB, sig benchSignal, truth []benchSlot, e benchEntry) 
 			rng := rand.New(rand.NewPCG(uint64(run)+500, uint64(cn*10)))
 			lo := int((pad + 0.2) * basebandRate)
 			s0 := lo + rng.IntN(n-win-lo-int(pad*basebandRate))
-			x := sig.noisy(cn, uint64(run)+900)[s0 : s0+win]
+			x := sig.noisy(t, cn, uint64(run)+900)[s0 : s0+win]
 			for _, b := range sheetReceive(t, x, e) {
 				sec := b.Seconds + float64(s0)/basebandRate
 				i := int(math.Round((sec - pad - ramp - float64(cachSymbols)/symbolRate) / slotSeconds))
@@ -443,11 +443,11 @@ func TestRxSheet(t *testing.T) {
 		for k := range uint64(sheetSeeds) {
 			job(func() {
 				offs[i][k] = sheetSweepOf(t, truth, e, sheetOffsets(), func(hz float64) []complex64 {
-					return cleanBaseband(slots, hz).noisy(sheetOffsetCN, 31+k)
+					return cleanBaseband(slots, hz).noisy(t, sheetOffsetCN, 31+k)
 				}, noClock)
 			})
 			job(func() {
-				x := sig.noisy(sheetRateCN, 41+k)
+				x := sig.noisy(t, sheetRateCN, 41+k)
 				rates[i][k] = sheetSweepOf(t, truth, e, sheetPPMs(), func(ppm float64) []complex64 { return resampleClock(x, ppm) }, ppmClock)
 			})
 		}

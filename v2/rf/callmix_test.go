@@ -28,7 +28,7 @@ type callSignal struct {
 
 func callBursts(t testing.TB, k callTalker) []layer2.RawBurst {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: k.src, Dest: 9, Group: true, Wakeups: 1, Superframes: k.superframes, Message: "DMRGO CALL"}
+	cfg := randomizedN(t, uint64(k.src), rftx.SeqConfig{ColorCode: 7, Source: k.src, Dest: 9, Group: true, Wakeups: 1, Superframes: k.superframes, Message: "DMRGO CALL"})
 	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

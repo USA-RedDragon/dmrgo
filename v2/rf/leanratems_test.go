@@ -25,7 +25,7 @@ func TestLeanClockRateNullMS(t *testing.T) {
 	}{{0, 20012}, {2, 20079}, {8, 20108}} {
 		r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier2, Format: IQFormatCU8})
 		dd := r.host().iqd.d
-		x := noisyFM(d.fm, d.env, 1400, c.cn, c.seed)
+		x := noisyFM(t, d.fm, d.env, 1400, c.cn, c.seed)
 		worst := 0.0
 		for k := 0; k < len(x); k += 2048 {
 			must(r.writeBB(x[k:min(k+2048, len(x))]))
@@ -56,7 +56,7 @@ func TestRateLineNullMS(t *testing.T) {
 		seed  uint64
 		audio bool
 	}{{6, 105, true}, {8, 119, true}, {8, 108, false}, {10, 123, false}} {
-		x := noisyFM(fm, env, 1400, c.cn, c.seed)
+		x := noisyFM(t, fm, env, 1400, c.cn, c.seed)
 		var core *leanCore
 		var write func(k int) int
 		if c.audio {

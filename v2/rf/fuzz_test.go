@@ -166,7 +166,7 @@ func sameBursts(t *testing.T, what string, a, b []Burst) {
 
 func fuzzSeedIQ(tb testing.TB, signed bool) []byte {
 	slots, _ := benchStream(tb, 1)
-	x := noisyBaseband(slots, 900, 20, 9)
+	x := noisyBaseband(tb, slots, 900, 20, 9)
 	out := make([]byte, 2*len(x))
 	for i, v := range x {
 		re, im := float64(real(v))*0.5*127.5, float64(imag(v))*0.5*127.5
@@ -229,7 +229,7 @@ func fuzzSamples(b []byte, scale uint8, raw bool) []complex64 {
 
 func fuzzSeedBaseband(tb testing.TB) []byte {
 	slots, _ := benchStream(tb, 1)
-	x := noisyBaseband(slots, -700, 20, 11)
+	x := noisyBaseband(tb, slots, -700, 20, 11)
 	out := make([]byte, 4*len(x))
 	for i, v := range x {
 		binary.LittleEndian.PutUint16(out[4*i:], uint16(int16(max(-32767, min(32767, math.Round(float64(real(v))*4096))))))
@@ -275,7 +275,7 @@ func FuzzReceiverBaseband(f *testing.F) {
 
 func fuzzSeedAudio(tb testing.TB, hz int) []byte {
 	slots, _ := benchStream(tb, 1)
-	a := discAudio(noisyBaseband(slots, 500, 20, 13), hz)
+	a := discAudio(noisyBaseband(tb, slots, 500, 20, 13), hz)
 	out := make([]byte, 2*len(a))
 	for i, v := range a {
 		binary.LittleEndian.PutUint16(out[2*i:], uint16(v))

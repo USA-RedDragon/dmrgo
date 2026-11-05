@@ -138,7 +138,7 @@ func TestShortLCClean(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
 	want := slcWant(slots)
-	x := cleanBaseband(slots, 1400).noisy(40, 1)
+	x := cleanBaseband(slots, 1400).noisy(t, 40, 1)
 	for _, e := range benchEntries() {
 		t.Run(e.name(), func(t *testing.T) {
 			t.Parallel()
@@ -183,7 +183,7 @@ func TestShortLCSoft(t *testing.T) {
 			var good, bad, hGood, hBad, soft int
 			for _, cn := range []float64{3, 4, 5} {
 				for s := range uint64(2) {
-					bursts, lcs := slcReceive(t, sig.noisy(cn, 900+s), e)
+					bursts, lcs := slcReceive(t, sig.noisy(t, cn, 900+s), e)
 					g, b := slcCount(lcs, want)
 					hg, hb := slcCount(slcHardOf(bursts), want)
 					good, bad, hGood, hBad = good+g, bad+b, hGood+hg, hBad+hb
@@ -212,7 +212,7 @@ func TestShortLCExactCACH(t *testing.T) {
 	var errs [2]int
 	for j, tier := range []Tier{Tier2, Tier3} {
 		for s := range uint64(2) {
-			for _, b := range benchReceive(t, sig.noisy(4, 40+s), benchEntry{benchIQ, tier}) {
+			for _, b := range benchReceive(t, sig.noisy(t, 4, 40+s), benchEntry{benchIQ, tier}) {
 				if k := slcKey(b.Seconds); b.HasCACH && k >= 0 && k < int64(len(slots)) {
 					for i := range b.CACH {
 						errs[j] += bits.OnesCount8(b.CACH[i] ^ slots[k].CACH[i])
@@ -269,7 +269,7 @@ func TestShortLCBurstsSame(t *testing.T) {
 		t.Run(e.name(), func(t *testing.T) {
 			t.Parallel()
 			for _, cn := range []float64{4, 8} {
-				x := sig.noisy(cn, 3)
+				x := sig.noisy(t, cn, 3)
 				with, _ := slcReceive(t, x, e)
 				without := benchReceive(t, x, e)
 				if len(with) != len(without) {
@@ -298,7 +298,7 @@ func TestShortLCCost(t *testing.T) {
 			continue
 		}
 		for _, cn := range []float64{4, 6} {
-			x := sig.noisy(cn, 7)
+			x := sig.noisy(t, cn, 7)
 			in := slcInputOf(x, e)
 			off, on := math.Inf(1), math.Inf(1)
 			for range 7 {
@@ -356,7 +356,7 @@ func slcSweep(t *testing.T, e benchEntry, sig benchSignal, noise benchSignal, wa
 	for cn := -3.0; cn <= 16; cn += 0.5 {
 		var hg, ng int
 		for s := range uint64(seeds) {
-			bursts, lcs := slcReceive(t, sig.noisy(cn, 2000+s), e)
+			bursts, lcs := slcReceive(t, sig.noisy(t, cn, 2000+s), e)
 			g, b := slcCount(lcs, want)
 			h, hb := slcCount(slcHardOf(bursts), want)
 			hg, ng, bt.HardWrong, bt.LCWrong, bt.Decoded = hg+h, ng+g, bt.HardWrong+hb, bt.LCWrong+b, bt.Decoded+len(lcs)
@@ -367,7 +367,7 @@ func slcSweep(t *testing.T, e benchEntry, sig benchSignal, noise benchSignal, wa
 		}
 	}
 	for seed := uint64(1); bt.NoiseSeconds < 120; seed++ {
-		x := noise.noisy(0, seed)
+		x := noise.noisy(t, 0, seed)
 		bt.NoiseSeconds += float64(len(x)) / basebandRate
 		bursts, lcs := slcReceive(t, x, e)
 		bt.NoiseHard += len(slcHardOf(bursts))

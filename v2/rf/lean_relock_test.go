@@ -86,7 +86,7 @@ func relockCheck(t *testing.T, label string, x []complex64, want []float64) {
 
 func TestLeanPayloadSync(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
+	cfg := randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1})
 	v, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -118,8 +118,8 @@ func TestLeanPayloadSync(t *testing.T) {
 
 func TestLeanTalkerAfterDrop(t *testing.T) {
 	t.Parallel()
-	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
-	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"}
+	c1 := randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1})
+	c2 := randomizedN(t, 1234568, rftx.SeqConfig{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"})
 	v, err := rftx.Sequence("voice", c1)
 	if err != nil {
 		t.Fatal(err)
@@ -140,7 +140,7 @@ func TestLeanTalkerAfterDrop(t *testing.T) {
 
 func TestLeanLoneRCProof(t *testing.T) {
 	t.Parallel()
-	b, err := rftx.Sequence("rc", rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911})
+	b, err := rftx.Sequence("rc", randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestLeanLoneRCProof(t *testing.T) {
 
 func TestLeanFadeNoBursts(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
+	cfg := randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1})
 	v, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +230,7 @@ func TestRxTwoTalkerLevelStep(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "mid.none.-1500.ms2.pi.-500ppm.nom.cs16-48k.40dB.step10dB")
 	rxs := mxReceivers(row.val(mxFormat), true)
-	res, err := mxRun(row, rxs)
+	res, err := mxRun(t, row, rxs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestRxAudioTwoTalkerLevelStep(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "gap.none.+2500.ms2.pi.-500ppm.nom.a12000.40dB.step10dB")
 	rxs := mxReceivers(row.val(mxFormat), true)
-	res, err := mxRun(row, rxs)
+	res, err := mxRun(t, row, rxs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +267,7 @@ func TestRxTwoTalkerSyncLevelStep(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "mid.none.+700.ms2.data12.+500ppm.nom.a12000.40dB.step10dB")
 	rxs := []mxRx{{row.val(mxFormat), Tier2}, {row.val(mxFormat), Tier3}}
-	res, err := mxRun(row, rxs)
+	res, err := mxRun(t, row, rxs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func TestRxTwoTalkerClipStep(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "gap.none.+2500.ms2.data1.-500ppm.nom.a12000.40dB.step10dB")
 	rxs := []mxRx{{row.val(mxFormat), Tier0}, {row.val(mxFormat), Tier1}}
-	res, err := mxRun(row, rxs)
+	res, err := mxRun(t, row, rxs)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -36,7 +36,7 @@ func acCoupled(a []int16, hz int) []int16 {
 func TestDiscACCoupled(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 16)
-	x := noisyBaseband(slots, 1400, 30, 1)
+	x := noisyBaseband(t, slots, 1400, 30, 1)
 	for _, hz := range []int{24000, 12000, 9600} {
 		a := acCoupled(discAudio(x, hz), hz)
 		for _, tier := range []Tier{Tier1, Tier2} {
@@ -64,7 +64,7 @@ func TestDiscACStaysOff(t *testing.T) {
 		noise[i] = complex(float32(rng.NormFloat64()), float32(rng.NormFloat64()))
 	}
 	for _, hz := range []int{24000, 12000, 9600} {
-		for _, in := range [][]complex64{noisyBaseband(slots, 1400, 30, 1), noisyBaseband(slots, -900, 3, 2), noise} {
+		for _, in := range [][]complex64{noisyBaseband(t, slots, 1400, 30, 1), noisyBaseband(t, slots, -900, 3, 2), noise} {
 			a := discAudio(in, hz)
 			want := receivePlain(t, a, hz, Tier1)
 			got, r := receiveFixed(t, a, hz, Tier1)

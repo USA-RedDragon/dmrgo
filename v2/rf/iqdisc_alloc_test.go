@@ -8,7 +8,7 @@ import (
 
 func TestAllocsIQDisc(t *testing.T) {
 	slots, _ := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 10, 5)
+	x := noisyBaseband(t, slots, 1400, 10, 5)
 	for _, on := range []func(*Burst){func(*Burst) {}, nil} {
 		o := discOptions()
 		o.IQDisc, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC, o.ExtLookback = true, true, true, true, true, 8

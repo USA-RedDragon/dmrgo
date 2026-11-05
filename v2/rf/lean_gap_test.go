@@ -13,7 +13,7 @@ import (
 
 func TestLeanGapNoise(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Wakeups, cfg.Slot, cfg.Preambles = 1, 0, 1, 2
 	built, err := rftx.Sequence("preamble", cfg)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestLeanGapNoise(t *testing.T) {
 		}
 	}
 	for _, tier := range []Tier{Tier0, Tier1} {
-		x := noisyFM(freq, amp, 0, 17, 24)
+		x := noisyFM(t, freq, amp, 0, 17, 24)
 		got := map[string]int{}
 		for _, b := range receiveBaseband(x, tier) {
 			data, _ := b.Decoded()

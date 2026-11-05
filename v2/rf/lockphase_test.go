@@ -16,7 +16,7 @@ func TestLockSamplePhase(t *testing.T) {
 		"s0.none.+0.bs.data1.0ppm.nom.cs16-48k.inf",
 	} {
 		row := mxRowOf(t, name)
-		s, err := mxBuild(row)
+		s, err := mxBuild(t, row)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -147,7 +147,7 @@ func receiveAudio(t testing.TB, a []int16, hz int, opt *options) []Burst {
 func TestDiscReceiverLoopback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 30, 1)
+	x := noisyBaseband(t, slots, 1400, 30, 1)
 	for _, hz := range []int{24000, 12000, 9600} {
 		sc := scoreBench(truth, receiveAudio(t, discAudio(x, hz), hz, nil))
 		for _, k := range []string{"ambe", "csbk", "rate12", "rate34", "sync", "emb", "slottype"} {
@@ -203,7 +203,7 @@ func TestNewDiscConfig(t *testing.T) {
 func TestDiscReceiverInitAppend(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
-	a := discAudio(noisyBaseband(slots, 1400, 12, 1), 9600)
+	a := discAudio(noisyBaseband(t, slots, 1400, 12, 1), 9600)
 	r, err := NewAudioReceiver(&AudioRxConfig{Rate: 9600, Tier: Tier0})
 	if err != nil {
 		t.Fatal(err)
@@ -289,7 +289,7 @@ func TestRingPosWrap(t *testing.T) {
 func TestDiscReceiverRingWrap(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
-	a := discAudio(noisyBaseband(slots, 1400, 12, 3), benchAudioHz)
+	a := discAudio(noisyBaseband(t, slots, 1400, 12, 3), benchAudioHz)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		want := receiveAudioTier(t, a, tier)
 		var got []Burst

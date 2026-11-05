@@ -9,7 +9,7 @@ func TestFront96Same(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
 	for _, cn := range []float64{30, 8, 4, 2, 0} {
-		a := discAudio(noisyBaseband(slots, 1400, cn, 3), 9600)
+		a := discAudio(noisyBaseband(t, slots, 1400, cn, 3), 9600)
 		for _, chunk := range []int{1, 7, 1024} {
 			var got [2][]Burst
 			for i, on := range []bool{false, true} {

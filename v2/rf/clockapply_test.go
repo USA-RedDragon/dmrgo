@@ -11,7 +11,7 @@ import (
 
 func TestLeanClockRateApplied(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 30}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 30})
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +20,7 @@ func TestLeanClockRateApplied(t *testing.T) {
 	tx := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for _, c := range []struct{ ppm, cn float64 }{{50, 25}, {-50, 25}, {-67, 25}, {-67, 0}} {
 		ppm := c.ppm
-		iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, 0, c.cn, 5)
+		iq := channel(t, tx, 2e6/(1+ppm*1e-6), 2.048e6, 0, c.cn, 5)
 		for _, tier := range []Tier{Tier0, Tier2} {
 			r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: tier, Format: IQFormatCU8})
 			if err != nil {

@@ -9,7 +9,7 @@ import (
 func TestRxRawBitsAtLock(t *testing.T) {
 	t.Parallel()
 
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	for _, seq := range []string{"ack", "data12", "voice"} {
 		built, err := rftx.Sequence(seq, cfg)
 		if err != nil {
@@ -17,7 +17,7 @@ func TestRxRawBitsAtLock(t *testing.T) {
 		}
 		fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 		for _, off := range []float64{1500, 3000, -3000, 4000} {
-			iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
+			iq := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
 			for _, tier := range []Tier{Tier1, Tier3} {
 				r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: tier, Format: IQFormatCU8})
 				if err != nil {

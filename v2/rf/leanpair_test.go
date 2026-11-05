@@ -20,7 +20,7 @@ func TestLeanPairLock(t *testing.T) {
 	tx := rftx.ToIQ(fm[cut:], env[cut:], 2e6, -320, 0.9)
 	got := make([]int, seeds)
 	forSeeds(seeds, func(i int) {
-		x := rftx.Channel(tx, 2e6, 2e6, 0, 2-22.1, uint64(i+1))
+		x := channel(t, tx, 2e6, 2e6, 0, 2-22.1, uint64(i+1))
 		r := mustNew(RxConfig{Rate: 2e6, Tier: Tier0, Format: IQFormatCU8})
 		got[i] = len(r.AppendFlush(r.AppendBursts(nil, x)))
 	})

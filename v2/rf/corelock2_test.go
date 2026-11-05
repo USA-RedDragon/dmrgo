@@ -13,10 +13,10 @@ import (
 // IDs and the text of benchMessage(d).
 func benchDraw(t testing.TB, n int, d uint64) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
-	return benchStreamOf(t, rftx.SeqConfig{Source: 3009101, BS: 990913, Message: benchMessage(d)}, 3009201, n)
+	return benchStreamOf(t, randomizedN(t, d+1, rftx.SeqConfig{Source: 3009101, BS: 990913, Dest: 3009201, Message: benchMessage(d)}), n)
 }
 
-func firstLockSlots(slots []rftx.BSSlot, cn float64, seeds []uint64, newRx func() *Receiver) []float64 {
+func firstLockSlots(t testing.TB, slots []rftx.BSSlot, cn float64, seeds []uint64, newRx func() *Receiver) []float64 {
 	sig := cleanBaseband(slots, 1400)
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	out := make([]float64, len(seeds))
@@ -30,7 +30,7 @@ func firstLockSlots(slots []rftx.BSSlot, cn float64, seeds []uint64, newRx func(
 			defer func() { <-sem }()
 			r := newRx()
 			h := r.host().iqd
-			x := sig.noisy(cn, seed)
+			x := sig.noisy(t, cn, seed)
 			out[i] = -1
 			for k := 0; k < len(x); k += 256 {
 				must(r.writeBB(x[k:min(k+256, len(x))]))
@@ -70,7 +70,7 @@ func TestCoreFirstLock(t *testing.T) {
 			for i := range ss {
 				ss[i] = 7000 + d*seeds + uint64(i)
 			}
-			for i, s := range firstLockSlots(slots, 0, ss, func() *Receiver {
+			for i, s := range firstLockSlots(t, slots, 0, ss, func() *Receiver {
 				return mustNew(RxConfig{Rate: basebandRate, Tier: rx.tier, Format: IQFormatCU8})
 			}) {
 				if s < 0 {

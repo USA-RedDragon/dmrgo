@@ -8,7 +8,7 @@ import (
 
 func TestAllocsAudioRate(t *testing.T) {
 	slots, _ := benchStream(t, 1)
-	a := sincResample(discAudio(noisyBaseband(slots, 1400, 30, 4), 2*discRate), 2*discRate, 44100)
+	a := sincResample(discAudio(noisyBaseband(t, slots, 1400, 30, 4), 2*discRate), 2*discRate, 44100)
 	var r AudioReceiver
 	if err := r.Init(AudioRxConfig{Rate: 44100, OnBursts: func([]Burst) {}}); err != nil {
 		t.Fatal(err)

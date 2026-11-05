@@ -52,7 +52,7 @@ func rxMS(t testing.TB, n int) rxTx {
 
 func rxMSCall(t testing.TB, n int, data string) rxTx {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 3, Source: 3009101, Dest: 9, Group: true, Message: "DMRGO MS", Superframes: n, Slot: 1}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 3, Source: 3009101, Dest: 9, Group: true, Message: "DMRGO MS", Superframes: n, Slot: 1})
 	voice, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

@@ -15,8 +15,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-func noisyBaseband(slots []rftx.BSSlot, offsetHz, cn float64, seed uint64) []complex64 {
-	return cleanBaseband(slots, offsetHz).noisy(cn, seed)
+func noisyBaseband(t testing.TB, slots []rftx.BSSlot, offsetHz, cn float64, seed uint64) []complex64 {
+	return cleanBaseband(slots, offsetHz).noisy(t, cn, seed)
 }
 
 type benchSignal struct {
@@ -35,7 +35,8 @@ func cleanBaseband(slots []rftx.BSSlot, offsetHz float64) benchSignal {
 	return s
 }
 
-func (s benchSignal) noisy(cn float64, seed uint64) []complex64 {
+func (s benchSignal) noisy(t testing.TB, cn float64, seed uint64) []complex64 {
+	seed = noiseSeed(t, seed)
 	x := make([]complex64, len(s.re))
 	rng := rand.New(rand.NewPCG(seed, seed+1))
 	sigma := math.Sqrt(basebandRate/(math.Pow(10, cn/10)*12500)) / math.Sqrt2
@@ -46,8 +47,8 @@ func (s benchSignal) noisy(cn float64, seed uint64) []complex64 {
 	return x
 }
 
-func basebandStream(slots []rftx.BSSlot, offsetHz float64) []complex64 {
-	return noisyBaseband(slots, offsetHz, 40, 1)
+func basebandStream(t testing.TB, slots []rftx.BSSlot, offsetHz float64) []complex64 {
+	return noisyBaseband(t, slots, offsetHz, 40, 1)
 }
 
 func receiveBaseband(x []complex64, t Tier) []Burst {
@@ -95,13 +96,13 @@ type AMBEFrameValue = uint64
 
 func TestReceiverTiersAtLowSNR(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 6, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	x := noisyBaseband(built.Slots, 1200, 3, 3)
+	x := noisyBaseband(t, built.Slots, 1200, 3, 3)
 	prev := -1
 	for _, tier := range []Tier{Tier0, Tier2, Tier3} {
 		exact, total := exactFrames(built.Slots, receiveBaseband(x, tier))
@@ -115,13 +116,13 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 
 func TestReceiverHalfRate(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 4, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	x := noisyBaseband(built.Slots, 1200, 12, 6)
+	x := noisyBaseband(t, built.Slots, 1200, 12, 6)
 	full, total := exactFrames(built.Slots, receiveBaseband(x, Tier0))
 	h := make([]complex64, len(x)/2)
 	for i := range h {
@@ -146,7 +147,7 @@ func TestReceiverHalfRate(t *testing.T) {
 func TestReceiverLowRate(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 25, 3)
+	x := noisyBaseband(t, slots, 1400, 25, 3)
 	for _, hz := range []int{iq0LowHz, discRate / 2} {
 		y := lowIQ(x, hz)
 		r := mustNew(RxConfig{Tier: Tier0, Rate: hz, Format: IQFormatCU8})
@@ -201,13 +202,13 @@ func TestReceiverLowRate(t *testing.T) {
 
 func TestReceiverOnBurst(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	x := noisyBaseband(built.Slots, 1200, 10, 4)
+	x := noisyBaseband(t, built.Slots, 1200, 10, 4)
 	for _, tier := range []Tier{Tier0, Tier2} {
 		want := receiveBaseband(x, tier)
 		var got []Burst
@@ -232,13 +233,13 @@ func TestReceiverOnBurst(t *testing.T) {
 }
 
 func BenchmarkReceiver(b *testing.B) {
-	cfg := testConfig()
+	cfg := testConfig(b)
 	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		b.Fatal(err)
 	}
-	x := noisyBaseband(built.Slots, 1200, 6, 3)
+	x := noisyBaseband(b, built.Slots, 1200, 6, 3)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		b.Run(strconv.Itoa(int(tier)), func(b *testing.B) {
 			r := mustNew(RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCU8})
@@ -260,9 +261,9 @@ func TestReceiverKeyUp(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
 	pad := int(0.3 * basebandRate)
-	a := noisyBaseband(slots, 1400, 15, 1)
-	gap := noisyBaseband(nil, 1400, 15, 2)[:int(0.15*basebandRate)+137]
-	b := noisyBaseband(slots, 1100, 15, 3)
+	a := noisyBaseband(t, slots, 1400, 15, 1)
+	gap := noisyBaseband(t, nil, 1400, 15, 2)[:int(0.15*basebandRate)+137]
+	b := noisyBaseband(t, slots, 1100, 15, 3)
 	x := append(append(append([]complex64(nil), a...), gap...), b...)
 	start := float64(len(a)+len(gap)+pad) / basebandRate
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
@@ -295,9 +296,17 @@ func resampleFM(freq, env []float64, ppm float64) ([]float64, []float64) {
 	return f, e
 }
 
+func directConfig() rftx.SeqConfig {
+	return rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 2, Slot: 1}
+}
+
 func directCalls(t testing.TB, n int) ([]float64, []float64, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 2, Slot: 1}
+	return directCallsOf(t, randomized(t, directConfig()), n)
+}
+
+func directCallsOf(t testing.TB, cfg rftx.SeqConfig, n int) ([]float64, []float64, []benchSlot) {
+	t.Helper()
 	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -344,16 +353,23 @@ type directSet struct {
 	inputAt200 [6]func() []complex64
 }
 
-var directCache directSet
+var directCache, directRandomCache directSet
 
+// directShared returns the shared direct mode calls of t: the fixed calls
+// for a test that keeps the fixed payloads, and otherwise the calls and
+// noise of the random scenario of this run.
 func directShared(t testing.TB) *directSet {
 	t.Helper()
-	d := &directCache
+	d, cfg, nt := &directCache, directConfig(), testing.TB(nil)
+	if !fixedPayload(t) {
+		scenarioOf(t)
+		d, cfg, nt = &directRandomCache, sharedRandomized(cfg), sharedRun
+	}
 	d.once.Do(func() {
-		d.fm, d.env, d.truth = directCalls(t, 4)
+		d.fm, d.env, d.truth = directCallsOf(t, cfg, 4)
 		d.f200, d.e200 = resampleFM(d.fm, d.env, 200)
 		for seed := range d.inputAt200 {
-			d.inputAt200[seed] = sync.OnceValue(func() []complex64 { return noisyFM(d.f200, d.e200, 1400, 5, 40+uint64(seed)) })
+			d.inputAt200[seed] = sync.OnceValue(func() []complex64 { return noisyFM(nt, d.f200, d.e200, 1400, 5, 40+uint64(seed)) })
 			d.tier3At200[seed] = sync.OnceValue(func() []Burst { return receiveBaseband(d.inputAt200[seed](), Tier3) })
 		}
 	})
@@ -379,7 +395,7 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 					if c.ppm == 200 {
 						got = slices.Clone(d.tier3At200[seed]())
 					} else {
-						got = receiveBaseband(noisyFM(f, e, 1400, 5, 40+uint64(seed)), Tier3)
+						got = receiveBaseband(noisyFM(t, f, e, 1400, 5, 40+uint64(seed)), Tier3)
 					}
 					scores[seed] = scoreMS(d.truth, got)["ambe_c0c1"]
 				}()

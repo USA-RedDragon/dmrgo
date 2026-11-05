@@ -14,8 +14,9 @@ func TestFloorDelta(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 1)
 	slots = slots[:12]
-	f := newFloorSignal(slots, 3, 5)
-	x := noisyBaseband(slots, 1400, 3, 5)
+	seed := noiseSeed(t, 5)
+	f := newFloorSignal(slots, 3, seed)
+	x := noisyBaseband(nil, slots, 1400, 3, seed)
 	for i := range x {
 		if cmplx.Abs(complex128(x[i])-f.y[i]*cmplx.Exp(complex(0, carrierPhase(i, len(x), 1400)))) > 1e-5 {
 			t.Fatalf("sample %d differs", i)
@@ -81,7 +82,7 @@ func TestFloorNoiseless(t *testing.T) {
 	}
 	slots, truth := benchStream(t, 2)
 	e := newFloorEval(1)
-	e.f = newFloorSignal(slots, 14, 1)
+	e.f = newFloorSignal(slots, 14, noiseSeed(t, 1))
 	e.truth = truth
 	e.stream()
 	for k, s := range e.sc {

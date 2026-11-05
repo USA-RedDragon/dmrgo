@@ -53,7 +53,7 @@ func TestTier1Weak(t *testing.T) {
 			d    []float64
 		}{{"rate12", 0, make([]float64, seeds)}, {"ambe_c0c1", 0.05, make([]float64, seeds)}}
 		forSeeds(seeds, func(i int) {
-			x := noisyBaseband(slots, 1400, c.cn, 5+uint64(i))
+			x := noisyBaseband(t, slots, 1400, c.cn, 5+uint64(i))
 			s0 := scoreBench(truth, benchReceive(t, x, benchEntry{c.mode, Tier0}))
 			s1 := scoreBench(truth, benchReceive(t, x, benchEntry{c.mode, Tier1}))
 			for _, p := range gains {

@@ -41,9 +41,9 @@ func TestStrongSignalExact(t *testing.T) {
 				defer func() { <-sem }()
 				var x []complex64
 				if c.ms {
-					x = noisyFM(freq, env, 1400, cn, seed)
+					x = noisyFM(t, freq, env, 1400, cn, seed)
 				} else {
-					x = noisyBaseband(bsSlots, 1400, cn, seed)
+					x = noisyBaseband(t, bsSlots, 1400, cn, seed)
 				}
 				var got []Burst
 				if c.mode == benchAudio {

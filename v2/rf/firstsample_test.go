@@ -23,7 +23,7 @@ func fmAtStart(freq, env []float64, offsetHz, cn float64, seed uint64) []complex
 func TestRxBurstAtFirstSample(t *testing.T) {
 	t.Parallel()
 
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	for _, seq := range []string{"ack", "data12"} {
 		built, err := rftx.Sequence(seq, cfg)
 		if err != nil {

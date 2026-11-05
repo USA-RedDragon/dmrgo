@@ -22,7 +22,7 @@ func maxLockedRate(t *testing.T, tr Tier, cn float64, seeds []uint64) []float64 
 			defer func() { <-sem }()
 			r := mustNew(RxConfig{Rate: basebandRate, Tier: tr, Format: IQFormatCU8})
 			d := r.host().iqd.d
-			x := sig.noisy(cn, seed)
+			x := sig.noisy(t, cn, seed)
 			for k := 0; k < len(x); k += 2048 {
 				must(r.writeBB(x[k:min(k+2048, len(x))]))
 				if v := math.Abs(float64(d.tm.rate / (2 * d.tm.step))); d.locked && v > out[i] {

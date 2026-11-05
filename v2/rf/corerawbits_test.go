@@ -10,7 +10,7 @@ import (
 
 func TestCoreTier3RawBitsAtLock(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	for _, seq := range []string{"ack", "data12", "voice"} {
 		built, err := rftx.Sequence(seq, cfg)
 		if err != nil {
@@ -18,7 +18,7 @@ func TestCoreTier3RawBitsAtLock(t *testing.T) {
 		}
 		fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 		for _, off := range []float64{1500, 3000, -3000, 4000} {
-			iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
+			iq := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
 			r, err := newReceiver(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8}, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -40,7 +40,7 @@ func TestCoreTier3RawBitsAtLock(t *testing.T) {
 func TestCoreTier3LockRetune(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "s0.noise.+1500.bs.pi.0ppm.high.cs16-48k.inf")
-	s, err := mxBuild(row)
+	s, err := mxBuild(t, row)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,7 +15,7 @@ func TestRxReplayStretch(t *testing.T) {
 	} {
 		row := mxRowOf(t, name)
 		x := mxRx{row.val(mxFormat), Tier3}
-		res, err := mxRun(row, []mxRx{x})
+		res, err := mxRun(t, row, []mxRx{x})
 		if err != nil {
 			t.Fatal(err)
 		}

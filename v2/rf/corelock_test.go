@@ -25,7 +25,7 @@ func lockErrors(t *testing.T, cn float64, seeds []uint64, newRx func() *Receiver
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			x := sig.noisy(cn, seed)
+			x := sig.noisy(t, cn, seed)
 			r := newRx()
 			h := r.host().iqd
 			var hz []float64

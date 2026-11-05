@@ -80,7 +80,7 @@ func sincResample(a []int16, from, to int) []int16 {
 func TestAudioRates(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	a := discAudio(noisyBaseband(slots, 1400, 30, 4), 2*discRate)
+	a := discAudio(noisyBaseband(t, slots, 1400, 30, 4), 2*discRate)
 	rng := rand.New(rand.NewPCG(4, 4))
 	rates := make([]int, 0, 16)
 	rates = append(rates, 8000, 9601, 11025, 12001, 16000, 22050, 24001, 32000, 44100, 47999, 48001, 96000, 192000)
@@ -135,7 +135,7 @@ func TestAudio44kMatches48k(t *testing.T) {
 	for _, cn := range []float64{4, 6, 8, 10} {
 		in := make([][2][]int16, seeds)
 		for seed := range in {
-			a := discAudio(noisyBaseband(slots, 1400, cn, 100+uint64(seed)), 2*discRate)
+			a := discAudio(noisyBaseband(t, slots, 1400, cn, 100+uint64(seed)), 2*discRate)
 			in[seed] = [2][]int16{a, sincResample(a, 2*discRate, 44100)}
 		}
 		for _, tier := range tiers {

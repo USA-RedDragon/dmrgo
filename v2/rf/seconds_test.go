@@ -73,7 +73,7 @@ func secondsErrors(got []Burst, lag float64) []float64 {
 func TestSecondsFirstBit(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	x := exactBaseband(slots).noisy(40, 3)
+	x := exactBaseband(slots).noisy(t, 40, 3)
 	a48 := discAudio(x, basebandRate)
 	type tcase struct {
 		name string
@@ -171,7 +171,7 @@ func fracResampleIQ(x []complex64, to int, d float64) []complex64 {
 func TestSecondsLowRatePhase(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	x := exactBaseband(slots).noisy(math.Inf(1), 3)
+	x := exactBaseband(slots).noisy(t, math.Inf(1), 3)
 	const phases = 20
 	span := float64(basebandRate) / iq0LowHz
 	for k := range phases {
@@ -192,7 +192,7 @@ func TestSecondsLowRatePhase(t *testing.T) {
 
 func TestSecondsLockBurstExact(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.Superframes = 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -234,7 +234,7 @@ func TestSecondsLockBurstOffset(t *testing.T) {
 			sig := cleanBaseband(slots, off)
 			d := make([]float64, seeds)
 			forSeeds(seeds, func(k int) {
-				got := receiveBaseband(sig.noisy(30, uint64(k+1)), tier)
+				got := receiveBaseband(sig.noisy(t, 30, uint64(k+1)), tier)
 				if len(got) == 0 {
 					d[k] = math.NaN()
 					return
@@ -251,8 +251,8 @@ func TestSecondsLockBurstOffset(t *testing.T) {
 
 func TestSecondsTalkerSwitch(t *testing.T) {
 	t.Parallel()
-	c1 := rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 990911, Superframes: 1}
-	c2 := rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"}
+	c1 := randomizedN(t, 1000001, rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 990911, Superframes: 1})
+	c2 := randomizedN(t, 1000002, rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"})
 	v, err := rftx.Sequence("voice", c1)
 	if err != nil {
 		t.Fatal(err)
@@ -294,7 +294,7 @@ func TestSecondsClockError(t *testing.T) {
 		for _, clock := range []uint8{1, 2} {
 			for _, f := range []uint8{1, 5} {
 				row := mxRow{mxOffset: 3, mxContent: content, mxClock: clock, mxFormat: f}
-				s, err := mxBuild(row)
+				s, err := mxBuild(t, row)
 				if err != nil {
 					t.Fatal(err)
 				}

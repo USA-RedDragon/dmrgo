@@ -5,7 +5,7 @@ import "testing"
 func TestTier1Voice(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)
-	x := noisyBaseband(slots, 1400, 7, 3)
+	x := noisyBaseband(t, slots, 1400, 7, 3)
 	a := discAudio(x, 9600)
 	rate := func(got []Burst) float64 {
 		s := scoreBench(truth, got)["ambe"]

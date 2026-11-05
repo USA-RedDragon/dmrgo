@@ -202,7 +202,7 @@ func TestCoherentStart(t *testing.T) {
 
 func TestCarrierLeadInMS(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -214,7 +214,7 @@ func TestCarrierLeadInMS(t *testing.T) {
 	}
 	want := make([]uint64, 0, 18*cfg.Superframes)
 	for k := range 18 * cfg.Superframes {
-		want = append(want, rftx.AMBEValue(rftx.TestAMBEFrame(k)))
+		want = append(want, rftx.AMBEValue(rftx.VoiceFrame(cfg.VoiceSeed, k)))
 	}
 	for _, cn := range []float64{math.Inf(1), 40} {
 		for _, lr := range []levelsReceiver{{24000, Tier0}, {0, Tier2}} {
@@ -245,7 +245,7 @@ func TestRxAudioQuietSource(t *testing.T) {
 	sig := cleanBaseband(slots, 1400)
 	for _, hz := range []int{9600, 48000} {
 		for _, level := range []float64{0.02, 0.01} {
-			a := discAudio(sig.noisy(30, 1), hz)
+			a := discAudio(sig.noisy(t, 30, 1), hz)
 			for i, v := range a {
 				a[i] = int16(math.Round(float64(v) * level))
 			}

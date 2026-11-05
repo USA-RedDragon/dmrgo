@@ -16,7 +16,7 @@ import (
 func TestRxDataReentry(t *testing.T) {
 	t.Parallel()
 	const seeds = 8
-	built, err := rftx.Sequence("data12", testConfig())
+	built, err := rftx.Sequence("data12", testConfig(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func TestRxDataReentry(t *testing.T) {
 		for _, ppm := range []float64{500, -500} {
 			gap := make([]float64, seeds)
 			forSeeds(seeds, func(i int) {
-				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, 1500, 30-22.1, uint64(i+1))
+				iq := channel(t, tx, 2e6/(1+ppm*1e-6), 2.048e6, 1500, 30-22.1, uint64(i+1))
 				r := mustNew(RxConfig{Rate: 2.048e6, Tier: tier, Format: IQFormatCU8})
 				got := r.AppendFlush(r.AppendBursts(nil, iq))
 				gap[i] = math.NaN()

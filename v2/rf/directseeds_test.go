@@ -80,7 +80,7 @@ func directSeedsRun(t *testing.T, seeds []uint64) (map[string][]int, int) {
 				sem <- struct{}{}
 				defer func() { <-sem }()
 				s := streams[c.ppm]
-				sc := scoreMS(d.truth, receiveBaseband(noisyFM(s[0], s[1], 1400, 5, seed), c.tier))["ambe_c0c1"]
+				sc := scoreMS(d.truth, receiveBaseband(noisyFM(t, s[0], s[1], 1400, 5, seed), c.tier))["ambe_c0c1"]
 				mu.Lock()
 				out[directSeedsKey(c.tier, c.ppm)][i], truth = sc.Exact, sc.Truth
 				mu.Unlock()

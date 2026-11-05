@@ -29,7 +29,7 @@ var acsWantedCN = map[Tier]float64{Tier0: 11, Tier1: 11, Tier2: 7, Tier3: 7}
 
 func acsBER(t *testing.T, tier Tier, o options, cn, irDB, irHz float64, seed uint64) float64 {
 	t.Helper()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {

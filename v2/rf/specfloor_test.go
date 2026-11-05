@@ -28,7 +28,7 @@ func TestSpectrumFloorFilteredNoise(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
 	for _, off := range []float64{1400, -2000} {
-		x := cleanBaseband(slots, off).noisy(2, 5000)
+		x := cleanBaseband(slots, off).noisy(t, 2, 5000)
 		for _, filt := range []bool{false, true} {
 			y := x
 			if filt {
@@ -65,7 +65,7 @@ func TestRxFilteredIQ(t *testing.T) {
 		sig := cleanBaseband(slots, c.off)
 		d := make([]float64, c.seeds)
 		forSeeds(c.seeds, func(i int) {
-			x := sig.noisy(c.cn, 5000+uint64(i))
+			x := sig.noisy(t, c.cn, 5000+uint64(i))
 			r := float64(scoreBench(truth, receiveBaseband(x, c.tier))["ambe"].Exact)
 			f := float64(scoreBench(truth, receiveBaseband(channelFiltered(x, 6250), c.tier))["ambe"].Exact)
 			d[i] = f - 0.9*r

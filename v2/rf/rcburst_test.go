@@ -10,7 +10,7 @@ import (
 func TestRxStandaloneRC(t *testing.T) {
 	t.Parallel()
 
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2})
 	built, err := rftx.Sequence("rc", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +19,7 @@ func TestRxStandaloneRC(t *testing.T) {
 	freq, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 	for _, cn := range []float64{20, 40} {
 		for seed := range uint64(4) {
-			x := noisyFM(freq, env, 1400, cn, 30+seed)
+			x := noisyFM(t, freq, env, 1400, cn, 30+seed)
 			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 				var found int
 				for _, b := range receiveBaseband(x, tier) {

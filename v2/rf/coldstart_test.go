@@ -19,7 +19,7 @@ func TestAudioColdStart(t *testing.T) {
 		"gap.none.-3000.ms.rc.0ppm.low.a24000.40dB",
 	} {
 		row := mxRowOf(t, name)
-		s, err := mxBuild(row)
+		s, err := mxBuild(t, row)
 		if err != nil {
 			t.Fatal(err)
 		}

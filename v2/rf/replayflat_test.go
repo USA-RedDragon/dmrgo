@@ -9,7 +9,7 @@ import (
 
 func TestRxNoBurstsFromCarrier(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Message: "DMRGO TEST MESSAGE", Superframes: 1, LateEntry: true}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Message: "DMRGO TEST MESSAGE", Superframes: 1, LateEntry: true})
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -32,7 +32,7 @@ func TestRxNoBurstsFromCarrier(t *testing.T) {
 	fm, env = fm[ramp/2:], env[ramp/2:]
 	at := lead - float64(ramp/2)/basebandRate
 	for _, off := range []float64{-2500, 2500} {
-		iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, basebandRate, off, 60, 5)
+		iq := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, basebandRate, off, 60, 5)
 		for _, tier := range []Tier{Tier1, Tier2} {
 			r, err := NewReceiver(&RxConfig{Rate: basebandRate, Tier: tier, Format: IQFormatCU8})
 			if err != nil {

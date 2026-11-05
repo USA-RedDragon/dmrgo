@@ -126,7 +126,7 @@ func TestAudioModes(t *testing.T) {
 func TestRxFormats(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
-	x := noisyBaseband(slots, 1400, 25, 7)
+	x := noisyBaseband(t, slots, 1400, 25, 7)
 	for _, rate := range []int{basebandRate, 5 * basebandRate} {
 		y := x
 		if rate != basebandRate {
@@ -186,7 +186,7 @@ func iqBytes(x []complex64, f IQFormat) []byte {
 func TestAudioBits(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
-	a := discAudio(noisyBaseband(slots, 1400, 20, 8), 9600)
+	a := discAudio(noisyBaseband(t, slots, 1400, 20, 8), 9600)
 	for _, c := range []struct {
 		bits     int
 		unsigned bool
@@ -234,9 +234,9 @@ func TestRxLag(t *testing.T) {
 	}
 	const chunk = 16
 	for _, tier := range tiers {
-		x := noisyBaseband(slots, 1400, 12, 3)
+		x := noisyBaseband(t, slots, 1400, 12, 3)
 		if tier == Tier3 {
-			x = noisyBaseband(long, 1400, 12, 3)
+			x = noisyBaseband(t, long, 1400, 12, 3)
 		}
 		x = x[int(0.9*basebandRate):]
 		for _, hz := range []int{9600, 48000} {
@@ -306,7 +306,7 @@ func TestRxLag(t *testing.T) {
 func TestRxLookbackOneCall(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	x := noisyBaseband(slots, 1400, 20, 3)
+	x := noisyBaseband(t, slots, 1400, 20, 3)
 	x = x[int(0.9*basebandRate):]
 	in := cf32(x)
 	most := 0

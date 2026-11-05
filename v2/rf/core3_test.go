@@ -20,7 +20,7 @@ import (
 func TestCoreTier3(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 4)
-	x := noisyBaseband(slots, 1400, 12, 1)
+	x := noisyBaseband(t, slots, 1400, 12, 1)
 	iq := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
 	var got []Burst
 	for k := 0; k < len(x); k += 4096 {
@@ -104,7 +104,7 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 			for i := range ss {
 				ss[i] = 7000 + d*seeds + uint64(i)
 			}
-			e, n, _ := earlyCount(truth, c.cn, ss, clockSignal{clockBaseband(slots, 5000, 0), 0})
+			e, n, _ := earlyCount(t, truth, c.cn, ss, clockSignal{clockBaseband(slots, 5000, 0), 0})
 			exact, total = exact+e, total+n
 		}
 		if rate := float64(exact) / float64(total); rate < c.min {
@@ -116,7 +116,7 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 func TestCoreTier3EarlySlotsClock(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	rate, miss := earlyExact(truth, 3, clockSignal{clockBaseband(slots, 5000, -500), -500}, clockSignal{clockBaseband(slots, 5000, 500), 500})
+	rate, miss := earlyExact(t, truth, 3, clockSignal{clockBaseband(slots, 5000, -500), -500}, clockSignal{clockBaseband(slots, 5000, 500), 500})
 	if rate < 0.9 {
 		t.Errorf("core Tier 3 at +5000 Hz, +-500 ppm, 3 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
@@ -128,7 +128,7 @@ func TestCoreTier3EarlySlotsClock(t *testing.T) {
 func TestCoreTier3WarmNullClock(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	_, _, miss := earlyCount(truth, -1, []uint64{9029, 9256, 9457}, clockSignal{cleanBaseband(slots, 1400), 0})
+	_, _, miss := earlyCount(t, truth, -1, []uint64{9029, 9256, 9457}, clockSignal{cleanBaseband(slots, 1400), 0})
 	if lookback := float64(tierOptions(Tier3).ExtLookback * slotSymbols); miss > 20e-6*lookback {
 		t.Errorf("core Tier 3 at 0 ppm, -1 dB: the lookback replay takes a clock stretch of %.0f ppm", miss/lookback*1e6)
 	}
@@ -154,16 +154,16 @@ func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
 	return s
 }
 
-func earlyExact(truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss float64) {
+func earlyExact(t testing.TB, truth []benchSlot, cn float64, sigs ...clockSignal) (rate, miss float64) {
 	seeds := make([]uint64, 24)
 	for i := range seeds {
 		seeds[i] = 7000 + uint64(i)
 	}
-	e, n, miss := earlyCount(truth, cn, seeds, sigs...)
+	e, n, miss := earlyCount(t, truth, cn, seeds, sigs...)
 	return float64(e) / float64(n), miss
 }
 
-func earlyCount(truth []benchSlot, cn float64, seeds []uint64, sigs ...clockSignal) (exactN, totalN int, miss float64) {
+func earlyCount(t testing.TB, truth []benchSlot, cn float64, seeds []uint64, sigs ...clockSignal) (exactN, totalN int, miss float64) {
 	start := (slotSeconds-burstSeconds)/2 + float64(cachSymbols)/symbolRate + benchPad
 	n := int((start + 16*slotSeconds) * basebandRate)
 	lookback := float64(tierOptions(Tier3).ExtLookback * slotSymbols)
@@ -178,7 +178,7 @@ func earlyCount(truth []benchSlot, cn float64, seeds []uint64, sigs ...clockSign
 			go func() {
 				defer wg.Done()
 				r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
-				x := sig.noisy(cn, seed)
+				x := sig.noisy(t, cn, seed)
 				var got []Burst
 				for k := 0; k < len(x); k += 4096 {
 					got = append(got, must(r.writeBB(x[k:min(k+4096, len(x))]))...)
@@ -233,7 +233,7 @@ func TestCoreTier3Ring(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
 	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier3, Format: IQFormatCU8})
-	x := noisyBaseband(slots, 1400, 40, 1)
+	x := noisyBaseband(t, slots, 1400, 40, 1)
 	for k := 0; k < len(x); k += 4096 {
 		must(r.writeBB(x[k:min(k+4096, len(x))]))
 	}
@@ -269,7 +269,7 @@ func TestCoreTier3Lag(t *testing.T) {
 		t.Skip("long stream")
 	}
 	long, _ := benchStream(t, 16)
-	x := noisyBaseband(long, 1400, 12, 3)
+	x := noisyBaseband(t, long, 1400, 12, 3)
 	x = x[int(0.9*basebandRate):]
 	const chunk = 16
 	for _, hz := range []int{9600, 48000} {
@@ -361,7 +361,7 @@ func TestCoreTier3Codec2Call(t *testing.T) {
 
 func TestCoreTier3SlowClock(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4})
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -372,7 +372,7 @@ func TestCoreTier3SlowClock(t *testing.T) {
 		tx := rftx.ToIQ(append(make([]float64, pad), fm0...), append(make([]float64, pad), env0...), 2e6, 0, 0.9)
 		for _, off := range []float64{0, 3000} {
 			for _, ppm := range []float64{500, -500} {
-				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
+				iq := channel(t, tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
 				r := mustNew(RxConfig{Rate: 2.048e6, Tier: Tier3, Format: IQFormatCU8})
 				got := r.AppendFlush(r.AppendBursts(nil, iq))
 				if len(got) != len(built.Bursts) {
@@ -421,7 +421,7 @@ func TestCoreTier3ReplayTime(t *testing.T) {
 		"gap.none.-4000.ms2.data1.+500ppm.nom.cs16-48k.inf",
 	} {
 		row := mxRowOf(t, name)
-		s, err := mxBuild(row)
+		s, err := mxBuild(t, row)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -444,7 +444,7 @@ func TestCoreTier3BurstContinuity(t *testing.T) {
 func TestDiscTier3WriteFlush(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 12, 7)
+	x := noisyBaseband(t, slots, 1400, 12, 7)
 	for _, hz := range []int{2 * symbolRate, discRate} {
 		a := discAudio(x, hz)
 		a = a[:len(a)*2/3]
@@ -492,7 +492,7 @@ func TestCoreTier3WeakDataPlaced(t *testing.T) {
 	for _, cn := range []float64{-3} {
 		for s := range uint64(4) {
 			have := map[int]bool{}
-			for _, b := range benchReceive(t, sig.noisy(cn, 60+s), benchEntry{benchIQ, Tier3}) {
+			for _, b := range benchReceive(t, sig.noisy(t, cn, 60+s), benchEntry{benchIQ, Tier3}) {
 				if i := int(math.Round((b.Seconds - first) / slotSeconds)); math.Abs(b.Seconds-first-float64(i)*slotSeconds) < 0.002 {
 					have[i] = true
 				}
@@ -528,7 +528,7 @@ func TestCoreTier3WeakProof(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				r := scoreBench(truth, benchReceive(t, sig.noisy(-2.5, 70+d*seeds+s), benchEntry{benchIQ, Tier3}))["sync"]
+				r := scoreBench(truth, benchReceive(t, sig.noisy(t, -2.5, 70+d*seeds+s), benchEntry{benchIQ, Tier3}))["sync"]
 				mu.Lock()
 				sc.Exact, sc.Truth = sc.Exact+r.Exact, sc.Truth+r.Truth
 				mu.Unlock()
@@ -552,7 +552,7 @@ func TestCoreTier3OneStream(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			seen := map[int]bool{}
-			for _, b := range benchReceive(t, sig.noisy(-2.5, 7100+uint64(i)), benchEntry{benchIQ, Tier3}) {
+			for _, b := range benchReceive(t, sig.noisy(t, -2.5, 7100+uint64(i)), benchEntry{benchIQ, Tier3}) {
 				seen[b.Stream] = true
 			}
 			streams[i] = len(seen)

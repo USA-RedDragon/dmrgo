@@ -8,7 +8,7 @@ import (
 
 func TestAllocsDiscTier2(t *testing.T) {
 	slots, _ := benchStream(t, 3)
-	a := discAudio(noisyBaseband(slots, 1400, 10, 1), 9600)
+	a := discAudio(noisyBaseband(t, slots, 1400, 10, 1), 9600)
 	r, err := NewAudioReceiver(&AudioRxConfig{Rate: 9600, Tier: Tier2})
 	if err != nil {
 		t.Fatal(err)

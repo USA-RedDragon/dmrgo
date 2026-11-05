@@ -14,7 +14,7 @@ import (
 // starts and seeds of TestSecondsLockBurstExact where it once did.
 func TestRxReplayNoisePad(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.Superframes = 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 
 func TestAllocsAudioShortLC(t *testing.T) {
 	slots, _ := benchStream(t, 4)
-	a := discAudio(noisyBaseband(slots, 1400, 20, 1), benchAudioHz)
+	a := discAudio(noisyBaseband(t, slots, 1400, 20, 1), benchAudioHz)
 	const chunk = 2048
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		lcs := 0

@@ -63,7 +63,7 @@ func TestLowIQISI(t *testing.T) {
 	o := discOptions()
 	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
 	for seed := uint64(1); seed <= 3; seed++ {
-		y := lowIQ(noisyBaseband(slots, 1400, 25, seed), iq0LowHz)
+		y := lowIQ(noisyBaseband(t, slots, 1400, 25, seed), iq0LowHz)
 		var r Receiver
 		var got []Burst
 		r.setLow(RxConfig{Rate: iq0LowHz, Format: IQFormatCF32, OnBursts: func(bs []Burst) { got = append(got, bs...) }}, &o)
@@ -82,7 +82,7 @@ func TestLowIQISI(t *testing.T) {
 func TestLowIQTimingPhase(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 4)
-	x := noisyBaseband(slots, 0, 40, 1)
+	x := noisyBaseband(t, slots, 0, 40, 1)
 	for shift := range basebandRate / symbolRate {
 		y := lowIQ(x[shift:], iq0LowHz)
 		r, err := NewReceiver(&RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCF32})

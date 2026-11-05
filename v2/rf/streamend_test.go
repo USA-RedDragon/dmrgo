@@ -28,7 +28,7 @@ func TestRxStreamEndNoise(t *testing.T) {
 	n := 0
 	for _, e := range []benchEntry{{benchIQ, Tier0}, {benchIQ, Tier1}, {benchIQ, Tier2}, {benchIQ, Tier3}, {benchAudio, Tier0}, {benchAudio, Tier1}, {benchAudio, Tier2}, {benchAudio, Tier3}} {
 		for seed := uint64(1); seed <= 8; seed++ {
-			for _, b := range benchReceive(t, noisyBaseband(slots[:40], 1400, 10, seed), e) {
+			for _, b := range benchReceive(t, noisyBaseband(t, slots[:40], 1400, 10, seed), e) {
 				if b.Seconds > end+0.005 {
 					n++
 				}

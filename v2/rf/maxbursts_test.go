@@ -13,7 +13,7 @@ type rxBoundSignal struct {
 func newRxBoundSignal(t testing.TB) *rxBoundSignal {
 	t.Helper()
 	slots, _ := benchStream(t, 2)
-	x := noisyBaseband(slots, 900, 25, 3)
+	x := noisyBaseband(t, slots, 900, 25, 3)
 	s := &rxBoundSignal{bb48: x, bb24: make([]complex64, len(x)/2), bb96: lowIQ(x, iq0LowHz)}
 	for i := range s.bb24 {
 		s.bb24[i] = (x[2*i] + x[2*i+1]) / 2

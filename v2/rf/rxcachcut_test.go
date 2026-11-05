@@ -13,7 +13,7 @@ func TestRxCACHCut(t *testing.T) {
 	for _, format := range []string{"a48000", "cs16-48k", "cu8-2048k"} {
 		for _, cut := range []float64{0.0021, 0.0028} {
 			row := mxRowOf(t, "s0.none.+0.bs.csbk.0ppm.nom."+format+".inf")
-			s, err := mxBuild(row)
+			s, err := mxBuild(t, row)
 			if err != nil {
 				t.Fatal(err)
 			}

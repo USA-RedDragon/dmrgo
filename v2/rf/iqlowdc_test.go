@@ -18,7 +18,7 @@ func TestIQLowDCOffset(t *testing.T) {
 		"agc.cw2s.+1500.ms.data34.0ppm.low.cs16-9600.inf.dc",
 	} {
 		row := mxRowOf(t, name)
-		res, err := mxRun(row, []mxRx{{row.val(mxFormat), Tier0}})
+		res, err := mxRun(t, row, []mxRx{{row.val(mxFormat), Tier0}})
 		if err != nil {
 			t.Fatal(err)
 		}

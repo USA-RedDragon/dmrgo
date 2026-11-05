@@ -56,7 +56,7 @@ func TestRxPreEmphasisFilter(t *testing.T) {
 func TestRxPreEmphasisRecovers(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 3)
-	x := noisyBaseband(slots, 0, 9, 1)
+	x := noisyBaseband(t, slots, 0, 9, 1)
 	for _, hz := range []int{8000, 9600, 48000} {
 		exact := func(a []int16, pe *RxPreEmphasis) int {
 			var r AudioReceiver

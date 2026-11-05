@@ -17,7 +17,7 @@ func TestRxLevelStep(t *testing.T) {
 				for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 					t.Run(fmt.Sprintf("%+.0fdB/%s/%gms/t%d", db, off, ms, tier-Tier0), func(t *testing.T) {
 						t.Parallel()
-						s, err := mxBuild(row)
+						s, err := mxBuild(t, row)
 						if err != nil {
 							t.Fatal(err)
 						}

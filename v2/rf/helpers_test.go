@@ -4,7 +4,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 
 const burstSeconds = 0.0275
 
-func testConfig() rftx.SeqConfig {
+func testConfigFixed() rftx.SeqConfig {
 	return rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 }
 

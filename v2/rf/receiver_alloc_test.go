@@ -11,16 +11,16 @@ import (
 )
 
 func TestAllocsReceiver(t *testing.T) {
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.BSSourced, cfg.Superframes = true, 2
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fm, env := rftx.ModulateBS(built.Slots)
-	iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
+	iq := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
 	const chunk = 1 << 14
-	x := cf32(basebandStream(built.Slots, 1500))
+	x := cf32(basebandStream(t, built.Slots, 1500))
 	lcs := 0
 	slc := func(l []ShortLC) { lcs += len(l) }
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {

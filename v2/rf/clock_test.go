@@ -8,7 +8,7 @@ import (
 
 func TestRxVoiceSlowClock(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4})
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +20,7 @@ func TestRxVoiceSlowClock(t *testing.T) {
 		tx := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 		for _, off := range []float64{0, 3000} {
 			for _, ppm := range []float64{500, -500} {
-				iq := rftx.Channel(tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
+				iq := channel(t, tx, 2e6/(1+ppm*1e-6), 2.048e6, off, 25, 5)
 				for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 					if tier == Tier0 && off != 0 || tier == Tier0 && lead == 0 && off != 0 {
 						continue

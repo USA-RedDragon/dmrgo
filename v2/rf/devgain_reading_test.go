@@ -40,7 +40,7 @@ func TestIQDeviationReading(t *testing.T) {
 	for _, format := range []string{"cs16-48k", "cu8-2048k"} {
 		for _, off := range []string{"+0", "+1500", "-2500", "+4000"} {
 			row := mxRowOf(t, "s0.none."+off+".ms.data12.0ppm.nom."+format+".inf")
-			s, err := mxBuild(row)
+			s, err := mxBuild(t, row)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -61,7 +61,7 @@ func TestIQDeviationReading(t *testing.T) {
 		tol float64
 	}{{iq0LowHz, 0.04}, {discRate / 2, mxDevHigh}} {
 		for _, off := range []string{"+0", "-1500"} {
-			sig, err := mxBuild(mxRowOf(t, "s0.none."+off+".ms.data12.0ppm.nom.cs16-48k.inf"))
+			sig, err := mxBuild(t, mxRowOf(t, "s0.none."+off+".ms.data12.0ppm.nom.cs16-48k.inf"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -85,7 +85,7 @@ func TestIQDeviationReading(t *testing.T) {
 func TestCombDeviationFallback(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "agc.noise.-1500.ms.data1.-500ppm.nom.cu8-48k.inf")
-	sig, err := mxBuild(row)
+	sig, err := mxBuild(t, row)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestDeviationAfterRetune(t *testing.T) {
 	t.Parallel()
 	const offHz = 1400
 	row := mxRowOf(t, "s0.none.+1500.ms.data12.0ppm.nom.cs16-48k.inf")
-	s, err := mxBuild(row)
+	s, err := mxBuild(t, row)
 	if err != nil {
 		t.Fatal(err)
 	}

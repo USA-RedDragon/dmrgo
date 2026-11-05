@@ -8,7 +8,7 @@ import (
 
 func TestAllocsTier1Weak(t *testing.T) {
 	slots, _ := benchStream(t, 3)
-	x := noisyBaseband(slots, 1400, 4, 1)
+	x := noisyBaseband(t, slots, 1400, 4, 1)
 	const chunk = 1 << 12
 	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier1, Format: IQFormatCU8})
 	pos, bursts := 0, 0

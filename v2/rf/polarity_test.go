@@ -60,7 +60,7 @@ func receivePol(t testing.TB, a []int16, hz int, tier Tier, plain bool) ([]Burst
 func TestDiscInverted(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 20, 3)
+	x := noisyBaseband(t, slots, 1400, 20, 3)
 	for _, hz := range []int{24000, 12000, 9600} {
 		a := discAudio(x, hz)
 		for i, v := range a {
@@ -89,7 +89,7 @@ func TestDiscPolarityStays(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
 	for _, hz := range []int{24000, 12000, 9600} {
-		for _, in := range [][]complex64{noisyBaseband(slots, 1400, 30, 1), noisyBaseband(slots, -900, 3, 2)} {
+		for _, in := range [][]complex64{noisyBaseband(t, slots, 1400, 30, 1), noisyBaseband(t, slots, -900, 3, 2)} {
 			a := discAudio(in, hz)
 			want := receivePlain(t, a, hz, Tier1)
 			got, r := receiveFixed(t, a, hz, Tier1)
@@ -110,7 +110,7 @@ func TestDiscPolarityStays(t *testing.T) {
 
 func msVoiceAudio(t *testing.T, hz int, inv bool) []int16 {
 	t.Helper()
-	b, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 12, Slot: 1})
+	b, err := rftx.Sequence("voice", randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 12, Slot: 1}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestDiscInvertedVoiceOnly(t *testing.T) {
 func TestDiscInvertedInit(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
-	a := discAudio(noisyBaseband(slots, 1400, 20, 3), 9600)
+	a := discAudio(noisyBaseband(t, slots, 1400, 20, 3), 9600)
 	for i, v := range a {
 		a[i] = -max(v, -math.MaxInt16)
 	}

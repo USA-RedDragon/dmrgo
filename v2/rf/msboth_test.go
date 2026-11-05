@@ -23,7 +23,7 @@ type msTalker struct {
 
 func talkerFM(t testing.TB, k msTalker, src uint32) (freq, env []float64, bursts []layer2.RawBurst) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: src, Dest: 9, Group: true, Wakeups: 1, Superframes: 3, Message: "DMRGO MS BOTH"}
+	cfg := randomizedN(t, uint64(src), rftx.SeqConfig{ColorCode: 7, Source: src, Dest: 9, Group: true, Wakeups: 1, Superframes: 3, Message: "DMRGO MS BOTH"})
 	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -189,7 +189,7 @@ func TestMSOneSlot(t *testing.T) {
 
 func TestMSBothLookback(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.Wakeups = 40
 	b, err := rftx.Sequence("wakeup", cfg)
 	if err != nil {
@@ -197,7 +197,7 @@ func TestMSBothLookback(t *testing.T) {
 	}
 	fm, env := rftx.Modulate(b.Bursts, rftx.Schedule{Slot: -1})
 	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
-	x := rftx.FromCU8(rftx.Channel(iq, 2e6, 2.048e6, -2500, 20, 7))
+	x := rftx.FromCU8(channel(t, iq, 2e6, 2.048e6, -2500, 20, 7))
 	cu8 := make([]byte, 2*len(x))
 	for i, v := range x {
 		cu8[2*i] = byte(math.Max(0, math.Min(255, math.Round(real(v)*127.5+127.5))))

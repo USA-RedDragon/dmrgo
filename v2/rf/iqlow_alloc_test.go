@@ -8,7 +8,7 @@ import (
 
 func TestAllocsLowIQ(t *testing.T) {
 	slots, _ := benchStream(t, 3)
-	x := noisyBaseband(slots, 1400, 30, 1)
+	x := noisyBaseband(t, slots, 1400, 30, 1)
 	o := discOptions()
 	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
 	for _, hz := range []int{9600, 12000} {

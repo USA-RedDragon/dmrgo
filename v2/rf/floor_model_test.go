@@ -78,7 +78,7 @@ func TestFloorModel(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 2)
 	e := newFloorEval(1)
-	e.f = newFloorSignal(slots, 2, 3)
+	e.f = newFloorSignal(slots, 2, noiseSeed(t, 3))
 	e.truth = truth
 	rng := rand.New(rand.NewPCG(3, 4))
 	var m floorModel

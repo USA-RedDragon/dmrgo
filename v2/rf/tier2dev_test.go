@@ -14,7 +14,7 @@ import (
 func TestTier2DeviationRange(t *testing.T) {
 	t.Parallel()
 	const seeds = 8
-	built, err := rftx.Sequence("data12", testConfig())
+	built, err := rftx.Sequence("data12", testConfig(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func TestTier2DeviationRange(t *testing.T) {
 			tx := rftx.ToIQ(append(make([]float64, n), fm...), append(make([]float64, n), env0...), 2e6, 0, 0.9)
 			exact := make([]float64, seeds)
 			forSeeds(seeds, func(i int) {
-				iq := rftx.Channel(tx, 2e6, 2.048e6, 0, 25-22.1, uint64(i+1))
+				iq := channel(t, tx, 2e6, 2.048e6, 0, 25-22.1, uint64(i+1))
 				r := mustNew(RxConfig{Rate: 2.048e6, Tier: Tier2, Format: IQFormatCU8})
 				for _, g := range r.AppendFlush(r.AppendBursts(nil, iq)) {
 					for _, w := range built.Bursts {

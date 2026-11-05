@@ -8,7 +8,7 @@ import (
 func TestCohExtVoice(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)
-	x := noisyBaseband(slots, 1400, 4, 21)
+	x := noisyBaseband(t, slots, 1400, 4, 21)
 	ambe := func(coh bool) float64 {
 		o := discOptions()
 		o.IQDisc, o.IQHz, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC = true, discRate, true, true, true, true
@@ -36,7 +36,7 @@ func TestCohTier2VoiceAboveEasySNR(t *testing.T) {
 	lost := func(cn float64) int {
 		n := 0
 		for seed := range uint64(8) {
-			s := scoreBench(truth, receiveBaseband(sig.noisy(cn, seed+1), Tier2))["ambe"]
+			s := scoreBench(truth, receiveBaseband(sig.noisy(t, cn, seed+1), Tier2))["ambe"]
 			n += s.Truth - s.Exact
 		}
 		return n

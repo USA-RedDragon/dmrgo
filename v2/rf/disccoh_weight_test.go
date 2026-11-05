@@ -23,7 +23,7 @@ func TestDiscPhaseHeldUnit(t *testing.T) {
 	for _, cn := range []float64{40, 12, 7, 5} {
 		for _, hz := range []int{9600, 24000, 48000} {
 			for seed := uint64(1); seed <= 4; seed++ {
-				a := discAudio(noisyBaseband(slots, 1400, cn, seed), hz)
+				a := discAudio(noisyBaseband(t, slots, 1400, cn, seed), hz)
 				r := mustAudio(AudioRxConfig{Rate: hz, Tier: Tier2})
 				r.AppendFlush(r.AppendBursts(nil, a))
 				p := discPhaseOf(t, r)
@@ -40,7 +40,7 @@ func TestDiscPhaseClickWeights(t *testing.T) {
 	slots, _ := benchStream(t, 2)
 	const hz = 9600
 	for _, cn := range []float64{40, 7} {
-		a := discAudio(noisyBaseband(slots, 1400, cn, 5), hz)
+		a := discAudio(noisyBaseband(t, slots, 1400, cn, 5), hz)
 		spikes := map[int]bool{}
 		for i := len(a) - 3000; i < len(a)-100; i += 487 {
 			a[i] = int16(audioOffset + (1400+3*discClickHz)*audioGain)

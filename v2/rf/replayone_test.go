@@ -14,7 +14,7 @@ import (
 
 func lateEntrySignal(t *testing.T, ppm, cut float64) *mxSignal {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3190001, Dest: 9990, Message: "DMRGO REPLAY", Superframes: 2, LateEntry: true}
+	cfg := randomizedN(t, 3190001, rftx.SeqConfig{ColorCode: 1, Source: 3190001, Dest: 9990, Message: "DMRGO REPLAY", Superframes: 2, LateEntry: true})
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

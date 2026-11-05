@@ -5,7 +5,7 @@ import "testing"
 func discBoundAudio(t testing.TB) map[int][]int16 {
 	t.Helper()
 	slots, _ := benchStream(t, 2)
-	x := noisyBaseband(slots, 900, 35, 3)
+	x := noisyBaseband(t, slots, 900, 35, 3)
 	a := map[int][]int16{}
 	for _, hz := range []int{24000, 12000, 9600} {
 		a[hz] = discAudio(x, hz)

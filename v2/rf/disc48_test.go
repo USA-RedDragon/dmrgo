@@ -53,7 +53,7 @@ func halvedWrites(n, chunk int) []int {
 func TestDisc48MatchesHalved(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 30, 1)
+	x := noisyBaseband(t, slots, 1400, 30, 1)
 	a48 := discAudio(x, 48000)
 	a24 := halve48(a48)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
@@ -94,7 +94,7 @@ func TestDisc48MatchesHalved(t *testing.T) {
 func TestDisc48InitAppend(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
-	a := discAudio(noisyBaseband(slots, 1400, 20, 1), 48000)
+	a := discAudio(noisyBaseband(t, slots, 1400, 20, 1), 48000)
 	var r AudioReceiver
 	if err := r.Init(AudioRxConfig{Rate: 48000}); err != nil {
 		t.Fatal(err)

@@ -559,7 +559,7 @@ func (r extRunner) decodeAll(st extStream, decs []extDecoder) ([][][]map[string]
 }
 
 func (r extRunner) decodeOne(st extStream, decs []extDecoder, ci int, cn float64, s int, runs chan<- extRun) {
-	x := st.sig.noisy(cn, 20000+uint64(s))
+	x := st.sig.noisy(nil, cn, 20000+uint64(s))
 	disc := extDisc(x)
 	var a9 []int16
 	for di, d := range decs {

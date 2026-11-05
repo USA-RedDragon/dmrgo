@@ -23,7 +23,8 @@ func msStream(t testing.TB, n int, jitter float64) ([]float64, []float64, []benc
 // calls.
 func msStreamMsg(t testing.TB, n int, jitter float64, msg string) ([]float64, []float64, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Wakeups: 1, Message: msg, Superframes: 2, Preambles: 2, Slot: 1}
+	ids := randomizedN(t, nameHash(msg), rftx.SeqConfig{Source: 3009101, Dest: 3009201, Message: msg})
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: ids.Source, Dest: benchTalkgroup(ids), Group: true, Wakeups: 1, Message: ids.Message, Superframes: 2, Preambles: 2, Slot: 1, VoiceSeed: ids.VoiceSeed}
 	const slotN = slotSeconds * basebandRate
 	gap := int(0.3 * basebandRate)
 	var freq, env []float64
@@ -34,7 +35,7 @@ func msStreamMsg(t testing.TB, n int, jitter float64, msg string) ([]float64, []
 		for _, seq := range []string{"voice", "data12", "data34", "preamble"} {
 			c := cfg
 			if seq != "voice" {
-				c.Group, c.Dest = false, 3009201
+				c.Group, c.Dest = false, ids.Dest
 			}
 			b, err := rftx.Sequence(seq, c)
 			if err != nil {
@@ -85,7 +86,8 @@ func scoreMS(truth []benchSlot, got []Burst) map[string]*benchScore {
 	return scoreBench(truth, got)
 }
 
-func noisyFM(freq, env []float64, offsetHz, cn float64, seed uint64) []complex64 {
+func noisyFM(t testing.TB, freq, env []float64, offsetHz, cn float64, seed uint64) []complex64 {
+	seed = noiseSeed(t, seed)
 	pad := int(benchPad * basebandRate)
 	x := make([]complex64, len(freq)+2*pad)
 	rng := rand.New(rand.NewPCG(seed, seed+1))
@@ -144,11 +146,11 @@ func TestTierOrder(t *testing.T) {
 				s := stream{scenario: sc.name, draw: d}
 				switch sc.name {
 				case "bs":
-					s.truth, s.x = bsTruth, noisyBaseband(slots, 1400, cn, seed)
+					s.truth, s.x = bsTruth, noisyBaseband(t, slots, 1400, cn, seed)
 				case "ms":
-					s.truth, s.x = msTruth, noisyFM(fm, env, 1400, cn, seed)
+					s.truth, s.x = msTruth, noisyFM(t, fm, env, 1400, cn, seed)
 				default:
-					s.truth, s.x = jTruth, noisyFM(jfm, jenv, 1400, cn, seed)
+					s.truth, s.x = jTruth, noisyFM(t, jfm, jenv, 1400, cn, seed)
 				}
 				streams = append(streams, s)
 			}

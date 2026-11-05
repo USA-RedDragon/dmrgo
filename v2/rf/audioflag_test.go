@@ -9,7 +9,7 @@ import (
 
 func TestAudioFlagLeavesIQ(t *testing.T) { //nolint:paralleltest // it flips the package audio flag
 	slots, _ := benchStream(t, 2)
-	x := cleanBaseband(slots, 1400).noisy(12, 1)
+	x := cleanBaseband(slots, 1400).noisy(t, 12, 1)
 	was := audioOn()
 	defer audioRx.Store(was)
 	for _, e := range benchEntries() {

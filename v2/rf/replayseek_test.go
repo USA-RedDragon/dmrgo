@@ -31,7 +31,7 @@ func TestRxReplaySeek(t *testing.T) {
 		at, frac float64
 		hz       float64
 	}{{3009101, 0, 0, 0, 0}, {3009102, 1, -6 * slotSeconds, 0.33, -200}} {
-		cfg := rftx.SeqConfig{ColorCode: 1, Source: c.src, Dest: 9990, Message: "DMRGO REPLAY", Superframes: 2, Slot: c.slot, LateEntry: true}
+		cfg := randomizedN(t, uint64(c.src), rftx.SeqConfig{ColorCode: 1, Source: c.src, Dest: 9990, Message: "DMRGO REPLAY", Superframes: 2, Slot: c.slot, LateEntry: true})
 		built, err := rftx.Sequence("voice", cfg)
 		if err != nil {
 			t.Fatal(err)

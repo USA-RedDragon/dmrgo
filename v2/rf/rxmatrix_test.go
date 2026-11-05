@@ -484,8 +484,8 @@ func mxParamsOf(row mxRow) mxParams {
 	}
 }
 
-func mxTransmission(row mxRow, src uint32, slot int, bs bool) (f, e []float64, truth []mxTruth, first float64, err error) {
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: src, Dest: 9990, BS: 990911, Message: "DMRGO MATRIX", Superframes: 1, Slot: slot, BSSourced: bs}
+func mxTransmission(t testing.TB, row mxRow, src uint32, slot int, bs bool) (f, e []float64, truth []mxTruth, first float64, err error) {
+	cfg := randomizedN(t, uint64(src), rftx.SeqConfig{ColorCode: 1, Source: src, Dest: 9990, BS: 990911, Message: "DMRGO MATRIX", Superframes: 1, Slot: slot, BSSourced: bs})
 	seq := row.val(mxContent)
 	switch seq {
 	case "voice":
@@ -515,16 +515,21 @@ func mxTransmission(row mxRow, src uint32, slot int, bs bool) (f, e []float64, t
 	return f, e, truth, float64(slot) * slotSeconds, nil
 }
 
-func mxBuild(row mxRow) (*mxSignal, error) {
+// mxBuild builds the input of row for t: the fixed payload and noise of the
+// row for a test that keeps the fixed payloads, and otherwise a random
+// payload and noise of the scenario of t. The talker geometry of a row stays
+// the one of its name.
+func mxBuild(t testing.TB, row mxRow) (*mxSignal, error) {
+	sd := mxDraw(t, row)
 	p := mxParamsOf(row)
 	ppm := map[string]float64{"0ppm": 0, "+500ppm": 500, "-500ppm": -500}[row.val(mxClock)]
 	off, _ := strconv.ParseFloat(row.val(mxOffset), 64)
-	s := &mxSignal{r: 1 + ppm*1e-6, seed: row.seed(), step: math.Inf(1), gain: [2]float64{1, 1}}
+	s := &mxSignal{r: 1 + ppm*1e-6, seed: row.seed() ^ sd, step: math.Inf(1), gain: [2]float64{1, 1}}
 	if row.val(mxCN) == "40dB" {
 		s.sigma = math.Sqrt(1/(math.Pow(10, 4)*12500)) / math.Sqrt2
 	}
 	src := row.val(mxSource)
-	f, e, truth, first, err := mxTransmission(row, 3009101, p.slot, src == "bs")
+	f, e, truth, first, err := mxTransmission(t, row, 3009101, p.slot, src == "bs")
 	if err != nil {
 		return nil, err
 	}
@@ -580,7 +585,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 		s.truth = append(s.truth, tr)
 	}
 	if src == "ms2" {
-		f2, e2, truth2, _, err := mxTransmission(row, 3009102, 1-p.slot, false)
+		f2, e2, truth2, _, err := mxTransmission(t, row, 3009102, 1-p.slot, false)
 		if err != nil {
 			return nil, err
 		}
@@ -598,7 +603,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 	}
 	s.end += mxTail
 	if adj := row.val(mxAdj); adj != "none" {
-		if err := mxAdjacent(s, adj, p); err != nil {
+		if err := mxAdjacent(t, s, adj, p); err != nil {
 			return nil, err
 		}
 	}
@@ -617,7 +622,7 @@ func mxBuild(row mxRow) (*mxSignal, error) {
 	return s, nil
 }
 
-func mxAdjacent(s *mxSignal, adj string, p mxParams) error {
+func mxAdjacent(t testing.TB, s *mxSignal, adj string, p mxParams) error {
 	hz := mxAdjHz
 	if p.adjBelow {
 		hz = -hz
@@ -626,7 +631,7 @@ func mxAdjacent(s *mxSignal, adj string, p mxParams) error {
 	part := mxPart{hz: hz}
 	switch adj {
 	case "dmr40":
-		cfg := rftx.SeqConfig{ColorCode: 5, Source: 3009103, Dest: 9990, BS: 990912, Message: "DMRGO NEIGHBOR", Superframes: 1 + int(s.end/(6*2*slotSeconds)), BSSourced: true}
+		cfg := randomizedN(t, 3009103, rftx.SeqConfig{ColorCode: 5, Source: 3009103, Dest: 9990, BS: 990912, Message: "DMRGO NEIGHBOR", Superframes: 1 + int(s.end/(6*2*slotSeconds)), BSSourced: true})
 		built, err := rftx.Sequence("voice", cfg)
 		if err != nil {
 			return err
@@ -1113,7 +1118,7 @@ func mxGenieRef(hz int) float64 {
 			for d, want := range []string{"s0", "none", "+0", "bs", "voice", "0ppm", "nom", f, "inf"} {
 				row[d] = uint8(slices.Index(mxValues[d], want))
 			}
-			s, err := mxBuild(row)
+			s, err := mxBuild(nil, row)
 			if err != nil {
 				continue
 			}
@@ -1170,8 +1175,8 @@ func mxApplyLimits(row mxRow, x mxRx, res *mxResult, used []bool) {
 	}
 }
 
-func mxRun(row mxRow, rxs []mxRx) (map[mxRx]*mxResult, error) {
-	s, err := mxBuild(row)
+func mxRun(t testing.TB, row mxRow, rxs []mxRx) (map[mxRx]*mxResult, error) {
+	s, err := mxBuild(t, row)
 	if err != nil {
 		return nil, err
 	}
@@ -1258,7 +1263,7 @@ func TestRxMatrix(t *testing.T) {
 		row := c.row
 		t.Run(row.name(), func(t *testing.T) {
 			t.Parallel()
-			res, err := mxRun(row, c.rxs)
+			res, err := mxRun(t, row, c.rxs)
 			if err != nil {
 				t.Fatal(err)
 			}

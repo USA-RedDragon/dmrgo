@@ -16,7 +16,7 @@ func TestRxNoBurstPastInputEnd(t *testing.T) {
 			t.Parallel()
 			for seed := uint64(1); seed <= 2; seed++ {
 				for _, cut := range []int{0, slotSamplesN / 4, slotSamplesN / 2} {
-					x := noisyBaseband(slots[:40], 1400, 20, seed)
+					x := noisyBaseband(t, slots[:40], 1400, 20, seed)
 					x = x[:len(x)-pad-cut]
 					end := float64(len(x)) / basebandRate
 					last := false

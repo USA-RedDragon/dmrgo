@@ -9,7 +9,7 @@ import (
 
 func TestRxRawBitsAfterNoise(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	const lead = 0.2
 	for _, seq := range []string{"ack", "data12", "voice"} {
 		built, err := rftx.Sequence(seq, cfg)
@@ -20,7 +20,7 @@ func TestRxRawBitsAfterNoise(t *testing.T) {
 		pad := int(lead * basebandRate)
 		fm, env = append(make([]float64, pad), fm...), append(make([]float64, pad), env...)
 		for _, off := range []float64{1500, -2000, 2600, -2600, 3000, -3000, 4000} {
-			iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
+			iq := channel(t, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, off, 25, 5)
 			for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 				if tier == Tier0 && math.Abs(off) >= 3000 {
 					continue

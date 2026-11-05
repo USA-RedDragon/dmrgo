@@ -15,7 +15,7 @@ import (
 func TestIQAdjacentOffCenter(t *testing.T) {
 	t.Parallel()
 	row := mxRowNamed(t, "s0.cw500ms.-1500.ms.rc.+500ppm.high.cs16-48k.inf.dmr40")
-	res, err := mxRun(row, mxReceivers(row.val(mxFormat), true))
+	res, err := mxRun(t, row, mxReceivers(row.val(mxFormat), true))
 	if err != nil {
 		t.Fatal(err)
 	}

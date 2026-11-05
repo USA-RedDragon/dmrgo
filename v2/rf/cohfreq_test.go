@@ -14,7 +14,7 @@ import (
 func TestCohFreqSlotType(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 8)
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 3009201, BS: 990913, Message: "DMRGO RXBENCH", BSSourced: true}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 3009201, BS: 990913, Message: "DMRGO RXBENCH", BSSourced: true})
 	hz := map[enums.DataType]float64{}
 	for _, name := range []string{"data12", "data34"} {
 		b, err := rftx.Sequence(name, cfg)
@@ -35,7 +35,7 @@ func TestCohFreqSlotType(t *testing.T) {
 			one[i] = rftx.BSSlot{CACH: slots[i].CACH, Burst: burst}
 		}
 		r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier2, Format: IQFormatCU8})
-		x := cleanBaseband(one, 1400).noisy(40, 1)
+		x := cleanBaseband(one, 1400).noisy(t, 40, 1)
 		for k := 0; k < len(x); k += 4096 {
 			must(r.writeBB(x[k:min(k+4096, len(x))]))
 		}

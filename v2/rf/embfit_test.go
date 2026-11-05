@@ -16,7 +16,7 @@ import (
 // fit after the hunt; it fails when the line holds fewer than the other 7.
 func TestEMBFitKeptSamples(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.Superframes = 3
 	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -25,7 +25,7 @@ func TestEMBFitKeptSamples(t *testing.T) {
 	var f, e [2][]float64
 	f[0], e[0] = rftx.Modulate(b.Bursts, rftx.Schedule{})
 	f[0], e[0] = resampleFM(f[0], e[0], 400)
-	x := twoTalkerIQ(f, e, 1400, 30, 2)
+	x := twoTalkerIQ(t, f, e, 1400, 30, 2)
 	r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier1, Format: IQFormatCU8})
 	for k := 0; k < len(x); k += 2048 {
 		must(r.writeBB(x[k:min(k+2048, len(x))]))

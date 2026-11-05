@@ -9,7 +9,7 @@ func TestSpectrumWeakDirectMode(t *testing.T) {
 	t.Parallel()
 	fm, env, _ := directCalls(t, 2)
 	for seed := range uint64(6) {
-		x := noisyFM(fm, env, 1400, 0.5, 70+seed)
+		x := noisyFM(t, fm, env, 1400, 0.5, 70+seed)
 		s := newSpectrum(basebandRate)
 		at := -1
 		for i, v := range x[:min(len(x), 2*basebandRate)] {

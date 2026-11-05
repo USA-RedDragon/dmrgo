@@ -19,7 +19,7 @@ func twoTalkers(t testing.TB, ppm [2]float64, sf int) (f, e [2][]float64, tk [2]
 	t.Helper()
 	ramp := (slotSeconds - burstSeconds) / 2
 	for k := range 2 {
-		cfg := testConfig()
+		cfg := testConfig(t)
 		cfg.Source, cfg.Superframes = []uint32{3009104, 3009105}[k], sf
 		b, err := rftx.Sequence("voice", cfg)
 		if err != nil {
@@ -35,7 +35,8 @@ func twoTalkers(t testing.TB, ppm [2]float64, sf int) (f, e [2][]float64, tk [2]
 	return f, e, tk
 }
 
-func twoTalkerIQ(f, e [2][]float64, offsetHz, cn float64, seed uint64) []complex64 {
+func twoTalkerIQ(t testing.TB, f, e [2][]float64, offsetHz, cn float64, seed uint64) []complex64 {
+	seed = noiseSeed(t, seed)
 	pad := int(benchPad * basebandRate)
 	n := max(len(f[0]), len(f[1])) + 2*pad
 	x := make([]complex64, n)
@@ -102,7 +103,7 @@ func TestRxTwoTalkerClocks(t *testing.T) {
 		for _, audio := range []bool{false, true} {
 			for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 				forSeeds(seeds, func(i int) {
-					x := twoTalkerIQ(f, e, 1400, 12, uint64(i+1))
+					x := twoTalkerIQ(t, f, e, 1400, 12, uint64(i+1))
 					var got []Burst
 					if audio {
 						got = ttAudio(x, 48000, tier)

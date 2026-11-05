@@ -52,7 +52,7 @@ func TestRxSeekSecondTalker(t *testing.T) {
 				rxs = append(rxs, x)
 			}
 		}
-		out, err := mxRun(row, rxs)
+		out, err := mxRun(t, row, rxs)
 		if err != nil {
 			t.Fatal(err)
 		}

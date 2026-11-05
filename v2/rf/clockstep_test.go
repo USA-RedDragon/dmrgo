@@ -10,7 +10,7 @@ import (
 func TestRxClockStepSettles(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "agc.none.-2500.ms.pi.-500ppm.high.cu8-2048k.40dB")
-	s, err := mxBuild(row)
+	s, err := mxBuild(t, row)
 	if err != nil {
 		t.Fatal(err)
 	}

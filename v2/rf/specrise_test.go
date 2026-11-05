@@ -16,7 +16,7 @@ const specriseWakeup = 2 * slotSeconds
 // lost; the second must then come out.
 func TestRxTier0FirstBurstAtOffset(t *testing.T) {
 	t.Parallel()
-	cfg := rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
+	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE"})
 	for _, seq := range []string{"ack", "data12", "voice"} {
 		built, err := rftx.Sequence(seq, cfg)
 		if err != nil {
@@ -28,7 +28,7 @@ func TestRxTier0FirstBurstAtOffset(t *testing.T) {
 			fm, env := append(make([]float64, pad), fm0...), append(make([]float64, pad), env0...)
 			tx := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 			for _, off := range []float64{2500, -2500, 3000, -3000, 4000, -4000} {
-				iq := rftx.Channel(tx, 2e6, 2.048e6, off, 25, 1)
+				iq := channel(t, tx, 2e6, 2.048e6, off, 25, 1)
 				r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: Tier0, Format: IQFormatCU8})
 				if err != nil {
 					t.Fatal(err)

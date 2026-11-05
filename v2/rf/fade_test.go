@@ -43,7 +43,7 @@ func fadedBaseband(fm, env []float64, fd, cn float64, seed uint64) []complex64 {
 
 func TestReceiverFading(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 20, 1
 	bs, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -66,7 +66,7 @@ func TestReceiverFading(t *testing.T) {
 	msFM, msEnv := rftx.Modulate(ms.Bursts, rftx.Schedule{Slot: 1})
 	msWant := make([]uint64, 0, 18*cfg.Superframes)
 	for i := range 18 * cfg.Superframes {
-		msWant = append(msWant, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
+		msWant = append(msWant, rftx.AMBEValue(rftx.VoiceFrame(cfg.VoiceSeed, i)))
 	}
 	seeds := []uint64{10, 11, 12, 13}
 	switch {

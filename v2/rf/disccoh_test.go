@@ -22,7 +22,7 @@ func receiveDisc(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 func TestDiscTier2Loopback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	x := noisyBaseband(slots, 1400, 30, 1)
+	x := noisyBaseband(t, slots, 1400, 30, 1)
 	for _, hz := range []int{24000, 12000, 9600} {
 		sc := scoreBench(truth, receiveDisc(t, discAudio(x, hz), hz, Tier2))
 		for _, k := range []string{"ambe", "csbk", "rate12", "rate34", "elc", "sync", "emb", "slottype"} {
@@ -51,7 +51,7 @@ func TestDiscTier2Weak(t *testing.T) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for seed := uint64(1); seed <= discWeakSeeds; seed++ {
-		x := noisyBaseband(slots, 1400, 3, seed)
+		x := noisyBaseband(t, slots, 1400, 3, seed)
 		for _, hz := range []int{24000, 12000, 9600} {
 			a := discAudio(x, hz)
 			for _, tier := range []Tier{Tier0, Tier2} {
@@ -90,7 +90,7 @@ func TestDiscTier2Weak(t *testing.T) {
 func TestDiscTier2FalseLockBeforeStream(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 30)
-	a := discAudio(cleanBaseband(slots, 1400).noisy(12, 29363428), benchAudioHz)
+	a := discAudio(cleanBaseband(slots, 1400).noisy(t, 12, 29363428), benchAudioHz)
 	got := receiveDisc(t, a, benchAudioHz, Tier2)
 	if len(got) == 0 || got[len(got)-1].Stream < 2 {
 		t.Fatal("no false lock in the noise before the stream")

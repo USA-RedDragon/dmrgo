@@ -49,7 +49,7 @@ func benchStream(t testing.TB, n int) ([]rftx.BSSlot, []benchSlot) {
 // its data calls.
 func benchStreamMsg(t testing.TB, n int, msg string) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
-	return benchStreamOf(t, rftx.SeqConfig{Source: 3009101, BS: 990913, Message: msg}, 3009201, n)
+	return benchStreamOf(t, randomizedN(t, nameHash(msg), rftx.SeqConfig{Source: 3009101, BS: 990913, Dest: 3009201, Message: msg}), n)
 }
 
 // benchMessage gives the text of the data calls of payload draw d: 16
@@ -63,9 +63,13 @@ func benchMessage(d uint64) string {
 	return string(b)
 }
 
-func benchStreamOf(t testing.TB, ids rftx.SeqConfig, dest uint32, n int) ([]rftx.BSSlot, []benchSlot) {
+// benchStreamOf builds the bench stream with the Source, BS, voice and
+// Message of ids: a group voice call to benchTalkgroup(ids) and data calls
+// to ids.Dest.
+func benchStreamOf(t testing.TB, ids rftx.SeqConfig, n int) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: ids.Source, Dest: 9, BS: ids.BS, Group: true, Wakeups: 1, Message: ids.Message, Superframes: n, BSSourced: true, Slot: 1, Preambles: 2}
+	dest := ids.Dest
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: ids.Source, Dest: benchTalkgroup(ids), BS: ids.BS, Group: true, Wakeups: 1, Message: ids.Message, Superframes: n, BSSourced: true, Slot: 1, Preambles: 2, VoiceSeed: ids.VoiceSeed}
 	voice, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -434,7 +438,7 @@ func (s benchShared) run(cases [][]benchCase) [][]benchPoint {
 		us := users[c]
 		wg.Add(len(us))
 		s.pool.do(benchGenPrio, func() {
-			x := s.sig.noisy(c.cn, c.seed)
+			x := s.sig.noisy(nil, c.cn, c.seed)
 			var a []int16
 			if slices.ContainsFunc(us, func(u use) bool { return s.es[u.e].mode == benchAudio }) {
 				a = discAudio(x, benchAudioHz)
@@ -694,7 +698,7 @@ func falseBursts(e benchEntry, input string, noise benchSignal, seconds float64)
 		hz, _ := strconv.Atoi(input[1:])
 		r := mustAudio(AudioRxConfig{Rate: hz, Tier: e.tier})
 		for seed := uint64(1); total < seconds; seed++ {
-			a := discAudio(noise.noisy(0, seed), hz)
+			a := discAudio(noise.noisy(nil, 0, seed), hz)
 			n += len(r.AppendBursts(nil, a))
 			total += float64(len(a)) / float64(hz)
 		}
@@ -702,7 +706,7 @@ func falseBursts(e benchEntry, input string, noise benchSignal, seconds float64)
 	case e.mode == benchIQLow:
 		r := mustNew(RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8})
 		for seed := uint64(1); total < seconds; seed++ {
-			y := lowIQ(noise.noisy(0, seed), iq0LowHz)
+			y := lowIQ(noise.noisy(nil, 0, seed), iq0LowHz)
 			n += len(must(r.writeBB(y)))
 			total += float64(len(y)) / iq0LowHz
 		}
@@ -717,7 +721,7 @@ func falseBursts(e benchEntry, input string, noise benchSignal, seconds float64)
 		}
 		r := mustNew(RxConfig{Rate: rate, Tier: e.tier, Format: f})
 		for seed := uint64(1); total < seconds; seed++ {
-			x := noise.noisy(0, seed)
+			x := noise.noisy(nil, 0, seed)
 			if rate != basebandRate {
 				x = dgUpsample(x, rate)
 			}
@@ -948,7 +952,7 @@ func TestRxBench(t *testing.T) {
 			continue
 		}
 		if full {
-			bt.Allocs = steadyAllocs(t, fsig.noisy(6, 1), e)
+			bt.Allocs = steadyAllocs(t, fsig.noisy(t, 6, 1), e)
 			bt.RAMBytes = receiverRAM(e)
 			bt.NsPerSecond, bt.WorstNs, bt.WorstCN = benchCPU(t, fsig, e)
 		}
@@ -983,7 +987,7 @@ const (
 
 func benchRef(t *testing.T) func() {
 	rs, _ := benchStream(t, 2)
-	a := discAudio(cleanBaseband(rs, 1400).noisy(6, 1), benchAudioHz)
+	a := discAudio(cleanBaseband(rs, 1400).noisy(t, 6, 1), benchAudioHz)
 	return func() { receiveAudioTier(t, a, Tier2) }
 }
 
@@ -991,7 +995,7 @@ func benchCPU(t *testing.T, sig benchSignal, e benchEntry) (at6, worst, worstCN 
 	t.Helper()
 	ref := benchRef(t)
 	for _, cn := range benchCPUGrid {
-		x := sig.noisy(cn, 1)
+		x := sig.noisy(t, cn, 1)
 		var f func()
 		switch e.mode {
 		case benchAudio:

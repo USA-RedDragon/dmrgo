@@ -9,7 +9,7 @@ import (
 func TestSoftExtEmbeddedLC(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)
-	x := noisyBaseband(slots, 1400, 5, 41)
+	x := noisyBaseband(t, slots, 1400, 5, 41)
 	a := discAudio(x, benchAudioHz)
 	elc := func(soft bool) float64 {
 		var out []Burst
@@ -35,7 +35,7 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 func TestSoftExtLookbackClicks(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 30)
-	a := discAudio(noisyBaseband(slots, 1400, 9, 604), benchAudioHz)
+	a := discAudio(noisyBaseband(t, slots, 1400, 9, 604), benchAudioHz)
 	t0 := scoreBench(truth, receiveAudioTier(t, a, Tier0))["rate12"]
 	t1 := scoreBench(truth, receiveAudioTier(t, a, Tier1))["rate12"]
 	if t1.Exact < t0.Exact {
@@ -56,7 +56,7 @@ func TestSoftExtLookback(t *testing.T) {
 	if start < 0 {
 		t.Fatal("no voice burst B in the stream")
 	}
-	a := discAudio(noisyBaseband(slots[start:], 1400, 20, 7), benchAudioHz)
+	a := discAudio(noisyBaseband(t, slots[start:], 1400, 20, 7), benchAudioHz)
 	first := func(lookback int) (start, b float64) {
 		start, b = -1, -1
 		r, err := NewAudioReceiver(&AudioRxConfig{Rate: benchAudioHz, Tier: Tier0, OnBursts: each(func(x *Burst) {

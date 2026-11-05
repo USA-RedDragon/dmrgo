@@ -8,7 +8,7 @@ import (
 
 func TestAllocsDiscReceiver(t *testing.T) {
 	slots, _ := benchStream(t, 3)
-	a := discAudio(noisyBaseband(slots, 1400, 20, 1), 9600)
+	a := discAudio(noisyBaseband(t, slots, 1400, 20, 1), 9600)
 	var r AudioReceiver
 	dst := make([]Burst, 0, 16)
 	const chunk = 1 << 10
@@ -36,7 +36,7 @@ func TestAllocsDiscReceiver(t *testing.T) {
 	}); n != 0 {
 		t.Errorf("Init with PreEmphasis: %v allocations", n)
 	}
-	a = radioAudio(noisyBaseband(slots, 1400, 20, 1), 9600, true)
+	a = radioAudio(noisyBaseband(t, slots, 1400, 20, 1), 9600, true)
 	pos, bursts = 0, 0
 	n = allocstest.PerRun(t, len(a)/chunk-2, func() {
 		dst = r.AppendBursts(dst[:0], a[pos:pos+chunk])

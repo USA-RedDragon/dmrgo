@@ -10,7 +10,7 @@ import (
 
 func TestForcedLockHeader(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.ColorCode, cfg.Wakeups, cfg.Slot = 1, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -23,7 +23,7 @@ func TestForcedLockHeader(t *testing.T) {
 	lost := 0
 	const seeds = 16
 	for seed := range uint64(seeds) {
-		x := noisyFM(freq, amp, 0, 17, 100+seed)
+		x := noisyFM(t, freq, amp, 0, 17, 100+seed)
 		ok := false
 		for _, b := range receiveBaseband(x, Tier2) {
 			data, _ := b.Decoded()

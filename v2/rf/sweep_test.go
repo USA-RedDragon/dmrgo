@@ -248,9 +248,9 @@ func TestSweepWorker(t *testing.T) {
 			defer func() { <-sem }()
 			var x []complex64
 			if fm != nil {
-				x = noisyFM(fm, env, j.Offset, c.CN, c.Seed)
+				x = noisyFM(t, fm, env, j.Offset, c.CN, c.Seed)
 			} else {
-				x = noisyBaseband(slots, j.Offset, c.CN, c.Seed)
+				x = noisyBaseband(t, slots, j.Offset, c.CN, c.Seed)
 			}
 			got, cpu, sec := j.receive(cfg, o, x)
 			sc := scoreBench(truth, got)
@@ -273,7 +273,7 @@ func TestSweepWorker(t *testing.T) {
 func TestSweepAudioShipped(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
-	x := noisyBaseband(slots, 1400, 8, 3)
+	x := noisyBaseband(t, slots, 1400, 8, 3)
 	for _, hz := range []int{9600, 48000} {
 		for tier := Tier0; tier <= Tier3; tier++ {
 			j := sweepJob{Tier: int(tier - Tier0), Disc: true, Hz: hz}
@@ -323,7 +323,7 @@ func sweepCosts(t testing.TB, j *sweepJob, cfg RxConfig, o *options) *sweepCost 
 	n := 0
 	var cpu float64
 	for seed := uint64(1); float64(n) < seconds*float64(j.rate()); seed++ {
-		in := r.convert(j, noisyBaseband(nil, 0, 0, seed))
+		in := r.convert(j, noisyBaseband(t, nil, 0, 0, seed))
 		cpu += threadCPUSeconds(func() { r.write(in, 0, in.len()) })
 		n += in.len()
 	}
@@ -334,7 +334,7 @@ func sweepCosts(t testing.TB, j *sweepJob, cfg RxConfig, o *options) *sweepCost 
 	c.SearchNsPerSecond = cpu * 1e9 * float64(j.rate()) / float64(n)
 	slots, _ := benchStream(t, 6)
 	ar := j.newRx(cfg, o)
-	in := ar.convert(j, noisyBaseband(slots, j.Offset, 10, 1))
+	in := ar.convert(j, noisyBaseband(t, slots, j.Offset, 10, 1))
 	const chunk = 1 << 12
 	ar.write(in, 0, chunk)
 	k := in.len()/chunk - 1

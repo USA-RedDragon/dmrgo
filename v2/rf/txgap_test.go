@@ -12,7 +12,7 @@ import (
 
 func msBursts(t testing.TB, name string) []Burst {
 	t.Helper()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.Superframes = 1
 	b, err := rftx.Sequence(name, cfg)
 	if err != nil {
@@ -27,7 +27,7 @@ func msBursts(t testing.TB, name string) []Burst {
 
 func bsBursts(t testing.TB, name string) []Burst {
 	t.Helper()
-	cfg := testConfig()
+	cfg := testConfig(t)
 	cfg.Superframes, cfg.BSSourced, cfg.Slot = 1, true, 1
 	b, err := rftx.Sequence(name, cfg)
 	if err != nil {
@@ -175,7 +175,7 @@ func repeaterBursts(t *testing.T) []Burst {
 	}
 	var in []layer2.RawBurst
 	for _, name := range []string{"voice", "data12"} {
-		cfg := testConfig()
+		cfg := testConfig(t)
 		cfg.Superframes = 2
 		b, err := rftx.Sequence(name, cfg)
 		if err != nil {
