@@ -10,11 +10,13 @@ import (
 
 // TestRxLevelStep steps the level of an audio BS stream in burst 4. The CACH
 // of that burst must come out exact, except at Tiers 0 and 1 for a step of
-// more than 10 dB within the RRC half-span after it: there the undershoot of
+// 10 dB or more within the RRC half-span after it: there the undershoot of
 // the matched filter at the step puts about 0.09·(G-1)·x(ts) on the CACH
 // symbol before it, with G the gain ratio and x(ts) the signal at the step,
 // and an ideal linear matched filter gets that CACH wrong on 64 of 64
-// payloads at +20 dB.
+// payloads at +20 dB. At 10 dB the outer level before the step and the
+// inner level after it differ by 5%, and a slicer that finds the step from
+// the symbol values alone gets the CACH wrong on 11 to 14 of 64 payloads.
 func TestRxLevelStep(t *testing.T) {
 	t.Parallel()
 	for _, db := range []float64{-10, 10, 20} {
@@ -41,7 +43,7 @@ func TestRxLevelStep(t *testing.T) {
 						if db > 10 {
 							from++
 						}
-						gibbs := tier <= Tier1 && math.Abs(db) > 10 && ms/1000*symbolRate < discSpan
+						gibbs := tier <= Tier1 && math.Abs(db) >= 10 && ms/1000*symbolRate < discSpan
 						in := mxInputOf(s, row)
 						got, dev, err := mxReceive(in, mxRx{"a24000", tier})
 						if err != nil {
