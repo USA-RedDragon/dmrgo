@@ -21,6 +21,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -169,6 +170,9 @@ func TestShortLCClean(t *testing.T) {
 	}
 }
 
+// TestShortLCSoft checks that OnShortLC recovers more Short LCs than the hard
+// decode, and that its soft decodes are not wrong more often than the hard
+// decodes are, both as rates at level testseed.Alpha.
 func TestShortLCSoft(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
@@ -180,13 +184,13 @@ func TestShortLCSoft(t *testing.T) {
 	for _, e := range []benchEntry{{benchAudio, Tier1}, {benchIQ, Tier1}} {
 		t.Run(e.name(), func(t *testing.T) {
 			t.Parallel()
-			var good, bad, hGood, hBad, soft int
+			var good, bad, hGood, hBad, soft, n int
 			for _, cn := range []float64{3, 4, 5} {
-				for s := range uint64(2) {
+				for s := range uint64(8) {
 					bursts, lcs := slcReceive(t, sig.noisy(t, cn, 900+s), e)
 					g, b := slcCount(lcs, want)
 					hg, hb := slcCount(slcHardOf(bursts), want)
-					good, bad, hGood, hBad = good+g, bad+b, hGood+hg, hBad+hb
+					good, bad, hGood, hBad, n = good+g, bad+b, hGood+hg, hBad+hb, n+len(want)
 					for _, l := range lcs {
 						if l.Soft {
 							soft++
@@ -194,9 +198,12 @@ func TestShortLCSoft(t *testing.T) {
 					}
 				}
 			}
-			t.Logf("%s: OnShortLC %d right %d wrong (%d soft), hard %d right %d wrong, of %d", e.name(), good, bad, soft, hGood, hBad, 6*len(want))
-			if good <= hGood || bad > hBad {
-				t.Errorf("OnShortLC %d right %d wrong, hard %d right %d wrong", good, bad, hGood, hBad)
+			t.Logf("%s: OnShortLC %d right %d wrong (%d soft), hard %d right %d wrong, of %d", e.name(), good, bad, soft, hGood, hBad, n)
+			if !testseed.RateHigher(good, n, hGood, n) {
+				t.Errorf("OnShortLC %d right of %d, hard decode %d", good, n, hGood)
+			}
+			if testseed.RateHigher(bad-hBad, soft, hBad, hGood+hBad) {
+				t.Errorf("soft decodes %d wrong of %d, hard decodes %d wrong of %d", bad-hBad, soft, hBad, hGood+hBad)
 			}
 		})
 	}
