@@ -207,8 +207,9 @@ func TestRegression_WeakCallKeepsVoice(t *testing.T) {
 				}
 			}
 		}
-		if floor := 999 - 49*boolInt(cfg != nil); got*1000 < have*floor {
-			t.Errorf("color code %v: %d of %d correct frames at 8%% BER", cfg != nil, got, have)
+		t.Logf("color code %v: %d of %d correct frames at 8%% BER", cfg != nil, got, have)
+		if floor := 0.999 - 0.049*float64(boolInt(cfg != nil)); testseed.RateBelow(got, have, floor) {
+			t.Errorf("color code %v: %d of %d correct frames at 8%% BER, rate below %g", cfg != nil, got, have, floor)
 		}
 	}
 }
