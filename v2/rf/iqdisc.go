@@ -621,7 +621,7 @@ func (r *iqRx) follow() {
 func (r *iqRx) syncTune() {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
-	if scale <= 0 {
+	if scale <= 0 || r.d.seekLv {
 		return
 	}
 	if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz {

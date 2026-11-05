@@ -82,3 +82,24 @@ func TestIQSyncTuneAdjacent(t *testing.T) {
 		}
 	}
 }
+
+// TestIQSeekLevelsHoldTune pins an MS call where an EMB seek anchored the
+// empty slot on noise and the converter followed the levels of that slot.
+func TestIQSeekLevelsHoldTune(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		tier Tier
+		off  float64
+		run  uint64
+		name string
+	}{
+		{Tier1, 0, 9979531959472472741, "TestIQAdjacentPull/1/0"},
+		{Tier2, 300, 11058614226070481730, "TestIQAdjacentPull/2/300"},
+	} {
+		o := tierOptions(c.tier)
+		s := runMix(c.run, nameHash(c.name))
+		if n, want, off := adjacentPin(t, c.tier, &o, c.off, s, s, 3); n < want || off > iqAFCLockHz {
+			t.Errorf("%s: C0 and C1 of %d of %d voice frames exact, converter %.0f Hz off the carrier while locked", c.name, n, want, off)
+		}
+	}
+}
