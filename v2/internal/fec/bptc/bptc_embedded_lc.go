@@ -233,6 +233,39 @@ func DecodeEmbeddedStrict(fragments [4]uint32) ([10]byte, fec.Result) {
 	return embeddedLCInfo(&rows), result
 }
 
+// DecodeEmbeddedOne decodes a full embedded LC that has at most one bit
+// error. Each of the 8 rows of the product code is a Hamming (16,11,4)
+// codeword and each column has even parity; one error shows as one row with
+// a nonzero syndrome that points at the single column whose parity fails.
+// Any other pattern is uncorrectable, so that, with the LC checksum, a
+// received word with many errors is refused instead of decoded to another
+// LC. (ETSI TS 102 361-1 clause B.2.1)
+func DecodeEmbeddedOne(fragments [4]uint32) ([10]byte, fec.Result) {
+	rows := embeddedLCMatrix(fragments)
+	var parity uint16
+	bad, n := 0, 0
+	for row, r := range rows {
+		parity ^= r
+		if rowSyndrome16_11(r) != 0 {
+			bad, n = row, n+1
+		}
+	}
+	result := fec.Result{BitsChecked: 128}
+	switch {
+	case n == 0 && parity == 0:
+	case n == 1 && bits.OnesCount16(parity) == 1:
+		fixed, ok := correctHamming16_11(rows[bad])
+		if !ok || fixed^rows[bad] != parity {
+			result.Uncorrectable = true
+			break
+		}
+		rows[bad], result.ErrorsCorrected = fixed, 1
+	default:
+		result.Uncorrectable = true
+	}
+	return embeddedLCInfo(&rows), result
+}
+
 func embeddedLCMatrix(fragments [4]uint32) [8]uint16 {
 	left := transpose8(uint64(fragments[0])<<32 | uint64(fragments[1]))
 	right := transpose8(uint64(fragments[2])<<32 | uint64(fragments[3]))
