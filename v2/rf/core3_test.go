@@ -516,24 +516,27 @@ func TestCoreTier3WeakProof(t *testing.T) {
 	if testmode.Race {
 		t.Skip("a statistical bar; the runs without -race check it")
 	}
-	slots, truth := benchStream(t, 30)
-	sig := cleanBaseband(slots, 1400)
+	const draws, seeds = 4, 2
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	var sc benchScore
-	for s := range uint64(2) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r := scoreBench(truth, benchReceive(t, sig.noisy(-2.5, 70+s), benchEntry{benchIQ, Tier3}))["sync"]
-			mu.Lock()
-			sc.Exact, sc.Truth = sc.Exact+r.Exact, sc.Truth+r.Truth
-			mu.Unlock()
-		}()
+	for d := range uint64(draws) {
+		slots, truth := benchDraw(t, 30, d)
+		sig := cleanBaseband(slots, 1400)
+		for s := range uint64(seeds) {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				r := scoreBench(truth, benchReceive(t, sig.noisy(-2.5, 70+d*seeds+s), benchEntry{benchIQ, Tier3}))["sync"]
+				mu.Lock()
+				sc.Exact, sc.Truth = sc.Exact+r.Exact, sc.Truth+r.Truth
+				mu.Unlock()
+			}()
+		}
 	}
 	wg.Wait()
-	if 100*sc.Exact < 86*sc.Truth {
-		t.Errorf("%d of %d SYNCs at C/N -2.5 dB", sc.Exact, sc.Truth)
+	if 1000*sc.Exact < 914*sc.Truth {
+		t.Errorf("%d of %d SYNCs at C/N -2.5 dB over %d payload draws, want at least 91.4%%", sc.Exact, sc.Truth, draws)
 	}
 }
 
