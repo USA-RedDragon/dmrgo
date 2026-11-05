@@ -227,3 +227,33 @@ func TestDiscACAcquire(t *testing.T) {
 		}
 	}
 }
+
+// TestRxLockRetuneCoherent pins a held-out run where Tier 2 locked with the
+// carrier 3 kHz off the converter and decoded burst 0 from the symbols taken
+// there, as the lock retune and replay skipped the coherent tiers.
+func TestRxLockRetuneCoherent(t *testing.T) {
+	t.Parallel()
+	p := pinnedRun{t, 958015591593368716, "TestRxVoiceSlowClock"}
+	cfg := randomizedN(p, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4})
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	pad := int(0.2 * basebandRate)
+	fm, env = append(make([]float64, pad), fm...), append(make([]float64, pad), env...)
+	iq := channel(p, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6/(1-500e-6), 2.048e6, 3000, 25, 5)
+	r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: Tier2, Format: IQFormatCU8})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := r.AppendFlush(r.AppendBursts(nil, iq))
+	if len(got) != len(built.Bursts) {
+		t.Fatalf("%d bursts, want %d", len(got), len(built.Bursts))
+	}
+	for i := range got {
+		if got[i].Data != built.Bursts[i] {
+			t.Errorf("burst %d: raw bits differ", i)
+		}
+	}
+}

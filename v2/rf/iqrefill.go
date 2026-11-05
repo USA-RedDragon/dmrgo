@@ -182,7 +182,7 @@ func (r *iqRx) lockOffset() float32 {
 }
 
 func (r *iqRx) retuneWanted(*leanCore) bool {
-	if r.refill == nil || r.tunes != nil || r.d.locked {
+	if r.refill == nil || r.d.locked {
 		return false
 	}
 	return r.refill.narrow != nil || r.lockTuned()
@@ -190,8 +190,7 @@ func (r *iqRx) retuneWanted(*leanCore) bool {
 
 func (r *iqRx) lockTuned() bool {
 	hz := r.lockOffset()
-	lim := r.tuneLimit()
-	return abs32(hz) >= iqRefillHz && (lim <= 0 || abs32(r.conv.hz+hz-r.center) <= lim)
+	return abs32(hz) >= iqRefillHz && abs32(r.conv.hz+hz-r.center) <= r.lockLimit()
 }
 
 // lockRetune tunes onto the carrier the receiver locks on, puts the narrow
@@ -206,7 +205,7 @@ func (r *iqRx) lockRetune(rest []int16) []int16 {
 	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	if tuned {
-		r.tuneWith(r.lockOffset(), 0, r.tuneLimit())
+		r.tuneWith(r.lockOffset(), 0, r.lockLimit())
 	}
 	taps, dd, swap := r.conv.taps, int64(0), false
 	if f.narrowOn {
