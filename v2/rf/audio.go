@@ -144,7 +144,7 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 		}
 		r.designResample(cfg.Tier)
 	}
-	r.hookShortLC(newShortLCOut(cfg.OnShortLC, cfg.Tier, false))
+	r.hookShortLC(newShortLCOut(cfg.OnShortLC, cfg.Tier))
 	if soft {
 		r.attachFix(cfg.Tier != Tier0)
 	}

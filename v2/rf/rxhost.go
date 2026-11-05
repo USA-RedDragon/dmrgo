@@ -51,7 +51,7 @@ func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	if n := streamBursts(opt.ExtLookback); cfg.OnBursts != nil && n > 0 {
 		r.sink.out = make([]Burst, 0, n)
 	}
-	r.core().hookShortLC(newShortLCOut(cfg.OnShortLC, cfg.Tier, true))
+	r.core().hookShortLC(newShortLCOut(cfg.OnShortLC, cfg.Tier))
 	return r, nil
 }
 

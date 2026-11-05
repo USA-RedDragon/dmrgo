@@ -71,6 +71,7 @@ var bugPinTests = map[string]string{
 	"TestRxTwoTalkerSyncLevelStepHead":   "payloads whose step burst head took the post-step phase unit",
 	"TestRxAudioTwoTalkerLevelStepBlind": "payloads whose imbalance kept the blind refit of a stepped burst off",
 	"TestDiscInvertedVoicePin":           "voice patterns that delayed the polarity flip past the fourth superframe",
+	"TestShortLCSoftNotWrong":            "seeds where soft Short LCs passed the CRC-8 with wrong bits",
 }
 
 func fixedPayload(t testing.TB) bool {

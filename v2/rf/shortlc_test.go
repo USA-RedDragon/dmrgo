@@ -202,6 +202,30 @@ func TestShortLCSoft(t *testing.T) {
 	}
 }
 
+// TestShortLCSoftNotWrong pins inputs where soft decodes passed the CRC-8
+// with wrong bits under the soft cost limit 5.0.
+func TestShortLCSoftNotWrong(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 30)
+	want := slcWant(slots)
+	sig := cleanBaseband(slots, 1400)
+	for _, c := range []struct {
+		e    benchEntry
+		cn   float64
+		seed uint64
+	}{
+		{benchEntry{benchAudio, Tier1}, 4, 5}, {benchEntry{benchAudio, Tier2}, 3, 5}, {benchEntry{benchAudio, Tier2}, 3, 6},
+		{benchEntry{benchAudio, Tier1}, 3, 12}, {benchEntry{benchIQ, Tier2}, 3, 12}, {benchEntry{benchAudio, Tier2}, 4, 20},
+	} {
+		_, lcs := slcReceive(t, sig.noisy(t, c.cn, c.seed), c.e)
+		for _, l := range lcs {
+			if w, ok := want[slcKey(l.Seconds)]; l.Soft && !(ok && slcSame(w, l.LC)) {
+				t.Errorf("%s, %g dB, seed %d: soft Short LC at %.4f s is wrong", c.e.name(), c.cn, c.seed, l.Seconds)
+			}
+		}
+	}
+}
+
 func TestShortLCExactCACH(t *testing.T) {
 	t.Parallel()
 	if testmode.Race {
@@ -452,20 +476,19 @@ func TestShortLCBench(t *testing.T) {
 	}
 }
 
-func TestShortLCTierCost(t *testing.T) {
+func TestShortLCSoftCost(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(3, 4))
 	c := &softOSDCodes[softShortLCCode]
 	for _, tc := range []struct {
 		tier Tier
-		iq   bool
 		flip int16
 		ok   bool
 	}{
-		{Tier1, true, 100, true}, {Tier2, true, 100, true}, {Tier3, false, 100, true},
-		{Tier3, true, 100, false}, {Tier3, true, 40, true}, {Tier1, true, 160, false},
+		{Tier1, 100, false}, {Tier2, 100, false}, {Tier3, 100, false},
+		{Tier1, 40, true}, {Tier3, 40, true}, {Tier1, 160, false},
 	} {
-		o := newShortLCOut(func([]ShortLC) {}, tc.tier, tc.iq)
+		o := newShortLCOut(func([]ShortLC) {}, tc.tier)
 		info := softShortLCInfoBits(rng)
 		cach, _ := softCACH(t, rng, info)
 		flipped := map[int]bool{}
@@ -493,7 +516,7 @@ func TestShortLCTierCost(t *testing.T) {
 		v := unpacked.Uint(info[:]) << 4
 		want := pdu.DecodeShortLC([5]byte{byte(v >> 32 & 0xff), byte(v >> 24 & 0xff), byte(v >> 16 & 0xff), byte(v >> 8 & 0xff), byte(v & 0xff)})
 		if ok != tc.ok || ok && (!slcSame(lc, want) || lc.FEC.ErrorsCorrected != 6) {
-			t.Errorf("tier %d, I/Q %v, flips of %d: ok %v, LC %+v, want ok %v, LC %+v", tc.tier, tc.iq, tc.flip, ok, lc, tc.ok, want)
+			t.Errorf("tier %d, flips of %d: ok %v, LC %+v, want ok %v, LC %+v", tc.tier, tc.flip, ok, lc, tc.ok, want)
 		}
 	}
 }
