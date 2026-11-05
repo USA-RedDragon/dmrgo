@@ -2423,7 +2423,7 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 	if d, ok := r.rcAnchor(base, ms && !isAnchor); ok {
 		isAnchor, shift, anchor = true, d, enums.SyncMSSourcedRC
 	}
-	if end := base + leanSyncEnd + shift; isAnchor && anchor == dp && r.embBeats(end, r.syncErrors(end, dp, r.devScale, r.dcHz)) {
+	if end := base + leanSyncEnd + shift; isAnchor && r.embBeats(end, r.syncErrors(end, anchor, r.devScale, r.dcHz)) {
 		isAnchor = false
 	}
 	if isAnchor && r.isReplaying() {

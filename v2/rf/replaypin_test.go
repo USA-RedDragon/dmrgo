@@ -154,3 +154,25 @@ func TestRxEMBSeekSliceTie(t *testing.T) {
 		t.Error(strings.Join(r.detail, " | "))
 	}
 }
+
+// TestRxEMBNotRCSync pins a payload whose EMB field in a voice burst reads as
+// an MS reverse channel SYNC: every tier anchored the burst as RC and
+// rewrote its bits.
+func TestRxEMBNotRCSync(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.none.+0.ms.voice.0ppm.nom.cs16-48k.inf")
+	s := lateEntryOf(t, randomizedN(pinnedTB{t, 3972215592164023459}, 3190001, lateEntryConfig()), 0, 0.008)
+	in := mxInputOf(s, row)
+	in.iq, in.iqFmt = cf32(s.baseband()), IQFormatCF32
+	for _, x := range mxReceivers("cs16-48k", true) {
+		got, dev, err := mxReceive(in, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := &mxResult{}
+		mxScore(s, in, x.tier, got, dev, false, r)
+		if r.fail["bits"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
+		}
+	}
+}
