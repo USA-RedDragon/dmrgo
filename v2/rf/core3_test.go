@@ -124,6 +124,15 @@ func TestCoreTier3EarlySlotsClock(t *testing.T) {
 	}
 }
 
+func TestCoreTier3WarmNullClock(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 6)
+	_, _, miss := earlyCount(truth, -1, []uint64{9029, 9256, 9457}, clockSignal{cleanBaseband(slots, 1400), 0})
+	if lookback := float64(tierOptions(Tier3).ExtLookback * slotSymbols); miss > 20e-6*lookback {
+		t.Errorf("core Tier 3 at 0 ppm, -1 dB: the lookback replay takes a clock stretch of %.0f ppm", miss/lookback*1e6)
+	}
+}
+
 type clockSignal struct {
 	sig benchSignal
 	ppm float64

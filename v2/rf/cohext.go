@@ -865,11 +865,10 @@ func (s *cohStage) slotMeasure(slot int64, pt float64, pOK bool) {
 }
 
 const (
-	cohWarmSpanHz     = cohFreqFirst
-	cohWarmStepHz     = 0.26 * symbolRate / syncSymbols
-	cohWarmSpanSym    = 0.5
-	cohWarmStepSym    = 0.25
-	cohWarmStretchSig = 0.25
+	cohWarmSpanHz  = cohFreqFirst
+	cohWarmStepHz  = 0.26 * symbolRate / syncSymbols
+	cohWarmSpanSym = 0.5
+	cohWarmStepSym = 0.25
 )
 
 func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
@@ -910,6 +909,10 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 		return
 	}
 	s.totalHz = bestHz
+	tv := replayTimeVarMS
+	if c.bs {
+		tv = replayTimeVarBS
+	}
 	var std, sdd float64
 	for j := 0; j < n; j++ {
 		at := s.ringTime(c, first-int64(n-j)*slotSymbols) + s.dt
@@ -926,11 +929,12 @@ func (s *cohStage) warmFreq(c *leanCore, first int64, n int) {
 		}
 		if top >= cohPlaceRho {
 			d := float64(n-j) * slotSymbols
-			std, sdd = std+tau*d, sdd+d*d
+			w := top / (fmath.Max(1-top, 1e-6) * tv)
+			std, sdd = std+w*tau*d, sdd+w*d*d
 		}
 	}
 	if sdd > 0 {
-		if e := -std / sdd; e*e*sdd >= cohWarmStretchSig && math.Abs(e) <= leanClockMax {
+		if e := -std / sdd; e*e*sdd > leanClockSig*leanClockSig && math.Abs(e) <= leanClockMax {
 			s.warmStretch = e
 		}
 	}
