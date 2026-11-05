@@ -1509,9 +1509,9 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 		for i := range cv {
 			cv[i] = keptSyncCorr(c, &syms[p], at-span+float32(best+i-1)*sps/8, sps)
 		}
-		off := (float32(best) + edgeVertex3(&cv)) * sps / 8
+		off := keptMMZero(c, &syms[p], at-span, (float32(best)+edgeVertex3(&cv))*sps/8, sps)
 		if j >= 0 {
-			x.syncFit(c, first+j*slotSymbols+leanSyncEnd, c.ticksAt(x.atN, at-span+keptMMZero(c, &syms[p], at-span, off, sps)), r, 1)
+			x.syncFit(c, first+j*slotSymbols+leanSyncEnd, c.ticksAt(x.atN, at-span+off), r, 1)
 		}
 		w := r / (max32(1-r, 1e-6) * tv * sps * sps)
 		sw, sx, sy, sxx, sxy = sw+w, sx+w*span, sy+w*off, sxx+w*span*span, sxy+w*span*off

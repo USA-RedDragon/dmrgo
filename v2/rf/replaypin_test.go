@@ -76,3 +76,25 @@ func TestCoreLockSlotSync(t *testing.T) {
 		t.Errorf("the oldest replayed slot sits %.2f symbols off", miss)
 	}
 }
+
+// TestRxReplayStretchSyncs receives a clean MS voice call at -500 ppm and
+// -4000 Hz on a payload where the correlation peaks of the replayed SYNCs
+// sit off by the data around them, so with a stretch fitted to the peaks
+// the oldest replayed bursts come 15 us early. The stretch must come from
+// the timing the MM detector gives each SYNC.
+func TestRxReplayStretchSyncs(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.none.-4000.ms.voice.-500ppm.nom.cs16-48k.inf")
+	s := lateEntryOf(t, testscen.Of(43).Apply(lateEntryConfig()), -500, 0)
+	s.parts[0].hz = -4000
+	in := mxInputOf(s, row)
+	got, dev, err := mxReceive(in, mxRx{"cs16-48k", Tier3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := &mxResult{}
+	mxScore(s, in, Tier3, got, dev, false, r)
+	if r.fail["seconds"] {
+		t.Error(strings.Join(r.detail, " | "))
+	}
+}
