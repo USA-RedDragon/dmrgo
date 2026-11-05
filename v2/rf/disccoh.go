@@ -146,7 +146,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 			p.filter(m)
 			p.n = m + 1
 			y, z := p.hist[m&(p.size-1)], p.hist[(m-1)&(p.size-1)]
-			d := y * complex(real(z), -imag(z))
+			d := cmul(y, complex(real(z), -imag(z)))
 			v := p.rawAt(m)
 			if p.cal && !p.clipped(float64(m-discPhaseLag), float64(m+discPhaseLag)) {
 				v = int16(max(min(roundf((atan2f(imag(d), real(d))+off)*scale), math.MaxInt16), math.MinInt16))

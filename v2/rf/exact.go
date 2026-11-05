@@ -276,11 +276,11 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			tp0, tp1 = tp0[:len(seg)], tp1[:len(seg)]
 			var c0, c1 complex64
 			for j, v := range seg {
-				c0 += v * tp0[j]
-				c1 += v * tp1[j]
+				c0 += cmulWide(v, tp0[j])
+				c1 += cmulWide(v, tp1[j])
 			}
-			c0 = c0 * rot0 * complex(scale, 0)
-			c1 = c1 * rot0 * complex(scale, 0)
+			c0 = cmulWide(c0, rot0) * complex(scale, 0)
+			c1 = cmulWide(c1, rot0) * complex(scale, 0)
 			corr[w], corr[w+1] = c0, c1
 			cm = max(cm, real(c0)*real(c0)+imag(c0)*imag(c0), real(c1)*real(c1)+imag(c1)*imag(c1))
 		}

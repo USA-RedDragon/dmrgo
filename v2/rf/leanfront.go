@@ -110,8 +110,8 @@ func (f *leanFront) push(v complex64) (s, power float32, ok bool) {
 		g := (3 - real(f.ncoRot)*real(f.ncoRot) - imag(f.ncoRot)*imag(f.ncoRot)) / 2
 		f.ncoRot *= complex(g, 0)
 	}
-	w := complex(float32(x[0]), float32(x[1])) * f.ncoRot
-	f.ncoRot *= f.ncoStep
+	w := cmul(complex(float32(x[0]), float32(x[1])), f.ncoRot)
+	f.ncoRot = cmul(f.ncoRot, f.ncoStep)
 	f.preHist[f.preHead] = [2]int8{sat8(real(w)), sat8(imag(w))}
 	if f.preHead++; f.preHead == preTaps {
 		f.preHead = 0
@@ -125,7 +125,7 @@ func (f *leanFront) push(v complex64) (s, power float32, ok bool) {
 		im += int32(t) * (int32(a[1]) + int32(b[1]))
 	}
 	y := complex(float32(re), float32(im)) * (1.0 / 32768)
-	d := y * complex(real(f.prev), -imag(f.prev))
+	d := cmul(y, complex(real(f.prev), -imag(f.prev)))
 	f.prev, f.lag = y, d*complex(f.inv2, 0)
 	f.rrcHist[f.rrcHead] = sat8(atan2f(imag(d), real(d)) * (discRate / (2 * math.Pi) / rrcStepHz))
 	if f.rrcHead++; f.rrcHead == rrcTaps {
@@ -182,10 +182,10 @@ func (f *leanFront) retuneFront(hz, d float32) {
 func (f *leanFront) turn(w float32) {
 	for r := range preTaps {
 		j := (f.preHead - 1 - r + preTaps) % preTaps
-		v := complex(float32(f.preHist[j][0]), float32(f.preHist[j][1])) * turnBy(w, r+1)
+		v := cmul(complex(float32(f.preHist[j][0]), float32(f.preHist[j][1])), turnBy(w, r+1))
 		f.preHist[j] = [2]int8{sat8(real(v)), sat8(imag(v))}
 	}
-	f.prev *= turnBy(w, preTaps-preTaps/2)
+	f.prev = cmul(f.prev, turnBy(w, preTaps-preTaps/2))
 }
 
 func newLean(cfg rxSetup, opt options) *leanRx {

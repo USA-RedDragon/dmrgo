@@ -299,7 +299,7 @@ func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64)
 		}
 		rot := complex64(cmplx.Exp(complex(0, -ph)))
 		for j := range m.sps {
-			tpl[(k-1)*m.sps+j] = m.tpl[w*m.sps+j] * rot
+			tpl[(k-1)*m.sps+j] = cmul(m.tpl[w*m.sps+j], rot)
 		}
 		ph += m.h * math.Pi * float64(syms[k])
 	}
@@ -588,8 +588,7 @@ func (s *cohStage) sample(t float64) complex64 {
 	i := int64(math.Floor(t))
 	mu := float32(t - float64(i))
 	p0, p1, p2, p3 := s.ringAt(hist, i-1, lo, n), s.ringAt(hist, i, lo, n), s.ringAt(hist, i+1, lo, n), s.ringAt(hist, i+2, lo, n)
-	c := complex(mu, 0)
-	return p1 + 0.5*c*(p2-p0+c*(2*p0-5*p1+4*p2-p3+c*(3*(p1-p2)+p3-p0)))
+	return p1 + complex(0.5*mu, 0)*(p2-p0+complex(mu, 0)*(2*p0-5*p1+4*p2-p3+complex(mu, 0)*(3*(p1-p2)+p3-p0)))
 }
 
 func (s *cohStage) phaseAt(t float64) float64 {
@@ -659,8 +658,8 @@ func (s *cohStage) fillSym(k int, x []complex64) {
 	sn, cs = math.Sincos(dph)
 	rs := complex64(complex(cs, sn))
 	for j := range sps {
-		v := s.sample(start+float64(j)*step) * rot
-		rot *= rs
+		v := cmul(s.sample(start+float64(j)*step), rot)
+		rot = cmul(rot, rs)
 		if s.dir < 0 {
 			v = complex(real(v), -imag(v))
 		}

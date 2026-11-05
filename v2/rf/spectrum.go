@@ -34,7 +34,7 @@ func fftTransform(x []complex64) {
 		half, step := size/2, fftSize/size
 		for start := 0; start < fftSize; start += size {
 			for k := range half {
-				t := fftTwiddles[k*step] * x[start+k+half]
+				t := cmul(fftTwiddles[k*step], x[start+k+half])
 				x[start+k+half] = x[start+k] - t
 				x[start+k] += t
 			}

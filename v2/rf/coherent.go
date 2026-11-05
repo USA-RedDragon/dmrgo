@@ -192,12 +192,12 @@ func (t *trellis) forward(j int, lp []float32, scale, mu float32) {
 			}
 		}
 		next[s2] = best
-		r := bro * m.step[bd&3]
+		r := cmul(bro, m.step[bd&3])
 		if mu != 0 && best > negInf {
-			c := bro * bc
+			c := cmul(bro, bc)
 			if a := sqrtf(real(c)*real(c) + imag(c)*imag(c)); a > 0 {
 				e := mu * imag(c) / a
-				r *= complex(1, -e)
+				r = cmul(r, complex(1, -e))
 			}
 		}
 		nrot[s2] = r
@@ -319,7 +319,7 @@ func (m *cpmModel) anchor(x []complex64, syms []int) complex64 {
 		}
 		var s complex128
 		for j := range sps {
-			s += complex128(x[(k+d)*sps+j] * m.tpl[w*sps+j])
+			s += complex128(cmul(x[(k+d)*sps+j], m.tpl[w*sps+j]))
 		}
 		c += s * cmplx.Exp(complex(0, -ph))
 		ph += m.h * math.Pi * float64(syms[k])
@@ -328,4 +328,19 @@ func (m *cpmModel) anchor(x []complex64, syms []int) complex64 {
 		return 1
 	}
 	return complex64(cmplx.Conj(c) / complex(cmplx.Abs(c), 0))
+}
+
+// cmul returns a*b with each product rounded to float32, as TinyGo computes it.
+// gc widens a complex64 product to float64, so a bare a*b differs between the
+// two compilers in the last bit.
+func cmul(a, b complex64) complex64 {
+	ar, ai, br, bi := real(a), imag(a), real(b), imag(b)
+	return complex(float32(ar*br)-float32(ai*bi), float32(ar*bi)+float32(ai*br))
+}
+
+// cmulWide returns a*b computed in float64 and rounded once, as gc computes a
+// complex64 product and as the SIMD kernels of the exact trellis do, so the
+// portable kernel gives their bits under both compilers.
+func cmulWide(a, b complex64) complex64 {
+	return complex64(complex128(a) * complex128(b))
 }

@@ -257,7 +257,7 @@ func (r *iqLowRx) halfRunGo(x []uint32) {
 //go:noinline
 func (r *iqLowRx) follow() {
 	s, c := sincosf(float32(r.step) * (-2 * math.Pi / (1 << 32)))
-	acc := complex(float32(r.ar), float32(r.ai)) * complex(c, s)
+	acc := cmul(complex(float32(r.ar), float32(r.ai)), complex(c, s))
 	p := float32(r.pow)
 	r.ar, r.ai, r.pow = 0, 0, 0
 	rate := float32(r.d.hz())
@@ -305,7 +305,7 @@ func (r *iqLowRx) tune(hz, dc float32) {
 	rate := float32(r.d.hz())
 	r.step = roundBits(r.hz/rate*(1<<16)) << 16
 	s, c := sincosf(-2 * math.Pi * hz / rate)
-	r.afcAvg *= complex(c, s)
+	r.afcAvg = cmul(r.afcAvg, complex(c, s))
 	d := hz*scale + dc - f.dc
 	if r.d.locked {
 		f.mean += dc - f.dc

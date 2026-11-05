@@ -282,28 +282,28 @@ func (d *iqDisc) turn(w float32) {
 	ref := age0 + per*(d.phase+n-1-n/2)
 	for r := range nh {
 		j := (h.head - 1 - r + nh) % nh
-		h.hist[j] *= turnBy(w, r+1-ref)
+		h.hist[j] = cmul(h.hist[j], turnBy(w, r+1-ref))
 		h.hist[j+nh] = h.hist[j]
 	}
 	for r := range n {
 		j := (d.head - 1 - r + n) % n
-		d.hist[j] *= turnBy(w, age0+per*r-ref)
+		d.hist[j] = cmul(d.hist[j], turnBy(w, age0+per*r-ref))
 		d.hist[j+n] = d.hist[j]
 	}
 	if c := d.coh; c != nil {
 		m := len(c.taps)
 		for r := range m {
 			j := (c.head - 1 - r + m) % m
-			c.hist[j] *= turnBy(w, age0+per*r-ref)
+			c.hist[j] = cmul(c.hist[j], turnBy(w, age0+per*r-ref))
 			c.hist[j+m] = c.hist[j]
 		}
 	}
-	d.ncoRot *= turnBy(w, -ref)
+	d.ncoRot = cmul(d.ncoRot, turnBy(w, -ref))
 	if m := len(d.afc); m > 0 {
 		d.afcSum = 0
 		for r := range m {
 			j := (d.afcHead - 1 - r + m) % m
-			d.afc[j] *= turnBy(w, r*d.decim)
+			d.afc[j] = cmul(d.afc[j], turnBy(w, r*d.decim))
 			d.afcSum += d.afc[j]
 		}
 		d.afcPrev = d.afcSum
@@ -323,8 +323,8 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 		g = (3 - real(d.post)*real(d.post) - imag(d.post)*imag(d.post)) / 2
 		d.post *= complex(g, 0)
 	}
-	w := v * d.ncoRot
-	d.ncoRot *= d.ncoStep
+	w := cmul(v, d.ncoRot)
+	d.ncoRot = cmul(d.ncoRot, d.ncoStep)
 	if d.halfOn {
 		var ok bool
 		if w, ok = d.half.push(w); !ok {
@@ -361,12 +361,12 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 			im += t * imag(h[k])
 		}
 	}
-	y := complex(re, im) * d.post
+	y := cmul(complex(re, im), d.post)
 	if d.coh != nil {
-		d.coh.y *= d.post
+		d.coh.y = cmul(d.coh.y, d.post)
 	}
-	d.post *= d.postRot
-	p := y * complex(real(d.prev), -imag(d.prev))
+	d.post = cmul(d.post, d.postRot)
+	p := cmul(y, complex(real(d.prev), -imag(d.prev)))
 	d.prev = y
 	d.acc += p
 	d.pw += re*re + im*im
@@ -379,7 +379,7 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 				d.afcSum += a
 			}
 		}
-		d.accAvg += d.afcSum * complex(real(d.afcPrev), -imag(d.afcPrev))
+		d.accAvg += cmul(d.afcSum, complex(real(d.afcPrev), -imag(d.afcPrev)))
 		d.afcPrev = d.afcSum
 		d.pwAvg += real(d.afcSum)*real(d.afcSum) + imag(d.afcSum)*imag(d.afcSum)
 	}
@@ -711,7 +711,7 @@ func (r *iqRx) tuneLean(hz, dc float32) {
 	scale := f.gain * iqUnitsPerHz
 	r.afcPull -= hz
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
-	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))
+	r.afcAvg = cmul(r.afcAvg, complex(float32(math.Cos(p)), float32(math.Sin(p))))
 	d := hz*scale + dc - f.dc
 	if r.d.locked {
 		f.mean += dc - f.dc

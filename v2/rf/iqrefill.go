@@ -130,9 +130,9 @@ func (r *iqRx) refillCoh(hz float64) {
 	}
 	for k := k0; k < r.yN; k++ {
 		e := f.out - 1 - per*(r.yN-1-k)
-		p := r.conv.post * turnBy(r.conv.postW, int(k-r.yN))
-		r.yHist[k&int64(len(r.yHist)-1)] = f.fir(main, e-i0) * p
-		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = f.fir(coh, e-i0) * p
+		p := cmul(r.conv.post, turnBy(r.conv.postW, int(k-r.yN)))
+		r.yHist[k&int64(len(r.yHist)-1)] = cmul(f.fir(main, e-i0), p)
+		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = cmul(f.fir(coh, e-i0), p)
 	}
 }
 
@@ -310,7 +310,7 @@ func (r *iqRx) toWide() {
 			im += v * imag(x)
 		}
 		y := complex(re, im)
-		p := y * complex(real(c.prev), -imag(c.prev))
+		p := cmul(y, complex(real(c.prev), -imag(c.prev)))
 		c.prev = y
 		if len(r.audio) == cap(r.audio) {
 			r.writeAudio()
