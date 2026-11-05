@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/cmplx"
 	"math/rand/v2"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -563,4 +564,40 @@ func TestCoreTier3OneStream(t *testing.T) {
 			t.Errorf("seed %d: one call at C/N -2.5 dB comes out as %d streams", 7100+i, n)
 		}
 	}
+}
+
+func TestCoreTier3SlotOnce(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 30)
+	sig := cleanBaseband(slots, 1400)
+	sigma := math.Sqrt(basebandRate/(math.Pow(10, 10.0/10)*12500)) / math.Sqrt2
+	fade := math.Pow(10, -16.0/20)
+	var wg sync.WaitGroup
+	for s := range uint64(4) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			rng := rand.New(rand.NewPCG(300+s, 301+s))
+			x := make([]complex64, len(sig.re))
+			for i := range x {
+				a := 1.0
+				if t := float64(i) / basebandRate; t >= 3 && t < 4.2 {
+					a = fade
+				}
+				x[i] = complex(float32(a*sig.re[i]+rng.NormFloat64()*sigma), float32(a*sig.im[i]+rng.NormFloat64()*sigma))
+			}
+			got := benchReceive(t, x, benchEntry{benchIQ, Tier3})
+			at := make([]float64, len(got))
+			for i, b := range got {
+				at[i] = b.Seconds
+			}
+			slices.Sort(at)
+			for i := 1; i < len(at); i++ {
+				if at[i]-at[i-1] < 0.002 {
+					t.Errorf("seed %d: the slot at %.4f s comes out twice after a fade to -6 dB", 300+s, at[i])
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }

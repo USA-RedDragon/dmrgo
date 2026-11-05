@@ -45,8 +45,10 @@ type AudioRxConfig struct {
 	// the bursts to it. Each call carries the bursts that are ready at
 	// the same point of the stream, in storage of the receiver that is
 	// valid only during the call: usually one, and after a late lock the
-	// bursts of the slots before the lock, decoded again. When nil, the
-	// receiver is in append mode, for AppendBursts and AppendFlush.
+	// bursts of the slots before the lock, decoded again. A slot comes out
+	// at most once: the replay after a relock skips each slot that an
+	// earlier lock already gave. When nil, the receiver is in append mode,
+	// for AppendBursts and AppendFlush.
 	OnBursts func([]Burst)
 	// PreEmphasis, when not nil, states that the radio de-emphasizes its
 	// discriminator output from 300 Hz to 3 kHz, as the speaker and

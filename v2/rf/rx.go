@@ -33,8 +33,10 @@ type RxConfig struct {
 	// the bursts to it. Each call carries the bursts that are ready at
 	// the same point of the stream, in storage of the receiver that is
 	// valid only during the call: usually one, and after a late lock the
-	// LookbackSlots bursts decoded again. When nil, the receiver is in
-	// append mode, for AppendBursts and AppendFlush.
+	// LookbackSlots bursts decoded again. A slot comes out at most once:
+	// the replay after a relock skips each slot that an earlier lock
+	// already gave. When nil, the receiver is in append mode, for
+	// AppendBursts and AppendFlush.
 	OnBursts func([]Burst)
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8

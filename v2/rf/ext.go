@@ -82,6 +82,8 @@ type extChan struct {
 type softExt struct {
 	fit             [extFitSamples]int8
 	lastSync        int32
+	outs            []float64
+	outHead         int
 	fitHead, fitN   int32
 	seekPend        [2]seekNote
 	strobes         *[extStrobes]int64
@@ -191,6 +193,7 @@ func newSoftExtStages(st uint8, lookback int, sps float32) *softExt {
 	if lookback > 0 {
 		n := int(float32((lookback+1)*slotSymbols)*sps) + leanAcqSamples
 		x.acq = make([]int16, (n+1)/2)
+		x.outs = make([]float64, lookback+extQueue+4)
 	}
 	for dt := range x.checks {
 		x.checks[dt] = softBPTCCheck(enums.DataType(dt))
@@ -798,13 +801,29 @@ func (x *softExt) retime(c *leanCore) {
 func (x *softExt) drain(c *leanCore, one bool, keep int) {
 	for x.n > keep && !x.held[x.head] && !x.early[x.head] && !c.unproven {
 		c2Note(&x.ch[x.q[x.head].Slot&1].c2, &x.q[x.head], x.qc2[x.head])
-		c.emit(&x.q[x.head])
+		if b := &x.q[x.head]; x.firstOut(c, b) {
+			c.emit(b)
+		}
 		x.head = (x.head + 1) % extQueue
 		x.n--
 		if one {
 			return
 		}
 	}
+}
+
+func (x *softExt) firstOut(c *leanCore, b *Burst) bool {
+	if len(x.outs) == 0 || !payloadInInput(b.Seconds) && !c.earlyOK(b) {
+		return true
+	}
+	for _, t := range x.outs {
+		if t != 0 && math.Abs(t-b.Seconds) < slotSeconds/4 {
+			return false
+		}
+	}
+	x.outs[x.outHead] = b.Seconds
+	x.outHead = (x.outHead + 1) % len(x.outs)
+	return true
 }
 
 func (x *softExt) kept() []int16 { return x.acq }

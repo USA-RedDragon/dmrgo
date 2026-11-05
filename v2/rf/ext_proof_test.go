@@ -47,6 +47,7 @@ func TestExtWeakLockProof(t *testing.T) {
 		}
 		x := &softExt{}
 		for i := range bs {
+			bs[i].Seconds = float64(i) * slotSeconds
 			if c.unproven {
 				x.prove(c, &bs[i])
 			}
