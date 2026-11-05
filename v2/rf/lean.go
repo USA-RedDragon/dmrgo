@@ -2694,8 +2694,10 @@ func (r *leanCore) ended(j int32, base int64) bool {
 // iqHuntMaxHz moved a carrier that was outside the range the lean core pulls
 // in, so the symbols taken before it are off; inside that range the lean core
 // follows the carrier untuned.
-func (r *leanCore) heldTune(hz float32) {
-	if !r.locked && abs32(hz) > iqHuntMaxHz {
+func (r *leanCore) heldTune(hz float32) { r.heldOver(hz, iqHuntMaxHz) }
+
+func (r *leanCore) heldOver(hz, lim float32) {
+	if !r.locked && abs32(hz) > lim {
 		r.heldNs = r.ns
 	}
 }

@@ -149,3 +149,36 @@ func TestIQRefillSettle(t *testing.T) {
 		}
 	}
 }
+
+// TestRxRawBitsHuntTune pins a held-out run where the spectrum hunt tuned a
+// Tier 0 receiver by less than iqHuntMaxHz inside burst 0, whose symbols
+// before the tune passed the channel filter 2.6 kHz off its center.
+func TestRxRawBitsHuntTune(t *testing.T) {
+	t.Parallel()
+	p := pinnedRun{t, 14370708237565064112, "TestRxRawBitsAfterNoise"}
+	cfg := randomizedN(p, 3009101, testConfigFixed())
+	for _, seq := range []string{"ack", "data12", "voice"} {
+		built, err := rftx.Sequence(seq, cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+		pad := int(0.2 * basebandRate)
+		fm, env = append(make([]float64, pad), fm...), append(make([]float64, pad), env...)
+		iq := channel(p, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 2600, 25, 5)
+		r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: Tier0, Format: IQFormatCU8})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := r.AppendFlush(r.AppendBursts(nil, iq))
+		if len(got) != len(built.Bursts) {
+			t.Errorf("%s: %d bursts, want %d", seq, len(got), len(built.Bursts))
+			continue
+		}
+		for i := range got {
+			if got[i].Data != built.Bursts[i] {
+				t.Errorf("%s burst %d: raw bits differ", seq, i)
+			}
+		}
+	}
+}

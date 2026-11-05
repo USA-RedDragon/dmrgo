@@ -79,6 +79,7 @@ var bugPinTests = map[string]string{
 	"TestIQSeekLevelsHoldTune":           "MS calls where the converter followed an EMB seek on noise in the empty slot",
 	"TestIQHuntAfterLock":                "Tier 0 locks where the spectrum hunt tuned after the lock",
 	"TestIQRefillSettle":                 "Tier 3 locks that tuned twice by the coherent lock offset",
+	"TestRxRawBitsHuntTune":              "a held-out run whose first burst started before a 2.4 kHz hunt tune",
 }
 
 func fixedPayload(t testing.TB) bool {
@@ -120,9 +121,20 @@ type pinnedTB struct {
 	run uint64
 }
 
+type pinnedRun struct {
+	testing.TB
+	run  uint64
+	name string
+}
+
+func (p pinnedRun) Name() string { return p.name }
+
 func scenarioOf(t testing.TB) (s testscen.Scenario, ok bool) {
 	if p, pinned := t.(pinnedTB); pinned {
 		return testscen.Of(p.run), true
+	}
+	if p, pin := t.(pinnedRun); pin {
+		return testscen.Of(runMix(p.run, nameHash(p.name))), true
 	}
 	if fixedPayload(t) {
 		return s, false
@@ -147,6 +159,9 @@ func sharedRandomized(cfg rftx.SeqConfig) rftx.SeqConfig { return runScenario().
 func noiseSeed(t testing.TB, seed uint64) uint64 {
 	if p, pinned := t.(pinnedTB); pinned {
 		return runMix(p.run, seed)
+	}
+	if p, ok := t.(pinnedRun); ok {
+		return runMix(runMix(p.run, nameHash(p.name)), seed)
 	}
 	if fixedPayload(t) {
 		return seed
