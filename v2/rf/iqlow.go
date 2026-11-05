@@ -49,6 +49,7 @@ type iqLowRx struct {
 	env, env2   float32
 	proj, edge  float32
 	spin        float32
+	fit         dcFit
 	dcN         uint16
 	sub, dHead  uint8
 	dly         [iqLowDCDelay]uint32
@@ -66,6 +67,7 @@ func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) {
 	r.d.iqLow = hz == iq0LowHz
 	r.d.lagTicks = int32((basebandRate/hz)<<7 + iqLowDCDelay*(basebandRate/hz)<<8)
 	r.edge = float32(iqLowDCEvery / (dcEdgeSeconds * float64(hz)))
+	r.fit = dcFit{du: 1.0 / iqLowDCBlock, end: float32(dcFitSeconds * float64(hz))}
 }
 
 func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {
@@ -119,8 +121,13 @@ func (r *iqLowRx) feed16(x []uint32) {
 // asin(sqrt(dcSpin)) per sample on average also starts it again: every DMR
 // symbol moves the frequency off zero, while a constant offset under a
 // carrier weak enough to leave the envelope that flat turns the sum less.
+// Over the first dcFitSeconds after the start or such a restart, a block of
+// iqLowDCBlock samples whose circle fit (dcFit) holds sets the estimate to
+// the center: the mean of so few samples still holds a share of the signal,
+// as large as the payload makes it.
 func (r *iqLowRx) dcUpdate(x []uint32) {
 	var si, sq int32
+	fit := false
 	prev := r.dly[(r.dHead-1)&(iqLowDCDelay-1)]
 	for _, w := range x {
 		i, q := int32(int16(w)), int32(w)>>16
@@ -140,12 +147,22 @@ func (r *iqLowRx) dcUpdate(x []uint32) {
 		r.spin += (s*s - r.spin) * r.edge
 		if c := r.dcI*r.dcI + r.dcQ*r.dcQ; c > dcCarrierShare*r.env && r.env2 < dcFlat*r.env*r.env && (r.proj < dcTurn*c || r.env2 < dcSpinFlat*r.env*r.env && r.spin > dcSpin*r.env2) {
 			r.dcN, r.dcI, r.dcQ, r.proj, r.spin = 1<<iqLowDCShift, 0, 0, 0, 0
+			r.fit.reset()
+		}
+		if r.fit.k < r.fit.end {
+			if c, _, ok := r.fit.push(complex(fx, fy)); ok {
+				r.dcI, r.dcQ, fit = real(c), imag(c), true
+			}
 		}
 	}
 	n := float32(len(x))
-	g := min(n/float32(max(r.dcN, 1<<iqLowDCStart)), 1)
-	r.dcI += g * (float32(si)/n - r.dcI)
-	r.dcQ += g * (float32(sq)/n - r.dcQ)
+	if fit {
+		r.dcN = max(r.dcN, 1<<iqLowDCStart)
+	} else {
+		g := min(n/float32(max(int(r.dcN), min(1<<iqLowDCStart, int(r.dcN)+len(x)))), 1)
+		r.dcI += g * (float32(si)/n - r.dcI)
+		r.dcQ += g * (float32(sq)/n - r.dcQ)
+	}
 	r.dcN = uint16(min(int(r.dcN)+len(x), 1<<iqLowDCShift))
 	r.dcm = uint32(uint16(int16(roundBits(r.dcI)))) | uint32(uint16(int16(roundBits(r.dcQ))))<<16
 }

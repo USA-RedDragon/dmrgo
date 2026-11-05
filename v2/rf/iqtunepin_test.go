@@ -288,3 +288,22 @@ func TestRxMidLockRetune(t *testing.T) {
 		}
 	}
 }
+
+// TestIQLowDCStart pins a held-out run where the low-rate I/Q receiver
+// started on a call with a DC offset as strong as the carrier, and the I/Q
+// mean of the first blocks, which still held a share of the signal, cost
+// burst 0 its first bits.
+func TestIQLowDCStart(t *testing.T) {
+	t.Parallel()
+	name := "s0.none.+0.ms.voice.0ppm.low.cs16-9600.40dB.dc"
+	row := mxRowOf(t, name)
+	res, err := mxRun(pinnedRun{t, 3, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range res {
+		if s := r.symptoms(); s != "" {
+			t.Errorf("%s: %s", name, s)
+		}
+	}
+}
