@@ -61,7 +61,7 @@ func TestIQNarrowReplayAligned(t *testing.T) {
 		t.Fatal("Tier 1 has no narrow filter")
 	}
 	ref := func(taps []float32) []int16 {
-		d := iqDisc{decim: q.conv.decim, step: q.conv.step, taps: taps, hist: make([]complex64, 2*len(taps)), ncoRot: 1, ncoStep: 1}
+		d := iqDisc{decim: q.conv.decim, step: q.conv.step, taps: taps, hist: make([]complex64, 2*len(taps)), ncoRot: 1, ncoStep: 1, post: 1, postRot: 1}
 		var out []int16
 		for _, v := range x {
 			if a, _, ok := d.push(v); ok {

@@ -387,6 +387,7 @@ type leanCore struct {
 	tuneHz         float32
 	offsetHz       float32
 	tunePrev       float32
+	fcOff, fcPrev  float32
 	tuneNs         uint32
 	heldNs         int64
 	lastAt         float32
@@ -2050,11 +2051,11 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		r.levelN, r.levelEnd = levelWarm, uint16(end)
 		r.syncFitRes = res
 		if a := r.audio; a != nil {
-			t := r.tuneHz
+			t, o := r.tuneHz, r.fcOff
 			if int32(uint32(end)-r.tuneNs) < 0 {
-				t = r.tunePrev
+				t, o = r.tunePrev, r.fcPrev
 			}
-			r.fitHz = (t + dc) / a.gain
+			r.fitHz = (t+dc)/a.gain + o
 		}
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		if step > 0 && r.hasExt() && !r.isReplaying() {
@@ -2076,11 +2077,11 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 	r.discVar = f*r.discVar + (1-f)*res
 	r.syncFitRes = res
 	if a := r.audio; a != nil {
-		t := r.tuneHz
+		t, o := r.tuneHz, r.fcOff
 		if int32(uint32(end)-r.tuneNs) < 0 {
-			t = r.tunePrev
+			t, o = r.tunePrev, r.fcPrev
 		}
-		r.fitHz = f*r.fitHz + (1-f)*(t+dc)/a.gain
+		r.fitHz = f*r.fitHz + (1-f)*((t+dc)/a.gain+o)
 	}
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	return true

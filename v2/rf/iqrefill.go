@@ -121,7 +121,7 @@ func (r *iqRx) refillCoh(hz float64) {
 	}
 	r.tunes[r.nTunes%iqTunes] = iqTune{n: k0, hz: r.conv.hz}
 	r.nTunes++
-	w := 2 * math.Pi * float64(r.conv.hz) / basebandRate
+	w := 2 * math.Pi * float64(r.conv.fc) / basebandRate
 	rot := complex128(r.conv.ncoRot)
 	i0 := f.out - per*(r.yN-k0) + per - span
 	for i := i0; i < f.out; i++ {
@@ -130,8 +130,9 @@ func (r *iqRx) refillCoh(hz float64) {
 	}
 	for k := k0; k < r.yN; k++ {
 		e := f.out - 1 - per*(r.yN-1-k)
-		r.yHist[k&int64(len(r.yHist)-1)] = f.fir(main, e-i0)
-		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = f.fir(coh, e-i0)
+		p := r.conv.post * turnBy(r.conv.postW, int(k-r.yN))
+		r.yHist[k&int64(len(r.yHist)-1)] = f.fir(main, e-i0) * p
+		r.cHist[(k-r.cLag)&int64(len(r.cHist)-1)] = f.fir(coh, e-i0) * p
 	}
 }
 
@@ -252,7 +253,7 @@ func (r *iqRx) regenAudio(rest []int16, taps []float32, dd int64) (int, bool) {
 	cv := &f.conv
 	hist := cv.hist
 	clear(hist)
-	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, fc: r.conv.fc, post: 1, postW: r.conv.postW, postRot: r.conv.postRot, floor: r.conv.floor, span: r.conv.span}
 	p := f.head - int(f.n-s)
 	if p < 0 {
 		p += len(f.raw)
@@ -281,7 +282,7 @@ func (r *iqRx) toNarrow() {
 	c := &r.conv
 	c.taps, c.span = f.narrow, c.span+len(f.narrow)-len(f.wideTaps)
 	c.hist, f.conv.hist = f.conv.hist, c.hist
-	c.head, c.phase, c.prev, c.ncoRot = f.conv.head, f.conv.phase, f.conv.prev, f.conv.ncoRot
+	c.head, c.phase, c.prev, c.ncoRot, c.post = f.conv.head, f.conv.phase, f.conv.prev, f.conv.ncoRot, f.conv.post
 	r.outN -= f.dd
 	if r.pow != nil {
 		r.pow.lag += float64(f.dd) / r.pow.rate
@@ -400,7 +401,7 @@ func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force 
 	cv := &f.conv
 	hist := cv.hist
 	clear(hist)
-	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, floor: r.conv.floor, span: r.conv.span}
+	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, fc: r.conv.fc, post: 1, postW: r.conv.postW, postRot: r.conv.postRot, floor: r.conv.floor, span: r.conv.span}
 	fr := r.d.f
 	fr.rrcHist, fr.hbHist, fr.rrcHead, fr.hbHead, fr.odd = [2 * audio12Taps]int8{}, [halfTaps]int8{}, 0, 0, false
 	j := s / per

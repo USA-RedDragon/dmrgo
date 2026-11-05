@@ -42,6 +42,10 @@ type iqDisc struct {
 	ncoRot  complex64
 	ncoN    int
 	hz      float32
+	fc      float32
+	post    complex64
+	postW   float32
+	postRot complex64
 	acc     complex64
 	pw      float32
 	accAvg  complex64
@@ -169,7 +173,7 @@ func windowTaps(n int, fc, beta float64) []float64 {
 }
 
 func (d *iqDisc) init(decim int, f iqFilter) {
-	*d = iqDisc{decim: decim, step: decim, ncoRot: 1, ncoStep: 1}
+	*d = iqDisc{decim: decim, step: decim, ncoRot: 1, ncoStep: 1, post: 1, postRot: 1}
 	n, fc, rate := iqTaps, discCutHz, float64(basebandRate)
 	if f.taps > 0 {
 		n = f.taps
@@ -247,11 +251,18 @@ func (d *iqDisc) lagTicks() int32 {
 	return int32(per*(len(d.taps)/2-(d.step-1))+hb)<<8 + int32(d.decim)<<7
 }
 
-func (d *iqDisc) tune(hz float32) {
-	d.turn(2 * math.Pi * (hz - d.hz) / basebandRate)
-	d.hz = hz
-	p := -2 * math.Pi * float64(hz) / basebandRate
+func (d *iqDisc) tune(hz float32) { d.tuneAt(hz, hz) }
+
+// tuneAt tunes the converter to hz with the channel filter centered on fc:
+// the input is mixed down by fc before the filter and by hz-fc after it.
+func (d *iqDisc) tuneAt(hz, fc float32) {
+	d.turn(2 * math.Pi * (fc - d.fc) / basebandRate)
+	d.hz, d.fc = hz, fc
+	p := -2 * math.Pi * float64(fc) / basebandRate
 	d.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+	d.postW = float32(-2 * math.Pi * float64(hz-fc) * float64(d.decim) / basebandRate)
+	s, c := sincosf(d.postW)
+	d.postRot = complex(c, s)
 }
 
 func turnBy(w float32, age int) complex64 {
@@ -309,6 +320,8 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 		d.ncoN = 0
 		g := (3 - real(d.ncoRot)*real(d.ncoRot) - imag(d.ncoRot)*imag(d.ncoRot)) / 2
 		d.ncoRot *= complex(g, 0)
+		g = (3 - real(d.post)*real(d.post) - imag(d.post)*imag(d.post)) / 2
+		d.post *= complex(g, 0)
 	}
 	w := v * d.ncoRot
 	d.ncoRot *= d.ncoStep
@@ -348,7 +361,11 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 			im += t * imag(h[k])
 		}
 	}
-	y := complex(re, im)
+	y := complex(re, im) * d.post
+	if d.coh != nil {
+		d.coh.y *= d.post
+	}
+	d.post *= d.postRot
 	p := y * complex(real(d.prev), -imag(d.prev))
 	d.prev = y
 	d.acc += p
@@ -424,6 +441,8 @@ type iqRx struct {
 	wasLocked bool
 	outBand   bool
 	center    float32
+	adjSide   float32
+	fcMove    float32
 	devTab    uint8
 	raw       int
 }
@@ -604,6 +623,19 @@ func (r *iqRx) hunt(v complex64) {
 	if !ok {
 		return
 	}
+	side := float32(0)
+	switch {
+	case !r.outBand:
+	case hz > r.center:
+		side = 1
+	default:
+		side = -1
+	}
+	if side != r.adjSide {
+		r.adjSide = side
+		r.conv.tuneAt(r.conv.hz, r.filterAt(r.conv.hz))
+		r.d.fcOff = (r.conv.hz - r.conv.fc) * iqUnitsPerHz
+	}
 	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
@@ -634,8 +666,22 @@ func (r *iqRx) tuneWith(hz, dc, lim float32) {
 	r.tuneLean(hz, dc)
 }
 
+// filterAt returns the center of the channel filter for a converter tuned to
+// hz: hz itself, or the channel center when hz lies past it toward an
+// adjacent channel that the spectrum hunt found beyond the tuning range. The
+// skirt of a strong adjacent channel rises toward it, so the filter keeps
+// less of it at the channel center than on a carrier off center toward it.
+func (r *iqRx) filterAt(hz float32) float32 {
+	if r.adjSide*(hz-r.center) <= 0 {
+		return hz
+	}
+	return r.center
+}
+
 func (r *iqRx) tuneConv(hz float32) {
-	r.conv.tune(r.conv.hz + hz)
+	to, fc := r.conv.hz+hz, r.conv.fc
+	r.conv.tuneAt(to, r.filterAt(to))
+	r.fcMove = r.conv.fc - fc
 	r.d.offsetHz -= hz * r.d.f.gain * iqUnitsPerHz
 	r.noteTune(hz)
 	if r.tunes != nil {
@@ -654,11 +700,12 @@ func (r *iqRx) tuneLean(hz, dc float32) {
 	d := hz*scale + dc - f.dc
 	if r.d.locked {
 		f.mean += dc - f.dc
-		r.d.refit = r.d.refit || abs32(hz) >= iqAFCPullHz
+		r.d.refit = r.d.refit || abs32(r.fcMove) >= iqAFCPullHz
 	} else {
 		f.mean = dc
 	}
 	r.d.tunePrev, r.d.tuneNs = r.d.tuneHz, uint32(r.d.ns)
+	r.d.fcPrev, r.d.fcOff = r.d.fcOff, (r.conv.hz-r.conv.fc)*iqUnitsPerHz
 	f.dc, r.d.tuneHz = dc, dc
 	f.refresh()
 	if !r.d.locked {
