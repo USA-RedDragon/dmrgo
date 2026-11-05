@@ -217,13 +217,13 @@ stream: 43813 bits, 37 junk bits, 149 bits flipped
 TS2 call: group 3003192 -> 3100 (Voice LC Header)
 TS1 late entry at voice burst Unknown
 TS1 call: private 3009999 -> 9990 (embedded LC)
-TS2 talker alias: "N1CALL Alice"
 TS2 GPS: lat 27.1234 lon -88.4321 (PositionLessThan20M)
+TS2 talker alias: "N1CALL Alice"
 TS2 call end: group 3003192 -> 3100, 72 voice bursts
 TS1 call end: private 3009999 -> 9990, 74 voice bursts
 framer: first burst at bit 349, 151 bursts
-TS1: 74 voice bursts (A=11 B=12 C=12 D=12 E=13 F=13 unknown=1), 0 embedded LC errors, AMBE BER 0.33%
-TS2: 72 voice bursts (A=12 B=12 C=12 D=12 E=12 F=12 unknown=0), 0 embedded LC errors, AMBE BER 0.37%
+TS1: 74 voice bursts (A=11 B=12 C=12 D=12 E=13 F=13 unknown=1), 1 embedded LC errors, AMBE BER 0.33%
+TS2: 72 voice bursts (A=12 B=12 C=12 D=12 E=12 F=12 unknown=0), 1 embedded LC errors, AMBE BER 0.37%
 ```
 <!-- /dmrgo:output -->
 

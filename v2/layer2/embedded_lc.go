@@ -22,15 +22,17 @@ func EncodeEmbeddedLC(lc pdu.LCBytes) [4][4]byte {
 }
 
 // DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling
-// fields f of bursts B to E, as RawBurst.EmbeddedData returns them. The FEC
-// result sets Uncorrectable when no nearest BPTC codeword, or more than one,
-// has a 5-bit checksum that matches its LC.
+// fields f of bursts B to E, as RawBurst.EmbeddedData returns them. It
+// corrects at most one bit error: the 5-bit checksum and the column parity
+// are too weak to vouch for an LC after more corrections, which at low
+// signal levels give a wrong LC. The FEC result sets Uncorrectable when the
+// fields hold more than one bit error or the checksum does not match.
 func DecodeEmbeddedLC(f [4][4]byte) (lc pdu.LCBytes, res fec.Result) {
 	return decodeEmbeddedLC(fragmentWords(f))
 }
 
 func decodeEmbeddedLC(fragments [4]uint32) ([9]byte, fec.Result) {
-	return embeddedLCChecksum(bptc.DecodeEmbeddedWithCheck(fragments, embeddedLCChecksumValid))
+	return embeddedLCChecksum(bptc.DecodeEmbeddedOne(fragments))
 }
 
 // EmbeddedLCAssembler collects the four embedded LC fragments of voice
@@ -117,11 +119,6 @@ func encodeEmbeddedLC(lc [9]byte) [4]uint32 {
 		bits.SetBit(info[:], row*11+10, cs>>(6-row))
 	}
 	return bptc.EncodeEmbedded(info)
-}
-
-func embeddedLCChecksumValid(info [10]byte) bool {
-	_, result := embeddedLCChecksum(info, fec.Result{})
-	return !result.Uncorrectable
 }
 
 func embeddedLCChecksum(info [10]byte, result fec.Result) ([9]byte, fec.Result) {

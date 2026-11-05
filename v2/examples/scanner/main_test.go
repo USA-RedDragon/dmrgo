@@ -24,7 +24,7 @@ func TestRun(t *testing.T) {
 		"TS2 GPS: lat 27.1234 lon -88.4321",
 		"TS2 call end: group 3003192 -> 3100, 72 voice bursts",
 		"framer: first burst at bit 349, 151 bursts",
-		"TS2: 72 voice bursts (A=12 B=12 C=12 D=12 E=12 F=12 unknown=0), 0 embedded LC errors",
+		"TS2: 72 voice bursts (A=12 B=12 C=12 D=12 E=12 F=12 unknown=0), 1 embedded LC errors",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)

@@ -162,32 +162,31 @@ func TestEmbeddedLC_MMDVMHostVectors(t *testing.T) {
 
 	for _, v := range []struct {
 		lc, raw string
-		accept  bool
 	}{
-		{"f83e5f0c2adb924331", "e2ebddc09a0f7821505ad46a1e27e396", true},
-		{"925d1d73a9ee8c2fd9", "ce665aaa78228e1174f6600fe22d65ca", true},
-		{"9b90d5c5ac9d653ef6", "d22d3aaf935ac5afde246a4114bd57e7", false},
-		{"e3663d5c125b76552e", "81afcc700a2db2ee4bddc61b3c6f7282", false},
-		{"d24b7d1ba315ee12ba", "96ed17c9420bfa5c6ae153b80079db88", false},
-		{"f33409806d6be65bff", "cab7ff800b1e8b9f0f539f8e062b1263", true},
-		{"aa0dee370cd56406ee", "b34dc30af178c36a3a746c0ffa301bf9", true},
-		{"f2781994b12bb527e1", "dbe7bb920a288d3148cfac41ca5c9cee", false},
-		{"8189980d3bb8442c89", "984d1b11504136b0d46631e293f53066", false},
-		{"9f6c22c5c5f5824e09", "bb5945a9819c8bf014b7d5562c03e8ff", true},
-		{"566c7e0bcaa790d92d", "39d241881e8cba4774ebeb9c701de27b", false},
-		{"dcb65064daf19ba814", "5d9944f5b48b5c22d418a9880c1d2323", true},
-		{"4dafaf174cb0206b4b", "2bfe4142d0f506e1bf63e27af34744a6", false},
-		{"7c9cfc9c4ee3f319fc", "48d3e3879afa7b6fdd5972b297c481d8", false},
-		{"ddd0e8dc6af86ef892", "cc9c3fb091e774ed9dd1065aac576528", true},
-		{"ef60a16604a0460887", "88a587a1a4d381eb36829c878622fc77", true},
-		{"7819da4f5c43d39509", "61d284b4df196a2d607e12964be5bedf", false},
-		{"7a7e39c1cb0ebf2be4", "56f6eece9a023c534de8bdbc559ca63c", false},
-		{"0b5791f52eff3d7fb4", "4e267b6cfa7e95e64cbd16f3979cc62b", true},
-		{"b4122f968cfb45c2ae", "faadbacd1ebd036a35505c5c3caa56d1", true},
-		{"d0ccb74820a3c2ad83", "a9e276a00d48ad48c7875f6a650a03bd", false},
-		{"ec92448480013aa3a7", "d782a241878844229b2a5c93079c4c40", false},
-		{"f4a071bfdfdaf92322", "96bba9953ab56d78fa399722236366a5", true},
-		{"0d3456555ae86ce17b", "6c15c83396b676a95233ed15c53cb750", true},
+		{"f83e5f0c2adb924331", "e2ebddc09a0f7821505ad46a1e27e396"},
+		{"925d1d73a9ee8c2fd9", "ce665aaa78228e1174f6600fe22d65ca"},
+		{"9b90d5c5ac9d653ef6", "d22d3aaf935ac5afde246a4114bd57e7"},
+		{"e3663d5c125b76552e", "81afcc700a2db2ee4bddc61b3c6f7282"},
+		{"d24b7d1ba315ee12ba", "96ed17c9420bfa5c6ae153b80079db88"},
+		{"f33409806d6be65bff", "cab7ff800b1e8b9f0f539f8e062b1263"},
+		{"aa0dee370cd56406ee", "b34dc30af178c36a3a746c0ffa301bf9"},
+		{"f2781994b12bb527e1", "dbe7bb920a288d3148cfac41ca5c9cee"},
+		{"8189980d3bb8442c89", "984d1b11504136b0d46631e293f53066"},
+		{"9f6c22c5c5f5824e09", "bb5945a9819c8bf014b7d5562c03e8ff"},
+		{"566c7e0bcaa790d92d", "39d241881e8cba4774ebeb9c701de27b"},
+		{"dcb65064daf19ba814", "5d9944f5b48b5c22d418a9880c1d2323"},
+		{"4dafaf174cb0206b4b", "2bfe4142d0f506e1bf63e27af34744a6"},
+		{"7c9cfc9c4ee3f319fc", "48d3e3879afa7b6fdd5972b297c481d8"},
+		{"ddd0e8dc6af86ef892", "cc9c3fb091e774ed9dd1065aac576528"},
+		{"ef60a16604a0460887", "88a587a1a4d381eb36829c878622fc77"},
+		{"7819da4f5c43d39509", "61d284b4df196a2d607e12964be5bedf"},
+		{"7a7e39c1cb0ebf2be4", "56f6eece9a023c534de8bdbc559ca63c"},
+		{"0b5791f52eff3d7fb4", "4e267b6cfa7e95e64cbd16f3979cc62b"},
+		{"b4122f968cfb45c2ae", "faadbacd1ebd036a35505c5c3caa56d1"},
+		{"d0ccb74820a3c2ad83", "a9e276a00d48ad48c7875f6a650a03bd"},
+		{"ec92448480013aa3a7", "d782a241878844229b2a5c93079c4c40"},
+		{"f4a071bfdfdaf92322", "96bba9953ab56d78fa399722236366a5"},
+		{"0d3456555ae86ce17b", "6c15c83396b676a95233ed15c53cb750"},
 	} {
 		raw := must(hex.DecodeString(v.raw))
 		var fr [4][32]unpacked.Bit
@@ -195,11 +194,10 @@ func TestEmbeddedLC_MMDVMHostVectors(t *testing.T) {
 			copy(fr[i][:], unpacked.Unpack(raw[i*4:i*4+4]))
 		}
 		lc, res := decodeLCBits(fr)
-		if v.accept && res.Uncorrectable {
-			t.Errorf("%s: rejected, MMDVMHost accepts it", v.raw)
-			continue
+		if !res.Uncorrectable && res.ErrorsCorrected > 1 {
+			t.Errorf("%s: %+v, more than one bit corrected", v.raw, res)
 		}
-		if got := hex.EncodeToString(unpacked.Pack(lc[:])); v.accept && got != v.lc {
+		if got := hex.EncodeToString(unpacked.Pack(lc[:])); !res.Uncorrectable && got != v.lc {
 			t.Errorf("%s: LC %s, want %s", v.raw, got, v.lc)
 		}
 		flc, flcRes := decodeFLCBits(fr)
@@ -214,7 +212,7 @@ func TestEmbeddedLC_FiveErrors(t *testing.T) {
 
 	r := rand.New(rand.NewSource(int64(testseed.New(t).Uint64())))
 	const n = 2000
-	recovered, wrong := 0, 0
+	accepted := 0
 	for i := 0; i < n; i++ {
 		var lc [72]unpacked.Bit
 		for j := range lc {
@@ -224,17 +222,12 @@ func TestEmbeddedLC_FiveErrors(t *testing.T) {
 		for _, p := range r.Perm(128)[:5] {
 			fr[p/32][p%32] ^= 1
 		}
-		got, res := decodeLCBits(fr)
-		switch {
-		case res.Uncorrectable:
-		case got == lc:
-			recovered++
-		default:
-			wrong++
+		if _, res := decodeLCBits(fr); !res.Uncorrectable {
+			accepted++
 		}
 	}
-	if recovered < n*98/100 || wrong > 1 {
-		t.Errorf("%d of %d recovered, %d wrong", recovered, n, wrong)
+	if accepted != 0 {
+		t.Errorf("%d of %d LCs with five bit errors accepted", accepted, n)
 	}
 }
 
