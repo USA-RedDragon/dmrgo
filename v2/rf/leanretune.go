@@ -7,6 +7,8 @@ type lockRetune struct {
 	p        enums.SyncPattern
 	src      int
 	verified bool
+	wideOK   bool
+	wideZ    float32
 }
 
 func (r *leanCore) dueLock() bool { return r.hasExt() && r.lockDue }
@@ -15,7 +17,7 @@ func (r *leanCore) wantRetune(p enums.SyncPattern, src int, verified bool) bool 
 	return !r.locked && r.hasExt() && r.ext.lockTune(r, p, src, verified)
 }
 
-func (r *leanCore) relock(p enums.SyncPattern, src int, verified bool) {
+func (r *leanCore) relock(p enums.SyncPattern, src int, verified bool, at *float32) {
 	r.lockDue = false
 	if verified {
 		r.fitLevels(r.ns-1, p, true, false)
@@ -30,7 +32,7 @@ func (r *leanCore) relock(p enums.SyncPattern, src int, verified bool) {
 		return
 	}
 	var saved [syncSymbols]int8
-	d, c2, _, ok := r.resample(p, &saved, false, discLock)
+	d, c2, _, ok := r.resample(p, &saved, false, discLock, at)
 	if ok && c2 >= discLock*discLock && (r.fitLevels(r.ns-1, p, true, true) || r.fitLevels(r.ns-1, p, true, false)) {
 		r.resampleStart(d)
 		r.lockStream(src, d, c2, 0)
@@ -53,5 +55,28 @@ func (x *softExt) lockTune(c *leanCore, p enums.SyncPattern, src int, verified b
 }
 
 func (x *softExt) relock(c *leanCore) {
-	c.relock(x.rt.p, x.rt.src, x.rt.verified)
+	var at *float32
+	if x.rt.wideOK {
+		at = &x.rt.wideZ
+	}
+	x.rt.wideOK = false
+	c.relock(x.rt.p, x.rt.src, x.rt.verified, at)
+}
+
+// wideFit times the sync of a coming relock on the kept samples that the
+// wide channel filter gave at the new tune. The narrow filter bandlimits the
+// FM, and the MM zero of the sync on its output moved 0.2 us with the sync
+// pattern; the relock then takes this zero on the narrow samples.
+func (x *softExt) wideFit(c *leanCore) {
+	x.rt.wideOK = false
+	if x.rt.verified {
+		return
+	}
+	var saved [syncSymbols]int8
+	again := c.again
+	if _, _, z, ok := c.resample(x.rt.p, &saved, false, discLock, nil); ok {
+		c.restoreSync(&saved)
+		x.rt.wideZ, x.rt.wideOK = z, true
+	}
+	c.again = again
 }

@@ -214,7 +214,11 @@ func (r *iqRx) lockRetune(rest []int16) []int16 {
 	} else if f.narrow != nil && r.canRegen(rest, f.narrow, f.dd) {
 		taps, dd, swap = f.narrow, f.dd, true
 	}
-	r.refillWith(&r.d.leanCore, r.d.n, taps, dd, swap)
+	if dd != 0 {
+		r.refillWith(&r.d.leanCore, r.d.n, f.wideTaps, 0, true)
+		f.soft.wideFit(&r.d.leanCore)
+	}
+	r.refillWith(&r.d.leanCore, r.d.n, taps, dd, swap || dd != 0)
 	if tuned || swap {
 		if n, ok := r.regenAudio(rest, taps, dd); ok {
 			rest = rest[:n]

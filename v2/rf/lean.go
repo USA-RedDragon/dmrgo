@@ -799,7 +799,7 @@ func peakAt(c *[7]float32, k int) float32 {
 	return c[k]
 }
 
-func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool, lim float32) (d, c2, z float32, ok bool) {
+func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool, lim float32, at *float32) (d, c2, z float32, ok bool) {
 	sps := 2 * r.tm.step
 	end := r.lastAt
 	if !r.burstKept() && (!r.locked || max(int32(-end-sps/2)-2, 0)+leanSyncWindow > r.acqKept()) {
@@ -847,6 +847,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		}
 	}
 	z = win.mmZero(&syms, end, bestD, sps)
+	if at != nil {
+		z = *at
+	}
 	bestD = min32(z, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
 	const n = syncSymbols
@@ -1210,7 +1213,7 @@ func (r *leanCore) searchRC() bool {
 	}
 	p := enums.SyncMSSourcedRC
 	var saved [syncSymbols]int8
-	d, c2, _, ok := r.resample(p, &saved, false, discLock)
+	d, c2, _, ok := r.resample(p, &saved, false, discLock, nil)
 	if ok {
 		if ok = c2 >= discLock*discLock && r.fitLevels(r.ns-1, p, true, true); ok {
 			r.resampleStart(d)
@@ -1605,7 +1608,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 	if pairing {
 		lim = leanPairLock
 	}
-	if d, c2, _, sampled := r.resample(p, &saved, r.locked, lim); sampled {
+	if d, c2, _, sampled := r.resample(p, &saved, r.locked, lim, nil); sampled {
 		if strict && r.held(d, src, data, p) {
 			r.restoreSync(&saved)
 			return 0, 0, false, true
@@ -1726,7 +1729,7 @@ func (r *leanCore) lockMid(src int, p enums.SyncPattern) bool {
 	at := r.lastAt
 	r.lastAt = at - r.tm.step
 	var saved [syncSymbols]int8
-	d, c2, _, ok := r.resample(p, &saved, false, discLock)
+	d, c2, _, ok := r.resample(p, &saved, false, discLock, nil)
 	r.lastAt = at
 	if !ok {
 		return false
@@ -1814,7 +1817,7 @@ func (r *leanCore) retime(mid bool) {
 		return
 	}
 	var saved [syncSymbols]int8
-	if d, c2, z, ok := r.resample(p, &saved, true, discLock); ok {
+	if d, c2, z, ok := r.resample(p, &saved, true, discLock, nil); ok {
 		r.fitNs, r.fitT, r.fitQ = int32(r.ns-1), r.strobeTicks(r.lastAt+z), c2
 		if r.hasExt() && r.ns-1 == r.slotEnd-slotSymbols+leanSyncEnd {
 			r.ext.liveFit(r, r.ns-1, r.strobeTicks(r.lastAt+z), c2, 1)
@@ -1848,7 +1851,7 @@ func (r *leanCore) midSync() {
 		p = dp
 	}
 	var saved [syncSymbols]int8
-	d, _, _, ok := r.resample(p, &saved, true, discLock)
+	d, _, _, ok := r.resample(p, &saved, true, discLock, nil)
 	if !ok {
 		return
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 )
 
 const (
@@ -191,9 +192,29 @@ func TestSecondsLowRatePhase(t *testing.T) {
 	}
 }
 
+// tier0LockSpanHz is the span of the Tier0 carrier offsets of
+// TestSecondsLockBurstExact; the other tiers take the hunt range. Further
+// off, Tier0 times its first burst before the AFC tunes, with the FM on the
+// edge of the wide channel filter, as it has no RAM to filter the burst again
+// (docs/rx-notes.md).
+const tier0LockSpanHz = 1000
+
+// TestSecondsLockBurstExact checks the lock burst Seconds over locks at
+// fresh starts and carrier offsets. With no noise both the mean and the RMS
+// error must stay within 0.6 us; at 30 dB the mean must. The offset is drawn
+// for every lock, as the rounding of the kept samples to steps of
+// discStepHz moves the MM zero by an amount that follows the DC: on a grid
+// offset by 0, 1/4, 1/2 and 3/4 of a step it moved the Tier2 lock -0.37,
+// +0.02, +0.25 and +0.15 us against unrounded samples.
 func TestSecondsLockBurstExact(t *testing.T) {
 	t.Parallel()
-	secondsLockBurstExact(t, testConfig(t))
+	g := testseed.New(t)
+	secondsLockBurstExact(t, testConfig(t), func(tier Tier) float64 {
+		if tier == Tier0 {
+			return (2*g.Float64() - 1) * tier0LockSpanHz
+		}
+		return (2*g.Float64() - 1) * iqHuntMaxHz
+	})
 }
 
 // TestSecondsLockBurstDeferredFit pins a payload whose lock burst a false
@@ -201,11 +222,21 @@ func TestSecondsLockBurstExact(t *testing.T) {
 // symbol, and the lock took the strobe unfitted, 25 us early.
 func TestSecondsLockBurstDeferredFit(t *testing.T) {
 	t.Parallel()
-	secondsLockBurstExact(t, testscen.Of(1234071648616322122).Apply(testConfigFixed()))
+	secondsLockBurstExact(t, testscen.Of(1234071648616322122).Apply(testConfigFixed()), func(Tier) float64 { return 300 }, Tier0, Tier1, Tier2)
 }
 
-func secondsLockBurstExact(t *testing.T, cfg rftx.SeqConfig) {
+// TestSecondsLockBurstWideFit pins a payload whose Tier1 lock burst Seconds
+// read 0.71 us RMS: the lock fit the sync on the output of the narrow
+// channel filter, which cuts the FM spectrum and moved the zero with the sync
+// pattern.
+func TestSecondsLockBurstWideFit(t *testing.T) {
+	t.Parallel()
+	secondsLockBurstExact(t, testscen.Of(3).Apply(testConfigFixed()), func(Tier) float64 { return 300 }, Tier1)
+}
+
+func secondsLockBurstExact(t *testing.T, cfg rftx.SeqConfig, hz func(Tier) float64, tiers ...Tier) {
 	t.Helper()
+	const locks = 64
 	cfg.Superframes = 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -213,21 +244,32 @@ func secondsLockBurstExact(t *testing.T, cfg rftx.SeqConfig) {
 	}
 	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 	ramp := (slotSeconds - burstSeconds) / 2
+	var offs [Tier2 - Tier0 + 1][locks]float64
+	for i := range offs {
+		for k := range offs[i] {
+			offs[i][k] = hz(Tier0 + Tier(i))
+		}
+	}
 	for _, cn := range []float64{math.Inf(1), 30} {
-		for tier := Tier0; tier <= Tier2; tier++ {
-			var sum float64
-			for k := range 16 {
+		for _, tier := range tiers {
+			var sum, sq float64
+			for k, off := range offs[tier-Tier0] {
 				start := benchPad + float64(k)*0.00037
-				x := signalBaseband([]signalPart{{start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, uint64(k+1))
+				x := signalBasebandAt([]signalPart{{start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, uint64(k+1), off)
 				got := receiveIQAt(t, x, basebandRate, tier)
 				if len(got) == 0 {
-					t.Fatalf("%.0f dB Tier%d start %.5f s: no bursts", cn, tier-Tier0, start)
+					t.Fatalf("%.0f dB Tier%d start %.5f s %+.0f Hz: no bursts", cn, tier-Tier0, start, off)
 				}
 				d := got[0].Seconds - math.Floor(start*basebandRate)/basebandRate - ramp
-				sum += d - math.Round(d/(2*slotSeconds))*2*slotSeconds
+				e := d - math.Round(d/(2*slotSeconds))*2*slotSeconds
+				sum, sq = sum+e, sq+e*e
 			}
-			if mean := sum / 16; math.Abs(mean) > 0.6e-6 {
+			mean, rms := sum/locks, math.Sqrt(sq/locks)
+			if math.Abs(mean) > 0.6e-6 {
 				t.Errorf("%.0f dB Tier%d: the lock burst Seconds is %+.2f us off on average", cn, tier-Tier0, mean*1e6)
+			}
+			if math.IsInf(cn, 1) && rms > 0.6e-6 {
+				t.Errorf("%.0f dB Tier%d: the lock burst Seconds is %.2f us off RMS", cn, tier-Tier0, rms*1e6)
 			}
 		}
 	}

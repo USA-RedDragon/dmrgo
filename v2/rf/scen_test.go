@@ -63,6 +63,7 @@ var bugPinTests = map[string]string{
 	"TestRxReplayNoisePad":               "starts and seeds where a replay placed a burst before the call",
 	"TestRxEmbeddedLCTalkerChange":       "seeds that failed every cell under the old ELC combiner (f63c851a5)",
 	"TestMSKeyUpGuardHold":               "a payload whose second burst the loop moved over the guard",
+	"TestSecondsLockBurstWideFit":        "a payload whose Tier1 lock fit on the narrow filter output",
 	"TestSecondsLockBurstDeferredFit":    "a payload whose lock took the strobe when the sync fit deferred",
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 }

@@ -76,3 +76,15 @@ Clean signal, 3 bursts, I/Q at 48 kHz and 2.048 Msps, reading as a fraction of 1
 - The levels keep most of the first sync fit of a stream. A first fit made before the timing settles can read high, 2.5% in a measured tier 0 case 1.5 kHz off. Each sync fit keeps the carrier offset of its samples, and the receiver looks the response up at the average of those offsets, so an AFC retune after a fit does not change its correction. `TestDeviationAfterRetune` checks this with a retune of 1.4 kHz.
 - Low-rate I/Q comes from the channel filter of a radio chip. The reading does not include that filter, so it reads low when the filter cuts the signal.
 - `TestIQDeviationReading` in `v2/rf` checks the reading within 3% at tiers 0 to 3 and 12 kHz, and within 4% at 9.6 kHz. The scenario matrix checks 0.95 to 1.03 at the I/Q tiers below tier 3 and 0.90 to 1.03 at 9.6 kHz.
+
+## The lock burst time
+
+The lock burst `Seconds` comes from the zero of the timing error of the MM detector over the 24 sync symbols. These parts of the receiver move it with no noise, and `TestSecondsLockBurstExact` checks the mean and the RMS of the error over 64 locks within 0.6 us:
+
+- The kept samples are stored as int8 in steps of 64 Hz. The rounding error follows the signal, so it moves the zero by an amount that depends on the DC and the levels modulo one step. Measured at tier 2 against unrounded samples, on a grid offset by 0, 1/4, 1/2 and 3/4 of a step: -0.37, +0.02, +0.25 and +0.15 us. The mean over the DC is near 0, and the RMS is about 0.24 us. The test draws the carrier offset for every lock, so this enters as scatter, as it does for real carriers.
+- The sync window is read between samples at 2.5 samples per symbol with a cubic interpolator. Its error follows the payload: over 120 payloads with no noise the lock scatter at tiers 0 to 2 is 0.15 to 0.34 us, against 0.10 to 0.15 us with an ideal interpolator. A 6-point Lagrange interpolator took tiers 0 and 2 to 0.11 and 0.26 us, but no check needs it, and it costs 8 B of Tier 0 stack.
+- At tiers 1 and 2 the narrow channel filter that the receiver puts in place at the lock cuts the FM spectrum, and the zero on its output moved 0.2 us with the sync pattern. The lock time is fit on the kept samples filtered again with the wide filter at the new tune.
+
+Tier 0 is checked with carriers within 1 kHz of the tuned frequency. Further off it times its first burst before the AFC tunes, with the FM on the edge of the wide channel filter: a lock burst 2.1 to 2.5 kHz off read up to 4 us off. Tier 0 has no RAM to filter the burst again, and this was accepted.
+
+At 30 dB C/N the timing scatter of the lock is about 0.75 to 0.9 us RMS. The Cramer-Rao bound for 24 known sync symbols at that C/N is 0.23 us, and the same MM zero computed on unrounded samples gives 0.64 us, so the gap is in the estimator, not the noise.
