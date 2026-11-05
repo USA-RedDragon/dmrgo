@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 )
 
 const (
@@ -192,7 +193,11 @@ func TestSecondsLowRatePhase(t *testing.T) {
 
 func TestSecondsLockBurstExact(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig(t)
+	secondsLockBurstExact(t, testConfig(t))
+}
+
+func secondsLockBurstExact(t *testing.T, cfg rftx.SeqConfig) {
+	t.Helper()
 	cfg.Superframes = 1
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -249,10 +254,27 @@ func TestSecondsLockBurstOffset(t *testing.T) {
 	}
 }
 
+var (
+	switchFirst  = rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 990911, Superframes: 1}
+	switchSecond = rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"}
+)
+
 func TestSecondsTalkerSwitch(t *testing.T) {
 	t.Parallel()
-	c1 := randomizedN(t, 1000001, rftx.SeqConfig{ColorCode: 1, Source: 1000001, Dest: 9990, BS: 990911, Superframes: 1})
-	c2 := randomizedN(t, 1000002, rftx.SeqConfig{ColorCode: 1, Source: 1000002, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"})
+	secondsTalkerSwitch(t, randomizedN(t, 1000001, switchFirst), randomizedN(t, 1000002, switchSecond))
+}
+
+// TestSecondsTalkerSwitchHuntFit pins payloads whose second talker locked
+// while the receiver still held the first: that lock took the peak of the
+// sync correlation, which moves with the symbols next to the sync, and
+// not the MM zero of a first lock.
+func TestSecondsTalkerSwitchHuntFit(t *testing.T) {
+	t.Parallel()
+	secondsTalkerSwitch(t, testscen.Of(2859943720115404153).Apply(switchFirst), testscen.Of(4478137214299954279).Apply(switchSecond))
+}
+
+func secondsTalkerSwitch(t *testing.T, c1, c2 rftx.SeqConfig) {
+	t.Helper()
 	v, err := rftx.Sequence("voice", c1)
 	if err != nil {
 		t.Fatal(err)

@@ -846,10 +846,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		}
 	}
 	z = win.mmZero(&syms, end, bestD, sps)
-	if !r.locked || p == enums.SyncMSSourcedRC || r.cohRefit {
-		bestD = z
-	}
-	bestD = min32(bestD, -end)
+	bestD = min32(z, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
 	const n = syncSymbols
 	sxy := sxv - sp*sv/n

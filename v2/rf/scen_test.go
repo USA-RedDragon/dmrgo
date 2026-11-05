@@ -62,6 +62,7 @@ var bugPinTests = map[string]string{
 	"TestDiscTier2FalseLockBeforeStream": "a seed whose noise makes a false lock before the stream",
 	"TestRxReplayNoisePad":               "starts and seeds where a replay placed a burst before the call",
 	"TestRxEmbeddedLCTalkerChange":       "seeds that failed every cell under the old ELC combiner (f63c851a5)",
+	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 }
 
 func fixedPayload(t testing.TB) bool {
