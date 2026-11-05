@@ -625,7 +625,7 @@ func (r *iqRx) syncTune() {
 	if scale <= 0 || r.d.seekLv {
 		return
 	}
-	if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz {
+	if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCFineHz {
 		r.tune(hz, f.dc-hz*scale)
 	}
 }
