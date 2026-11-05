@@ -142,20 +142,14 @@ type pinnedTB struct {
 	run uint64
 }
 
-type pinnedRun struct {
-	testing.TB
-	run  uint64
-	name string
+// pinnedRun pins the draw that the run seed run gave the test name.
+func pinnedRun(t testing.TB, run uint64, name string) pinnedTB {
+	return pinnedTB{t, runMix(run, nameHash(name))}
 }
-
-func (p pinnedRun) Name() string { return p.name }
 
 func scenarioOf(t testing.TB) (s testscen.Scenario, ok bool) {
 	if p, pinned := t.(pinnedTB); pinned {
 		return testscen.Of(p.run), true
-	}
-	if p, pin := t.(pinnedRun); pin {
-		return testscen.Of(runMix(p.run, nameHash(p.name))), true
 	}
 	if fixedPayload(t) {
 		return s, false
@@ -180,9 +174,6 @@ func sharedRandomized(cfg rftx.SeqConfig) rftx.SeqConfig { return runScenario().
 func noiseSeed(t testing.TB, seed uint64) uint64 {
 	if p, pinned := t.(pinnedTB); pinned {
 		return runMix(p.run, seed)
-	}
-	if p, ok := t.(pinnedRun); ok {
-		return runMix(runMix(p.run, nameHash(p.name)), seed)
 	}
 	if fixedPayload(t) {
 		return seed

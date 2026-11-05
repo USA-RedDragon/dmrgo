@@ -156,7 +156,7 @@ func TestIQRefillSettle(t *testing.T) {
 // before the tune passed the channel filter 2.6 kHz off its center.
 func TestRxRawBitsHuntTune(t *testing.T) {
 	t.Parallel()
-	p := pinnedRun{t, 14370708237565064112, "TestRxRawBitsAfterNoise"}
+	p := pinnedRun(t, 14370708237565064112, "TestRxRawBitsAfterNoise")
 	cfg := randomizedN(p, 3009101, testConfigFixed())
 	for _, seq := range []string{"ack", "data12", "voice"} {
 		built, err := rftx.Sequence(seq, cfg)
@@ -192,7 +192,7 @@ func TestIQLowCWLead(t *testing.T) {
 	for _, run := range []uint64{979335601447876854, 14328703105160663048} {
 		for _, name := range []string{"s0.cw500ms.+0.ms.voice.0ppm.nom.cs16-9600.40dB.dc", "s0.cw2s.+0.ms.voice.0ppm.high.cs16-9600.40dB"} {
 			row := mxRowOf(t, name)
-			res, err := mxRun(pinnedRun{t, run, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
+			res, err := mxRun(pinnedRun(t, run, "TestIQLowDCOffset"), row, []mxRx{{row.val(mxFormat), Tier0}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -211,7 +211,7 @@ func TestIQLowCWLead(t *testing.T) {
 func TestDiscACAcquire(t *testing.T) {
 	t.Parallel()
 	for _, run := range []uint64{2177666937959402496, 102544416862867516} {
-		p := pinnedRun{t, run, "TestDiscACCoupled"}
+		p := pinnedRun(t, run, "TestDiscACCoupled")
 		slots, truth := benchStream(p, 16)
 		x := noisyBaseband(p, slots, 1400, 30, 1)
 		for _, hz := range []int{24000, 12000, 9600} {
@@ -234,7 +234,7 @@ func TestDiscACAcquire(t *testing.T) {
 // there, as the lock retune and replay skipped the coherent tiers.
 func TestRxLockRetuneCoherent(t *testing.T) {
 	t.Parallel()
-	p := pinnedRun{t, 958015591593368716, "TestRxVoiceSlowClock"}
+	p := pinnedRun(t, 958015591593368716, "TestRxVoiceSlowClock")
 	cfg := randomizedN(p, 3009101, rftx.SeqConfig{ColorCode: 1, Source: 3009101, Dest: 9990, BS: 990911, Wakeups: 2, Message: "DMRGO TEST MESSAGE", Superframes: 4})
 	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
@@ -265,7 +265,7 @@ func TestRxLockRetuneCoherent(t *testing.T) {
 // the retune and refill of the other lock paths.
 func TestRxMidLockRetune(t *testing.T) {
 	t.Parallel()
-	p := pinnedRun{t, 15169259909967258117, "TestRxRawBitsAfterNoise"}
+	p := pinnedRun(t, 15169259909967258117, "TestRxRawBitsAfterNoise")
 	cfg := randomizedN(p, 3009101, testConfigFixed())
 	built, err := rftx.Sequence("ack", cfg)
 	if err != nil {
@@ -299,7 +299,7 @@ func TestIQLowDCStart(t *testing.T) {
 	name := "s0.none.+0.ms.voice.0ppm.low.cs16-9600.40dB.dc"
 	row := mxRowOf(t, name)
 	for _, run := range []uint64{3} {
-		res, err := mxRun(pinnedRun{t, run, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
+		res, err := mxRun(pinnedRun(t, run, "TestIQLowDCOffset"), row, []mxRx{{row.val(mxFormat), Tier0}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -316,7 +316,7 @@ func TestIQLowDCStart(t *testing.T) {
 // the raw bits taken through the channel filter off its center.
 func TestRxLockFarHeld(t *testing.T) {
 	t.Parallel()
-	p := pinnedRun{t, 7257307190297903594, "TestRxRawBitsAfterNoise"}
+	p := pinnedRun(t, 7257307190297903594, "TestRxRawBitsAfterNoise")
 	cfg := randomizedN(p, 3009101, testConfigFixed())
 	built, err := rftx.Sequence("ack", cfg)
 	if err != nil {
