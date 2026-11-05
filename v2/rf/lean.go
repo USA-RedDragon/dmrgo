@@ -1335,6 +1335,9 @@ func (r *leanCore) huntMid(at float32) bool {
 
 //go:noinline
 func (r *leanCore) huntMatch(again, mid bool) {
+	if !r.ms.seek && !r.reEntry && !r.offGrid() && !r.stale() {
+		return
+	}
 	if d := r.gridMiss(); r.ms.seek && d >= -leanSeekSyms && d <= leanSeekSyms {
 		r.seekMatch(d, again && mid)
 		return
@@ -2577,10 +2580,11 @@ func (r *leanCore) setHunt() {
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
-			if r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r)) || r.isReplaying() {
+			settled := r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r)) || r.isReplaying()
+			if settled && !r.syncDue() {
 				return
 			}
-			r.reEntry = true
+			r.reEntry = !settled
 		}
 	}
 	if !r.hunt {
@@ -2592,6 +2596,16 @@ func (r *leanCore) setHunt() {
 		}
 	}
 	r.hunt = true
+}
+
+// syncDue reports whether the next slot of an MS stream should carry the
+// voice A SYNC of a superframe after the last one. The hunt runs in that slot
+// for a SYNC off the grid, so a voice A SYNC that a timing jump moved locks
+// again in the slot that carries it.
+func (r *leanCore) syncDue() bool {
+	j := r.next
+	c := &r.ch[j&1]
+	return !r.bs && !r.isReplaying() && c.sf != leanNoSlot && j > c.sf && (j-c.sf)%(2*layer2.VoiceBurstsPerSuperframe) == 0
 }
 
 func (r *leanCore) seeking() bool {

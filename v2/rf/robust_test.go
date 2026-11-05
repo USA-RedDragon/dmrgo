@@ -14,6 +14,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -50,9 +51,17 @@ func rxMS(t testing.TB, n int) rxTx {
 	return rxMSCall(t, n, "data34")
 }
 
+func rxMSConfig(n int) rftx.SeqConfig {
+	return rftx.SeqConfig{ColorCode: 3, Source: 3009101, Dest: 9, Group: true, Message: "DMRGO MS", Superframes: n, Slot: 1}
+}
+
 func rxMSCall(t testing.TB, n int, data string) rxTx {
 	t.Helper()
-	cfg := randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 3, Source: 3009101, Dest: 9, Group: true, Message: "DMRGO MS", Superframes: n, Slot: 1})
+	return rxMSCallOf(t, randomizedN(t, 3009101, rxMSConfig(n)), data)
+}
+
+func rxMSCallOf(t testing.TB, cfg rftx.SeqConfig, data string) rxTx {
+	t.Helper()
 	voice, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -644,6 +653,27 @@ func TestRxRobust(t *testing.T) {
 							})
 						}
 					})
+				}
+			}
+		}
+	}
+}
+
+// TestRxJumpPin pins MS payloads whose first voice A SYNC after a timing
+// jump of 2 ms fell in a slot without a hunt, so the receiver relocked only a
+// superframe later.
+func TestRxJumpPin(t *testing.T) {
+	t.Parallel()
+	conds := rxConds()
+	for _, seed := range []uint64{7, 25, 57, 101} {
+		tx := rxMSCallOf(t, testscen.Of(seed).Apply(rxMSConfig(3)), "data34")
+		for _, name := range []string{"jump -2 ms", "jump +2 ms"} {
+			c := conds[slices.IndexFunc(conds, func(c rxCond) bool { return c.name == name })]
+			in := rxBuild(tx, c, 40, false, rxSeed("ms"+c.name))
+			for _, e := range []rxRecv{{benchEntry{benchIQ, Tier0}, false}, {benchEntry{benchIQ, Tier0}, true}} {
+				sc := rxMatch(rxEligible(in), rxReceive(t, in, e))
+				if sc.exact*10 < sc.total*9 {
+					t.Errorf("payload %d, %s, %s: %d of %d payloads", seed, name, e.name(), sc.exact, sc.total)
 				}
 			}
 		}
