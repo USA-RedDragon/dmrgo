@@ -1394,7 +1394,7 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 		s.t0 = t0
 		d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 		amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-		if rho := amp * amp / (amp*amp + fmath.Max(noise, 0)); amp > 0 && rho > best {
+		if rho := amp * amp / (amp*amp + fmath.Max(noise, 0)); amp > 0 && rho > best && s.noiseFits(amp, noise) {
 			best, bestP, bestD = rho, p, d
 		}
 	}
@@ -1486,8 +1486,7 @@ func (s *cohStage) verifyAcq(c *leanCore, p enums.SyncPattern) bool {
 	}
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-	rho := amp * amp / (amp*amp + fmath.Max(noise, 0))
-	if amp <= 0 || rho < cohVerifyRho || s.src.cohResidual() && 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
+	if amp <= 0 || amp*amp/(amp*amp+fmath.Max(noise, 0)) < cohVerifyRho || !s.noiseFits(amp, noise) {
 		return false
 	}
 	s.dt += cohDTGain * d
@@ -1528,11 +1527,35 @@ func (s *cohStage) verifySum(c *leanCore, p enums.SyncPattern, base int64) bool 
 	}
 	voice, data, _ := src.SyncPatterns()
 	best, bestHz, bestTau := s.syncSum(&t0, int(n), voice, data, s.totalHz)
-	if best < cohSumBar(int(n), s.wideSum(p)) {
+	if best < cohSumBar(int(n), s.wideSum(p)) || !s.slotFits(c, p, base, bestTau) {
 		return false
 	}
 	s.vHz, s.vOK, s.vTau, s.vTauOK = bestHz, true, bestTau, true
 	return true
+}
+
+// slotFits tells whether the slot at base itself carries SYNC p at the
+// timing tau of the sum: the past syncs show only the slot grid, and a lock
+// takes the slot at base as a SYNC burst, so its own fit must hold.
+func (s *cohStage) slotFits(c *leanCore, p enums.SyncPattern, base int64, tau float64) bool {
+	s.t0 = s.ringTime(c, base) + s.dt + tau*s.sps
+	s.followOK = false
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	for i, v := range syms {
+		s.known[syncFirstSym+i] = v
+	}
+	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
+	return amp > 0 && s.noiseFits(amp, noise)
+}
+
+// noiseFits tells whether the SYNC fit of the last levels call leaves no
+// more residual than the noise that the envelope of its samples shows: a
+// slot that carries no SYNC leaves the residual of its payload, which the
+// envelope does not show.
+func (s *cohStage) noiseFits(amp, noise float64) bool {
+	rho := amp * amp / (amp*amp + fmath.Max(noise, 0))
+	return !s.src.cohResidual() || 1-rho <= cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps])
 }
 
 func (s *cohStage) syncSum(t0 *[cohSumSlots]float64, n int, voice, data enums.SyncPattern, hz0 float64) (best, bestHz, bestTau float64) {

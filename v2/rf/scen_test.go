@@ -91,6 +91,7 @@ var bugPinTests = map[string]string{
 	"TestLeanFadeKeepsPhase":             "a payload whose burst after a fade was stamped early (loop on the faded slots)",
 	"TestLeanWeakLockKeeps":              "payloads whose header a weak lock on its payload cut from the kept samples",
 	"TestLeanPayloadHoldsSlot":           "payloads whose random EMB held a stopped talker's slot against a new SYNC",
+	"TestRxReplayPayloadSync":            "a payload whose burst E passed the coherent checks as a data SYNC",
 }
 
 func fixedPayload(t testing.TB) bool {
