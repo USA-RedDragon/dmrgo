@@ -111,7 +111,7 @@ func TestRegression_NoiseAfterCarrierDrop(t *testing.T) {
 func TestRegression_NoiseAfterCarrierDropPins(t *testing.T) {
 	t.Parallel()
 
-	for _, run := range []uint64{149, 372} {
+	for _, run := range []uint64{149, 372, 1111, 1167} {
 		noiseAfterCarrierDrop(t, testseed.Of(testseed.Mix(run, testseed.NameHash("TestRegression_NoiseAfterCarrierDrop"))).Uint64())
 	}
 }

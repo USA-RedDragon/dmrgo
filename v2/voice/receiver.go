@@ -290,6 +290,7 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 		dst = r.receive(now, nil, nil, &h, dst)
 		if r.b.Kind == layer2.KindVoice && syncGated(&h) && (r.state == StateInCall || r.state == StateLateEntry) && errors.Is(err, layer2.ErrColorCodeMismatch) {
 			dst = r.dropPending(now, dst)
+			r.lower(r.odds + r.gatedScore(now, r.b, raw, *raw))
 			dst = r.miss(now, dst)
 		}
 		return dst
