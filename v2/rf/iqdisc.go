@@ -16,6 +16,7 @@ const (
 	iqAFCFineHz    = 60
 	iqAFCAvgGain   = 0.25
 	iqAFCJumpHz    = 1000
+	iqHeldHz       = 2000
 	iqAFCCoherence = 0.48
 	iqZeroFloor    = 8
 	iqZeroRun      = 8
@@ -734,7 +735,7 @@ func (r *iqRx) tuneConv(hz float32) {
 }
 
 func (r *iqRx) tuneLean(hz, dc float32) {
-	r.d.heldOver(hz, iqAFCJumpHz)
+	r.d.heldOver(hz, iqHeldHz)
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
 	r.afcPull -= hz

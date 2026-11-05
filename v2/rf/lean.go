@@ -2105,7 +2105,7 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
 	r.fitNs, r.fitT, r.fitQ = int32(r.ns-1-back), r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step), q
-	if a := r.audio; a != nil && a.iq && !r.hasExt() && abs32(r.fitHz) > iqAFCJumpHz*iqUnitsPerHz {
+	if a := r.audio; a != nil && a.iq && !r.hasExt() && abs32(r.fitHz) > iqHeldHz*iqUnitsPerHz {
 		r.heldNs = r.ns
 	}
 	if r.hasExt() {
