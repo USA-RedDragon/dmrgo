@@ -4122,7 +4122,7 @@ struct dmrgo_rf_audio_rx_config_t {
 	int64_t bits;
 	/* Unsigned selects offset binary codes, from 0 to 1<<Bits-1, in place of two's complement codes. */
 	bool unsigned_;
-	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the bursts of the slots before the lock, decoded again. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
+	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the bursts of the slots before the lock, decoded again. A slot comes out at most once: the replay after a relock skips each slot that an earlier lock already gave. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
 	/* PreEmphasis, when not NULL, states that the radio de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, so that the receiver inverts it with the filter that it holds before it detects the bursts: a RxPreEmphasis of this receiver alone, set up by Init or NewRxPreEmphasis. NULL is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it. Every Tier and Rate takes it. A RxPreEmphasis that is not set up gives a *dmrgo_config_error_t. */
 	dmrgo_rf_rx_pre_emphasis_t *pre_emphasis;
@@ -4190,7 +4190,7 @@ struct dmrgo_rf_rx_config_t {
 	dmrgo_rf_iq_format_t format;
 	/* OffsetHz is the frequency of the carrier relative to the center of the I/Q, in Hz, when the oscillator of the radio is known to be off, as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that OffsetHz of a Receiver reported for that radio. The receiver tunes there before it searches 6.25 kHz around it for the carrier. It must be under 24000 in size, or under Rate/2 for a Rate under 48000. 0 means a centered carrier. */
 	double offset_hz;
-	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
+	/* OnBursts, when not NULL, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. A slot comes out at most once: the replay after a relock skips each slot that an earlier lock already gave. When NULL, the receiver is in append mode, for AppendBursts and AppendFlush. */
 	dmrgo_rf_audio_rx_config_on_bursts_fn_t on_bursts;
 	/* LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for DMRGO_RF_TIER1, 8 for DMRGO_RF_TIER2, and 16 for DMRGO_RF_TIER3, and at most DMRGO_RF_MAX_LOOKBACK_SLOTS. DMRGO_RF_TIER0 keeps none, and loses the start of a stream that it enters late. */
 	int64_t lookback_slots;
