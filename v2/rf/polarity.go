@@ -47,10 +47,10 @@ func (f *audioFront) observe(b *Burst) {
 	case enums.SyncBSSourcedData, enums.SyncMSSourcedData, enums.SyncTDMA1Data, enums.SyncTDMA2Data:
 		_, res := golay.Decode2087(slotTypeWord(&b.Data))
 		switch {
+		case b.Distance <= 1 && slot-p.data[k] == polPeriod:
+			score++
 		case !res.Uncorrectable && res.ErrorsCorrected <= 1:
 			score -= polGood
-		case res.Uncorrectable && b.Distance <= 1 && slot-p.data[k] == polPeriod:
-			score++
 		}
 		p.data[k] = slot
 	case enums.SyncBSSourcedVoice, enums.SyncMSSourcedVoice, enums.SyncTDMA1Voice, enums.SyncTDMA2Voice:

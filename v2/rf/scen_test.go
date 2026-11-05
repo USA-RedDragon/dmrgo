@@ -70,6 +70,7 @@ var bugPinTests = map[string]string{
 	"TestRxLevelStepOneDrop":             "payloads where one level rise dropped the audio gain twice",
 	"TestRxTwoTalkerSyncLevelStepHead":   "payloads whose step burst head took the post-step phase unit",
 	"TestRxAudioTwoTalkerLevelStepBlind": "payloads whose imbalance kept the blind refit of a stepped burst off",
+	"TestDiscInvertedVoicePin":           "voice patterns that delayed the polarity flip past the fourth superframe",
 }
 
 func fixedPayload(t testing.TB) bool {

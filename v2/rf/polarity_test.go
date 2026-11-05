@@ -9,6 +9,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 )
 
 func (r *discRx) inverted() bool {
@@ -108,9 +109,18 @@ func TestDiscPolarityStays(t *testing.T) {
 	}
 }
 
+func msVoiceConfig() rftx.SeqConfig {
+	return rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 12, Slot: 1}
+}
+
 func msVoiceAudio(t *testing.T, hz int, inv bool) []int16 {
 	t.Helper()
-	b, err := rftx.Sequence("voice", randomizedN(t, 3009101, rftx.SeqConfig{ColorCode: 7, Source: 3009101, Dest: 9, Group: true, Superframes: 12, Slot: 1}))
+	return msVoiceAudioOf(t, randomizedN(t, 3009101, msVoiceConfig()), hz, inv)
+}
+
+func msVoiceAudioOf(t *testing.T, cfg rftx.SeqConfig, hz int, inv bool) []int16 {
+	t.Helper()
+	b, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,6 +173,26 @@ func TestDiscInvertedVoiceOnly(t *testing.T) {
 			if !r.inverted() || voice > 2 || fixed < 8 {
 				t.Errorf("%d Hz %v: inverted %v, voice SYNCs %d without the check and %d with it", hz, tier, r.inverted(), voice, fixed)
 			}
+		}
+	}
+}
+
+// TestDiscInvertedVoicePin pins voice patterns whose inverted voice bursts
+// carry 20 bits at the slot type positions that decode with 2 or 3 errors or
+// with 1, which the polarity check did not count as an inverted call.
+func TestDiscInvertedVoicePin(t *testing.T) {
+	t.Parallel()
+	for _, seed := range []uint64{2, 3, 9, 11} {
+		a := msVoiceAudioOf(t, testscen.Of(seed).Apply(msVoiceConfig()), 9600, true)
+		got, r := receiveFixed(t, a, 9600, Tier1)
+		fixed := 0
+		for _, b := range got {
+			if b.Sync == enums.SyncMSSourcedVoice {
+				fixed++
+			}
+		}
+		if !r.inverted() || fixed < 8 {
+			t.Errorf("voice pattern %d: inverted %v, %d voice SYNCs", seed, r.inverted(), fixed)
 		}
 	}
 }
