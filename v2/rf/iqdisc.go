@@ -412,6 +412,7 @@ func (r *iqRx) ncoAt(n int64) float32 {
 }
 
 type iqRx struct {
+	gs        gainStep
 	fe        *frontEnd
 	wide      []complex64
 	inChunk   int
@@ -477,6 +478,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.d.setup(discSetup{Hz: hz, OnBurst: cfg.OnBurst, opt: &opt, iq: true}, false)
 	r.d.sink = cfg.sink
 	r.devTab = devTabOf(&opt)
+	r.gs.init()
 	r.d.lagTicks += r.conv.lagTicks()
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
@@ -514,6 +516,19 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 }
 
 func (r *iqRx) sample(v complex64) {
+	switch {
+	case r.adjSide != 0:
+		if v, ok := r.gs.push(v); ok {
+			r.take(v)
+		}
+		return
+	case r.gs.n > 0:
+		r.gs.drain(r.take)
+	}
+	r.take(v)
+}
+
+func (r *iqRx) take(v complex64) {
 	if r.spec != nil {
 		r.hunt(v)
 	}
@@ -777,6 +792,7 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 }
 
 func (r *iqRx) flush() {
+	r.gs.drain(r.take)
 	r.writeAudio()
 	if r.endNarrow() {
 		r.writeAudio()

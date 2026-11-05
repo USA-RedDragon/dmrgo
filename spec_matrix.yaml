@@ -118,6 +118,7 @@ ignore_files:
   - v2/rf/fir96.go
   - v2/rf/fir96_dsp.go
   - v2/rf/frontend.go
+  - v2/rf/gainstep.go
   - v2/rf/iqdisc.go
   - v2/rf/iqdsp.go
   - v2/rf/iqdsp_dsp.go
