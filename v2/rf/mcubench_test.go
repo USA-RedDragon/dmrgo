@@ -83,6 +83,10 @@ func mcuNoisy(fm, env []float64, cn float64, seed uint64, sig bool) []complex64 
 	return x
 }
 
+// mcuDraws is the number of noise draws of each bench signal. A row takes the
+// most cycles over every draw, so one draw that decodes little sets no row.
+const mcuDraws = 4
+
 func TestMCUBenchSignals(t *testing.T) {
 	t.Parallel()
 	out := os.Getenv("DMRGO_MCUBENCH_OUT")
@@ -92,15 +96,21 @@ func TestMCUBenchSignals(t *testing.T) {
 	slots, _ := benchStream(t, 6)
 	fm, env := rftx.ModulateBS(slots)
 	mf, me, _ := msStream(t, 2, 0.37)
-	conds := map[string]func() []complex64{
-		"30":    func() []complex64 { return mcuNoisy(fm, env, 30, 30, true) },
-		"10":    func() []complex64 { return mcuNoisy(fm, env, 10, 10, true) },
-		"6":     func() []complex64 { return mcuNoisy(fm, env, 6, 6, true) },
-		"2":     func() []complex64 { return mcuNoisy(fm, env, 2, 2, true) },
-		"-1":    func() []complex64 { return mcuNoisy(fm, env, -1, 1, true) },
-		"noise": func() []complex64 { return mcuNoisy(fm, env, 0, 5, false) },
-		"ms10":  func() []complex64 { return mcuNoisy(mf, me, 10, 11, true) },
-		"ms2":   func() []complex64 { return mcuNoisy(mf, me, 2, 12, true) },
+	conds := map[string]func() []complex64{}
+	for d := range uint64(mcuDraws) {
+		s := d * 1000
+		for c, f := range map[string]func() []complex64{
+			"30":    func() []complex64 { return mcuNoisy(fm, env, 30, 30+s, true) },
+			"10":    func() []complex64 { return mcuNoisy(fm, env, 10, 10+s, true) },
+			"6":     func() []complex64 { return mcuNoisy(fm, env, 6, 6+s, true) },
+			"2":     func() []complex64 { return mcuNoisy(fm, env, 2, 2+s, true) },
+			"-1":    func() []complex64 { return mcuNoisy(fm, env, -1, 1+s, true) },
+			"noise": func() []complex64 { return mcuNoisy(fm, env, 0, 5+s, false) },
+			"ms10":  func() []complex64 { return mcuNoisy(mf, me, 10, 11+s, true) },
+			"ms2":   func() []complex64 { return mcuNoisy(mf, me, 2, 12+s, true) },
+		} {
+			conds[fmt.Sprintf("%ss%d", c, d)] = f
+		}
 	}
 	ref := make([]string, 0, 2*len(conds))
 	for _, pe := range []bool{false, true} {

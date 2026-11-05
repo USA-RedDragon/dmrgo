@@ -189,7 +189,18 @@ func m7Rows() []benchRow {
 	return []benchRow{{prog: progRxTier, mode: modeAudio, rate: 9600, tier: 1}, {prog: progRxTier, mode: modeAudio, rate: 9600, tier: 2}}
 }
 
-func signalConds() []string { return []string{"30", "10", "6", "2", "-1", "noise", "ms10", "ms2"} }
+const signalDraws = 4
+
+func signalConds() []string {
+	conds := []string{"30", "10", "6", "2", "-1", "noise", "ms10", "ms2"}
+	out := make([]string, 0, signalDraws*len(conds))
+	for d := range signalDraws {
+		for _, c := range conds {
+			out = append(out, fmt.Sprintf("%ss%d", c, d))
+		}
+	}
+	return out
+}
 
 func run(ctx context.Context, root, work string, update bool) error {
 	t, err := findTools(ctx, root)
