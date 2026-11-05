@@ -67,9 +67,13 @@ var bugPinTests = map[string]string{
 	"TestSecondsLockBurstDeferredFit":    "a payload whose lock took the strobe when the sync fit deferred",
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 	"TestRxLevelStepTiming":              "payloads where a level and DC step pulled the timing loop",
+	"TestRxTwoTalkerSyncLevelStepHead":   "payloads whose step burst head took the post-step phase unit",
 }
 
 func fixedPayload(t testing.TB) bool {
+	if _, pinned := t.(pinnedTB); pinned {
+		return false
+	}
 	if t == nil || fixedRun() {
 		return true
 	}

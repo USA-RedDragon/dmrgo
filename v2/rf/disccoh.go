@@ -60,6 +60,7 @@ type discPhase struct {
 	o, sumO    int64
 	unit       float64
 	dcU        float64
+	ph0        float64
 	seen       bool
 	cal        bool
 	acc        complex64
@@ -276,7 +277,7 @@ func (p *discPhase) phase(m int64) float64 {
 	q := m * p.den
 	i, r := q/p.num, q%p.num
 	if r == 0 {
-		return p.a*float64(p.sumAt(i)-p.sumO) - p.b*float64(i-p.o)
+		return p.a*float64(p.sumAt(i)-p.sumO) - p.b*float64(i-p.o) + p.ph0
 	}
 	return p.between(i, float64(r)/float64(p.num))
 }
@@ -287,7 +288,7 @@ func (p *discPhase) between(i int64, mu float64) float64 {
 	s1 := float64(p.sumAt(i) - p.sumO)
 	s0, s2, s3 := s1+float64(p.sum[(i-1)&k]-v), s1+float64(p.sum[(i+1)&k]-v), s1+float64(p.sum[(i+2)&k]-v)
 	s := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
-	return p.a*s - p.b*(float64(i-p.o)+mu)
+	return p.a*s - p.b*(float64(i-p.o)+mu) + p.ph0
 }
 
 func (p *discPhase) phaseAt(t float64) (float64, bool) {
@@ -404,9 +405,10 @@ func (p *discPhase) lock() {
 // stepped takes the levels of a burst that the core refitted after a level
 // step of the input. The unit keeps the ratio to the levels of the core that
 // the last fit measured, so a second refit of the same step, as on the other
-// slot, gives the same unit.
-func (p *discPhase) stepped() {
-	c := p.c
+// slot, gives the same unit. With k, the first ring symbol after the step,
+// the samples before the step keep their phase and the new unit starts at
+// the step; with k < 0 the new unit holds for every kept sample.
+func (p *discPhase) stepped(c *leanCore, k int64) {
 	g := float64(c.audio.gain)
 	if p.unit <= 0 || p.ref <= 0 || g <= 0 || c.devScale <= 0 {
 		return
@@ -414,11 +416,21 @@ func (p *discPhase) stepped() {
 	u := p.ref * g / float64(c.devScale)
 	p.fitN, p.heldN = 0, 0
 	p.held, p.fitUnit = u, u
-	p.build(u, float64(c.audio.dc+c.dcHz)/g)
+	from := int64(-1)
+	if k > 0 {
+		t := (symTime(c, k-1) + symTime(c, k)) / 2
+		from = int64(math.Floor(t * float64(p.den) / float64(p.num)))
+	}
+	p.rebuild(u, float64(c.audio.dc+c.dcHz)/g, from)
 	p.acc, p.accN, p.avg = 0, 0, 0
 }
 
-func (p *discPhase) build(unit, dc float64) {
+func (p *discPhase) build(unit, dc float64) { p.rebuild(unit, dc, -1) }
+
+// rebuild sets the unit and the DC of the phase and recomputes the kept
+// phase samples. With from inside the kept sums, the samples before it keep
+// their phase, and the phase stays continuous at from.
+func (p *discPhase) rebuild(unit, dc float64, from int64) {
 	if p.unit > 0 {
 		if q := p.coh; q != nil {
 			q.freq = (q.freq/p.unit + p.dcU - dc) * unit
@@ -432,20 +444,30 @@ func (p *discPhase) build(unit, dc float64) {
 		d := -2 * math.Pi * (dc - p.dcU) * unit / discRate
 		p.acc, p.avg = rescaleTurn(p.acc, k, d), rescaleTurn(p.avg, k, d)
 	}
+	o, ph0 := max(p.sumN-p.size, 0), 0.0
+	cut := from > max(o, p.o) && from < p.sumN
+	if cut {
+		o, ph0 = from, p.a*float64(p.sumAt(from)-p.sumO)-p.b*float64(from-p.o)+p.ph0
+	}
 	p.unit, p.dcU = unit, dc
 	p.clickN, p.clickAt, p.prevClicks, p.prevN = 0, p.sumN, 0, 0
 	p.a = 2 * math.Pi * unit / (float64(discRate) * float64(p.den) / float64(p.num))
 	p.b = p.a * dc
-	p.o = max(p.sumN-p.size, 0)
+	p.o, p.ph0 = o, ph0
 	p.sumO = 0
 	if p.sumN > 0 {
 		p.sumO = p.sumAt(p.o)
 	}
 	lo := max(((p.o+p.wait)*p.num+p.den-1)/p.den, p.rawN-p.size)
-	p.lo = lo + discPhaseLag
+	fk := lo + discPhaseLag
+	if cut {
+		fk = max(lo-discPhaseLag, p.lo)
+	} else {
+		p.lo = fk
+	}
 	for m := lo; m < p.rawN; m++ {
 		p.emit(m)
-		if k := m - discPhaseLag; k >= p.lo {
+		if k := m - discPhaseLag; k >= fk {
 			p.filter(k)
 		}
 	}

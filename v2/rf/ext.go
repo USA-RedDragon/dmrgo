@@ -48,7 +48,7 @@ type leanExt interface {
 	grid(c *leanCore, start int64) (int64, float32, bool)
 	rateBound(c *leanCore, base int64) (float32, bool)
 	replayTicks(c *leanCore, start int64) (int64, int16, float32, bool)
-	stepped()
+	stepped(c *leanCore, k int64)
 	lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool
 	replaySpread() float32
 	noteSync(c *leanCore, j int32, b *Burst) bool
@@ -1120,11 +1120,11 @@ func (x *softExt) replaySlots(c *leanCore, last int64, at, sps float32) int32 {
 	return n
 }
 
-func (x *softExt) stepped() {
+func (x *softExt) stepped(c *leanCore, k int64) {
 	if x.ph == nil || x.coh == nil {
 		return
 	}
-	x.ph.stepped()
+	x.ph.stepped(c, k)
 	x.coh.freqOK = false
 	for i := range x.coh.radios {
 		x.coh.radios[i].freqOK = false

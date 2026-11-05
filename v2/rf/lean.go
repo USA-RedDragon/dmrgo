@@ -2066,7 +2066,10 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		}
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		if step > 0 && r.hasExt() && !r.isReplaying() {
-			r.ext.stepped()
+			base := end - leanSyncEnd
+			off := func(dc float32) int32 { return int32(roundf((r.off - dc) / llrStepHz)) }
+			dev := func(g float32) int32 { return int32(roundf(g * deviationHz / llrStepHz)) }
+			r.ext.stepped(r, base+int64(r.splitAt(base, off(r.off-r.preOff), dev(r.preDev), off(dc), dev(g))))
 		}
 		return true
 	}
@@ -2899,7 +2902,7 @@ func (r *leanCore) blindLevels(slot int32, base int64, anchor enums.SyncPattern)
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	r.stepOther(slot, k, held0)
 	if r.hasExt() && !r.isReplaying() {
-		r.ext.stepped()
+		r.ext.stepped(r, -1)
 	}
 }
 
@@ -3161,6 +3164,13 @@ func (r *leanCore) stepSplit(base int64) (int, int32, int32) {
 	r.preStep = false
 	off := int32(roundf(r.preOff / llrStepHz))
 	dev := int32(roundf(r.preDev * deviationHz / llrStepHz))
+	return r.splitAt(base, off, dev, r.llrOff, r.llrDev), off, 2 * dev
+}
+
+// splitAt gives the number of symbols of the burst at base before a level
+// step: the head that the levels off and dev fit better than the levels
+// offNew and devNew.
+func (r *leanCore) splitAt(base int64, off, dev, offNew, devNew int32) int {
 	var c, best int32
 	split := 0
 	h := ringPos(base)
@@ -3169,11 +3179,11 @@ func (r *leanCore) stepSplit(base int64) (int, int32, int32) {
 		if h++; h == leanRing {
 			h = 0
 		}
-		if c += symRes(v+off, dev) - symRes(v+r.llrOff, r.llrDev); c < best {
+		if c += symRes(v+off, dev) - symRes(v+offNew, devNew); c < best {
 			best, split = c, k+1
 		}
 	}
-	return split, off, 2 * dev
+	return split
 }
 
 //go:noinline
