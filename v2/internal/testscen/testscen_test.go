@@ -11,11 +11,12 @@ import (
 
 func TestSameSeedSameScenario(t *testing.T) {
 	t.Parallel()
-	if Of(42) != Of(42) || Of(42) == Of(43) {
-		t.Fatalf("seed 42 draws %+v then %+v", Of(42), Of(42))
+	a, b, c := Of(42), Of(42), Of(43)
+	if a != b || a == c {
+		t.Fatalf("seed 42 draws %+v then %+v, seed 43 %+v", a, b, c)
 	}
 	cfg := rftx.SeqConfig{Message: "0123456789"}
-	if Of(42).Apply(cfg) != Of(42).Apply(cfg) {
+	if a.Apply(cfg) != b.Apply(cfg) {
 		t.Fatal("one scenario applies two messages")
 	}
 }

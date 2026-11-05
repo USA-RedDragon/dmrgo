@@ -19,7 +19,8 @@ func TestUpperBound(t *testing.T) {
 
 func TestTrialStreams(t *testing.T) {
 	t.Parallel()
-	if Of(42).Trial(3).Uint64() != Of(42).Trial(3).Uint64() || Of(42).Trial(3).Uint64() == Of(42).Trial(4).Uint64() {
+	a, b, c := Of(42).Trial(3).Uint64(), Of(42).Trial(3).Uint64(), Of(42).Trial(4).Uint64()
+	if a != b || a == c {
 		t.Fatal("trial streams do not follow the trial index")
 	}
 	if New(t).Seed() != Mix(RunSeed(), NameHash(t.Name())) {
