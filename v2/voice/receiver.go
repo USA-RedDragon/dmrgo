@@ -28,7 +28,8 @@ const codec2FID enums.FID = 0xC2
 
 const maxPend = 6
 
-const sameCallEMB = 3
+// sameCallEMB is the correcting radius of the QR (16,7,6) code of the EMB.
+const sameCallEMB = 2
 
 const ownKeep = 64
 

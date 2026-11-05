@@ -372,3 +372,38 @@ func TestRegression_NoiseBeforeLateEntry(t *testing.T) {
 		t.Errorf("%d noise bursts went out before 200 late entries", leaked)
 	}
 }
+
+// pinEMBBits are the bit positions of the EMB in a burst.
+var pinEMBBits = [16]int{108, 109, 110, 111, 112, 113, 114, 115, 148, 149, 150, 151, 152, 153, 154, 155}
+
+// TestRegression_NoiseNearCallEMB checks that a noise burst whose EMB sits 3
+// bits from the EMB of the call does not go out at a late entry.
+func TestRegression_NoiseNearCallEMB(t *testing.T) {
+	t.Parallel()
+	r := rand.New(rand.NewPCG(31, 32))
+	call := transmission(t, groupLC(t, 91, 3002068), 4, nil)
+	leaked := 0
+	for range 200 {
+		off := 3 + r.IntN(10)
+		noise := noiseBurst(r)
+		src := call[off-1]
+		for _, b := range pinEMBBits {
+			noise[b/8] = noise[b/8]&^(0x80>>(b%8)) | src[b/8]&(0x80>>(b%8))
+		}
+		for _, k := range r.Perm(16)[:3] {
+			noise[pinEMBBits[k]/8] ^= 0x80 >> (pinEMBBits[k] % 8)
+		}
+		in := []input{{at: 0, raw: noise}}
+		for i, b := range call[off:] {
+			in = append(in, input{at: time.Duration(1+i) * slot, raw: b})
+		}
+		for _, e := range find(feed(t, newReceiver(t, nil), in, -1), voice.EventVoice) {
+			if e.Burst == noise {
+				leaked++
+			}
+		}
+	}
+	if leaked > 0 {
+		t.Errorf("%d of 200 noise bursts 3 bits from the EMB of the call went out before a late entry", leaked)
+	}
+}
