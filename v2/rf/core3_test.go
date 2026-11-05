@@ -104,7 +104,7 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 			for i := range ss {
 				ss[i] = 7000 + d*seeds + uint64(i)
 			}
-			e, n, _ := earlyCount(t, truth, c.cn, ss, clockSignal{clockBaseband(slots, 5000, 0), 0})
+			e, n, _ := earlyCount(t, truth, c.cn, ss, clockSignal{clockBaseband(slots, 0), 0})
 			exact, total = exact+e, total+n
 		}
 		if rate := float64(exact) / float64(total); rate < c.min {
@@ -116,7 +116,7 @@ func TestCoreTier3EarlySlots(t *testing.T) {
 func TestCoreTier3EarlySlotsClock(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
-	rate, miss := earlyExact(t, truth, 3, clockSignal{clockBaseband(slots, 5000, -500), -500}, clockSignal{clockBaseband(slots, 5000, 500), 500})
+	rate, miss := earlyExact(t, truth, 3, clockSignal{clockBaseband(slots, -500), -500}, clockSignal{clockBaseband(slots, 500), 500})
 	if rate < 0.9 {
 		t.Errorf("core Tier 3 at +5000 Hz, +-500 ppm, 3 dB: %.3f of the AMBE frames in the first 12 slots exact", rate)
 	}
@@ -139,7 +139,8 @@ type clockSignal struct {
 	ppm float64
 }
 
-func clockBaseband(slots []rftx.BSSlot, offsetHz, ppm float64) benchSignal {
+func clockBaseband(slots []rftx.BSSlot, ppm float64) benchSignal {
+	const offsetHz = 5000
 	fm, env := rftx.ModulateBS(slots)
 	if ppm != 0 {
 		fm, env = resampleFM(fm, env, ppm)

@@ -2338,9 +2338,7 @@ func (r *leanCore) slot() {
 			r.lost = 0
 		}
 	}
-	if !heard && r.slotJ == j && !r.isReplaying() {
-		r.tm.t -= r.tm.baseC + r.tm.corr - r.slotC
-	}
+	r.undoSlot(j, heard)
 	if !r.isReplaying() {
 		switch {
 		case isAnchor:
@@ -2365,6 +2363,12 @@ const (
 	leanEyeSpreadAudio = 23
 	leanEyeNearAudio   = 0.46
 )
+
+func (r *leanCore) undoSlot(j int32, heard bool) {
+	if !heard && r.slotJ == j && !r.isReplaying() {
+		r.tm.t -= r.tm.baseC + r.tm.corr - r.slotC
+	}
+}
 
 //go:noinline
 func (r *leanCore) eyeNoise(base int64) bool {

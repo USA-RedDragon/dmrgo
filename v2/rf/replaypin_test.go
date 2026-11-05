@@ -72,7 +72,7 @@ func TestCoreLockSlotSync(t *testing.T) {
 	t.Parallel()
 	ids := testscen.Of(16528811544069809204).Apply(rftx.SeqConfig{Source: 3009101, BS: 990913, Dest: 3009201, Message: "DMRGO RXBENCH"})
 	slots, truth := benchStreamOf(t, ids, 6)
-	if _, _, miss := earlyCount(t, truth, 3, []uint64{6972457321712919085}, clockSignal{clockBaseband(slots, 5000, 500), 500}); miss > 0.6 {
+	if _, _, miss := earlyCount(t, truth, 3, []uint64{6972457321712919085}, clockSignal{clockBaseband(slots, 500), 500}); miss > 0.6 {
 		t.Errorf("the oldest replayed slot sits %.2f symbols off", miss)
 	}
 }
