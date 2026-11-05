@@ -393,7 +393,8 @@ func TestRegression_NoiseNearCallEMB(t *testing.T) {
 		for _, k := range r.Perm(16)[:3] {
 			noise[pinEMBBits[k]/8] ^= 0x80 >> (pinEMBBits[k] % 8)
 		}
-		in := []input{{at: 0, raw: noise}}
+		in := make([]input, 0, 1+len(call)-off)
+		in = append(in, input{at: 0, raw: noise})
 		for i, b := range call[off:] {
 			in = append(in, input{at: time.Duration(1+i) * slot, raw: b})
 		}

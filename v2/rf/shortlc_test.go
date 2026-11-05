@@ -226,7 +226,7 @@ func TestShortLCSoftNotWrong(t *testing.T) {
 	} {
 		_, lcs := slcReceive(t, sig.noisy(t, c.cn, c.seed), c.e)
 		for _, l := range lcs {
-			if w, ok := want[slcKey(l.Seconds)]; l.Soft && !(ok && slcSame(w, l.LC)) {
+			if w, ok := want[slcKey(l.Seconds)]; l.Soft && (!ok || !slcSame(w, l.LC)) {
 				t.Errorf("%s, %g dB, seed %d: soft Short LC at %.4f s is wrong", c.e.name(), c.cn, c.seed, l.Seconds)
 			}
 		}
