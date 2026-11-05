@@ -1746,7 +1746,7 @@ func (r *leanCore) searchSym(strict bool) {
 	}
 	r.lockStream(src, d, c2, 0)
 	if verified {
-		r.unproven = true
+		r.unproven, r.hunt = true, true
 		r.ext.weakAt(r.ns - 1)
 	}
 }

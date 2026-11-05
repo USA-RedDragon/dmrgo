@@ -133,8 +133,25 @@ func checkPayloadSync(t *testing.T, cfg rftx.SeqConfig) {
 
 func TestLeanTalkerAfterDrop(t *testing.T) {
 	t.Parallel()
-	c1 := randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1})
-	c2 := randomizedN(t, 1234568, rftx.SeqConfig{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"})
+	checkTalkerAfterDrop(t, randomizedN(t, 1234567, dropTalkers[0]), randomizedN(t, 1234568, dropTalkers[1]))
+}
+
+var dropTalkers = [2]rftx.SeqConfig{
+	{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1},
+	{ColorCode: 1, Source: 1234568, Dest: 9990, BS: 990911, Message: "TALKER TWO DATA"},
+}
+
+// TestLeanWeakLockKeeps pins payloads whose voice header was lost on audio
+// at Tiers 2 and 3: a weak lock on the header payload stopped keeping the
+// acquisition samples, so the replay of the true lock could not reach the
+// header.
+func TestLeanWeakLockKeeps(t *testing.T) {
+	t.Parallel()
+	checkTalkerAfterDrop(t, testscen.Of(1394549278350625547).Apply(dropTalkers[0]), testscen.Of(5879030131196329451).Apply(dropTalkers[1]))
+}
+
+func checkTalkerAfterDrop(t *testing.T, c1, c2 rftx.SeqConfig) {
+	t.Helper()
 	v, err := rftx.Sequence("voice", c1)
 	if err != nil {
 		t.Fatal(err)
