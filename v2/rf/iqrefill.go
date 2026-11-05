@@ -7,25 +7,26 @@ const (
 )
 
 type iqRefill struct {
-	soft     *softExt
-	raw      []complex64
-	head     int
-	n        int64
-	from     int64
-	tuned    int64
-	hz0      float32
-	idle     bool
-	out      int64
-	wide     []complex64
-	mixed    []complex128
-	settle   bool
-	settleHz float32
-	conv     iqDisc
-	narrow   []float32
-	wideTaps []float32
-	dd       int64
-	drop     int
-	narrowOn bool
+	soft      *softExt
+	raw       []complex64
+	head      int
+	n         int64
+	from      int64
+	tuned     int64
+	hz0       float32
+	idle      bool
+	out       int64
+	wide      []complex64
+	mixed     []complex128
+	settle    bool
+	settleDue bool
+	settleHz  float32
+	conv      iqDisc
+	narrow    []float32
+	wideTaps  []float32
+	dd        int64
+	drop      int
+	narrowOn  bool
 }
 
 func (r *iqRx) attachRefill(x *softExt) {
@@ -71,12 +72,21 @@ func (f *iqRefill) setNarrow(r *iqRx) {
 	f.conv.hist = make([]complex64, 2*len(n))
 }
 
+// settleCoh moves the lean core onto the tune of refillCoh once it has
+// taken the outputs that the converter made before that tune, which the
+// write in progress still holds.
 func (r *iqRx) settleCoh() {
+	if f := r.refill; f != nil && f.settle {
+		f.settleDue = true
+	}
+}
+
+func (r *iqRx) settleNow() {
 	f := r.refill
-	if f == nil || !f.settle {
+	if f == nil || !f.settleDue {
 		return
 	}
-	f.settle = false
+	f.settle, f.settleDue = false, false
 	d := f.settleHz
 	r.tuneLean(d, r.d.f.dc-d*r.d.f.gain*iqUnitsPerHz)
 }
@@ -359,6 +369,7 @@ func (r *iqRx) writeAudioExt() {
 	}
 	r.settleCoh()
 	r.audio = r.audio[:0]
+	r.settleNow()
 	if f != nil && f.narrowOn && !r.d.locked {
 		r.toWide()
 	}

@@ -98,3 +98,24 @@ func TestRxReplayStretchSyncs(t *testing.T) {
 		t.Error(strings.Join(r.detail, " | "))
 	}
 }
+
+// TestRxSeekAfterCohTune receives a strong MS talker that Tier 3 finds on
+// its EMB after it locks on a weaker one 150 Hz above it. At the lock the
+// coherent stage tunes the converter onto the locked talker while outputs
+// made at the old tune still wait for the lean core. The core must take
+// those outputs at the old tune: taken at the new one, the first seeked
+// burst reads about the 263 Hz of the tune off, its levels set the coherent
+// frequency of that talker 300 Hz off, and the coherent decisions put 30
+// wrong bits in it.
+func TestRxSeekAfterCohTune(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.+0.ms2.voice.0ppm.nom.cs16-48k.inf")
+	x := mxRx{row.val(mxFormat), Tier3}
+	out, err := mxRun(pinnedTB{t, 7213212379218616557}, row, []mxRx{x})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := out[x]; r.fail["bits"] {
+		t.Error(strings.Join(r.detail, " | "))
+	}
+}

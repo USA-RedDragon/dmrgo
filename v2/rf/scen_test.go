@@ -95,6 +95,7 @@ var bugPinTests = map[string]string{
 	"TestRxLateFillLevels":               "a payload whose late burst was filled at the levels of a later lock",
 	"TestCoreLockSlotSync":               "a payload and noise where a voice burst locked on the past-sync sum",
 	"TestRxReplayStretchSyncs":           "a payload whose SYNC correlation peaks put the replayed bursts 15 us early",
+	"TestRxSeekAfterCohTune":             "a draw where the core took the coherent lock tune before the outputs made at it",
 }
 
 func fixedPayload(t testing.TB) bool {
