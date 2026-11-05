@@ -527,3 +527,28 @@ func TestCoreTier3WeakProof(t *testing.T) {
 		t.Errorf("%d of %d SYNCs at C/N -2.5 dB", sc.Exact, sc.Truth)
 	}
 }
+
+func TestCoreTier3OneStream(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 10)
+	sig := cleanBaseband(slots, 1400)
+	var wg sync.WaitGroup
+	streams := make([]int, 8)
+	for i := range streams {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			seen := map[int]bool{}
+			for _, b := range benchReceive(t, sig.noisy(-2.5, 7100+uint64(i)), benchEntry{benchIQ, Tier3}) {
+				seen[b.Stream] = true
+			}
+			streams[i] = len(seen)
+		}()
+	}
+	wg.Wait()
+	for i, n := range streams {
+		if n != 1 {
+			t.Errorf("seed %d: one call at C/N -2.5 dB comes out as %d streams", 7100+i, n)
+		}
+	}
+}

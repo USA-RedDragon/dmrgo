@@ -2223,7 +2223,7 @@ func (r *leanCore) slot() {
 	r.holdNext(j, present)
 	lost := r.lost
 	switch {
-	case present && (isAnchor || r.lastAnch != leanNoSlot && j-r.lastAnch < lostSlots):
+	case present && (isAnchor || r.lastLive() != leanNoSlot && j-r.lastLive() < lostSlots):
 		r.lost = 0
 	default:
 		r.lost++
@@ -2234,6 +2234,8 @@ func (r *leanCore) slot() {
 		}
 		if !r.burst(j, base, anchor, noisy, missedA) {
 			r.lost = lost + 1
+		} else if !isAnchor && r.syncLive(j) {
+			r.lost = 0
 		}
 	}
 	if !r.isReplaying() {
@@ -2566,8 +2568,20 @@ func (r *leanCore) gapSpread(g, res float32) bool {
 	return res*r.devScale*r.devScale > leanGapSpread*leanGapSpread*r.discVar*g*g
 }
 
+func (r *leanCore) syncLive(j int32) bool {
+	return r.hasExt() && r.ext.noteSync(r, j, &r.cb)
+}
+
+func (r *leanCore) lastLive() int32 {
+	if r.hasExt() {
+		return max(r.lastAnch, r.ext.syncSlot())
+	}
+	return r.lastAnch
+}
+
 func (r *leanCore) ended(j int32, base int64) bool {
-	return r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 || j-r.lastAnch >= lostSlots ||
+	a := r.lastLive()
+	return r.lost >= lostSlots || a == leanNoSlot && j >= 6 || j-a >= lostSlots ||
 		r.forced && base-r.lockNs > 6*slotSymbols
 }
 

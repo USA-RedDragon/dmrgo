@@ -51,6 +51,8 @@ type leanExt interface {
 	stepped()
 	lockTune(c *leanCore, p enums.SyncPattern, src int, verified bool) bool
 	replaySpread() float32
+	noteSync(c *leanCore, j int32, b *Burst) bool
+	syncSlot() int32
 }
 
 const extQueue = 8
@@ -79,6 +81,7 @@ type extChan struct {
 
 type softExt struct {
 	fit             [extFitSamples]int8
+	lastSync        int32
 	fitHead, fitN   int32
 	seekPend        [2]seekNote
 	strobes         *[extStrobes]int64
@@ -184,7 +187,7 @@ func softExtOf(opt *options, sps float32) *softExt {
 }
 
 func newSoftExtStages(st uint8, lookback int, sps float32) *softExt {
-	x := &softExt{soft: newSoftDecoder(), lookback: lookback, stages: st, passes: cohDataPasses}
+	x := &softExt{soft: newSoftDecoder(), lookback: lookback, stages: st, passes: cohDataPasses, lastSync: leanNoSlot}
 	if lookback > 0 {
 		n := int(float32((lookback+1)*slotSymbols)*sps) + leanAcqSamples
 		x.acq = make([]int16, (n+1)/2)
@@ -1024,6 +1027,7 @@ func (x *softExt) locked(c *leanCore, d float32) {
 	x.early, x.timing, x.stretch = [extQueue]bool{}, !c.bs, 0
 	x.vOK = false
 	x.proofs = 0
+	x.lastSync = leanNoSlot
 	if x.coh != nil {
 		x.vHz, x.vOK, x.coh.vOK, x.coh.vTauOK = x.coh.vHz, x.coh.vOK, false, false
 		x.lockHz(c)
@@ -1969,6 +1973,20 @@ func (a *extAnchor) fits(xs, t int64) bool {
 	p, ok := a.at(xs, 0)
 	return ok && float32(abs64(t-p)) <= extEmbGate*samplesPerSy*256
 }
+
+func (x *softExt) noteSync(c *leanCore, j int32, b *Burst) bool {
+	if c.isReplayDry() {
+		return false
+	}
+	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
+	if b.Distance < 0 || b.Distance > discAnchorBits || b.Sync != voice && b.Sync != data {
+		return false
+	}
+	x.lastSync = j
+	return true
+}
+
+func (x *softExt) syncSlot() int32 { return x.lastSync }
 
 func (x *softExt) replaySpread() float32 {
 	return max(extReplaySpread*x.spread, extReplaySpreadMin)
