@@ -12,7 +12,11 @@
 // The Receiver places voice bursts in the superframe from the strongest
 // evidence it has: the position from the transport (layer2.Hint), the voice
 // SYNC of burst A, the transport sequence number, the LCSS of the EMB, and
-// last the time since the previous burst, in 60 ms steps. It reports lost and
+// last the time since the previous burst, in 60 ms steps. Without a position
+// or sequence number from the transport, an EMB that needed correction or
+// carries another color code than the call does not place the burst once a
+// burst of the call is placed: the time does, so that each slot counts once,
+// as a voice burst or as lost. It reports lost and
 // duplicate bursts, gets the call from the Voice LC Header or, on late
 // entry, from the embedded LC of bursts B to E, and ends the call on a
 // terminator, a data or idle burst, a transport end flag, the loss of the
@@ -54,7 +58,8 @@
 // the odds and is counted in the Lost of the next voice burst, and 13 in a
 // row end the call with EndSyncLost. The embedded LC of a superframe that
 // does not decode alone is decoded from the bitwise majority of it and the
-// two superframes before. (ETSI TS 102 361-1 Annex G.1.1)
+// two superframes before. A fragment whose EMB decodes to the LCSS of another
+// fragment does not count. (ETSI TS 102 361-1 clause 9.3.3, Annex G.1.1)
 //
 // A Transmitter makes the bursts of one call, as the source of the call or
 // as the relay of the events of a Receiver. A source call follows the

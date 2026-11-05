@@ -838,6 +838,11 @@ func (r *Receiver) sameCall(b *layer2.Burst, raw *layer2.RawBurst, cc enums.Colo
 	return d <= sameCallEMB
 }
 
+func lcssFits(l enums.LCSS, idx int) bool {
+	p := lcssPos(l)
+	return p == idx || p == 2 && idx == 3
+}
+
 func lcssPos(l enums.LCSS) int {
 	switch l {
 	case enums.LCSSFirstFragment:
@@ -880,6 +885,11 @@ func (r *Receiver) lower(v int) {
 
 func (r *Receiver) take(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, out []Event) []Event {
 	r.raw = rawOf(b, raw)
+	if syncGated(h) && r.hasIdx && b.VoiceBurst != enums.VoiceBurstA && !r.exactEMB(b, raw) {
+		if steps := int((now - r.lastAt + slotPeriod/2) / slotPeriod); steps >= 1 {
+			h.VoiceBurst, _ = enums.VoiceBurstAt((r.lastIdx + steps) % layer2.VoiceBurstsPerSuperframe)
+		}
+	}
 	idx, lost, p := r.track.place(b, &r.raw, h, now)
 	if p == placed && idx >= 0 {
 		r.lastIdx, r.lastAt, r.hasIdx = idx, now, true
@@ -935,6 +945,18 @@ func (r *Receiver) take(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 		out = r.embedded(lc, out)
 	}
 	return out
+}
+
+func (r *Receiver) exactEMB(b *layer2.Burst, raw *layer2.RawBurst) bool {
+	emb := &b.EmbeddedSignalling
+	if !b.HasEmbeddedSignalling() || emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected != 0 {
+		return false
+	}
+	cc, known := r.callCC, r.hasCC
+	if raw != nil && r.opts.ColorCode != nil {
+		cc, known = *r.opts.ColorCode, true
+	}
+	return !known || emb.ColorCode == cc
 }
 
 func (r *Receiver) begin(now time.Duration, out []Event) []Event {
@@ -1130,7 +1152,7 @@ func (r *Receiver) miss(now time.Duration, out []Event) []Event {
 }
 
 func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
-	if idx < 1 || idx > 4 || !b.HasEmbeddedSignalling() {
+	if idx < 1 || idx > 4 || !b.HasEmbeddedSignalling() || !b.EmbeddedSignalling.FEC.Uncorrectable && !lcssFits(b.EmbeddedSignalling.LCSS, idx) {
 		r.fragNext = 0
 		return pdu.LCBytes{}, false
 	}

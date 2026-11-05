@@ -99,16 +99,7 @@ func TestRegression_OtherCodecMissDoesNotCascade(t *testing.T) {
 func TestRegression_NoiseBurstInCallIsCounted(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 6))
-	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
-	in := timed(call, 0, layer2.Hint{})
-	in[4].raw = noiseBurst(r)
-	events := feed(t, newReceiver(t, nil), in, -1)
-	v := find(events, voice.EventVoice)
-	end := find(events, voice.EventCallEnd)
-	if len(end) != 1 || int(end[0].Stats.Bursts) != len(v) || end[0].Stats.Bursts+end[0].Stats.Lost != 12 || len(v) == 11 && v[3].Lost != 1 {
-		t.Errorf("noise burst in a call: %s, end %+v", kinds(events), end)
-	}
+	noiseBurstInCall(t, testseed.New(t).Uint64(), nil)
 }
 
 func TestRegression_NoiseAfterCarrierDrop(t *testing.T) {
