@@ -36,7 +36,8 @@
 // a voice SYNC, lowered where the timing of the call puts another burst than
 // A; or the distance of the EMB to the codewords of the color code of the
 // call (ReceiverConfig.ColorCode, else that of the Voice LC Header, else the
-// one that most error-free EMBs give, at least two), and, for an EMB within
+// one that most error-free EMBs give, at least two), lowered where the timing
+// puts burst A, and, for an EMB within
 // 5 bits of one, the distance of the embedded data to the fragments of the
 // call LC, to a null fragment, or to the fragments of the three superframes
 // before. To that it adds the bit errors that the Golay codes of the three

@@ -34,7 +34,7 @@ const ownKeep = 64
 
 const embFar = -60
 
-const notA = -80
+const offPlace = -80
 
 // The sync check works in log-likelihood ratios of voice against noise, in
 // 1/16 nat, for a bit error rate of 10%: per frame by the errors that the
@@ -1007,7 +1007,9 @@ func (r *Receiver) score(now time.Duration, b *layer2.Burst, raw *layer2.RawBurs
 	if r.hasIdx && (r.state == StateInCall || r.state == StateLateEntry) {
 		steps := max(int((now-r.lastAt+slotPeriod/2)/slotPeriod), 1)
 		if (r.lastIdx+steps)%layer2.VoiceBurstsPerSuperframe != 0 {
-			sync += notA
+			sync += offPlace
+		} else {
+			emb += offPlace
 		}
 	}
 	frame := sync

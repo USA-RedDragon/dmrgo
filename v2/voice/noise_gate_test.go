@@ -105,9 +105,22 @@ func TestRegression_NoiseBurstInCallIsCounted(t *testing.T) {
 func TestRegression_NoiseAfterCarrierDrop(t *testing.T) {
 	t.Parallel()
 
+	noiseAfterCarrierDrop(t, testseed.New(t).Uint64())
+}
+
+func TestRegression_NoiseAfterCarrierDropPins(t *testing.T) {
+	t.Parallel()
+
+	for _, run := range []uint64{149, 372} {
+		noiseAfterCarrierDrop(t, testseed.Of(testseed.Mix(run, testseed.NameHash("TestRegression_NoiseAfterCarrierDrop"))).Uint64())
+	}
+}
+
+func noiseAfterCarrierDrop(t *testing.T, seed uint64) {
+	t.Helper()
 	cc := enums.ColorCode(1)
 	for _, cfg := range []*voice.ReceiverConfig{nil, {ColorCode: &cc}} {
-		r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 4))
+		r := rand.New(rand.NewPCG(seed, 4))
 		call := transmission(t, groupLC(t, 91, 3002068), 3, nil)
 		call = call[:len(call)-1]
 		in := timed(call, 0, layer2.Hint{})
@@ -125,13 +138,13 @@ func TestRegression_NoiseAfterCarrierDrop(t *testing.T) {
 			case voice.EventCallEnd:
 				ended = true
 				if e.Reason != voice.EndSyncLost || e.Stats.Duration > time.Duration(start+20)*slot {
-					t.Errorf("color code %v: call ended %v after %v", cfg != nil, e.Reason, e.Stats.Duration)
+					t.Errorf("seed %d color code %v: call ended %v after %v", seed, cfg != nil, e.Reason, e.Stats.Duration)
 				}
 			case voice.EventCallStart, voice.EventEmbedded, voice.EventTalkerAlias, voice.EventPIHeader, voice.EventSessionStart, voice.EventSessionEnd:
 			}
 		}
 		if want := 3 * layer2.VoiceBurstsPerSuperframe; voiceN != want || !ended {
-			t.Errorf("color code %v: %d EventVoice for %d voice bursts and noise, ended %v: %s", cfg != nil, voiceN, want, ended, kinds(events))
+			t.Errorf("seed %d color code %v: %d EventVoice for %d voice bursts and noise, ended %v: %s", seed, cfg != nil, voiceN, want, ended, kinds(events))
 		}
 	}
 }
