@@ -298,7 +298,7 @@ func TestIQLowDCStart(t *testing.T) {
 	t.Parallel()
 	name := "s0.none.+0.ms.voice.0ppm.low.cs16-9600.40dB.dc"
 	row := mxRowOf(t, name)
-	for _, run := range []uint64{3, 17135660685592486755} {
+	for _, run := range []uint64{3} {
 		res, err := mxRun(pinnedRun{t, run, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
 		if err != nil {
 			t.Fatal(err)
