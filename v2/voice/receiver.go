@@ -133,6 +133,7 @@ type Receiver struct {
 	raw      layer2.RawBurst
 	frags    [4][4]byte
 	fragNext int
+	elc      layer2.EmbeddedLCConfirmer
 	lc       pdu.FullLinkControl
 	alias    pdu.TalkerAliasAssembler
 	text     [pdu.TalkerAliasMaxText]byte
@@ -401,6 +402,7 @@ func (r *Receiver) receive(now time.Duration, b *layer2.Burst, raw *layer2.RawBu
 	}
 	if h.HasStream {
 		if r.hasStream && h.Stream != r.stream {
+			r.elc.Reset()
 			out = r.dropPending(now, out)
 			switch r.state {
 			case StateInCall:
@@ -576,6 +578,7 @@ func (r *Receiver) startCall(now time.Duration, c *Call, out []Event) []Event {
 	if c.Origin == OriginHeader {
 		r.track = tracker{}
 		r.fragNext = 0
+		r.elc.Header(c.LC)
 	}
 	if !keep {
 		r.heardSet, r.nPrev = 0, 0
@@ -628,6 +631,9 @@ func (r *Receiver) endNoHang(at time.Duration, reason EndReason, out []Event) []
 }
 
 func (r *Receiver) appendEnd(at time.Duration, reason EndReason, out []Event) []Event {
+	if reason != EndSuperseded {
+		r.elc.Reset()
+	}
 	r.stats.Duration = max(at-r.start, 0)
 	var e *Event
 	out, e = appendEvent(out, EventCallEnd, &r.call)
@@ -965,6 +971,7 @@ func (r *Receiver) begin(now time.Duration, out []Event) []Event {
 	r.misses, r.heardSet, r.nPrev, r.hasIdx = 0, 0, 0, false
 	r.track = tracker{}
 	r.fragNext = 0
+	r.elc.Reset()
 	r.alias.Reset()
 	r.hasHeld, r.heldTA = false, false
 	r.stats = Stats{}
@@ -1173,17 +1180,7 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 		return pdu.LCBytes{}, false
 	}
 	r.fragNext = 0
-	lc, res := layer2.DecodeEmbeddedLC(r.frags)
-	if res.Uncorrectable && r.nPrev == len(r.prev) {
-		var m [4][4]byte
-		for i := range m {
-			for j := range m[i] {
-				x, y, z := r.frags[i][j], r.prev[0][i][j], r.prev[1][i][j]
-				m[i][j] = x&y | y&z | x&z
-			}
-		}
-		lc, res = layer2.DecodeEmbeddedLC(m)
-	}
+	lc, res := r.elc.Decode(r.frags)
 	r.prev[1], r.prev[0] = r.prev[0], r.frags
 	r.nPrev = min(r.nPrev+1, len(r.prev))
 	if res.Uncorrectable {
