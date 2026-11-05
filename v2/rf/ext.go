@@ -15,6 +15,7 @@ type leanExt interface {
 	keepFit(q int8)
 	noteStrobe(c *leanCore)
 	noteGrid(c *leanCore, d float32, n int)
+	noteSpan(c *leanCore, k0, k1 int64, d, sps float32)
 	burst(c *leanCore, b *Burst)
 	end(c *leanCore)
 	kept() []int16
@@ -35,6 +36,9 @@ type leanExt interface {
 	replayGrid(c *leanCore) (sym int64, at, sps float32)
 	replayPhase(p int32, d float32)
 	gridShift(c *leanCore) float32
+	backfillAt(d float32)
+	keptGap(n int64)
+	keptSince() int64
 	lockFit(c *leanCore, sym, t int64, q float32)
 	syncFit(c *leanCore, sym, t int64, q, w float32)
 	liveFit(c *leanCore, sym, t int64, q, w float32)
@@ -123,6 +127,8 @@ type softExt struct {
 	replayP         enums.SyncPattern
 	lockAt          float32
 	replayD         [2]float32
+	backD           float32
+	keptN           int64
 	stretch         float32
 	stretchSig      float32
 	lockN           int64
@@ -799,6 +805,12 @@ func (x *softExt) drain(c *leanCore, one bool, keep int) {
 
 func (x *softExt) kept() []int16 { return x.acq }
 
+// keptGap notes that the kept samples skip the input before sample n, so
+// that the kept samples older than n do not lie on the timeline of the newer.
+func (x *softExt) keptGap(n int64) { x.keptN = n }
+
+func (x *softExt) keptSince() int64 { return x.keptN }
+
 // extFitSamples is the size of the ring of recent samples that the EMB
 // timing fit of a burst reads. The core keeps its acquisition samples only
 // while it searches or hunts, so the fit has its own ring, written at every
@@ -940,6 +952,15 @@ func (x *softExt) noteGrid(c *leanCore, d float32, n int) {
 	for i := range n {
 		j := c.ns - int64(n) + int64(i)
 		x.strobes[j&(extStrobes-1)] = c.strobeTicks(c.lastAt + d - float32(n-1-i)*sps)
+	}
+}
+
+func (x *softExt) noteSpan(c *leanCore, k0, k1 int64, d, sps float32) {
+	if x.strobes == nil {
+		return
+	}
+	for k := max(k0, c.ns-extStrobes); k <= k1 && k < c.ns-1; k++ {
+		x.strobes[k&(extStrobes-1)] = c.strobeTicks(c.lastAt + d - float32(c.ns-1-k)*sps)
 	}
 }
 
@@ -1295,7 +1316,14 @@ func (x *softExt) replayGrid(c *leanCore) (int64, float32, float32) {
 
 func (x *softExt) replayPhase(p int32, d float32) { x.replayD[p] = d }
 
-func (x *softExt) gridShift(c *leanCore) float32 { return x.replayD[(c.next-1)&1] }
+func (x *softExt) gridShift(c *leanCore) float32 {
+	if c.backfill {
+		return x.backD
+	}
+	return x.replayD[(c.next-1)&1]
+}
+
+func (x *softExt) backfillAt(d float32) { x.backD = d }
 
 func lcssFollows(a, b enums.LCSS) bool {
 	return a == enums.LCSSFirstFragment && b == enums.LCSSContinuationFragment ||

@@ -2492,6 +2492,7 @@ func (r *leanCore) setHunt() {
 	}
 	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
 	r.reEntry = false
+	was := r.hunt
 	if !r.stale() {
 		r.hunt = false
 		if !r.ms.seek {
@@ -2505,6 +2506,8 @@ func (r *leanCore) setHunt() {
 		r.acqFrom = r.n
 		if !r.hasExt() || r.ext.kept() == nil {
 			r.acqHead, r.acqLow = 0, 0
+		} else if !was {
+			r.ext.keptGap(r.n)
 		}
 	}
 	r.hunt = true
@@ -2686,6 +2689,9 @@ func (r *leanCore) unlock() {
 	}
 	if !r.hunt || !r.hasExt() || r.ext.kept() == nil {
 		r.acqFrom = r.n
+		if r.hasExt() && r.ext.kept() != nil {
+			r.ext.keptGap(r.n)
+		}
 	}
 	r.locked, r.forced, r.hunt, r.stepHold, r.preStep = false, false, false, false, false
 	r.snap().ok = false
@@ -3354,8 +3360,9 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if !found {
 		return 0, false
 	}
+	agrees := r.ext.seekAgrees(j, emb.ColorCode, emb.LCSS)
 	if !strong {
-		if !r.ext.seekAgrees(j, emb.ColorCode, emb.LCSS) {
+		if !agrees {
 			return 0, false
 		}
 		cc = emb.ColorCode
@@ -3410,8 +3417,9 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		r.ms.fresh[j&1] = 2
 		r.saveClock(o)
 		r.fitNs, r.fitT, r.fitQ = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps), sxy*sxy/(sxx*pp)
+		r.ext.noteSpan(r, max(base-1, kept), base+slotSymbols, d, sps)
 		r.tm.t += d
-		if !strong {
+		if agrees {
 			r.seekBackfill(j-2, base-2*slotSymbols, d, sps)
 		}
 	}
@@ -3460,17 +3468,27 @@ func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
 // queue until a later EMB or SYNC of the talker gives its position.
 func (r *leanCore) seekBackfill(j int32, base int64, d, sps float32) {
 	_, an := r.acqBuf()
-	if j < 0 || float32(r.ns-base+1)*sps+4-r.lastAt > float32(an) {
+	room := float32(min(int64(an), r.n-r.ext.keptSince())) + r.lastAt - 4
+	lo := base - 1
+	for float32(r.ns-lo)*sps > room && lo < base+cachSymbols-1 {
+		lo++
+	}
+	if j < 0 || float32(r.ns-lo)*sps > room {
 		return
 	}
 	saved := r.ring
-	for k := base - 1; k <= base+slotSymbols; k++ {
+	for k := lo; k <= base+slotSymbols; k++ {
 		v := r.keptAt(r.lastAt + d - float32(r.ns-1-k)*sps)
 		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
 	}
+	r.ext.backfillAt(d)
+	fitNs, fitT := r.fitNs, r.fitT
+	end := base + leanSyncEnd
+	r.fitNs, r.fitT = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps)
 	r.backfill = true
 	r.burst(j, base, 0, false, false)
 	r.ring, r.backfill = saved, false
+	r.fitNs, r.fitT = fitNs, fitT
 }
 
 func embOfSyms(syms *[syncSymbols]int8) pdu.EmbeddedSignalling {

@@ -380,7 +380,7 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 // coherent grid follows the corrections of the timing loop over the burst.
 func (s *cohStage) followStrobe(c *leanCore, b *Burst) {
 	s.followOK = false
-	if s.strobes == nil || c.bs || c.replaying || c.lateTime || c.ns-1-(c.base-cohFollowPre) >= extStrobes {
+	if s.strobes == nil || c.bs || c.replaying || c.lateTime || c.backfill || c.ns-1-(c.base-cohFollowPre) >= extStrobes {
 		return
 	}
 	end := float64(s.strobes[(c.ns-1)&(extStrobes-1)]) / 256
@@ -413,7 +413,7 @@ func symTime(c *leanCore, k int64) float64 {
 		per *= 1 + float64(c.tm.rate)/(2*float64(c.tm.step))
 	}
 	t := float64(c.mfStep*(c.n-1)+c.center) - float64(c.ns-1-k)*per + float64(c.mfStep)*float64(c.lastAt)
-	if c.replaying {
+	if c.replaying || c.backfill {
 		t += float64(c.mfStep) * float64(c.ext.gridShift(c))
 	}
 	return t / 2
