@@ -32,8 +32,9 @@ func mxRowNamed(t *testing.T, name string) mxRow {
 
 // TestRxSeekSecondTalker checks that Tiers 1 to 3 receive the voice bursts
 // of a second MS talker that has no SYNC in the input, from its EMB, with
-// every bit right. Burst B of that talker comes before the first talker's
-// lock and is not received yet.
+// every bit right. In the first row, burst B of that talker comes before the
+// first talker's lock and is not received yet. In the others, the seek takes
+// burst B, which comes after the lock, on the EMB of burst C.
 func TestRxSeekSecondTalker(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {
@@ -41,7 +42,8 @@ func TestRxSeekSecondTalker(t *testing.T) {
 		miss string
 	}{
 		{"mid.none.+0.ms2.voice.0ppm.nom.cs16-48k.inf", "#0 "},
-		{"mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB", "#1 "},
+		{"mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB", ""},
+		{"mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB.dmr40", ""},
 	} {
 		row := mxRowNamed(t, c.row)
 		var rxs []mxRx
@@ -62,7 +64,7 @@ func TestRxSeekSecondTalker(t *testing.T) {
 					miss = m
 				}
 			}
-			if res.fail["bits"] || res.fail["extra"] || !strings.HasPrefix(miss, "1 of ") || !strings.Contains(miss, c.miss) {
+			if c.miss == "" && miss != "" || c.miss != "" && (!strings.HasPrefix(miss, "1 of ") || !strings.Contains(miss, c.miss)) || res.fail["bits"] || res.fail["extra"] {
 				t.Errorf("%s/%s: %s", c.row, x.name(), strings.Join(res.detail, " | "))
 			}
 		}

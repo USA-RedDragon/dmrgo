@@ -3345,17 +3345,30 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if back < 0 || float32(int(back)+syncSymbols+4)*2*r.tm.step+4-at0 > float32(r.acqKept()) {
 		return 0, false
 	}
-	var syms [syncSymbols]int8
+	var syms, try [syncSymbols]int8
 	found, strong := false, false
 	var emb pdu.EmbeddedSignalling
+	top, shift := 3, float32(0)
 	for _, k := range [5]float32{0, -1, 1, -2, 2} {
-		r.sliceKept(at+k*sps/4, sps, &syms)
-		emb = embOfSyms(&syms)
-		if strong = known && embStrong(&emb, cc); strong || embWeak(&emb, known, cc) {
-			at += k * sps / 4
-			found = true
+		r.sliceKept(at+k*sps/4, sps, &try)
+		e := embOfSyms(&try)
+		rank := 3
+		switch {
+		case known && embStrong(&e, cc):
+			rank = 0
+		case embWeak(&e, known, cc):
+			rank = 1 + e.FEC.ErrorsCorrected
+		}
+		if rank < top {
+			top, shift, syms, emb = rank, k*sps/4, try, e
+		}
+		if rank == 0 {
 			break
 		}
+	}
+	if top < 3 {
+		at += shift
+		found, strong = true, top == 0
 	}
 	if !found {
 		return 0, false
