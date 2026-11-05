@@ -265,7 +265,55 @@ func UpperBound(fails, n int) float64 {
 	return hi
 }
 
+// Alpha is the one-sided error level of the rate bars: a receiver whose true
+// rate meets a bar fails RateBelow, RateAbove or RateHigher in at most this
+// share of runs.
+const Alpha = 1e-4
+
+// RateBelow reports whether k successes in n trials show a success rate
+// below bar: the one-sided Clopper-Pearson upper bound of the rate at
+// confidence 1-Alpha lies below bar.
+func RateBelow(k, n int, bar float64) bool {
+	if n <= 0 || k >= n {
+		return false
+	}
+	return binomCDF(k, n, bar) < Alpha
+}
+
+// RateAbove reports whether k events in n trials show an event rate above
+// bar: the one-sided Clopper-Pearson lower bound of the rate at confidence
+// 1-Alpha lies above bar.
+func RateAbove(k, n int, bar float64) bool {
+	if n <= 0 || k <= 0 {
+		return false
+	}
+	if bar <= 0 {
+		return true
+	}
+	return 1-binomCDF(k-1, n, bar) < Alpha
+}
+
+// RateHigher reports whether k1 events in n1 trials show a higher event rate
+// than k2 events in n2 trials, by the exact conditional test: with equal
+// rates, k1 of the k1+k2 events fall in the first set with probability
+// n1/(n1+n2) each, and the chance of k1 or more is below Alpha.
+func RateHigher(k1, n1, k2, n2 int) bool {
+	if n1 <= 0 || n2 <= 0 || k1 <= 0 {
+		return false
+	}
+	return 1-binomCDF(k1-1, k1+k2, float64(n1)/float64(n1+n2)) < Alpha
+}
+
 func binomCDF(k, n int, p float64) float64 {
+	if k >= n || p <= 0 {
+		return 1
+	}
+	if k < 0 {
+		return 0
+	}
+	if p >= 1 {
+		return 0
+	}
 	lp, lq := math.Log(p), math.Log1p(-p)
 	ln := lgamma(n + 1)
 	s := 0.0
