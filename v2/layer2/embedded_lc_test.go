@@ -10,6 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -211,7 +212,7 @@ func TestEmbeddedLC_MMDVMHostVectors(t *testing.T) {
 func TestEmbeddedLC_FiveErrors(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewSource(5))
+	r := rand.New(rand.NewSource(int64(testseed.New(t).Uint64())))
 	const n = 2000
 	recovered, wrong := 0, 0
 	for i := 0; i < n; i++ {

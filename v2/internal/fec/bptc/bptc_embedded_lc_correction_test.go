@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
@@ -122,7 +123,7 @@ func TestEmbeddedLC_TieResolvedByCheck(t *testing.T) {
 
 func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 	t.Parallel()
-	r := rand.New(rand.NewSource(3))
+	r := rand.New(rand.NewSource(int64(testseed.New(t).Uint64())))
 	accepted := 0
 	for n := 0; n < 2000; n++ {
 		var rx [4][32]unpacked.Bit

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -24,7 +25,7 @@ func TestRegression_NoiseIsNotVoice(t *testing.T) {
 
 	cc := enums.ColorCode(1)
 	for _, cfg := range []*voice.ReceiverConfig{nil, {ColorCode: &cc}} {
-		r := rand.New(rand.NewPCG(1, 2))
+		r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 2))
 		rx := newReceiver(t, cfg)
 		in := make([]input, 0, 2000)
 		for i := range 2000 {
@@ -41,7 +42,7 @@ func TestRegression_NoiseAfterTerminator(t *testing.T) {
 
 	cc := enums.ColorCode(1)
 	for _, cfg := range []*voice.ReceiverConfig{nil, {ColorCode: &cc}} {
-		r := rand.New(rand.NewPCG(7, 8))
+		r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 8))
 		rx := newReceiver(t, cfg)
 		events := make([]voice.Event, 0, 64*50)
 		at := time.Duration(0)
@@ -72,7 +73,7 @@ func TestRegression_OtherCodecMissDoesNotCascade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := rand.New(rand.NewPCG(9, 10))
+	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 10))
 	call := vt.AppendHeaders(nil)
 	for range 2 * layer2.VoiceBurstsPerSuperframe * layer2.VoiceSlotsPerBurst {
 		var s [9]byte
@@ -98,7 +99,7 @@ func TestRegression_OtherCodecMissDoesNotCascade(t *testing.T) {
 func TestRegression_NoiseBurstInCallIsCounted(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewPCG(5, 6))
+	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 6))
 	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	in := timed(call, 0, layer2.Hint{})
 	in[4].raw = noiseBurst(r)
@@ -115,7 +116,7 @@ func TestRegression_NoiseAfterCarrierDrop(t *testing.T) {
 
 	cc := enums.ColorCode(1)
 	for _, cfg := range []*voice.ReceiverConfig{nil, {ColorCode: &cc}} {
-		r := rand.New(rand.NewPCG(3, 4))
+		r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 4))
 		call := transmission(t, groupLC(t, 91, 3002068), 3, nil)
 		call = call[:len(call)-1]
 		in := timed(call, 0, layer2.Hint{})
@@ -149,7 +150,7 @@ func TestRegression_WeakCallKeepsVoice(t *testing.T) {
 
 	cc := enums.ColorCode(1)
 	for _, cfg := range []*voice.ReceiverConfig{nil, {ColorCode: &cc}} {
-		r := rand.New(rand.NewPCG(11, 12))
+		r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 12))
 		have, got := 0, 0
 		for range 40 {
 			vt, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(t, 91, 3002068), ColorCode: 1})
@@ -249,7 +250,7 @@ func TestRegression_SyncCheckRejectsStructuredNoise(t *testing.T) {
 func TestRegression_NoiseAfterLostCall(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewPCG(13, 14))
+	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 14))
 	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	call = call[:len(call)-1]
 	n := 0
@@ -284,7 +285,7 @@ func TestRegression_DecodedBadFECDoesNotPanic(t *testing.T) {
 func TestRegression_RepeatedNoiseBurstEndsCall(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewPCG(15, 16))
+	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 16))
 	call := transmission(t, groupLC(t, 91, 3002068), 2, nil)
 	call = call[:len(call)-1]
 	held := 0
@@ -325,7 +326,7 @@ type taken struct {
 func TestRegression_HeldNoiseExpires(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewPCG(17, 18))
+	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 18))
 	call := transmission(t, groupLC(t, 91, 3002068), 1, nil)
 	term := call[len(call)-1]
 	n := 0
@@ -342,7 +343,7 @@ func TestRegression_HeldNoiseExpires(t *testing.T) {
 func TestRegression_NoiseBeforeLateEntry(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewPCG(19, 20))
+	r := rand.New(rand.NewPCG(testseed.New(t).Uint64(), 20))
 	call := transmission(t, groupLC(t, 91, 3002068), 4, nil)
 	leaked := 0
 	for range 200 {
