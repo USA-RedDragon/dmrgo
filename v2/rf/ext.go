@@ -66,6 +66,7 @@ type lateBurst struct {
 	ring [leanRing]int8
 	base int64
 	lean bool
+	lv   sliceLevels
 }
 
 type extChan struct {
@@ -866,7 +867,7 @@ func (x *softExt) unplaced(c *leanCore, b *Burst) {
 	}
 	l := &ch.late[ch.lateN]
 	ch.lateN++
-	l.b, l.ring, l.base, l.lean = *b, c.ring, c.base, c.backfill
+	l.b, l.ring, l.base, l.lean, l.lv = *b, c.ring, c.base, c.backfill, c.sliceLevels()
 	x.drain(c, false, 0)
 }
 
@@ -889,7 +890,7 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 		pos += 6
 	}
 	voice, _, _ := sourceAt(int(c.src)).SyncPatterns()
-	cur, ring, base := x.llr, c.ring, c.base
+	cur, ring, base, lv := x.llr, c.ring, c.base, c.sliceLevels()
 	pi := b.Data.EMB().PreemptionAndPowerControlIndicator
 	for i := range n {
 		l := &ch.late[i]
@@ -904,14 +905,18 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 		}
 		lb.HasCACH = false
 		c.ring, c.base = l.ring, l.base
+		c.setSliceLevels(&l.lv)
 		c.repair(&c.fec, lb, cc, ccOK)
+		c.setSliceLevels(&lv)
 		if lb.Voice != enums.VoiceBurstUnknown && ccOK {
 			_ = lb.Fixed.SetEMB(pdu.EmbeddedSignalling{ColorCode: cc, PreemptionAndPowerControlIndicator: pi, LCSS: lateLCSS(lb.Voice)})
 		}
 		data := lb.Data
 		late := x.coh != nil && !l.lean && x.cohLate(c, lb)
 		if !late {
+			c.setSliceLevels(&l.lv)
 			x.fill(c, &lb.Data)
+			c.setSliceLevels(&lv)
 		}
 		c.ring, c.base = ring, base
 		x.repairAll(c, lb, cc, ccOK)

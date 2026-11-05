@@ -36,3 +36,27 @@ func TestRxReplayPayloadSync(t *testing.T) {
 		}
 	}
 }
+
+// TestRxLateFillLevels receives a clean MS voice call with zero-filled gaps
+// from cu8 I/Q at 2048 kHz, on a payload where Tier 2 queues the oldest
+// replayed burst until a later burst gives its position, and the levels of
+// the live stream then differ from those the replay sliced it with. The
+// burst must decode from the levels its symbols were taken at.
+func TestRxLateFillLevels(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.none.+0.ms.voice.0ppm.nom.cu8-2048k.inf")
+	s := lateEntryOf(t, testscen.Of(15368350369733910535).Apply(lateEntryConfig()), 0, 0.008)
+	in := mxInputOf(s, row)
+	for _, x := range mxReceivers("cu8-2048k", true) {
+		got, dev, err := mxReceive(in, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := &mxResult{}
+		mxScore(s, in, x.tier, got, dev, false, r)
+		delete(r.fail, "missing")
+		if len(r.fail) > 0 {
+			t.Errorf("%s: %s: %s", x.name(), r.symptoms(), strings.Join(r.detail, " | "))
+		}
+	}
+}

@@ -2487,6 +2487,20 @@ func (r *leanCore) setLevels(l *leanLevels) {
 	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 }
 
+type sliceLevels struct {
+	off, dcHz, dev, discVar, ll, lfloor float32
+	llrOff, llrDev, llrFloor, llrK      int32
+}
+
+func (r *leanCore) sliceLevels() sliceLevels {
+	return sliceLevels{r.off, r.dcHz, r.dev, r.discVar, r.ll, r.lfloor, r.llrOff, r.llrDev, r.llrFloor, r.llrK}
+}
+
+func (r *leanCore) setSliceLevels(l *sliceLevels) {
+	r.off, r.dcHz, r.dev, r.discVar, r.ll, r.lfloor = l.off, l.dcHz, l.dev, l.discVar, l.ll, l.lfloor
+	r.llrOff, r.llrDev, r.llrFloor, r.llrK = l.llrOff, l.llrDev, l.llrFloor, l.llrK
+}
+
 func (r *leanCore) symWait() float32 {
 	if !r.tm.mm && r.tm.mid {
 		return r.tm.t + r.tm.step
