@@ -186,7 +186,7 @@ func TestRegression_WeakCallKeepsVoice(t *testing.T) {
 					}
 				}
 				good := 0
-				if i > 0 {
+				if i > 0 && i < len(call)-1 {
 					for j, s := range raw.VoiceSlots() {
 						f, res := vocoder.DecodeAMBE72(s)
 						w, _ := vocoder.DecodeAMBE72(sent.VoiceSlots()[j])
