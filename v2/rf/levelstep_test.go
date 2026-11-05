@@ -119,3 +119,41 @@ func TestRxLevelStepTiming(t *testing.T) {
 		}
 	}
 }
+
+// TestRxLevelStepOneDrop steps an audio input up by 10 dB at the start of a
+// burst. The symbols that clip before the gain drop stay at the rails of the
+// ring, and they must not drop the gain a second time when the next SYNC
+// takes them in: the front gain ends 4 times lower, not 16.
+func TestRxLevelStepOneDrop(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.none.+0.bs.data12.0ppm.nom.a24000.inf")
+	gain := func(tb testing.TB, tier Tier, step bool) float32 {
+		s, err := mxBuild(tb, row)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s.gain = [2]float64{math.Pow(10, -0.5), math.Pow(10, -0.5)}
+		if step {
+			s.step, s.gain[1] = s.truth[4].at, 1
+		}
+		in := mxInputOf(s, row)
+		r, err := NewAudioReceiver(&AudioRxConfig{Rate: in.hz, Tier: tier})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []Burst
+		for k := 0; k < len(in.audio); k += 1024 {
+			got = r.AppendBursts(got, in.audio[k:min(k+1024, len(in.audio))])
+		}
+		r.AppendFlush(got)
+		return r.f.gain
+	}
+	for run := uint64(1); run <= 8; run++ {
+		for _, tier := range []Tier{Tier0, Tier1} {
+			tb := pinnedTB{t, run}
+			if k := gain(tb, tier, true) / gain(tb, tier, false); k < 1.0/8 {
+				t.Errorf("run %d t%d: front gain fell %.1f times at a 10 dB step", run, tier-Tier0, 1/k)
+			}
+		}
+	}
+}

@@ -67,6 +67,7 @@ var bugPinTests = map[string]string{
 	"TestSecondsLockBurstDeferredFit":    "a payload whose lock took the strobe when the sync fit deferred",
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 	"TestRxLevelStepTiming":              "payloads where a level and DC step pulled the timing loop",
+	"TestRxLevelStepOneDrop":             "payloads where one level rise dropped the audio gain twice",
 	"TestRxTwoTalkerSyncLevelStepHead":   "payloads whose step burst head took the post-step phase unit",
 	"TestRxAudioTwoTalkerLevelStepBlind": "payloads whose imbalance kept the blind refit of a stepped burst off",
 }

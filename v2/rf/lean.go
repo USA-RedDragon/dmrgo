@@ -1750,13 +1750,21 @@ func (r *leanCore) lockMid(src int, p enums.SyncPattern) bool {
 
 //go:noinline
 func (r *leanCore) clipped(end int64) bool {
-	return 2*r.clips(end) > syncSymbols
+	return 2*r.clips(end, false) > syncSymbols
 }
 
-func (r *leanCore) clips(end int64) int {
+// clips counts the symbols at the rails in the SYNC span that ends at end.
+// With fresh, it counts only the symbols after the last gain drop: the ring
+// keeps the symbols that clipped before a drop at the rails, and they say
+// nothing of the level after it.
+func (r *leanCore) clips(end int64, fresh bool) int {
 	n := 0
-	j := ringPos(end - syncSymbols + 1)
-	for range syncSymbols {
+	k := end - syncSymbols + 1
+	if d := int64(int16(uint16(r.ns) - r.clipNs)); fresh && d >= 0 && d < leanRing {
+		k = max(k, r.ns-d)
+	}
+	j := ringPos(k)
+	for ; k <= end; k++ {
 		if q := r.ring[j]; q == math.MaxInt8 || q == math.MinInt8 {
 			n++
 		}
@@ -1775,14 +1783,14 @@ func (r *leanCore) clipHot() {
 	if a := r.audio; !audioOn() || a == nil || a.maxGain != 0 || r.isReplaying() || int16(uint16(r.ns)-r.clipNs) < syncSymbols {
 		return
 	}
-	if 2*r.clips(r.ns-1) >= syncSymbols {
+	if 2*r.clips(r.ns-1, true) >= syncSymbols {
 		r.relevel(leanClipDrop)
 		r.clipNs = uint16(r.ns)
 	}
 }
 
-func (r *leanCore) overload(best float32, end int64) bool {
-	n := r.clips(end)
+func (r *leanCore) overload(best float32, end int64, fresh bool) bool {
+	n := r.clips(end, fresh)
 	return n >= leanClipSyms && best >= discAnchor*discAnchor || 2*n >= syncSymbols
 }
 
@@ -2318,8 +2326,11 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 			}
 		}
 	}
-	if a := r.audio; audioOn() && a != nil && a.maxGain == 0 && !r.isReplaying() && r.overload(best, base+leanSyncEnd+shift) {
-		r.relevel(leanClipDrop)
+	if a := r.audio; audioOn() && a != nil && a.maxGain == 0 && !r.isReplaying() && r.overload(best, base+leanSyncEnd+shift, false) {
+		if r.overload(best, base+leanSyncEnd+shift, true) {
+			r.relevel(leanClipDrop)
+			r.clipNs = uint16(r.ns)
+		}
 		r.stepHold = true
 		return false, 0, 0
 	}
