@@ -3567,9 +3567,9 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	var syms, try [syncSymbols]int8
 	found, strong := false, false
 	var emb pdu.EmbeddedSignalling
-	top, shift := 3, float32(0)
+	top, shift, eye := 3, float32(0), float32(0)
 	for _, k := range [5]float32{0, -1, 1, -2, 2} {
-		r.sliceKept(at+k*sps/4, sps, &try)
+		ek := r.sliceKept(at+k*sps/4, sps, &try)
 		e := embOfSyms(&try)
 		rank := 3
 		switch {
@@ -3578,8 +3578,8 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		case embWeak(&e, known, cc):
 			rank = 1 + e.FEC.ErrorsCorrected
 		}
-		if rank < top {
-			top, shift, syms, emb = rank, k*sps/4, try, e
+		if rank < top || rank == top && rank < 3 && ek < eye {
+			top, shift, syms, emb, eye = rank, k*sps/4, try, e, ek
 		}
 		if rank == 0 {
 			break
@@ -3624,19 +3624,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	}
 	kept := sym + 1 - int64((float32(r.acqKept())-4+at0)/sps)
 	lo, hi := max(base-1, kept), min(base+slotSymbols, r.ns-1)
-	r.ringKept(lo, hi, sym, at0+d, sps)
-	for range leanZeroPasses {
-		z, ok := r.burstZero(max(lo, base+cachSymbols+2), min(hi, base+slotSymbols-3), sym, at0, d, sps)
-		if !ok {
-			break
-		}
-		moved := abs32(z - d)
-		d = z
-		r.ringKept(lo, hi, sym, at0+d, sps)
-		if moved < leanZeroStill {
-			break
-		}
-	}
+	d = r.ringZero(lo, hi, base, sym, at0, d, sps)
 	r.sliceSyms(end, &syms)
 	g, dc, res := r.fitSyms(end, &syms)
 	if emb = embOfSyms(&syms); !embWeak(&emb, true, cc) || g <= 0 {
@@ -3668,11 +3656,16 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	return sh, true
 }
 
-func (r *leanCore) sliceKept(at, sps float32, syms *[syncSymbols]int8) {
+func (r *leanCore) sliceKept(at, sps float32, syms *[syncSymbols]int8) float32 {
 	r.setLLR()
+	var e float32
 	for i := range syncSymbols {
-		syms[i] = r.sliceLevel(int32(roundf(r.keptAt(at - float32(syncSymbols-1-i)*sps))))
+		v := int32(roundf(r.keptAt(at - float32(syncSymbols-1-i)*sps)))
+		syms[i] = r.sliceLevel(v)
+		d := float32(v*(discStepHz/llrStepHz)+r.llrOff) - float32(syms[i])*float32(r.llrDev)
+		e += d * d
 	}
+	return e
 }
 
 func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
@@ -3693,6 +3686,23 @@ func (r *leanCore) sliceLevel(v int32) int8 {
 		q = -q
 	}
 	return q
+}
+
+func (r *leanCore) ringZero(lo, hi, base, sym int64, at, d, sps float32) float32 {
+	r.ringKept(lo, hi, sym, at+d, sps)
+	for range leanZeroPasses {
+		z, ok := r.burstZero(max(lo, base+cachSymbols+2), min(hi, base+slotSymbols-3), sym, at, d, sps)
+		if !ok {
+			break
+		}
+		moved := abs32(z - d)
+		d = z
+		r.ringKept(lo, hi, sym, at+d, sps)
+		if moved < leanZeroStill {
+			break
+		}
+	}
+	return d
 }
 
 func (r *leanCore) ringKept(lo, hi, sym int64, at, sps float32) {

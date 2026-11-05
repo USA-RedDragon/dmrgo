@@ -137,3 +137,20 @@ func TestRxEMBNotDataSync(t *testing.T) {
 		}
 	}
 }
+
+// TestRxEMBSeekSliceTie pins a payload on which two slices of the first EMB
+// of the second talker decoded exactly before the color code was known, one
+// at the wrong timing with the wrong color code; taking the first of the
+// two lost the talker's burst B.
+func TestRxEMBSeekSliceTie(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB")
+	x := mxRx{row.val(mxFormat), Tier1}
+	out, err := mxRun(pinnedTB{t, 9993286574802603798}, row, []mxRx{x})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := out[x]; r.fail["missing"] || r.fail["bits"] {
+		t.Error(strings.Join(r.detail, " | "))
+	}
+}
