@@ -307,3 +307,33 @@ func TestIQLowDCStart(t *testing.T) {
 		}
 	}
 }
+
+// TestRxLockFarHeld pins a held-out run where Tier 0 locked with the carrier
+// 2.6 kHz off the converter, before any hunt tune, and put out burst 0 with
+// the raw bits taken through the channel filter off its center.
+func TestRxLockFarHeld(t *testing.T) {
+	t.Parallel()
+	p := pinnedRun{t, 7257307190297903594, "TestRxRawBitsAfterNoise"}
+	cfg := randomizedN(p, 3009101, testConfigFixed())
+	built, err := rftx.Sequence("ack", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	pad := int(0.2 * basebandRate)
+	fm, env = append(make([]float64, pad), fm...), append(make([]float64, pad), env...)
+	iq := channel(p, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, -2600, 25, 5)
+	r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: Tier0, Format: IQFormatCU8})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := r.AppendFlush(r.AppendBursts(nil, iq))
+	if len(got) != len(built.Bursts) {
+		t.Fatalf("%d bursts, want %d", len(got), len(built.Bursts))
+	}
+	for i := range got {
+		if got[i].Data != built.Bursts[i] {
+			t.Errorf("burst %d: raw bits differ", i)
+		}
+	}
+}
