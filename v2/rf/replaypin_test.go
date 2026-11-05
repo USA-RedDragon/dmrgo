@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 )
 
@@ -58,5 +59,20 @@ func TestRxLateFillLevels(t *testing.T) {
 		if len(r.fail) > 0 {
 			t.Errorf("%s: %s: %s", x.name(), r.symptoms(), strings.Join(r.detail, " | "))
 		}
+	}
+}
+
+// TestCoreLockSlotSync locks core Tier 3 on a BS stream at 3 dB and +500
+// ppm, on a payload and noise where a voice burst without a SYNC passes the
+// sliced search and the past-sync sum of the slots before it. The lock must
+// wait for a slot with its own coherent SYNC: the replay fits its stretch
+// from the lock SYNC, and a lock on a slot without one leaves the replay
+// unstretched, 1.15 symbols off at the oldest slot.
+func TestCoreLockSlotSync(t *testing.T) {
+	t.Parallel()
+	ids := testscen.Of(16528811544069809204).Apply(rftx.SeqConfig{Source: 3009101, BS: 990913, Dest: 3009201, Message: "DMRGO RXBENCH"})
+	slots, truth := benchStreamOf(t, ids, 6)
+	if _, _, miss := earlyCount(t, truth, 3, []uint64{6972457321712919085}, clockSignal{clockBaseband(slots, 5000, 500), 500}); miss > 0.6 {
+		t.Errorf("the oldest replayed slot sits %.2f symbols off", miss)
 	}
 }

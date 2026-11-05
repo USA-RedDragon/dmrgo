@@ -1534,9 +1534,6 @@ func (s *cohStage) verifySum(c *leanCore, p enums.SyncPattern, base int64) bool 
 	return true
 }
 
-// slotFits tells whether the slot at base itself carries SYNC p at the
-// timing tau of the sum: the past syncs show only the slot grid, and a lock
-// takes the slot at base as a SYNC burst, so its own fit must hold.
 func (s *cohStage) slotFits(c *leanCore, p enums.SyncPattern, base int64, tau float64) bool {
 	s.t0 = s.ringTime(c, base) + s.dt + tau*s.sps
 	s.followOK = false
@@ -1546,7 +1543,7 @@ func (s *cohStage) slotFits(c *leanCore, p enums.SyncPattern, base int64, tau fl
 		s.known[syncFirstSym+i] = v
 	}
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-	return amp > 0 && s.noiseFits(amp, noise)
+	return amp > 0 && amp*amp/(amp*amp+fmath.Max(noise, 0)) >= cohSlotRho && s.noiseFits(amp, noise)
 }
 
 // noiseFits tells whether the SYNC fit of the last levels call leaves no

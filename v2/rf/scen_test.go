@@ -93,6 +93,7 @@ var bugPinTests = map[string]string{
 	"TestLeanPayloadHoldsSlot":           "payloads whose random EMB held a stopped talker's slot against a new SYNC",
 	"TestRxReplayPayloadSync":            "a payload whose burst E passed the coherent checks as a data SYNC",
 	"TestRxLateFillLevels":               "a payload whose late burst was filled at the levels of a later lock",
+	"TestCoreLockSlotSync":               "a payload and noise where a voice burst locked on the past-sync sum",
 }
 
 func fixedPayload(t testing.TB) bool {
