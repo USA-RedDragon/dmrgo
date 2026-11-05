@@ -1787,6 +1787,11 @@ func (r *leanCore) lockMid(src int, p enums.SyncPattern) bool {
 		}
 		return false
 	}
+	if r.wantRetune(p, src, false) {
+		r.restoreSync(&saved)
+		r.lockDue = true
+		return false
+	}
 	r.resampleStart(d)
 	r.lockStream(src, d, c2, 0)
 	return r.locked

@@ -257,3 +257,34 @@ func TestRxLockRetuneCoherent(t *testing.T) {
 		}
 	}
 }
+
+// TestRxMidLockRetune pins a held-out run where Tier 1 locked on a SYNC
+// found mid-burst after a 4.2 kHz hunt tune inside burst 0, and kept the
+// symbols of that burst taken before the tune, as that lock path skipped
+// the retune and refill of the other lock paths.
+func TestRxMidLockRetune(t *testing.T) {
+	t.Parallel()
+	p := pinnedRun{t, 15169259909967258117, "TestRxRawBitsAfterNoise"}
+	cfg := randomizedN(p, 3009101, testConfigFixed())
+	built, err := rftx.Sequence("ack", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+	pad := int(0.2 * basebandRate)
+	fm, env = append(make([]float64, pad), fm...), append(make([]float64, pad), env...)
+	iq := channel(p, rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 4000, 25, 5)
+	r, err := NewReceiver(&RxConfig{Rate: 2.048e6, Tier: Tier1, Format: IQFormatCU8})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := r.AppendFlush(r.AppendBursts(nil, iq))
+	if len(got) != len(built.Bursts) {
+		t.Fatalf("%d bursts, want %d", len(got), len(built.Bursts))
+	}
+	for i := range got {
+		if got[i].Data != built.Bursts[i] {
+			t.Errorf("burst %d: raw bits differ", i)
+		}
+	}
+}

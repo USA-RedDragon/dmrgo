@@ -83,6 +83,7 @@ var bugPinTests = map[string]string{
 	"TestIQLowCWLead":                    "held-out runs whose first burst after a carrier lead lost bits to the I/Q mean",
 	"TestDiscACAcquire":                  "held-out runs where the AC restorer took seconds to train",
 	"TestRxLockRetuneCoherent":           "a held-out run where Tier 2 locked 3 kHz off and kept burst 0 from there",
+	"TestRxMidLockRetune":                "a held-out run where a mid-burst Tier 1 lock kept symbols from before a hunt tune",
 }
 
 func fixedPayload(t testing.TB) bool {
