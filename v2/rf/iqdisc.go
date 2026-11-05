@@ -665,8 +665,11 @@ func (r *iqRx) hunt(v complex64) {
 }
 
 func (r *iqRx) tuneLimit() float32 {
-	if r.d.locked && r.maxHz > 0 {
+	if r.d.locked {
 		return max32(r.maxHz, iqTuneMaxHz)
+	}
+	if r.maxHz == 0 {
+		return iqHuntMaxHz
 	}
 	return r.maxHz
 }

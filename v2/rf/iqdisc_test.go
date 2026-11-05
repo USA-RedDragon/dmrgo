@@ -121,8 +121,8 @@ func TestIQDiscAdjacent(t *testing.T) {
 		switch {
 		case held && off > iqAFCLockHz:
 			t.Errorf("held: oscillator %.0f Hz off the carrier while locked", off)
-		case !held && off <= iqAFCLockHz:
-			t.Errorf("not held: oscillator at most %.0f Hz off the carrier; the test no longer shows the pull", off)
+		case !held && off >= iqTuneMaxHz:
+			t.Errorf("not held: oscillator %.0f Hz off the carrier, outside the channel", off)
 		}
 	}
 }
@@ -134,12 +134,12 @@ func TestTier3Adjacent(t *testing.T) {
 		if !held {
 			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQStopHz, o.IQSpecHunt = 0, 0, 0, 0, false
 		}
-		n, want, _ := adjacentReceive(t, Tier3, &o, 0)
-		switch {
-		case held && n < want:
-			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
-		case !held && n == want:
-			t.Errorf("not held: all %d voice frames exact; the test no longer shows the other channel", n)
+		n, want, off := adjacentReceive(t, Tier3, &o, 0)
+		if n < want {
+			t.Errorf("held %v: C0 and C1 of %d of %d voice frames exact", held, n, want)
+		}
+		if !held && off >= iqTuneMaxHz {
+			t.Errorf("not held: oscillator %.0f Hz off the carrier, outside the channel", off)
 		}
 	}
 }
