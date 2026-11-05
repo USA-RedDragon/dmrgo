@@ -58,6 +58,7 @@ func (r *VoiceReceiver) receive(b *Burst, hp *Hint) (lc [9]byte, res fec.Result,
 	}
 	if r.pos.hint(&h) {
 		err = r.lc.discard()
+		r.lc.confirm.Reset()
 	}
 	if b != nil {
 		lc, res, done, err = r.place(b, &h, err)
@@ -67,6 +68,7 @@ func (r *VoiceReceiver) receive(b *Burst, hp *Hint) (lc [9]byte, res fec.Result,
 		if e := r.lc.discard(); err == nil {
 			err = e
 		}
+		r.lc.confirm.Reset()
 	}
 	return lc, res, done, err
 }
@@ -83,6 +85,7 @@ func (r *VoiceReceiver) place(b *Burst, h *Hint, err error) (lc [9]byte, res fec
 		if b.Kind == KindData && (b.SlotType.DataType == enums.DataTypeVoiceLCHeader || b.SlotType.DataType == enums.DataTypePIHeader) {
 			r.pos.Header(h)
 		}
+		r.callLC(b)
 		return lc, res, false, err
 	case KindReverseChannel:
 		b.VoiceBurst = enums.VoiceBurstUnknown
@@ -108,4 +111,27 @@ func (r *VoiceReceiver) place(b *Burst, h *Hint, err error) (lc [9]byte, res fec
 		err = e
 	}
 	return lc, res, done, err
+}
+
+func (r *VoiceReceiver) callLC(b *Burst) {
+	if b.Kind != KindData {
+		return
+	}
+	switch b.SlotType.DataType {
+	case enums.DataTypeVoiceLCHeader:
+		flc, ok := b.Data.(*pdu.FullLinkControl)
+		if !ok || b.FEC.PDU.Uncorrectable {
+			r.lc.confirm.Reset()
+			return
+		}
+		lc, err := flc.Bytes()
+		if err != nil {
+			r.lc.confirm.Reset()
+			return
+		}
+		r.lc.confirm.Header(lc)
+	case enums.DataTypeTerminatorWithLC:
+		r.lc.confirm.Reset()
+	default:
+	}
 }

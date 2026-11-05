@@ -8605,6 +8605,18 @@ func new_layer2_EmbeddedLCAssembler(v *g_layer2.EmbeddedLCAssembler) *C.dmrgo_la
 	return (*C.dmrgo_layer2_embedded_lc_assembler_t)(newHandle(&h_layer2_EmbeddedLCAssembler{v: v}))
 }
 
+type h_layer2_EmbeddedLCConfirmer struct {
+	v *g_layer2.EmbeddedLCConfirmer
+}
+
+func get_layer2_EmbeddedLCConfirmer(p *C.dmrgo_layer2_embedded_lc_confirmer_t) *h_layer2_EmbeddedLCConfirmer {
+	return lookup[*h_layer2_EmbeddedLCConfirmer](unsafe.Pointer(p))
+}
+
+func new_layer2_EmbeddedLCConfirmer(v *g_layer2.EmbeddedLCConfirmer) *C.dmrgo_layer2_embedded_lc_confirmer_t {
+	return (*C.dmrgo_layer2_embedded_lc_confirmer_t)(newHandle(&h_layer2_EmbeddedLCConfirmer{v: v}))
+}
+
 type h_layer2_PositionTracker struct {
 	v *g_layer2.PositionTracker
 }
@@ -18051,6 +18063,28 @@ func dmrgo_layer2_decode_embedded_lc(c_f *C.uint8_t, c_lc *C.dmrgo_pdu_lc_bytes_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer2_decode_embedded_lc_candidate
+func dmrgo_layer2_decode_embedded_lc_candidate(c_f *C.uint8_t, c_lc *C.dmrgo_pdu_lc_bytes_t, c_res *C.dmrgo_fec_result_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_f == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_layer2.DecodeEmbeddedLCCandidate(*(*[4][4]byte)(unsafe.Pointer(c_f)))
+	_ = r0
+	_ = r1
+	if c_lc != nil {
+		*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&(*c_lc))) = r0
+	}
+	if c_res != nil {
+		out_fec_Result(&(*c_res), &r1, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer2_decode_embedded_rc
 func dmrgo_layer2_decode_embedded_rc(c_data *C.uint8_t, c_out *C.dmrgo_pdu_reverse_channel_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -18120,11 +18154,97 @@ func dmrgo_layer2_embedded_lc_assembler_add(c_self *C.dmrgo_layer2_embedded_lc_a
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer2_embedded_lc_assembler_header
+func dmrgo_layer2_embedded_lc_assembler_header(c_self *C.dmrgo_layer2_embedded_lc_assembler_t, c_lc *C.dmrgo_pdu_lc_bytes_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_EmbeddedLCAssembler(c_self)
+	if c_lc == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h.v.Header(*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_lc)))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer2_embedded_lc_assembler_reset
 func dmrgo_layer2_embedded_lc_assembler_reset(c_self *C.dmrgo_layer2_embedded_lc_assembler_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_layer2_EmbeddedLCAssembler(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_embedded_lc_confirmer_new
+func dmrgo_layer2_embedded_lc_confirmer_new(c_out **C.dmrgo_layer2_embedded_lc_confirmer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_layer2_EmbeddedLCConfirmer(new(g_layer2.EmbeddedLCConfirmer))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_embedded_lc_confirmer_free
+func dmrgo_layer2_embedded_lc_confirmer_free(c_self *C.dmrgo_layer2_embedded_lc_confirmer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_layer2_EmbeddedLCConfirmer(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_embedded_lc_confirmer_decode
+func dmrgo_layer2_embedded_lc_confirmer_decode(c_self *C.dmrgo_layer2_embedded_lc_confirmer_t, c_f *C.uint8_t, c_lc *C.dmrgo_pdu_lc_bytes_t, c_res *C.dmrgo_fec_result_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_EmbeddedLCConfirmer(c_self)
+	if c_f == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := h.v.Decode(*(*[4][4]byte)(unsafe.Pointer(c_f)))
+	_ = r0
+	_ = r1
+	if c_lc != nil {
+		*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&(*c_lc))) = r0
+	}
+	if c_res != nil {
+		out_fec_Result(&(*c_res), &r1, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_embedded_lc_confirmer_header
+func dmrgo_layer2_embedded_lc_confirmer_header(c_self *C.dmrgo_layer2_embedded_lc_confirmer_t, c_lc *C.dmrgo_pdu_lc_bytes_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_EmbeddedLCConfirmer(c_self)
+	if c_lc == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h.v.Header(*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_lc)))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_embedded_lc_confirmer_reset
+func dmrgo_layer2_embedded_lc_confirmer_reset(c_self *C.dmrgo_layer2_embedded_lc_confirmer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_EmbeddedLCConfirmer(c_self)
 	h.v.Reset()
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

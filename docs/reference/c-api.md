@@ -338,8 +338,10 @@ typedef struct dmrgo_layer2_call_t dmrgo_layer2_call_t;
 typedef struct dmrgo_layer2_data_t dmrgo_layer2_data_t;
 /* Go: layer2.DecodeOptions. DecodeOptions are receive-side settings for DecodeFromBytesWith. */
 typedef struct dmrgo_layer2_decode_options_t dmrgo_layer2_decode_options_t;
-/* Go: layer2.EmbeddedLCAssembler. EmbeddedLCAssembler collects the four embedded LC fragments of voice bursts B to E in the order of their LCSS, First, Continuation, Continuation and Last, and decodes the LC as DecodeEmbeddedLC does. */
+/* Go: layer2.EmbeddedLCAssembler. EmbeddedLCAssembler collects the four embedded LC fragments of voice bursts B to E in the order of their LCSS, First, Continuation, Continuation and Last, and decodes the LC of each superframe of the call as EmbeddedLCConfirmer does. */
 typedef struct dmrgo_layer2_embedded_lc_assembler_t dmrgo_layer2_embedded_lc_assembler_t;
+/* Go: layer2.EmbeddedLCConfirmer. EmbeddedLCConfirmer decodes the embedded LCs of the superframes of one call. */
+typedef struct dmrgo_layer2_embedded_lc_confirmer_t dmrgo_layer2_embedded_lc_confirmer_t;
 /* Go: layer2.Hint. Hint is the data of a transport about a burst besides its 264 bits, such as the fields of a HomeBrew DMRD, IPSC or MMDVM frame. */
 typedef struct dmrgo_layer2_hint_t dmrgo_layer2_hint_t;
 typedef struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t;
@@ -9458,6 +9460,8 @@ int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t 
 int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_pdu_full_link_control_t *out);
 /* Go: layer2.DecodeEmbeddedLC. DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling fields f of bursts B to E, as dmrgo_layer2_raw_burst_embedded_data returns them. */
 int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res);
+/* Go: layer2.DecodeEmbeddedLCCandidate. DecodeEmbeddedLCCandidate decodes the 9 LC octets from the embedded signalling fields f of bursts B to E to the nearest codeword of the BPTC, up to 8 bit errors, whose 5-bit checksum matches its LC. */
+int dmrgo_layer2_decode_embedded_lc_candidate(const uint8_t f[4][4], dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res);
 /* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as dmrgo_layer2_raw_burst_embedded_data returns it. */
 int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
 /* dmrgo_layer2_embedded_lc_assembler_new makes a zero dmrgo_layer2_embedded_lc_assembler_t. */
@@ -9466,8 +9470,20 @@ int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t 
 int dmrgo_layer2_embedded_lc_assembler_free(dmrgo_layer2_embedded_lc_assembler_t *self);
 /* Go: layer2.EmbeddedLCAssembler.Add. Add adds the embedded signalling field frag of a burst whose EMB carries lcss. When a Last fragment follows a First and two Continuation fragments, Add returns the LC with done set, and DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE when its FEC result is uncorrectable. Add returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when a fragment out of that order discards a partial LC. */
 int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res, bool *done);
-/* Go: layer2.EmbeddedLCAssembler.Reset. Reset discards any partial LC. */
+/* Go: layer2.EmbeddedLCAssembler.Header. Header starts a new call whose voice header carries lc, as dmrgo_layer2_embedded_lc_confirmer_header does, and discards any partial LC. */
+int dmrgo_layer2_embedded_lc_assembler_header(dmrgo_layer2_embedded_lc_assembler_t *self, const dmrgo_pdu_lc_bytes_t *lc);
+/* Go: layer2.EmbeddedLCAssembler.Reset. Reset discards any partial LC and starts a new call. */
 int dmrgo_layer2_embedded_lc_assembler_reset(dmrgo_layer2_embedded_lc_assembler_t *self);
+/* dmrgo_layer2_embedded_lc_confirmer_new makes a zero dmrgo_layer2_embedded_lc_confirmer_t. */
+int dmrgo_layer2_embedded_lc_confirmer_new(dmrgo_layer2_embedded_lc_confirmer_t **out);
+/* dmrgo_layer2_embedded_lc_confirmer_free frees the handle. self may be NULL. */
+int dmrgo_layer2_embedded_lc_confirmer_free(dmrgo_layer2_embedded_lc_confirmer_t *self);
+/* Go: layer2.EmbeddedLCConfirmer.Decode. Decode decodes the embedded LC of the next superframe of the call from the embedded signalling fields f of bursts B to E. */
+int dmrgo_layer2_embedded_lc_confirmer_decode(dmrgo_layer2_embedded_lc_confirmer_t *self, const uint8_t f[4][4], dmrgo_pdu_lc_bytes_t *lc, dmrgo_fec_result_t *res);
+/* Go: layer2.EmbeddedLCConfirmer.Header. Header starts a new call whose voice header carries lc. */
+int dmrgo_layer2_embedded_lc_confirmer_header(dmrgo_layer2_embedded_lc_confirmer_t *self, const dmrgo_pdu_lc_bytes_t *lc);
+/* Go: layer2.EmbeddedLCConfirmer.Reset. Reset starts a new call: no header and no earlier superframes. */
+int dmrgo_layer2_embedded_lc_confirmer_reset(dmrgo_layer2_embedded_lc_confirmer_t *self);
 /* Go: layer2.EncodeEmbeddedFullLinkControl. EncodeEmbeddedFullLinkControl returns the four embedded signalling fields, in burst order B to E, that carry lc. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL lc. lc may be NULL. */
 int dmrgo_layer2_encode_embedded_full_link_control(const dmrgo_pdu_full_link_control_t *lc, uint8_t out[4][4]);
 /* Go: layer2.EncodeEmbeddedLC. EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in burst order B to E, that carry the 9-octet LC lc, in the form dmrgo_layer2_raw_burst_set_embedded_data takes. */

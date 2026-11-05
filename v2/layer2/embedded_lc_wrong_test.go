@@ -41,7 +41,7 @@ func elcDecodeAll(t *testing.T, f [4][4]byte) ([9]byte, bool) {
 	lc, res := layer2.DecodeEmbeddedLC(f)
 	alc, aok := elcAssemble(f)
 	flc := layer2.DecodeEmbeddedFullLinkControl(f)
-	if aok == res.Uncorrectable || !elcAssembleErr(f) || flc.FEC.Uncorrectable != res.Uncorrectable || aok && alc != lc {
+	if aok && res.Uncorrectable || !elcAssembleErr(f) || flc.FEC.Uncorrectable != res.Uncorrectable || aok && alc != lc {
 		t.Fatalf("%x: DecodeEmbeddedLC %x %+v, assembler %x %t, Full LC FEC %+v", f, lc, res, alc, aok, flc.FEC)
 	}
 	return lc, !res.Uncorrectable

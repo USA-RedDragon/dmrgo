@@ -37,15 +37,26 @@ func decodeEmbeddedLC(fragments [4]uint32) ([9]byte, fec.Result) {
 
 // EmbeddedLCAssembler collects the four embedded LC fragments of voice
 // bursts B to E in the order of their LCSS, First, Continuation,
-// Continuation and Last, and decodes the LC as DecodeEmbeddedLC does. The
-// zero EmbeddedLCAssembler is ready to use. It is not safe for concurrent
-// use.
+// Continuation and Last, and decodes the LC of each superframe of the call
+// as EmbeddedLCConfirmer does. The zero EmbeddedLCAssembler is ready to use.
+// It is not safe for concurrent use.
 type EmbeddedLCAssembler struct {
+	confirm   EmbeddedLCConfirmer
 	fragments [4]uint32
 	count     int
 }
 
-// Reset discards any partial LC.
+// Header starts a new call whose voice header carries lc, as
+// EmbeddedLCConfirmer.Header does, and discards any partial LC.
+func (a *EmbeddedLCAssembler) Header(lc pdu.LCBytes) {
+	if a == nil {
+		return
+	}
+	a.count = 0
+	a.confirm.Header(lc)
+}
+
+// Reset discards any partial LC and starts a new call.
 func (a *EmbeddedLCAssembler) Reset() {
 	if a == nil {
 		return
@@ -94,7 +105,7 @@ func (a *EmbeddedLCAssembler) add(frag uint32, lcss enums.LCSS) (pdu.LCBytes, fe
 		return [9]byte{}, fec.Result{}, false, nil
 	}
 	a.count = 0
-	lc, res := decodeEmbeddedLC(a.fragments)
+	lc, res := a.confirm.decode(a.fragments)
 	if res.Uncorrectable {
 		return lc, res, true, ErrEmbeddedLCUncorrectable
 	}
