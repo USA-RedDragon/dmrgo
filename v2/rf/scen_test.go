@@ -11,8 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 )
 
-// fixedPayloadTests keep the fixed payloads and noise seeds of the
-// helpers: they compare with stored digests, counts or files, or they write
+// fixedPayloadTests compare with stored digests, counts or files, or write
 // the measurements that later runs compare with.
 var fixedPayloadTests = map[string]bool{
 	"TestTierDigests":         true,
@@ -43,8 +42,6 @@ var fixedPayloadTests = map[string]bool{
 	"TestRxMatrix":            true,
 }
 
-// fixedRun reports whether a measurement or generator variable is set: such
-// a run measures the fixed benchmark payloads.
 var fixedRun = sync.OnceValue(func() bool {
 	for _, kv := range os.Environ() {
 		k, _, _ := strings.Cut(kv, "=")
@@ -83,25 +80,27 @@ func fixedPayload(t testing.TB) bool {
 
 var reproLogged sync.Map
 
-func nameHash(s string) uint64 { return testseed.NameHash(s) }
-
-func runMix(a, b uint64) uint64 { return testseed.Mix(a, b) }
-
-// scenarioOf returns the random scenario of t for this run, drawn from the
-// run seed and the name of t; ok is false for a test that keeps the fixed
-// payloads.
-func scenarioOf(t testing.TB) (s testscen.Scenario, ok bool) {
-	if fixedPayload(t) {
-		return s, false
+func logRepro(t testing.TB) {
+	if _, shared := t.(sharedTB); shared {
+		return
 	}
 	if _, seen := reproLogged.LoadOrStore(t, true); !seen {
 		testseed.Repro(t)
 	}
+}
+
+func nameHash(s string) uint64 { return testseed.NameHash(s) }
+
+func runMix(a, b uint64) uint64 { return testseed.Mix(a, b) }
+
+func scenarioOf(t testing.TB) (s testscen.Scenario, ok bool) {
+	if fixedPayload(t) {
+		return s, false
+	}
+	logRepro(t)
 	return testscen.Of(runMix(testseed.RunSeed(), nameHash(t.Name()))), true
 }
 
-// randomized returns cfg with the addresses, voice and message of the
-// scenario of t.
 func randomized(t testing.TB, cfg rftx.SeqConfig) rftx.SeqConfig {
 	if s, ok := scenarioOf(t); ok {
 		return s.Apply(cfg)
@@ -109,21 +108,17 @@ func randomized(t testing.TB, cfg rftx.SeqConfig) rftx.SeqConfig {
 	return cfg
 }
 
-// runScenario is the scenario of this run for the payloads that the tests
-// share through a cache.
 var runScenario = sync.OnceValue(func() testscen.Scenario {
 	return testscen.Of(runMix(testseed.RunSeed(), 0x7266))
 })
 
 func sharedRandomized(cfg rftx.SeqConfig) rftx.SeqConfig { return runScenario().Apply(cfg) }
 
-// noiseSeed returns the noise seed of t for seed: seed itself for a test
-// that keeps the fixed payloads, and a draw from the run seed and seed
-// otherwise, so the seeds of a test differ on every run.
 func noiseSeed(t testing.TB, seed uint64) uint64 {
 	if fixedPayload(t) {
 		return seed
 	}
+	logRepro(t)
 	return runMix(runMix(testseed.RunSeed(), nameHash(t.Name())), seed)
 }
 
@@ -133,8 +128,6 @@ func channel(t testing.TB, iq []byte, txRate, rxRate, offsetHz, snrDB float64, s
 	return rftx.Channel(iq, txRate, rxRate, offsetHz, snrDB, noiseSeed(t, seed))
 }
 
-// randomizedN returns cfg with the addresses, voice and message of draw salt
-// of the scenario of t, so the talkers of one test differ.
 func randomizedN(t testing.TB, salt uint64, cfg rftx.SeqConfig) rftx.SeqConfig {
 	if s, ok := scenarioOf(t); ok {
 		return testscen.Of(runMix(s.VoiceSeed, salt)).Apply(cfg)
@@ -142,9 +135,6 @@ func randomizedN(t testing.TB, salt uint64, cfg rftx.SeqConfig) rftx.SeqConfig {
 	return cfg
 }
 
-// benchTalkgroup returns the talkgroup of the voice call of a stream whose
-// data calls go to ids.Dest: 9 for the fixed bench IDs and an address drawn
-// from ids.Dest for a random scenario.
 func benchTalkgroup(ids rftx.SeqConfig) uint32 {
 	if ids.Dest == 3009201 {
 		return 9
@@ -160,8 +150,6 @@ func (sharedTB) Name() string { return "shared" }
 // noise seeds come from the run seed only.
 var sharedRun testing.TB = sharedTB{}
 
-// mxDraw returns the noise draw of matrix row for t: 0 keeps the fixed noise
-// of the row.
 func mxDraw(t testing.TB, row mxRow) uint64 {
 	if t == nil || fixedPayload(t) {
 		return 0
