@@ -90,6 +90,7 @@ var bugPinTests = map[string]string{
 	"TestRxReplaySeekEMBTiming":          "payloads whose EMB seek the 24-symbol peak timed 7 to 9 us off",
 	"TestLeanFadeKeepsPhase":             "a payload whose burst after a fade was stamped early (loop on the faded slots)",
 	"TestLeanWeakLockKeeps":              "payloads whose header a weak lock on its payload cut from the kept samples",
+	"TestLeanPayloadHoldsSlot":           "payloads whose random EMB held a stopped talker's slot against a new SYNC",
 }
 
 func fixedPayload(t testing.TB) bool {

@@ -150,6 +150,15 @@ func TestLeanWeakLockKeeps(t *testing.T) {
 	checkTalkerAfterDrop(t, testscen.Of(1394549278350625547).Apply(dropTalkers[0]), testscen.Of(5879030131196329451).Apply(dropTalkers[1]))
 }
 
+// TestLeanPayloadHoldsSlot pins payloads where a new talker's first SYNC,
+// in the slot of a talker that had stopped, was dropped as a SYNC in that
+// talker's payload: the payload at the EMB of the old slot decoded with two
+// corrected bits, though the new SYNC showed no noise.
+func TestLeanPayloadHoldsSlot(t *testing.T) {
+	t.Parallel()
+	checkTalkerAfterDrop(t, testscen.Of(5191531046375087081).Apply(dropTalkers[0]), testscen.Of(2832539846698043428).Apply(dropTalkers[1]))
+}
+
 func checkTalkerAfterDrop(t *testing.T, c1, c2 rftx.SeqConfig) {
 	t.Helper()
 	v, err := rftx.Sequence("voice", c1)

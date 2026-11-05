@@ -65,6 +65,8 @@ const (
 	leanFlatSyms        = 1
 	leanInBurst         = cachSymbols + syncSymbols - 1
 	leanDeferSkew       = 0.125
+	leanHoldF           = 4
+	leanHoldExactQ      = 0.014
 	leanProofErrors     = 0
 	leanExtSignMiss     = 9
 	leanExtRho          = 0.3
@@ -352,6 +354,7 @@ type leanCore struct {
 	lastGood int32
 	termAt   int32
 	pendEnd  int64
+	pendQ    float32
 	pendWait uint8
 	pendSrc  uint8
 	pendData bool
@@ -1409,17 +1412,17 @@ func (r *leanCore) holding() bool {
 	return !r.bs && r.lastGood != r.termAt && r.next-1-r.lastGood <= 2*leanFadeBursts+1
 }
 
-func (r *leanCore) held(d float32, src int, data bool, p enums.SyncPattern) bool {
+func (r *leanCore) held(d, c2 float32, src int, data bool, p enums.SyncPattern) bool {
 	base := r.slotEnd - slotSymbols
 	if !r.locked || !r.holding() || (r.next-r.lastGood)&1 != 0 || r.ns-1 < base+leanInBurst ||
 		abs32(d) > leanDeferSkew*2*r.tm.step || !r.fitOK(r.ns-1, p) {
 		return false
 	}
 	if r.ns >= base+leanSyncEnd+1 {
-		return r.slotHolds(base)
+		return r.slotHolds(base, 1-c2)
 	}
 	if r.pendEnd == 0 {
-		r.pendEnd, r.pendWait, r.pendSrc, r.pendData = r.ns-1, uint8(base+leanSyncEnd+2-r.ns), uint8(src), data
+		r.pendEnd, r.pendWait, r.pendSrc, r.pendData, r.pendQ = r.ns-1, uint8(base+leanSyncEnd+2-r.ns), uint8(src), data, 1-c2
 	}
 	return true
 }
@@ -1433,7 +1436,7 @@ func (r *leanCore) fitOK(end int64, p enums.SyncPattern) bool {
 func (r *leanCore) decidePend() {
 	end := r.pendEnd
 	r.pendEnd = 0
-	if r.slotHolds(end + int64(r.pendWait) - leanSyncEnd - 1) {
+	if r.slotHolds(end+int64(r.pendWait)-leanSyncEnd-1, r.pendQ) {
 		return
 	}
 	src, back := int(r.pendSrc), r.ns-1-end
@@ -1451,10 +1454,25 @@ func (r *leanCore) decidePend() {
 	r.forced, r.hunt = true, true
 }
 
-func (r *leanCore) slotHolds(base int64) bool {
+// slotHolds tells whether the stream's own burst fills the slot at base, so
+// that a SYNC found in the slot lies in its payload: the slot has the
+// stream's SYNC, or its EMB with the color code. The SYNC found sets the
+// noise of the signal, q, the share of its variance that its pattern does
+// not explain. The burst of the stream at the same noise has a SYNC whose
+// unexplained share is at most leanHoldF times q (the 99.9% point of
+// F(22, 22)), and an EMB with no corrected bit while q is under
+// leanHoldExactQ, where 8 symbols hold an error with probability 1e-3. So a
+// payload that matches the SYNC or the EMB by chance does not hold the slot
+// against a cleaner SYNC.
+func (r *leanCore) slotHolds(base int64, q float32) bool {
 	for d := int64(-1); d <= 1 && base+leanSyncEnd+d < r.ns; d++ {
 		end := base + leanSyncEnd + d
-		if rho2, src, _ := r.syncAt(end); src == int(r.src) && rho2 >= discAnchor*discAnchor || r.rcAt(end) >= discAnchor*discAnchor {
+		rho2, src, _ := r.syncAt(end)
+		if src != int(r.src) {
+			rho2 = 0
+		}
+		rho2 = max32(rho2, r.rcAt(end))
+		if rho2 >= discAnchor*discAnchor && 1-rho2 <= leanHoldF*q {
 			return true
 		}
 	}
@@ -1477,7 +1495,7 @@ func (r *leanCore) slotHolds(base int64) bool {
 		}
 	}
 	e := embOfCW(cw)
-	return r.embOK(&e)
+	return r.embOK(&e) && (e.FEC.ErrorsCorrected == 0 || q >= leanHoldExactQ)
 }
 
 func (r *leanCore) fitScale() {
@@ -1663,7 +1681,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 		lim = leanPairLock
 	}
 	if d, c2, _, sampled := r.resample(p, &saved, r.locked, lim, nil); sampled {
-		if strict && r.held(d, src, data, p) {
+		if strict && r.held(d, c2, src, data, p) {
 			r.restoreSync(&saved)
 			return 0, 0, false, true
 		}
@@ -1725,7 +1743,7 @@ func (r *leanCore) searchSym(strict bool) {
 			return
 		}
 	}
-	if !ok && strict && rho2 >= discLock*discLock && r.held(0, src, data, p) {
+	if !ok && strict && rho2 >= discLock*discLock && r.held(0, rho2, src, data, p) {
 		return
 	}
 	if !ok && r.ns <= leanSyncEnd+1 {
@@ -1918,11 +1936,11 @@ func (r *leanCore) midSync() {
 		p = dp
 	}
 	var saved [syncSymbols]int8
-	d, _, _, ok := r.resample(p, &saved, true, discLock, nil)
+	d, c2, _, ok := r.resample(p, &saved, true, discLock, nil)
 	if !ok {
 		return
 	}
-	if r.held(d, src, data, p) {
+	if r.held(d, c2, src, data, p) {
 		r.restoreSync(&saved)
 		return
 	}
