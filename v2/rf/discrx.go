@@ -297,7 +297,7 @@ func (r *discRx) runAll(x []int16) int {
 		dn++
 		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 		if keep {
-			q := int16(int8((acc + 1<<13) >> 14))
+			q := int16(keptQ(acc))
 			if kh&1 == 0 {
 				kq = q
 			} else if i := kh >> 1; i < int32(len(buf)) {
@@ -308,7 +308,7 @@ func (r *discRx) runAll(x []int16) int {
 			}
 		}
 		if fit {
-			r.ext.keepFit(int8((acc + 1<<13) >> 14))
+			r.ext.keepFit(keptQ(acc))
 		}
 		t--
 		for t <= 0 {
@@ -431,10 +431,10 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				y := float32(acc) * (rrcStepHz / 32768.0)
 				sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 				if fit {
-					r.ext.keepFit(int8((acc + 1<<13) >> 14))
+					r.ext.keepFit(keptQ(acc))
 				}
 				if st&st96Keep != 0 {
-					q := int16(int8((acc + 1<<13) >> 14))
+					q := int16(keptQ(acc))
 					if kh&1 == 0 {
 						kq = q
 					} else if uint32(kh) < uint32(an) {
@@ -803,7 +803,7 @@ func (r *leanCore) refilter(g float32) bool {
 		default:
 			acc = f.mf12(u)
 		}
-		q := int16(int8((acc + 1<<13) >> 14))
+		q := int16(keptQ(acc))
 		if kh&1 == 0 {
 			kq = q
 		} else if i := kh >> 1; i < int32(len(buf)) {
@@ -922,6 +922,10 @@ func (f *audioFront) shiftHist(d float32) {
 	for i, v := range &f.hbHist {
 		f.hbHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
+}
+
+func keptQ(acc int32) int8 {
+	return int8(max(min((acc+1<<13)>>14, math.MaxInt8), math.MinInt8))
 }
 
 func (f *audioFront) quantize(u int16) int8 {

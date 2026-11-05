@@ -351,3 +351,44 @@ func TestReadingKeepsPrecisionOverGainSteps(t *testing.T) {
 		t.Errorf("offset reading %.4f Hz after three gain steps, want %.4f Hz", got, want)
 	}
 }
+
+func TestKeptSaturates(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct{ hz, w int }{{9600, 3}, {12000, 3}, {24000, 6}} {
+		x := make([]int16, 2*frontBlock)
+		var sq float64
+		for i := range x {
+			if i%32 < c.w {
+				x[i] = int16(12000 * (1 - 2*(i/32%2)))
+			}
+			sq += float64(x[i]) * float64(x[i])
+		}
+		hot := float32(3800 / math.Sqrt(sq/float64(len(x))))
+		for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+			var kept [2][]float32
+			for k, g := range []float32{hot / 2, hot} {
+				r := mustAudio(AudioRxConfig{Rate: c.hz, Tier: tier})
+				r.f.cold, r.f.leveled, r.f.gain = false, true, g
+				r.f.refresh()
+				_ = r.AppendBursts(nil, x)
+				if r.f.gain != g {
+					t.Fatalf("%d Hz, tier %d: gain moved from %.3f to %.3f", c.hz, tier-Tier0, g, r.f.gain)
+				}
+				for b := range r.acqKept() {
+					kept[k] = append(kept[k], r.kept(b))
+				}
+			}
+			full := false
+			for i, v := range kept[1] {
+				want := max(min(2*kept[0][i], math.MaxInt8), math.MinInt8)
+				if abs32(v-want) > 3 {
+					t.Fatalf("%d Hz, tier %d: kept sample %d is %.0f, want about %.0f", c.hz, tier-Tier0, i, v, want)
+				}
+				full = full || abs32(want) >= math.MaxInt8
+			}
+			if !full {
+				t.Errorf("%d Hz, tier %d: no kept sample reaches full scale", c.hz, tier-Tier0)
+			}
+		}
+	}
+}

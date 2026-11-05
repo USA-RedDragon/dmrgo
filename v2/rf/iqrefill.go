@@ -441,7 +441,7 @@ func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force 
 			acc = fr.mf12(u)
 		}
 		if j >= first {
-			c.setKept(m-1-j, int16(int8((acc+1<<13)>>14)))
+			c.setKept(m-1-j, int16(keptQ(acc)))
 		}
 		j++
 	}
