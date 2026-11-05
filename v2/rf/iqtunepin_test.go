@@ -95,6 +95,7 @@ func TestIQSeekLevelsHoldTune(t *testing.T) {
 	}{
 		{Tier1, 0, 9979531959472472741, "TestIQAdjacentPull/1/0"},
 		{Tier2, 300, 11058614226070481730, "TestIQAdjacentPull/2/300"},
+		{Tier2, 300, 8091554330429897612, "TestIQAdjacentPull/2/300"},
 	} {
 		o := tierOptions(c.tier)
 		s := runMix(c.run, nameHash(c.name))

@@ -1238,7 +1238,7 @@ func (x *softExt) keepReplay(c *leanCore, ms *leanSlots, n32 int32, live int64) 
 	for i := range rs.anch {
 		if a := rs.anch[i]; a != leanNoSlot && a != n32 {
 			ms.anch[i], ms.lv[i], ms.lvN[i] = a, rs.lv[i], rs.lvN[i]
-			ms.seekLv = ms.seekLv&^(1<<i) | rs.seekLv&(1<<i)
+			ms.looseLv = ms.looseLv&^(1<<i) | rs.looseLv&(1<<i)
 			if !c.bs && int32(i) != n32&1 {
 				if d := c.first + int64(rs.off[i]) - live; d >= math.MinInt16 && d <= math.MaxInt16 {
 					ms.off[i], seeked[i] = int16(d), true
