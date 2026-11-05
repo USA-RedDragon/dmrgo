@@ -75,6 +75,7 @@ var bugPinTests = map[string]string{
 	"TestRxJumpPin":                      "payloads whose first voice A after a 2 ms jump fell in a slot without a hunt",
 	"TestShortLCSoftNotWrong":            "seeds where soft Short LCs passed the CRC-8 with wrong bits",
 	"TestIQUnheldAdjacentWalk":           "an interferer payload whose residue walked an unheld converter onto the adjacent channel",
+	"TestIQSyncTuneAdjacent":             "payloads whose lag-1 mean held the SYNC-fit tune back next to an adjacent channel",
 }
 
 func fixedPayload(t testing.TB) bool {

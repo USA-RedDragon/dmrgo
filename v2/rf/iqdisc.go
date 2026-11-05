@@ -590,6 +590,8 @@ func (r *iqRx) follow() {
 		case abs32(avg) >= iqAFCPullHz && !r.syncOnly && abs32(hz) >= iqAFCLockHz && hz*avg > 0:
 			r.afcAvg = 0
 			r.tune(avg, f.dc-avg*scale)
+		case r.syncOnly:
+			r.syncTune()
 		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < max32(iqAFCPullHz, abs32(hz)/2):
 			r.tune(hz, f.dc-hz*scale)
 		}
@@ -613,6 +615,17 @@ func (r *iqRx) follow() {
 			r.afcAvg = 0
 		}
 		r.tune(avg, 0)
+	}
+}
+
+func (r *iqRx) syncTune() {
+	f := &r.d.f
+	scale := f.gain * iqUnitsPerHz
+	if scale <= 0 {
+		return
+	}
+	if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz {
+		r.tune(hz, f.dc-hz*scale)
 	}
 }
 

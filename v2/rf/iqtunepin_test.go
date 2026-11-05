@@ -68,3 +68,17 @@ func TestIQUnheldAdjacentWalk(t *testing.T) {
 		t.Errorf("C0 and C1 of %d of %d voice frames exact, converter %.0f Hz off the carrier", n, want, off)
 	}
 }
+
+// TestIQSyncTuneAdjacent pins a payload pair where the lag-1 mean of a
+// receiver tuned on the SYNC fits read the carrier 300 Hz off 20 dB of C/N
+// next to a 40 dB stronger channel at +12.5 kHz, and held the tune back.
+func TestIQSyncTuneAdjacent(t *testing.T) {
+	t.Parallel()
+	o := discOptions()
+	o.IQDisc, o.IQHz, o.IQTuneMaxHz, o.IQTuneSyncOnly = true, 12000, 2500, true
+	for _, s := range []uint64{0, 2, 5, 11} {
+		if n, want, off := adjacentPin(t, Tier0, &o, 300, 1000+s, 2000+s, 7); n < want || off > iqAFCLockHz {
+			t.Errorf("payload %d: C0 and C1 of %d of %d voice frames exact, converter %.0f Hz off the carrier while locked", s, n, want, off)
+		}
+	}
+}
