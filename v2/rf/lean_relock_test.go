@@ -318,3 +318,25 @@ func TestRxTwoTalkerSyncLevelStepHead(t *testing.T) {
 		}
 	}
 }
+
+// TestRxAudioTwoTalkerLevelStepBlind steps an audio input of two talkers on a
+// 2500 Hz offset by -10 dB just before a voice burst without a SYNC of the
+// weaker talker. The step moves the level and the DC of that burst, and the
+// core must refit them from the burst's own symbols, whatever the balance of
+// its payload.
+func TestRxAudioTwoTalkerLevelStepBlind(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "gap.none.+2500.ms2.pi.-500ppm.nom.a12000.40dB.step10dB")
+	rxs := mxReceivers(row.val(mxFormat), true)
+	for _, run := range []uint64{10, 16, 22, 34, 53, 54, 56, 57, 60, 61} {
+		res, err := mxRun(pinnedTB{t, run}, row, rxs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, x := range rxs {
+			if r := res[x]; r.fail["bits"] || r.fail["missing"] {
+				t.Errorf("run %d %s: %s", run, x.name(), strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}

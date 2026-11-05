@@ -68,6 +68,7 @@ var bugPinTests = map[string]string{
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 	"TestRxLevelStepTiming":              "payloads where a level and DC step pulled the timing loop",
 	"TestRxTwoTalkerSyncLevelStepHead":   "payloads whose step burst head took the post-step phase unit",
+	"TestRxAudioTwoTalkerLevelStepBlind": "payloads whose imbalance kept the blind refit of a stepped burst off",
 }
 
 func fixedPayload(t testing.TB) bool {
