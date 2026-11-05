@@ -10,6 +10,10 @@ The carrier of low-rate I/Q tier 0 must be less than 2.5 kHz from the center: th
 
 Tier 0 needs more than 2 KB of RAM with its stack on a Cortex-M4F; [Tier 0 on a Cortex-M4F](rx.md#tier-0-on-a-cortex-m4f) gives the measured cost. These parts of Tier 0 were accepted at their cost when they were added: the detection of standalone RC bursts, the MS bursts of both TDMA slots with their own timing and levels, the burst-edge gain hold, the CACH replay, the clock rate tracking, the I/Q gain cap, the lookback replay checks, and `PreEmphasis` on audio tier 0.
 
+## An audio level step after the CACH
+
+Tiers 0 and 1 slice the output of a linear matched filter. When the level of an audio input steps by a gain ratio G, the filter output undershoots before the step by about 0.09·(G-1)·x(ts), where x(ts) is the signal at the step. At +20 dB with the step at the end of a CACH, that is about 2.4 inner symbol levels on the last CACH symbol, against a decision margin of 1. An ideal float RRC with the true timing and the true levels before the step gets that CACH wrong on 64 of 64 payloads; at +10 dB it gets 64 of 64 right, with at most 0.74 inner levels of error. So at Tiers 0 and 1 the CACH of a burst need not be exact when a step of more than 10 dB lands within the RRC half-span, 4 symbols, after it. Tiers 2 and 3 decide on the phase and get it exact. `TestRxLevelStep` checks this.
+
 ## A carrier off the tuned frequency
 
 I/Q tier 0 runs at 12 kHz. A carrier more than 2.5 kHz off is outside its AFC range and partly outside its channel filter, so the receiver must retune before it can lock. When the input power rises, the spectrum hunt estimates the carrier from the next three FFT frames, about 8 ms, and retunes. Tier 0 keeps no samples to decode again, so the symbols before the retune are lost, and at 4 kHz the first burst comes out with its first symbols wrong.
