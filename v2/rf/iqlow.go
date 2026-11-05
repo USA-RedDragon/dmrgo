@@ -17,6 +17,8 @@ const (
 	iqLowScale   = 4096
 	iqLowISI     = 0.04
 	iq0Coherence = 0.2
+	dcSpinFlat   = 1.05
+	dcSpin       = 0.05
 )
 
 const iq0LowHz = 9600
@@ -46,6 +48,7 @@ type iqLowRx struct {
 	dcI, dcQ    float32
 	env, env2   float32
 	proj, edge  float32
+	spin        float32
 	dcN         uint16
 	sub, dHead  uint8
 	dly         [iqLowDCDelay]uint32
@@ -110,12 +113,20 @@ func (r *iqLowRx) feed16(x []uint32) {
 // as a mean: when the mean holds most of the input power, the input envelope
 // is flat and the input turns away from the mean (the carrier test of
 // dcBlock), the mean is a carrier that has started to move, and it starts
-// again from zero with the full window.
+// again from zero with the full window. The turn away from the mean can take
+// many symbols when the payload holds the phase near where the carrier
+// stood, so a nearly flat envelope whose phase steps by more than
+// asin(sqrt(dcSpin)) per sample on average also starts it again: every DMR
+// symbol moves the frequency off zero, while a constant offset under a
+// carrier weak enough to leave the envelope that flat turns the sum less.
 func (r *iqLowRx) dcUpdate(x []uint32) {
 	var si, sq int32
+	prev := r.dly[(r.dHead-1)&(iqLowDCDelay-1)]
 	for _, w := range x {
 		i, q := int32(int16(w)), int32(w)>>16
 		si, sq = si+i, sq+q
+		pi, pq := float32(int16(prev)), float32(int32(prev)>>16)
+		prev = w
 		if r.sub++; r.sub < iqLowDCEvery {
 			continue
 		}
@@ -125,8 +136,10 @@ func (r *iqLowRx) dcUpdate(x []uint32) {
 		r.env += (p - r.env) * r.edge
 		r.env2 += (p*p - r.env2) * r.edge
 		r.proj += (fx*r.dcI + fy*r.dcQ - r.proj) * r.edge
-		if c := r.dcI*r.dcI + r.dcQ*r.dcQ; c > dcCarrierShare*r.env && r.env2 < dcFlat*r.env*r.env && r.proj < dcTurn*c {
-			r.dcN, r.dcI, r.dcQ, r.proj = 1<<iqLowDCShift, 0, 0, 0
+		s := fy*pi - fx*pq
+		r.spin += (s*s - r.spin) * r.edge
+		if c := r.dcI*r.dcI + r.dcQ*r.dcQ; c > dcCarrierShare*r.env && r.env2 < dcFlat*r.env*r.env && (r.proj < dcTurn*c || r.env2 < dcSpinFlat*r.env*r.env && r.spin > dcSpin*r.env2) {
+			r.dcN, r.dcI, r.dcQ, r.proj, r.spin = 1<<iqLowDCShift, 0, 0, 0, 0
 		}
 	}
 	n := float32(len(x))

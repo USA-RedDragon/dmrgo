@@ -182,3 +182,24 @@ func TestRxRawBitsHuntTune(t *testing.T) {
 		}
 	}
 }
+
+// TestIQLowCWLead pins held-out runs where the low-rate I/Q mean learned a
+// carrier lead on the tuned frequency and the first burst lost bits before
+// the carrier test let it go.
+func TestIQLowCWLead(t *testing.T) {
+	t.Parallel()
+	for _, run := range []uint64{979335601447876854, 14328703105160663048} {
+		for _, name := range []string{"s0.cw500ms.+0.ms.voice.0ppm.nom.cs16-9600.40dB.dc", "s0.cw2s.+0.ms.voice.0ppm.high.cs16-9600.40dB"} {
+			row := mxRowOf(t, name)
+			res, err := mxRun(pinnedRun{t, run, "TestIQLowDCOffset"}, row, []mxRx{{row.val(mxFormat), Tier0}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, r := range res {
+				if s := r.symptoms(); s != "" {
+					t.Errorf("run %d %s: %s", run, name, s)
+				}
+			}
+		}
+	}
+}

@@ -80,6 +80,7 @@ var bugPinTests = map[string]string{
 	"TestIQHuntAfterLock":                "Tier 0 locks where the spectrum hunt tuned after the lock",
 	"TestIQRefillSettle":                 "Tier 3 locks that tuned twice by the coherent lock offset",
 	"TestRxRawBitsHuntTune":              "a held-out run whose first burst started before a 2.4 kHz hunt tune",
+	"TestIQLowCWLead":                    "held-out runs whose first burst after a carrier lead lost bits to the I/Q mean",
 }
 
 func fixedPayload(t testing.TB) bool {
