@@ -203,3 +203,27 @@ func TestIQLowCWLead(t *testing.T) {
 		}
 	}
 }
+
+// TestDiscACAcquire pins held-out runs where the AC restorer took seconds to
+// train: its symbol scale started from the first symbol alone, and a weak
+// first SYNC held the search to its slot grid for acAcquire symbols.
+func TestDiscACAcquire(t *testing.T) {
+	t.Parallel()
+	for _, run := range []uint64{2177666937959402496, 102544416862867516} {
+		p := pinnedRun{t, run, "TestDiscACCoupled"}
+		slots, truth := benchStream(p, 16)
+		x := noisyBaseband(p, slots, 1400, 30, 1)
+		for _, hz := range []int{24000, 12000, 9600} {
+			a := acCoupled(discAudio(x, hz), hz)
+			for _, tier := range []Tier{Tier1, Tier2} {
+				got, _ := receiveFixed(t, a, hz, tier)
+				sc := scoreBench(truth, got)
+				for _, k := range []string{"csbk", "rate12", "ambe"} {
+					if s := sc[k]; s.Truth == 0 || s.Exact < s.Truth/2 {
+						t.Errorf("run %d, %d Hz %v, %s: %d of %d recovered from AC-coupled audio", run, hz, tier, k, s.Exact, s.Truth)
+					}
+				}
+			}
+		}
+	}
+}

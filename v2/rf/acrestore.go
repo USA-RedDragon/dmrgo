@@ -189,7 +189,8 @@ type acStage struct {
 	live    [acRing]bool
 	scale   float32
 	short   float32
-	scaled  bool
+	scaleN  int32
+	grid    bool
 	w       [acTaps]float32
 	p       [acTaps * acTaps]float64
 	prevY   float32
@@ -353,14 +354,15 @@ func (a *acStage) symbol() {
 		vals[q] = a.at(a.t + a.off[q])
 	}
 	x0 := vals[2]
-	if !a.scaled {
-		a.scale, a.short, a.scaled = max(x0*x0, 1e-12), x0*x0, true
+	if a.scaleN == 0 {
+		a.scale, a.short = max(x0*x0, 1e-12), x0*x0
 	} else {
 		a.short += acShortGain * (x0*x0 - a.short)
 		if a.short > acLive*a.scale {
-			a.scale += acScaleGain * (x0*x0 - a.scale)
+			a.scale += max32(1/float32(a.scaleN+1), acScaleGain) * (x0*x0 - a.scale)
 		}
 	}
+	a.scaleN = min(a.scaleN+1, 1/acScaleGain)
 	g := sqrtf(5 / max(a.scale, 1e-12))
 	for q, v := range vals {
 		a.ring[q][idx] = v * g
@@ -378,7 +380,7 @@ func (a *acStage) search(k int64) {
 	if k < acRing {
 		return
 	}
-	if a.k-a.last <= acAcquire {
+	if a.grid && a.k-a.last <= acAcquire {
 		if m := (k - a.lastK) % slotSymbols; m > 1 && m < slotSymbols-1 {
 			a.flushPending(k)
 			return
@@ -438,7 +440,8 @@ func (a *acStage) commit(p *acPending) {
 	for i, s := range syncSyms8[p.pat] {
 		a.known[(p.k-syncSymbols+1+int64(i))&(acRing-1)] = int8(float32(s) * p.sign)
 	}
-	if a.k-a.last > acAcquire {
+	in := a.k-a.last <= acAcquire
+	if !in || !a.grid {
 		d := a.off[p.q] - a.off[2]
 		if p.q > 0 && p.q < acPhases-1 {
 			lo, mid, hi := p.rhos[p.q-1], p.rhos[p.q], p.rhos[p.q+1]
@@ -448,7 +451,7 @@ func (a *acStage) commit(p *acPending) {
 		}
 		a.t += d
 	}
-	a.lastK, a.last = p.k, a.k
+	a.lastK, a.last, a.grid = p.k, a.k, in
 }
 
 func acSlice(y float32) int8 {
