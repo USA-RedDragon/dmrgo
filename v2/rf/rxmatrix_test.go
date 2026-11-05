@@ -515,10 +515,6 @@ func mxTransmission(t testing.TB, row mxRow, src uint32, slot int, bs bool) (f, 
 	return f, e, truth, float64(slot) * slotSeconds, nil
 }
 
-// mxBuild builds the input of row for t: the fixed payload and noise of the
-// row for a test that keeps the fixed payloads, and otherwise a random
-// payload and noise of the scenario of t. The talker geometry of a row stays
-// the one of its name.
 func mxBuild(t testing.TB, row mxRow) (*mxSignal, error) {
 	sd := mxDraw(t, row)
 	p := mxParamsOf(row)

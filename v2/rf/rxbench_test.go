@@ -63,9 +63,6 @@ func benchMessage(d uint64) string {
 	return string(b)
 }
 
-// benchStreamOf builds the bench stream with the Source, BS, voice and
-// Message of ids: a group voice call to benchTalkgroup(ids) and data calls
-// to ids.Dest.
 func benchStreamOf(t testing.TB, ids rftx.SeqConfig, n int) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
 	dest := ids.Dest

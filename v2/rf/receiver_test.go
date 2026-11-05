@@ -355,9 +355,6 @@ type directSet struct {
 
 var directCache, directRandomCache directSet
 
-// directShared returns the shared direct mode calls of t: the fixed calls
-// for a test that keeps the fixed payloads, and otherwise the calls and
-// noise of the random scenario of this run.
 func directShared(t testing.TB) *directSet {
 	t.Helper()
 	d, cfg, nt := &directCache, directConfig(), testing.TB(nil)
