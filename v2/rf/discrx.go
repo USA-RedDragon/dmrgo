@@ -321,7 +321,7 @@ func (r *discRx) runAll(x []int16) int {
 				xv = s3 + at*(s3-s2)
 			}
 			tm.t = t
-			sym := tm.strobe(xv)
+			sym := tm.strobe(xv, r.off)
 			t = tm.t
 			if sym {
 				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3 = sa, sb, s0, s1, s2, s3
@@ -525,10 +525,11 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 					d = -d
 				}
 				e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
-				if tm.stale {
-					tm.stale, e = false, 0
+				out := abs32(xv-r.off) > leanRingRail
+				if tm.stale || out {
+					tm.stale, e = out, 0
 				}
-				if !tm.hold {
+				if !tm.hold && !out {
 					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
 				}
 				tm.last, tm.half = xv, d

@@ -74,3 +74,40 @@ func TestRxLevelStep(t *testing.T) {
 		}
 	}
 }
+
+// TestRxLevelStepTiming steps an audio input with a 2500 Hz offset up by
+// 10 dB at 8 and 12 ms into a burst, which moves the level and the DC
+// between two SYNCs. The timing loop must not follow the strobes far outside
+// the eye of the held levels, or the bursts after the next SYNC come out late.
+func TestRxLevelStepTiming(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "s0.none.-2500.bs.data12.0ppm.nom.a24000.inf")
+	for _, tier := range []Tier{Tier0, Tier1} {
+		for c := range 64 {
+			run, ms := uint64(c/2+1), float64(8+4*(c%2))
+			s, err := mxBuild(pinnedTB{t, run}, row)
+			if err != nil {
+				t.Fatal(err)
+			}
+			const j = 4
+			s.step = s.truth[j].at + ms/1000
+			s.gain = [2]float64{math.Pow(10, -0.5), 1}
+			in := mxInputOf(s, row)
+			got, _, err := mxReceive(in, mxRx{"a24000", tier})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ok := make([]bool, len(s.truth))
+			for i := range got {
+				if k := mxNearest(s, got[i].Seconds+in.delay); k >= 0 && got[i].Data == s.truth[k].data {
+					ok[k] = true
+				}
+			}
+			for k := j + 2; k < len(s.truth); k++ {
+				if !ok[k] {
+					t.Errorf("t%d run %d step at %.2f ms: burst %d not decoded exactly", tier-Tier0, run, ms, k)
+				}
+			}
+		}
+	}
+}

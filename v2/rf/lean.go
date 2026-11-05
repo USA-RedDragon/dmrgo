@@ -82,6 +82,7 @@ const (
 	leanMMSPS           = 2.5
 	leanMMSign          = 1
 	leanMMGain          = 2
+	leanRingRail        = (math.MaxInt8 + 0.5) * discStepHz
 	leanMMSlope         = 1.926
 	leanStampSec        = 2e-6
 	leanClockGain       = leanClockBudget / (slotSymbols * leanPhaseRatio * leanPhaseRatio)
@@ -143,7 +144,7 @@ func (tm *leanTiming) newTalker() {
 	tm.owed, tm.fresh, tm.learned, tm.mOK, tm.lag0 = 0, 1, false, false, 0
 }
 
-func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
+func (tm *leanTiming) push(s, off float32) (v, at float32, ok bool) {
 	if tm.cubic {
 		tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3 = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, s
 	} else {
@@ -152,7 +153,7 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 	tm.t--
 	for tm.t <= 0 {
 		t := tm.t
-		if tm.strobe(tm.at(t)) {
+		if tm.strobe(tm.at(t), off) {
 			v, at, ok = tm.last, t, true
 		}
 	}
@@ -231,7 +232,7 @@ func (tm *leanTiming) rateKnown(n float32) (float32, bool) {
 	return e, e < leanStampSec*symbolRate*2*tm.step
 }
 
-func (tm *leanTiming) strobe(x float32) bool {
+func (tm *leanTiming) strobe(x, off float32) bool {
 	if tm.mm {
 		y := x - tm.dc
 		d := tm.dev
@@ -242,10 +243,11 @@ func (tm *leanTiming) strobe(x float32) bool {
 			d = -d
 		}
 		e := leanMMSign * (tm.half*y - d*(tm.last-tm.dc))
-		if tm.stale {
-			tm.stale, e = false, 0
+		out := abs32(x-off) > leanRingRail
+		if tm.stale || out {
+			tm.stale, e = out, 0
 		}
-		if !tm.hold {
+		if !tm.hold && !out {
 			tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
 		}
 		tm.last, tm.half = x, d
@@ -956,7 +958,7 @@ func (r *leanCore) shiftStrobe(d float32) {
 }
 
 func (r *leanCore) push(s float32) {
-	if x, at, ok := r.tm.push(s); ok {
+	if x, at, ok := r.tm.push(s, r.off); ok {
 		r.symbol(x, at)
 	}
 }

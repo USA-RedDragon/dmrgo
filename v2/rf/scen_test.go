@@ -66,6 +66,7 @@ var bugPinTests = map[string]string{
 	"TestSecondsLockBurstWideFit":        "a payload whose Tier1 lock fit on the narrow filter output",
 	"TestSecondsLockBurstDeferredFit":    "a payload whose lock took the strobe when the sync fit deferred",
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
+	"TestRxLevelStepTiming":              "payloads where a level and DC step pulled the timing loop",
 }
 
 func fixedPayload(t testing.TB) bool {
@@ -97,7 +98,17 @@ func nameHash(s string) uint64 { return testseed.NameHash(s) }
 
 func runMix(a, b uint64) uint64 { return testseed.Mix(a, b) }
 
+// pinnedTB draws its payloads and noise from a fixed run seed, for a bug pin
+// whose bug needs a payload that the fixed one does not carry.
+type pinnedTB struct {
+	testing.TB
+	run uint64
+}
+
 func scenarioOf(t testing.TB) (s testscen.Scenario, ok bool) {
+	if p, pinned := t.(pinnedTB); pinned {
+		return testscen.Of(p.run), true
+	}
 	if fixedPayload(t) {
 		return s, false
 	}
@@ -119,6 +130,9 @@ var runScenario = sync.OnceValue(func() testscen.Scenario {
 func sharedRandomized(cfg rftx.SeqConfig) rftx.SeqConfig { return runScenario().Apply(cfg) }
 
 func noiseSeed(t testing.TB, seed uint64) uint64 {
+	if p, pinned := t.(pinnedTB); pinned {
+		return runMix(p.run, seed)
+	}
 	if fixedPayload(t) {
 		return seed
 	}
