@@ -3330,10 +3330,13 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	}
 	cc, known := r.colorCode()
 	end := base + leanSyncEnd
-	back := r.ns - 1 - end
-	sps := 2*r.tm.step + r.tm.rate
-	at := r.lastAt - float32(back)*sps
-	if back < 0 || !r.keptSymbols(int(back)+syncSymbols+4) {
+	sym, at0, sps := r.ns-1, r.lastAt, 2*r.tm.step+r.tm.rate
+	if r.isReplaying() {
+		sym, at0, sps = r.ext.replayGrid(r)
+	}
+	back := sym - end
+	at := at0 - float32(back)*sps
+	if back < 0 || float32(int(back)+syncSymbols+4)*2*r.tm.step+4-at0 > float32(r.acqKept()) {
 		return 0, false
 	}
 	var syms [syncSymbols]int8
@@ -3366,7 +3369,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	}
 	d := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
 	sv, svv, sxv, sp := win.sums(&syms, at+d, sps)
-	d += at - (r.lastAt - float32(back)*sps)
+	d += at - (at0 - float32(back)*sps)
 	sh := int64(roundf(d / sps))
 	d -= float32(sh) * sps
 	base += sh
@@ -3380,9 +3383,9 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if sxy <= 0 || sxx <= 0 || pp <= 0 || sxy*sxy < discLock*discLock*sxx*pp {
 		return 0, false
 	}
-	kept := r.ns - int64((float32(r.acqKept())-4+r.lastAt)/sps)
+	kept := sym + 1 - int64((float32(r.acqKept())-4+at0)/sps)
 	for k := max(base-1, kept); k <= base+slotSymbols && k < r.ns; k++ {
-		v := r.keptAt(r.lastAt + d - float32(r.ns-1-k)*sps)
+		v := r.keptAt(at0 + d - float32(sym-k)*sps)
 		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
 	}
 	r.sliceSyms(end, &syms)
@@ -3401,7 +3404,9 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	r.ms.off[(j+1)&1] -= int16(k)
 	r.ms.off[j&1] = 0
 	r.ms.anch[j&1] = j
-	if !r.isReplaying() {
+	if r.isReplaying() {
+		r.ext.replayPhase(j&1, d)
+	} else {
 		r.ms.fresh[j&1] = 2
 		r.saveClock(o)
 		r.fitNs, r.fitT, r.fitQ = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps), sxy*sxy/(sxx*pp)

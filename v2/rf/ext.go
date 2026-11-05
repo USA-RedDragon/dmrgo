@@ -32,6 +32,9 @@ type leanExt interface {
 	replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool
 	replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool)
 	seekAgrees(j int32, cc enums.ColorCode, lcss enums.LCSS) bool
+	replayGrid(c *leanCore) (sym int64, at, sps float32)
+	replayPhase(p int32, d float32)
+	gridShift(c *leanCore) float32
 	lockFit(c *leanCore, sym, t int64, q float32)
 	syncFit(c *leanCore, sym, t int64, q, w float32)
 	liveFit(c *leanCore, sym, t int64, q, w float32)
@@ -119,6 +122,7 @@ type softExt struct {
 	replayN         int32
 	replayP         enums.SyncPattern
 	lockAt          float32
+	replayD         [2]float32
 	stretch         float32
 	stretchSig      float32
 	lockN           int64
@@ -1128,6 +1132,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	c.replaying = true
 	x.replayN, x.replayP = n32, 0
 	for _, dry := range [2]bool{true, false} {
+		x.replayD = [2]float32{}
 		votes := c.votes
 		c.resetChans()
 		c.votes = votes
@@ -1151,7 +1156,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 			} else {
 				base := c.first + int64(j)*slotSymbols + int64(c.ms.off[j&1])
 				for k := base - 1; k <= base+slotSymbols; k++ {
-					v := c.keptAt(at - float32(last-k)*sps*(1+stretch))
+					v := c.keptAt(at + x.replayD[j&1] - float32(last-k)*sps*(1+stretch))
 					c.ring[ringPos(k)] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
 				}
 			}
@@ -1172,26 +1177,40 @@ func (x *softExt) firstSlot(c *leanCore) {
 		c.lastAnch = leanNoSlot
 	}
 	c.clicks = clicks
-	rs := &c.ms
-	ms.anch[0], ms.anch[1] = leanNoSlot, leanNoSlot
-	for i := range rs.anch {
-		if a := rs.anch[i]; a != leanNoSlot && a != n32 {
-			ms.anch[i], ms.lv[i], ms.lvN[i] = a, rs.lv[i], rs.lvN[i]
-		}
-	}
-	c.ms = ms
-	for i := range c.ms.anch {
-		if c.ms.anch[i] != leanNoSlot {
-			c.savePhase(int32(i))
-		}
-	}
+	live := first - int64(n)*slotSymbols
+	x.keepReplay(c, &ms, n32, live)
 	c.ring = x.ring
-	c.first = first - int64(n)*slotSymbols
+	c.first = live
 	c.slotEnd = slotEnd
 	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
 	x.settleLock()
 	x.lockHz(c)
 	x.vOK = false
+}
+
+func (x *softExt) keepReplay(c *leanCore, ms *leanSlots, n32 int32, live int64) {
+	rs := &c.ms
+	var seeked [2]bool
+	ms.anch[0], ms.anch[1] = leanNoSlot, leanNoSlot
+	for i := range rs.anch {
+		if a := rs.anch[i]; a != leanNoSlot && a != n32 {
+			ms.anch[i], ms.lv[i], ms.lvN[i] = a, rs.lv[i], rs.lvN[i]
+			if !c.bs && int32(i) != n32&1 {
+				if d := c.first + int64(rs.off[i]) - live; d >= math.MinInt16 && d <= math.MaxInt16 {
+					ms.off[i], seeked[i] = int16(d), true
+				}
+			}
+		}
+	}
+	c.ms = *ms
+	for i := range c.ms.anch {
+		if c.ms.anch[i] != leanNoSlot {
+			c.savePhase(int32(i))
+		}
+		if seeked[i] {
+			c.ms.t[i] += x.replayD[i]
+		}
+	}
 }
 
 func (x *softExt) refillLock(c *leanCore) {
@@ -1269,6 +1288,14 @@ func (x *softExt) seekAgrees(j int32, cc enums.ColorCode, lcss enums.LCSS) bool 
 	*p = seekNote{j: j, cc: cc, lcss: lcss, ok: !ok}
 	return ok
 }
+
+func (x *softExt) replayGrid(c *leanCore) (int64, float32, float32) {
+	return x.lockSym, x.atAt, 2 * c.tm.step * (1 + x.stretch)
+}
+
+func (x *softExt) replayPhase(p int32, d float32) { x.replayD[p] = d }
+
+func (x *softExt) gridShift(c *leanCore) float32 { return x.replayD[(c.next-1)&1] }
 
 func lcssFollows(a, b enums.LCSS) bool {
 	return a == enums.LCSSFirstFragment && b == enums.LCSSContinuationFragment ||
@@ -1718,7 +1745,7 @@ func (x *softExt) replayTicks(c *leanCore, start int64) (int64, int16, float32, 
 	}
 	k := float32(x.lockSym - start)
 	sps := 2 * c.tm.step
-	t := c.ticksAt(x.atN, x.atAt-k*sps*(1+x.stretch))
+	t := c.ticksAt(x.atN, x.atAt+x.gridShift(c)-k*sps*(1+x.stretch))
 	if x.stretch == 0 || x.stretchSig == 0 {
 		return t, int16(k), 0, true
 	}
