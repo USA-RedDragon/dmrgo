@@ -202,6 +202,7 @@ func (r *leanCore) pushSym(x float32) {
 	_ = [1]struct{}{}[(unsafe.Offsetof(r.ring)-unsafe.Offsetof(r.ns)-8)|(unsafe.Offsetof(r.head)-unsafe.Offsetof(r.ns)-154)|(unsafe.Offsetof(r.ringSum)-unsafe.Offsetof(r.ns)-192)|(unsafe.Offsetof(r.signs)-unsafe.Offsetof(r.ns)-196)]
 	_ = [1]struct{}{}[leanRing-146]
 	_ = [1]struct{}{}[syncSymbols-24]
+	r.wakeStep()
 	leanPush(uintptr(unsafe.Pointer(&r.ns)), uintptr(int32(symQ(x, r.off))))
 }
 

@@ -16,7 +16,10 @@ func addRound10(a, b int32) int32 { return a + (b+512)>>10 }
 
 func (r *iqLowRx) halfRun(x []uint32) { r.halfRunGo(x) }
 
-func (r *leanCore) pushSym(x float32) { r.pushSymGo(x) }
+func (r *leanCore) pushSym(x float32) {
+	r.wakeStep()
+	r.pushSymGo(x)
+}
 
 func (r *iqLowRx) fill(x []uint32) int {
 	m := min(len(x), iqLowBuf)

@@ -122,6 +122,7 @@ type leanTiming struct {
 	rateK          float32
 	lastC          float32
 	stale          bool
+	wake           uint8
 	leanClock
 	jit float32
 }
@@ -1995,6 +1996,7 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	r.ms.fresh, r.ms.clkAt = [2]uint8{}, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 1
+	r.tm.wake = 0
 	r.tm.learned = false
 	r.tm.lag0 = float32(back) + (syncSymbols-1)/2
 	r.tm.baseN, r.tm.baseC, r.tm.mOK, r.tm.jit = 0, 0, false, 0
@@ -2249,6 +2251,7 @@ func (r *leanCore) slot() {
 		r.dataAnch[j&1] = isAnchor && anchor == dp
 	}
 	r.slotSwitch(j)
+	r.holdGuard()
 	r.slotEnd = r.first + int64(j+2)*slotSymbols + int64(r.ms.off[(j+1)&1])
 	r.setHunt()
 	if !r.isReplaying() && r.ended(j, base) {
@@ -2325,6 +2328,23 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 		}
 	}
 	return isAnchor, shift, anchor
+}
+
+func (r *leanCore) wakeStep() {
+	if r.tm.wake != 0 {
+		if r.tm.wake--; r.tm.wake == 0 {
+			r.tm.hold, r.tm.stale = false, true
+		}
+	}
+}
+
+// holdGuard keeps the timing loop of an MS stream held over the guard at
+// the start of the next slot, where the ramp of the transmitter and the
+// carrier-off noise give no symbols, and frees it at the first burst symbol.
+func (r *leanCore) holdGuard() {
+	if !r.bs && !r.tm.hold && !r.isReplaying() {
+		r.tm.hold, r.tm.wake = true, cachSymbols
+	}
 }
 
 func (r *leanCore) holdNext(j int32, present bool) {
@@ -2715,6 +2735,7 @@ func (r *leanCore) unlock() {
 	}
 	r.rebuildSigns()
 	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed = false, r.acqGain, 0, 0, 0
+	r.tm.wake = 0
 	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
 	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
 	if r.tm.mm {

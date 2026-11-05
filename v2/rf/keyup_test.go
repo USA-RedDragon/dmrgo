@@ -3,11 +3,27 @@ package rf
 import (
 	"math"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 )
 
 func TestMSKeyUpStrobes(t *testing.T) {
 	t.Parallel()
-	fm, env, _ := directCalls(t, 6)
+	msKeyUpStrobes(t, randomized(t, directConfig()))
+}
+
+// TestMSKeyUpGuardHold pins a payload whose second burst started 0.035 of
+// a symbol off: the timing loop ran over the guard before it, on the ramp
+// of the transmitter.
+func TestMSKeyUpGuardHold(t *testing.T) {
+	t.Parallel()
+	msKeyUpStrobes(t, testscen.Of(16444078704928298029).Apply(directConfig()))
+}
+
+func msKeyUpStrobes(t *testing.T, cfg rftx.SeqConfig) {
+	t.Helper()
+	fm, env, _ := directCallsOf(t, cfg, 6)
 	for seed := range uint64(4) {
 		a := discAudio(msBaseband(fm, env, 0, 60, 70+seed), benchAudioHz)
 		var r *AudioReceiver
