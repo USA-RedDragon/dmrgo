@@ -429,7 +429,9 @@ func (p *discPhase) build(unit, dc float64) { p.rebuild(unit, dc, -1) }
 
 // rebuild sets the unit and the DC of the phase and recomputes the kept
 // phase samples. With from inside the kept sums, the samples before it keep
-// their phase, and the phase stays continuous at from.
+// their phase, and the phase stays continuous at from. A later rebuild keeps
+// that cut while it is inside the kept sums: the samples before a level step
+// keep the unit of their level.
 func (p *discPhase) rebuild(unit, dc float64, from int64) {
 	if p.unit > 0 {
 		if q := p.coh; q != nil {
@@ -445,7 +447,10 @@ func (p *discPhase) rebuild(unit, dc float64, from int64) {
 		p.acc, p.avg = rescaleTurn(p.acc, k, d), rescaleTurn(p.avg, k, d)
 	}
 	o, ph0 := max(p.sumN-p.size, 0), 0.0
-	cut := from > max(o, p.o) && from < p.sumN
+	if from < 0 && p.o > o {
+		from = p.o
+	}
+	cut := from > o && from >= p.o && from < p.sumN
 	if cut {
 		o, ph0 = from, p.a*float64(p.sumAt(from)-p.sumO)-p.b*float64(from-p.o)+p.ph0
 	}

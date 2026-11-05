@@ -306,7 +306,7 @@ func TestRxTwoTalkerSyncLevelStepHead(t *testing.T) {
 	t.Parallel()
 	row := mxRowOf(t, "mid.none.+700.ms2.data12.+500ppm.nom.a12000.40dB.step10dB")
 	rxs := []mxRx{{row.val(mxFormat), Tier2}, {row.val(mxFormat), Tier3}}
-	for _, run := range []uint64{5, 10, 13, 20, 24, 30, 35, 40, 44} {
+	for _, run := range []uint64{1, 2, 5, 10, 12, 13, 15, 17, 19, 20, 21, 24, 25, 27, 30, 35, 40, 44} {
 		res, err := mxRun(pinnedTB{t, run}, row, rxs)
 		if err != nil {
 			t.Fatal(err)
