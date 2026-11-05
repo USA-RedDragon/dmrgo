@@ -196,6 +196,14 @@ func TestSecondsLockBurstExact(t *testing.T) {
 	secondsLockBurstExact(t, testConfig(t))
 }
 
+// TestSecondsLockBurstDeferredFit pins a payload whose lock burst a false
+// lock before it made the receiver hunt: the sync fit deferred to the next
+// symbol, and the lock took the strobe unfitted, 25 us early.
+func TestSecondsLockBurstDeferredFit(t *testing.T) {
+	t.Parallel()
+	secondsLockBurstExact(t, testscen.Of(1234071648616322122).Apply(testConfigFixed()))
+}
+
 func secondsLockBurstExact(t *testing.T, cfg rftx.SeqConfig) {
 	t.Helper()
 	cfg.Superframes = 1

@@ -1629,6 +1629,9 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 			r.pairNs, r.pairSrc = r.ns, uint8(src)+1
 		}
 	}
+	if r.again {
+		return 0, 0, false, true
+	}
 	if !strict {
 		r.acqNext = r.ns + leanAcqWait
 	}
