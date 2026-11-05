@@ -12,4 +12,7 @@ func (r *iqRx) unsettled() float32 { return r.unsettledExt() }
 
 func (r *iqRx) endNarrow() bool { return r.endNarrowExt() }
 
-func (r *iqRx) writeAudio() { r.writeAudioExt() }
+func (r *iqRx) writeAudio() {
+	r.writeAudioExt()
+	r.lockTune()
+}

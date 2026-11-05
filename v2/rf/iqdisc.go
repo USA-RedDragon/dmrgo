@@ -440,6 +440,7 @@ type iqRx struct {
 	spec      *spectrum
 	specLock  bool
 	wasLocked bool
+	lockSeen  bool
 	outBand   bool
 	center    float32
 	adjSide   float32
@@ -629,6 +630,17 @@ func (r *iqRx) syncTune() {
 	}
 }
 
+func (r *iqRx) lockTune() {
+	if !r.d.locked {
+		r.lockSeen = false
+		return
+	}
+	if !r.lockSeen && r.syncOnly {
+		r.syncTune()
+	}
+	r.lockSeen = true
+}
+
 func (d *iqDisc) hzOf(acc complex64) float32 {
 	return atan2f(imag(acc), real(acc)) * (float32(basebandRate/d.decim) / (2 * math.Pi))
 }
@@ -667,14 +679,12 @@ func (r *iqRx) hunt(v complex64) {
 	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
-	r.writeAudio()
+	if r.writeAudio(); r.d.locked {
+		return
+	}
 	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
-	dc := float32(0)
-	if r.d.locked {
-		dc = r.d.f.dc - (hz-r.conv.hz)*r.d.f.gain*iqUnitsPerHz
-	}
-	r.tuneWith(hz-r.conv.hz, dc, iqTuneMaxHz)
+	r.tuneWith(hz-r.conv.hz, 0, iqTuneMaxHz)
 }
 
 func (r *iqRx) tuneLimit() float32 {

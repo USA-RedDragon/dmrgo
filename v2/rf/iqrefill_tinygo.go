@@ -32,8 +32,9 @@ func (r *iqRx) endNarrow() bool { return r.d.hasExt() && r.endNarrowExt() }
 func (r *iqRx) writeAudio() {
 	if r.d.hasExt() {
 		r.writeAudioExt()
-		return
+	} else {
+		r.d.writeIQ(r.audio)
+		r.audio = r.audio[:0]
 	}
-	r.d.writeIQ(r.audio)
-	r.audio = r.audio[:0]
+	r.lockTune()
 }

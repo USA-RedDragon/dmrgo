@@ -103,3 +103,29 @@ func TestIQSeekLevelsHoldTune(t *testing.T) {
 		}
 	}
 }
+
+func lockOffsetPin(t *testing.T, run uint64, name string, off, cn float64, spur float32, tier Tier) float64 {
+	t.Helper()
+	sc := testscen.Of(runMix(run, nameHash(name)))
+	const msg = "DMRGO RXBENCH"
+	ids := testscen.Of(runMix(sc.VoiceSeed, nameHash(msg))).Apply(rftx.SeqConfig{Source: 3009101, BS: 990913, Dest: 3009201, Message: msg})
+	slots, _ := benchStreamOf(t, ids, 1)
+	x := cleanBaseband(slots, off).noisy(t, cn, runMix(runMix(run, nameHash(name)), 7))
+	at, _, ok := lockNCO(t, cu8Spur(x, 32, spur), basebandRate, tier)
+	if !ok {
+		t.Fatalf("%s at %.0f Hz: no lock", name, off)
+	}
+	return at
+}
+
+// TestIQHuntAfterLock pins Tier 0 locks at +-1400 Hz with a DC spur where
+// the spectrum hunt tuned to its estimate right after the audio it flushed
+// made the lock.
+func TestIQHuntAfterLock(t *testing.T) {
+	t.Parallel()
+	for _, off := range []float64{1400, -1400} {
+		if at := lockOffsetPin(t, 3524953757563366875, "TestIQLockOffsetDCSpur", off, 10, -0.5, Tier0); math.Abs(at-off) > iqAFCPullHz {
+			t.Errorf("%+.0f Hz: converter at %.0f Hz at the lock", off, at)
+		}
+	}
+}

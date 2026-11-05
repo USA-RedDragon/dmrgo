@@ -77,6 +77,7 @@ var bugPinTests = map[string]string{
 	"TestIQUnheldAdjacentWalk":           "an interferer payload whose residue walked an unheld converter onto the adjacent channel",
 	"TestIQSyncTuneAdjacent":             "payloads whose lag-1 mean held the SYNC-fit tune back next to an adjacent channel",
 	"TestIQSeekLevelsHoldTune":           "MS calls where the converter followed an EMB seek on noise in the empty slot",
+	"TestIQHuntAfterLock":                "Tier 0 locks where the spectrum hunt tuned after the lock",
 }
 
 func fixedPayload(t testing.TB) bool {
