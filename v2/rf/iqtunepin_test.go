@@ -341,3 +341,15 @@ func TestRxLockFarHeld(t *testing.T) {
 	}
 }
 
+// TestIQRefillInChannel pins a held-out run where an unheld Tier 3 receiver
+// locked on the residue of a 40 dB stronger channel and the refill tune
+// moved the converter 6.5 kHz off, past the channel edge.
+func TestIQRefillInChannel(t *testing.T) {
+	t.Parallel()
+	o := tierOptions(Tier3)
+	o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQSpecHunt = 0, false, false
+	s := runMix(11190316752511572895, nameHash("TestTier3Adjacent"))
+	if _, _, off := adjacentPin(t, Tier3, &o, 0, s, s, 7); off >= channelEdgeHz {
+		t.Errorf("converter %.0f Hz off the carrier, outside the channel", off)
+	}
+}

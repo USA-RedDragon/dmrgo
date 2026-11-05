@@ -101,7 +101,7 @@ func (r *iqRx) refillCoh(hz float64) {
 		return
 	}
 	d := float32(hz) - r.conv.hz
-	if abs32(d) < cohFreqSpan {
+	if abs32(d) < cohFreqSpan || abs32(float32(hz)-r.center) > r.lockLimit() {
 		d = 0
 	}
 	main, coh := r.conv.taps, r.conv.coh.taps
