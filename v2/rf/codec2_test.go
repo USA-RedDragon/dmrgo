@@ -25,7 +25,8 @@ func codec2ModeOf(late bool) int {
 func codec2CallMode(t *testing.T, n int, late bool, cn float64, mode int) ([]complex64, [][9]byte, float64) {
 	t.Helper()
 	var lc pdu.FullLinkControl
-	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3009101}); err != nil {
+	ids := randomized(t, rftx.SeqConfig{Source: 3009101, Dest: 9})
+	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: ids.Dest, SourceAddress: ids.Source}); err != nil {
 		t.Fatal(err)
 	}
 	lc.FID = 0xC2
