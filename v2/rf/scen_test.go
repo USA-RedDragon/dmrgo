@@ -88,6 +88,7 @@ var bugPinTests = map[string]string{
 	"TestRxLockFarHeld":                  "a held-out run where Tier 0 locked 2.6 kHz off and put out burst 0 raw",
 	"TestIQRefillInChannel":              "a held-out run where a refill tune left the channel",
 	"TestRxReplaySeekEMBTiming":          "payloads whose EMB seek the 24-symbol peak timed 7 to 9 us off",
+	"TestLeanFadeKeepsPhase":             "a payload whose burst after a fade was stamped early (loop on the faded slots)",
 }
 
 func fixedPayload(t testing.TB) bool {

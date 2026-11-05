@@ -13,6 +13,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -86,7 +87,21 @@ func relockCheck(t *testing.T, label string, x []complex64, want []float64) {
 
 func TestLeanPayloadSync(t *testing.T) {
 	t.Parallel()
-	cfg := randomizedN(t, 1234567, rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1})
+	checkPayloadSync(t, randomizedN(t, 1234567, payloadSyncConfig))
+}
+
+var payloadSyncConfig = rftx.SeqConfig{ColorCode: 1, Source: 1234567, Dest: 9990, BS: 990911, Superframes: 1}
+
+// TestLeanFadeKeepsPhase pins a payload whose burst after a two-slot fade
+// was stamped 0.06 symbol early: the timing loop ran on the noise of the
+// faded slots of the talker and moved the strobe phase.
+func TestLeanFadeKeepsPhase(t *testing.T) {
+	t.Parallel()
+	checkPayloadSync(t, testscen.Of(17341948031809861460).Apply(payloadSyncConfig))
+}
+
+func checkPayloadSync(t *testing.T, cfg rftx.SeqConfig) {
+	t.Helper()
 	v, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)

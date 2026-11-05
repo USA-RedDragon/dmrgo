@@ -366,6 +366,8 @@ type leanCore struct {
 	sink     *burstSink
 	audio    *audioFront
 	tm       leanTiming
+	slotC    float32
+	slotJ    int32
 	ns       int64
 	ring     [leanRing]int8
 	head     uint8
@@ -1279,6 +1281,10 @@ func (r *leanCore) endSlot() {
 	if first && r.locked && r.audio != nil && r.devScale > leanOverScale {
 		r.fitScale()
 	}
+	r.slotJ, r.slotC = leanNoSlot, r.tm.baseC+r.tm.corr
+	if r.locked && !r.tm.hold {
+		r.slotJ = r.next
+	}
 }
 
 //go:noinline
@@ -2054,6 +2060,7 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	r.unproven, r.rcLone = false, false
 	r.lastGood, r.termAt, r.pendEnd = 0, leanNoSlot, 0
 	r.streams++
+	r.slotJ = leanNoSlot
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
 	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
@@ -2302,15 +2309,19 @@ func (r *leanCore) slot() {
 	default:
 		r.lost++
 	}
+	heard := present
 	if present {
 		if !isAnchor {
 			anchor = 0
 		}
-		if !r.burst(j, base, anchor, noisy, missedA) {
+		if heard = r.burst(j, base, anchor, noisy, missedA); !heard {
 			r.lost = lost + 1
 		} else if !isAnchor && r.syncLive(j) {
 			r.lost = 0
 		}
+	}
+	if !heard && r.slotJ == j && !r.isReplaying() {
+		r.tm.t -= r.tm.baseC + r.tm.corr - r.slotC
 	}
 	if !r.isReplaying() {
 		switch {
