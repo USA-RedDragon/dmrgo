@@ -52,6 +52,8 @@ const (
 	leanSearchHz        = 200
 	leanLockMMStep      = 0.1
 	leanMMSteps         = 4
+	leanZeroPasses      = 3
+	leanZeroStill       = 0.02
 	leanSignMiss        = 5
 	leanBurstSec        = float64(slotSymbols-cachSymbols) / symbolRate
 	leanCachSec         = float64(cachSymbols) / symbolRate
@@ -3541,9 +3543,19 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		return 0, false
 	}
 	kept := sym + 1 - int64((float32(r.acqKept())-4+at0)/sps)
-	for k := max(base-1, kept); k <= base+slotSymbols && k < r.ns; k++ {
-		v := r.keptAt(at0 + d - float32(sym-k)*sps)
-		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
+	lo, hi := max(base-1, kept), min(base+slotSymbols, r.ns-1)
+	r.ringKept(lo, hi, sym, at0+d, sps)
+	for range leanZeroPasses {
+		z, ok := r.burstZero(max(lo, base+cachSymbols+2), min(hi, base+slotSymbols-3), sym, at0, d, sps)
+		if !ok {
+			break
+		}
+		moved := abs32(z - d)
+		d = z
+		r.ringKept(lo, hi, sym, at0+d, sps)
+		if moved < leanZeroStill {
+			break
+		}
 	}
 	r.sliceSyms(end, &syms)
 	g, dc, res := r.fitSyms(end, &syms)
@@ -3578,36 +3590,75 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 
 func (r *leanCore) sliceKept(at, sps float32, syms *[syncSymbols]int8) {
 	r.setLLR()
-	thr := 2 * r.llrDev
 	for i := range syncSymbols {
-		v := r.keptAt(at - float32(syncSymbols-1-i)*sps)
-		x := int32(roundf(v))*(discStepHz/llrStepHz) + r.llrOff
-		q := int8(1)
-		if x > thr || -x > thr {
-			q = 3
-		}
-		if x < 0 {
-			q = -q
-		}
-		syms[i] = q
+		syms[i] = r.sliceLevel(int32(roundf(r.keptAt(at - float32(syncSymbols-1-i)*sps))))
 	}
 }
 
 func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
 	r.setLLR()
-	thr := 2 * r.llrDev
 	k0 := end - (syncSymbols - 1)
 	for i := range syncSymbols {
-		x := int32(r.ring[ringPos(k0+int64(i))])*(discStepHz/llrStepHz) + r.llrOff
-		v := int8(1)
-		if x > thr || -x > thr {
-			v = 3
-		}
-		if x < 0 {
-			v = -v
-		}
-		syms[i] = v
+		syms[i] = r.sliceLevel(int32(r.ring[ringPos(k0+int64(i))]))
 	}
+}
+
+func (r *leanCore) sliceLevel(v int32) int8 {
+	x := v*(discStepHz/llrStepHz) + r.llrOff
+	q := int8(1)
+	if x > 2*r.llrDev || -x > 2*r.llrDev {
+		q = 3
+	}
+	if x < 0 {
+		q = -q
+	}
+	return q
+}
+
+func (r *leanCore) ringKept(lo, hi, sym int64, at, sps float32) {
+	for k := lo; k <= hi; k++ {
+		v := r.keptAt(at - float32(sym-k)*sps)
+		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
+	}
+}
+
+// burstZero moves the timing d of an EMB seek to the zero of the
+// Mueller-Muller detector over the symbols lo to hi of the burst, sliced from
+// the ring at d. The correlation peak of the 24 EMB symbols moves with the
+// payload symbols next to them; the detector zero over the whole burst does
+// not.
+func (r *leanCore) burstZero(lo, hi, sym int64, at, d, sps float32) (float32, bool) {
+	if hi-lo < slotSymbols/2 {
+		return d, false
+	}
+	r.setLLR()
+	x0, x1 := d-leanLockMMStep, d+leanLockMMStep
+	f0, f1 := r.burstMM(lo, hi, sym, at+x0, sps), r.burstMM(lo, hi, sym, at+x1, sps)
+	for range leanMMSteps {
+		if f1 == f0 {
+			break
+		}
+		x0, x1 = x1, x1-f1*(x1-x0)/(f1-f0)
+		if abs32(x1-d) > sps/4 {
+			return d, false
+		}
+		f0, f1 = f1, r.burstMM(lo, hi, sym, at+x1, sps)
+	}
+	return x1, true
+}
+
+func (r *leanCore) burstMM(lo, hi, sym int64, at, sps float32) float32 {
+	prev := r.keptAt(at - float32(sym-lo)*sps)
+	a0 := r.sliceLevel(int32(r.ring[ringPos(lo)]))
+	first, e, m := a0, float32(0), prev
+	for k := lo + 1; k <= hi; k++ {
+		y := r.keptAt(at - float32(sym-k)*sps)
+		a1 := r.sliceLevel(int32(r.ring[ringPos(k)]))
+		e += float32(a0)*y - float32(a1)*prev
+		m += y
+		prev, a0 = y, a1
+	}
+	return e - m/float32(hi-lo+1)*float32(first-a0)
 }
 
 // seekBackfill decodes the talker's slot two slots before the one where
@@ -3627,10 +3678,7 @@ func (r *leanCore) seekBackfill(j int32, base int64, d, sps float32) {
 		return
 	}
 	saved := r.ring
-	for k := lo; k <= base+slotSymbols; k++ {
-		v := r.keptAt(r.lastAt + d - float32(r.ns-1-k)*sps)
-		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
-	}
+	r.ringKept(lo, base+slotSymbols, r.ns-1, r.lastAt+d, sps)
 	r.ext.backfillAt(d)
 	fitNs, fitT := r.fitNs, r.fitT
 	end := base + leanSyncEnd
