@@ -41,6 +41,7 @@ func TestDiscPhaseClickWeights(t *testing.T) {
 	const hz = 9600
 	for _, cn := range []float64{40, 7} {
 		a := discAudio(noisyBaseband(t, slots, 1400, cn, 5), hz)
+		a = a[:len(a)-int(benchPad*hz)]
 		spikes := map[int]bool{}
 		for i := len(a) - 3000; i < len(a)-100; i += 487 {
 			a[i] = int16(audioOffset + (1400+3*discClickHz)*audioGain)
