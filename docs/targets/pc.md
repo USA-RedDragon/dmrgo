@@ -48,7 +48,7 @@ CI runs the tests of the module at the Go version of `v2/go.mod`, with cgo off:
 <!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.minimum-go-tests -->
 ```yaml
 minimum-go-tests:
-  runs-on: ubuntu-24.04
+  runs-on: ubuntu-26.04
 
   steps:
     - name: Checkout repository
@@ -68,7 +68,7 @@ It also builds and vets the module for 32-bit arm and 386, and tests the Codec2 
 <!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.arch-32bit -->
 ```yaml
 arch-32bit:
-  runs-on: ubuntu-24.04
+  runs-on: ubuntu-26.04
 
   steps:
     - name: Checkout repository
@@ -91,11 +91,11 @@ arch-32bit:
     - name: Codec2 tests on amd64 with the translated engine
       run: CGO_ENABLED=0 go test -C v2 -tags codec2aot ./vocoder/codec2/...
 
-    - name: Install qemu-user-static
-      run: sudo apt-get update && sudo apt-get install -y qemu-user-static
+    - name: Install qemu-user
+      run: sudo apt-get update && sudo apt-get install -y qemu-user
 
     - name: Codec2 allocation and engine tests on arm
-      run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm-static -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
+      run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
 ```
 <!-- /dmrgo:code -->
 

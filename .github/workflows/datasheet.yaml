@@ -32,7 +32,7 @@ env:
 jobs:
   sweep:
     if: github.actor != 'usa-reddragon-auto-commit-bot[bot]'
-    runs-on: ${{ vars.RXBENCH_RUNNER || 'ubuntu-24.04' }}
+    runs-on: ${{ vars.RXBENCH_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 360
     strategy:
       fail-fast: true
@@ -80,7 +80,7 @@ jobs:
   update:
     needs: sweep
     if: github.actor != 'usa-reddragon-auto-commit-bot[bot]'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 180
 
     steps:
