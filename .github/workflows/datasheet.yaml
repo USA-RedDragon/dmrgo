@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # renovate: datasource=github-releases depName=qemu/qemu
+  # renovate: datasource=github-tags extractVersion=^v(?<version>\d+\.\d+\.\d+)$ depName=qemu/qemu
   QEMU_VERSION: 11.1.2
   QEMU_SHA256: 731b5681e4bb18be313231579b8efd0296c5b015fa36dc533874b639ba838016
   TINYGO_IMAGE: tinygo/tinygo:0.44.0@sha256:98126534a0653966913b803d26805ea79250a244217d921d74044cfedc1d24a2
