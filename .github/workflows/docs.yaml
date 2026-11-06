@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-26.04
 
     env:
-      PANDOC_VERSION: "3.11"
-      PANDOC_SHA256: 37edb3bbcf722f921a009941bf5874e2e0c09263226c9b4a2d980788cb062ab6
+      PANDOC_VERSION: "3.13"
+      PANDOC_SHA256: 38aa33b325a2bc96a4c39409631212db55702f564250bcdbead180b3bf646389
 
     steps:
       - name: Checkout repository
