@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/USA-RedDragon/dmrgo/v2 v2.0.0
-	gvisor.dev/gvisor v0.0.0-20261023012131-1b45d45a79e1
+	gvisor.dev/gvisor v0.0.0-20261106024050-6e980c2ddc1e
 )
 
 require (
