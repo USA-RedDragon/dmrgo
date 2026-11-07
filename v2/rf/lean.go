@@ -3300,11 +3300,13 @@ func (r *leanCore) burstTicks(base int64) (int64, int16, float32) {
 	return ticks, int16(roundf(n)), 0
 }
 
+func (r *leanCore) fitIs(sym int64) bool { return r.fitNs == int32(sym) }
+
 // fitAt moves the anchor at and the symbols n it projects back over toward
 // the SYNC fit of the burst at base, when the burst has one, by the weight
 // of the fit.
 func (r *leanCore) fitAt(base, at int64, n float32) (int64, float32) {
-	if r.fitNs != int32(base+leanSyncEnd) {
+	if !r.fitIs(base + leanSyncEnd) {
 		return at, n
 	}
 	w := r.fitWeight()
