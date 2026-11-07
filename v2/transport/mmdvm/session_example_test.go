@@ -110,7 +110,7 @@ func reply(out []byte, f mmdvm.Frame) []byte {
 		payload, _ := a.AppendBinary(nil)
 		out, _ = mmdvm.AppendFrame(out, mmdvm.CommandAck, payload)
 		if f.Command == mmdvm.CommandSetMode {
-			raw, _ := hex.DecodeString("20580b4015ec0f6871000d005c4d5d7f77fd757361a416203d5235242181850277")
+			raw, _ := hex.DecodeString("21f40d58182015f8599012205c4d5d7f77fd757362300e202b9229044141c30391")
 			d := mmdvm.DMRData{Slot: enums.Slot2, Control: mmdvm.ControlDataSync | mmdvm.Control(enums.DataTypeVoiceLCHeader)}
 			copy(d.Burst[:], raw)
 			payload, _ = d.AppendBinary(nil)

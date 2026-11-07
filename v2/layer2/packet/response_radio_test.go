@@ -18,8 +18,8 @@ func TestNewResponse_MatchesRadio(t *testing.T) {
 		ns    uint8
 		resp  packet.Response
 	}{
-		{"ACK", "200f36eb706ce1f995e3ce27ddad5d7f77fd757e68f8fae870342926881a063c20", 2, packet.ResponseACK},
-		{"NACK out of sequence", "20a3362d7160e7e191d3cfc7ddad5d7f77fd757e695cfaa870342fe6871a2dbc70", 3, packet.ResponseNACKOutOfSequence},
+		{"ACK", "2d3e2cf14f68e99196c12f855dad5d7f77fd757e68c4ab0061b54ce4cb1f9fbd54", 2, packet.ResponseACK},
+		{"NACK out of sequence", "2d922c374e64ef8992f12e655dad5d7f77fd757e6960ab4061b54a24c41fb43d04", 3, packet.ResponseNACKOutOfSequence},
 	} {
 		raw, err := hex.DecodeString(c.burst)
 		if err != nil {
@@ -42,8 +42,8 @@ func TestNewResponse_MatchesRadio(t *testing.T) {
 		to := &pdu.ConfirmedDataHeader{
 			ResponseRequested:  true,
 			SAP:                enums.SAPIPBasedPacketData,
-			LLIDDestination:    3191868,
-			LLIDSource:         3140598,
+			LLIDDestination:    3009999,
+			LLIDSource:         3009998,
 			FullMessageFlag:    true,
 			BlocksToFollow:     9,
 			SendSequenceNumber: c.ns,

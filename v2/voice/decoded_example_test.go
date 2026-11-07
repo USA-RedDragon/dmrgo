@@ -75,6 +75,6 @@ func ExampleReceiver_Decoded() {
 		}
 	}
 	// Output:
-	// voice: call from 3191868 to 9990
+	// voice: call from 3009999 to 9990
 	// voice: end, Terminator
 }

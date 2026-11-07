@@ -15,15 +15,15 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-var capturedEmbeddedLC = []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
+var capturedEmbeddedLC = []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x2D, 0xED, 0xCF}
 
 func capturedFragments() [4][32]unpacked.Bit {
 	var fr [4][32]unpacked.Bit
 	for i, word := range [4][4]byte{
-		{0x00, 0x00, 0x11, 0x09},
-		{0x0F, 0x12, 0x96, 0x96},
-		{0x09, 0x0C, 0x35, 0x95},
-		{0x84, 0xAA, 0x2B, 0xA5},
+		{0x05, 0x06, 0x12, 0x0F},
+		{0x0C, 0x14, 0x96, 0x93},
+		{0x0F, 0x06, 0x14, 0x96},
+		{0x88, 0x84, 0x0C, 0x88},
 	} {
 		copy(fr[i][:], unpacked.Unpack(word[:]))
 	}
@@ -34,7 +34,7 @@ func capturedLC() pdu.FullLinkControl {
 	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
 	mustSet(lc.SetUnitToUnit(pdu.FLCUnitToUnit{
 		TargetAddress: 9990,
-		SourceAddress: 3191868,
+		SourceAddress: 3009999,
 	}))
 	return lc
 }
@@ -55,7 +55,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 		t.Fatalf("FEC = %+v, LC FEC = %+v", res, flc.FEC)
 	}
 	target, source, ok := flc.Addresses()
-	if !ok || flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || target != 9990 || source != 3191868 {
+	if !ok || flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || target != 9990 || source != 3009999 {
 		t.Errorf("decoded %s", flc.String())
 	}
 	if flc.DataType() != enums.DataTypeVoiceLCHeader {

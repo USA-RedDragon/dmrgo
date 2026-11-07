@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	motoRadioCheckRequest = "a41000002febf630b43c0637"
-	motoRadioCheckAnswer  = "a41000802febf630b43cadce"
-	motoCallAlert         = "9f10000030b43c2febf62dbe"
-	motoCallAlertAck      = "a0109f002febf630b43cb2f5"
+	motoRadioCheckRequest = "a41000002dedce2dedcf83b1"
+	motoRadioCheckAnswer  = "a41000802dedce2dedcf2848"
+	motoCallAlert         = "9f1000002dedcf2dedceb33b"
+	motoCallAlertAck      = "a0109f002dedce2dedcf3773"
 )
 
 func motoBytes(t *testing.T, s string) [12]byte {
@@ -34,8 +34,8 @@ func TestMotorolaRadioCheck(t *testing.T) {
 		answer         bool
 		target, source uint32
 	}{
-		{"request", motoRadioCheckRequest, false, 3191868, 3140598},
-		{"answer", motoRadioCheckAnswer, true, 3140598, 3191868},
+		{"request", motoRadioCheckRequest, false, 3009999, 3009998},
+		{"answer", motoRadioCheckAnswer, true, 3009998, 3009999},
 	}
 	for _, tt := range tests {
 		raw := motoBytes(t, tt.vector)
@@ -44,7 +44,7 @@ func TestMotorolaRadioCheck(t *testing.T) {
 			t.Fatalf("%s: decoded %+v", tt.name, c)
 		}
 		p, ok := c.AsMotorolaRadioCheck()
-		if !ok || p.Answer != tt.answer || p.RequesterAddress != 3140598 || p.CheckedAddress != 3191868 {
+		if !ok || p.Answer != tt.answer || p.RequesterAddress != 3009998 || p.CheckedAddress != 3009999 {
 			t.Fatalf("%s: payload %+v %t", tt.name, p, ok)
 		}
 		if tgt, src, ok := p.Addresses(); !ok || tgt != tt.target || src != tt.source {
@@ -55,7 +55,7 @@ func TestMotorolaRadioCheck(t *testing.T) {
 		}
 
 		built := pdu.CSBK{LastBlock: true}
-		if err := built.SetMotorolaRadioCheck(pdu.MotorolaRadioCheckPDU{Answer: tt.answer, RequesterAddress: 3140598, CheckedAddress: 3191868}); err != nil {
+		if err := built.SetMotorolaRadioCheck(pdu.MotorolaRadioCheckPDU{Answer: tt.answer, RequesterAddress: 3009998, CheckedAddress: 3009999}); err != nil {
 			t.Fatal(err)
 		}
 		if got := must(built.Encode()); got != raw {
@@ -79,14 +79,14 @@ func TestMotorolaCallAlert(t *testing.T) {
 	raw := motoBytes(t, motoCallAlert)
 	c := pdu.DecodeCSBK(raw)
 	p, ok := c.AsMotorolaCallAlert()
-	if c.FEC.Uncorrectable || !ok || p.TargetAddress != 3191868 || p.SourceAddress != 3140598 {
+	if c.FEC.Uncorrectable || !ok || p.TargetAddress != 3009999 || p.SourceAddress != 3009998 {
 		t.Fatalf("decoded %+v %+v %t", c, p, ok)
 	}
 	if _, ok := c.AsMotorolaCallAlertAck(); ok {
 		t.Error("AsMotorolaCallAlertAck ok")
 	}
 	built := pdu.CSBK{LastBlock: true}
-	if err := built.SetMotorolaCallAlert(pdu.MotorolaCallAlertPDU{TargetAddress: 3191868, SourceAddress: 3140598}); err != nil {
+	if err := built.SetMotorolaCallAlert(pdu.MotorolaCallAlertPDU{TargetAddress: 3009999, SourceAddress: 3009998}); err != nil {
 		t.Fatal(err)
 	}
 	if got := must(built.Encode()); got != raw {
@@ -100,7 +100,7 @@ func TestMotorolaCallAlertAck(t *testing.T) {
 	raw := motoBytes(t, motoCallAlertAck)
 	c := pdu.DecodeCSBK(raw)
 	p, ok := c.AsMotorolaCallAlertAck()
-	if c.FEC.Uncorrectable || !ok || p.Request != 0x9F || p.TargetAddress != 3140598 || p.SourceAddress != 3191868 {
+	if c.FEC.Uncorrectable || !ok || p.Request != 0x9F || p.TargetAddress != 3009998 || p.SourceAddress != 3009999 {
 		t.Fatalf("decoded %+v %+v %t", c, p, ok)
 	}
 	alert := motoBytes(t, motoCallAlert)
@@ -108,7 +108,7 @@ func TestMotorolaCallAlertAck(t *testing.T) {
 		t.Errorf("Request %#x, want octet 0 of the call alert %#x", p.Request, alert[0])
 	}
 	built := pdu.CSBK{LastBlock: true}
-	if err := built.SetMotorolaCallAlertAck(pdu.MotorolaCallAlertAckPDU{Request: 0x9F, TargetAddress: 3140598, SourceAddress: 3191868}); err != nil {
+	if err := built.SetMotorolaCallAlertAck(pdu.MotorolaCallAlertAckPDU{Request: 0x9F, TargetAddress: 3009998, SourceAddress: 3009999}); err != nil {
 		t.Fatal(err)
 	}
 	if got := must(built.Encode()); got != raw {

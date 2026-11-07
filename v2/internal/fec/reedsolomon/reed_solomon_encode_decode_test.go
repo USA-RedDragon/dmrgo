@@ -265,9 +265,9 @@ func TestEncodeMatchesGeneratorMatrix(t *testing.T) {
 func TestEncodeKnownVector(t *testing.T) {
 	t.Parallel()
 
-	data := [dataSize]byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
+	data := [dataSize]byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x2D, 0xED, 0xCF}
 	encoded := Encode(data)
-	want := [checksumSize]byte{0xCB, 0x59, 0x57}
+	want := [checksumSize]byte{0x46, 0xEF, 0x9D}
 	if got := [checksumSize]byte(encoded[dataSize:]); got != want {
 		t.Errorf("parity % X, want % X", got, want)
 	}

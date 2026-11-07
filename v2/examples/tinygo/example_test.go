@@ -13,5 +13,5 @@ func Example() {
 	fmt.Println("call from", s.source, "to", s.target, "calls", s.calls, "end", s.ended.String(), "relayed", s.relayed)
 	// Output:
 	// bursts 15 voice 13 data 2 re-encoded 15 corrected 0
-	// call from 3191868 to 9990 calls 1 end Terminator relayed 20
+	// call from 3009999 to 9990 calls 1 end Terminator relayed 20
 }

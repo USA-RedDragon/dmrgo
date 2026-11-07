@@ -27,14 +27,14 @@ func TestAppendAck(t *testing.T) {
 		t.Fatal(err)
 	}
 	u, ok := h.Data.AsUnconfirmed()
-	if out[0] != 'x' || !ok || u.LLIDSource != 3140598 || u.LLIDDestination != 3191868 || u.SAP != enums.SAPIPBasedPacketData {
+	if out[0] != 'x' || !ok || u.LLIDSource != 3009998 || u.LLIDDestination != 3009999 || u.SAP != enums.SAPIPBasedPacketData {
 		t.Fatalf("header %s", h.Data.String())
 	}
 	d, err := ip.Decode(enums.SAPIPBasedPacketData, out[1:])
 	if err != nil {
 		t.Fatal(err)
 	}
-	if d.Source != [4]byte{12, 47, 235, 246} || d.Destination != [4]byte{12, 48, 180, 60} || d.SourcePort != ip.PortTMS || d.DestinationPort != ip.PortTMS {
+	if d.Source != [4]byte{12, 45, 237, 206} || d.Destination != [4]byte{12, 45, 237, 207} || d.SourcePort != ip.PortTMS || d.DestinationPort != ip.PortTMS {
 		t.Errorf("datagram %+v", d)
 	}
 	ack, err := tms.NewAck(text.Sequence)

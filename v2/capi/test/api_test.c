@@ -642,7 +642,7 @@ static void test_voice_capture(const char *path) {
 		OK(dmrgo_voice_receiver_burst(rx, now, &raw, &h, ev, DMRGO_VOICE_MAX_EVENTS, &m, &need, arena, aneed, &used, &aneed));
 		for (size_t j = 0; j < m; j++) {
 			if (ev[j].kind == DMRGO_VOICE_EVENT_CALL_START)
-				CHECK(ev[j].call.source == 3191868 && ev[j].call.target == 9990 && ev[j].call.origin == DMRGO_VOICE_ORIGIN_HEADER);
+				CHECK(ev[j].call.source == 3009999 && ev[j].call.target == 9990 && ev[j].call.origin == DMRGO_VOICE_ORIGIN_HEADER);
 			if (ev[j].kind == DMRGO_VOICE_EVENT_VOICE)
 				voice++;
 			if (ev[j].kind == DMRGO_VOICE_EVENT_CALL_END) {

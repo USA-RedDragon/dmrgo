@@ -16,10 +16,10 @@ import (
 // addresses of its Full LC and encodes it back to the same 33 bytes.
 func Example() {
 	raw := [33]byte{
-		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
-		12, 161, 196, 109, 255, 87, 215, 93, 245, 222,
-		49, 168, 53, 24, 63, 48, 61, 97, 56, 82,
-		151, 134, 91,
+		69, 231, 5, 159, 41, 142, 22, 96, 61, 96,
+		19, 129, 196, 109, 255, 87, 215, 93, 245, 222,
+		50, 60, 45, 24, 41, 240, 33, 65, 88, 146,
+		209, 135, 189,
 	}
 	burst, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -35,7 +35,7 @@ func Example() {
 	fmt.Println(encoded == raw, err)
 	// Output:
 	// Voice LC Header <nil>
-	// call from 3191868 to 9990
+	// call from 3009999 to 9990
 	// true <nil>
 }
 

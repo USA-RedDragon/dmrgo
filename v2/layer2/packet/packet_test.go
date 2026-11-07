@@ -48,9 +48,9 @@ func TestAssembler_Captures(t *testing.T) {
 		size   int
 		want   []byte
 	}{
-		{"d-sms", pdu.FormatUnconfirmed, 56, utf16le("TEST KI5VMF")},
-		{"m-sms", pdu.FormatUnconfirmed, 62, utf16le("TEST KI5VMF")},
-		{"h-sms", pdu.FormatShortDataDefined, 26, utf16le("TEST KI5VMF")},
+		{"d-sms", pdu.FormatUnconfirmed, 56, utf16le("TEST N0CALL")},
+		{"m-sms", pdu.FormatUnconfirmed, 62, utf16le("TEST N0CALL")},
+		{"h-sms", pdu.FormatShortDataDefined, 26, utf16le("TEST N0CALL")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.file, func(t *testing.T) {
@@ -99,7 +99,7 @@ func TestAssembler_CaptureCRCFailure(t *testing.T) {
 			msg, got = m, err
 		}
 	}
-	if !errors.Is(got, packet.ErrMessageCRC) || !errors.Is(got, fec.ErrUncorrectable) || msg == nil || msg.CRC != 0x0b8c211b {
+	if !errors.Is(got, packet.ErrMessageCRC) || !errors.Is(got, fec.ErrUncorrectable) || msg == nil || msg.CRC != 0x63bee077 {
 		t.Fatalf("err %v msg %+v", got, msg)
 	}
 }
@@ -207,7 +207,7 @@ func TestAssembler_HeaderCRCFailureKeepsPacket(t *testing.T) {
 			}
 		}
 	}
-	if msg == nil || !bytes.Contains(msg.Data, utf16le("TEST KI5VMF")) {
+	if msg == nil || !bytes.Contains(msg.Data, utf16le("TEST N0CALL")) {
 		t.Fatalf("message %+v", msg)
 	}
 }

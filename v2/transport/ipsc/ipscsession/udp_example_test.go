@@ -14,7 +14,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
 
-// ExamplePeer_loopback registers peer 314926 with a master over UDP on the loopback
+// ExamplePeer_loopback registers peer 300926 with a master over UDP on the loopback
 // interface, with the authentication key 123456789abcdef1234, and sends
 // the master the voice LC header of a call once it is registered.
 func ExamplePeer_loopback() {
@@ -23,14 +23,14 @@ func ExamplePeer_loopback() {
 	}
 	// Output:
 	// master gets RegisterRequest
-	// master: Up 314926
+	// master: Up 300926
 	// peer gets RegisterReply
 	// peer: Up 1
 	// master gets PeerListRequest
 	// peer gets PeerListReply
 	// peer: Peers 0
 	// master gets GroupVoice
-	// master: Data 314926 GroupVoice from 3191868 to 9
+	// master: Data 300926 GroupVoice from 3009999 to 9
 }
 
 func register() error {
@@ -50,7 +50,7 @@ func register() error {
 	if err != nil {
 		return err
 	}
-	call, _ := hex.DecodeString("800004ce2e1d30b43c0000090200000d9e2080dd7b5f482e7d3e0000000001c0000a800a006000000000000930b43ce9f8ed0071466f")
+	call, _ := hex.DecodeString("800004977e1d2dedcf0000090200000d9e2080dd7b5f482e7d3e0000000001c0000a800a00600000000000092dedcf644e270071466f")
 	return passPackets(call, masterConn, peerConn, peer, master)
 }
 
@@ -68,7 +68,7 @@ func newMachines(masterAt net.Addr) (*ipscsession.Peer, *ipscsession.Master, err
 	if err != nil {
 		return nil, nil, err
 	}
-	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 314926, Master: masterAddr, Auth: true, Key: key})
+	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 300926, Master: masterAddr, Auth: true, Key: key})
 	if err != nil {
 		return nil, nil, err
 	}

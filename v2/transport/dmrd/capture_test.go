@@ -63,7 +63,7 @@ func checkGatewayPacket(t *testing.T, cmd dmrd.Command, c captured) {
 	switch cmd {
 	case dmrd.CommandDMRD:
 		d, err := dmrd.DecodeData(c.p)
-		if err != nil || d.Size != 55 || d.Source != 3191868 || d.Destination != 91 || d.Slot != enums.Slot2 || d.Repeater != 3149999 {
+		if err != nil || d.Size != 55 || d.Source != 3009999 || d.Destination != 91 || d.Slot != enums.Slot2 || d.Repeater != 3009990 {
 			t.Fatalf("DMRD %x: %v %v", c.p, d.String(), err)
 		}
 		out, err := d.AppendBinary(nil)
@@ -107,8 +107,8 @@ func checkGatewayConfig(t *testing.T, p []byte) {
 	rx, _ := cfg.RXFrequency()
 	tx, _ := cfg.TXFrequency()
 	s, _ := cfg.Slots()
-	if cfg.ID() != 3149999 || cc != 9 || pw != 8 || h != 10 || rx != 447000000 || tx != 434500000 || s != 3 ||
-		string(cfg.Callsign()) != "KI5VMF" || string(cfg.Location()) != "Anytown" || string(cfg.PackageID()) != "MMDVM" {
+	if cfg.ID() != 3009990 || cc != 9 || pw != 8 || h != 10 || rx != 447000000 || tx != 434500000 || s != 3 ||
+		string(cfg.Callsign()) != "N0CALL" || string(cfg.Location()) != "Anytown" || string(cfg.PackageID()) != "MMDVM" {
 		t.Errorf("RPTC: id %d cc %d power %d height %d rx %d tx %d slots %d %q %q %q", cfg.ID(), cc, pw, h, rx, tx, s, cfg.Callsign(), cfg.Location(), cfg.PackageID())
 	}
 }

@@ -123,13 +123,13 @@ func TestLCBytesCodeword_MatchesTableB18(t *testing.T) {
 func TestLCBytesCodeword_RealCapture(t *testing.T) {
 	t.Parallel()
 
-	lc := hex9(t, "03000000270630b43c")
+	lc := hex9(t, "0300000027062dedcf")
 	tests := []struct {
 		dt   enums.DataType
 		want string
 	}{
-		{enums.DataTypeVoiceLCHeader, "03000000270630b43c5dcfc1"},
-		{enums.DataTypeTerminatorWithLC, "03000000270630b43c52c0ce"},
+		{enums.DataTypeVoiceLCHeader, "0300000027062dedcfd0790b"},
+		{enums.DataTypeTerminatorWithLC, "0300000027062dedcfdf7604"},
 	}
 	for _, tt := range tests {
 		lcb := pdu.LCBytes(lc)
@@ -162,11 +162,11 @@ func TestLCBytesCodeword_RealCapture(t *testing.T) {
 func TestFullLinkControlEncode(t *testing.T) {
 	t.Parallel()
 
-	lc := hex9(t, "03000000270630b43c")
+	lc := hex9(t, "0300000027062dedcf")
 	f := pdu.DecodeFullLinkControlBytes(lc)
 	for dt, want := range map[enums.DataType]string{
-		enums.DataTypeVoiceLCHeader:    "03000000270630b43c5dcfc1",
-		enums.DataTypeTerminatorWithLC: "03000000270630b43c52c0ce",
+		enums.DataTypeVoiceLCHeader:    "0300000027062dedcfd0790b",
+		enums.DataTypeTerminatorWithLC: "0300000027062dedcfdf7604",
 	} {
 		f.BurstDataType = dt
 		cw := must(f.Encode())
@@ -214,7 +214,7 @@ func TestLCBytesCodeword_RejectsOtherDataTypes(t *testing.T) {
 func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 	t.Parallel()
 
-	lc := hex9(t, "03000000270630b43c")
+	lc := hex9(t, "0300000027062dedcf")
 	lcb := pdu.LCBytes(lc)
 	cw := must(lcb.Codeword(enums.DataTypeVoiceLCHeader))
 	got, res, err := pdu.DecodeFullLCCodeword(cw, enums.DataTypeVoiceLCHeader)

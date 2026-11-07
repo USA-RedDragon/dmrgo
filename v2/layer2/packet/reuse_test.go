@@ -62,7 +62,7 @@ func TestAssembler_ReusedBurst(t *testing.T) {
 					copies = append(copies, packet.Message{Data: bytes.Clone(m.Data), Header: deepCopy(m.Header)})
 				}
 			}
-			if len(copies) != 2 || !bytes.Contains(copies[0].Data, utf16le("TEST KI5VMF")) || !bytes.Equal(copies[0].Data, copies[1].Data) ||
+			if len(copies) != 2 || !bytes.Contains(copies[0].Data, utf16le("TEST N0CALL")) || !bytes.Equal(copies[0].Data, copies[1].Data) ||
 				!reflect.DeepEqual(copies[0].Header, copies[1].Header) {
 				t.Fatalf("%d messages", len(copies))
 			}

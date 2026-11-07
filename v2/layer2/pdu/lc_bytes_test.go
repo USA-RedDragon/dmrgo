@@ -15,13 +15,13 @@ import (
 func TestLCBytes_Capture(t *testing.T) {
 	t.Parallel()
 
-	l := pdu.LCBytes(hex9(t, "03000000270630b43c"))
+	l := pdu.LCBytes(hex9(t, "0300000027062dedcf"))
 	if g, _, _, ok := l.Call(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || !soOK(l, layer3.ServiceOptions{}) || g || !ok || l.ProtectFlag() {
 		t.Fatalf("fields of %x", l)
 	}
 	tgt, src, ok := l.Addresses()
-	if !ok || tgt != 9990 || src != 3191868 {
-		t.Fatalf("Addresses %d -> %d %t, want 3191868 -> 9990", src, tgt, ok)
+	if !ok || tgt != 9990 || src != 3009999 {
+		t.Fatalf("Addresses %d -> %d %t, want 3009999 -> 9990", src, tgt, ok)
 	}
 
 	if l.SetGroup(true) != nil || l.SetAddresses(91, 3002699) != nil {
@@ -42,12 +42,12 @@ func TestLCBytes_Capture(t *testing.T) {
 		t.Fatal("codeword of the edited LC fails its parity")
 	}
 
-	orig := pdu.LCBytes(hex9(t, "03000000270630b43c"))
-	if back := pdu.LCBytes([9]byte(cw[:9])); back.SetGroup(false) != nil || back.SetAddresses(9990, 3191868) != nil || back != orig {
+	orig := pdu.LCBytes(hex9(t, "0300000027062dedcf"))
+	if back := pdu.LCBytes([9]byte(cw[:9])); back.SetGroup(false) != nil || back.SetAddresses(9990, 3009999) != nil || back != orig {
 		t.Fatalf("edit back gives %x", back)
 	}
 	vlc, tlc := must(orig.Codeword(enums.DataTypeVoiceLCHeader)), must(orig.Codeword(enums.DataTypeTerminatorWithLC))
-	if hex.EncodeToString(vlc[9:]) != "5dcfc1" || hex.EncodeToString(tlc[9:]) != "52c0ce" {
+	if hex.EncodeToString(vlc[9:]) != "d0790b" || hex.EncodeToString(tlc[9:]) != "df7604" {
 		t.Fatalf("parity %x %x", vlc[9:], tlc[9:])
 	}
 }

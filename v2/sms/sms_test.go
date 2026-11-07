@@ -74,7 +74,7 @@ func ipMessage(t testing.TB, s string) packet.Message {
 	t.Helper()
 	return packet.Message{
 		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
-			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868, FullMessageFlag: true,
+			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3009998, LLIDSource: 3009999, FullMessageFlag: true,
 		}),
 		Data: unhex(t, s),
 	}
@@ -101,7 +101,7 @@ func TestReceivedTexts(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", tt.name, err)
 		}
-		if got.Format != tt.format || string(got.Body) != tt.body || string(out) != "x"+tt.body || got.Source != 3191868 || got.Destination != 3140598 || got.Group {
+		if got.Format != tt.format || string(got.Body) != tt.body || string(out) != "x"+tt.body || got.Source != 3009999 || got.Destination != 3009998 || got.Group {
 			t.Errorf("%s: %+v, %q", tt.name, got, got.Body)
 		}
 	}
@@ -114,8 +114,8 @@ func TestAppendPacketMatchesRadios(t *testing.T) {
 		text sms.Text
 		want string
 	}{
-		{sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3002198, Sequence: 1, Body: []byte("MOTO TEST\x00")}, appcapture.TMS},
-		{sms.Text{Format: sms.FormatAnyTone, Source: 3191868, Destination: 3002198, Body: []byte("DMR TEST")}, appcapture.DMRText},
+		{sms.Text{Format: sms.FormatTMS, Source: 3009999, Destination: 3002198, Sequence: 1, Body: []byte("MOTO TEST\x00")}, appcapture.TMS},
+		{sms.Text{Format: sms.FormatAnyTone, Source: 3009999, Destination: 3002198, Body: []byte("DMR TEST")}, appcapture.DMRText},
 	}
 	for _, tt := range tests {
 		var h sms.Header
@@ -125,7 +125,7 @@ func TestAppendPacketMatchesRadios(t *testing.T) {
 		}
 		want := unhex(t, tt.want)
 		if u, ok := h.Data.AsUnconfirmed(); out[0] != 'x' || !ok || u.SAP != enums.SAPIPBasedPacketData ||
-			u.LLIDSource != 3191868 {
+			u.LLIDSource != 3009999 {
 			t.Fatalf("%s: header %s", tt.text.Format, h.Data.String())
 		}
 		got := out[1:]
@@ -275,11 +275,11 @@ func TestAppendPacketAnyToneNUL(t *testing.T) {
 		body, udp string
 		ipLen     int
 	}{
-		{"C4 one", "13981398001a46df000d000a4300340020006f006e0065000000", 46},
+		{"C4 one", "13981398001a0b79000d000a4300340020006f006e0065000000", 46},
 		{"C4 x", "139813980016", 42},
 	}
 	for _, tt := range tests {
-		in := sms.Text{Format: sms.FormatAnyTone, Source: 3140598, Destination: 3191868, Body: []byte(tt.body)}
+		in := sms.Text{Format: sms.FormatAnyTone, Source: 3009998, Destination: 3009999, Body: []byte(tt.body)}
 		var h sms.Header
 		in.Confirmed = true
 		out, err := sms.AppendPacket(nil, &in, &h)

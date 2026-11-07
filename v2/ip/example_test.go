@@ -22,7 +22,7 @@ func ExampleDecode() {
 	out, _ := ip.AppendIPv4(nil, &d)
 	fmt.Println(hex.EncodeToString(out) == appcapture.TMS)
 	// Output:
-	// 3191868 to 3002198 port TMS 30 octets
+	// 3009999 to 3002198 port TMS 30 octets
 	// true
 }
 

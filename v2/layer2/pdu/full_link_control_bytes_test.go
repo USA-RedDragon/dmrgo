@@ -13,20 +13,20 @@ import (
 func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
 	t.Parallel()
 
-	lc := hex9(t, "03000000270630b43c")
+	lc := hex9(t, "0300000027062dedcf")
 	f := pdu.DecodeFullLinkControlBytes(lc)
 	if _, ok := f.AsUnitToUnit(); f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || f.FID != enums.FIDStandardized || !ok {
 		t.Fatalf("decoded %s", f.String())
 	}
-	if tgt, src, ok := f.Addresses(); !ok || tgt != 9990 || src != 3191868 {
-		t.Fatalf("addresses %d -> %d %t, want 3191868 -> 9990", src, tgt, ok)
+	if tgt, src, ok := f.Addresses(); !ok || tgt != 9990 || src != 3009999 {
+		t.Fatalf("addresses %d -> %d %t, want 3009999 -> 9990", src, tgt, ok)
 	}
 	if got := must(f.Bytes()); got != lc {
 		t.Fatalf("Bytes %x, want %x", got, lc)
 	}
 	f.BurstDataType = enums.DataTypeTerminatorWithLC
 	enc := must(f.Encode())
-	if want := hex12(t, "03000000270630b43c52c0ce"); enc != want {
+	if want := hex12(t, "0300000027062dedcfdf7604"); enc != want {
 		t.Fatal("Encode after DecodeFullLinkControlBytes does not give the terminator codeword")
 	}
 }

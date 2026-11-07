@@ -70,7 +70,7 @@ func TestAnyTonePositions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if f.Format != location.FormatNMEA || !f.Valid || f.Source != 3191868 || f.Destination != 3140598 ||
+		if f.Format != location.FormatNMEA || !f.Valid || f.Source != 3009999 || f.Destination != 3009998 ||
 			!near(f.Latitude, 34+12.73/60, 1e-9) || !near(f.Longitude, 108+50.0/60, 1e-9) || !f.HasTime || f.Year != 2025 || f.Month != 12 || f.Day != 2 ||
 			!f.HasCourse || f.Course != 121 || !f.HasSpeed || f.Speed != 0 || f.HasAltitude {
 			t.Errorf("packet %d: %+v", i, f)

@@ -1,5 +1,5 @@
-# AMBE+2 frames 255 to 302 of a TS2 group voice call from 3191868 to TG 9
-# that a Motorola XPR 8400 repeater (CC 7, ID 314926) sent on 2026-10-15,
+# AMBE+2 frames 255 to 302 of a TS2 group voice call to TG 9
+# that a Motorola XPR 8400 repeater (CC 7) sent on 2026-10-15,
 # as injected over the network. xpr8400_gain_sweep.cu8 holds 1 s of the
 # outbound stream at 424.075 MHz with the RTL-SDR at a gain of 9.7 dB (run
 # gs-rpt-1, file g9.7.cu8), about 7.3 dB C/N in 12.5 kHz: low-pass filtered

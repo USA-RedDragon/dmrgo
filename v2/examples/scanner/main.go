@@ -129,7 +129,7 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 }
 
 func generatedCall() ([]layer2.RawBurst, error) {
-	rotation, err := pdu.EncodeTalkerAlias("KF5XYZ Jacob", layer3.TalkerAliasSevenBit)
+	rotation, err := pdu.EncodeTalkerAlias("N1CALL Alice", layer3.TalkerAliasSevenBit)
 	if err != nil {
 		return nil, err
 	}

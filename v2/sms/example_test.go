@@ -79,7 +79,7 @@ func Example_reply() {
 		fmt.Println(err)
 	}
 	// Output:
-	// AnyTone text from 3191868 to 3002198: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
+	// AnyTone text from 3009999 to 3002198: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
 	// radio: "got it" from 3002198 <nil>
 	// sender: Delivered after 1 tries (ACK)
 }

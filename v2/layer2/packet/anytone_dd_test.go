@@ -19,10 +19,10 @@ var anyToneDD = []struct {
 	bitPadding uint8
 	crc9       uint16
 }{
-	{"A", "200e368173e9e06d93cbdc27ddad5d7f77fd757e6898fd5e7120228e94da253c65",
+	{"A", "2d3f2c9b4cede80590e93d855dad5d7f77fd757e68a4acb660a1474cd7dfbcbd11",
 		"2d2f2222223762b2722222285e1d5d7f77fd7577d6df2f22222e76e27222222659",
 		[]byte{0, 0, 'A', 0, 0, 0}, 48, 0x083},
-	{"AB", "204d368172e9e17d911bdce7ddad5d7f77fd757e6890fd6e7230222e8c5a343c75",
+	{"AB", "2d7c2c9b4dede91592393d455dad5d7f77fd757e68acac8663b147eccf5fadbd01",
 		"282fe22222d9e2327a22221d5e1d5d7f77fd7577d7ef2f722220695272f2222919",
 		[]byte{0, 0, 'A', 0, 'B', 0, 0, 0}, 32, 0x117},
 }
@@ -77,7 +77,7 @@ func TestAnyToneDefinedData(t *testing.T) {
 			}
 
 			h := header(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{
-				ResponseRequested: true, SAP: enums.SAPShortData, LLIDDestination: 3140598, LLIDSource: 3191868,
+				ResponseRequested: true, SAP: enums.SAPShortData, LLIDDestination: 3009998, LLIDSource: 3009999,
 				DefinedData: enums.DDFormat(1), FullMessageFlag: true})
 			tx := packet.NewBuilder(1)
 			p, err := tx.Segment(h, tt.payload, enums.DataTypeRate34)

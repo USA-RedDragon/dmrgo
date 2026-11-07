@@ -32,8 +32,8 @@ func TestBuilderMotorolaVectors(t *testing.T) {
 		vector string
 		build  func() (pdu.CSBK, error)
 	}{
-		{"radio check", motoRadioCheckRequest, pdu.MotorolaRadioCheckPDU{RequesterAddress: 3140598, CheckedAddress: 3191868}.CSBK},
-		{"radio check answer", motoRadioCheckAnswer, pdu.MotorolaRadioCheckPDU{Answer: true, RequesterAddress: 3140598, CheckedAddress: 3191868}.CSBK},
+		{"radio check", motoRadioCheckRequest, pdu.MotorolaRadioCheckPDU{RequesterAddress: 3009998, CheckedAddress: 3009999}.CSBK},
+		{"radio check answer", motoRadioCheckAnswer, pdu.MotorolaRadioCheckPDU{Answer: true, RequesterAddress: 3009998, CheckedAddress: 3009999}.CSBK},
 	} {
 		c, err := tt.build()
 		if err != nil {

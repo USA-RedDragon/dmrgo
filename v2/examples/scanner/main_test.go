@@ -17,10 +17,10 @@ func TestRun(t *testing.T) {
 	out := buf.String()
 	for _, want := range []string{
 		"TS1 late entry at voice burst",
-		"TS1 call: private 3191868 -> 9990 (embedded LC)",
-		"TS1 call end: private 3191868 -> 9990, 74 voice bursts",
+		"TS1 call: private 3009999 -> 9990 (embedded LC)",
+		"TS1 call end: private 3009999 -> 9990, 74 voice bursts",
 		"TS2 call: group 3003192 -> 3100 (Voice LC Header)",
-		`TS2 talker alias: "KF5XYZ Jacob"`,
+		`TS2 talker alias: "N1CALL Alice"`,
 		"TS2 GPS: lat 27.1234 lon -88.4321",
 		"TS2 call end: group 3003192 -> 3100, 72 voice bursts",
 		"framer: first burst at bit 349, 151 bursts",

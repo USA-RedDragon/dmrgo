@@ -106,11 +106,11 @@ func TestIPSC(t *testing.T) {
 	protocols(t, r, "Motorola IPSC", 182)
 	noErrors(t, Result{Packets: r.Packets[121:]})
 	hdr := r.Packets[121]
-	wantOctets(t, wantValue(t, hdr, "IPSC.Source", "3191868"), 6, 9)
+	wantOctets(t, wantValue(t, hdr, "IPSC.Source", "3009999"), 6, 9)
 	wantValue(t, hdr, "IPSC.Destination", "9")
 	wantValue(t, hdr, "IPSC.Info.Slot", "TS2")
 	wantValue(t, hdr, "IPSC.Burst", "Voice LC Header")
-	sa := wantValue(t, hdr, "IPSC.DMR burst.FullLinkControl.GroupVoice.SourceAddress", "3191868")
+	sa := wantValue(t, hdr, "IPSC.DMR burst.FullLinkControl.GroupVoice.SourceAddress", "3009999")
 	b := hdr.Buffers[sa.Ranges[0].Buf]
 	if b.Parent != 0 || b.Map[0] != 38 {
 		t.Errorf("payload buffer maps to buffer %d octet %v, want packet octet 38", b.Parent, b.Map)
@@ -118,7 +118,7 @@ func TestIPSC(t *testing.T) {
 	wantValue(t, hdr, "IPSC.DMR burst.Slot type.ColorCode", "7")
 	e := r.Packets[126]
 	wantValue(t, e, "IPSC.Voice.Full LC of burst E.GroupVoice.GroupAddress", "9")
-	wantValue(t, e, "IPSC.DMR burst.Embedded LC (assembled).GroupVoice.SourceAddress", "3191868")
+	wantValue(t, e, "IPSC.DMR burst.Embedded LC (assembled).GroupVoice.SourceAddress", "3009999")
 	wantValue(t, e, "IPSC.DMR burst.Voice position", "E")
 	sms := r.Packets[181]
 	wantValue(t, sms, "IPSC.DMR burst.Data packet (reassembled).Text message", `".ADGJMPTW`)
@@ -141,13 +141,13 @@ func TestDMRDMMDVM(t *testing.T) {
 	if login.Protocol != "MMDVM network protocol" {
 		t.Errorf("RPTL protocol %q", login.Protocol)
 	}
-	wantOctets(t, wantValue(t, login, "RPTL.ID", "3149999"), 4, 8)
+	wantOctets(t, wantValue(t, login, "RPTL.ID", "3009990"), 4, 8)
 	cfg := r.Packets[4]
-	wantOctets(t, wantValue(t, cfg, "RPTC.Callsign", `"KI5VMF"`), 8, 16)
+	wantOctets(t, wantValue(t, cfg, "RPTC.Callsign", `"N0CALL"`), 8, 16)
 	wantValue(t, cfg, "RPTC.ColorCode", "9")
 	wantValue(t, cfg, "RPTC.Location", `"Anytown"`)
 	d := r.Packets[8]
-	wantOctets(t, wantValue(t, d, "DMRD.Source", "3191868"), 5, 8)
+	wantOctets(t, wantValue(t, d, "DMRD.Source", "3009999"), 5, 8)
 	wantValue(t, d, "DMRD.Burst.DMR burst.FullLinkControl.GroupVoice.GroupAddress", "91")
 	sync := node(t, d, "DMRD.Burst.DMR burst.SYNC")
 	if sync.Ranges[0] != (Range{Buf: 0, Start: 160 + 108, End: 160 + 156}) {
@@ -156,7 +156,7 @@ func TestDMRDMMDVM(t *testing.T) {
 	if findNode(d.Tree, "DMRD.UUID") != nil {
 		t.Error("UUID shown on a 55-octet DMRD")
 	}
-	wantValue(t, r.Packets[13], "DMRD.Burst.DMR burst.Embedded LC (assembled).GroupVoice.SourceAddress", "3191868")
+	wantValue(t, r.Packets[13], "DMRD.Burst.DMR burst.Embedded LC (assembled).GroupVoice.SourceAddress", "3009999")
 	wantValue(t, r.Packets[6], "RPTO.DMR+ options.StartRef.Value", "4013")
 }
 
@@ -167,7 +167,7 @@ func TestDMRDLocalAndOpenBridge(t *testing.T) {
 	if r.Packets[0].Protocol != "MMDVMHost to DMRGateway local link" {
 		t.Errorf("DMRP protocol %q", r.Packets[0].Protocol)
 	}
-	wantValue(t, r.Packets[2], "DMRD.Burst.DMR burst.FullLinkControl.GroupVoice.SourceAddress", "3191868")
+	wantValue(t, r.Packets[2], "DMRD.Burst.DMR burst.FullLinkControl.GroupVoice.SourceAddress", "3009999")
 
 	ob := inspect(t, repo(t, "transport/dmrd/testdata/hblink3-openbridge.txt"), Options{})
 	protocols(t, ob, "OpenBridge", 8)
@@ -294,9 +294,9 @@ func TestBursts(t *testing.T) {
 	for _, c := range []struct {
 		file, path, want string
 	}{
-		{"layer2/testdata/d-sms.bin", "DMR burst.Data packet (reassembled).Text message", `"TEST KI5VMF"`},
-		{"layer2/testdata/m-sms.bin", "DMR burst.Data packet (reassembled).Text message", `"TEST KI5VMF"`},
-		{"layer2/testdata/h-sms.bin", "DMR burst.Data packet (reassembled).Text message", `"TEST KI5VMF"`},
+		{"layer2/testdata/d-sms.bin", "DMR burst.Data packet (reassembled).Text message", `"TEST N0CALL"`},
+		{"layer2/testdata/m-sms.bin", "DMR burst.Data packet (reassembled).Text message", `"TEST N0CALL"`},
+		{"layer2/testdata/h-sms.bin", "DMR burst.Data packet (reassembled).Text message", `"TEST N0CALL"`},
 		{"sms/testdata/anytone_hsms.txt", "DMR burst.Data packet (reassembled).Text message", `"HYT TEST"`},
 		{"sms/testdata/anytone_dmr_text.txt", "DMR burst.Data packet (reassembled).Text message", `"DMR TEST"`},
 		{"data/testdata/anytone_sms_xpr.txt", "DMR burst.Data packet (reassembled).Text message", `"THE QUICK BROWN FOX`},

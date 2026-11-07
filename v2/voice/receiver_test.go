@@ -102,7 +102,7 @@ func TestReceiver_Golden(t *testing.T) {
 			continue
 		}
 		c := find(got, voice.EventCallStart)[0].Call
-		if c.Origin != tt.origin || c.Source != 3191868 || !c.Group {
+		if c.Origin != tt.origin || c.Source != 3009999 || !c.Group {
 			t.Errorf("%s: call %+v", tt.name, c)
 		}
 		if end := find(got, voice.EventCallEnd)[0]; end.Reason != voice.EndTerminator {
@@ -162,7 +162,7 @@ func TestReceiver_WeakCapture(t *testing.T) {
 		t.Errorf("positions %s", p)
 	}
 	c, end := got[0].Call, got[len(got)-1]
-	if c.Target != 9 || c.Source != 3191868 || !c.Group {
+	if c.Target != 9 || c.Source != 3009999 || !c.Group {
 		t.Errorf("call %+v", c)
 	}
 	if end.Reason != voice.EndTerminator || end.Stats.Duplicates != 2 || end.Stats.Bursts != 6 || end.Stats.Lost != 0 {

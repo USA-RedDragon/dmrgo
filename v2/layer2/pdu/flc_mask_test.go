@@ -9,7 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-const realVoiceLCHeader = "03000000270630b43c5dcfc1"
+const realVoiceLCHeader = "0300000027062dedcfd0790b"
 
 func hex12(t *testing.T, s string) [12]byte {
 	t.Helper()
@@ -78,8 +78,8 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 	if flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || !ok {
 		t.Fatalf("FLCO = %v, want UU_V_Ch_Usr", flc.FLCO)
 	}
-	if uu.TargetAddress != 9990 || uu.SourceAddress != 3191868 {
-		t.Errorf("target/source = %d/%d, want 9990/3191868", uu.TargetAddress, uu.SourceAddress)
+	if uu.TargetAddress != 9990 || uu.SourceAddress != 3009999 {
+		t.Errorf("target/source = %d/%d, want 9990/3009999", uu.TargetAddress, uu.SourceAddress)
 	}
 }
 

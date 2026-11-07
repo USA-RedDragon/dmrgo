@@ -14,10 +14,10 @@ import (
 
 func voiceLCHeader() [33]byte {
 	return [33]byte{
-		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
-		12, 161, 196, 109, 255, 87, 215, 93, 245, 222,
-		49, 168, 53, 24, 63, 48, 61, 97, 56, 82,
-		151, 134, 91,
+		69, 231, 5, 159, 41, 142, 22, 96, 61, 96,
+		19, 129, 196, 109, 255, 87, 215, 93, 245, 222,
+		50, 60, 45, 24, 41, 240, 33, 65, 88, 146,
+		209, 135, 189,
 	}
 }
 
@@ -38,7 +38,7 @@ func ExampleNewBurstFromBytes() {
 	fmt.Println("unchanged:", encoded == voiceLCHeader())
 	// Output:
 	// Data Voice LC Header
-	// call from 3191868 to 9990
+	// call from 3009999 to 9990
 	// unchanged: true
 }
 
@@ -64,7 +64,7 @@ func ExampleRawBurst() {
 	fmt.Printf("%x %d\n", payload, res.ErrorsCorrected)
 	// Output:
 	// BS-sourced data 0 1 Voice LC Header
-	// 03000000270630b43c5dcfc1 0
+	// 0300000027062dedcfd0790b 0
 }
 
 // ExampleBuildDataBurst builds a Terminator with LC burst from a
@@ -187,8 +187,8 @@ func ExampleNewBurstFromBytes_capture() {
 	}
 	fmt.Println(voiceBursts, "voice bursts")
 	// Output:
-	// Voice LC Header: call from 3191868 to 9990
-	// Terminator With LC: call from 3191868 to 9990
+	// Voice LC Header: call from 3009999 to 9990
+	// Terminator With LC: call from 3009999 to 9990
 	// 13 voice bursts
 }
 

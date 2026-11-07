@@ -18,7 +18,7 @@ func TestBridgeV1(t *testing.T) {
 	sig := bytes.Repeat([]byte{0x5A}, 20)
 	pkt := append(append([]byte{}, p...), sig...)
 	b, err := dmrd.DecodeBridge(pkt)
-	if err != nil || b.Version != 1 || b.Data.Destination != 3140598 || b.Data.Slot != enums.Slot1 || !bytes.Equal(b.Signature[:], sig) {
+	if err != nil || b.Version != 1 || b.Data.Destination != 3009998 || b.Data.Slot != enums.Slot1 || !bytes.Equal(b.Signature[:], sig) {
 		t.Fatalf("%+v %v", b, err)
 	}
 	out, err := b.AppendBinary(nil)

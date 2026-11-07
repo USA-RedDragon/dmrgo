@@ -14,11 +14,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
 
-// ExamplePeer_loopback logs repeater 3149999 into a master over UDP on the loopback
+// ExamplePeer_loopback logs repeater 3009990 into a master over UDP on the loopback
 // interface, first with the MMDVM network protocol and then with HBRP, and
 // sends the voice LC header of a call to the master once the login is up.
 func ExamplePeer_loopback() {
-	call, _ := hex.DecodeString("444d52440030b43c00005b003010afa1506290d020580b4015ec0f6871000d005c4d5d7f77fd757361a416203d52352421818502770000")
+	call, _ := hex.DecodeString("444d5244002dedcf00005b002dedc6a1506290d021f40d58182015f8599012205c4d5d7f77fd757362300e202b9229044141c303910000")
 	for _, dialect := range []dmrd.Dialect{dmrd.DialectMMDVM, dmrd.DialectHBRP} {
 		if err := login(dialect, call); err != nil {
 			fmt.Println(err)
@@ -34,7 +34,7 @@ func ExamplePeer_loopback() {
 	//   master sends RPTACK
 	//   repeater is Running
 	//   repeater sends DMRD
-	//   master gets a call from 3191868 to 91 on TS2
+	//   master gets a call from 3009999 to 91 on TS2
 	// HBRP
 	//   repeater sends RPTL
 	//   master sends MSTACK
@@ -44,7 +44,7 @@ func ExamplePeer_loopback() {
 	//   master sends MSTACK
 	//   repeater is Running
 	//   repeater sends DMRD
-	//   master gets a call from 3191868 to 91 on TS2
+	//   master gets a call from 3009999 to 91 on TS2
 }
 
 func login(dialect dmrd.Dialect, call []byte) error {
@@ -71,17 +71,17 @@ func rptcConfig(dialect dmrd.Dialect) []byte {
 	if dialect == dmrd.DialectMMDVM {
 		var c dmrd.MMDVMConfig
 		c.Reset()
-		c.SetID(3149999)
+		c.SetID(3009990)
 		return c[:]
 	}
 	var c dmrd.HBRPConfig
 	c.Reset()
-	c.SetID(3149999)
+	c.SetID(3009990)
 	return c[:]
 }
 
 func newMachines(dialect dmrd.Dialect, rptc []byte) (*dmrdsession.Peer, *dmrdsession.Master, error) {
-	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dialect, ID: 3149999, Password: []byte("passw0rd"), Config: rptc})
+	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dialect, ID: 3009990, Password: []byte("passw0rd"), Config: rptc})
 	if err != nil {
 		return nil, nil, err
 	}

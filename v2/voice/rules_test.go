@@ -21,7 +21,7 @@ import (
 func TestReceiver_EmbeddedData(t *testing.T) {
 	t.Parallel()
 
-	alias, err := pdu.EncodeTalkerAlias("N0CALL JACOB", layer3.TalkerAliasISOEightBit)
+	alias, err := pdu.EncodeTalkerAlias("N0CALL ALICE", layer3.TalkerAliasISOEightBit)
 	if err != nil || len(alias) != 2 {
 		t.Fatalf("alias LCs %d: %v", len(alias), err)
 	}
@@ -50,7 +50,7 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 		!ok || g.Latitude < 41.7 || m[2].Call.Target != 91 {
 		t.Errorf("embedded %v %v %+v", m[0].LC.FLCO, m[1].LC.FLCO, g)
 	}
-	if ta := find(got, voice.EventTalkerAlias); string(ta[0].Text) != "N0CALL JACOB" {
+	if ta := find(got, voice.EventTalkerAlias); string(ta[0].Text) != "N0CALL ALICE" {
 		t.Errorf("alias %q", ta[0].Text)
 	}
 }
@@ -88,7 +88,7 @@ func TestReceiver_XPR8400(t *testing.T) {
 	if len(starts) != 1 || len(ends) != 1 {
 		t.Fatalf("events %s", kinds(got))
 	}
-	if c := starts[0].Call; c.Target != 9 || c.Source != 3191868 || !c.Group || c.Origin != voice.OriginHeader {
+	if c := starts[0].Call; c.Target != 9 || c.Source != 3009999 || !c.Group || c.Origin != voice.OriginHeader {
 		t.Errorf("call %+v", c)
 	}
 	if p := positions(got); p != repeat("ABCDEF", 5) {

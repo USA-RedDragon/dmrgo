@@ -10,7 +10,7 @@ import (
 // ExampleNext finds the frames in octets that MMDVMHost sent to a modem: a
 // get status request and the voice LC header of a call on slot 2.
 func ExampleNext() {
-	p, _ := hex.DecodeString("e00301" + "e0251a0020580b4015ec0f6871000d005c4d5d7f77fd757361a416203d5235242181850277")
+	p, _ := hex.DecodeString("e00301" + "e0251a0021f40d58182015f8599012205c4d5d7f77fd757362300e202b9229044141c30391")
 	for len(p) > 0 {
 		f, n, st := mmdvm.Next(p)
 		if st != mmdvm.NextFrame {

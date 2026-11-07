@@ -265,7 +265,7 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 					t.Errorf("burst %d: LC % X, want % X", i, info[:9], capturedEmbeddedLC)
 				}
 				target, source, ok := lc.Addresses()
-				if !ok || target != 9990 || source != 3191868 {
+				if !ok || target != 9990 || source != 3009999 {
 					t.Errorf("burst %d: %s", i, lc.String())
 				}
 			}

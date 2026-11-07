@@ -13,26 +13,26 @@ import (
 
 var (
 	anytoneRadioCheck = []string{
-		"bd0000052febf630b43c9df6",
-		"bd0000042febf630b43c2597",
-		"bd0000032febf630b43c3cd3",
-		"bd0000022febf630b43c84b2",
-		"bd0000012febf630b43c5c30",
-		"a410000030b43c2febf67ba1",
+		"bd0000052dedce2dedcf1870",
+		"bd0000042dedce2dedcfa011",
+		"bd0000032dedce2dedcfb955",
+		"bd0000022dedce2dedcf0134",
+		"bd0000012dedce2dedcfd9b6",
+		"a41000002dedcf2dedcee524",
 	}
 	anytoneRetryPreambles = []string{
-		"bd00000f2febf630b43c6eb8", "bd00000e2febf630b43cd6d9", "bd00000d2febf630b43c0e5b",
-		"bd00000c2febf630b43cb63a", "bd00000b2febf630b43caf7e", "bd00000a2febf630b43c171f",
-		"bd0000092febf630b43ccf9d", "bd0000082febf630b43c77fc", "bd0000072febf630b43cfd15",
-		"bd0000062febf630b43c4574",
+		"bd00000f2dedce2dedcfeb3e", "bd00000e2dedce2dedcf535f", "bd00000d2dedce2dedcf8bdd",
+		"bd00000c2dedce2dedcf33bc", "bd00000b2dedce2dedcf2af8", "bd00000a2dedce2dedcf9299",
+		"bd0000092dedce2dedcf4a1b", "bd0000082dedce2dedcff27a", "bd0000072dedce2dedcf7893",
+		"bd0000062dedce2dedcfc0f2",
 	}
 )
 
 const (
-	injectedRadioCheck = "a41000002febf630b43c0637"
-	anytoneRadioAnswer = "a41000802febf630b43cadce"
-	injectedCallAlert  = "9f10000030b43c2febf62dbe"
-	anytoneCallAlertAc = "a0109f002febf630b43cb2f5"
+	injectedRadioCheck = "a41000002dedce2dedcf83b1"
+	anytoneRadioAnswer = "a41000802dedce2dedcf2848"
+	injectedCallAlert  = "9f1000002dedcf2dedceb33b"
+	anytoneCallAlertAc = "a0109f002dedce2dedcf3773"
 )
 
 func TestRequesterRadioCheckMatchesAnyTone(t *testing.T) {
@@ -131,7 +131,7 @@ func TestPreamblesJoinXPROutbound(t *testing.T) {
 	t.Parallel()
 
 	p := mustPreambles(t, nil)
-	pre := "bd00000130b43c2febf621a6"
+	pre := "bd0000012dedcf2dedcebf23"
 	all := make([]csbk.Output, 0, 2)
 	for _, at := range []int{624, 684, 744, 804, 864} {
 		all = append(all, p.Burst(time.Duration(at)*ms, burstOf(t, pre, layer2.SyncSourceBS), layer2.Hint{}, nil)...)
@@ -167,7 +167,7 @@ func TestPreamblesJoinAnyToneInbound(t *testing.T) {
 func TestWakeupMatchesXPRGolden(t *testing.T) {
 	t.Parallel()
 
-	const golden = "06548e2409d808e846084ab09ced5d7f77fd7577988a04f87788be603ac028a6e5"
+	const golden = "07c68460193c0f502eb851d0dced5d7f77fd757799ae1e286ca8ece02dc14126e6"
 	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
 	if err != nil {
 		t.Fatal(err)

@@ -55,6 +55,6 @@ func ExampleDecodeMessage() {
 	reply, _ := ip.AppendIPv4(nil, &ip.Datagram{Source: d.Destination, Destination: d.Source, SourcePort: d.DestinationPort, DestinationPort: d.SourcePort, Payload: payload})
 	fmt.Printf("ack %x in %d octets\n", payload, len(reply))
 	// Output:
-	// Text 1 from 3191868 to 3002198: "\r\nMOTO TEST"
+	// Text 1 from 3009999 to 3002198: "\r\nMOTO TEST"
 	// no acknowledgement requested
 }

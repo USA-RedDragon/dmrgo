@@ -2,7 +2,7 @@ go test fuzz v1
 byte('\x00')
 uint64(17)
 uint32(10039)
-uint32(3191868)
+uint32(3009999)
 uint16(33)
 []byte("000000000000\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
 []byte("0mm")

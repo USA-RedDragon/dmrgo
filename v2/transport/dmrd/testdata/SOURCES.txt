@@ -2,15 +2,16 @@ dmrgateway-master.txt and mmdvmhost-dmrgateway.txt were captured on 2026-10-20 o
 127.0.0.1 only. MMDVMHost 9384d68 ran with a fake modem over its UDP modem protocol,
 DMRGateway ee79d38 linked to it, and DMRGateway logged into a fake master that
 used the password passw0rd and sent the call back. The call is one superframe
-on slot 2 from 3191868 to talkgroup 91. Each line is: time, direction, length,
-packet in hex.
+on slot 2 from 3009999 to talkgroup 91. Each line is: time, direction, length,
+packet in hex. The radio ID and call sign are fictional: 3009999 and N0CALL replace the
+captured ones, with the FEC and the OpenBridge signatures computed again.
 
 dmrgateway-master.txt: r>m is DMRGateway to the master, m>r the master to DMRGateway.
 mmdvmhost-dmrgateway.txt: host>gw is MMDVMHost to DMRGateway, gw>host the reverse.
 
 hblink3-openbridge.txt was captured on 2026-10-20 on 127.0.0.1 only. HBlink3 1db2730
 bridge.py ran a MASTER system, which a dmrgo client logged into, and an OPENBRIDGE system
-with NETWORK_ID 3129100 and the passphrase passw0rd-longer-than-twenty, bridged on slot 1
+with NETWORK_ID 3009100 and the passphrase passw0rd-longer-than-twenty, bridged on slot 1
 talkgroup 91. The client sent the call of dmrgateway-master.txt on slot 1, and HBlink3
 sent it on the OpenBridge link. Each line is: direction (h>o, HBlink3 to the OpenBridge
 peer), packet in hex.

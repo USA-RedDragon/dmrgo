@@ -44,7 +44,7 @@ func TestBurstType(t *testing.T) {
 func TestDecodeErrors(t *testing.T) {
 	t.Parallel()
 
-	voice, _ := hex.DecodeString("800004ce2e1d30b43c0000090200000d9e20805d7b60482e7f1e000000000a1440541cbd8ee6d793cd54372cbe82e8c4004a2a78")
+	voice, _ := hex.DecodeString("800004977e1d2dedcf0000090200000d9e20805d7b60482e7f1e000000000a1440541cbd8ee6d793cd54372cbe82e8c4004a2a78")
 	tests := []struct {
 		p    []byte
 		want error

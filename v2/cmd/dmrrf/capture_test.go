@@ -17,9 +17,9 @@ import (
 )
 
 const captureHeader = `# Bursts that dmrrf rx recovered from an RTL-SDR capture of the outbound
-# stream of a Motorola XPR 8400 repeater (CC 7, ID 314926) on 2026-10-15:
+# stream of a Motorola XPR 8400 repeater (CC 7, ID 300926) on 2026-10-15:
 # 424.075 MHz, 2.048 Msps, run dmrgo-bs-voice/rec1, file repeater-bs-voice.cu8.
-# The repeater sent a group voice call from 3191868 to TG 9 on TS2, 5
+# The repeater sent a group voice call from 3009999 to TG 9 on TS2, 5
 # superframes of the AMBE test pattern of dmrrf (rftx.TestAMBEFrame) that came to it
 # over the network.
 # Columns: the sample of the first burst bit at 48 kHz, the 24 CACH bits
@@ -95,10 +95,10 @@ func TestCaptureXPR8400(t *testing.T) {
 	}
 	l := loop{lines: strings.Split(buf.String(), "\n")}
 
-	const fields = "ts=2 header flco=0 fid=0x00 group src=3191868 dst=9 privacy=0 emergency=0 fec=ok"
+	const fields = "ts=2 header flco=0 fid=0x00 group src=3009999 dst=9 privacy=0 emergency=0 fec=ok"
 	l.expect(t, "lc", fields, 3)
 	l.expect(t, "lc", strings.Replace(fields, "header", "terminator", 1), 33)
-	l.expect(t, "elc", "ts=2 flco=0 fid=0x00 group src=3191868 dst=9 privacy=0 emergency=0 checksum=ok fec=ok", 5)
+	l.expect(t, "elc", "ts=2 flco=0 fid=0x00 group src=3009999 dst=9 privacy=0 emergency=0 checksum=ok fec=ok", 5)
 	l.expect(t, "cach", "fec=ok", 162)
 	l.expect(t, "slc", fmt.Sprintf("slco=1 activity ts1=0x0 hash1=0x00 ts2=0x%x hash2=0x3f fec=ok", uint8(enums.ActivityGroupVoice)), 34)
 	l.expect(t, "slc", "slco=0", 6)

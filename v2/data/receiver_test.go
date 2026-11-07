@@ -49,7 +49,7 @@ func TestReceiverSMSCaptures(t *testing.T) {
 		if got := kinds(ev); got != "CallStart Delivered CallEnd(Quiet)" {
 			t.Fatalf("%s: events %s", c.name, got)
 		}
-		want := data.Call{Target: 9990, Source: 3191868}
+		want := data.Call{Target: 9990, Source: 3009999}
 		if ev[0].Call != want {
 			t.Errorf("%s: call %+v, want %+v", c.name, ev[0].Call, want)
 		}
@@ -57,7 +57,7 @@ func TestReceiverSMSCaptures(t *testing.T) {
 		if m.Header.Format() != c.format || len(m.Payload) != c.octets || m.Rate != enums.DataTypeRate12 || m.BadCRC {
 			t.Errorf("%s: %v, %d octets, %v, bad CRC %v", c.name, m.Header.Format(), len(m.Payload), m.Rate, m.BadCRC)
 		}
-		if !strings.Contains(utf16(m.Payload), "TEST KI5VMF") {
+		if !strings.Contains(utf16(m.Payload), "TEST N0CALL") {
 			t.Errorf("%s: text %q", c.name, utf16(m.Payload))
 		}
 		s := ev[2].Stats
