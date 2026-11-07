@@ -9,6 +9,7 @@ type lockRetune struct {
 	verified bool
 	wideOK   bool
 	wideZ    float32
+	wideNs   int32
 }
 
 func (r *leanCore) dueLock() bool { return r.hasExt() && r.lockDue }
@@ -61,6 +62,10 @@ func (x *softExt) relock(c *leanCore) {
 	}
 	x.rt.wideOK = false
 	c.relock(x.rt.p, x.rt.src, x.rt.verified, at)
+	x.rt.wideNs = -1
+	if at != nil {
+		x.rt.wideNs = c.fitNs
+	}
 }
 
 // wideFit times the sync of a coming relock on the kept samples that the
