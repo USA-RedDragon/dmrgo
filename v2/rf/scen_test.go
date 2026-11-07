@@ -142,11 +142,6 @@ type pinnedTB struct {
 	run uint64
 }
 
-// pinnedRun pins the draw that the run seed run gave the test name.
-func pinnedRun(t testing.TB, run uint64, name string) pinnedTB {
-	return pinnedTB{t, runMix(run, nameHash(name))}
-}
-
 func scenarioOf(t testing.TB) (s testscen.Scenario, ok bool) {
 	if p, pinned := t.(pinnedTB); pinned {
 		return testscen.Of(p.run), true

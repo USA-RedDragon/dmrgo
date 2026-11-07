@@ -10,6 +10,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testscen"
 )
 
+// pinnedRun pins the draw that the run seed run gave the test name.
+func pinnedRun(t testing.TB, run uint64, name string) pinnedTB {
+	return pinnedTB{t, runMix(run, nameHash(name))}
+}
+
 // TestRxReplayPayloadSync receives a clean MS voice call that starts 8 ms
 // before the input, on a payload whose burst E carries an EMB and embedded
 // LC that match the MS data SYNC well enough for the sliced search. The
