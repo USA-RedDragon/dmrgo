@@ -84,18 +84,11 @@ jobs:
     timeout-minutes: 180
 
     steps:
-      - name: Generate GitHub App Token
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ vars.AUTO_COMMIT_APP_ID }}
-          private-key: ${{ secrets.AUTO_COMMIT_APP_KEY }}
-
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -168,8 +161,16 @@ jobs:
           go run -C cmd/rxbench . -check-readme
           go test -C v2 -count=1 -run '^(TestTxDoc|TestDocParams|TestMinRates.*)$' ./rf ./internal/fsktx
 
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.AUTO_COMMIT_APP_ID }}
+          private-key: ${{ secrets.AUTO_COMMIT_APP_KEY }}
+
       - name: Commit the datasheets
         env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
           GIT_AUTHOR_NAME: usa-reddragon-auto-commit-bot[bot]
           GIT_AUTHOR_EMAIL: usa-reddragon-auto-commit-bot[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: usa-reddragon-auto-commit-bot[bot]
@@ -181,12 +182,14 @@ jobs:
             exit 0
           fi
           git commit -m "docs: regenerate the datasheets [skip ci]"
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$APP_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth#AUTHORIZATION: basic }"
           for attempt in 1 2 3 4 5; do
-            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            if git -c "http.https://github.com/.extraheader=${auth}" push origin "HEAD:${GITHUB_REF_NAME}"; then
               exit 0
             fi
             echo "main moved during the run (attempt ${attempt}); rebasing onto it"
-            git fetch origin "${GITHUB_REF_NAME}"
+            git -c "http.https://github.com/.extraheader=${auth}" fetch origin "${GITHUB_REF_NAME}"
             git rebase "origin/${GITHUB_REF_NAME}"
           done
           echo "main kept moving; the datasheets were not pushed" >&2
