@@ -283,7 +283,7 @@ v2/rf/disccoh.go	304	299
 v2/rf/discrx.go	416	398
 v2/rf/discsoft.go	51	50
 v2/rf/exact.go	263	263
-v2/rf/exact_amd64.go	62	59
+v2/rf/exact_amd64.go	62	62
 v2/rf/ext.go	732	717
 v2/rf/fastmath.go	60	60
 v2/rf/fir96.go	1	1
