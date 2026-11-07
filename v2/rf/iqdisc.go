@@ -593,7 +593,9 @@ func (r *iqRx) follow() {
 			r.afcAvg = 0
 			r.tune(avg, f.dc-avg*scale)
 		case r.syncOnly:
-			r.syncTune()
+			if int16(r.d.levelEnd-uint16(r.d.tuneNs)) > 0 {
+				r.syncTune()
+			}
 		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < max32(iqAFCPullHz, abs32(hz)/2):
 			r.tune(hz, f.dc-hz*scale)
 		}
