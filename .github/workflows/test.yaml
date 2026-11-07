@@ -137,7 +137,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Install libcodec2
-        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config codec2
+        run: bash .github/scripts/install-codec2.sh
 
       - run: go generate ./...
 
@@ -170,7 +170,7 @@ jobs:
           CGO_ENABLED=1 go test -C v2 ./vocoder/codec2/... ./examples/transcoder/...
 
       - name: Install libcodec2
-        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config codec2
+        run: bash .github/scripts/install-codec2.sh
 
       - name: Test the native backend
         run: |

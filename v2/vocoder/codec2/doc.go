@@ -18,8 +18,10 @@
 // nothing. Backend names the backend of a build. Both backends encode the
 // same frames; the decoded samples of the WebAssembly backend can differ
 // from the native ones by small amounts, because its math library differs
-// in the last bit. Build with -tags nocodec2 to remove libcodec2 entirely;
-// New then returns ErrUnavailable. TinyGo builds always use this path.
+// in the last bit, and by a few more when libcodec2 was built with fused
+// multiply-add, as in the amd64v3 packages of Ubuntu 26.04. Build with -tags
+// nocodec2 to remove libcodec2 entirely; New then returns ErrUnavailable.
+// TinyGo builds always use this path.
 //
 // The WebAssembly backend embeds wasm/codec2.wasm, which wasm/build.sh builds
 // from a pinned libcodec2. NewModule and Config.WASM run another build in its
