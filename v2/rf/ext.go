@@ -130,6 +130,7 @@ type softExt struct {
 	lockSym         int64
 	replayN         int32
 	replayP         enums.SyncPattern
+	replayT         bool
 	lockAt          float32
 	replayD         [2]float32
 	backD           float32
@@ -1184,7 +1185,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
 	clicks := c.clicks
 	c.replaying = true
-	x.replayN, x.replayP = n32, 0
+	x.replayN, x.replayP, x.replayT = n32, 0, false
 	for _, dry := range [2]bool{true, false} {
 		x.replayD = [2]float32{}
 		votes := c.votes
@@ -1281,6 +1282,8 @@ func (x *softExt) refillLock(c *leanCore) {
 func (x *softExt) replayLock(j int32, b *Burst) {
 	if j == x.replayN {
 		x.replayP = b.Sync
+		st := b.Data.SlotType()
+		x.replayT = !st.FEC.Uncorrectable && st.DataType == enums.DataTypeTerminatorWithLC
 	}
 }
 
@@ -1301,12 +1304,12 @@ func (x *softExt) replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) boo
 // follows burst F has: burst F two slots before it, back to burst B ten slots
 // before it. The burst counts only when its EMB carries the stream's color
 // code and the LCSS of that position (ETSI TS 102 361-1 clause 7.1.3), with
-// at most one corrected bit, so the slots before a data lock that is not a
-// terminator take no position.
+// at most one corrected bit, and only when the lock burst's slot type
+// decodes as a terminator with LC.
 func (x *softExt) replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool) {
 	_, data, _ := sourceAt(int(c.src)).SyncPatterns()
 	d := x.replayN - j
-	if c.replayDry || x.replayP != data || d&1 != 0 || d < 2 || d > 2*int32(enums.VoiceBurstF-enums.VoiceBurstB+1) {
+	if c.replayDry || x.replayP != data || !x.replayT || d&1 != 0 || d < 2 || d > 2*int32(enums.VoiceBurstF-enums.VoiceBurstB+1) {
 		return 0, false
 	}
 	pos := enums.VoiceBurstF - enums.VoiceBurstType(d/2-1)
