@@ -36,12 +36,12 @@ func rptcConfig(dialect dmrd.Dialect) []byte {
 	if dialect == dmrd.DialectMMDVM {
 		var c dmrd.MMDVMConfig
 		c.Reset()
-		c.SetID(3149999)
+		c.SetID(3009990)
 		return c[:]
 	}
 	var c dmrd.HBRPConfig
 	c.Reset()
-	c.SetID(3149999)
+	c.SetID(3009990)
 	return c[:]
 }
 ```
@@ -54,7 +54,7 @@ func rptcConfig(dialect dmrd.Dialect) []byte {
 <!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=newMachines -->
 ```go
 func newMachines(dialect dmrd.Dialect, rptc []byte) (*dmrdsession.Peer, *dmrdsession.Master, error) {
-	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dialect, ID: 3149999, Password: []byte("passw0rd"), Config: rptc})
+	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dialect, ID: 3009990, Password: []byte("passw0rd"), Config: rptc})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -154,7 +154,7 @@ Once the Peer is up, send each burst in a DMRD packet on the same socket. The Ma
 <!-- dmrgo:code file=v2/transport/dmrd/example_test.go symbol=ExampleDecodeData -->
 ```go
 func ExampleDecodeData() {
-	p, _ := hex.DecodeString("444d52440030b43c00005b003010afa1506290d020580b4015ec0f6871000d005c4d5d7f77fd757361a416203d52352421818502770000")
+	p, _ := hex.DecodeString("444d5244002dedcf00005b002dedc6a1506290d021f40d58182015f8599012205c4d5d7f77fd757362300e202b9229044141c303910000")
 	fmt.Println(dmrd.Classify(p, dmrd.DialectMMDVM))
 	d, err := dmrd.DecodeData(p)
 	if err != nil {
@@ -183,7 +183,7 @@ MMDVM
   master sends RPTACK
   repeater is Running
   repeater sends DMRD
-  master gets a call from 3191868 to 91 on TS2
+  master gets a call from 3009999 to 91 on TS2
 HBRP
   repeater sends RPTL
   master sends MSTACK
@@ -193,7 +193,7 @@ HBRP
   master sends MSTACK
   repeater is Running
   repeater sends DMRD
-  master gets a call from 3191868 to 91 on TS2
+  master gets a call from 3009999 to 91 on TS2
 ```
 <!-- /dmrgo:output -->
 
@@ -202,7 +202,7 @@ The DMRD packet and the hint of its burst:
 <!-- dmrgo:output test=dmrd.ExampleDecodeData -->
 ```text
 DMRD
-3191868 91 3149999 TS2 true Data Sync 55
+3009999 91 3009990 TS2 true Data Sync 55
 Data Voice LC Header
 ```
 <!-- /dmrgo:output -->

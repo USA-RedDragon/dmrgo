@@ -48,7 +48,7 @@ Each packet of the DMR service is one 72-octet [Frame](https://pkg.go.dev/github
 <!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeFrame -->
 ```go
 func ExampleDecodeFrame() {
-	p, _ := hex.DecodeString("c35200502a0300000100050101000000111111111111000040b87900820b4015700f207560056d4457ff5dd7def50031781670382037012f829f0073000000005b0000003cb43000")
+	p, _ := hex.DecodeString("c35200502a0300000100050101000000111111111111000040b8d5019a0d8c18e015b05d401a6d4457ff5dd7def59432780eb02e002bc14f83d90095000000005b000000cfed2d00")
 	f, err := hytera.DecodeFrame(p)
 	if err != nil {
 		fmt.Println(err)
@@ -158,7 +158,7 @@ A voice LC header frame from a capture, and the heartbeat reply:
 
 <!-- dmrgo:output test=hytera.ExampleDecodeFrame -->
 ```text
-TS1 Voice LC Header 1 3191868 91 true
+TS1 Voice LC Header 1 3009999 91 true
 Data Voice LC Header
 ```
 <!-- /dmrgo:output -->

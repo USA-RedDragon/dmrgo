@@ -171,7 +171,7 @@ Output:
 
 <!-- dmrgo:output test=data.ExampleReceiver -->
 ```text
-data call from 3191868 to 9990
+data call from 3009999 to 9990
 Unconfirmed packet, 56 octets
 end: Quiet after 960ms
 ```

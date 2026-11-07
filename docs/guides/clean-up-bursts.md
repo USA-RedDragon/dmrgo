@@ -154,7 +154,7 @@ The first lines describe the capture and the call. Then come the bit errors that
 <!-- dmrgo:output example=hotspot -->
 ```text
 capture: 79 bursts (2 data, 77 voice), color code 1
-call: Unit to Unit Voice Channel User 3191868 -> 9990
+call: Unit to Unit Voice Channel User 3009999 -> 9990
 burst FEC: injected 67, corrected 67, uncorrectable false
 AMBE FEC: injected 77, corrected 80, uncorrectable false
 mmdvmhost accepts: 2/2 data bursts

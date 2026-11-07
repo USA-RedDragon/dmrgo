@@ -40,7 +40,7 @@ The example prints:
 <!-- dmrgo:output test=.Example -->
 ```text
 Voice LC Header <nil>
-call from 3191868 to 9990
+call from 3009999 to 9990
 true <nil>
 ```
 <!-- /dmrgo:output -->

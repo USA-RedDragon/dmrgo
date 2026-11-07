@@ -287,11 +287,11 @@ func ExampleNew() {
 
 <!-- dmrgo:output example=transcoder -->
 ```text
-capture: 79 bursts, 77 voice bursts, 231 AMBE frames, 13 embedded LCs, 3191868 -> 9990
+capture: 79 bursts, 77 voice bursts, 231 AMBE frames, 13 embedded LCs, 3009999 -> 9990
 AMBE72 FEC: 3 bits corrected, 0 uncorrectable frames, 230 of 231 frames re-encode unchanged
 AMBE72 with 3 flipped bits: 3 corrected, frame restored true
 rebuilt: 80 bursts, 13 embedded LCs, AMBE frames equal true
-codec2: 50 frames -> 20 bursts, rx FID 0xc2, 3191868 -> 9990, 3 embedded LCs, slots equal true
+codec2: 50 frames -> 20 bursts, rx FID 0xc2, 3009999 -> 9990, 3 embedded LCs, slots equal true
 codec2 decode: 8640 samples, 54 good frames, audible true
 ```
 <!-- /dmrgo:output -->

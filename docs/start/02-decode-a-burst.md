@@ -61,8 +61,8 @@ It prints:
 
 <!-- dmrgo:output test=layer2.ExampleNewBurstFromBytes_capture -->
 ```text
-Voice LC Header: call from 3191868 to 9990
-Terminator With LC: call from 3191868 to 9990
+Voice LC Header: call from 3009999 to 9990
+Terminator With LC: call from 3009999 to 9990
 13 voice bursts
 ```
 <!-- /dmrgo:output -->

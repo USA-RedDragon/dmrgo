@@ -40,7 +40,7 @@ func newMachines(masterAt net.Addr) (*ipscsession.Peer, *ipscsession.Master, err
 	if err != nil {
 		return nil, nil, err
 	}
-	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 314926, Master: masterAddr, Auth: true, Key: key})
+	peer, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 300926, Master: masterAddr, Auth: true, Key: key})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -164,8 +164,8 @@ An IPSC user packet carries the decoded payload of a burst in place of the 264-b
 ```go
 func ExampleDecodeUser() {
 	for _, s := range []string{
-		"800004ce2e1d30b43c0000090200000d9e2080dd7b5f482e7d3e0000000001c0000a800a006000000000000930b43ce9f8ed0071466f",
-		"800004ce2e0130b43c000009020000465e00805d2d490a223107000000000a1440541cbd8ee6d793cd54372cbe82e8c4004a2a78",
+		"800004977e1d2dedcf0000090200000d9e2080dd7b5f482e7d3e0000000001c0000a800a00600000000000092dedcf644e270071466f",
+		"800004977e012dedcf000009020000465e00805d2d490a223107000000000a1440541cbd8ee6d793cd54372cbe82e8c4004a2a78",
 	} {
 		p, _ := hex.DecodeString(s)
 		u, err := ipsc.DecodeUser(p)
@@ -187,14 +187,14 @@ The registration with the master, the peer list, and the voice LC header of a ca
 <!-- dmrgo:output test=ipscsession.ExamplePeer_loopback -->
 ```text
 master gets RegisterRequest
-master: Up 314926
+master: Up 300926
 peer gets RegisterReply
 peer: Up 1
 master gets PeerListRequest
 peer gets PeerListReply
 peer: Peers 0
 master gets GroupVoice
-master: Data 314926 GroupVoice from 3191868 to 9
+master: Data 300926 GroupVoice from 3009999 to 9
 ```
 <!-- /dmrgo:output -->
 
@@ -202,8 +202,8 @@ A voice LC header and a voice burst from a Motorola XPR 8400:
 
 <!-- dmrgo:output test=ipsc.ExampleDecodeUser -->
 ```text
-GroupVoice 3191868 9 TS2 false Data
-GroupVoice 3191868 9 TS1 true Voice
+GroupVoice 3009999 9 TS2 false Data
+GroupVoice 3009999 9 TS1 true Voice
 ```
 <!-- /dmrgo:output -->
 
@@ -211,8 +211,8 @@ The authentication trailer of a registration request:
 
 <!-- dmrgo:output test=ipscauth.ExampleKey_Sign -->
 ```text
-5a09decc4db02fba02dc
-900004ce2e6a0000805c04080400 true
+728dcee3d5b8009d4a07
+900004977e6a0000805c04080400 true
 ```
 <!-- /dmrgo:output -->
 

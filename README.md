@@ -30,10 +30,10 @@ import (
 func main() {
 	// A Voice LC Header burst as received from a repeater.
 	raw := [33]byte{
-		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
-		12, 161, 196, 109, 255, 87, 215, 93, 245, 222,
-		49, 168, 53, 24, 63, 48, 61, 97, 56, 82,
-		151, 134, 91,
+		69, 231, 5, 159, 41, 142, 22, 96, 61, 96,
+		19, 129, 196, 109, 255, 87, 215, 93, 245, 222,
+		50, 60, 45, 24, 41, 240, 33, 65, 88, 146,
+		209, 135, 189,
 	}
 
 	burst, err := layer2.NewBurstFromBytes(raw)
@@ -56,7 +56,7 @@ func main() {
 }
 ```
 
-The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded unchanged: true`.
+The program prints `Voice LC Header: call from 3009999 to 9990` and `re-encoded unchanged: true`.
 
 An FEC or CRC error does not make `NewBurstFromBytes` fail. `burst.FEC` reports it, and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. Fields of bits are packed in bytes in transmit order, with the first bit on air in the most significant bit of byte 0. A burst is a `[33]byte`, a CSBK a `[12]byte` and a vocoder slot a `[9]byte`.
 

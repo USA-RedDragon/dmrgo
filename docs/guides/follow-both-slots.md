@@ -161,7 +161,7 @@ The TS2 call comes from a [VoiceTransmitter](https://pkg.go.dev/github.com/USA-R
 <!-- dmrgo:code file=v2/examples/scanner/main.go symbol=generatedCall -->
 ```go
 func generatedCall() ([]layer2.RawBurst, error) {
-	rotation, err := pdu.EncodeTalkerAlias("KF5XYZ Jacob", layer3.TalkerAliasSevenBit)
+	rotation, err := pdu.EncodeTalkerAlias("N1CALL Alice", layer3.TalkerAliasSevenBit)
 	if err != nil {
 		return nil, err
 	}
@@ -216,11 +216,11 @@ The first line describes the stream. Then come the events of both slots in the o
 stream: 43813 bits, 37 junk bits, 149 bits flipped
 TS2 call: group 3003192 -> 3100 (Voice LC Header)
 TS1 late entry at voice burst Unknown
-TS1 call: private 3191868 -> 9990 (embedded LC)
-TS2 talker alias: "KF5XYZ Jacob"
+TS1 call: private 3009999 -> 9990 (embedded LC)
+TS2 talker alias: "N1CALL Alice"
 TS2 GPS: lat 27.1234 lon -88.4321 (PositionLessThan20M)
 TS2 call end: group 3003192 -> 3100, 72 voice bursts
-TS1 call end: private 3191868 -> 9990, 74 voice bursts
+TS1 call end: private 3009999 -> 9990, 74 voice bursts
 framer: first burst at bit 349, 151 bursts
 TS1: 74 voice bursts (A=11 B=12 C=12 D=12 E=13 F=13 unknown=1), 0 embedded LC errors, AMBE BER 0.33%
 TS2: 72 voice bursts (A=12 B=12 C=12 D=12 E=12 F=12 unknown=0), 0 embedded LC errors, AMBE BER 0.37%

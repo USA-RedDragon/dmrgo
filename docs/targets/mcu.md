@@ -33,7 +33,7 @@ Open the serial console of the board, for example with `tinygo monitor`. Each se
 <!-- dmrgo:output test=examples/tinygo.Example -->
 ```text
 bursts 15 voice 13 data 2 re-encoded 15 corrected 0
-call from 3191868 to 9990 calls 1 end Terminator relayed 20
+call from 3009999 to 9990 calls 1 end Terminator relayed 20
 ```
 <!-- /dmrgo:output -->
 

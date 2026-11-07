@@ -8,7 +8,7 @@ A DMR signal is 4FSK, with two TDMA time slots on one carrier. A repeater sends 
 
 ## The capture
 
-`v2/cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8` is a weak RTL-SDR capture of the output of a Motorola XPR 8400 repeater, color code 7. It holds a group call from 3191868 to talkgroup 9 on time slot 2. The samples are 8-bit unsigned I/Q, the format that `rtl_sdr` writes, at the sample rate that the code gives. [v2/voice/testdata/xpr8400_bs_voice_weak.txt](../../v2/voice/testdata/xpr8400_bs_voice_weak.txt) lists the bursts of the same capture.
+`v2/cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8` is a weak RTL-SDR capture of the output of a Motorola XPR 8400 repeater, color code 7. It holds a group call to talkgroup 9 on time slot 2. The samples are 8-bit unsigned I/Q, the format that `rtl_sdr` writes, at the sample rate that the code gives. [v2/voice/testdata/xpr8400_bs_voice_weak.txt](../../v2/voice/testdata/xpr8400_bs_voice_weak.txt) lists the bursts of the same capture, with the radio ID of the caller replaced by the fictional 3009999.
 
 ## The code
 

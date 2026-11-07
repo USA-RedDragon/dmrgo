@@ -243,7 +243,7 @@ Output:
 <!-- dmrgo:output test=bs.ExampleRepeater -->
 ```text
 Key
-TS2: Data from 3191868 to 9990
+TS2: Data from 3009999 to 9990
 CallEnd
 Dekey
 TS1: map[Idle:93]
