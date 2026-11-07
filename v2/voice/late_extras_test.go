@@ -13,7 +13,7 @@ import (
 func TestRegression_LateEntryExtrasAfterCallStart(t *testing.T) {
 	t.Parallel()
 
-	for _, alias := range []string{"N0CALL", "N0CALL Jacob McSwain"} {
+	for _, alias := range []string{"N0CALL", "N0CALL Alice Example"} {
 		tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Queue: voice.MaxQueue, Access: enums.AccessImpolite})
 		gps := pdu.FLCGPSInfo{Latitude: 32.75, Longitude: -97.33}
 		if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3002068}, &voice.CallOptions{TalkerAlias: alias, GPS: &gps}); err != nil {

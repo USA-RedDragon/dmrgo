@@ -210,7 +210,7 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	vtx := tinyOK(voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20}))
 	outs := make([]voice.Output, 0, voice.MaxOutputs)
 	gps := pdu.FLCGPSInfo{Latitude: 41.75}
-	callOpts := &voice.CallOptions{TalkerAlias: "N0CALL JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
+	callOpts := &voice.CallOptions{TalkerAlias: "N0CALL ALICE", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
 
 	rep := tinyOK(bs.New(&bs.Config{ColorCode: 1, CACH: true}))
 	bsOut := make([]bs.Output, 0, bs.MaxOutputs)

@@ -187,7 +187,7 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 
 	tx := newTransmitter(t, &voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 3, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 40})
 	gps := pdu.FLCGPSInfo{Longitude: -87.5, Latitude: 41.75}
-	opts := &voice.CallOptions{TalkerAlias: "N0CALL JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
+	opts := &voice.CallOptions{TalkerAlias: "N0CALL ALICE", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
 	if err := tx.Start(0, voice.Call{Group: true, Target: 91, Source: 3002068}, opts); err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 	if len(starts) != 1 || len(ends) != 1 || ends[0].Reason != voice.EndTerminator || ends[0].Stats.Lost != 1 || ends[0].Stats.Bursts != 35 {
 		t.Fatalf("events %s, end %+v", kinds(got), ends)
 	}
-	if ta := find(got, voice.EventTalkerAlias); len(ta) != 1 || string(ta[0].Text) != "N0CALL JACOB" {
+	if ta := find(got, voice.EventTalkerAlias); len(ta) != 1 || string(ta[0].Text) != "N0CALL ALICE" {
 		t.Errorf("talker alias %v", kinds(got))
 	}
 	gpsSeen := false

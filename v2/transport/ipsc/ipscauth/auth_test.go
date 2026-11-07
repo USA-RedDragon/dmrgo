@@ -20,8 +20,8 @@ func TestSignMatchesPython(t *testing.T) {
 	}
 	key := ipscauth.NewKey(k)
 	for _, tt := range []struct{ body, trailer string }{
-		{"900004ce2e6a0000805c04080400", "5a09decc4db02fba02dc"},
-		{"96003010af6a000080dc04020401", "712d51b8061daed9d7ce"},
+		{"900004977e6a0000805c04080400", "728dcee3d5b8009d4a07"},
+		{"96002dedc66a000080dc04020401", "b5e43b431b806a371ae6"},
 	} {
 		b, _ := hex.DecodeString(tt.body)
 		p, _ := key.Sign(append([]byte{}, b...))

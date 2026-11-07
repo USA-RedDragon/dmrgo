@@ -10,7 +10,7 @@ import (
 
 func gatewayPeerConfig(t *testing.T, lines []capLine) *dmrdsession.PeerConfig {
 	t.Helper()
-	cfg := &dmrdsession.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 0x003010af, Password: []byte("passw0rd")}
+	cfg := &dmrdsession.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 0x002dedc6, Password: []byte("passw0rd")}
 	for _, l := range lines {
 		if l.dir != "r>m" {
 			continue
@@ -102,7 +102,7 @@ func TestMasterReplaysDMRGateway(t *testing.T) {
 			case dmrdsession.OutputSend:
 				sent = append(sent, append([]byte(nil), o.Packet...))
 			case dmrdsession.OutputLogin:
-				if o.ID != 0x003010af {
+				if o.ID != 0x002dedc6 {
 					t.Fatalf("login of %x", o.ID)
 				}
 				sent = append(sent, sends(m.Admit(l.at, 0xfcb17c08, []byte("passw0rd"), nil))...)

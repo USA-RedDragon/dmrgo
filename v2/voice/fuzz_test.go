@@ -119,7 +119,7 @@ func newPool(t testing.TB) *pool {
 		t.Fatal(err)
 	}
 	gps := pdu.FLCGPSInfo{Latitude: 32.75, Longitude: -97.33}
-	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "N0CALL Jacob", GPS: &gps}
+	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "N0CALL Alice", GPS: &gps}
 	if err := tx.Start(0, voice.Call{Group: true, Target: 3100, Source: 3002068}, opts); err != nil {
 		t.Fatal(err)
 	}

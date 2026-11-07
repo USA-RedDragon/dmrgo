@@ -59,7 +59,7 @@ func TestMasterReplaysXPR8400(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const xpr = 0x0004ce2e
+	const xpr = 0x0004977e
 	for _, step := range []struct {
 		in   ipsc.Opcode
 		want ipsc.Opcode
@@ -99,7 +99,7 @@ func TestMasterSendsXPR8400Versions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const xpr = 0x0004ce2e
+	const xpr = 0x0004977e
 	reg, alive := xprPacket(t, lines, ipsc.OpRegisterRequest, xpr), xprPacket(t, lines, ipsc.OpAliveRequest, xpr)
 	peerReg, _ := (&ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: xpr, Version: [4]byte(reg[10:14])}).AppendBinary(nil)
 	for _, step := range []struct {
@@ -120,12 +120,12 @@ func TestMasterSendsXPR8400Versions(t *testing.T) {
 var xprRig = func() map[string][]byte {
 	m := map[string][]byte{}
 	for k, v := range map[string]string{
-		"reg":        "900004ce2e6a0002805c04080400",
-		"regReply":   "91003010af6a0000001d000104080400",
-		"list":       "920004ce2e",
-		"listReply":  "93003010af000b0004ce2ec0a800e7c3506a",
-		"alive":      "960004ce2e6a0002805c04080400",
-		"aliveReply": "97003010af6a0000001d04080400",
+		"reg":        "900004977e6a0002805c04080400",
+		"regReply":   "91002dedc66a0000001d000104080400",
+		"list":       "920004977e",
+		"listReply":  "93002dedc6000b0004977ec0a800e7c3506a",
+		"alive":      "960004977e6a0002805c04080400",
+		"aliveReply": "97002dedc66a0000001d04080400",
 	} {
 		m[k], _ = hex.DecodeString(v)
 	}
@@ -135,7 +135,7 @@ var xprRig = func() map[string][]byte {
 func TestMasterReplaysXPR8400Rig(t *testing.T) {
 	t.Parallel()
 
-	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 0x3010af, Flags: ipsc.Flags{0, 0, 0, 0x1d}})
+	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 0x2dedc6, Flags: ipsc.Flags{0, 0, 0, 0x1d}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestMasterReplaysXPR8400Rig(t *testing.T) {
 func TestPeerReplaysXPR8400Rig(t *testing.T) {
 	t.Parallel()
 
-	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 0x0004ce2e, Flags: ipsc.Flags{0, 0x02, 0x80, 0x5c}, Master: masterAddr})
+	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 0x0004977e, Flags: ipsc.Flags{0, 0x02, 0x80, 0x5c}, Master: masterAddr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestPeerReplaysXPR8400(t *testing.T) {
 	t.Parallel()
 
 	lines := readXPR(t)
-	const xpr = 0x0004ce2e
+	const xpr = 0x0004977e
 	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: xpr, Flags: ipsc.Flags{0, 0, 0x80, 0xdc}, AliveVersion: [4]byte{4, 2, 4, 1}, Master: masterAddr})
 	if err != nil {
 		t.Fatal(err)

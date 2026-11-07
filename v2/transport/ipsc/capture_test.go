@@ -89,9 +89,9 @@ func TestXPR8400PacketsRoundTrip(t *testing.T) {
 func TestXPR8400Register(t *testing.T) {
 	t.Parallel()
 
-	p, _ := hex.DecodeString("900004ce2e6a0000805c04080400")
+	p, _ := hex.DecodeString("900004977e6a0000805c04080400")
 	c, err := ipsc.DecodeControl(p)
-	if err != nil || c.ID != 314926 || !c.Mode.Operational() || !c.Mode.Digital() || c.Mode.TS1() != 2 || c.Mode.TS2() != 2 {
+	if err != nil || c.ID != 300926 || !c.Mode.Operational() || !c.Mode.Digital() || c.Mode.TS1() != 2 || c.Mode.TS2() != 2 {
 		t.Fatalf("%+v %v", c, err)
 	}
 	if !c.Flags.Has(ipsc.FlagCSBK) || !c.Flags.Has(ipsc.FlagXNLMaster) || !c.Flags.Has(ipsc.FlagAuth) || !c.Flags.Has(ipsc.FlagData) ||

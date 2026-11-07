@@ -12,7 +12,7 @@ import (
 // checks the RPTK that DMRGateway sent with the password passw0rd.
 func ExampleToken() {
 	ack, _ := hex.DecodeString("52505441434bfcb17c08")
-	rptk, _ := hex.DecodeString("5250544b003010afc95b349a634da769f56cab69f361bc30c6e5ea9a127fd973ef40a9f6a329dcfb")
+	rptk, _ := hex.DecodeString("5250544b002dedc6c95b349a634da769f56cab69f361bc30c6e5ea9a127fd973ef40a9f6a329dcfb")
 	a, _ := dmrd.DecodeControl(ack, dmrd.DialectMMDVM)
 	k, _ := dmrd.DecodeControl(rptk, dmrd.DialectMMDVM)
 

@@ -153,7 +153,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	if _, err := pdu.EncodeTalkerAlias("x", layer3.TalkerAliasDataFormat(4)); !errors.As(err, &fre) {
 		t.Errorf("unknown format: %v, want a *dmrgo.FieldRangeError", err)
 	}
-	lcs, _ := pdu.EncodeTalkerAlias("N0CALL Jacob", layer3.TalkerAliasUTF8)
+	lcs, _ := pdu.EncodeTalkerAlias("N0CALL Alice", layer3.TalkerAliasUTF8)
 	hdr, ok := lcs[0].AsTalkerAliasHeader()
 	if !ok {
 		t.Fatal("LC 0 is not a header")
@@ -188,7 +188,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	if _, ok, _ := a.Add(&lcs[0]); ok {
 		t.Error("changed header kept old blocks")
 	}
-	if alias, ok, _ := a.Add(&lcs[1]); !ok || alias != "N0CALL Jacob" {
+	if alias, ok, _ := a.Add(&lcs[1]); !ok || alias != "N0CALL Alice" {
 		t.Errorf("got %q %v", alias, ok)
 	}
 	a.Reset()

@@ -13,7 +13,7 @@ func TestKeyedRepliesCarryAuthFlag(t *testing.T) {
 	t.Parallel()
 
 	lines := readXPR(t)
-	const xpr = 0x0004ce2e
+	const xpr = 0x0004977e
 	key, _ := ipscauth.ParseKey("1234")
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, RegisterVersion: [4]byte{4, 2, 4, 1}, AliveVersion: [4]byte{4, 2, 4, 1}})
 	signer := ipscauth.NewKey(key)

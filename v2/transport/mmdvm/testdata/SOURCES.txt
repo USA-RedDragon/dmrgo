@@ -8,4 +8,5 @@ characters, and the SetFreq frame has RX 430000000 Hz and TX 440000000 Hz.
 mmdvmhost.txt holds the frames that MMDVMHost 9384d68 wrote on 2026-10-20 to a fake modem
 over its UDP modem protocol on 127.0.0.1 (protocol 2), including one call that it sent on
 slot 2 from the network. Each distinct frame is kept once, in the same line format. Its
-SetFreq frame has the same placeholder frequencies.
+SetFreq frame has the same placeholder frequencies. The caller's radio ID is fictional:
+3009999 replaces the captured one in every LC, with its FEC computed again.

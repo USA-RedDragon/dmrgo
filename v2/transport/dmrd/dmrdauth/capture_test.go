@@ -73,7 +73,7 @@ func TestHBlink3OpenBridge(t *testing.T) {
 			t.Fatalf("%x does not verify", p)
 		}
 		d, err := dmrd.DecodeBridge(p)
-		if err != nil || d.Version != 1 || d.Data.Repeater != 3129100 || d.Data.Destination != 91 {
+		if err != nil || d.Version != 1 || d.Data.Repeater != 3009100 || d.Data.Destination != 91 {
 			t.Fatalf("%x: %+v %v", p, d, err)
 		}
 		q := append([]byte(nil), p...)

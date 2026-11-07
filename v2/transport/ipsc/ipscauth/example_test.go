@@ -16,13 +16,13 @@ func ExampleKey_Sign() {
 		return
 	}
 	key := ipscauth.NewKey(k)
-	p, _ := hex.DecodeString("900004ce2e6a0000805c04080400")
+	p, _ := hex.DecodeString("900004977e6a0000805c04080400")
 	signed, _ := key.Sign(p)
 	fmt.Printf("%x\n", signed[len(signed)-ipscauth.TrailerLen:])
 
 	body, ok := key.Verify(signed)
 	fmt.Printf("%x %v\n", body, ok)
 	// Output:
-	// 5a09decc4db02fba02dc
-	// 900004ce2e6a0000805c04080400 true
+	// 728dcee3d5b8009d4a07
+	// 900004977e6a0000805c04080400 true
 }

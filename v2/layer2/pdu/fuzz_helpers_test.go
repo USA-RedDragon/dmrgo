@@ -25,7 +25,7 @@ func FuzzTalkerAlias(f *testing.F) {
 
 func talkerAliasSeeds(add func(alias string, format, order uint8, extra []byte)) {
 	add("N0CALL", uint8(layer3.TalkerAliasSevenBit), uint8(0), []byte{})
-	add("Jacob McSwain N0CALL", uint8(layer3.TalkerAliasISOEightBit), uint8(0x1B), []byte{})
+	add("Alice Example N0CALL", uint8(layer3.TalkerAliasISOEightBit), uint8(0x1B), []byte{})
 	add("Grüße aus Texas 73", uint8(layer3.TalkerAliasUTF8), uint8(0x27), []byte{})
 	add("日本語のエイリアス", uint8(layer3.TalkerAliasUTF16), uint8(0x93), []byte{})
 	add("73\x00\x00", uint8(layer3.TalkerAliasUTF16), uint8(0), []byte{})
