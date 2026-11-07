@@ -12,8 +12,10 @@ import (
 func collectSuperframe(r *Receiver, f [4][4]byte) (pdu.LCBytes, bool) {
 	var lc pdu.LCBytes
 	var ok bool
+	lcss := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
 	for i := range f {
 		b := layer2.Burst{Kind: layer2.KindVoice, SyncPattern: enums.SyncNone, EmbeddedSignallingData: f[i]}
+		b.EmbeddedSignalling.LCSS = lcss[i]
 		lc, ok = r.collect(&b, i+1, 0)
 	}
 	return lc, ok
