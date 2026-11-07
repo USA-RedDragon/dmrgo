@@ -1285,7 +1285,7 @@ func (r *leanCore) endSlot() {
 		r.fitScale()
 	}
 	r.slotJ, r.slotC = leanNoSlot, r.tm.baseC+r.tm.corr
-	if r.locked && !r.tm.hold {
+	if r.locked && (!r.tm.hold || r.tm.wake != 0) {
 		r.slotJ = r.next
 	}
 }
