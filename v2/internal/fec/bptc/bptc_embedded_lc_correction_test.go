@@ -2,6 +2,7 @@ package bptc_test
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"slices"
 	"testing"
@@ -121,24 +122,43 @@ func TestEmbeddedLC_TieResolvedByCheck(t *testing.T) {
 	}
 }
 
+const (
+	embeddedLCRandomAcceptRate = 2.72e-4
+	embeddedLCFalseFailureRate = 1e-6
+)
+
+func binomialUpperBar(n int, p, alpha float64) int {
+	lgN, _ := math.Lgamma(float64(n + 1))
+	tail := 1.0
+	for k := 0; k <= n; k++ {
+		lgK, _ := math.Lgamma(float64(k + 1))
+		lgNK, _ := math.Lgamma(float64(n - k + 1))
+		tail -= math.Exp(lgN - lgK - lgNK + float64(k)*math.Log(p) + float64(n-k)*math.Log1p(-p))
+		if tail <= alpha {
+			return k
+		}
+	}
+	return n
+}
+
 func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(int64(testseed.New(t).Uint64())))
+	n := testmode.N(50_000, 50_000, 5_000)
+	bar := binomialUpperBar(n, embeddedLCRandomAcceptRate, embeddedLCFalseFailureRate)
 	accepted := 0
-	for n := 0; n < 2000; n++ {
-		var rx [4][32]unpacked.Bit
-		for i := 0; i < 128; i++ {
-			rx[i/32][i%32] = unpacked.Bit(r.Intn(2))
-		}
-		if _, res := decodeEmbedded(rx); !res.Uncorrectable {
+	for range n {
+		rx := [4]uint32{r.Uint32(), r.Uint32(), r.Uint32(), r.Uint32()}
+		if _, res := bptc.DecodeEmbedded(rx); !res.Uncorrectable {
 			if res.ErrorsCorrected > bptc.EmbeddedMaxErrors {
 				t.Fatalf("corrected %d errors", res.ErrorsCorrected)
 			}
 			accepted++
 		}
 	}
-	if accepted > 2 {
-		t.Errorf("accepted %d of 2000 random words", accepted)
+	if accepted > bar {
+		t.Errorf("accepted %d of %d random words, want at most %d: a random word is within %d bits of exactly one nearest codeword with probability %.3g (the unique coset leaders of weight %d or less over 2^51 cosets), so more than %d accepts has probability below %g",
+			accepted, n, bar, bptc.EmbeddedMaxErrors, embeddedLCRandomAcceptRate, bptc.EmbeddedMaxErrors, bar, embeddedLCFalseFailureRate)
 	}
 }
 
