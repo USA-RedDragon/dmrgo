@@ -56,6 +56,7 @@ var fixedRun = sync.OnceValue(func() bool {
 // reproduce a traced bug.
 var bugPinTests = map[string]string{
 	"TestTier2FadeUncoded":               "a fading draw where Tier 2 took uncoded AMBE bits from the coherent detection by the protected errors of each frame",
+	"TestRate34CheckedCore":              "a fading draw where Tier 1 gave rate 3/4 blocks with a failed CRC-9 over good ones from its core",
 	"TestLeanClockRateNullMS":            "seeds that learned a false MS clock rate",
 	"TestRateLineNullMS":                 "cases that stepped a false rate on the rate line",
 	"TestCoreTier3WarmNullClock":         "first locks at -521, -473 and +473 ppm on 0 ppm streams (11fd46a52)",

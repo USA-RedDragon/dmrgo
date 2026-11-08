@@ -80,6 +80,7 @@ type extChan struct {
 	late  [extLate]lateBurst
 	lateN int
 	raw   bool
+	conf  bool
 	c2    c2mode.Detector
 }
 
@@ -243,6 +244,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	hold := false
 	switch {
 	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
+		ch.conf = false
 		if x.stages&(extAMBE|extELC) != 0 {
 			x.fill(c, &b.Data)
 		}
@@ -258,6 +260,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		if x.stages&extOSD != 0 {
 			x.data(c, b)
 		}
+		x.noteHeader(ch, b)
 		noteCallLC(&ch.raw, out, x.checks[enums.DataTypeVoiceLCHeader])
 		ch.elc.callLC(out, x.checks[enums.DataTypeVoiceLCHeader])
 	default:
@@ -365,6 +368,7 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	if x.bptcRetry(b) && x.affords(extCoreCredit) {
 		x.coreData(c, b, fixed, data)
 	}
+	x.keepRate34(b, &fixed, &data)
 	x.cohCACH(c, b)
 	x.coh.trackBurst(&b.Fixed)
 	if x.coh.ex != nil && burstDistance(&data, &b.Fixed) < burstDistance(&b.Data, &b.Fixed) {
@@ -372,8 +376,10 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 	}
 	hold := false
 	if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
+		ch.conf = false
 		hold = x.fragment(ch, b)
 	} else {
+		x.noteHeader(ch, b)
 		ch.have = 0
 		ch.elc.reset()
 		noteCallLC(&ch.raw, &b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
@@ -404,8 +410,10 @@ func (x *softExt) data(c *leanCore, b *Burst) {
 	}
 	dt := st.DataType
 	if dt == enums.DataTypeRate34 && x.np != nil {
+		fixed, data := *out, b.Data
 		x.fill(c, &b.Data)
 		x.soft.decodeRate34(&x.llr, out)
+		x.keepRate34(b, &fixed, &data)
 		return
 	}
 	check := x.checks[dt&0xF]
@@ -465,6 +473,7 @@ func (x *softExt) back(c *leanCore, j int64) {
 		if ok && x.bptcRetry(b) {
 			b.Fixed, b.Data = lc, data
 		}
+		x.keepRate34(b, &lc, &data)
 		if b.Voice >= enums.VoiceBurstB && b.Voice <= enums.VoiceBurstE {
 			for q := embFirstBit; q < embFirstBit+embBits; q++ {
 				m := byte(0x80) >> (q % 8)
@@ -1681,6 +1690,7 @@ func (x *softExt) end(c *leanCore) {
 	x.ch[0].have, x.ch[1].have = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.ch[0].raw, x.ch[1].raw = false, false
+	x.ch[0].conf, x.ch[1].conf = false, false
 	x.ch[0].elc, x.ch[1].elc = elcState{}, elcState{}
 	if c.unproven {
 		x.n = 0
@@ -1738,6 +1748,37 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m
 		}
 	}
+}
+
+func (x *softExt) keepRate34(b *Burst, fixed, data *layer2.RawBurst) {
+	if !x.ch[b.Slot&1].conf || rate34Checked(&b.Fixed) || !rate34Checked(fixed) {
+		return
+	}
+	b.Fixed, b.Data = *fixed, *data
+}
+
+// ETSI TS 102 361-1 clause 9.2
+func (x *softExt) noteHeader(ch *extChan, b *Burst) {
+	st := b.Fixed.SlotType()
+	switch {
+	case st.FEC.Uncorrectable:
+	case st.DataType == enums.DataTypeDataHeader:
+		p, _ := b.Fixed.BPTCPayload()
+		ch.conf = x.checks[enums.DataTypeDataHeader](p) && pdu.Format(p[0]&0xf) == pdu.FormatConfirmed
+	case st.DataType != enums.DataTypeRate34 && st.DataType != enums.DataTypeRate12 && st.DataType != enums.DataTypeRate1:
+		ch.conf = false
+	}
+}
+
+// ETSI TS 102 361-1 clause 9.2.2, Table 9.11; clause B.3.10
+func rate34Checked(b *layer2.RawBurst) bool {
+	st := b.SlotType()
+	if st.FEC.Uncorrectable || st.DataType != enums.DataTypeRate34 {
+		return false
+	}
+	p, _ := b.Rate34Payload()
+	d := pdu.Rate34Data{Data: p}
+	return d.ConfirmedCRC9OK()
 }
 
 func (x *softExt) coreCleaner() bool {
