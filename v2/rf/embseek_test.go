@@ -77,11 +77,14 @@ func TestRxSeekSecondTalker(t *testing.T) {
 // keeps no slot back, so it takes burst B on its own EMB, which reads with no
 // bit corrected as the first fragment of an embedded LC, and the seek runs
 // at the end of the EMB field, where the hunt buffer still holds the burst
-// up to there.
+// up to there. The seek starts that talker's clock from the rate of the
+// other one, and on these payloads burst C lost a bit at its start to the
+// phase carried over the other slot until Tier 0 fitted the timing again on
+// the EMB of burst C.
 func TestRxTier0SeekEMB(t *testing.T) {
 	t.Parallel()
 	row := mxRowNamed(t, "mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB")
-	for _, run := range []uint64{2} {
+	for _, run := range []uint64{2, 9} {
 		res, err := mxRun(pinnedRun(t, run, "TestRxMatrix"), row, []mxRx{{row.val(mxFormat), Tier0}})
 		if err != nil {
 			t.Fatal(err)

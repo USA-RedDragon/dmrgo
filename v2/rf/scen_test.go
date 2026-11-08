@@ -106,7 +106,7 @@ var bugPinTests = map[string]string{
 	"TestCoreLockSlotSync":               "a payload and noise where a voice burst locked on the past-sync sum",
 	"TestRxReplayStretchSyncs":           "a payload whose SYNC correlation peaks put the replayed bursts 15 us early",
 	"TestRxSeekAfterCohTune":             "a draw where the core took the coherent lock tune before the outputs made at it",
-	"TestRxTier0SeekEMB":                 "a payload whose second talker starts at voice burst B before a color code vote",
+	"TestRxTier0SeekEMB":                 "payloads whose second talker starts at voice B before a color code vote, one losing a bit of burst C to the carried phase",
 }
 
 func fixedPayload(t testing.TB) bool {

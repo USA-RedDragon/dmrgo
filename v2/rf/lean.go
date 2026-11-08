@@ -3556,10 +3556,16 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 // seekMid seeks, in a core with no soft stages, an MS talker that has no
 // SYNC anchor yet by the EMB of the slot at the end of its SYNC field, while
 // the hunt buffer still holds the burst up to there. A seek at the end of the
-// slot, as the soft stages run it, needs the samples of the whole slot.
+// slot, as the soft stages run it, needs the samples of the whole slot. In
+// the next burst of a fresh talker it fits the timing again on the EMB: the
+// talker's clock started from the other talker's rate, and the phase it
+// carried over the other slot can be off at the start of the burst. Where
+// the core measures the I/Q power, the head of the burst must stand 10 dB
+// over the guard before it, as the slot power test at the end of the slot
+// asks of the whole burst.
 func (r *leanCore) seekMid() bool {
 	j := r.next
-	if r.hasExt() || !r.ms.seek || r.ns != r.slotEnd-slotSymbols+leanSyncEnd+1 || r.ms.anch[j&1] != leanNoSlot {
+	if r.hasExt() || !r.ms.seek || r.ns != r.slotEnd-slotSymbols+leanSyncEnd+1 || r.ms.anch[j&1] != leanNoSlot && r.ms.fresh[j&1] == 0 {
 		return false
 	}
 	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
@@ -3656,17 +3662,22 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		return 0, false
 	}
 	o := (j + 1) & 1
-	r.embTalker(j, end, g, dc, res, &emb, known)
+	refit := r.ms.anch[j&1] != leanNoSlot
+	if !refit {
+		r.embTalker(j, end, g, dc, res, &emb, known)
+		r.ms.anch[j&1] = j
+	}
 	k := sh + int64(r.ms.off[j&1])
 	r.first += k
 	r.ms.off[(j+1)&1] -= int16(k)
 	r.ms.off[j&1] = 0
-	r.ms.anch[j&1] = j
 	if r.isReplaying() {
 		r.ext.replayPhase(j&1, d)
 	} else {
-		r.ms.fresh[j&1] = 2
-		r.saveClock(o)
+		if !refit {
+			r.ms.fresh[j&1] = 2
+			r.saveClock(o)
+		}
 		r.fitNs, r.fitT, r.fitQ = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps), sxy*sxy/(sxx*pp)
 		r.tm.t += d
 		if r.hasExt() {
