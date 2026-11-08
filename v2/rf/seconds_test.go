@@ -214,7 +214,7 @@ func TestSecondsLockBurstExact(t *testing.T) {
 			return (2*g.Float64() - 1) * tier0LockSpanHz
 		}
 		return (2*g.Float64() - 1) * iqHuntMaxHz
-	})
+	}, Tier0, Tier1, Tier2)
 }
 
 // TestSecondsLockBurstDeferredFit pins a payload whose lock burst a false
