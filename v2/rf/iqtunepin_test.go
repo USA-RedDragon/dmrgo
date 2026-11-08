@@ -353,3 +353,24 @@ func TestIQRefillInChannel(t *testing.T) {
 		t.Errorf("converter %.0f Hz off the carrier, outside the channel", off)
 	}
 }
+
+// TestIQSyncTuneTwoSlots pins held-out runs where an MS talker 13 dB weaker
+// on the other slot, 250 Hz off, moved the SYNC fit of a sync-only receiver
+// next to an AM neighbor: the tune followed each slot's fit, and burst 7 lost
+// bits before a 10 dB level step.
+func TestIQSyncTuneTwoSlots(t *testing.T) {
+	t.Parallel()
+	name := "mid.none.-1500.ms2.pi.-500ppm.nom.cs16-48k.40dB.step10dB.am3-60"
+	row := mxRowOf(t, name)
+	for _, run := range []uint64{3, 4, 8} {
+		res, err := mxRun(pinnedRun(t, run, "TestRxMatrix"), row, []mxRx{{row.val(mxFormat), Tier0}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range res {
+			if s := r.symptoms(); s != "" {
+				t.Errorf("run %d %s: %s", run, name, s)
+			}
+		}
+	}
+}
