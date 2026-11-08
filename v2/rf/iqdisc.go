@@ -358,9 +358,15 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	} else {
 		h := d.hist[d.head : d.head+n]
 		h = h[:n]
-		for k, t := range d.taps {
-			re += t * real(h[k])
-			im += t * imag(h[k])
+		m := n / 2
+		for k, t := range d.taps[:m] {
+			a, b := h[k], h[n-1-k]
+			re += t * (real(a) + real(b))
+			im += t * (imag(a) + imag(b))
+		}
+		if n%2 == 1 {
+			re += d.taps[m] * real(h[m])
+			im += d.taps[m] * imag(h[m])
 		}
 	}
 	y := cmul(complex(re, im), d.post)

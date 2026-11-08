@@ -625,3 +625,22 @@ func TestReceiverReadingsAfterLevelStep(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+// TestIQDiscTapsSymmetric checks that the wide and narrow channel filters of
+// every tier have symmetric taps, as the folded filter loop of iqDisc.push
+// takes them.
+func TestIQDiscTapsSymmetric(t *testing.T) {
+	t.Parallel()
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+		o := tierOptions(tier)
+		var d iqDisc
+		d.init(basebandRate/o.IQHz, iqFilter{taps: o.IQTaps, beta: o.IQKaiser, cutHz: o.IQCutHz, half: o.IQHalfband, stop: o.IQStopHz})
+		for _, taps := range [][]float32{d.taps, narrowTaps(d.taps)} {
+			for i, v := range taps {
+				if v != taps[len(taps)-1-i] {
+					t.Fatalf("%v: %d taps, tap %d is %g and its mirror %g", tier, len(taps), i, v, taps[len(taps)-1-i])
+				}
+			}
+		}
+	}
+}
