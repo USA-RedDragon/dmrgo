@@ -586,7 +586,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				r.acqHead, r.acqLow = kh, kq
 				if st&st96Lock != 0 {
 					again, mid, match := r.lockSym(tm.last, at)
-					if !match && !r.ms.retry && uint32(r.ns) != uint32(r.slotEnd) {
+					if !match && !r.ms.retry && uint32(r.ns) != uint32(r.slotEnd) && (uint32(r.ns)+leanSeekLead != uint32(r.slotEnd) || !r.hunt || !r.seekMid()) {
 						if t > 0 {
 							break
 						}

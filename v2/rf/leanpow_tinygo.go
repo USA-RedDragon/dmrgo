@@ -10,12 +10,12 @@ func (r *leanCore) setPower(p *iqPower) {
 	}
 }
 
-func (r *leanCore) slotPower(base int64) (on, off float32, ok bool) {
+func (r *leanCore) slotPower(base int64, head bool) (on, off float32, ok bool) {
 	x, ok := r.ext.(*softExt)
 	if !r.hasExt() || !ok || x.pow == nil {
 		return 0, 0, false
 	}
-	return r.slotPowerOf(x.pow, base)
+	return r.slotPowerOf(x.pow, base, head)
 }
 
 func wantPower(opt *options) bool { return opt.SoftExt }

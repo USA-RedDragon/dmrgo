@@ -1,9 +1,13 @@
 package rf
 
-func (r *leanCore) slotPowerOf(p *iqPower, base int64) (on, off float32, ok bool) {
+func (r *leanCore) slotPowerOf(p *iqPower, base int64, head bool) (on, off float32, ok bool) {
 	ticks, _, _ := r.burstTicks(base)
 	t0 := tickSeconds(ticks)
-	if on, ok = p.mean(t0+leanBurstSec/4, t0+3*leanBurstSec/4); !ok {
+	end := t0 + 3*leanBurstSec/4
+	if head {
+		end = t0 + leanBurstSec/2
+	}
+	if on, ok = p.mean(t0+leanBurstSec/4, end); !ok {
 		return 0, 0, false
 	}
 	off = on
@@ -13,7 +17,7 @@ func (r *leanCore) slotPowerOf(p *iqPower, base int64) (on, off float32, ok bool
 			off = min32(off, p)
 		}
 	}
-	for k := 1; k <= 3; k++ {
+	for k := 1; k <= 3 && !head; k++ {
 		t := t0 + leanBurstSec + float64(k)*iqPowerUs/1e6
 		if p, ok := p.mean(t, t); ok {
 			off = min32(off, p)

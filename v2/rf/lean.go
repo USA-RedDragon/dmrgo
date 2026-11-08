@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -41,7 +42,7 @@ const (
 	leanAcqWait         = 48
 	leanVoteErrors      = 2
 	leanSyncWindow      = (syncSymbols-1)*5/2 + 3 + 6
-	leanHuntSamples     = (leanAcqSymbols*5/2 + 7) &^ 1
+	leanHuntSamples     = ((leanAcqSymbols+2)*5/2 + 7) &^ 1
 	leanAcqGain         = 0.15
 	leanTrackGain       = 0.02
 	leanPowerForget     = 0.99
@@ -1001,7 +1002,7 @@ func (r *leanCore) symbol(x, at float32) {
 	if r.pendEnd != 0 && r.ns >= r.pendEnd+int64(r.pendWait) {
 		r.decidePend()
 	}
-	if r.hunt {
+	if r.hunt && (uint32(r.ns)+leanSeekLead != uint32(r.slotEnd) || !r.seekMid()) {
 		r.huntSym(at)
 	}
 	if r.ns == r.slotEnd {
@@ -2013,6 +2014,7 @@ func (r *leanCore) gridMiss() int32 {
 
 const (
 	leanSeekSyms     = 4
+	leanSeekLead     = slotSymbols - leanSyncEnd - 1
 	leanReplayErrors = 1
 	leanReplayFalse  = 4
 	leanReplayNear   = 8
@@ -2287,7 +2289,7 @@ func (r *leanCore) slotEnergy(base int64) (energy, floor float32, known, measure
 	r.eAcc, r.eSyms = 0, 0
 	if !r.bs {
 		var e float32
-		if e, floor, measured = r.slotPower(base); measured {
+		if e, floor, measured = r.slotPower(base, false); measured {
 			energy = e
 		}
 	}
@@ -3551,16 +3553,30 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 	return pos, ok && (!r.isReplaying() || r.ext.replayFits(r, j, pos))
 }
 
-// embAnchor takes the MS slot at base, in the slot parity of a talker that
-// has no SYNC anchor yet, as that talker's voice burst B or E when its EMB,
-// sliced at the grid of the locked talker, carries the stream's color code
-// and the LCSS of burst B or E with at most one corrected bit (ETSI TS 102
-// 361-1 clause 7.1.3). The 24 sliced symbols of the SYNC field then stand in
-// for a SYNC pattern: their timing fit on the kept samples resamples the slot
-// and moves the talker's strobe phase, and their level fit gives the
-// talker's levels, as a SYNC anchor's fit does.
+// seekMid seeks, in a core with no soft stages, an MS talker that has no
+// SYNC anchor yet by the EMB of the slot at the end of its SYNC field, while
+// the hunt buffer still holds the burst up to there. A seek at the end of the
+// slot, as the soft stages run it, needs the samples of the whole slot.
+func (r *leanCore) seekMid() bool {
+	j := r.next
+	if r.hasExt() || !r.ms.seek || r.ns != r.slotEnd-slotSymbols+leanSyncEnd+1 || r.ms.anch[j&1] != leanNoSlot {
+		return false
+	}
+	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
+	if on, off, ok := r.slotPower(base, true); ok && on <= leanSlotContrast*off || !ok && r.eSyms > 0 && !r.powered(r.eAcc/float32(r.eSyms), 0, true, false) {
+		return false
+	}
+	sh, ok := r.embAnchor(j, base)
+	if !ok {
+		return false
+	}
+	r.slotEnd += sh
+	r.ms.seek, r.tm.hold = false, false
+	return true
+}
+
 func (r *leanCore) embSeek(j int32, base int64, present, known, measured bool) (int64, bool) {
-	if !present && (known || measured) {
+	if !r.hasExt() || !present && (known || measured) {
 		return 0, false
 	}
 	return r.embAnchor(j, base)
@@ -3572,10 +3588,18 @@ func (r *leanCore) seekNoise(energy float32, known, measured bool) {
 	}
 }
 
+// embAnchor takes the MS slot at base, in the slot parity of a talker that
+// has no SYNC anchor yet, as that talker's voice burst B or E when its EMB,
+// sliced at the grid of the locked talker, carries the stream's color code
+// and the LCSS of burst B or E with at most one corrected bit (ETSI TS 102
+// 361-1 clause 7.1.3). A core with no soft stages keeps no slot back to
+// confirm the EMB by the next one, so before any color code vote it takes
+// an EMB of burst B or E that reads with no bit corrected. The 24 sliced
+// symbols of the SYNC field then stand in for a SYNC pattern: their timing
+// fit on the kept samples resamples the slot and moves the talker's strobe
+// phase, and their level fit gives the talker's levels, as a SYNC anchor's
+// fit does.
 func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
-	if !r.hasExt() {
-		return 0, false
-	}
 	cc, known := r.colorCode()
 	end := base + leanSyncEnd
 	sym, at0, sps := r.ns-1, r.lastAt, 2*r.tm.step+r.tm.rate
@@ -3587,39 +3611,17 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	if back < 0 || float32(int(back)+syncSymbols+4)*2*r.tm.step+4-at0 > float32(r.acqKept()) {
 		return 0, false
 	}
-	var syms, try [syncSymbols]int8
-	found, strong := false, false
-	var emb pdu.EmbeddedSignalling
-	top, shift, eye := 3, float32(0), float32(0)
-	for _, k := range [5]float32{0, -1, 1, -2, 2} {
-		ek := r.sliceKept(at+k*sps/4, sps, &try)
-		e := embOfSyms(&try)
-		rank := 3
-		switch {
-		case known && embStrong(&e, cc):
-			rank = 0
-		case embWeak(&e, known, cc):
-			rank = 1 + e.FEC.ErrorsCorrected
-		}
-		if rank < top || rank == top && rank < 3 && ek < eye {
-			top, shift, syms, emb, eye = rank, k*sps/4, try, e, ek
-		}
-		if rank == 0 {
-			break
-		}
-	}
-	if top < 3 {
-		at += shift
-		found, strong = true, top == 0
-	}
-	if !found {
+	syms, emb, shift, top := r.embFind(at, sps, known, cc)
+	if top == embNone {
 		return 0, false
 	}
-	agrees := r.ext.seekAgrees(j, emb.ColorCode, emb.LCSS)
-	if !strong {
-		if !agrees {
-			return 0, false
-		}
+	at += shift
+	strong := top == 0
+	agrees := r.hasExt() && r.ext.seekAgrees(j, emb.ColorCode, emb.LCSS)
+	if !strong && !agrees {
+		return 0, false
+	}
+	if !known {
 		cc = emb.ColorCode
 	}
 	var win syncWindow
@@ -3654,11 +3656,7 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		return 0, false
 	}
 	o := (j + 1) & 1
-	r.saveLevels(o)
-	g = max32(g, leanMinScale)
-	r.devScale, r.dcHz, r.discVar, r.amp, r.looseLv = g, dc, res, 0, true
-	r.levelN, r.levelEnd = levelWarm, uint16(end)
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+	r.embTalker(j, end, g, dc, res, &emb, known)
 	k := sh + int64(r.ms.off[j&1])
 	r.first += k
 	r.ms.off[(j+1)&1] -= int16(k)
@@ -3670,13 +3668,110 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 		r.ms.fresh[j&1] = 2
 		r.saveClock(o)
 		r.fitNs, r.fitT, r.fitQ = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps), sxy*sxy/(sxx*pp)
-		r.ext.noteSpan(r, max(base-1, kept), base+slotSymbols, d, sps)
 		r.tm.t += d
-		if agrees {
-			r.seekBackfill(j-2, base-2*slotSymbols, d, sps)
+		if r.hasExt() {
+			r.ext.noteSpan(r, max(base-1, kept), base+slotSymbols, d, sps)
+			if agrees {
+				r.seekBackfill(j-2, base-2*slotSymbols, d, sps)
+			}
 		}
 	}
 	return sh, true
+}
+
+const embNone = 3
+
+// embFind slices the SYNC field that ends at at, and at a quarter and a half
+// symbol to each side, and returns the reading whose EMB ranks best: rank 0
+// for an EMB that needs no corrected bit to carry the stream's color code,
+// or, in a core with no soft stages before a color code vote, to place its
+// burst; rank 1 plus its corrected bits for an EMB that fits the stream with
+// at most one corrected bit; embNone when no reading holds such an EMB.
+func (r *leanCore) embFind(at, sps float32, known bool, cc enums.ColorCode) (syms [syncSymbols]int8, emb pdu.EmbeddedSignalling, shift float32, top int) {
+	var try [syncSymbols]int8
+	top = embNone
+	var eye float32
+	for _, k := range [5]float32{0, -1, 1, -2, 2} {
+		e, ok := r.sliceEMB(at+k*sps/4, sps, known, cc)
+		if !ok {
+			continue
+		}
+		var rank int
+		switch {
+		case known && embStrong(&e, cc), !known && !r.hasExt() && embPlaced(&e):
+		case embWeak(&e, known, cc):
+			rank = 1 + e.FEC.ErrorsCorrected
+		default:
+			continue
+		}
+		ek := r.sliceKept(at+k*sps/4, sps, &try)
+		if rank < top || rank == top && ek < eye {
+			top, shift, syms, emb, eye = rank, k*sps/4, try, e, ek
+		}
+		if rank == 0 {
+			break
+		}
+	}
+	return syms, emb, shift, top
+}
+
+// embTalker starts the talker of slot j on its EMB anchor: it keeps the
+// levels of the other talker, takes the levels of the SYNC field fit, and
+// before a color code vote places the burst in the superframe by the LCSS of
+// its EMB.
+func (r *leanCore) embTalker(j int32, end int64, g, dc, res float32, emb *pdu.EmbeddedSignalling, known bool) {
+	r.saveLevels((j + 1) & 1)
+	g = max32(g, leanMinScale)
+	r.devScale, r.dcHz, r.discVar, r.amp, r.looseLv = g, dc, res, 0, true
+	r.levelN, r.levelEnd = levelWarm, uint16(end)
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+	if known {
+		return
+	}
+	switch emb.LCSS {
+	case enums.LCSSFirstFragment:
+		r.ch[j&1].sf = j - 2*int32(enums.VoiceBurstB-enums.VoiceBurstA)
+	case enums.LCSSLastFragment:
+		r.ch[j&1].sf = j - 2*int32(enums.VoiceBurstE-enums.VoiceBurstA)
+	case enums.LCSSSingleFragment, enums.LCSSContinuationFragment:
+	}
+}
+
+// sliceEMB slices from the kept samples only the 8 EMB symbols of the SYNC
+// field that ends at at, the first and last 4 of its 24 (ETSI TS 102 361-1
+// clause 9.1.2), and reads the EMB from them. It reports no EMB unless the
+// EMB needs at most one corrected bit, and with the color code known it
+// stops after the first 2 symbols when they differ from it in 2 bits or
+// more, since no such EMB can then carry it.
+func (r *leanCore) sliceEMB(at, sps float32, known bool, cc enums.ColorCode) (pdu.EmbeddedSignalling, bool) {
+	r.setLLR()
+	var cw uint16
+	for n, i := range [8]int{0, 1, 2, 3, syncSymbols - 4, syncSymbols - 3, syncSymbols - 2, syncSymbols - 1} {
+		v := int32(roundf(r.keptAt(at - float32(syncSymbols-1-i)*sps)))
+		cw = cw<<2 | dibitOf(r.sliceLevel(v))
+		if n == 1 && known && bits.OnesCount16(cw^uint16(cc)) >= 2 {
+			return pdu.EmbeddedSignalling{}, false
+		}
+	}
+	if !embNear(cw) {
+		return pdu.EmbeddedSignalling{}, false
+	}
+	return embOfCW(cw), true
+}
+
+// embNear reports whether cw lies at most one bit from a QR (16,7,6)
+// codeword: its data bits encode to within one bit of it, or one flipped
+// data bit makes it a codeword.
+func embNear(cw uint16) bool {
+	if bits.OnesCount16(quadraticresidue.Encode(uint8(cw>>9))^cw) <= 1 {
+		return true
+	}
+	for k := 9; k < 16; k++ {
+		if quadraticresidue.Check(cw ^ 1<<k) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *leanCore) sliceKept(at, sps float32, syms *[syncSymbols]int8) float32 {
@@ -3816,6 +3911,13 @@ func embStrong(emb *pdu.EmbeddedSignalling, cc enums.ColorCode) bool {
 
 func embWeak(emb *pdu.EmbeddedSignalling, known bool, cc enums.ColorCode) bool {
 	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && (!known || emb.ColorCode == cc) && emb.LCSS != enums.LCSSSingleFragment
+}
+
+// embPlaced reports whether emb reads with no bit corrected as the EMB of
+// voice burst B or E, the bursts whose LCSS gives their place in the
+// superframe (ETSI TS 102 361-1 clause 9.1.2 and annex B.2.1).
+func embPlaced(emb *pdu.EmbeddedSignalling) bool {
+	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected == 0 && (emb.LCSS == enums.LCSSFirstFragment || emb.LCSS == enums.LCSSLastFragment)
 }
 
 func dibitOf(v int8) uint16 {

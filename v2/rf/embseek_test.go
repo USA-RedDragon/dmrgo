@@ -70,3 +70,26 @@ func TestRxSeekSecondTalker(t *testing.T) {
 		}
 	}
 }
+
+// TestRxTier0SeekEMB checks that Tier 0 receives every burst of an MS talker
+// whose first burst in the input is voice burst B, on the other slot of a
+// talker that locked on voice burst A before any color code was voted. Tier 0
+// keeps no slot back, so it takes burst B on its own EMB, which reads with no
+// bit corrected as the first fragment of an embedded LC, and the seek runs
+// at the end of the EMB field, where the hunt buffer still holds the burst
+// up to there.
+func TestRxTier0SeekEMB(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB")
+	for _, run := range []uint64{2} {
+		res, err := mxRun(pinnedRun(t, run, "TestRxMatrix"), row, []mxRx{{row.val(mxFormat), Tier0}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range res {
+			if len(r.fail) > 0 {
+				t.Errorf("run %d: %s", run, strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}
