@@ -21,6 +21,8 @@ const (
 	audioMaxK      = 1<<16 - 1
 	audioMaxGain   = audioMaxK * rrcStepHz / 65536.0
 	discMeanJump   = 2 * discInputRMSHz
+	discIQJump     = 0.75 * discInputRMSHz
+	discIQJumpVar  = 4 * discInputRMSHz * discInputRMSHz
 	audioMaxOff    = 1<<29 - 1<<15
 	audioStartGain = math.MaxInt8 * rrcStepHz / -float32(math.MinInt16)
 )
@@ -645,13 +647,34 @@ func (r *discRx) deviation() float64 {
 	return float64(float32(r.devHz) / r.f.gain)
 }
 
+// jumpDC moves the DC of the front to the mean qm of the last quarter block
+// when it is off by more than discIQJump and the variance qv is that of a
+// signal, not of noise. Before the lock the mean of the blocks follows a
+// carrier step at the start of a burst too slowly, and at I/Q tier 0, which
+// times the first burst before the AFC tunes, the DC left in the kept samples
+// clipped them at the sync 2 kHz or more off. A quarter that a converter tune
+// split is skipped.
+//
 //go:noinline
+func (r *discRx) jumpDC(qm, qv float32) {
+	f := &r.f
+	m := qm * f.gain
+	if r.tuneNs != 0 && uint32(r.ns)-r.tuneNs <= frontQuarter/2 || qv*f.gain*f.gain >= discIQJumpVar || abs32(m-f.dc) <= discIQJump {
+		return
+	}
+	f.mean = m
+	r.moveDC(m - f.dc)
+}
+
 func (r *discRx) levels() {
 	f := &r.f
 	qm := float32(f.sum-f.qsum) / frontQuarter
 	qv := sq32(f.sq-f.qsq)/frontQuarter - qm*qm
 	f.qsum, f.qsq = f.sum, f.sq
 	r.quarterHot(qv)
+	if f.iq && !r.hasExt() {
+		r.jumpDC(qm, qv)
+	}
 	if f.n == frontQuarter {
 		f.qmin, f.qmax = qv, qv
 	} else {

@@ -192,29 +192,31 @@ func TestSecondsLowRatePhase(t *testing.T) {
 	}
 }
 
-// tier0LockSpanHz is the span of the Tier0 carrier offsets of
-// TestSecondsLockBurstExact; the other tiers take the hunt range. Further
-// off, Tier0 times its first burst before the AFC tunes, with the FM on the
-// edge of the wide channel filter, as it has no RAM to filter the burst again
-// (docs/rx-notes.md).
-const tier0LockSpanHz = 1000
-
 // TestSecondsLockBurstExact checks the lock burst Seconds over locks at
-// fresh starts and carrier offsets. With no noise both the mean and the RMS
-// error must stay within 0.6 us; at 30 dB the mean must. The offset is drawn
-// for every lock, as the rounding of the kept samples to steps of
-// discStepHz moves the MM zero by an amount that follows the DC: on a grid
-// offset by 0, 1/4, 1/2 and 3/4 of a step it moved the Tier2 lock -0.37,
-// +0.02, +0.25 and +0.15 us against unrounded samples.
+// fresh starts and carrier offsets over the hunt range. With no noise both
+// the mean and the RMS error must stay within 0.6 us; at 30 dB the mean must.
+// The offset is drawn for every lock, as the rounding of the kept samples to
+// steps of discStepHz moves the MM zero by an amount that follows the DC: on
+// a grid offset by 0, 1/4, 1/2 and 3/4 of a step it moved the Tier2 lock
+// -0.37, +0.02, +0.25 and +0.15 us against unrounded samples.
 func TestSecondsLockBurstExact(t *testing.T) {
 	t.Parallel()
 	g := testseed.New(t)
-	secondsLockBurstExact(t, testConfig(t), func(tier Tier) float64 {
-		if tier == Tier0 {
-			return (2*g.Float64() - 1) * tier0LockSpanHz
-		}
+	secondsLockBurstExact(t, testConfig(t), func(Tier) float64 {
 		return (2*g.Float64() - 1) * iqHuntMaxHz
 	}, Tier0, Tier1, Tier2)
+}
+
+// TestSecondsLockBurstFarOffset pins carriers 2.4 kHz off, where the Tier0
+// lock burst Seconds read 2.8 us RMS and up to 4.6 us off: the DC of the
+// carrier was still in the kept samples at the sync, and they clipped.
+func TestSecondsLockBurstFarOffset(t *testing.T) {
+	t.Parallel()
+	var k int
+	secondsLockBurstExact(t, testscen.Of(5).Apply(testConfigFixed()), func(Tier) float64 {
+		k++
+		return float64(1-2*(k&1)) * 2400
+	}, Tier0)
 }
 
 // TestSecondsLockBurstDeferredFit pins a payload whose lock burst a false

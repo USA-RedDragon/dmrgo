@@ -64,6 +64,7 @@ var bugPinTests = map[string]string{
 	"TestRxEmbeddedLCTalkerChange":       "seeds that failed every cell under the old ELC combiner (f63c851a5)",
 	"TestMSKeyUpGuardHold":               "a payload whose second burst the loop moved over the guard",
 	"TestSecondsLockBurstWideFit":        "a payload whose Tier1 lock fit on the narrow filter output",
+	"TestSecondsLockBurstFarOffset":      "a payload whose Tier0 lock burst clipped in the kept samples 2.4 kHz off",
 	"TestSecondsLockBurstDeferredFit":    "a payload whose lock took the strobe when the sync fit deferred",
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 	"TestRxLevelStepTiming":              "payloads where a level and DC step pulled the timing loop",

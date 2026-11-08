@@ -73,7 +73,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.none.-3000.ms.rc.0ppm.low.a24000.40dB/t1":             {checks: "missing"},
 	"gap.none.-3000.ms.rc.0ppm.low.a24000.40dB/t2":             {checks: "missing"},
 	"gap.none.-3000.ms.rc.0ppm.low.a24000.40dB/t3":             {checks: "missing"},
-	"gap.none.-4000.ms2.data1.+500ppm.nom.cs16-48k.inf/t0":     {checks: "missing"},
 	"gap.none.-700.ms.rc.0ppm.nom.a12000.40dB/t0":              {checks: "missing"},
 	"gap.none.-700.ms.rc.0ppm.nom.a12000.40dB/t2":              {checks: "bits"},
 	"gap.none.-700.ms.rc.0ppm.nom.a12000.40dB/t3":              {checks: "bits"},

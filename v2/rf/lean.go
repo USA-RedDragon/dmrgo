@@ -2801,6 +2801,12 @@ func (r *leanCore) heldOver(hz, lim float32) {
 
 func (r *leanCore) retune(d float32) {
 	r.heldTune(d)
+	r.moveDC(d)
+}
+
+// moveDC moves the DC that the front takes out of the discriminator output
+// by d, and the kept samples and the timing state with it.
+func (r *leanCore) moveDC(d float32) {
 	r.tuneHz += d
 	if r.audio != nil {
 		r.audio.retuneFront(r.tuneHz, d)
