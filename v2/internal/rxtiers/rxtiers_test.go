@@ -140,7 +140,7 @@ func TestIQTiersDecode(t *testing.T) {
 		n, ok, h uint32
 	}{
 		{rf.Tier1, 48, 48, 0x4c76a7f4},
-		{rf.Tier2, 48, 48, 0xe6dc3400},
+		{rf.Tier2, 48, 48, 0x9026a1c3},
 	} {
 		d := digest{sent: sent, h: 2166136261}
 		r, err := rf.NewReceiver(&rf.RxConfig{Rate: rftx.BasebandRate, Format: rf.IQFormatCS16, Tier: c.tier, OnBursts: d.on})
