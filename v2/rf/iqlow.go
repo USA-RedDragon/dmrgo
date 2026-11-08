@@ -12,6 +12,7 @@ const (
 	iqLowDCEvery = 1
 	iqLowDCBlock = 16
 	iqLowDCDelay = 16
+	iqLowDCHold  = 32
 	iqLowBuf     = 16
 	iqLowPack    = 16
 	iqLowScale   = 4096
@@ -42,7 +43,7 @@ type iqLowRx struct {
 	step        int32
 	hz          float32
 	afcN        int16
-	n           uint8
+	n, dN       uint8
 	buf         [iqLowBuf]int16
 	dcm         uint32
 	dcI, dcQ    float32
@@ -52,8 +53,7 @@ type iqLowRx struct {
 	fit         dcFit
 	dcN         uint16
 	sub, dHead  uint8
-	dly         [iqLowDCDelay]uint32
-	out         [iqLowDCBlock]uint32
+	dly         [iqLowDCHold]uint32
 }
 
 func (r *iqLowRx) center(hz float32) {
@@ -68,6 +68,7 @@ func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) {
 	r.d.lagTicks = int32((basebandRate/hz)<<7 + iqLowDCDelay*(basebandRate/hz)<<8)
 	r.edge = float32(iqLowDCEvery / (dcEdgeSeconds * float64(hz)))
 	r.fit = dcFit{du: 1.0 / iqLowDCBlock, end: float32(dcFitSeconds * float64(hz))}
+	r.dN = iqLowDCDelay
 }
 
 func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {
@@ -92,17 +93,35 @@ func (r *iqLowRx) write(iq []byte, f IQFormat, words *[2]uint32) {
 // samples, iqLowDCDelay samples late. dcUpdate takes each block into the DC
 // estimate first, and the kernels subtract the packed estimate dcm from the
 // delayed samples, so a reset of the estimate also reaches the samples taken
-// while the carrier test decided.
+// while the carrier test decided. At the start the samples wait up to
+// iqLowDCHold samples for the first circle fit: the first block holds the
+// ramp of a call that starts with the input, its fit fails, and the mean of
+// the first blocks can sit half the carrier off the offset.
 func (r *iqLowRx) feed16(x []uint32) {
 	for len(x) > 0 {
 		m := min(len(x), iqLowDCBlock)
 		r.dcUpdate(x[:m])
-		for i, w := range x[:m] {
-			r.out[i], r.dly[r.dHead] = r.dly[r.dHead], w
-			r.dHead = (r.dHead + 1) & (iqLowDCDelay - 1)
+		lag := iqLowDCDelay
+		if r.dcN < 1<<iqLowDCShift && r.fit.blocks < 2 && r.fit.k < r.fit.end {
+			lag = iqLowDCHold
 		}
-		r.run(r.out[:m])
+		r.release(max(int(r.dN)+m-lag, 0))
+		for _, w := range x[:m] {
+			r.dly[(r.dHead+r.dN)&(iqLowDCHold-1)] = w
+			r.dN++
+		}
 		x = x[m:]
+	}
+}
+
+func (r *iqLowRx) release(n int) {
+	for n > 0 {
+		h := int(r.dHead)
+		m := min(n, iqLowDCHold-h)
+		r.dHead = uint8((h + m) & (iqLowDCHold - 1))
+		r.dN -= uint8(m)
+		r.run(r.dly[h : h+m])
+		n -= m
 	}
 }
 
@@ -128,7 +147,7 @@ func (r *iqLowRx) feed16(x []uint32) {
 func (r *iqLowRx) dcUpdate(x []uint32) {
 	var si, sq int32
 	fit := false
-	prev := r.dly[(r.dHead-1)&(iqLowDCDelay-1)]
+	prev := r.dly[(r.dHead+r.dN-1)&(iqLowDCHold-1)]
 	for _, w := range x {
 		i, q := int32(int16(w)), int32(w)>>16
 		si, sq = si+i, sq+q
@@ -351,10 +370,7 @@ func (r *iqLowRx) tune(hz, dc float32) {
 }
 
 func (r *iqLowRx) flush() {
-	for i := range r.out[:iqLowDCDelay] {
-		r.out[i] = r.dly[(int(r.dHead)+i)&(iqLowDCDelay-1)]
-	}
-	r.run(r.out[:iqLowDCDelay])
+	r.release(int(r.dN))
 	if !r.d.iqLow || !r.d.front96 {
 		r.d.writeIQ(r.buf[:r.n])
 	}

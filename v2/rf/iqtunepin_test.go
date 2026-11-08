@@ -290,16 +290,22 @@ func TestRxMidLockRetune(t *testing.T) {
 	}
 }
 
-// TestIQLowDCStart pins a held-out run where the low-rate I/Q receiver
+// TestIQLowDCStart pins held-out runs where the low-rate I/Q receiver
 // started on a call with a DC offset as strong as the carrier, and the I/Q
 // mean of the first blocks, which still held a share of the signal, cost
-// burst 0 its first bits.
+// burst 0 its first bits. In run 171 the circle fits of the first two blocks
+// failed on the ramp; in run 705 the first fit held on the ramp at 100 of the
+// 236 units of radius, 145 units off the offset, and stayed in the mean.
 func TestIQLowDCStart(t *testing.T) {
 	t.Parallel()
 	name := "s0.none.+0.ms.voice.0ppm.low.cs16-9600.40dB.dc"
 	row := mxRowOf(t, name)
-	for _, run := range []uint64{3} {
-		res, err := mxRun(pinnedRun(t, run, "TestIQLowDCOffset"), row, []mxRx{{row.val(mxFormat), Tier0}})
+	for _, p := range []struct {
+		run  uint64
+		test string
+	}{{3, "TestIQLowDCOffset"}, {171, "TestRxMatrix"}, {705, "TestRxMatrix"}, {782, "TestRxMatrix"}} {
+		run := p.run
+		res, err := mxRun(pinnedRun(t, run, p.test), row, []mxRx{{row.val(mxFormat), Tier0}})
 		if err != nil {
 			t.Fatal(err)
 		}
