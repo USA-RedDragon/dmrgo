@@ -784,59 +784,107 @@ func TestMinRatesGenerated(t *testing.T) {
 	if !longRun() {
 		t.Skip("the full rate grid runs with DMRGO_LONG=1; TestMinRatesSample checks a sample of it")
 	}
-	var tb minRateTable
-	var mu sync.Mutex
-	var log []string
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, max(1, testParallel()))
+	writeMinRates(t, measureMinRateItems(t, minRateItems()))
+}
+
+type minRateItem struct {
+	c    limClass
+	li   int
+	lp   int
+	rate int
+}
+
+func (it minRateItem) key() string { return fmt.Sprintf("%s lp%d %d", it.c, it.lp, it.rate) }
+
+func (c limClass) rates() []int {
+	if c.iq {
+		return iqGrid(c.tier)
+	}
+	return audioGrid(c.tier)
+}
+
+func minRateItems() []minRateItem {
+	var out []minRateItem
 	for _, c := range limClasses() {
-		rates := iqGrid(c.tier)
-		if !c.iq {
-			rates = audioGrid(c.tier)
-		}
 		for li, lp := range c.lowpasses() {
-			res := make([]map[string]float64, len(rates))
-			for i, r := range rates {
-				wg.Add(1)
-				sem <- struct{}{}
-				go func() {
-					defer func() { <-sem; wg.Done() }()
-					g, err := measureClassRate(t, c, r, c.superframes(), lp)
-					if err != nil {
-						return
-					}
-					res[i] = g
-				}()
+			for _, r := range c.rates() {
+				out = append(out, minRateItem{c: c, li: li, lp: lp, rate: r})
 			}
-			wg.Wait()
-			cell := tb.cell(c, li)
-			for reg := range limRegions {
-				for s := range limServices {
-					for p, pw := range limPowerClasses {
-						pass := make([]bool, len(rates))
-						for i, g := range res {
-							pass[i] = g != nil && len(regimeFails(t, g, reg, s, pw)) == 0
-						}
-						cell[reg][s][p] = minRateOf(rates, pass, gridFloor(c.iq))
-					}
-				}
-			}
-			mu.Lock()
-			for i, g := range res {
-				if g == nil {
-					continue
-				}
-				log = append(log, fmt.Sprintf("%s lp%d %d %s", c, lp, rates[i], summary(g)))
-			}
-			mu.Unlock()
 		}
 	}
+	return out
+}
+
+func measureMinRateItems(t *testing.T, items []minRateItem) map[string]map[string]float64 {
+	res := make([]map[string]float64, len(items))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, max(1, testParallel()))
+	for i, it := range items {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer func() { <-sem; wg.Done() }()
+			g, err := measureClassRate(t, it.c, it.rate, it.c.superframes(), it.lp)
+			if err == nil {
+				res[i] = g
+			}
+		}()
+	}
+	wg.Wait()
+	out := make(map[string]map[string]float64, len(items))
+	for i, it := range items {
+		out[it.key()] = res[i]
+	}
+	return out
+}
+
+func buildMinRates(t testing.TB, res map[string]map[string]float64) (*minRateTable, []string) {
+	var tb minRateTable
+	var log []string
+	items := minRateItems()
+	for len(items) > 0 {
+		c, li := items[0].c, items[0].li
+		n := 0
+		for n < len(items) && items[n].c == c && items[n].li == li {
+			n++
+		}
+		group := items[:n]
+		items = items[n:]
+		rates := make([]int, len(group))
+		for i, it := range group {
+			rates[i] = it.rate
+		}
+		cell := tb.cell(c, li)
+		for reg := range limRegions {
+			for s := range limServices {
+				for p, pw := range limPowerClasses {
+					pass := make([]bool, len(group))
+					for i, it := range group {
+						g := res[it.key()]
+						pass[i] = g != nil && len(regimeFails(t, g, reg, s, pw)) == 0
+					}
+					cell[reg][s][p] = minRateOf(rates, pass, gridFloor(c.iq))
+				}
+			}
+		}
+		for _, it := range group {
+			if g := res[it.key()]; g != nil {
+				log = append(log, fmt.Sprintf("%s lp%d %d %s", it.c, it.lp, it.rate, summary(g)))
+			}
+		}
+	}
+	return &tb, log
+}
+
+func writeMinRates(t *testing.T, res map[string]map[string]float64) {
+	t.Helper()
+	tb, log := buildMinRates(t, res)
 	if p := os.Getenv("DMRGO_MINRATE_LOG"); p != "" {
 		if err := os.WriteFile(p, []byte(strings.Join(log, "\n")+"\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
-	tier0, host, err := renderMinRates(&tb, minRateInputsDigest(t))
+	tier0, host, err := renderMinRates(tb, minRateInputsDigest(t))
 	if err != nil {
 		t.Fatal(err)
 	}
