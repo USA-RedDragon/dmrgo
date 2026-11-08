@@ -89,8 +89,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 55.0 | 57,832 | 274.2 |
-| Audio tier 2 | 9.6 | 548.6 | 344,904 | 274.2 |
+| Audio tier 1 | 9.6 | 55.0 | 57,056 | 274.7 |
+| Audio tier 2 | 9.6 | 548.6 | 344,128 | 274.7 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
