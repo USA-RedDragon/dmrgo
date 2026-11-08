@@ -268,6 +268,15 @@ func TestSecondsLockBurstWideFit(t *testing.T) {
 	secondsLockBurstExact(t, testscen.Of(3).Apply(testConfigFixed()), func(Tier) float64 { return 300 }, Tier1)
 }
 
+// TestSecondsLockBurstReplayPower pins a payload whose Tier1 lock burst
+// Seconds read 30 ms early at 30 dB on one lock: the replay slots older than
+// the slot power history read as powered, and the EMB seek on the empty slot
+// took a chance EMB match in the noise before the call as a burst.
+func TestSecondsLockBurstReplayPower(t *testing.T) {
+	t.Parallel()
+	secondsLockBurstExact(t, testscen.Of(4115232114435223412).Apply(testConfigFixed()), func(Tier) float64 { return -1463 }, Tier1)
+}
+
 func secondsLockBurstExact(t *testing.T, cfg rftx.SeqConfig, hz func(Tier) float64, tiers ...Tier) {
 	t.Helper()
 	const locks = 64
