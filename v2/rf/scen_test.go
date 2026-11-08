@@ -66,6 +66,7 @@ var bugPinTests = map[string]string{
 	"TestSecondsLockBurstWideFit":        "a payload whose Tier1 lock fit on the narrow filter output",
 	"TestSecondsLockBurstFarOffset":      "a payload whose Tier0 lock burst clipped in the kept samples 2.4 kHz off",
 	"TestSecondsLockBurstDeferredFit":    "a payload whose lock took the strobe when the sync fit deferred",
+	"TestEMBFitLockZeroPast":             "a payload whose lock SYNC fit put its MM zero past the newest sample",
 	"TestSecondsLockBurstFineFit":        "payloads whose Tier2 lock burst read 0.6 to 0.7 us RMS 2.5 kHz off",
 	"TestSecondsTalkerSwitchHuntFit":     "payloads whose second talker locked on the sync correlation peak",
 	"TestRxLevelStepTiming":              "payloads where a level and DC step pulled the timing loop",

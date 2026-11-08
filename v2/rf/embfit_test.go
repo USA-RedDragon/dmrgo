@@ -16,6 +16,20 @@ import (
 // fit after the hunt; it fails when the line holds fewer than the other 7.
 func TestEMBFitKeptSamples(t *testing.T) {
 	t.Parallel()
+	embFitKept(t)
+}
+
+// TestEMBFitLockZeroPast pins a payload whose lock SYNC fit put its MM zero
+// past the newest sample. The zero, extrapolated there, read the lock 0.05
+// symbol late, the line through the first three SYNC fits took a slope 130
+// ppm off, and every later EMB fit fell outside the gate of that line.
+func TestEMBFitLockZeroPast(t *testing.T) {
+	t.Parallel()
+	embFitKept(pinnedTB{t, runMix(14818072848625347973, nameHash("TestEMBFitKeptSamples"))})
+}
+
+func embFitKept(t testing.TB) {
+	t.Helper()
 	cfg := testConfig(t)
 	cfg.Superframes = 3
 	b, err := rftx.Sequence("voice", cfg)

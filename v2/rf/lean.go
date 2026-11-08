@@ -860,6 +860,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	z = win.mmZero(&syms, end, bestD, sps)
 	if at != nil {
 		z = *at
+	} else if z > -end {
+		r.again = true
+		return 0, 0, 0, false
 	}
 	bestD = min32(z, -end)
 	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
