@@ -35,6 +35,7 @@ type leanExt interface {
 	seekAgrees(j int32, cc enums.ColorCode, lcss enums.LCSS) bool
 	replayGrid(c *leanCore) (sym int64, at, sps float32)
 	replayPhase(p int32, d float32)
+	seekPhase(c *leanCore, j int32, base int64)
 	gridShift(c *leanCore) float32
 	backfillAt(d float32)
 	keptGap(n int64)
@@ -1364,6 +1365,57 @@ func (x *softExt) replayGrid(c *leanCore) (int64, float32, float32) {
 }
 
 func (x *softExt) replayPhase(p int32, d float32) { x.replayD[p] = d }
+
+// seekPhase moves, in a replay, the slot j at base of an MS talker that has
+// no anchor yet to the symbol phase of its own SYNC. The replay slices that
+// slot at the grid of the talker that locked, but the two talkers of the TDMA
+// slots run their own symbol clocks, so their phases differ by any fraction
+// of a symbol. It fits the timing of either SYNC pattern of the source on
+// the kept samples, at the grid and one symbol to each side, as an EMB seek
+// does, moves the fit to the Mueller-Muller zero of the burst, slices the
+// slot again there, and keeps that phase for the slot parity.
+func (x *softExt) seekPhase(c *leanCore, j int32, base int64) {
+	sym, at0, sps := x.replayGrid(c)
+	back := sym - (base + leanSyncEnd)
+	if back < 1 || float32(int(back)+syncSymbols+6)*2*c.tm.step+4-at0 > float32(c.acqKept()) {
+		return
+	}
+	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
+	var syms [syncSymbols]int8
+	var cv [7]float32
+	var win syncWindow
+	top, d := float32(discAnchor*discAnchor), float32(0)
+	found := false
+	for _, p := range [2]enums.SyncPattern{voice, data} {
+		syncSyms(p, &syms)
+		var spp, sp float32
+		for _, q := range syms {
+			spp += float32(q) * float32(q)
+			sp += float32(q)
+		}
+		pp := spp - sp*sp/syncSymbols
+		for m := int64(-1); m <= 1; m++ {
+			at := at0 - float32(back-m)*sps
+			c.fillWindow(&win, max(int32(-at-sps/2)-2, 0))
+			best := win.peak(&syms, &cv, at, sps, true)
+			if best == 0 || best == len(cv)-1 {
+				continue
+			}
+			v := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
+			sv, svv, sxv, _ := win.sums(&syms, at+v, sps)
+			sxy, sxx := sxv-sp*sv/syncSymbols, svv-sv*sv/syncSymbols
+			if sxy <= 0 || sxx <= 0 || sxy*sxy <= top*sxx*pp {
+				continue
+			}
+			top, d, found = sxy*sxy/(sxx*pp), float32(m)*sps+v, true
+		}
+	}
+	if !found {
+		return
+	}
+	d -= roundf(d/sps) * sps
+	x.replayD[j&1] = c.ringZero(base-1, base+slotSymbols, base, sym, at0, d, sps)
+}
 
 func (x *softExt) gridShift(c *leanCore) float32 {
 	if c.backfill {

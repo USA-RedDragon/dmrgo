@@ -2308,6 +2308,7 @@ func (r *leanCore) slot() {
 	energy, floor, known, measured := r.slotEnergy(base)
 	_, dp, _ := sourceAt(int(r.src)).SyncPatterns()
 	seek := !r.bs && r.lastAnch != leanNoSlot && r.ms.anch[j&1] == leanNoSlot
+	r.replaySeek(j, base, seek)
 	isAnchor, shift, anchor := r.slotAnchor(base, seek)
 	c := &r.ch[j&1]
 	sf := c.sf
@@ -2364,6 +2365,12 @@ func (r *leanCore) slot() {
 	r.setHunt()
 	if !r.isReplaying() && r.ended(j, base) {
 		r.unlock()
+	}
+}
+
+func (r *leanCore) replaySeek(j int32, base int64, seek bool) {
+	if seek && r.isReplaying() {
+		r.ext.seekPhase(r, j, base)
 	}
 }
 

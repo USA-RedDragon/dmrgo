@@ -118,3 +118,29 @@ func TestRxSeekBackfillRate(t *testing.T) {
 		}
 	}
 }
+
+// TestRxReplaySeekPhase checks Tier 1 on I/Q on two MS talkers at +400 and
+// -400 ppm whose first bursts come before the lock, on the payloads and
+// noise of two draws. The replay sliced the slot of the talker with no
+// anchor at the phase of the talker that locked, 48 us away at that point:
+// on the first draw it lost the SYNC of that talker's first burst, and on
+// the second it took the SYNC but carried the phase of the other talker
+// into the next burst, which came out with 29 raw bit errors.
+func TestRxReplaySeekPhase(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		run   uint64
+		noise uint64
+	}{{1015841, 2}, {16979474955301313960, 4}} {
+		p := pinnedRun(t, c.run, "TestRxTwoTalkerClocks")
+		f, e, tk := twoTalkers(p, [2]float64{400, -400}, 3)
+		got := receiveBaseband(twoTalkerIQ(p, f, e, 1400, 12, c.noise), Tier1)
+		for k, errs := range twoTalkerErrors(tk, got) {
+			for j, n := range errs {
+				if n > 10 && (j > 0 || n > 20) {
+					t.Errorf("run %d: talker %d burst %d has %d raw bit errors", c.run, k+1, j, n)
+				}
+			}
+		}
+	}
+}
