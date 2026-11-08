@@ -174,3 +174,25 @@ func TestRxSeekEyeVertex(t *testing.T) {
 		}
 	}
 }
+
+// TestRxTier0LockRefit checks Tier 0 on three draws of a weak MS talker that
+// the stream locks on, 7 dB under the other talker and with a DMR neighbor
+// 40 dB over it at -12.5 kHz. The timing loop held that talker's phase over
+// the other slot at a clock rate it had not learned yet, and burst B, its
+// next burst, lost one or two bits at its head. Tier 0 now fits the timing of
+// that burst again on its EMB, as it does for a talker it took on its EMB.
+func TestRxTier0LockRefit(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB.dmr40")
+	for _, run := range []uint64{2, 9, 10} {
+		res, err := mxRun(pinnedTB{t, run}, row, []mxRx{{row.val(mxFormat), Tier0}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range res {
+			if len(r.fail) > 0 {
+				t.Errorf("run %d: %s", run, strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}

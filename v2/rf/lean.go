@@ -2306,7 +2306,7 @@ func (r *leanCore) slot() {
 	r.next++
 	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
 	energy, floor, known, measured := r.slotEnergy(base)
-	_, dp, _ := sourceAt(int(r.src)).SyncPatterns()
+	vp, dp, _ := sourceAt(int(r.src)).SyncPatterns()
 	seek := !r.bs && r.lastAnch != leanNoSlot && r.ms.anch[j&1] == leanNoSlot
 	r.replaySeek(j, base, seek)
 	isAnchor, shift, anchor := r.slotAnchor(base, seek)
@@ -2318,6 +2318,7 @@ func (r *leanCore) slot() {
 			r.slotFirst(j, base, anchor)
 		}
 		r.anchorAt(j, base, shift, anchor, energy)
+		r.lockFresh(j, anchor == vp)
 	}
 	present := isAnchor || r.powered(energy, floor, known, measured)
 	noisy := present && !isAnchor && r.eyeNoise(base)
@@ -2371,6 +2372,15 @@ func (r *leanCore) slot() {
 func (r *leanCore) replaySeek(j int32, base int64, seek bool) {
 	if seek && r.isReplaying() {
 		r.ext.seekPhase(r, j, base)
+	}
+}
+
+// lockFresh counts the MS talker that a core with no soft stages locked on
+// with a voice SYNC in slot j as fresh, so that seekMid fits its timing
+// again on the EMB of its next burst.
+func (r *leanCore) lockFresh(j int32, voice bool) {
+	if j == 0 && voice && !r.bs && !r.hasExt() {
+		r.ms.fresh[0] = 2
 	}
 }
 
@@ -3564,9 +3574,10 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 // SYNC anchor yet by the EMB of the slot at the end of its SYNC field, while
 // the hunt buffer still holds the burst up to there. A seek at the end of the
 // slot, as the soft stages run it, needs the samples of the whole slot. In
-// the next burst of a fresh talker it fits the timing again on the EMB: the
-// talker's clock started from the other talker's rate, and the phase it
-// carried over the other slot can be off at the start of the burst. Where
+// the next burst of a fresh talker, the one it took on its EMB or the one
+// the stream locked on, it fits the timing again on the EMB: that talker's
+// clock rate is not known yet, and the phase it carried over the other slot
+// can be off at the start of the burst. Where
 // the core measures the I/Q power, the head of the burst must stand 10 dB
 // over the guard before it, as the slot power test at the end of the slot
 // asks of the whole burst.

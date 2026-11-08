@@ -110,6 +110,7 @@ var bugPinTests = map[string]string{
 	"TestRxSeekBackfillRate":             "payloads whose backfilled burst B lost head bits to the nominal coherent grid",
 	"TestRxSeekEyeVertex":                "a payload whose burst C EMB reads wrong at all five quarter symbol phases",
 	"TestRxReplaySeekPhase":              "draws where the replay sliced the second talker at the phase of the first",
+	"TestRxTier0LockRefit":               "draws where the locked weak talker lost head bits of burst B to its held phase",
 }
 
 func fixedPayload(t testing.TB) bool {
