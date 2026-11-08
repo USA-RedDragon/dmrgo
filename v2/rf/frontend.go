@@ -23,6 +23,7 @@ const (
 	dcFlat            = 1.2
 	dcTurn            = 0.5
 	dcFitSeconds      = 0.02
+	dcFitGrow         = 2
 	dcFitBlockSeconds = 0.004
 	dcFitMove         = 0.01
 )
@@ -76,7 +77,8 @@ func (f *dcFit) clear() {
 
 // push adds v to the block and returns the mean of the fitted centers of the
 // blocks so far, and the number of those blocks, at the end of a block whose
-// fit holds.
+// fit holds. A fit whose squared radius is over dcFitGrow times the mean
+// starts the mean again: the blocks before it held the ramp of the call.
 func (f *dcFit) push(v complex64) (complex64, float32, bool) {
 	f.k++
 	f.u += f.du
@@ -95,6 +97,9 @@ func (f *dcFit) push(v complex64) (complex64, float32, bool) {
 	f.clear()
 	if !ok {
 		return 0, 0, false
+	}
+	if r2 > dcFitGrow*f.r2 {
+		f.blocks = 0
 	}
 	f.blocks++
 	f.cx += (real(c) - f.cx) / f.blocks
