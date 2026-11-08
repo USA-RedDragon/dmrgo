@@ -49,13 +49,9 @@ func TestReceiverFading(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var bsWant []uint64
-	for i, s := range bs.Slots {
-		if f, res := s.Burst.AMBEFrames(); i%2 == 1 && !res.Uncorrectable {
-			for _, v := range f {
-				bsWant = append(bsWant, rftx.AMBEValue(v))
-			}
-		}
+	want := make([]uint64, 0, 18*cfg.Superframes)
+	for i := range 18 * cfg.Superframes {
+		want = append(want, rftx.AMBEValue(rftx.VoiceFrame(cfg.VoiceSeed, i)))
 	}
 	bsFM, bsEnv := rftx.ModulateBS(bs.Slots)
 	cfg.BSSourced, cfg.Wakeups = false, 0
@@ -64,10 +60,6 @@ func TestReceiverFading(t *testing.T) {
 		t.Fatal(err)
 	}
 	msFM, msEnv := rftx.Modulate(ms.Bursts, rftx.Schedule{Slot: 1})
-	msWant := make([]uint64, 0, 18*cfg.Superframes)
-	for i := range 18 * cfg.Superframes {
-		msWant = append(msWant, rftx.AMBEValue(rftx.VoiceFrame(cfg.VoiceSeed, i)))
-	}
 	seeds := []uint64{10, 11, 12, 13}
 	switch {
 	case testmode.Long():
@@ -82,7 +74,7 @@ func TestReceiverFading(t *testing.T) {
 		fm, env []float64
 		want    []uint64
 		cn      float64
-	}{{"bs", bsFM, bsEnv, bsWant, 25}, {"ms", msFM, msEnv, msWant, 20}} {
+	}{{"bs", bsFM, bsEnv, want, 25}, {"ms", msFM, msEnv, want, 20}} {
 		for _, fd := range []float64{5, 50} {
 			t.Run(fmt.Sprintf("%s/%g", c.name, fd), func(t *testing.T) {
 				t.Parallel()
