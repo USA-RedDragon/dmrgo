@@ -127,6 +127,8 @@ type softExt struct {
 	slc             *shortLCOut
 	refillCoh       func(float64)
 	fineZero        func(c *leanCore, p enums.SyncPattern, end, d float32) (float32, bool)
+	fineNs          int64
+	fineOK          bool
 	lookback        int
 	ring            [leanRing]int8
 	lockSym         int64
@@ -835,7 +837,11 @@ func (x *softExt) syncZero(c *leanCore, p enums.SyncPattern, end, d float32) (fl
 	if x.fineZero == nil {
 		return 0, false
 	}
-	return x.fineZero(c, p, end, d)
+	z, ok := x.fineZero(c, p, end, d)
+	if ok {
+		x.fineNs, x.fineOK = c.ns-1, true
+	}
+	return z, ok
 }
 
 // keptGap notes that the kept samples skip the input before sample n, so
@@ -1520,7 +1526,7 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 		off := keptMMZero(c, &syms[p], at-span, (float32(best)+edgeVertex3(&cv))*sps/8, sps)
 		if j >= 0 {
 			x.syncFit(c, first+j*slotSymbols+leanSyncEnd, c.ticksAt(x.atN, at-span+off), r, 1)
-		} else if t := c.ticksAt(x.atN, at+off); c.fitIs(c.first+leanSyncEnd) && c.fitNs != x.rt.wideNs {
+		} else if t := c.ticksAt(x.atN, at+off); c.fitIs(c.first+leanSyncEnd) && c.fitNs != x.rt.wideNs && (!x.fineOK || !c.fitIs(x.fineNs)) {
 			c.fitT, c.fitQ = t, r
 			x.lockFit(c, c.first+leanSyncEnd, t, r)
 		}
