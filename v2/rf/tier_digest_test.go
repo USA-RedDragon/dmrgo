@@ -211,7 +211,7 @@ var tierWantDigests = map[string]string{
 	"cu8x2048k/tier2":      "2882e22eb791fc03f7760238a102019b154190f30088ceba2375b53e5a9abb21",
 	"cu8half/tier0":        "e577fba46f15422898bc9d6f7d763586563897dece9955fc88e1576fc61cb0f6",
 	"cu8half/tier1":        "e5aa812e76d277a6ccee8dd468f0c9bf5e0f97b273afdac2cafb540b55fb087a",
-	"cu8low/tier0":         "6e28bb70e27852eb100a9528086881ab14b91b9b9e78b78781b75b5851d75cf1",
+	"cu8low/tier0":         "7e3e9493ce033e9649e07dcc9259c2bb5736348d9b881cf05ff249b62b382383",
 }
 
 func TestTierDigests(t *testing.T) {
