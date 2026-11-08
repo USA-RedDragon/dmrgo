@@ -96,3 +96,25 @@ func TestRxTier0SeekEMB(t *testing.T) {
 		}
 	}
 }
+
+// TestRxSeekBackfillRate checks that Tiers 2 and 3 get every bit of burst B
+// of a second MS talker at -500 ppm that the seek takes on the EMB of burst
+// C and decodes from the kept samples two slots back. The coherent grid of
+// that burst stepped back from the newest strobe at the nominal symbol
+// period, and on these payloads the head of burst B, about 420 symbols
+// back, lay 0.2 symbol off the fitted clock and lost two or three bits.
+func TestRxSeekBackfillRate(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.-700.ms2.voice.-500ppm.nom.cs16-48k.40dB")
+	for _, run := range []uint64{14559090507006385804, 11362867179671988559} {
+		res, err := mxRun(pinnedRun(t, run, "TestRxSeekSecondTalker"), row, []mxRx{{row.val(mxFormat), Tier2}, {row.val(mxFormat), Tier3}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for x, r := range res {
+			if len(r.fail) > 0 {
+				t.Errorf("run %d, %s: %s", run, x.name(), strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}

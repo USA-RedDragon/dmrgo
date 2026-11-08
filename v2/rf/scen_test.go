@@ -107,6 +107,7 @@ var bugPinTests = map[string]string{
 	"TestRxReplayStretchSyncs":           "a payload whose SYNC correlation peaks put the replayed bursts 15 us early",
 	"TestRxSeekAfterCohTune":             "a draw where the core took the coherent lock tune before the outputs made at it",
 	"TestRxTier0SeekEMB":                 "payloads whose second talker starts at voice B before a color code vote, one losing a bit of burst C to the carried phase",
+	"TestRxSeekBackfillRate":             "payloads whose backfilled burst B lost head bits to the nominal coherent grid",
 }
 
 func fixedPayload(t testing.TB) bool {
