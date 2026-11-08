@@ -50,14 +50,14 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Input | Rate (kHz) | Carrier offset (kHz) | Clock error (ppm) | Late entry, C/N 8 dB (ms) | Late entry, C/N 20 dB (ms) | CPU, C/N 6 dB (ms/s) | CPU, worst (ms/s) | RAM (KiB) |
 |:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 59 | 62 | 0.36 | 0.41 | 1.8 |
-| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 47 | 45 | 0.87 | 2.6 | 48 |
-| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 8.3 | 14 | 315 |
-| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 46 | 45 | 60 | 207 | 911 |
-| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 60 | 61 | 0.38 | 0.47 | 1.8 |
-| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 61 | 1.3 | 1.6 | 19 |
-| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 1.9 | 3.9 | 165 |
-| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 44 | 44 | 8.3 | 10 | 461 |
+| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 60 | 0.36 | 0.41 | 1.8 |
+| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 45 | 0.87 | 2.6 | 48 |
+| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 52 | 45 | 8.3 | 14 | 315 |
+| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 60 | 207 | 911 |
+| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 52 | 59 | 0.38 | 0.47 | 1.8 |
+| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.3 | 1.6 | 19 |
+| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 1.9 | 3.9 | 165 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 8.3 | 10 | 461 |
 | I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 107 | 140 | 2,126 |
 
 - Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
@@ -79,9 +79,9 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0 | 9.6 | 5.4 | 2,556 | 49.4 |
-| Audio tier 0, `PreEmphasis` | 9.6 | 6.0 | 2,612 | 49.6 |
-| Low-rate I/Q tier 0 | 9.6 | 6.5 | 2,800 | 48.1 |
+| Audio tier 0 | 9.6 | 5.5 | 2,572 | 50.8 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 6.0 | 2,628 | 51.0 |
+| Low-rate I/Q tier 0 | 9.6 | 6.9 | 2,944 | 50.7 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
@@ -89,8 +89,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 53.6 | 57,072 | 265.0 |
-| Audio tier 2 | 9.6 | 464.0 | 343,344 | 265.0 |
+| Audio tier 1 | 9.6 | 55.0 | 57,832 | 274.2 |
+| Audio tier 2 | 9.6 | 548.6 | 344,904 | 274.2 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
@@ -243,17 +243,17 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 | Recording | C/N (dB) | Frames | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |:---|---:|---:|---:|---:|---:|---:|
-| MS voice relayed, HackRF on the uplink | 9.3 | 2013 | 1480 | 1519 | 1828 | 1864 |
-| Late entry voice relayed, HackRF on the uplink | 11.1 | 1890 | 1467 | 1503 | 1622 | 1632 |
+| MS voice relayed, HackRF on the uplink | 9.3 | 2013 | 1478 | 1563 | 1828 | 1865 |
+| Late entry voice relayed, HackRF on the uplink | 11.1 | 1890 | 1471 | 1507 | 1621 | 1632 |
 | Voice with PI header relayed, HackRF on the uplink | 17.3 | 1818 | 1818 | 1818 | 1818 | 1818 |
-| Mixed voice and data, network to air, run 1 | 9.7 | 144 | 114 | 119 | 122 | 126 |
-| Mixed voice and data, network to air, run 2 | 10.6 | 144 | 117 | 121 | 125 | 126 |
-| Voice, network to air | 10.0 | 90 | 89 | 90 | 90 | 90 |
-| Voice, network to air | 11.6 | 90 | 83 | 81 | 90 | 90 |
-| Gain sweep, RTL gain 0 dB | 9.9 | 51 | 41 | 47 | 50 | 50 |
-| Gain sweep, RTL gain 9.7 dB | 7.3 | 51 | 33 | 43 | 48 | 48 |
-| Gain sweep, RTL gain 19.7 dB | 10.4 | 51 | 51 | 51 | 51 | 51 |
-| Gain sweep, RTL gain 29.7 dB | 11.2 | 51 | 44 | 50 | 50 | 50 |
+| Mixed voice and data, network to air, run 1 | 9.7 | 144 | 114 | 118 | 122 | 126 |
+| Mixed voice and data, network to air, run 2 | 10.6 | 144 | 117 | 120 | 125 | 126 |
+| Voice, network to air | 10.0 | 90 | 87 | 87 | 90 | 90 |
+| Voice, network to air | 11.6 | 90 | 84 | 82 | 90 | 90 |
+| Gain sweep, RTL gain 0 dB | 9.9 | 51 | 39 | 45 | 48 | 48 |
+| Gain sweep, RTL gain 9.7 dB | 7.3 | 51 | 36 | 42 | 48 | 48 |
+| Gain sweep, RTL gain 19.7 dB | 10.4 | 51 | 51 | 50 | 51 | 51 |
+| Gain sweep, RTL gain 29.7 dB | 11.2 | 51 | 42 | 48 | 48 | 48 |
 
 <!-- rxbench:end -->
 
@@ -264,15 +264,15 @@ Eb/N0 in dB for 90% of the Short LCs right, and the Short LCs that pass the CRC-
 <!-- shortlc:begin -->
 | Tier | Input | Hard decode (dB) | `OnShortLC` (dB) | Wrong, hard decode | Wrong, `OnShortLC` | On noise, hard decode (1/h) | On noise, `OnShortLC` (1/h) |
 |:---|:---|---:|---:|---:|---:|---:|---:|
-| Audio tier 0 | FM audio | 7.6 | 7.6 | 0 of 3,168 | 0 of 3,168 | 0.0 | 0.0 |
-| Audio tier 1 | FM audio | 7.6 | 6.5 | 0 of 2,801 | 0 of 3,619 | 0.0 | 0.0 |
-| Audio tier 2 | FM audio | 7.5 | 6.3 | 0 of 2,552 | 1 of 3,382 | 0.0 | 0.0 |
-| Audio tier 3 | FM audio | 5.5 | 4.5 | 0 of 2,872 | 2 of 3,617 | 0.0 | 0.0 |
-| Low-rate I/Q tier 0 | I/Q | 7.9 | 7.9 | 0 of 5,867 | 0 of 5,867 | 0.0 | 0.0 |
-| I/Q tier 0 | I/Q | 7.0 | 7.0 | 0 of 5,637 | 0 of 5,637 | 0.0 | 0.0 |
-| I/Q tier 1 | I/Q | 7.0 | 5.2 | 0 of 3,415 | 0 of 4,660 | 0.0 | 0.0 |
-| I/Q tier 2 | I/Q | 7.1 | 5.3 | 0 of 3,096 | 0 of 4,297 | 0.0 | 0.0 |
-| I/Q tier 3 | I/Q | 4.2 | 2.7 | 0 of 3,676 | 2 of 4,515 | 0.0 | 0.0 |
+| Audio tier 0 | FM audio | 7.6 | 7.6 | 0 of 2,850 | 0 of 2,850 | 0.0 | 0.0 |
+| Audio tier 1 | FM audio | 7.6 | 6.9 | 0 of 2,849 | 0 of 3,397 | 0.0 | 0.0 |
+| Audio tier 2 | FM audio | 7.5 | 6.8 | 0 of 2,977 | 0 of 3,535 | 0.0 | 0.0 |
+| Audio tier 3 | FM audio | 5.1 | 4.3 | 0 of 3,017 | 1 of 3,577 | 0.0 | 0.0 |
+| Low-rate I/Q tier 0 | I/Q | 7.9 | 7.9 | 0 of 5,888 | 0 of 5,888 | 0.0 | 0.0 |
+| I/Q tier 0 | I/Q | 7.2 | 7.2 | 0 of 3,851 | 0 of 3,851 | 0.0 | 0.0 |
+| I/Q tier 1 | I/Q | 7.1 | 5.8 | 0 of 3,852 | 0 of 4,725 | 0.0 | 0.0 |
+| I/Q tier 2 | I/Q | 7.0 | 5.9 | 0 of 3,532 | 0 of 4,301 | 0.0 | 0.0 |
+| I/Q tier 3 | I/Q | 4.2 | 2.9 | 0 of 3,966 | 0 of 4,751 | 0.0 | 0.0 |
 
 - Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
 - Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
@@ -282,9 +282,9 @@ The Motorola XPR 8400 idle capture (`motorola-xpr8400-idle-424075000-2048k.cu8`)
 | Noise sigma | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |:---|---:|---:|---:|---:|
 | 0 | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) | 46 / 46 (0) |
-| 16 | 17 / 17 (0) | 18 / 38 (20) | 20 / 42 (22) | 44 / 46 (2) |
-| 20 | 0 / 0 (0) | 0 / 9 (9) | 0 / 2 (2) | 25 / 42 (17) |
-| 24 | 0 / 0 (0) | 1 / 1 (0) | 0 / 0 (0) | 7 / 17 (10) |
+| 16 | 19 / 19 (0) | 19 / 35 (16) | 24 / 36 (12) | 44 / 46 (2) |
+| 20 | 0 / 0 (0) | 1 / 7 (6) | 0 / 6 (6) | 25 / 37 (12) |
+| 24 | 0 / 0 (0) | 0 / 1 (1) | 0 / 1 (1) | 5 / 12 (7) |
 
 <!-- shortlc:end -->
 

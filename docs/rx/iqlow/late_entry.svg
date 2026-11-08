@@ -22,19 +22,23 @@
 <text x="676.0" y="382.0" text-anchor="middle">20</text>
 <line class="gr" x1="76.0" y1="364.0" x2="676.0" y2="364.0"/>
 <text x="68.0" y="368.0" text-anchor="end">0</text>
-<line class="gr" x1="76.0" y1="292.0" x2="676.0" y2="292.0"/>
-<text x="68.0" y="296.0" text-anchor="end">25</text>
+<line class="gr" x1="76.0" y1="316.0" x2="676.0" y2="316.0"/>
+<text x="68.0" y="320.0" text-anchor="end">25</text>
+<line class="gr" x1="76.0" y1="268.0" x2="676.0" y2="268.0"/>
+<text x="68.0" y="272.0" text-anchor="end">50</text>
 <line class="gr" x1="76.0" y1="220.0" x2="676.0" y2="220.0"/>
-<text x="68.0" y="224.0" text-anchor="end">50</text>
-<line class="gr" x1="76.0" y1="148.0" x2="676.0" y2="148.0"/>
-<text x="68.0" y="152.0" text-anchor="end">75</text>
+<text x="68.0" y="224.0" text-anchor="end">75</text>
+<line class="gr" x1="76.0" y1="172.0" x2="676.0" y2="172.0"/>
+<text x="68.0" y="176.0" text-anchor="end">100</text>
+<line class="gr" x1="76.0" y1="124.0" x2="676.0" y2="124.0"/>
+<text x="68.0" y="128.0" text-anchor="end">125</text>
 <line class="gr" x1="76.0" y1="76.0" x2="676.0" y2="76.0"/>
-<text x="68.0" y="80.0" text-anchor="end">100</text>
+<text x="68.0" y="80.0" text-anchor="end">150</text>
 <rect class="ax" x="76.0" y="76.0" width="600.0" height="288.0"/>
 <text x="376.0" y="408.0" text-anchor="middle">C/N in 12.5 kHz (dB)</text>
 <text x="18" y="220.0" text-anchor="middle" transform="rotate(-90 18 220.0)">Time (ms)</text>
-<path class="l s1" d="M76.0,90.3 L151.0,190.0 L226.0,192.1 L301.0,172.6 L376.0,224.8 L451.0,166.7 L526.0,210.4 L601.0,212.9 L676.0,189.8"/>
-<circle class="p s1" cx="76.0" cy="90.3" r="2"/><circle class="p s1" cx="151.0" cy="190.0" r="2"/><circle class="p s1" cx="226.0" cy="192.1" r="2"/><circle class="p s1" cx="301.0" cy="172.6" r="2"/><circle class="p s1" cx="376.0" cy="224.8" r="2"/><circle class="p s1" cx="451.0" cy="166.7" r="2"/><circle class="p s1" cx="526.0" cy="210.4" r="2"/><circle class="p s1" cx="601.0" cy="212.9" r="2"/><circle class="p s1" cx="676.0" cy="189.8" r="2"/>
+<path class="l s1" d="M76.0,146.8 L151.0,263.0 L226.0,264.7 L301.0,239.7 L376.0,274.2 L451.0,235.6 L526.0,264.7 L601.0,266.4 L676.0,251.1"/>
+<circle class="p s1" cx="76.0" cy="146.8" r="2"/><circle class="p s1" cx="151.0" cy="263.0" r="2"/><circle class="p s1" cx="226.0" cy="264.7" r="2"/><circle class="p s1" cx="301.0" cy="239.7" r="2"/><circle class="p s1" cx="376.0" cy="274.2" r="2"/><circle class="p s1" cx="451.0" cy="235.6" r="2"/><circle class="p s1" cx="526.0" cy="264.7" r="2"/><circle class="p s1" cx="601.0" cy="266.4" r="2"/><circle class="p s1" cx="676.0" cy="251.1" r="2"/>
 <line class="l s1" x1="76.0" y1="46.0" x2="100.0" y2="46.0"/>
 <text x="106.0" y="50.0">Tier 0</text>
 </svg>

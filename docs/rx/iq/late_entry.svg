@@ -22,25 +22,29 @@
 <text x="676.0" y="382.0" text-anchor="middle">20</text>
 <line class="gr" x1="76.0" y1="364.0" x2="676.0" y2="364.0"/>
 <text x="68.0" y="368.0" text-anchor="end">0</text>
-<line class="gr" x1="76.0" y1="292.0" x2="676.0" y2="292.0"/>
-<text x="68.0" y="296.0" text-anchor="end">25</text>
+<line class="gr" x1="76.0" y1="316.0" x2="676.0" y2="316.0"/>
+<text x="68.0" y="320.0" text-anchor="end">25</text>
+<line class="gr" x1="76.0" y1="268.0" x2="676.0" y2="268.0"/>
+<text x="68.0" y="272.0" text-anchor="end">50</text>
 <line class="gr" x1="76.0" y1="220.0" x2="676.0" y2="220.0"/>
-<text x="68.0" y="224.0" text-anchor="end">50</text>
-<line class="gr" x1="76.0" y1="148.0" x2="676.0" y2="148.0"/>
-<text x="68.0" y="152.0" text-anchor="end">75</text>
+<text x="68.0" y="224.0" text-anchor="end">75</text>
+<line class="gr" x1="76.0" y1="172.0" x2="676.0" y2="172.0"/>
+<text x="68.0" y="176.0" text-anchor="end">100</text>
+<line class="gr" x1="76.0" y1="124.0" x2="676.0" y2="124.0"/>
+<text x="68.0" y="128.0" text-anchor="end">125</text>
 <line class="gr" x1="76.0" y1="76.0" x2="676.0" y2="76.0"/>
-<text x="68.0" y="80.0" text-anchor="end">100</text>
+<text x="68.0" y="80.0" text-anchor="end">150</text>
 <rect class="ax" x="76.0" y="76.0" width="600.0" height="288.0"/>
 <text x="376.0" y="408.0" text-anchor="middle">C/N in 12.5 kHz (dB)</text>
 <text x="18" y="220.0" text-anchor="middle" transform="rotate(-90 18 220.0)">Time (ms)</text>
-<path class="l s1" d="M76.0,147.4 L151.0,190.0 L226.0,210.4 L301.0,172.6 L376.0,224.8 L451.0,166.7 L526.0,210.4 L601.0,212.9 L676.0,189.8"/>
-<circle class="p s1" cx="76.0" cy="147.4" r="2"/><circle class="p s1" cx="151.0" cy="190.0" r="2"/><circle class="p s1" cx="226.0" cy="210.4" r="2"/><circle class="p s1" cx="301.0" cy="172.6" r="2"/><circle class="p s1" cx="376.0" cy="224.8" r="2"/><circle class="p s1" cx="451.0" cy="166.7" r="2"/><circle class="p s1" cx="526.0" cy="210.4" r="2"/><circle class="p s1" cx="601.0" cy="212.9" r="2"/><circle class="p s1" cx="676.0" cy="189.8" r="2"/>
-<path class="l s2" d="M76.0,163.3 L151.0,207.8 L226.0,238.3 L301.0,227.6 L376.0,237.3 L451.0,186.7 L526.0,235.0 L601.0,228.2 L676.0,237.6"/>
-<circle class="p s2" cx="76.0" cy="163.3" r="2"/><circle class="p s2" cx="151.0" cy="207.8" r="2"/><circle class="p s2" cx="226.0" cy="238.3" r="2"/><circle class="p s2" cx="301.0" cy="227.6" r="2"/><circle class="p s2" cx="376.0" cy="237.3" r="2"/><circle class="p s2" cx="451.0" cy="186.7" r="2"/><circle class="p s2" cx="526.0" cy="235.0" r="2"/><circle class="p s2" cx="601.0" cy="228.2" r="2"/><circle class="p s2" cx="676.0" cy="237.6" r="2"/>
-<path class="l s3" d="M76.0,162.4 L151.0,207.8 L226.0,238.3 L301.0,227.6 L376.0,237.3 L451.0,186.7 L526.0,235.0 L601.0,228.2 L676.0,237.6"/>
-<circle class="p s3" cx="76.0" cy="162.4" r="2"/><circle class="p s3" cx="151.0" cy="207.8" r="2"/><circle class="p s3" cx="226.0" cy="238.3" r="2"/><circle class="p s3" cx="301.0" cy="227.6" r="2"/><circle class="p s3" cx="376.0" cy="237.3" r="2"/><circle class="p s3" cx="451.0" cy="186.7" r="2"/><circle class="p s3" cx="526.0" cy="235.0" r="2"/><circle class="p s3" cx="601.0" cy="228.2" r="2"/><circle class="p s3" cx="676.0" cy="237.6" r="2"/>
-<path class="l s4" d="M76.0,192.6 L151.0,239.2 L226.0,230.1 L301.0,227.6 L376.0,237.3 L451.0,186.7 L526.0,235.0 L601.0,228.2 L676.0,237.6"/>
-<circle class="p s4" cx="76.0" cy="192.6" r="2"/><circle class="p s4" cx="151.0" cy="239.2" r="2"/><circle class="p s4" cx="226.0" cy="230.1" r="2"/><circle class="p s4" cx="301.0" cy="227.6" r="2"/><circle class="p s4" cx="376.0" cy="237.3" r="2"/><circle class="p s4" cx="451.0" cy="186.7" r="2"/><circle class="p s4" cx="526.0" cy="235.0" r="2"/><circle class="p s4" cx="601.0" cy="228.2" r="2"/><circle class="p s4" cx="676.0" cy="237.6" r="2"/>
+<path class="l s1" d="M76.0,143.5 L151.0,259.8 L226.0,261.7 L301.0,236.4 L376.0,271.2 L451.0,232.5 L526.0,261.6 L601.0,263.3 L676.0,262.4"/>
+<circle class="p s1" cx="76.0" cy="143.5" r="2"/><circle class="p s1" cx="151.0" cy="259.8" r="2"/><circle class="p s1" cx="226.0" cy="261.7" r="2"/><circle class="p s1" cx="301.0" cy="236.4" r="2"/><circle class="p s1" cx="376.0" cy="271.2" r="2"/><circle class="p s1" cx="451.0" cy="232.5" r="2"/><circle class="p s1" cx="526.0" cy="261.6" r="2"/><circle class="p s1" cx="601.0" cy="263.3" r="2"/><circle class="p s1" cx="676.0" cy="262.4" r="2"/>
+<path class="l s2" d="M76.0,219.5 L151.0,267.7 L226.0,272.7 L301.0,273.1 L376.0,279.5 L451.0,245.8 L526.0,278.0 L601.0,273.5 L676.0,279.7"/>
+<circle class="p s2" cx="76.0" cy="219.5" r="2"/><circle class="p s2" cx="151.0" cy="267.7" r="2"/><circle class="p s2" cx="226.0" cy="272.7" r="2"/><circle class="p s2" cx="301.0" cy="273.1" r="2"/><circle class="p s2" cx="376.0" cy="279.5" r="2"/><circle class="p s2" cx="451.0" cy="245.8" r="2"/><circle class="p s2" cx="526.0" cy="278.0" r="2"/><circle class="p s2" cx="601.0" cy="273.5" r="2"/><circle class="p s2" cx="676.0" cy="279.7" r="2"/>
+<path class="l s3" d="M76.0,229.6 L151.0,267.7 L226.0,272.7 L301.0,273.1 L376.0,279.5 L451.0,245.8 L526.0,278.0 L601.0,273.5 L676.0,279.7"/>
+<circle class="p s3" cx="76.0" cy="229.6" r="2"/><circle class="p s3" cx="151.0" cy="267.7" r="2"/><circle class="p s3" cx="226.0" cy="272.7" r="2"/><circle class="p s3" cx="301.0" cy="273.1" r="2"/><circle class="p s3" cx="376.0" cy="279.5" r="2"/><circle class="p s3" cx="451.0" cy="245.8" r="2"/><circle class="p s3" cx="526.0" cy="278.0" r="2"/><circle class="p s3" cx="601.0" cy="273.5" r="2"/><circle class="p s3" cx="676.0" cy="279.7" r="2"/>
+<path class="l s4" d="M76.0,239.4 L151.0,280.8 L226.0,274.7 L301.0,273.1 L376.0,279.5 L451.0,245.8 L526.0,278.0 L601.0,273.5 L676.0,279.7"/>
+<circle class="p s4" cx="76.0" cy="239.4" r="2"/><circle class="p s4" cx="151.0" cy="280.8" r="2"/><circle class="p s4" cx="226.0" cy="274.7" r="2"/><circle class="p s4" cx="301.0" cy="273.1" r="2"/><circle class="p s4" cx="376.0" cy="279.5" r="2"/><circle class="p s4" cx="451.0" cy="245.8" r="2"/><circle class="p s4" cx="526.0" cy="278.0" r="2"/><circle class="p s4" cx="601.0" cy="273.5" r="2"/><circle class="p s4" cx="676.0" cy="279.7" r="2"/>
 <line class="l s1" x1="76.0" y1="46.0" x2="100.0" y2="46.0"/>
 <text x="106.0" y="50.0">Tier 0</text>
 <line class="l s2" x1="166.0" y1="46.0" x2="190.0" y2="46.0"/>
