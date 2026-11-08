@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("y0\xff1100007000079\xff002")
+[]byte("0")
+byte('\x0f')

@@ -68,7 +68,9 @@ func (c *EmbeddedLCConfirmer) Header(lc pdu.LCBytes) {
 // Decode decodes the embedded LC of the next superframe of the call from
 // the embedded signalling fields f of bursts B to E. The FEC result sets
 // Uncorrectable when the LC has corrected bits and nothing confirms it, or
-// when it does not decode.
+// when it does not decode. lc and the FEC result are then those of
+// DecodeEmbeddedLC with Uncorrectable set, so the bits and corrected count
+// of an unconfirmed candidate do not come back.
 func (c *EmbeddedLCConfirmer) Decode(f [4][4]byte) (lc pdu.LCBytes, res fec.Result) {
 	if c == nil {
 		return decodeEmbeddedLC(fragmentWords(f))
@@ -82,19 +84,19 @@ func (c *EmbeddedLCConfirmer) decode(fragments [4]uint32) ([9]byte, fec.Result) 
 		c.take(lc)
 		return lc, res
 	}
-	need := 1
+	cand, candRes, need := lc, res, 1
 	if res.Uncorrectable {
-		lc, res = decodeEmbeddedLCCandidate(fragments)
-		if res.Uncorrectable {
+		cand, candRes = decodeEmbeddedLCCandidate(fragments)
+		if candRes.Uncorrectable {
 			return lc, res
 		}
 		need = 2
 	}
-	if c.confirms(lc, need) {
-		c.take(lc)
-		return lc, res
+	if c.confirms(cand, need) {
+		c.take(cand)
+		return cand, candRes
 	}
-	c.add(lc)
+	c.add(cand)
 	res.Uncorrectable = true
 	return lc, res
 }

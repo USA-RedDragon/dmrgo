@@ -61,8 +61,11 @@ func TestEmbeddedLCConfirmer(t *testing.T) {
 	}
 	refuse := func(c *layer2.EmbeddedLCConfirmer, f [4][4]byte, name string) {
 		t.Helper()
-		if lc, res := c.Decode(f); !res.Uncorrectable {
-			t.Errorf("%s: accepts %x %+v", name, lc, res)
+		lc, res := c.Decode(f)
+		want, wantRes := layer2.DecodeEmbeddedLC(f)
+		wantRes.Uncorrectable = true
+		if lc != want || res != wantRes {
+			t.Errorf("%s: %x %+v, want the refusal %x %+v", name, lc, res, want, wantRes)
 		}
 	}
 

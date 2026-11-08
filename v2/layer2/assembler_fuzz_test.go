@@ -227,6 +227,7 @@ func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte) {
 
 	var a layer2.EmbeddedLCAssembler
 	var m embeddedLCModel
+	seen := map[[9]byte]int{}
 	for i, fr := range frags {
 		wantDone, wantDiscard := m.add(fr.lcss)
 		got, res, done, err := a.Add(fr.data, fr.lcss)
@@ -246,8 +247,25 @@ func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte) {
 		for k := range in {
 			in[k] = frags[i-3+k].data
 		}
-		if lc2, res2 := layer2.DecodeEmbeddedLC(in); lc2 != got || res2 != res {
-			t.Fatalf("fragment %d: assembler gives %x, %+v, DecodeEmbeddedLC %x, %+v", i, got, res, lc2, res2)
+		lc1, res1 := layer2.DecodeEmbeddedLC(in)
+		want, wantRes, need := lc1, res1, 1
+		if res1.Uncorrectable {
+			want, wantRes = layer2.DecodeEmbeddedLCCandidate(in)
+			need = 2
+		}
+		refused := res1
+		refused.Uncorrectable = true
+		switch {
+		case res.Uncorrectable && (got != lc1 || res != refused):
+			t.Fatalf("fragment %d: assembler refuses with %x, %+v, DecodeEmbeddedLC gives %x, %+v", i, got, res, lc1, res1)
+		case res.Uncorrectable:
+		case got != want || res != wantRes:
+			t.Fatalf("fragment %d: assembler gives %x, %+v, want %x, %+v", i, got, res, want, wantRes)
+		case res.ErrorsCorrected > 0 && seen[got] < need:
+			t.Fatalf("fragment %d: LC %x with %+v taken after %d earlier superframes with it", i, got, res, seen[got])
+		}
+		if !wantRes.Uncorrectable {
+			seen[want]++
 		}
 		if i == first+3 && (got != lc || !clean(res)) {
 			t.Fatalf("LC %x comes back as %x, %+v", lc, got, res)
