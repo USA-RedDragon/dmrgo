@@ -108,6 +108,7 @@ var bugPinTests = map[string]string{
 	"TestRxSeekAfterCohTune":             "a draw where the core took the coherent lock tune before the outputs made at it",
 	"TestRxTier0SeekEMB":                 "payloads whose second talker starts at voice B before a color code vote, one losing a bit of burst C to the carried phase",
 	"TestRxSeekBackfillRate":             "payloads whose backfilled burst B lost head bits to the nominal coherent grid",
+	"TestRxSeekEyeVertex":                "a payload whose burst C EMB reads wrong at all five quarter symbol phases",
 	"TestRxReplaySeekPhase":              "draws where the replay sliced the second talker at the phase of the first",
 }
 

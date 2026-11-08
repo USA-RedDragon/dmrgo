@@ -144,3 +144,33 @@ func TestRxReplaySeekPhase(t *testing.T) {
 		}
 	}
 }
+
+// TestRxSeekEyeVertex checks that Tiers 1 to 3 take a second MS talker on
+// the EMB of its burst C, a payload on which the five quarter symbol phases
+// of the EMB seek all read the EMB with two or more bits wrong at no noise:
+// the talker sat 0.13 symbol off the grid, half way between two of them.
+func TestRxSeekEyeVertex(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "mid.none.+0.ms2.voice.0ppm.nom.cs16-48k.inf")
+	var rxs []mxRx
+	for _, x := range mxReceivers(row.val(mxFormat), true) {
+		if x.tier != Tier0 {
+			rxs = append(rxs, x)
+		}
+	}
+	res, err := mxRun(pinnedRun(t, 2100744, "TestRxSeekSecondTalker"), row, rxs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for x, r := range res {
+		var miss string
+		for _, d := range r.detail {
+			if m, ok := strings.CutPrefix(d, "missing: "); ok {
+				miss = m
+			}
+		}
+		if !strings.HasPrefix(miss, "1 of ") || r.fail["bits"] || r.fail["extra"] {
+			t.Errorf("%s: %s", x.name(), strings.Join(r.detail, " | "))
+		}
+	}
+}

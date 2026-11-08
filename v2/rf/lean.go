@@ -3730,7 +3730,38 @@ func (r *leanCore) embFind(at, sps float32, known bool, cc enums.ColorCode) (sym
 			break
 		}
 	}
+	if top != 0 && r.hasExt() {
+		if vs, ve, vsh, rank, ek, ok := r.ext.vertexEMB(r, at, sps, known, cc); ok && (rank < top || rank == top && ek < eye) {
+			syms, emb, shift, top = vs, ve, vsh, rank
+		}
+	}
 	return syms, emb, shift, top
+}
+
+// eyeVertex returns the phase, in quarter symbols from at, where the 24
+// symbols of the SYNC field that ends there slice with the least squared
+// distance to their levels, from a parabola through the best of the five
+// quarter symbol phases from -1/2 to +1/2 symbol and its neighbors. With the
+// roll-off of 0.2 of the DMR pulse the eye closes fast off its center, so
+// the nearest quarter symbol phase can miss outer symbols that the vertex
+// phase reads. It reports false when the best phase is an outer one.
+func (r *leanCore) eyeVertex(at, sps float32) (float32, bool) {
+	var try [syncSymbols]int8
+	var ek [5]float32
+	for p := range ek {
+		ek[p] = r.sliceKept(at+float32(p-2)*sps/4, sps, &try)
+	}
+	lo, a, b, c := 0, float32(0), float32(math.Inf(1)), float32(0)
+	for p := 1; p+1 < len(ek); p++ {
+		if ek[p] < b {
+			lo, a, b, c = p, ek[p-1], ek[p], ek[p+1]
+		}
+	}
+	den := a - 2*b + c
+	if ek[0] <= b || ek[len(ek)-1] < b || den <= 0 {
+		return 0, false
+	}
+	return float32(lo-2) + 0.5*(a-c)/den, true
 }
 
 // embTalker starts the talker of slot j on its EMB anchor: it keeps the

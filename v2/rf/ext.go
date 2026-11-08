@@ -36,6 +36,7 @@ type leanExt interface {
 	replayGrid(c *leanCore) (sym int64, at, sps float32)
 	replayPhase(p int32, d float32)
 	seekPhase(c *leanCore, j int32, base int64)
+	vertexEMB(c *leanCore, at, sps float32, known bool, cc enums.ColorCode) (syms [syncSymbols]int8, emb pdu.EmbeddedSignalling, shift float32, rank int, eye float32, ok bool)
 	gridShift(c *leanCore) float32
 	backfillAt(d float32)
 	keptGap(n int64)
@@ -1415,6 +1416,31 @@ func (x *softExt) seekPhase(c *leanCore, j int32, base int64) {
 	}
 	d -= roundf(d/sps) * sps
 	x.replayD[j&1] = c.ringZero(base-1, base+slotSymbols, base, sym, at0, d, sps)
+}
+
+// vertexEMB reads the EMB of the SYNC field that ends at time at, for an EMB seek
+// in which no quarter symbol phase gave an EMB that needs no corrected bit,
+// at the phase that eyeVertex gives. It returns the sliced field, the EMB,
+// the phase from at, the rank of embFind, the squared slicing error, and
+// whether that phase holds an EMB that fits the stream.
+func (x *softExt) vertexEMB(c *leanCore, at, sps float32, known bool, cc enums.ColorCode) (syms [syncSymbols]int8, emb pdu.EmbeddedSignalling, shift float32, rank int, eye float32, ok bool) {
+	v, ok := c.eyeVertex(at, sps)
+	if !ok {
+		return syms, emb, 0, 0, 0, false
+	}
+	shift = v * sps / 4
+	if emb, ok = c.sliceEMB(at+shift, sps, known, cc); !ok {
+		return syms, emb, 0, 0, 0, false
+	}
+	switch {
+	case known && embStrong(&emb, cc):
+	case embWeak(&emb, known, cc):
+		rank = 1 + emb.FEC.ErrorsCorrected
+	default:
+		return syms, emb, 0, 0, 0, false
+	}
+	eye = c.sliceKept(at+shift, sps, &syms)
+	return syms, emb, shift, rank, eye, true
 }
 
 func (x *softExt) gridShift(c *leanCore) float32 {
