@@ -76,6 +76,8 @@ ignore_files:
   - v2/internal/testmode/norace.go
   - v2/internal/testmode/race.go
   - v2/internal/testmode/testmode.go
+  - v2/internal/testscen/testscen.go
+  - v2/internal/testseed/testseed.go
   - v2/internal/unpacked/unpacked.go
   - v2/internal/pcg/pcg.go
   - v2/internal/fmath/fmath.go
@@ -123,6 +125,7 @@ ignore_files:
   - v2/rf/iqdisc.go
   - v2/rf/iqdsp.go
   - v2/rf/iqdsp_dsp.go
+  - v2/rf/iqfine.go
   - v2/rf/iqformat.go
   - v2/rf/iqlow.go
   - v2/rf/iqlowhalf_dsp.go
@@ -567,6 +570,7 @@ documents:
           - v2/layer2/pdu/embedded_signalling.go
           - v2/layer2/embedded_lc.go
           - v2/layer2/embedded_lc_bytes.go
+          - v2/layer2/embedded_lc_confirm.go
           - v2/layer2/voice_superframe.go
           - v2/layer2/voice_receiver.go
           - v2/layer2/position_tracker.go
