@@ -833,6 +833,10 @@ func (x *softExt) firstOut(c *leanCore, b *Burst) bool {
 
 func (x *softExt) kept() []int16 { return x.acq }
 
+func (x *softExt) keptSeconds(sps float32) float64 {
+	return float64(2*len(x.acq)) / (float64(sps) * symbolRate)
+}
+
 func (x *softExt) syncZero(c *leanCore, p enums.SyncPattern, end, d float32) (float32, bool) {
 	if x.fineZero == nil {
 		return 0, false

@@ -483,8 +483,10 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.devTab = devTabOf(&opt)
 	r.gs.init()
 	r.d.lagTicks += r.conv.lagTicks()
+	var span float64
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
+		span = x.keptSeconds(2 * r.d.tm.step)
 		if opt.CohExt {
 			r.yHist = make([]complex64, opt.cohRing())
 			if d := cohWideTaps - len(r.conv.taps); opt.CohWide && !r.conv.halfOn && r.conv.decim == 2 && d >= 0 && d%4 == 0 {
@@ -503,7 +505,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		}
 	}
 	if wantPower(&opt) {
-		r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())))
+		r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())), span+float64(cap(r.audio))/float64(hz))
 		r.d.setPower(r.pow)
 	}
 	if r.spec != nil {
