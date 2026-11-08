@@ -1714,25 +1714,25 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 	if b.Voice == enums.VoiceBurstUnknown && (!known || kind != layer2.KindVoice) || x.ch[b.Slot&1].raw {
 		return
 	}
-	var nCore, nCoh [layer2.VoiceSlotsPerBurst]int
 	for i := range layer2.VoiceSlotsPerBurst {
+		var nCore, nCoh int
 		for id := softAMBECode + 2*softSmallID(i); id <= softAMBECode+2*softSmallID(i)+1; id++ {
 			c := smallCode(id)
 			for _, p := range c.pos[:c.n] {
 				q, m := p/8, byte(0x80)>>(p%8)
-				nCore[i] += int((b.Fixed[q] ^ core[q]) & m >> (7 - p%8))
-				nCoh[i] += int((b.Fixed[q] ^ coh[q]) & m >> (7 - p%8))
+				nCore += int((b.Fixed[q] ^ core[q]) & m >> (7 - p%8))
+				nCoh += int((b.Fixed[q] ^ coh[q]) & m >> (7 - p%8))
 			}
 		}
-		if update && min(nCore[i], nCoh[i]) <= extErrMax {
-			x.errCore += extErrGain * (float32(nCore[i]) - x.errCore)
-			x.errCoh += extErrGain * (float32(nCoh[i]) - x.errCoh)
+		if update && min(nCore, nCoh) <= extErrMax {
+			x.errCore += extErrGain * (float32(nCore) - x.errCore)
+			x.errCoh += extErrGain * (float32(nCoh) - x.errCoh)
 		}
 	}
+	if !x.coreCleaner() {
+		return
+	}
 	for i := range layer2.VoiceSlotsPerBurst {
-		if !x.coreCleaner() || nCore[i] > nCoh[i] {
-			continue
-		}
 		for _, p := range &softAMBEC2Pos[i] {
 			q, m := p/8, byte(0x80)>>(p%8)
 			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m

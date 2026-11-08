@@ -55,6 +55,7 @@ var fixedRun = sync.OnceValue(func() bool {
 // bugPinTests keep the fixed payloads and noise seeds because their seeds
 // reproduce a traced bug.
 var bugPinTests = map[string]string{
+	"TestTier2FadeUncoded":               "a fading draw where Tier 2 took uncoded AMBE bits from the coherent detection by the protected errors of each frame",
 	"TestLeanClockRateNullMS":            "seeds that learned a false MS clock rate",
 	"TestRateLineNullMS":                 "cases that stepped a false rate on the rate line",
 	"TestCoreTier3WarmNullClock":         "first locks at -521, -473 and +473 ppm on 0 ppm streams (11fd46a52)",
