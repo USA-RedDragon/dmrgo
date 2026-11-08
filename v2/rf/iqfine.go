@@ -59,7 +59,7 @@ func (r *iqRx) fineRun(m int64, shift float32) bool {
 	j0 := m - iqFineLen
 	warm := int64(len(r.conv.taps)) + int64(2*audio12Taps+halfTaps)*per
 	s := j0*per - warm
-	if s < 0 || s < max(f.n-int64(len(f.raw)), f.from) || m*per > f.n || len(f.conv.hist) < 2*len(r.conv.taps) {
+	if s < 0 || s < max(f.n-int64(len(f.raw)), f.from) || m*per > f.keptEnd() || len(f.conv.hist) < 2*len(r.conv.taps) {
 		return false
 	}
 	s = (s + per - 1) / per * per

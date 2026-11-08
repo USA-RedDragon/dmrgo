@@ -12,6 +12,7 @@ type iqRefill struct {
 	head     int
 	n        int64
 	from     int64
+	stop     int64
 	tuned    int64
 	hz0      float32
 	idle     bool
@@ -148,7 +149,9 @@ func (r *iqRx) keepRawExt(v complex64) {
 	f := r.refill
 	switch {
 	case r.d.locked && !r.d.hunt:
-		f.idle = true
+		if !f.idle {
+			f.idle, f.stop = true, f.n
+		}
 	case f.idle:
 		f.idle, f.from = false, f.n
 		fallthrough
@@ -162,6 +165,18 @@ func (r *iqRx) keepRawExt(v complex64) {
 		f.head = 0
 	}
 	f.n++
+}
+
+// keptEnd returns the end of the raw samples that the ring holds. The ring
+// does not keep the samples that come while the lean core is locked and not
+// hunting. The core runs on a block of samples after the ring takes them, so
+// a core that leaves that state in the block finds the samples from f.stop on
+// unkept, and f.from is not yet moved.
+func (f *iqRefill) keptEnd() int64 {
+	if f.idle {
+		return f.stop
+	}
+	return f.n
 }
 
 func (r *iqRx) noteTuneExt(hz float32) {
@@ -236,7 +251,7 @@ func (r *iqRx) canRegen(rest []int16, taps []float32, dd int64) bool {
 	k0 := min(r.outN-int64(len(rest)), r.outN-dd)
 	warm := (int64(len(taps)) + per - 1) / per
 	s := (k0 - warm + dd) * per
-	return s >= 0 && s >= max(f.n-int64(len(f.raw)), f.from)
+	return s >= 0 && s >= max(f.n-int64(len(f.raw)), f.from) && f.keptEnd() == f.n
 }
 
 // regenAudio runs the kept raw samples through a fresh converter with taps,
@@ -250,7 +265,7 @@ func (r *iqRx) regenAudio(rest []int16, taps []float32, dd int64) (int, bool) {
 	k0 := r.outN - int64(len(rest))
 	warm := (int64(len(taps)) + per - 1) / per
 	s := (min(k0, r.outN-dd) - warm + dd) * per
-	if s < max(f.n-int64(len(f.raw)), f.from) || s < 0 {
+	if s < max(f.n-int64(len(f.raw)), f.from) || s < 0 || f.keptEnd() != f.n {
 		return 0, false
 	}
 	cv := &f.conv
@@ -417,7 +432,7 @@ func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force 
 	if p < 0 {
 		p += len(f.raw)
 	}
-	stop := min(end+dd*int64(r.conv.step), f.n)
+	stop := min(end+dd*int64(r.conv.step), f.keptEnd())
 	for i := s; i < stop; i++ {
 		w := f.raw[p]
 		if p++; p == len(f.raw) {
