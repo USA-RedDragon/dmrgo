@@ -380,3 +380,33 @@ func TestIQSyncTuneTwoSlots(t *testing.T) {
 		}
 	}
 }
+
+// TestIQSyncTuneFitNoise pins weak calls on the carrier, 2 dB of C/N, where
+// the sync-only tune moved a locked Tier 0 converter by the noise of the
+// SYNC fit level average while the carrier stayed put.
+func TestIQSyncTuneFitNoise(t *testing.T) {
+	t.Parallel()
+	for run := uint64(1); run <= 5; run++ {
+		p := pinnedRun(t, run, "TestIQSyncTuneFitNoise")
+		slots, _ := benchStream(p, 4)
+		x := cleanBaseband(slots, 0).noisy(p, 2, 7)
+		r := mustNew(RxConfig{Rate: basebandRate, Tier: Tier0, Format: IQFormatCU8})
+		h := r.host()
+		moves, seen, last := 0, false, h.iqd.conv.hz
+		for k := 0; k < len(x); k += 960 {
+			if _, err := r.writeBB(x[k:min(k+960, len(x))]); err != nil {
+				t.Fatal(err)
+			}
+			if hz := h.iqd.conv.hz; hz != last {
+				if h.iqd.d.locked && seen {
+					moves++
+				}
+				last = hz
+			}
+			seen = seen || h.iqd.d.locked
+		}
+		if moves > 0 {
+			t.Errorf("run %d: converter moved %d times while locked on a carrier at 0 Hz", run, moves)
+		}
+	}
+}

@@ -88,6 +88,7 @@ var bugPinTests = map[string]string{
 	"TestRxMidLockRetune":                "a held-out run where a mid-burst Tier 1 lock kept symbols from before a hunt tune",
 	"TestIQLowDCStart":                   "a held-out run whose first low-rate burst lost bits to the start of the I/Q mean",
 	"TestIQSyncTuneTwoSlots":             "runs where the sync-only tune followed a weaker talker on the other slot",
+	"TestIQSyncTuneFitNoise":             "weak calls where the sync-only tune followed the noise of the SYNC fit",
 	"TestRxLockFarHeld":                  "a held-out run where Tier 0 locked 2.6 kHz off and put out burst 0 raw",
 	"TestIQRefillInChannel":              "a held-out run where a refill tune left the channel",
 	"TestRxEMBSeekSliceTie":              "a payload whose first EMB of the second talker decoded exactly at two slice timings",

@@ -14,6 +14,7 @@ const (
 	iqAFCLockHz    = 100
 	iqAFCPullHz    = 300
 	iqAFCFineHz    = 60
+	iqSyncTuneZ    = 3
 	iqAFCAvgGain   = 0.25
 	iqAFCJumpHz    = 1000
 	iqHeldHz       = 2000
@@ -634,7 +635,9 @@ func (r *iqRx) syncTune() {
 	if scale <= 0 || r.d.looseLv {
 		return
 	}
-	if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCFineHz {
+	hz := (f.dc + r.d.dcHz) / scale
+	fits := float32(levelWarm + 1 - r.d.levelN)
+	if abs32(hz) >= iqAFCFineHz && hz*hz*scale*scale*(syncSymbols-2)*fits >= iqSyncTuneZ*iqSyncTuneZ*r.d.discVar {
 		r.tune(hz, f.dc-hz*scale)
 	}
 }
