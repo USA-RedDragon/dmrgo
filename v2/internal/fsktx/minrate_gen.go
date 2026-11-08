@@ -2,7 +2,7 @@
 
 package fsktx
 
-const minRateInputs = "d734b73e9cfe28a60f9b43dfc7eff661c692d9d96091b67ffdd313c79d79f0ae"
+const minRateInputs = "ed71e0c82f487448e863549050dfc97433f9dd5009c3a2c62ea1201df79c0842"
 
 var minRateRows0 = [24]minRateRow{
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -27,7 +27,7 @@ var minRateRows0 = [24]minRateRow{
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{1, 1, 1, 1, 1, 0, 0, 0, 0, 0},
+	{1, 1, 1, 1, 1, 1, 1, 0, 0, 0},
 	{1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
 }
 
