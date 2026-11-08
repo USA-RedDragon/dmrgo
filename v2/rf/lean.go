@@ -871,7 +871,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		return 0, 0, 0, false
 	}
 	r.ringSync(&win, end+bestD, sps, saved)
-	return bestD, sxy * sxy / (sxx * spp), min(z, -end), true
+	return z, sxy * sxy / (sxx * spp), z, true
 }
 
 func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) float32 {
@@ -891,7 +891,7 @@ func (win *syncWindow) mmZero(syms *[syncSymbols]int8, end, d, sps float32) floa
 		}
 		z := lo - a*(hi-lo)/(b-a)
 		if z > c-2*h && z < c+2*h {
-			return min(z, -end)
+			return z
 		}
 		if z > c {
 			c += 2 * h

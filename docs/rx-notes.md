@@ -92,3 +92,5 @@ The lock burst `Seconds` comes from the zero of the timing error of the MM detec
 Tier 0 is checked with carriers within 1 kHz of the tuned frequency. Further off it times its first burst before the AFC tunes, with the FM on the edge of the wide channel filter: a lock burst 2.1 to 2.5 kHz off read up to 4 us off. Tier 0 has no RAM to filter the burst again, and this was accepted.
 
 At 30 dB C/N the timing scatter of the lock is about 0.75 to 0.9 us RMS. The Cramer-Rao bound for 24 known sync symbols at that C/N is 0.23 us, and the same MM zero computed on unrounded samples gives 0.64 us, so the gap is in the estimator, not the noise.
+
+A sync fit whose MM zero lies after the newest kept sample took the time of that sample. The lock then read up to 10 us early: at tier 2, 2 of 8 BS locks 2 kHz off in one `TestSecondsLockBurstOffset` run. The fit now keeps the zero and reads the levels at the newest sample.
