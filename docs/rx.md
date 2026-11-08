@@ -79,9 +79,9 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0 | 9.6 | 5.5 | 2,572 | 50.8 |
-| Audio tier 0, `PreEmphasis` | 9.6 | 6.0 | 2,628 | 51.0 |
-| Low-rate I/Q tier 0 | 9.6 | 6.9 | 2,944 | 50.7 |
+| Audio tier 0 | 9.6 | 5.9 | 2,628 | 55.1 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 6.4 | 2,684 | 55.3 |
+| Low-rate I/Q tier 0 | 9.6 | 7.2 | 3,000 | 55.0 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
