@@ -36,29 +36,29 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 | Tier | Voice | Rate 1/2 | Rate 3/4 | CSBK | Embedded LC |
 |:---|---:|---:|---:|---:|---:|
 | 4FSK floor | -1.0 | -3.0 | 0.3 | -4.1 | < -6.9 |
-| Audio tier 0 | 9.6 | 6.5 | 8.2 | 6.4 | 9.5 |
-| Audio tier 1 | 8.2 | 6.4 | 7.9 | 5.4 | 4.1 |
-| Audio tier 2 | 4.9 | 4.4 | 6.2 | 3.9 | 2.2 |
-| Audio tier 3 | 4.3 | 3.5 | 5.7 | 2.6 | 2.2 |
-| Low-rate I/Q tier 0 | 10.3 | 6.5 | 8.3 | 6.5 | 9.6 |
-| I/Q tier 0 | 9.3 | 5.4 | 7.6 | 5.4 | 9.2 |
-| I/Q tier 1 | 8.0 | 5.3 | 7.0 | 3.6 | 2.5 |
-| I/Q tier 2 | 4.9 | 4.4 | 5.5 | 3.2 | 1.5 |
-| I/Q tier 3 | 2.5 | 1.8 | 4.8 | 1.1 | 0.0 |
+| Audio tier 0 | 9.6 | 6.3 | 8.2 | 6.2 | 9.3 |
+| Audio tier 1 | 8.2 | 6.3 | 7.9 | 5.2 | 6.4 |
+| Audio tier 2 | 4.9 | 4.2 | 6.2 | 3.7 | 4.4 |
+| Audio tier 3 | 4.3 | 3.7 | 5.7 | 3.1 | 4.1 |
+| Low-rate I/Q tier 0 | 10.3 | 6.3 | 8.2 | 6.2 | 9.6 |
+| I/Q tier 0 | 9.3 | 5.3 | 7.6 | 5.2 | 9.0 |
+| I/Q tier 1 | 8.0 | 5.3 | 7.0 | 3.7 | 4.9 |
+| I/Q tier 2 | 4.8 | 4.3 | 5.5 | 3.2 | 3.9 |
+| I/Q tier 3 | 2.5 | 1.8 | 4.8 | 1.2 | 2.2 |
 
 ### Operating characteristics
 
 | Tier | Input | Rate (kHz) | Carrier offset (kHz) | Clock error (ppm) | Late entry, C/N 8 dB (ms) | Late entry, C/N 20 dB (ms) | CPU, C/N 6 dB (ms/s) | CPU, worst (ms/s) | RAM (KiB) |
 |:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 60 | 0.36 | 0.41 | 1.8 |
-| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 45 | 0.87 | 2.6 | 48 |
-| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 52 | 45 | 8.3 | 14 | 315 |
-| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 60 | 207 | 911 |
-| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 52 | 59 | 0.38 | 0.47 | 1.8 |
-| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.3 | 1.6 | 19 |
-| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 1.9 | 3.9 | 165 |
-| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 8.3 | 10 | 461 |
-| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 107 | 140 | 2,126 |
+| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 60 | 0.35 | 0.45 | 1.9 |
+| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 45 | 0.97 | 3.0 | 53 |
+| Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 52 | 45 | 7.8 | 12 | 316 |
+| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 53 | 133 | 912 |
+| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 52 | 59 | 0.39 | 0.45 | 2.1 |
+| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.4 | 1.5 | 21 |
+| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 2.5 | 4.7 | 168 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 8.4 | 9.8 | 464 |
+| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 97 | 123 | 2,131 |
 
 - Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
 - Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
@@ -203,6 +203,48 @@ On a clean signal, the symbol centers of every tier fall on `Burst.Seconds` plus
 
 ![CPU of each tier per second of signal](rx/cpu.svg)
 
+<details><summary>False bursts on noise</summary>
+
+Bursts that each tier reports from noise only, with no signal, for each input. The bound is the one-sided 95% upper bound on the rate.
+
+| Tier | Input | Noise | False bursts | Per hour | 95% upper bound per hour |
+|------|-------|-------|--------------|----------|--------------------------|
+| Audio tier 0 | a9600 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 0 | a12000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 0 | a24000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 0 | a48000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 1 | a9600 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 1 | a12000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 1 | a24000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 1 | a48000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 2 | a9600 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 2 | a12000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 2 | a24000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 2 | a48000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 3 | a9600 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 3 | a12000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 3 | a24000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Audio tier 3 | a48000 | 1.0 h | 0 | 0.00 | 3.00 |
+| Low-rate I/Q tier 0 | cu8-9600 | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 0 | cu8-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 0 | cs16-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 0 | cu8-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 0 | cs16-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 1 | cu8-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 1 | cs16-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 1 | cu8-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 1 | cs16-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 2 | cu8-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 2 | cs16-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 2 | cu8-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 2 | cs16-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 3 | cu8-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 3 | cs16-48k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 3 | cu8-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+| I/Q tier 3 | cs16-2048k | 1.0 h | 0 | 0.00 | 3.00 |
+
+</details>
+
 ### Sensitivity per payload type
 
 Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) defines each floor.
@@ -224,18 +266,18 @@ Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) d
 
 | Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.3 | 10.3 | 9.3 | 8.0 | 4.9 | 2.5 |
-| Voice frame, protected bits (C0 and C1) | 5.8 | 5.2 | 3.9 | 3.2 | 5.4 | 4.6 | 3.7 | 3.1 | 1.6 |
-| Data block, rate 1/2 | 6.5 | 6.4 | 4.4 | 3.5 | 6.5 | 5.4 | 5.3 | 4.4 | 1.8 |
-| Data block, rate 3/4 | 8.2 | 7.9 | 6.2 | 5.7 | 8.3 | 7.6 | 7.0 | 5.5 | 4.8 |
-| Data block, rate 1 | 11.3 | 11.3 | 8.3 | 8.0 | 12.4 | 11.1 | 11.3 | 7.8 | 7.6 |
-| CSBK | 6.4 | 5.4 | 3.9 | 2.6 | 6.5 | 5.4 | 3.6 | 3.2 | 1.1 |
-| Voice LC header and terminator | 6.6 | 5.5 | 4.3 | 3.3 | 6.4 | 5.7 | 3.9 | 3.4 | 1.4 |
-| Data header | 6.4 | 5.2 | 4.0 | 2.7 | 6.4 | 5.5 | 3.7 | 3.3 | 1.1 |
-| Embedded LC | 9.5 | 4.1 | 2.2 | 2.2 | 9.6 | 9.2 | 2.5 | 1.5 | 0.0 |
-| EMB | 3.8 | 3.6 | 2.1 | 1.4 | 2.4 | 2.0 | 1.6 | 1.0 | -0.1 |
-| Slot type | 4.0 | 3.9 | 1.6 | 1.5 | 3.0 | 2.5 | 2.4 | 1.0 | -0.2 |
-| SYNC detection | 3.5 | 3.4 | 1.1 | 1.1 | 2.3 | 1.7 | 1.6 | -0.8 | -1.5 |
+| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.3 | 10.3 | 9.3 | 8.0 | 4.8 | 2.5 |
+| Voice frame, protected bits (C0 and C1) | 5.8 | 5.2 | 3.8 | 3.3 | 5.1 | 4.5 | 3.7 | 3.1 | 1.6 |
+| Data block, rate 1/2 | 6.3 | 6.3 | 4.2 | 3.7 | 6.3 | 5.3 | 5.3 | 4.3 | 1.8 |
+| Data block, rate 3/4 | 8.2 | 7.9 | 6.2 | 5.7 | 8.2 | 7.6 | 7.0 | 5.5 | 4.8 |
+| Data block, rate 1 | 11.3 | 11.3 | 8.2 | 8.0 | 12.4 | 11.1 | 11.4 | 7.9 | 7.6 |
+| CSBK | 6.2 | 5.2 | 3.7 | 3.1 | 6.2 | 5.2 | 3.7 | 3.2 | 1.2 |
+| Voice LC header and terminator | 6.3 | 5.5 | 4.0 | 3.4 | 6.6 | 5.5 | 3.8 | 3.1 | 1.6 |
+| Data header | 6.1 | 5.1 | 3.8 | 3.1 | 6.2 | 5.4 | 3.7 | 3.2 | 1.1 |
+| Embedded LC | 9.3 | 6.4 | 4.4 | 4.1 | 9.6 | 9.0 | 4.9 | 3.9 | 2.2 |
+| EMB | 3.3 | 3.3 | 1.9 | 1.4 | 2.3 | 1.9 | 1.5 | 0.9 | -0.5 |
+| Slot type | 3.7 | 3.6 | 1.3 | 1.5 | 2.8 | 2.2 | 2.0 | 0.9 | -0.8 |
+| SYNC detection | 3.2 | 3.2 | 0.8 | 1.0 | 2.2 | 1.5 | 1.4 | -1.4 | -1.7 |
 
 ### Real recordings
 
