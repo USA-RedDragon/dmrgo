@@ -25,7 +25,7 @@ func TestLookbackNoise(t *testing.T) {
 	t.Parallel()
 	fm, env, _ := msStream(t, 3, 0.37)
 	for _, seed := range []uint64{129, 134} {
-		x := impairedFM(t, fm, env, 1400, 0, 50, 18, seed)
+		x := impairedFM(t, fm, env, 0, 50, 18, seed)
 		n, first := 0, 0.0
 		for _, b := range receiveBaseband(x, Tier2) {
 			switch {

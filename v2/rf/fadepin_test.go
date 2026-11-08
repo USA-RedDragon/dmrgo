@@ -22,7 +22,7 @@ func TestTier2FadeUncoded(t *testing.T) {
 	var got [2]int
 	var mu sync.Mutex
 	forSeeds(8, func(i int) {
-		x := impairedFM(tb, fm, env, 1400, 0, 50, 24, 100+uint64(i))
+		x := impairedFM(tb, fm, env, 0, 50, 24, 100+uint64(i))
 		for k, tier := range []Tier{Tier0, Tier2} {
 			n := scoreMS(truth, receiveBaseband(x, tier))["ambe"].Exact
 			mu.Lock()
@@ -49,7 +49,7 @@ func TestRate34CheckedCore(t *testing.T) {
 	var got [3]int
 	var mu sync.Mutex
 	forSeeds(8, func(i int) {
-		x := impairedFM(tb, fm, env, 1400, 0, 50, 18, 100+uint64(i))
+		x := impairedFM(tb, fm, env, 0, 50, 18, 100+uint64(i))
 		for k, tier := range []Tier{Tier0, Tier1, Tier2} {
 			n := scoreMS(truth, receiveBaseband(x, tier))["rate34"].Exact
 			mu.Lock()

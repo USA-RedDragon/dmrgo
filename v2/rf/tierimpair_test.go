@@ -11,7 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
 )
 
-func impairedFM(t testing.TB, freq, env []float64, offsetHz, dev, fd, cn float64, seed uint64) []complex64 {
+func impairedFM(t testing.TB, freq, env []float64, dev, fd, cn float64, seed uint64) []complex64 {
 	seed = noiseSeed(t, seed)
 	pad := int(benchPad * basebandRate)
 	x := make([]complex64, len(freq)+2*pad)
@@ -27,7 +27,7 @@ func impairedFM(t testing.TB, freq, env []float64, offsetHz, dev, fd, cn float64
 	for i := range x {
 		var s complex128
 		if k := i - pad; k >= 0 && k < len(freq) {
-			ph += 2 * math.Pi * (freq[k]*(1+dev) + offsetHz) / basebandRate
+			ph += 2 * math.Pi * (freq[k]*(1+dev) + 1400) / basebandRate
 			s = complex(env[k]*math.Cos(ph), env[k]*math.Sin(ph))
 			if fd > 0 {
 				var g complex128
@@ -74,7 +74,7 @@ func TestTierImpaired(t *testing.T) {
 	for _, sc := range scenarios {
 		for _, cn := range sc.cns {
 			for seed := range uint64(seeds) {
-				x := sync.OnceValue(func() []complex64 { return impairedFM(t, fm, env, 1400, sc.dev, sc.fd, cn, 100+seed) })
+				x := sync.OnceValue(func() []complex64 { return impairedFM(t, fm, env, sc.dev, sc.fd, cn, 100+seed) })
 				for _, tier := range tiers {
 					wg.Add(1)
 					go func() {
