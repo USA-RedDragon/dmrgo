@@ -448,6 +448,7 @@ type iqRx struct {
 	fcMove    float32
 	devTab    uint8
 	raw       int
+	fine      *iqFine
 }
 
 func newIQRx(cfg rxSetup, opt options) *iqRx {
@@ -497,6 +498,9 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		r.d.ext = x
 		setExtOn()
 		r.attachRefill(x)
+		if opt.IQFineLock {
+			r.attachFine(x)
+		}
 	}
 	if wantPower(&opt) {
 		r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())))

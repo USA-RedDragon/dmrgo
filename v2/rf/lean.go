@@ -870,6 +870,11 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	if sxy <= 0 || sxy*sxy < lim*lim*sxx*spp {
 		return 0, 0, 0, false
 	}
+	if at == nil && (!r.locked || r.hunt) && r.hasExt() {
+		if f, ok := r.ext.syncZero(r, p, end, z); ok {
+			z, bestD = f, min32(f, -end)
+		}
+	}
 	r.ringSync(&win, end+bestD, sps, saved)
 	return z, sxy * sxy / (sxx * spp), z, true
 }

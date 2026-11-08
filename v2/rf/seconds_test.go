@@ -195,10 +195,9 @@ func TestSecondsLowRatePhase(t *testing.T) {
 // TestSecondsLockBurstExact checks the lock burst Seconds over locks at
 // fresh starts and carrier offsets over the hunt range. With no noise both
 // the mean and the RMS error must stay within 0.6 us; at 30 dB the mean must.
-// The offset is drawn for every lock, as the rounding of the kept samples to
-// steps of discStepHz moves the MM zero by an amount that follows the DC: on
-// a grid offset by 0, 1/4, 1/2 and 3/4 of a step it moved the Tier2 lock
-// -0.37, +0.02, +0.25 and +0.15 us against unrounded samples.
+// The offset is drawn for every lock, as the int8 rounding of the samples
+// that Tier0 and Tier1 fit the sync on moves the MM zero by an amount that
+// follows the DC.
 func TestSecondsLockBurstExact(t *testing.T) {
 	t.Parallel()
 	g := testseed.New(t)
@@ -217,6 +216,39 @@ func TestSecondsLockBurstFarOffset(t *testing.T) {
 		k++
 		return float64(1-2*(k&1)) * 2400
 	}, Tier0)
+}
+
+// TestSecondsLockBurstFineFit pins carriers 2.5 kHz off at Tier2 over a new
+// payload for every lock, where the lock burst Seconds read 0.6 to 0.7 us RMS
+// with the sync fit on the int8 samples through the channel filter centered
+// off the carrier. The fit in float on the carrier reads 0.05 us.
+func TestSecondsLockBurstFineFit(t *testing.T) {
+	t.Parallel()
+	const locks = 64
+	ramp := (slotSeconds - burstSeconds) / 2
+	var sq float64
+	for k := range locks {
+		cfg := testscen.Of(uint64(k + 100)).Apply(testConfigFixed())
+		cfg.Superframes = 1
+		built, err := rftx.Sequence("voice", cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
+		start := benchPad + float64(k)*0.00037
+		off := float64(1-2*(k&1)) * iqHuntMaxHz
+		x := signalBasebandAt([]signalPart{{start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, math.Inf(1), uint64(k+1), off)
+		got := receiveIQAt(t, x, basebandRate, Tier2)
+		if len(got) == 0 {
+			t.Fatalf("payload %d %+.0f Hz: no bursts", k, off)
+		}
+		d := got[0].Seconds - math.Floor(start*basebandRate)/basebandRate - ramp
+		e := d - math.Round(d/(2*slotSeconds))*2*slotSeconds
+		sq += e * e
+	}
+	if rms := math.Sqrt(sq / locks); rms > 0.3e-6 {
+		t.Errorf("the lock burst Seconds is %.2f us off RMS", rms*1e6)
+	}
 }
 
 // TestSecondsLockBurstDeferredFit pins a payload whose lock burst a false

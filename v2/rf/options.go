@@ -108,6 +108,7 @@ type options struct {
 	IQLow                 uint8
 	LeanChase             uint8
 	IQHalf                bool
+	IQFineLock            bool
 	CohRing               uint8
 }
 
@@ -181,7 +182,7 @@ func tierOptions(t Tier) options {
 		o = tier2Options(o)
 		o.IQDisc, o.IQHz, o.CohNoCross, o.CohNoNext, o.CohBudget = true, 24000, true, true, 300
 		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg, o.IQSpecHunt = iqHuntMaxHz, true, 5, true
-		o.IQStopHz = iqStopHz
+		o.IQStopHz, o.IQFineLock = iqStopHz, true
 	case Tier3:
 		o = exactOptions(tierOptions(Tier2))
 		o.ExtLookback, o.CohSlotFit, o.CohWarm, o.CohRing, o.IQSpecFine = 16, true, true, 14, true

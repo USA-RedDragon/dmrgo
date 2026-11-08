@@ -53,6 +53,7 @@ type leanExt interface {
 	replaySpread() float32
 	noteSync(c *leanCore, j int32, b *Burst) bool
 	syncSlot() int32
+	syncZero(c *leanCore, p enums.SyncPattern, end, d float32) (float32, bool)
 }
 
 const extQueue = 8
@@ -125,6 +126,7 @@ type softExt struct {
 	rs              *audioRate
 	slc             *shortLCOut
 	refillCoh       func(float64)
+	fineZero        func(c *leanCore, p enums.SyncPattern, end, d float32) (float32, bool)
 	lookback        int
 	ring            [leanRing]int8
 	lockSym         int64
@@ -828,6 +830,13 @@ func (x *softExt) firstOut(c *leanCore, b *Burst) bool {
 }
 
 func (x *softExt) kept() []int16 { return x.acq }
+
+func (x *softExt) syncZero(c *leanCore, p enums.SyncPattern, end, d float32) (float32, bool) {
+	if x.fineZero == nil {
+		return 0, false
+	}
+	return x.fineZero(c, p, end, d)
+}
 
 // keptGap notes that the kept samples skip the input before sample n, so
 // that the kept samples older than n do not lie on the timeline of the newer.
