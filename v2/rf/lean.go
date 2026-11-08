@@ -2633,7 +2633,7 @@ func (r *leanCore) swapClock(p, q int32) {
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
 	g0, dc0, step := r.devScale, r.dcHz, r.preStep
-	if (r.pairLv || r.refit) && r.fitLevels(base+leanSyncEnd, anchor, true, true) {
+	if (r.pairLv || r.refit && int32(uint32(base+leanSyncEnd)-r.tuneNs) >= 0) && r.fitLevels(base+leanSyncEnd, anchor, true, true) {
 		r.pairLv = false
 	} else {
 		r.fitLevels(base+leanSyncEnd, anchor, false, true)
