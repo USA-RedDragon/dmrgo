@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/testmode"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/testseed"
 )
 
 func impairedFM(t testing.TB, freq, env []float64, dev, fd, cn float64, seed uint64) []complex64 {
@@ -43,6 +44,57 @@ func impairedFM(t testing.TB, freq, env []float64, dev, fd, cn float64, seed uin
 	return x
 }
 
+const tierImpairedDraws = 509
+
+var tierImpairedSD = map[string]float64{
+	"dev+10/1/ambe":      8.53,
+	"dev+10/1/ambe_c0c1": 0.23,
+	"dev+10/1/csbk":      1.04,
+	"dev+10/1/elc":       1.60,
+	"dev+10/1/lc":        0.09,
+	"dev+10/1/rate12":    0.38,
+	"dev+10/1/rate34":    0.86,
+	"dev+10/2/ambe":      7.60,
+	"dev+10/2/ambe_c0c1": 0.18,
+	"dev+10/2/csbk":      1.01,
+	"dev+10/2/elc":       1.60,
+	"dev+10/2/lc":        0.09,
+	"dev+10/2/rate12":    0.33,
+	"dev+10/2/rate34":    0.81,
+	"dev-10/1/ambe":      14.69,
+	"dev-10/1/ambe_c0c1": 0.42,
+	"dev-10/1/csbk":      0.44,
+	"dev-10/1/elc":       3.24,
+	"dev-10/1/lc":        0.04,
+	"dev-10/1/rate12":    0.23,
+	"dev-10/1/rate34":    1.74,
+	"dev-10/2/ambe":      13.86,
+	"dev-10/2/ambe_c0c1": 0.41,
+	"dev-10/2/csbk":      0.45,
+	"dev-10/2/elc":       3.24,
+	"dev-10/2/lc":        0.04,
+	"dev-10/2/rate12":    0.25,
+	"dev-10/2/rate34":    1.79,
+	"fade50/1/ambe_c0c1": 3.33,
+	"fade50/1/csbk":      2.69,
+	"fade50/1/elc":       3.93,
+	"fade50/1/lc":        0.75,
+	"fade50/1/rate12":    1.41,
+	"fade50/1/rate34":    2.81,
+	"fade50/2/ambe_c0c1": 3.64,
+	"fade50/2/csbk":      2.88,
+	"fade50/2/elc":       4.46,
+	"fade50/2/lc":        0.80,
+	"fade50/2/rate12":    1.63,
+	"fade50/2/rate34":    3.83,
+}
+
+// TestTierImpaired checks that Tiers 1 and 2 recover no fewer bursts than
+// Tier 0 on impaired MS streams. A tier fails a run only when it falls more
+// than max(2, 1%) below Tier 0 and also more than BarZ standard deviations
+// below 0, the requirement, with the standard deviation of the difference
+// over tierImpairedDraws run seeds. The cells where the mean difference is
+// significantly below 0 are not in tierImpairedSD and keep the first bar.
 func TestTierImpaired(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
@@ -106,10 +158,12 @@ func TestTierImpaired(t *testing.T) {
 			}
 			for _, tier := range tiers[1:] {
 				hi := sum[key{sc.name, tier, p}]
-				if testmode.Race || hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
+				d := hi.Exact - lo.Exact
+				sd, measured := tierImpairedSD[sc.name+"/"+strconv.Itoa(int(tier-Tier0))+"/"+p]
+				if testmode.Race || d >= -max(2, lo.Truth/100) || measured && float64(d) >= -testseed.BarZ*max(sd, 1) {
 					continue
 				}
-				t.Errorf("%s iq %s: Tier%d recovers %d of %d, Tier0 %d", sc.name, p, tier-Tier0, hi.Exact, hi.Truth, lo.Exact)
+				t.Errorf("%s iq %s: Tier%d recovers %d of %d, Tier0 %d; at equal tiers the difference has a standard deviation of %.2f over %d run seeds, so below %.1f has probability below %g", sc.name, p, tier-Tier0, hi.Exact, hi.Truth, lo.Exact, sd, tierImpairedDraws, -testseed.BarZ*max(sd, 1), testseed.BarAlpha)
 			}
 		}
 	}
