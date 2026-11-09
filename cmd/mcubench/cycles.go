@@ -18,7 +18,31 @@ var (
 	reCondSuffix = regexp.MustCompile(`(eq|ne|cs|hs|cc|lo|mi|pl|vs|vc|hi|ls|ge|lt|gt|le|al)$`)
 )
 
-var coreRegAlias = map[string]int{"sb": 9, "sl": 10, "fp": 11, "ip": 12, "sp": 13, "lr": 14, "pc": 15}
+const (
+	mnLDRD = "ldrd"
+	mnSTRD = "strd"
+	mnTEQ  = "teq"
+)
+
+func coreRegAlias(r string) (int, bool) {
+	switch r {
+	case "sb":
+		return 9, true
+	case "sl":
+		return 10, true
+	case "fp":
+		return 11, true
+	case "ip":
+		return 12, true
+	case "sp":
+		return 13, true
+	case "lr":
+		return 14, true
+	case "pc":
+		return 15, true
+	}
+	return 0, false
+}
 
 const (
 	regSP  = 13
@@ -26,25 +50,39 @@ const (
 	fpBank = 100
 )
 
-var noCondStrip = map[string]bool{
-	"mls": true, "smlal": true, "umlal": true, "smmls": true, "vmls": true, "vnmls": true,
-	"teq": true, "svc": true, "sbcs": true, "adcs": true, "lsls": true,
+func noCondStrip(m string) bool {
+	switch m {
+	case "mls", "smlal", "umlal", "smmls", "vmls", "vnmls", mnTEQ, "svc", "sbcs", "adcs", "lsls":
+		return true
+	}
+	return false
 }
 
-var nonDataProc = map[string]bool{
-	"b": true, "bl": true, "bx": true, "blx": true, "cbz": true, "cbnz": true, "tbb": true, "tbh": true,
-	"cmp": true, "cmn": true, "tst": true, "teq": true, "nop": true, "isb": true, "dmb": true, "dsb": true,
-	"wfe": true, "wfi": true, "sev": true, "yield": true, "cpsid": true, "cpsie": true, "msr": true, "mrs": true,
-	"svc": true, "bkpt": true, "clrex": true,
+func nonDataProc(m string) bool {
+	switch m {
+	case "b", "bl", "bx", "blx", "cbz", "cbnz", "tbb", "tbh",
+		"cmp", "cmn", "tst", mnTEQ, "nop", "isb", "dmb", "dsb",
+		"wfe", "wfi", "sev", "yield", "cpsid", "cpsie", "msr", "mrs",
+		"svc", "bkpt", "clrex":
+		return true
+	}
+	return false
 }
 
-var fpMAC = map[string]bool{
-	"vmla": true, "vmls": true, "vnmla": true, "vnmls": true, "vfma": true, "vfms": true, "vfnma": true, "vfnms": true,
+func isFPMAC(m string) bool {
+	switch m {
+	case "vmla", "vmls", "vnmla", "vnmls", "vfma", "vfms", "vfnma", "vfnms":
+		return true
+	}
+	return false
 }
 
-var fpArith = map[string]bool{
-	"vadd": true, "vsub": true, "vmul": true, "vnmul": true, "vdiv": true, "vsqrt": true,
-	"vmla": true, "vmls": true, "vnmla": true, "vnmls": true, "vfma": true, "vfms": true, "vfnma": true, "vfnms": true,
+func isFPArith(m string) bool {
+	switch m {
+	case "vadd", "vsub", "vmul", "vnmul", "vdiv", "vsqrt":
+		return true
+	}
+	return isFPMAC(m) || strings.HasPrefix(m, "vcvt")
 }
 
 type insn struct {
@@ -57,7 +95,7 @@ type insn struct {
 
 func normalize(mn string) string {
 	head, _, _ := strings.Cut(mn, ".")
-	if !noCondStrip[head] {
+	if !noCondStrip(head) {
 		if loc := reCondSuffix.FindStringIndex(head); loc != nil && loc[0] > 0 {
 			head = head[:loc[0]]
 		}
@@ -88,7 +126,7 @@ func splitOps(s string) []string {
 }
 
 func parseReg(r string) (byte, int, error) {
-	if i, ok := coreRegAlias[r]; ok {
+	if i, ok := coreRegAlias(r); ok {
 		return 'r', i, nil
 	}
 	m := reReg.FindStringSubmatch(r)
@@ -160,7 +198,7 @@ func opRegs(op string) []int {
 }
 
 func regsOf(ops []string) []int {
-	var ids []int
+	ids := make([]int, 0, len(ops))
 	for _, op := range ops {
 		ids = append(ids, opRegs(op)...)
 	}
@@ -178,16 +216,16 @@ func overlaps(a, b []int) bool {
 	return false
 }
 
-func isSingleLoad(m string) bool  { return strings.HasPrefix(m, "ldr") && m != "ldrd" }
-func isSingleStore(m string) bool { return strings.HasPrefix(m, "str") && m != "strd" }
+func isSingleLoad(m string) bool  { return strings.HasPrefix(m, "ldr") && m != mnLDRD }
+func isSingleStore(m string) bool { return strings.HasPrefix(m, "str") && m != mnSTRD }
 
 func isLoad(m string) bool {
-	return isSingleLoad(m) || m == "ldrd" || m == "vldr" || m == "pop" || m == "vpop" ||
+	return isSingleLoad(m) || m == mnLDRD || m == "vldr" || m == "pop" || m == "vpop" ||
 		strings.HasPrefix(m, "ldm") || strings.HasPrefix(m, "vldm")
 }
 
 func isStore(m string) bool {
-	return isSingleStore(m) || m == "strd" || m == "vstr" || m == "push" || m == "vpush" ||
+	return isSingleStore(m) || m == mnSTRD || m == "vstr" || m == "push" || m == "vpush" ||
 		strings.HasPrefix(m, "stm") || strings.HasPrefix(m, "vstm")
 }
 
@@ -210,7 +248,7 @@ func addrRegs(m string, ops []string) []int {
 }
 
 func isDataProc(m string) bool {
-	return !strings.HasPrefix(m, "v") && !strings.HasPrefix(m, "it") && !nonDataProc[m] && !isLoad(m) && !isStore(m)
+	return !strings.HasPrefix(m, "v") && !strings.HasPrefix(m, "it") && !nonDataProc(m) && !isLoad(m) && !isStore(m)
 }
 
 func dataProcDest(m string, ops []string) []int {
@@ -233,7 +271,7 @@ func fpSources(m string, ops []string) []int {
 	var src []string
 	switch {
 	case isLoad(m):
-	case isStore(m) || m == "cmp" || m == "cmn" || m == "tst" || m == "teq" || strings.HasPrefix(m, "vcmp"):
+	case isStore(m) || m == "cmp" || m == "cmn" || m == "tst" || m == mnTEQ || strings.HasPrefix(m, "vcmp"):
 		src = ops
 	case len(ops) > 1:
 		src = ops[1:]
@@ -246,8 +284,6 @@ func fpSources(m string, ops []string) []int {
 	}
 	return ids
 }
-
-func isFPArith(m string) bool { return fpArith[m] || strings.HasPrefix(m, "vcvt") }
 
 // cyclesOf returns the Cortex-M4F cycles of one instruction with mnemonic
 // mn and operands ops at zero wait states, by ARM DDI 0439C (Cortex-M4 TRM
@@ -287,7 +323,7 @@ func costOf(m string, ops []string) (int64, error) {
 			return 0, err
 		}
 		return 1 + words, nil
-	case m == "ldrd" || m == "strd":
+	case m == mnLDRD || m == mnSTRD:
 		return 3, nil
 	case isSingleLoad(m) || isSingleStore(m) || m == "tbb" || m == "tbh":
 		return 2, nil
@@ -300,7 +336,7 @@ func costOf(m string, ops []string) (int64, error) {
 		return 2, nil
 	case m == "vdiv" || m == "vsqrt":
 		return 14, nil
-	case fpMAC[m]:
+	case isFPMAC(m):
 		return 3, nil
 	case m == "vmov":
 		var core, fp, scalar bool
@@ -440,7 +476,7 @@ const cycleSample = `1000 2 3 0 ldr r0, [r1, #4]
 1070 2 1 0 ldm r0!, {r1, r2}
 1080 4 1 0 sdiv r0, r1, r2
 1090 4 1 0 udiv r0, r1, r2
-10a0 2 5 0 adds r0, r0, r1
+10a0 2 5 0 adds r0, r1, r0
 10b0 4 2 0 vmla.f32 s0, s1, s2
 10c0 2 4 3 bls #0x1000
 10d0 2 1 1 pop {r4, r5, r6, pc}
