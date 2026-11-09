@@ -449,7 +449,8 @@ type leanCore struct {
 // levels restart from the fit, preDev and preOff keep the levels before it,
 // and preStep marks the next burst for stepSplit, which slices the head of
 // that burst before the step at the old levels; preCut tells the soft stages
-// that the burst was cut so. jumpZ keeps the z of the first jump. stepHold
+// that the burst was cut so, or that a clip drop of the audio gain fell in
+// it. jumpZ keeps the z of the first jump. stepHold
 // holds the timing loop over the next slot when an audio input overloads at
 // a SYNC. pairLv marks levels that a pair lock fit without the tight check,
 // and refit levels that a later anchor fits again once the AFC moved
@@ -2322,7 +2323,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 	}
 	thr, out := 2*r.llrDev, r.llrDev*leanClickOut/2
 	split, preOff, preThr := r.stepSplit(base)
-	r.preCut = split > 0
+	r.preCut = r.levelCut(base, split)
 	h := ringPos(base)
 	var acc byte
 	beyond := 0
@@ -2393,6 +2394,11 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 	}
 	r.emit(b)
 	return true
+}
+
+func (r *leanCore) levelCut(base int64, split int) bool {
+	clip := int64(int16(uint16(r.ns) - r.clipNs))
+	return split > 0 || clip >= 0 && clip <= r.ns-base
 }
 
 //go:noinline
