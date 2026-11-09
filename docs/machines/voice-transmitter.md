@@ -14,7 +14,7 @@ Use a Transmitter when you send voice: a radio or a hotspot that keys up with fr
 
 Pass a [TransmitterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#TransmitterConfig) to [NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#NewTransmitter). The Slot must be set, so a nil config returns an error. Set Source to the SYNC source of your side: a repeater outbound or a radio. A radio that transmits on air sets Access, and ChanAuth when it starts calls in hang time. A sender that fills an RF FIFO ahead of air time sets Lead.
 
-<!-- dmrgo:config pkg=voice type=TransmitterConfig -->
+<!-- docgen:config pkg=voice type=TransmitterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types and EMBs. |
@@ -33,7 +33,7 @@ Pass a [TransmitterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/
 | `HoldoffMax` | `time.Duration` | `DefaultHoldoffMax` (1s) | HoldoffMax is the upper end of the random holdoff before a new channel authorization try. 0 means DefaultHoldoffMax, and a negative value means no holdoff. (ETSI TS 102 361-2 clause 5.1.1.6.2) |
 | `Seed` | `uint64` | zero value | Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. (ETSI TS 102 361-2 clause 5.1.1.6.2) |
 | `Scratch` | `*layer2.Burst` | not machine-readable; see the description | Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. Nil means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 Each call can also take [CallOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#CallOptions) in Start: a PI Header, a talker alias, GPS, and the flags for a call in progress or in hang time.
 
@@ -41,7 +41,7 @@ Each call can also take [CallOptions](https://pkg.go.dev/github.com/USA-RedDrago
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.State) returns the current state.
 
-<!-- dmrgo:states pkg=voice type=TransmitterState -->
+<!-- docgen:states pkg=voice type=TransmitterState -->
 States of [`Transmitter`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter), from [`Transmitter.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.State):
 
 | State | Meaning | Seen in tests |
@@ -76,7 +76,7 @@ Transitions seen in tests:
 | TransmitterChanAuth | `Burst` | TransmitterHeader |
 
 ![Transitions of Transmitter](states/voice-transmitter-transmitterstate.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 Start moves an idle Transmitter to the headers. A polite call on a busy channel first waits for [Channel](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.Channel) to report an idle channel; when the idle search time runs out, the call ends as denied. A call with CallOptions.HangTime and a ChanAuth time first sends the channel authorization. The repeater then repeats it, or a Voice LC Header with another source denies the call, or no outbound burst comes and the call ends so that you can wake the repeater and start again. After the headers the Transmitter sends voice. [Stop](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.Stop) sends the queued voice, pads the superframe to burst F with silence, and sends the terminators. After the transmit timeout the Transmitter sends the terminators and then waits for Stop, the release of the PTT. (ETSI TS 102 361-1 clause 5.2.2, ETSI TS 102 361-2 clauses 5.1.1.6.2 and 6.1)
 
@@ -100,22 +100,22 @@ Both modes:
 - [Tick](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.Tick) appends the next [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Output). Call it at the time [Deadline](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.Deadline) returns. A late caller calls Tick until Deadline is in the future, because each Tick returns at most one burst.
 - [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Transmitter.Reset) ends the transmission without an output.
 
-Each Output has an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#OutputKind): a burst to send, with its Due time on air and a [layer2.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Hint) for the transport, or the end of the transmission with its [EndReason](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#EndReason). The end comes in the same Tick as the last terminator. Give each method a slice with capacity <!-- dmrgo:const pkg=voice name=MaxOutputs -->`2`<!-- /dmrgo:const --> so that it does not allocate.
+Each Output has an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#OutputKind): a burst to send, with its Due time on air and a [layer2.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Hint) for the transport, or the end of the transmission with its [EndReason](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#EndReason). The end comes in the same Tick as the last terminator. Give each method a slice with capacity <!-- docgen:const pkg=voice name=MaxOutputs -->`2`<!-- /docgen:const --> so that it does not allocate.
 
 ## Timers
 
 - Burst period: one burst every 60 ms from the Due time of the first burst.
-- Transmit timeout T_TO: the default is <!-- dmrgo:const pkg=constants name=TTO -->`3m0s`<!-- /dmrgo:const -->. TransmitterConfig.Timeout changes it, and a negative value turns it off. (ETSI TS 102 361-2 clause 6.1)
-- Idle search T_IdleSrch, the wait for an idle channel before a polite call: the default is <!-- dmrgo:const pkg=voice name=DefaultIdleSearch -->`540ms`<!-- /dmrgo:const -->. (ETSI TS 102 361-1 clause 5.2.2.2.5)
-- Channel authorization T_MS_ChanAuth: off by default. The recommended values are <!-- dmrgo:const pkg=constants name=TMSChanAuth -->`180ms`<!-- /dmrgo:const --> and <!-- dmrgo:const pkg=constants name=TMSChanAuthMultiSite -->`360ms`<!-- /dmrgo:const --> for multi-site systems. (ETSI TS 102 361-2 clause 5.1.1.6.2)
-- Random holdoff before a new channel authorization try: up to <!-- dmrgo:const pkg=voice name=DefaultHoldoffMax -->`1s`<!-- /dmrgo:const --> by default. TransmitterConfig.Seed seeds the generator, so the same inputs give the same outputs. (ETSI TS 102 361-2 clause 5.1.1.6.2)
+- Transmit timeout T_TO: the default is <!-- docgen:const pkg=constants name=TTO -->`3m0s`<!-- /docgen:const -->. TransmitterConfig.Timeout changes it, and a negative value turns it off. (ETSI TS 102 361-2 clause 6.1)
+- Idle search T_IdleSrch, the wait for an idle channel before a polite call: the default is <!-- docgen:const pkg=voice name=DefaultIdleSearch -->`540ms`<!-- /docgen:const -->. (ETSI TS 102 361-1 clause 5.2.2.2.5)
+- Channel authorization T_MS_ChanAuth: off by default. The recommended values are <!-- docgen:const pkg=constants name=TMSChanAuth -->`180ms`<!-- /docgen:const --> and <!-- docgen:const pkg=constants name=TMSChanAuthMultiSite -->`360ms`<!-- /docgen:const --> for multi-site systems. (ETSI TS 102 361-2 clause 5.1.1.6.2)
+- Random holdoff before a new channel authorization try: up to <!-- docgen:const pkg=voice name=DefaultHoldoffMax -->`1s`<!-- /docgen:const --> by default. TransmitterConfig.Seed seeds the generator, so the same inputs give the same outputs. (ETSI TS 102 361-2 clause 5.1.1.6.2)
 - Lead: Tick returns each burst this long before its Due time.
 
 ## Worked example
 
 This example sends a short call as its source. It queues two bursts of silence frames, stops at once, and ticks until the Transmitter has nothing more to send.
 
-<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleTransmitter -->
+<!-- docgen:code file=v2/voice/example_test.go symbol=ExampleTransmitter -->
 ```go
 func ExampleTransmitter() {
 	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
@@ -152,11 +152,11 @@ func ExampleTransmitter() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=voice.ExampleTransmitter -->
+<!-- docgen:output test=voice.ExampleTransmitter -->
 ```text
 0s Voice LC Header
 60ms voice A fill false
@@ -168,13 +168,13 @@ Output:
 420ms Terminator With LC
 420ms Ended Terminator
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The two queued bursts go out as voice. The rest of the superframe is silence, marked as fill, and the Terminator with LC follows.
 
 The next example shows polite access. The call waits while the channel is busy and starts when it becomes idle. A second call is denied when the channel stays busy for the idle search time.
 
-<!-- dmrgo:code file=v2/voice/access_example_test.go symbol=ExampleTransmitter_Channel -->
+<!-- docgen:code file=v2/voice/access_example_test.go symbol=ExampleTransmitter_Channel -->
 ```go
 func ExampleTransmitter_Channel() {
 	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, Silence: vocoder.AMBESilenceSlot(), Access: enums.AccessPoliteOwnCC})
@@ -210,21 +210,21 @@ func ExampleTransmitter_Channel() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=voice.ExampleTransmitter_Channel -->
+<!-- docgen:output test=voice.ExampleTransmitter_Channel -->
 ```text
 Access
 Ended Terminator 260ms
 Ended Denied 1.54s
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
 Start and Relay return an error while a call runs, and a configuration error when the call does not make an LC. The queue methods return an error when the queue is full, when no call takes voice, and after the transmit timeout. NewTransmitter returns a configuration error for a field out of range. Match the errors with errors.Is or errors.As.
 
-<!-- dmrgo:errors pkg=voice type=Transmitter -->
+<!-- docgen:errors pkg=voice type=Transmitter -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `Transmitter.Start` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
@@ -233,7 +233,7 @@ Start and Relay return an error while a call runs, and a configuration error whe
 | [`voice.ErrNotActive`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#ErrNotActive) | `Transmitter.Frame` | ErrNotActive is returned for voice when no call takes it: before Start or after Stop. |
 | [`voice.ErrQueueFull`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#ErrQueueFull) | `Transmitter.Frame` | ErrQueueFull is returned when the queue of vocoder slots is full. |
 | [`voice.ErrTimedOut`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#ErrTimedOut) | `Transmitter.Frame` | ErrTimedOut is returned for voice after the transmit timeout T_TO, until Stop (ETSI TS 102 361-2 clause 6.1). |
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

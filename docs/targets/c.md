@@ -4,7 +4,7 @@ This page shows how to build libdmrgo, the C form of dmrgo in `v2/capi`, and how
 
 ## What you need
 
-- Go <!-- dmrgo:gomod field=go file=v2/capi/go.mod -->`1.24.0`<!-- /dmrgo:gomod --> or later, the version of the `go` line of `v2/capi/go.mod`.
+- Go <!-- docgen:gomod field=go file=v2/capi/go.mod -->`1.24.0`<!-- /docgen:gomod --> or later, the version of the `go` line of `v2/capi/go.mod`.
 
 - A C compiler and GNU make. `make static` also needs `ld`, `objcopy` and `ar` from binutils. `make test` also needs a C++ compiler and `nm`.
 - Optional: libcodec2 and its pkg-config file, for the native Codec2 backend (`GOFLAGS=-tags=codec2native`). The default build runs libcodec2 in WebAssembly and needs no system libcodec2.
@@ -15,15 +15,15 @@ This page shows how to build libdmrgo, the C form of dmrgo in `v2/capi`, and how
 
 libdmrgo has a C ABI number of its own, `DMRGO_ABI_VERSION`. The generated header defines it:
 
-<!-- dmrgo:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
+<!-- docgen:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
 ```c
 #define DMRGO_ABI_VERSION 5
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 The soname is `libdmrgo.so.N`, with N the ABI number. `dmrgo.h` gives the rules of the number:
 
-<!-- dmrgo:code file=v2/capi/dmrgo.h region=abi -->
+<!-- docgen:code file=v2/capi/dmrgo.h region=abi -->
 ```c
 * The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
 * independent of the version of the Go module and changes only when a
@@ -34,7 +34,7 @@ The soname is `libdmrgo.so.N`, with N the ABI number. `dmrgo.h` gives the rules 
 * DMRGO_1. New functions, codes and members at the end of a sized struct
 * keep the ABI version.
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 [Versioning](../project/versioning.md) gives the ABI number of each release. [v2.1 breaking changes](../project/breaking-v2.1.md) lists the C declarations that ABI 4 changed.
 
@@ -54,7 +54,7 @@ This writes `v2/capi/build/libdmrgo.so.N` and the link `libdmrgo.so`. Other targ
 
 The CI job of the C API runs these builds, also with the native Codec2 backend and without libcodec2:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.capi.steps[Go tests of the C API:Build libdmrgo without libcodec2]" -->
+<!-- docgen:code file=.github/workflows/test.yaml symbol="jobs.capi.steps[Go tests of the C API:Build libdmrgo without libcodec2]" -->
 ```yaml
 - name: Go tests of the C API
   run: go test -C v2/capi -race ./...
@@ -68,7 +68,7 @@ The CI job of the C API runs these builds, also with the native Codec2 backend a
 - name: Build libdmrgo without libcodec2
   run: go build -C v2/capi -tags nocodec2 -buildmode=c-shared -o build/libdmrgo-nocodec2.so .
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Use the library
 
@@ -76,7 +76,7 @@ Include `dmrgo.h`. It includes `dmrgo_gen.h`, which holds the C form of each pac
 
 This part of the C test program builds a CSBK burst, decodes it, reads its addresses and encodes it again:
 
-<!-- dmrgo:code file=v2/capi/test/api_test.c symbol=test_layer2 -->
+<!-- docgen:code file=v2/capi/test/api_test.c symbol=test_layer2 -->
 ```c
 static void test_layer2(void) {
 	dmrgo_layer2_data_t data = {0};
@@ -117,7 +117,7 @@ static void test_layer2(void) {
 	printf("layer2: build, decode, set and encode a CSBK burst\n");
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Each function returns `DMRGO_OK` or a negative status. [C header](../reference/c-api.md) gives the full rules for outputs, inputs, sized structs and handles.
 
@@ -125,7 +125,7 @@ Each function returns `DMRGO_OK` or a negative status. [C header](../reference/c
 
 These rules of `dmrgo.h` apply to threads, callback storage and processes:
 
-<!-- dmrgo:code file=v2/capi/dmrgo.h region=threads -->
+<!-- docgen:code file=v2/capi/dmrgo.h region=threads -->
 ```c
 * - Use a handle from one thread at a time. A handle that a call takes,
 *   such as the port of dmrgo_dvsi_new or the authenticator of a config,
@@ -140,6 +140,6 @@ These rules of `dmrgo.h` apply to threads, callback storage and processes:
 * - libdmrgo runs the Go runtime, whose threads a child of fork() does not
 *   have, so a child process calls libdmrgo only after an exec.
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 - `dmrgo_version` gives the `v2` tag that the library was built from. The capi module has no tags of its own.

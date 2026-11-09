@@ -14,7 +14,7 @@ Use a Peer to connect a repeater, a hotspot, a gateway or a test client to a mas
 
 Pass a [PeerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#PeerConfig) to [NewPeer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewPeer). The config is required. Config is the RPTC message of the dialect: build it with [dmrd.MMDVMConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#MMDVMConfig) or [dmrd.HBRPConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#HBRPConfig), with the same repeater ID as the config. Options apply to the MMDVM network protocol only: HBRP has no RPTO. Set Backoff to wait longer after each failed login.
 
-<!-- dmrgo:config pkg=transport/dmrd/dmrdsession type=PeerConfig -->
+<!-- docgen:config pkg=transport/dmrd/dmrdsession type=PeerConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Dialect` | `dmrd.Dialect` | zero value | Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. |
@@ -25,13 +25,13 @@ Pass a [PeerConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transpo
 | `Retry` | `time.Duration` | not machine-readable; see the description | Retry is the time between two sends of a login step, between two pings, and before a new login after the session ended. 0 means RetryDefault. |
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without an acknowledgement or a pong after which the Peer ends the session and logs in again. 0 means TimeoutDefault. |
 | `Backoff` | `time.Duration` | zero value | Backoff is the longest wait before a new login. Each session that ends before the login completes doubles the wait from Retry up to Backoff. 0, or a value up to Retry, waits Retry each time, as DMRGateway does. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.State) returns the current state. The Peer, the Master and the Bridge share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#State) type, and each uses some of its values.
 
-<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=Peer -->
+<!-- docgen:states pkg=transport/dmrd/dmrdsession type=Peer -->
 States of [`Peer`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer), from [`Peer.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.State):
 
 | State | Meaning | Seen in tests |
@@ -64,7 +64,7 @@ Transitions seen in tests:
 | StateRunning | `Packet` | StateWait |
 
 ![Transitions of Peer](states/transport-dmrd-dmrdsession-peer.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 The first Tick sends the RPTL. Each acknowledgement moves the Peer to the next login step: the token, the config, and the options when it has them. The acknowledgement of the last step completes the login, and the Peer reports that the session is up. When the session ends, by Timeout without an acknowledgement or a pong, by MSTNAK, or by MSTCL, the Peer reports it down and waits before it logs in again. A session that ends before the login completes doubles the wait, from Retry up to Backoff. [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.Close) ends the session for good, until [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer.Reset).
 
@@ -79,19 +79,19 @@ Inputs:
 
 Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Output) values with an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#OutputKind): a packet to send to the master, the session up, the session down with a [Reason](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Reason) and the state it ended in, and the DMRD, DMRA, DMRG and RPTSBKN packets of a logged-in session. The packet of a send output points into the Peer and is valid until the next call. The packet of a data output points into the packet that you passed in. Copy a packet that you keep.
 
-Give each method a slice with capacity <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /dmrgo:const -->. The Peer drops a packet longer than <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=MaxPacket -->`512`<!-- /dmrgo:const --> octets.
+Give each method a slice with capacity <!-- docgen:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /docgen:const -->. The Peer drops a packet longer than <!-- docgen:const pkg=transport/dmrd/dmrdsession name=MaxPacket -->`512`<!-- /docgen:const --> octets.
 
 ## Timers
 
-- Retry: the time between two sends of a login step, between two pings, and before a new login. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=RetryDefault -->`10s`<!-- /dmrgo:const -->, as DMRGateway sets it.
-- Timeout: the time without an acknowledgement or a pong after which the Peer ends the session. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->.
+- Retry: the time between two sends of a login step, between two pings, and before a new login. The default is <!-- docgen:const pkg=transport/dmrd/dmrdsession name=RetryDefault -->`10s`<!-- /docgen:const -->, as DMRGateway sets it.
+- Timeout: the time without an acknowledgement or a pong after which the Peer ends the session. The default is <!-- docgen:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /docgen:const -->.
 - Backoff: the longest wait before a new login. By default the Peer waits Retry each time, as DMRGateway does.
 
 ## Worked example
 
 The package example logs a Peer into a [Master](dmrdsession-master.md) over the MMDVM network protocol in memory, and passes each packet that one sends to the other:
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=Example -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=Example -->
 ```go
 func Example() {
 	var rptc dmrd.MMDVMConfig
@@ -150,9 +150,9 @@ func Example() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=transport/dmrd/dmrdsession.Example -->
+<!-- docgen:output test=transport/dmrd/dmrdsession.Example -->
 ```text
 repeater: RPTL
 master: RPTACK
@@ -167,11 +167,11 @@ master event: Options
 master: RPTACK
 repeater event: Up
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The next example runs an HBRP Peer whose master does not answer, with short timers. The Peer sends the RPTL again each Retry, ends the session at Timeout, and logs in again after the Retry wait.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExamplePeer -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExamplePeer -->
 ```go
 func ExamplePeer() {
 	var rptc dmrd.HBRPConfig
@@ -205,9 +205,9 @@ func ExamplePeer() {
 	fmt.Println(peer.State())
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=transport/dmrd/dmrdsession.ExamplePeer -->
+<!-- docgen:output test=transport/dmrd/dmrdsession.ExamplePeer -->
 ```text
 0s send RPTL
 5s send RPTL
@@ -217,15 +217,15 @@ func ExamplePeer() {
 25s send RPTL
 Login
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
-Packet and Tick return no errors. The Peer ignores a packet it cannot use. NewPeer returns an error for a nil config, and a configuration error for a dialect other than the MMDVM network protocol or HBRP, a Config that is not an RPTC of the dialect for the ID, Options with HBRP or longer than <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=MaxOptions -->`291`<!-- /dmrgo:const --> octets, or a negative timer.
+Packet and Tick return no errors. The Peer ignores a packet it cannot use. NewPeer returns an error for a nil config, and a configuration error for a dialect other than the MMDVM network protocol or HBRP, a Config that is not an RPTC of the dialect for the ID, Options with HBRP or longer than <!-- docgen:const pkg=transport/dmrd/dmrdsession name=MaxOptions -->`291`<!-- /docgen:const --> octets, or a negative timer.
 
-<!-- dmrgo:errors pkg=transport/dmrd/dmrdsession type=Peer -->
+<!-- docgen:errors pkg=transport/dmrd/dmrdsession type=Peer -->
 The doc comments of [`Peer`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Peer) and its methods name no error.
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

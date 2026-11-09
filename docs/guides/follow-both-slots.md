@@ -24,7 +24,7 @@ go run -C v2 ./examples/scanner
 
 A BS outbound stream has a CACH in front of each burst, and the TC bit of the CACH gives the time slot of the burst. Set `CACH` in the [framer.Config](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/framer#Config). Give the decoder the color code of the channel in [DecodeOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#DecodeOptions), so that a burst of another color code returns an error.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=newScanner -->
+<!-- docgen:code file=v2/examples/scanner/main.go symbol=newScanner -->
 ```go
 func newScanner() (*scanner, error) {
 	f, err := framer.New(&framer.Config{CACH: true})
@@ -39,13 +39,13 @@ func newScanner() (*scanner, error) {
 	}, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Write the stream and decode each burst
 
 Give the stream to [Framer.Write](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/framer#Framer.Write) in pieces of any size, with the number of bits in each piece. Write returns the bursts that the piece completes, each with its bit offset and its slot. Decode each burst with `DecodeFromBytesWith` and pass it to the state of its slot. The example cuts the stream at random lengths to show that a burst can start at any bit.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=scanner.scan -->
+<!-- docgen:code file=v2/examples/scanner/main.go symbol=scanner.scan -->
 ```go
 func (s *scanner) scan(w io.Writer, stream []byte, bits int) (first int64, n int) {
 	r := xorshift(2)
@@ -74,13 +74,13 @@ func (s *scanner) scan(w io.Writer, stream []byte, bits int) (first int64, n int
 	return first, n
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Start and end calls on each slot
 
 Keep one [VoiceReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceReceiver) for each slot. A Voice LC Header starts a call and a Terminator with LC ends it. A voice burst on a slot without a call is a late entry: the scanner started in the middle of the call. `Receive` places each voice burst in its superframe and returns the embedded LC when bursts B to E complete it. `AMBEFrames` returns the AMBE+2 frames and the FEC result of each voice burst, which [fec.BERCalculator](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#BERCalculator) adds up.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=channel.receive -->
+<!-- docgen:code file=v2/examples/scanner/main.go symbol=channel.receive -->
 ```go
 func (c *channel) receive(w io.Writer, b *layer2.Burst) {
 	if b.Kind == layer2.KindData {
@@ -116,13 +116,13 @@ func (c *channel) receive(w io.Writer, b *layer2.Burst) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Read the embedded LC
 
 The embedded LC carries the call, a GPS position or a talker alias. After a late entry, the call IDs come from the embedded LC. A talker alias comes in a header LC and block LCs, in any order, so add each one to a [pdu.TalkerAliasAssembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#TalkerAliasAssembler) until it returns the alias. Reset the assembler at the end of each call. (ETSI TS 102 361-2 clause 5.4.3)
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=channel.embedded -->
+<!-- docgen:code file=v2/examples/scanner/main.go symbol=channel.embedded -->
 ```go
 func (c *channel) embedded(w io.Writer, lc *pdu.FullLinkControl) {
 	switch lc.FLCO {
@@ -152,13 +152,13 @@ func (c *channel) embedded(w io.Writer, lc *pdu.FullLinkControl) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### How the example makes its input
 
 The TS2 call comes from a [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceTransmitter). Its `EmbeddedLC` callback returns the LC of each superframe, here a rotation of the talker alias blocks, a GPS position and the call LC.
 
-<!-- dmrgo:code file=v2/examples/scanner/main.go symbol=generatedCall -->
+<!-- docgen:code file=v2/examples/scanner/main.go symbol=generatedCall -->
 ```go
 func generatedCall() ([]layer2.RawBurst, error) {
 	rotation, err := pdu.EncodeTalkerAlias("N1CALL Alice", layer3.TalkerAliasSevenBit)
@@ -205,13 +205,13 @@ func generatedCall() ([]layer2.RawBurst, error) {
 	return append(append(out, voice...), tail...), nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The first line describes the stream. Then come the events of both slots in the order of the stream, and a summary for each slot with the count of each voice burst position and the AMBE+2 bit error rate.
 
-<!-- dmrgo:output example=scanner -->
+<!-- docgen:output cmd=v2/examples/scanner -->
 ```text
 stream: 43813 bits, 37 junk bits, 149 bits flipped
 TS2 call: group 3003192 -> 3100 (Voice LC Header)
@@ -225,7 +225,7 @@ framer: first burst at bit 349, 151 bursts
 TS1: 74 voice bursts (A=11 B=12 C=12 D=12 E=13 F=13 unknown=1), 0 embedded LC errors, AMBE BER 0.33%
 TS2: 72 voice bursts (A=12 B=12 C=12 D=12 E=12 F=12 unknown=0), 1 embedded LC errors, AMBE BER 0.37%
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The TS1 call starts with a late entry, because the stream skips the first bursts of the capture. Its first voice burst is burst C. Burst C has no voice SYNC, and its LCSS (Continuation) fits burst C and burst D, so the first burst decodes at `Unknown`. The call IDs come from the embedded LC of the first full superframe.
 

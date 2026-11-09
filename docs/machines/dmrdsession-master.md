@@ -14,19 +14,19 @@ Use a Master in a server that repeaters, hotspots and gateways log in to: a netw
 
 Pass a [MasterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#MasterConfig) to [NewMaster](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewMaster). The config is required, and the dialect must be the MMDVM network protocol or HBRP.
 
-<!-- dmrgo:config pkg=transport/dmrd/dmrdsession type=MasterConfig -->
+<!-- docgen:config pkg=transport/dmrd/dmrdsession type=MasterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Dialect` | `dmrd.Dialect` | zero value | Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. |
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. |
 | `LoginTimeout` | `time.Duration` | not machine-readable; see the description | LoginTimeout is the time after the first RPTL of a login in which the repeater must finish its login, or the Master ends the session. A repeated RPTL or RPTK does not restart it. 0 means LoginTimeoutDefault. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.State) returns the current state, and [ID](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.ID) the repeater ID from the last RPTL. The Peer, the Master and the Bridge share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#State) type, and each uses some of its values.
 
-<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=Master -->
+<!-- docgen:states pkg=transport/dmrd/dmrdsession type=Master -->
 States of [`Master`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master), from [`Master.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.State):
 
 | State | Meaning | Seen in tests |
@@ -55,7 +55,7 @@ Transitions seen in tests:
 | StateRunning | `Packet` | StateLogin |
 
 ![Transitions of Master](states/transport-dmrd-dmrdsession-master.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 An RPTL starts a login: the Master reports it and waits for [Admit](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Admit) or [Refuse](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Refuse). Admit sends the salt. An RPTK with the token of the salt and the password gets an acknowledgement, and the Master waits for the RPTC. The Master reports the RPTC and waits for [Accept](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Accept) or Refuse. Accept completes the login and the session runs. A wrong token, Refuse, an RPTCL, a new RPTL of a logged-in repeater, the login timeout, the timeout, or [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Close) ends the session. [Resume](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master.Resume) starts a logged-in session without a login, for a repeater that logged in to another replica of a server and now sends its packets here.
 
@@ -76,12 +76,12 @@ Inputs:
 
 Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Output) values with an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#OutputKind): packets to send to the repeater; the login and the config to check; the accepted options; the session up and down, with a [Reason](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Reason); the DMRD, DMRA and DMRG packets; the RPTG, RPTRSSI and RPTINTR messages; and each ping that the Master answered, so you can keep the time of the last ping. Every output but a send carries the repeater ID. The packet of a send output points into the Master and is valid until the next call. The packets of the other outputs point into the packet that you passed in, except the options that Accept reports and the config that an RPTK reports, which point into the Master and are valid until the next call. Copy a packet that you keep.
 
-Give each method a slice with capacity <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /dmrgo:const -->.
+Give each method a slice with capacity <!-- docgen:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /docgen:const -->.
 
 ## Timers
 
-- LoginTimeout: the time after the first RPTL in which the repeater must finish its login. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=LoginTimeoutDefault -->`15s`<!-- /dmrgo:const -->, the time after which an HBlink3 master drops a repeater. A repeated RPTL or RPTK does not restart it.
-- Timeout: the time without a packet from the repeater after which the Master ends the session. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->.
+- LoginTimeout: the time after the first RPTL in which the repeater must finish its login. The default is <!-- docgen:const pkg=transport/dmrd/dmrdsession name=LoginTimeoutDefault -->`15s`<!-- /docgen:const -->, the time after which an HBlink3 master drops a repeater. A repeated RPTL or RPTK does not restart it.
+- Timeout: the time without a packet from the repeater after which the Master ends the session. The default is <!-- docgen:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /docgen:const -->.
 
 Tick sends nothing when the session times out. A packet of the repeater after that gets MSTNAK, so the repeater logs in again.
 
@@ -89,7 +89,7 @@ Tick sends nothing when the session times out. A packet of the repeater after th
 
 The package example logs a [Peer](dmrdsession-peer.md) into a Master over the MMDVM network protocol in memory. The Master reports the config, which the example accepts, and the options:
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=Example -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=Example -->
 ```go
 func Example() {
 	var rptc dmrd.MMDVMConfig
@@ -148,9 +148,9 @@ func Example() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=transport/dmrd/dmrdsession.Example -->
+<!-- docgen:output test=transport/dmrd/dmrdsession.Example -->
 ```text
 repeater: RPTL
 master: RPTACK
@@ -165,11 +165,11 @@ master event: Options
 master: RPTACK
 repeater event: Up
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The next example resumes the session of a repeater, lets it time out, and shows the MSTNAK that answers the next ping of the repeater.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExampleMaster -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExampleMaster -->
 ```go
 func ExampleMaster() {
 	master, err := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM})
@@ -192,23 +192,23 @@ func ExampleMaster() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=transport/dmrd/dmrdsession.ExampleMaster -->
+<!-- docgen:output test=transport/dmrd/dmrdsession.ExampleMaster -->
 ```text
 Up 3002900
 1m0s Down Timeout in Running
 answer MSTNAK
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
 Packet, Tick and the answer methods return no errors. NewMaster returns an error for a nil config, and a configuration error for a dialect other than the MMDVM network protocol or HBRP, or a negative timer.
 
-<!-- dmrgo:errors pkg=transport/dmrd/dmrdsession type=Master -->
+<!-- docgen:errors pkg=transport/dmrd/dmrdsession type=Master -->
 The doc comments of [`Master`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Master) and its methods name no error.
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

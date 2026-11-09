@@ -26,7 +26,7 @@ go test -C v2 -run '^Example$' -v ./transport/mmdvm
 
 Every message on the port is a frame: a start octet, a length, a command and a payload. [mmdvm.AppendFrame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#AppendFrame) builds one around a payload. Write the frame to the serial port. The example gives the frame to its simulated modem in place of the port.
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=toModem -->
+<!-- docgen:code file=v2/transport/mmdvm/session_example_test.go symbol=toModem -->
 ```go
 func toModem(fromModem []byte, c mmdvm.Command, payload []byte) ([]byte, error) {
 	frame, err := mmdvm.AppendFrame(nil, c, payload)
@@ -36,13 +36,13 @@ func toModem(fromModem []byte, c mmdvm.Command, payload []byte) ([]byte, error) 
 	return modem(fromModem, frame), nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Open the session
 
 Request the version first. The reply gives the protocol version of the firmware: 1 for MMDVM_HS and 2 for MMDVM. [mmdvm.DecodeVersion](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DecodeVersion) reads it, and `Capabilities.Has` shows whether the modem has DMR. Then send the config: [ConfigV2](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#ConfigV2) for protocol 2 and [ConfigV1](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#ConfigV1) for protocol 1. It enables the modes and sets the color code, the levels and the delays. [SetMode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#SetMode) switches the modem to DMR. The modem answers the config and the mode with an Ack, or with a Nak and a reason code.
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=openSession -->
+<!-- docgen:code file=v2/transport/mmdvm/session_example_test.go symbol=openSession -->
 ```go
 func openSession() ([]byte, error) {
 	fromModem, err := toModem(nil, mmdvm.CommandGetVersion, nil)
@@ -64,7 +64,7 @@ func openSession() ([]byte, error) {
 	return toModem(fromModem, mmdvm.CommandSetMode, payload)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Read the frames from the modem
 
@@ -72,7 +72,7 @@ Append the octets that you read from the port to a buffer, and call [mmdvm.Next]
 
 A DMR burst comes as a `CommandDMRData1` or `CommandDMRData2` frame. [mmdvm.DecodeDMRData](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DecodeDMRData) decodes it, and [DMRData.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm#DMRData.Hint) gives the `layer2.Hint` for the voice and data machines. A `CommandDMRLost1` or `CommandDMRLost2` frame shows that the modem lost the signal of the slot.
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=printFrames -->
+<!-- docgen:code file=v2/transport/mmdvm/session_example_test.go symbol=printFrames -->
 ```go
 func printFrames(fromModem []byte) {
 	for len(fromModem) > 0 {
@@ -110,7 +110,7 @@ func printFrames(fromModem []byte) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Send bursts to the modem
 
@@ -118,7 +118,7 @@ Put each burst that a machine returns in a [DMRData](https://pkg.go.dev/github.c
 
 The simulated modem of the example builds its frames the same way:
 
-<!-- dmrgo:code file=v2/transport/mmdvm/session_example_test.go symbol=reply -->
+<!-- docgen:code file=v2/transport/mmdvm/session_example_test.go symbol=reply -->
 ```go
 func reply(out []byte, f mmdvm.Frame) []byte {
 	switch f.Command {
@@ -142,30 +142,30 @@ func reply(out []byte, f mmdvm.Frame) []byte {
 	return out
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The version, the two Acks and the received burst:
 
-<!-- dmrgo:output test=mmdvm.Example -->
+<!-- docgen:output test=mmdvm.Example -->
 ```text
 version: protocol 2, DMR true, MMDVM simulated
 ack: SetConfig
 ack: SetMode
 burst: TS2 Data Voice LC Header color code 7
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The frames that MMDVMHost sends to a modem, from a capture:
 
-<!-- dmrgo:output test=mmdvm.ExampleNext -->
+<!-- docgen:output test=mmdvm.ExampleNext -->
 ```text
 GetStatus 0
 DMRData2 34
 TS2 MS-sourced data Voice LC Header
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## How it works
 

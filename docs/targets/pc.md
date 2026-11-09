@@ -4,7 +4,7 @@ This page shows how to build and run dmrgo with the standard Go toolchain on a P
 
 ## What you need
 
-- Go <!-- dmrgo:gomod field=go -->`1.24.0`<!-- /dmrgo:gomod --> or later, the version of the `go` line of `v2/go.mod`.
+- Go <!-- docgen:gomod field=go -->`1.24.0`<!-- /docgen:gomod --> or later, the version of the `go` line of `v2/go.mod`.
 - No C compiler. The `v2` module is pure Go, and its only cgo code is the optional system libcodec2 backend of [vocoder/codec2](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2).
 
 ## Build
@@ -27,7 +27,7 @@ go run -C v2 ./examples/conformance
 
 It decodes each capture, encodes each burst again and compares the bytes. It prints:
 
-<!-- dmrgo:output example=conformance -->
+<!-- docgen:output cmd=v2/examples/conformance -->
 ```text
                  file  bursts  voice  data  re-encoded  rebuilt  sealed  emb LC  FEC fixed  result
             voice.bin      79     77     2          79        2       2      13          0    PASS
@@ -37,7 +37,7 @@ It decodes each capture, encodes each burst again and compares the bytes. It pri
             m-sms.bin      12      0    12          12       12       6       0          0    PASS
 all captures conform
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 [Examples](../reference/examples.md) lists the other programs.
 
@@ -45,7 +45,7 @@ all captures conform
 
 CI runs the tests of the module at the Go version of `v2/go.mod`, with cgo off:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.minimum-go-tests -->
+<!-- docgen:code file=.github/workflows/test.yaml symbol=jobs.minimum-go-tests -->
 ```yaml
 minimum-go-tests:
   runs-on: ubuntu-26.04
@@ -61,11 +61,11 @@ minimum-go-tests:
 
     - run: CGO_ENABLED=0 go test -C v2 -timeout 60m ./...
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 It also builds and vets the module for 32-bit arm and 386, and tests the Codec2 engine on them:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml symbol=jobs.arch-32bit -->
+<!-- docgen:code file=.github/workflows/test.yaml symbol=jobs.arch-32bit -->
 ```yaml
 arch-32bit:
   runs-on: ubuntu-26.04
@@ -97,13 +97,13 @@ arch-32bit:
     - name: Codec2 allocation and engine tests on arm
       run: GOARCH=arm CGO_ENABLED=0 go test -C v2 -exec qemu-arm -run '^(TestAllocs|TestEnginesMatch|TestAOT)' ./vocoder/codec2/
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Build tags
 
 The tags change only the backend of `vocoder/codec2`. The package doc gives each one:
 
-<!-- dmrgo:doc pkg=vocoder/codec2 -->
+<!-- docgen:doc pkg=vocoder/codec2 -->
 Package codec2 implements vocoder.Codec with the Codec2 speech codec: it encodes 8 kHz PCM into 72-bit DMR vocoder frames and decodes them, in the DMR framing that QRadioLink uses.
 
 By default, with or without cgo, the package runs libcodec2 compiled to WebAssembly: in wazero, which compiles it to machine code on amd64 and arm64, as Go code that wasm2go translated from the same module on other platforms, such as 386 and arm, where wazero has no compiler, and under GOOS=js GOARCH=wasm in the WebAssembly engine of the browser or Node. -tags codec2aot selects the translated code on every platform, for example for an amd64 CPU without SSE4.1, where wazero interprets. Such a build needs no C compiler and no system libcodec2. With -tags codec2native the package binds the system libcodec2 with cgo instead, so the build needs cgo, a C compiler and libcodec2 with its pkg-config file (pkg-config name codec2), for example the libcodec2-dev package on Debian. Without them the build fails, with "Package 'codec2' not found" when libcodec2 is missing. The tag codec2wasm is accepted and changes nothing. Backend names the backend of a build. Both backends encode the same frames; the decoded samples of the WebAssembly backend can differ from the native ones by small amounts, because its math library differs in the last bit, and by a few more when libcodec2 was built with fused multiply-add, as in the amd64v3 packages of Ubuntu 26.04. Build with -tags nocodec2 to remove libcodec2 entirely; New then returns ErrUnavailable. TinyGo builds always use this path.
@@ -113,7 +113,7 @@ The WebAssembly backend embeds wasm/codec2.wasm, which wasm/build.sh builds from
 Each 20 ms Codec2 frame (160 samples at 8 kHz) fills one 72-bit DMR vocoder frame, so a 60 ms voice burst carries three. The Codec2 bytes go MSB first at the start of the 9-byte frame and the remaining bits are zero. There is no FEC, scrambling or interleaving. Calls are marked with the Feature set ID 0xC2 in the Full LC. Nothing on the air identifies the Codec2 mode, so by default (ModeAuto) the decoder detects it from the padding: Mode2400 leaves bytes 6 to 8 zero and Mode3200 only byte 8.
 
 libcodec2 is licensed under the GNU LGPL 2.1. The native backend links it dynamically. The WebAssembly backend embeds a build of it, which a user can replace through NewModule as the LGPL requires; wasm/build.sh rebuilds it from the libcodec2 source. A program that links libcodec2 statically must meet the LGPL terms for that copy.
-<!-- /dmrgo:doc -->
+<!-- /docgen:doc -->
 
 ## Limits
 

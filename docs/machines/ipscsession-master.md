@@ -14,7 +14,7 @@ Use a Master to run an IPSC system that MOTOTRBO repeaters register with: a gate
 
 Pass a [MasterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#MasterConfig) to [NewMaster](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#NewMaster). The config is required. Set the master ID. Set Auth and Key when the system uses authentication; [ipscauth.ParseKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth#ParseKey) reads the hex key of a MOTOTRBO or DMRlink configuration. Leave Mode, Flags and the versions zero unless the repeaters need other values.
 
-<!-- dmrgo:config pkg=transport/ipsc/ipscsession type=MasterConfig -->
+<!-- docgen:config pkg=transport/ipsc/ipscsession type=MasterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ID` | `uint32` | zero value | ID is the peer ID of the master. |
@@ -27,13 +27,13 @@ Pass a [MasterConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trans
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet from a peer after which the Master drops it. 0 means TimeoutDefault. |
 | `MaxPeers` | `int` | `MaxPeersDefault` (15) | MaxPeers is the most peers that the Master registers. 0 means MaxPeersDefault. |
 | `AdoptKnown` | `bool` | zero value | AdoptKnown makes Packet adopt a peer that is not registered, as Adopt does, when the trailer of its packet proves the key of the config or the key that the caller passed, so that a peer that registered with another Master needs no Adopt call. Without a key it does nothing. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.State) returns the state of the Master. The Peer and the Master share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#State) type. A Master runs from NewMaster until [Close](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Close), and [Reset](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Reset) runs it again.
 
-<!-- dmrgo:states pkg=transport/ipsc/ipscsession type=Master -->
+<!-- docgen:states pkg=transport/ipsc/ipscsession type=Master -->
 States of [`Master`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master), from [`Master.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.State):
 
 | State | Meaning | Seen in tests |
@@ -50,7 +50,7 @@ Transitions seen in tests:
 | StateRunning | `Close` | StateIdle |
 
 ![Transitions of Master](states/transport-ipsc-ipscsession-master.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 Each peer has a link of its own, with no state type. A registration request registers a peer and reports it up. With a key, a keepalive whose trailer proves the key also registers a peer that is not registered, as a repeater keeps sending keepalives for a while after its master restarts. Each packet of a registered peer restarts its Timeout. A peer goes down on a de-registration request from the address it registered from, on Timeout without a packet, or on [Drop](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Drop). The Master then sends the new peer list to the peers left. [Peers](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Peers), [PeerAt](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.PeerAt) and [Peer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Master.Peer) return the registered peers.
 
@@ -71,15 +71,15 @@ Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transp
 
 ## Timers
 
-- Timeout: the time without a packet from a peer after which the Master drops it. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=TimeoutDefault -->`2m0s`<!-- /dmrgo:const -->, after which DMRlink drops a silent peer.
+- Timeout: the time without a packet from a peer after which the Master drops it. The default is <!-- docgen:const pkg=transport/ipsc/ipscsession name=TimeoutDefault -->`2m0s`<!-- /docgen:const -->, after which DMRlink drops a silent peer.
 
-The Master registers at most MaxPeers peers. The default is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxPeersDefault -->`15`<!-- /dmrgo:const --> and the largest is <!-- dmrgo:const pkg=transport/ipsc/ipscsession name=MaxPeersLimit -->`134`<!-- /dmrgo:const -->, the most peers whose peer list fits in one packet.
+The Master registers at most MaxPeers peers. The default is <!-- docgen:const pkg=transport/ipsc/ipscsession name=MaxPeersDefault -->`15`<!-- /docgen:const --> and the largest is <!-- docgen:const pkg=transport/ipsc/ipscsession name=MaxPeersLimit -->`134`<!-- /docgen:const -->, the most peers whose peer list fits in one packet.
 
 ## Worked example
 
 This example runs a Master with authentication. A peer with the key registers. A peer with another key is dropped for its trailer. The registered peer then sends nothing, and the Master drops it at Timeout.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=ExampleMaster -->
+<!-- docgen:code file=v2/transport/ipsc/ipscsession/example_test.go symbol=ExampleMaster -->
 ```go
 func ExampleMaster() {
 	key := [20]byte{1, 2, 3, 4}
@@ -113,18 +113,18 @@ func ExampleMaster() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=transport/ipsc/ipscsession.ExampleMaster -->
+<!-- docgen:output test=transport/ipsc/ipscsession.ExampleMaster -->
 ```text
 Up 315950
 Dropped Auth
 peers 1
 2m0s Down 315950 Timeout
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The package example on the [Peer page](ipscsession-peer.md#worked-example) shows a full registration from both sides.
 
@@ -132,11 +132,11 @@ The package example on the [Peer page](ipscsession-peer.md#worked-example) shows
 
 Packet, Tick and Adopt return no errors: a packet that the Master does not take gives a dropped output with its reason. Sign and SignFor return an error for a nil Master. NewMaster returns an error for a nil config, and a configuration error for a negative Timeout or a MaxPeers out of range.
 
-<!-- dmrgo:errors pkg=transport/ipsc/ipscsession type=Master -->
+<!-- docgen:errors pkg=transport/ipsc/ipscsession type=Master -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`dmrgo.ErrNilReceiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrNilReceiver) | `Master.Sign`, `Master.SignFor` | ErrNilReceiver is returned by a method of the library that returns an error when it is called on a nil pointer. |
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

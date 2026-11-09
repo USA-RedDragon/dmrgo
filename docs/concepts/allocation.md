@@ -12,7 +12,7 @@ The doc comment of each exported function states when that function allocates.
 
 A state machine appends its outputs to a slice `dst` that you give it, and allocates only to grow `dst`. Make `dst` once, with the capacity that its package gives, and pass it again sliced to `[:0]` on each call. The [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) of [Follow a voice call](../start/03-follow-a-voice-call.md) does this. The example makes `events` once and passes `events[:0]` to each call of `Burst` and `Tick`:
 
-<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
+<!-- docgen:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
 ```go
 func ExampleReceiver() {
 	data, err := os.ReadFile("../layer2/testdata/parrot_kerchunk.bin")
@@ -51,9 +51,9 @@ func ExampleReceiver() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-[voice.MaxEvents](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#MaxEvents) is <!-- dmrgo:const pkg=voice name=MaxEvents -->`16`<!-- /dmrgo:const -->. A slice with that capacity does not grow. The other machines have the same constants, such as `data.MaxEvents` and `data.MaxOutputs`.
+[voice.MaxEvents](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#MaxEvents) is <!-- docgen:const pkg=voice name=MaxEvents -->`16`<!-- /docgen:const -->. A slice with that capacity does not grow. The other machines have the same constants, such as `data.MaxEvents` and `data.MaxOutputs`.
 
 A function that returns a new slice or string allocates it. Each such function has a twin that writes into storage that you give it, such as an `AppendX` or `XInto` form.
 
@@ -68,19 +68,19 @@ TinyGo moves a local variable to the heap when its address goes into the library
 
 Put such a value in a package-level variable, or in a struct that you allocate once. This excerpt keeps the Full LC of `layer2.BuildBurst` at package level:
 
-<!-- dmrgo:code file=v2/layer2/example_test.go symbol=headerLC -->
+<!-- docgen:code file=v2/layer2/example_test.go symbol=headerLC -->
 ```go
 var headerLC pdu.FullLinkControl
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/layer2/example_test.go symbol=buildHeader -->
+<!-- docgen:code file=v2/layer2/example_test.go symbol=buildHeader -->
 ```go
 func buildHeader() (layer2.RawBurst, error) {
 	return layer2.BuildBurst(&headerLC, 1, layer2.SyncSourceBS)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Under TinyGo, the test `TestTinyGoCallerStorage` in [v2/internal/allocs](../../v2/internal/allocs) holds this rule. It logs the bytes per call that each of these calls allocates when its value is a local.
 

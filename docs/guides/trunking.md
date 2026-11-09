@@ -23,7 +23,7 @@ go run -C v2 ./examples/trunking
 
 Each Tier III CSBK has a PDU type in package pdu, such as [pdu.AlohaPDU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#AlohaPDU) for C_ALOHA or [pdu.TalkgroupVoiceGrantPDU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#TalkgroupVoiceGrantPDU) for TV_GRANT. Its `CSBK` method returns the [pdu.CSBK](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CSBK). [pdu.SysCode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#SysCode) packs the network model, network and site into the system identity code of a C_ALOHA.
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=buildCSBKs -->
+<!-- docgen:code file=v2/examples/trunking/main.go symbol=buildCSBKs -->
 ```go
 func buildCSBKs(sc pdu.SysCode) (uint16, []*pdu.CSBK, error) {
 	code, err := sc.Pack()
@@ -50,11 +50,11 @@ func buildCSBKs(sc pdu.SysCode) (uint16, []*pdu.CSBK, error) {
 	return code, csbks, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 [layer2.BuildBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildBurst) codes the CSBK into a burst with the color code and the SYNC source: `layer2.SyncSourceBS` for the outbound of the control channel, `layer2.SyncSourceMS` for a radio.
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=roundTripCSBK -->
+<!-- docgen:code file=v2/examples/trunking/main.go symbol=roundTripCSBK -->
 ```go
 func roundTripCSBK(c *pdu.CSBK, src layer2.SyncSource) (*pdu.CSBK, *layer2.Burst, error) {
 	raw, err := layer2.BuildBurst(c, colorCode, src)
@@ -64,13 +64,13 @@ func roundTripCSBK(c *pdu.CSBK, src layer2.SyncSource) (*pdu.CSBK, *layer2.Burst
 	return decodeAs[*pdu.CSBK](raw)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Decode a burst
 
 [layer2.Burst.DecodeFromBytesWith](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Burst.DecodeFromBytesWith) decodes the burst. Check the FEC result, then read the PDU with the `As` method of its type, such as [pdu.CSBK.AsAloha](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CSBK.AsAloha).
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=decodeAs -->
+<!-- docgen:code file=v2/examples/trunking/main.go symbol=decodeAs -->
 ```go
 func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 	var zero T
@@ -86,9 +86,9 @@ func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 	return d, &b, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=checkAloha -->
+<!-- docgen:code file=v2/examples/trunking/main.go symbol=checkAloha -->
 ```go
 func checkAloha(w io.Writer, c *pdu.CSBK, sc pdu.SysCode, code uint16) error {
 	aloha, _, err := roundTripCSBK(c, layer2.SyncSourceBS)
@@ -107,7 +107,7 @@ func checkAloha(w io.Writer, c *pdu.CSBK, sc pdu.SysCode, code uint16) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Opcode 0x38 means a different PDU inbound and outbound. A decode of a BS-sourced burst sets `Hint0x38`, and [pdu.CSBK.AsTalkgroupDataGrantMultiItem](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CSBK.AsTalkgroupDataGrantMultiItem) reads it.
 
@@ -115,7 +115,7 @@ Opcode 0x38 means a different PDU inbound and outbound. A decode of a BS-sourced
 
 A grant to a channel that the site has not announced carries the frequencies in a CG_AP block. `MBCHeader` of the grant returns the MBC header, and a [pdu.CGAPContinuation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CGAPContinuation) holds the last block with the [layer3.CdefParms](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer3#CdefParms).
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=mbcGrant -->
+<!-- docgen:code file=v2/examples/trunking/main.go symbol=mbcGrant -->
 ```go
 func mbcGrant(w io.Writer) error {
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3002701}
@@ -159,13 +159,13 @@ func mbcGrant(w io.Writer) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Send the system parameters in the CACH
 
 A Short LC of C_SYS_Parms or P_SYS_Parms carries the system identity code in the CACH of a control or payload channel. [layer2.EncodeShortLCToCACH](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#EncodeShortLCToCACH) splits it into four CACH fields, and a [layer2.ShortLCAssembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#ShortLCAssembler) joins them again.
 
-<!-- dmrgo:code file=v2/examples/trunking/main.go symbol=cachRoundTrip -->
+<!-- docgen:code file=v2/examples/trunking/main.go symbol=cachRoundTrip -->
 ```go
 func cachRoundTrip(asm *layer2.ShortLCAssembler, slc *pdu.ShortLC) (pdu.ShortLC, error) {
 	fields, err := layer2.EncodeShortLCToCACH(slc, pdu.TACT{AccessType: true})
@@ -195,13 +195,13 @@ func cachRoundTrip(asm *layer2.ShortLCAssembler, slc *pdu.ShortLC) (pdu.ShortLC,
 	return got, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Follow a site
 
 A [trunk.Follower](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Follower) follows the calls of a site without transmitting. Give it each burst of the control channel. It returns `OutputSite` when it decodes the site, `OutputGrant` for each grant and `OutputTune` with the channel to tune to. A [trunk.ChannelPlan](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#ChannelPlan) maps channel numbers to frequencies; add the plan of your site with `Add` or `AddRule`.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleFollower -->
+<!-- docgen:code file=v2/trunk/example_test.go symbol=ExampleFollower -->
 ```go
 func ExampleFollower() {
 	var plan trunk.ChannelPlan
@@ -236,13 +236,13 @@ func ExampleFollower() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 To decode the voice of a grant, pass `Grant.Call` to [voice.Receiver.Expect](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver.Expect) and feed the bursts of the granted slot to that Receiver, because trunked voice can start without a Voice LC Header.
 
 ## Output
 
-<!-- dmrgo:output example=trunking -->
+<!-- docgen:output cmd=v2/examples/trunking -->
 ```text
 outbound CSBKs: 7 round trips ok
 C_ALOHA SYScode 0x6acd: model 1 net 85 site 19 par 1
@@ -253,19 +253,19 @@ MBC TV_GRANT PDU ch 0xFFF tg 9: TX 451.1250 MHz RX 456.1250 MHz
 CACH Short LC: 8 C_SYS_Parms/P_SYS_Parms round trips ok over 4 models
 all checks passed
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The Follower:
 
-<!-- dmrgo:output test=trunk.ExampleFollower -->
+<!-- docgen:output test=trunk.ExampleFollower -->
 ```text
 site 1 2
 grant to talkgroup 9 from 3002701
 tune to channel 17 TS2 451200000 Hz
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
-<!-- dmrgo:config pkg=trunk type=FollowerConfig -->
+<!-- docgen:config pkg=trunk type=FollowerConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `SysCode` | `*pdu.SysCode` | zero value | SysCode, when set, is the system to follow: a TSCC with another MODEL, NET or SITE is skipped. Nil follows the first TSCC found. |
@@ -282,7 +282,7 @@ tune to channel 17 TS2 451200000 Hz
 | `SysErrors` | `int` | `constants.NSysErrDefault` (2) | SysErrors is NSYSerr, the number of C_SYScodes from another system after which the Follower leaves the TSCC. 0 means constants.NSysErrDefault; a negative value is an error. |
 | `AcceptRAS` | `bool` | zero value | AcceptRAS takes a CSBK whose CRC fails as valid when its BPTC needed no correction and its BPTC reserved bit R(2) flags RAS. The CRC of a Motorola Capacity Max system with RAS is a MAC with the key of the system, which the Follower cannot check. |
 | `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that the Follower decodes into, as for voice.ReceiverConfig.Scratch. Nil means the Follower makes its own. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## How it works
 

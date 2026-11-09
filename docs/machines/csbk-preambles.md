@@ -18,15 +18,15 @@ A [`data.Receiver`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Re
 
 [`csbk.NewPreambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#NewPreambles) takes a [`*csbk.PreamblesConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#PreamblesConfig). A nil config is the zero config, which is the usual choice. The only field is the scratch burst that `Burst` decodes into, which machines on one goroutine can share.
 
-<!-- dmrgo:config pkg=csbk type=PreamblesConfig -->
+<!-- docgen:config pkg=csbk type=PreamblesConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
-<!-- dmrgo:states pkg=csbk type=PreamblesState -->
+<!-- docgen:states pkg=csbk type=PreamblesState -->
 States of [`Preambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles), from [`Preambles.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles.State):
 
 | State | Meaning | Seen in tests |
@@ -42,7 +42,7 @@ Transitions seen in tests:
 | PreamblesAnnounced | `Burst`, `Lost`, `Reset`, `Tick` | PreamblesIdle |
 
 ![Transitions of Preambles](states/csbk-preambles-preamblesstate.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 These inputs move the state:
 
@@ -79,16 +79,16 @@ Each [`csbk.Output`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#O
 
 | Timer | Config field | Value |
 |---|---|---|
-| Time per announced block, from the start of the Pre_CSBK | none | <!-- dmrgo:const pkg=csbk name=BurstInterval -->`60ms`<!-- /dmrgo:const --> |
-| Wait after the last announced block before `OutputExpired` | none | <!-- dmrgo:const pkg=csbk name=BurstInterval -->`60ms`<!-- /dmrgo:const --> |
+| Time per announced block, from the start of the Pre_CSBK | none | <!-- docgen:const pkg=csbk name=BurstInterval -->`60ms`<!-- /docgen:const --> |
+| Wait after the last announced block before `OutputExpired` | none | <!-- docgen:const pkg=csbk name=BurstInterval -->`60ms`<!-- /docgen:const --> |
 
-A Pre_CSBK at time t with CSBK Blocks to Follow n sets `Until` to t plus n burst intervals. The most Pre_CSBKs before one CSBK is <!-- dmrgo:const pkg=csbk name=MaxPreambles -->`255`<!-- /dmrgo:const -->, the 8 bits of CSBK Blocks to Follow.
+A Pre_CSBK at time t with CSBK Blocks to Follow n sets `Until` to t plus n burst intervals. The most Pre_CSBKs before one CSBK is <!-- docgen:const pkg=csbk name=MaxPreambles -->`255`<!-- /docgen:const -->, the 8 bits of CSBK Blocks to Follow.
 
 ## Worked example
 
 This example uses a [csbk.Requester](csbk-requester.md) to make a Motorola call alert with 2 Pre_CSBKs, and feeds its three bursts to a Preambles.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExamplePreambles -->
+<!-- docgen:code file=v2/csbk/example_test.go symbol=ExamplePreambles -->
 ```go
 func ExamplePreambles() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS})
@@ -109,24 +109,24 @@ func ExamplePreambles() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=csbk.ExamplePreambles -->
+<!-- docgen:output test=csbk.ExamplePreambles -->
 ```text
 Announced to 3002068 until 120ms
 Joined to 3002068 until 0s
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The first Pre_CSBK announces two more blocks, so `Until` is the time of the call alert. The second Pre_CSBK has the same parties and appends nothing. The call alert joins the transfer.
 
 ## Errors
 
-<!-- dmrgo:errors pkg=csbk type=Preambles -->
+<!-- docgen:errors pkg=csbk type=Preambles -->
 The doc comments of [`Preambles`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Preambles) and its methods name no error.
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 No config is out of range, so `NewPreambles` returns a nil error; it returns one only to have the shape of the other constructors. The other methods return no error. A burst that does not decode, or a CSBK whose CRC fails, is dropped.
 

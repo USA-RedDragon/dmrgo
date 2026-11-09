@@ -10,7 +10,7 @@ This page shows how to build dmrgo to WebAssembly and run it in a web page, with
 
 The whole `v2` module builds for `GOOS=js GOARCH=wasm`, and CI runs the Codec2 tests on the WebAssembly engine of Node:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.js-wasm.steps[Build for js/wasm:Codec2 tests on the browser engine in Node]" -->
+<!-- docgen:code file=.github/workflows/test.yaml symbol="jobs.js-wasm.steps[Build for js/wasm:Codec2 tests on the browser engine in Node]" -->
 ```yaml
 - name: Build for js/wasm
   run: GOOS=js GOARCH=wasm go build -C v2 ./...
@@ -18,7 +18,7 @@ The whole `v2` module builds for `GOOS=js GOARCH=wasm`, and CI runs the Codec2 t
 - name: Codec2 tests on the browser engine in Node
   run: GOOS=js GOARCH=wasm go test -C v2 -exec "$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./vocoder/codec2/
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Build and run the decoder
 
@@ -32,7 +32,7 @@ go run ./examples/wasm/decoder/serve
 
 The command builds `decoder.wasm` and serves the page. Open http://localhost:8080/. Its flags:
 
-<!-- dmrgo:code file=v2/examples/wasm/decoder/serve/main.go symbol=defineFlags -->
+<!-- docgen:code file=v2/examples/wasm/decoder/serve/main.go symbol=defineFlags -->
 ```go
 func defineFlags(fs *flag.FlagSet) options {
 	return options{
@@ -43,7 +43,7 @@ func defineFlags(fs *flag.FlagSet) options {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Build and run the packet inspector
 

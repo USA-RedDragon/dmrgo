@@ -18,40 +18,36 @@ This page lists the generators of the repository and the checks of the generated
   - `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the facts, limits, rates and test parameters of [Receiver](../rx.md) and [Transmitter](../tx.md) from the code of `rf` and `fsktx`. Without the variable the test fails when they differ.
   - `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the transmitter margins into `v2/internal/fsktx/testdata/txmargins.json` and the spectra, eye diagrams and FSK error into `v2/internal/fsktx/testdata/txsheet.json`, and writes the tables and graphs of [Transmitter](../tx.md). Without the flag the test fails when the page or a graph differs from `minrate_gen.go` and that data. With `DMRGO_LONG=1` it measures the margins again and fails when they differ from the data.
   - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](../concepts/allocation.md), and `DMRGO_README=check` fails when it differs.
-  - `go run -C cmd/docgen . -update` writes the generated facts of every page under `docs/`. `-check` fails and lists each stale marker. See [Generated facts](#generated-facts).
+  - <!-- docgen:text text="`go run github.com/USA-RedDragon/docgen@{docgen} update`" -->`go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 update`<!-- /docgen:text --> writes the generated facts of every page under `docs/`. `check` fails and lists each stale marker. See [Generated facts](#generated-facts).
 
 ## Generated facts
 
-Facts that come from the code go inside markers in the Markdown, so that the pages change when the code changes. Write the prose by hand and leave the marker body empty; `cmd/docgen` fills it. Do not edit a marker body by hand.
+Facts that come from the code go inside markers in the Markdown, so that the pages change when the code changes. Write the prose by hand and leave the marker body empty; [docgen](https://docgen.mcswain.dev/) fills it. Do not edit a marker body by hand.
 
 ```text
-<!-- dmrgo:config pkg=csbk type=RequesterConfig -->
-<!-- /dmrgo:config -->
+<!-- docgen:config pkg=csbk type=RequesterConfig -->
+<!-- /docgen:config -->
 ```
 
-Package paths are relative to `v2`: `csbk`, `transport/dmrd/dmrdsession`, and `.` for the root package. The last elements of one package path are enough (`dmrdsession`). An argument with spaces takes double quotes: `section="Build tags"`.
+`.docgen.yaml` at the repository root holds the settings: the pages are under `docs`, the module is `v2`, each go command runs with `-p=2`, and `docgen` is the version of docgen that the pages and the Docs workflow use. Package paths are relative to `v2`: `csbk`, `transport/dmrd/dmrdsession`, and `.` for the root package. The last elements of one package path are enough (`dmrdsession`). An argument with spaces takes double quotes: `section="Build tags"`.
 
-| Marker | Arguments | Body |
-|---|---|---|
-| `dmrgo:output` | `example=<dir under v2/examples>` | The standard output of `go run` on the example. |
-| `dmrgo:output` | `test=<pkg>.<ExampleName>` | The `// Output:` of a Go Example, after `go test` runs it. `<pkg>.Example` is the package Example. |
-| `dmrgo:code` | `file=<repo path> symbol=<Name>` | One func, method (`Type.Method`), type, or const or var block, without its doc comment. An Example has no `// Output:` comment in the excerpt. |
-| `dmrgo:code` | `file=<YAML file> symbol=<key.key>` | The block of the key at that dotted path, such as `jobs.test` of a workflow. A last segment `key[A:B]` gives the items of the list at `key` from the item named `A` to the item named `B`, and `key[A]` the one item `A`. Quote a value that has spaces. |
-| `dmrgo:code` | `file=<C file> symbol=<Name>` | The `#define` of `Name`, or the definition of the function `Name`. |
-| `dmrgo:code` | `file=<repo path> region=<name>` | The lines between the line that holds `docgen:region <name>` and the next line that holds `docgen:end`, for example a part of a comment. Other excerpts of the file leave out those two lines. |
-| `dmrgo:code` | `file=<repo path>` | The whole file. |
-| `dmrgo:code` | `file=<repo path> lines=<a>-<b>` | Those lines. For Go, the lines must hold whole declarations or statements. It fails when the file changes under the excerpt, so prefer `symbol=`. |
-| `dmrgo:config` | `pkg=<path> type=<Config>` | A table of the exported fields: type, default and doc text. The default comes from the code that applies it. |
-| `dmrgo:const` | `pkg=<path> name=<Name>` | Inline: the value of a constant, or of a package-level var with a constant value, exported or not. Durations print as Go prints them (`60ms`, `2m0s`). |
-| `dmrgo:errors` | `pkg=<path> type=<Type>` | A table of the errors that the doc comments of the constructors and methods of the type name. |
-| `dmrgo:states` | `pkg=<path> type=<Type>` | The states, the transitions seen in the tests and an SVG diagram in `states/` next to the page. `type` is the machine type or its state type (`bs` `SlotState`). |
-| `dmrgo:doc` | `pkg=<path>` and optional `name=<Name>`, `section=<heading>` | The package doc, or the doc of a type, func, method, const or var, as Markdown, or one `# heading` section of it. A `pkg` outside v2, such as `cmd/rxbench`, is a directory from the repository root. |
-| `dmrgo:flags` | `cmd=<dir>` | The usage that the command in that directory prints for `-h`. |
-| `dmrgo:gomod` | `field=go`, `toolchain` or `module`, optional `file=<repo path>` | Inline: that line of `v2/go.mod`, or of the `go.mod` at `file=`. `field=go` is the minimum Go version. |
+The pages use these marker kinds. [Markers](https://docgen.mcswain.dev/latest/reference/markers) gives the arguments and the rules of each.
 
-docgen records the transitions of a state machine from its tests: a go build overlay adds a hook to the top of each exported method, and the hook records the state before and after each call. The package doc of `cmd/docgen` (`go doc` in `cmd/docgen`) gives the details. A transition that no test makes is not in the table, so a missing transition needs a test, not a hand edit.
+| Marker | Body |
+|---|---|
+| `docgen:output` | The standard output of `go run` on an example (`cmd=v2/examples/<dir>`), or the `// Output:` of a Go Example (`test=<pkg>.<ExampleName>`). |
+| `docgen:code` | An excerpt of a Go, YAML or C file by `symbol=`, by `region=`, by `lines=`, or the whole file. |
+| `docgen:config` | A table of the exported fields of a config struct: type, default and doc text. The default comes from the code that applies it. |
+| `docgen:const` | Inline: the value of a constant. Add `print=raw` for a type with a String method when the page needs the number, such as a port. |
+| `docgen:errors` | A table of the errors that the doc comments of the constructors and methods of a type name. |
+| `docgen:states` | The states, the transitions seen in the tests and an SVG diagram in `states/` next to the page. |
+| `docgen:doc` | A doc comment as Markdown, or one `# heading` section of it. |
+| `docgen:gomod` | Inline: a line of `v2/go.mod`, or of the `go.mod` at `file=`. |
+| `docgen:text` | Text with the values of `vars` in `.docgen.yaml`, such as the docgen version. |
 
-docgen needs the Go module cache and no network. It runs the go commands with `-p=2` and `GOMAXPROCS=2`. `go test` in `cmd/docgen` runs it on a fixture page that uses every marker kind.
+docgen records the transitions of a state machine from its tests: a go build overlay adds a hook to the top of each exported method, and the hook records the state before and after each call. A transition that no test makes is not in the table, so a missing transition needs a test, not a hand edit.
+
+`check` also fails for a `docgen:region` in the repository that no page excerpts, for a diagram in a `states/` directory that no marker writes, and for a link in `docs/` that reaches nothing.
 
 ## Docs site
 

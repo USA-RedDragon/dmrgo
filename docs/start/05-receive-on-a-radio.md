@@ -12,7 +12,7 @@ A DMR signal is 4FSK, with two TDMA time slots on one carrier. A repeater sends 
 
 ## The code
 
-<!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor_capture -->
+<!-- docgen:code file=v2/rf/example_test.go symbol=ExampleMonitor_capture -->
 ```go
 func ExampleMonitor_capture() {
 	iq, err := os.ReadFile("../cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8")
@@ -63,7 +63,7 @@ func ExampleMonitor_capture() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Run it from the `v2` directory:
 
@@ -73,12 +73,12 @@ go test -run ExampleMonitor_capture -v ./rf
 
 It prints:
 
-<!-- dmrgo:output test=rf.ExampleMonitor_capture -->
+<!-- docgen:output test=rf.ExampleMonitor_capture -->
 ```text
 call from 3191868 to 9 (Header)
 end: Terminator after 540ms, 6 voice bursts
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## What the code does
 

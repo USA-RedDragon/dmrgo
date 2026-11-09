@@ -15,7 +15,7 @@ The breaking-changes page of each minor release:
 
 ## The Go version
 
-The `go` line of `v2/go.mod` gives the oldest Go release that builds the module, now Go <!-- dmrgo:gomod field=go -->`1.24.0`<!-- /dmrgo:gomod -->.
+The `go` line of `v2/go.mod` gives the oldest Go release that builds the module, now Go <!-- docgen:gomod field=go -->`1.24.0`<!-- /docgen:gomod -->.
 
 The minimum Go version rises only in a minor release, with a note in the release notes. CI runs the tests at this version. See [PC](../targets/pc.md#platforms-in-ci).
 
@@ -36,10 +36,10 @@ The ABI number of each release:
 
 `v2/capi/abi.txt` holds the ABI number and each C declaration of the current ABI. The generated header `v2/capi/dmrgo_gen.h` defines the number:
 
-<!-- dmrgo:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
+<!-- docgen:code file=v2/capi/dmrgo_gen.h symbol=DMRGO_ABI_VERSION -->
 ```c
 #define DMRGO_ABI_VERSION 5
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 `capigen`, the generator of the C API, fails when a declaration of the lock changes or goes away, unless it runs with `-break`, which gives a new ABI number. While `abi.txt` has a `prerelease` line, a change does not need `-break`, and CI fails a release tag such as `v2.1.0` until the release commit removes that line. [C API](../targets/c.md#the-abi-version) gives the rules of `dmrgo.h`.

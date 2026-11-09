@@ -12,7 +12,7 @@ The Receiver does no I/O and reads no clock. You give it the time of each burst,
 
 The capture holds no time stamps, so the example puts the bursts of the time slot 60 ms apart, as they are on air:
 
-<!-- dmrgo:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
+<!-- docgen:code file=v2/voice/example_test.go symbol=ExampleReceiver -->
 ```go
 func ExampleReceiver() {
 	data, err := os.ReadFile("../layer2/testdata/parrot_kerchunk.bin")
@@ -51,7 +51,7 @@ func ExampleReceiver() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Run it from the `v2` directory:
 
@@ -61,13 +61,13 @@ go test -run '^ExampleReceiver$' -v ./voice
 
 It prints:
 
-<!-- dmrgo:output test=voice.ExampleReceiver -->
+<!-- docgen:output test=voice.ExampleReceiver -->
 ```text
 call from 3009999 to 9990 (Header)
 end: Terminator after 840ms, 13 voice bursts
 SessionEnd at 3.9s
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## What the code does
 

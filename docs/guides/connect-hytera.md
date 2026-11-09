@@ -27,7 +27,7 @@ A repeater sends P2P commands to the master to request a service: registration, 
 
 Each side also sends a heartbeat. [hytera.DecodeHeartbeat](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#DecodeHeartbeat) reads the 20-octet heartbeat of the P2P service and the 1-octet keepalive of the DMR service. Answer a heartbeat with the reply that the master sends in the capture:
 
-<!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeHeartbeat -->
+<!-- docgen:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeHeartbeat -->
 ```go
 func ExampleDecodeHeartbeat() {
 	p, _ := hex.DecodeString("5a5a5a5a0a000000140000005a5a595a00000000")
@@ -39,13 +39,13 @@ func ExampleDecodeHeartbeat() {
 	fmt.Printf("%x\n", reply)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Read the bursts of a call
 
 Each packet of the DMR service is one 72-octet [Frame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame). [hytera.DecodeFrame](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#DecodeFrame) decodes it. `HasBurst` reports whether it holds a burst, as sync and wakeup packets do not. [Frame.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Call) returns the call, and [Frame.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/hytera#Frame.Hint) the `layer2.Hint` for the voice and data machines.
 
-<!-- dmrgo:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeFrame -->
+<!-- docgen:code file=v2/transport/hytera/example_test.go symbol=ExampleDecodeFrame -->
 ```go
 func ExampleDecodeFrame() {
 	p, _ := hex.DecodeString("c35200502a0300000100050101000000111111111111000040b8d5019a0d8c18e015b05d401a6d4457ff5dd7def59432780eb02e002bc14f83d90095000000005b000000cfed2d00")
@@ -59,7 +59,7 @@ func ExampleDecodeFrame() {
 	fmt.Println(h.Kind, h.DataType)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Send the bursts of a call
 
@@ -67,7 +67,7 @@ Take the outputs of a machine, such as a [voice.Transmitter](https://pkg.go.dev/
 
 The example sends a group call over the loopback interface and follows it with a [voice.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Receiver) on the other side:
 
-<!-- dmrgo:code file=v2/transport/hytera/udp_example_test.go symbol=sendCall -->
+<!-- docgen:code file=v2/transport/hytera/udp_example_test.go symbol=sendCall -->
 ```go
 func sendCall(txConn, rxConn *net.UDPConn) error {
 	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceBS,
@@ -141,34 +141,34 @@ func sendCall(txConn, rxConn *net.UDPConn) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The group call over the loopback interface:
 
-<!-- dmrgo:output test=hytera.ExampleFrame_SetCallHint -->
+<!-- docgen:output test=hytera.ExampleFrame_SetCallHint -->
 ```text
 Voice LC Header on TS1 from 3002068 to 9 group true
 Terminator with LC after 6 voice bursts: Terminator
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 A voice LC header frame from a capture, and the heartbeat reply:
 
-<!-- dmrgo:output test=hytera.ExampleDecodeFrame -->
+<!-- docgen:output test=hytera.ExampleDecodeFrame -->
 ```text
 TS1 Voice LC Header 1 3009999 91 true
 Data Voice LC Header
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
-<!-- dmrgo:output test=hytera.ExampleDecodeHeartbeat -->
+<!-- docgen:output test=hytera.ExampleDecodeHeartbeat -->
 ```text
 0xa 0x5a <nil>
 5a5a5a5a0a000000140000005b5a595a00000000
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## How it works
 

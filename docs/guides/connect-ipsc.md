@@ -24,7 +24,7 @@ go test -C v2 -run 'ExamplePeer_loopback$' -v ./transport/ipsc/ipscsession
 
 [ipscauth.ParseKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth#ParseKey) reads the hex key of the configuration and pads it on the left to 20 octets, as DMRlink does. Set `Auth` and `Key` in the config of each side. [ipscsession.NewPeer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#NewPeer) takes the peer ID and the address of the master as an [Addr](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Addr). [AddrOf](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#AddrOf) converts the IP and port of a `net.UDPAddr`, as the example does for each packet that it reads. [ipscsession.NewMaster](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#NewMaster) makes the master.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=newMachines -->
+<!-- docgen:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=newMachines -->
 ```go
 func newMachines(masterAt net.Addr) (*ipscsession.Peer, *ipscsession.Master, error) {
 	key, err := ipscauth.ParseKey("123456789abcdef1234")
@@ -47,7 +47,7 @@ func newMachines(masterAt net.Addr) (*ipscsession.Peer, *ipscsession.Master, err
 	return peer, master, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Pass packets between the socket and the machines
 
@@ -55,7 +55,7 @@ The machines do no I/O. Give each UDP packet to `Packet` of the machine with the
 
 The Peer returns `OutputUp` when the master answers its registration, and `OutputPeers` when it gets a peer list. It then registers with each other peer of the list. The Master returns `OutputUp` for each new peer.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=passPackets -->
+<!-- docgen:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=passPackets -->
 ```go
 func passPackets(call []byte, masterConn, peerConn *net.UDPConn, peer *ipscsession.Peer, master *ipscsession.Master) error {
 	start := time.Now()
@@ -139,13 +139,13 @@ func passPackets(call []byte, masterConn, peerConn *net.UDPConn, peer *ipscsessi
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Send and receive the packets of a call
 
 With `Auth`, sign each voice or data packet with [Peer.Sign](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession#Peer.Sign) before you send it. The machines check the trailer of each packet that they get, and return the voice and data packets of registered peers as `OutputData`, without the trailer. [ipsc.DecodeUser](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#DecodeUser) decodes one. The Master does not send them on by itself; send each one to the other peers that should get it.
 
-<!-- dmrgo:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=sendSigned -->
+<!-- docgen:code file=v2/transport/ipsc/ipscsession/udp_example_test.go symbol=sendSigned -->
 ```go
 func sendSigned(peer *ipscsession.Peer, conn *net.UDPConn, to net.Addr, packet []byte) error {
 	signed, err := peer.Sign(append([]byte(nil), packet...))
@@ -156,11 +156,11 @@ func sendSigned(peer *ipscsession.Peer, conn *net.UDPConn, to net.Addr, packet [
 	return err
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 An IPSC user packet carries the decoded payload of a burst in place of the 264-bit burst: three AMBE+2 frames without FEC, or the payload of a data burst. [User.RawBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.RawBurst) rebuilds the burst, [User.SetRawBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.SetRawBurst) takes one apart, and [User.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#User.Hint) gives the `layer2.Hint` for the voice and data machines. The hint marks voice bursts A and E only; a [layer2.PositionTracker](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#PositionTracker) places B, C, D and F. To build the packets of a call from scratch, [ipsc.UserOpcode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#UserOpcode) picks the opcode and an [ipsc.Stream](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/ipsc#Stream) fills the RTP header and the call fields of each packet.
 
-<!-- dmrgo:code file=v2/transport/ipsc/example_test.go symbol=ExampleDecodeUser -->
+<!-- docgen:code file=v2/transport/ipsc/example_test.go symbol=ExampleDecodeUser -->
 ```go
 func ExampleDecodeUser() {
 	for _, s := range []string{
@@ -178,13 +178,13 @@ func ExampleDecodeUser() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The registration with the master, the peer list, and the voice LC header of a call at the master:
 
-<!-- dmrgo:output test=ipscsession.ExamplePeer_loopback -->
+<!-- docgen:output test=ipscsession.ExamplePeer_loopback -->
 ```text
 master gets RegisterRequest
 master: Up 300926
@@ -196,27 +196,27 @@ peer: Peers 0
 master gets GroupVoice
 master: Data 300926 GroupVoice from 3009999 to 9
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 A voice LC header and a voice burst from a Motorola XPR 8400:
 
-<!-- dmrgo:output test=ipsc.ExampleDecodeUser -->
+<!-- docgen:output test=ipsc.ExampleDecodeUser -->
 ```text
 GroupVoice 3009999 9 TS2 false Data
 GroupVoice 3009999 9 TS1 true Voice
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The authentication trailer of a registration request:
 
-<!-- dmrgo:output test=ipscauth.ExampleKey_Sign -->
+<!-- docgen:output test=ipscauth.ExampleKey_Sign -->
 ```text
 728dcee3d5b8009d4a07
 900004977e6a0000805c04080400 true
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
-<!-- dmrgo:config pkg=transport/ipsc/ipscsession type=PeerConfig -->
+<!-- docgen:config pkg=transport/ipsc/ipscsession type=PeerConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ID` | `uint32` | zero value | ID is the peer ID. |
@@ -230,9 +230,9 @@ The authentication trailer of a registration request:
 | `Alive` | `time.Duration` | not machine-readable; see the description | Alive is the keepalive period. 0 means AliveDefault. |
 | `MaxMissed` | `int` | `MaxMissedDefault` (20) | MaxMissed is the number of keepalives without a reply after which the Peer takes a link as down. 0 means MaxMissedDefault. |
 | `MaxPeers` | `int` | `MaxPeersDefault` (15) | MaxPeers is the most other peers that the Peer keeps from the peer list. 0 means MaxPeersDefault. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
-<!-- dmrgo:config pkg=transport/ipsc/ipscsession type=MasterConfig -->
+<!-- docgen:config pkg=transport/ipsc/ipscsession type=MasterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ID` | `uint32` | zero value | ID is the peer ID of the master. |
@@ -245,7 +245,7 @@ The authentication trailer of a registration request:
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet from a peer after which the Master drops it. 0 means TimeoutDefault. |
 | `MaxPeers` | `int` | `MaxPeersDefault` (15) | MaxPeers is the most peers that the Master registers. 0 means MaxPeersDefault. |
 | `AdoptKnown` | `bool` | zero value | AdoptKnown makes Packet adopt a peer that is not registered, as Adopt does, when the trailer of its packet proves the key of the config or the key that the caller passed, so that a peer that registered with another Master needs no Adopt call. Without a key it does nothing. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## How it works
 

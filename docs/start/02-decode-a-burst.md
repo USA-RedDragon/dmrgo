@@ -14,7 +14,7 @@ A DMR burst is the 264 bits that one 30 ms time slot carries. dmrgo holds a burs
 
 [layer2.NewBurstFromBytes](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#NewBurstFromBytes) decodes one burst into a [layer2.Burst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#Burst). This example decodes each burst of the capture:
 
-<!-- dmrgo:code file=v2/layer2/example_test.go symbol=ExampleNewBurstFromBytes_capture -->
+<!-- docgen:code file=v2/layer2/example_test.go symbol=ExampleNewBurstFromBytes_capture -->
 ```go
 func ExampleNewBurstFromBytes_capture() {
 	capture, err := os.ReadFile("testdata/parrot_kerchunk.bin")
@@ -49,7 +49,7 @@ func ExampleNewBurstFromBytes_capture() {
 	fmt.Println(voiceBursts, "voice bursts")
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Run it from the `v2` directory:
 
@@ -59,13 +59,13 @@ go test -run ExampleNewBurstFromBytes_capture -v ./layer2
 
 It prints:
 
-<!-- dmrgo:output test=layer2.ExampleNewBurstFromBytes_capture -->
+<!-- docgen:output test=layer2.ExampleNewBurstFromBytes_capture -->
 ```text
 Voice LC Header: call from 3009999 to 9990
 Terminator With LC: call from 3009999 to 9990
 13 voice bursts
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## What the code does
 

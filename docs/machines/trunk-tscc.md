@@ -8,13 +8,13 @@ A [TSCC](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC) is a d
 
 ## When to use it
 
-Use a TSCC to run a small Tier III site from software: a test site for radios, a simulator for MS and Follower code, or a site on SDR or repeater hardware that you drive. One TSCC runs one control channel and up to <!-- dmrgo:const pkg=trunk name=MaxPayloadChannels -->`16`<!-- /dmrgo:const --> payload channels, each with two slots for calls. It is not a multi-site controller.
+Use a TSCC to run a small Tier III site from software: a test site for radios, a simulator for MS and Follower code, or a site on SDR or repeater hardware that you drive. One TSCC runs one control channel and up to <!-- docgen:const pkg=trunk name=MaxPayloadChannels -->`16`<!-- /docgen:const --> payload channels, each with two slots for calls. It is not a multi-site controller.
 
 ## Config
 
 Pass a [TSCCConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCCConfig) to [NewTSCC](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#NewTSCC). The system code and at least one payload channel are required, so a nil config returns an error. Set Reg to require registration. Turn on each optional service that the site offers: authentication, transmit interrupt, power save, IP and supplementary data. Set Lead when the bursts must reach an RF FIFO ahead of air time.
 
-<!-- dmrgo:config pkg=trunk type=TSCCConfig -->
+<!-- docgen:config pkg=trunk type=TSCCConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `SysCode` | `pdu.SysCode` | zero value | SysCode is the C_SYScode of the site. |
@@ -42,7 +42,7 @@ Pass a [TSCCConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#T
 | `IP` | `bool` | zero value | IP offers the IP bearer service: the TSCC takes the IP connection advice of MSs. Without it the TSCC refuses the advice with IP_Connection_failed. (ETSI TS 102 361-4 clause 6.4.11) |
 | `Supplementary` | `bool` | zero value | Supplementary takes the supplementary_user data of call requests and passes it to the called party before the call. Without it the TSCC sets up the call without the data. (ETSI TS 102 361-4 clause 6.4.13) |
 | `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit the bursts of a slot this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must be at least 0 and less than MaxLead. The timers of the TSCC keep to the Due times. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
@@ -65,23 +65,23 @@ Inputs:
 - [ExpectAuth](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.ExpectAuth) gives the response that the TSCC accepts to an authentication challenge.
 - The services: [SendStatus](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.SendStatus), [Interrupt](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.Interrupt), [MassRegister](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.MassRegister), [Stun](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.Stun), [Kill](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.Kill), [SendShortData](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.SendShortData), [AssignGroups](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.AssignGroups), [PollShortData](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.PollShortData) and [PollUSBD](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.PollUSBD).
 
-Outputs are [TSCCOutput](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCCOutput) values with a [TSCCOutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCCOutputKind). A burst output has the carrier channel number, the slot, the CACH in transmit order, the burst, its Due time and a Hint. The other kinds report registrations, the start and end of calls, refusals, authentication challenges, and the results of the services. [UDT](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.UDT), [USBD](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.USBD) and [Diverted](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.Diverted) return the data of the last such output. Give each method a slice with capacity <!-- dmrgo:const pkg=trunk name=MaxTSCCOutputs -->`43`<!-- /dmrgo:const -->.
+Outputs are [TSCCOutput](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCCOutput) values with a [TSCCOutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCCOutputKind). A burst output has the carrier channel number, the slot, the CACH in transmit order, the burst, its Due time and a Hint. The other kinds report registrations, the start and end of calls, refusals, authentication challenges, and the results of the services. [UDT](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.UDT), [USBD](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.USBD) and [Diverted](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#TSCC.Diverted) return the data of the last such output. Give each method a slice with capacity <!-- docgen:const pkg=trunk name=MaxTSCCOutputs -->`43`<!-- /docgen:const -->.
 
 ## Timers
 
 - Slot clock: one slot each 30 ms from the first Tick, starting with TS1.
-- TV_Hangtime: the time after the end of a transmission in which the call keeps its slot. The default is <!-- dmrgo:const pkg=constants name=TVHangtimeDefault -->`4s`<!-- /dmrgo:const -->. (ETSI TS 102 361-4 Table A.1)
-- TV_Inactive: the time without an inbound burst, outside the hang time, after which the TSCC clears a call. The default is <!-- dmrgo:const pkg=constants name=TVInactiveDefault -->`5s`<!-- /dmrgo:const -->. (ETSI TS 102 361-4 Table A.1)
-- Answer timeout: the wait for the answer of a called MS to C_AHOY, and for the answer to an authentication challenge. The default is <!-- dmrgo:const pkg=constants name=TPTimerDefault -->`10s`<!-- /dmrgo:const -->.
-- T_Awake in power save: <!-- dmrgo:const pkg=constants name=TAwakeDefault -->`1s`<!-- /dmrgo:const --> by default. (ETSI TS 102 361-4 clause 6.4.7)
+- TV_Hangtime: the time after the end of a transmission in which the call keeps its slot. The default is <!-- docgen:const pkg=constants name=TVHangtimeDefault -->`4s`<!-- /docgen:const -->. (ETSI TS 102 361-4 Table A.1)
+- TV_Inactive: the time without an inbound burst, outside the hang time, after which the TSCC clears a call. The default is <!-- docgen:const pkg=constants name=TVInactiveDefault -->`5s`<!-- /docgen:const -->. (ETSI TS 102 361-4 Table A.1)
+- Answer timeout: the wait for the answer of a called MS to C_AHOY, and for the answer to an authentication challenge. The default is <!-- docgen:const pkg=constants name=TPTimerDefault -->`10s`<!-- /docgen:const -->.
+- T_Awake in power save: <!-- docgen:const pkg=constants name=TAwakeDefault -->`1s`<!-- /docgen:const --> by default. (ETSI TS 102 361-4 clause 6.4.7)
 - Late entry grants and the maximum call time: TSCCConfig.LateEntry and TSCCConfig.MaxCall. (ETSI TS 102 361-4 clause 6.4.14.3.2)
-- Lead: less than <!-- dmrgo:const pkg=trunk name=MaxLead -->`1s`<!-- /dmrgo:const -->. The timers keep to the Due times.
+- Lead: less than <!-- docgen:const pkg=trunk name=MaxLead -->`1s`<!-- /docgen:const -->. The timers keep to the Due times.
 
 ## Worked example
 
 This example runs a TSCC with one payload channel and one MS. The TSCC reports the registration of the MS, the start of its talkgroup call on the payload channel, and the end of the call when the MS sends P_MAINT. The helper newServiceSite and its run method, in example_services_test.go, carry the bursts on the 30 ms slot clock; the [MS page](trunk-ms.md#worked-example) shows them.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleTSCC -->
+<!-- docgen:code file=v2/trunk/example_test.go symbol=ExampleTSCC -->
 ```go
 func ExampleTSCC() {
 	s := newServiceSite(&trunk.TSCCConfig{}, &trunk.MSConfig{Address: 3002701, Seed: 1})
@@ -104,24 +104,24 @@ func ExampleTSCC() {
 	fmt.Println("registered", s.tscc.Registered(3002701))
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=trunk.ExampleTSCC -->
+<!-- docgen:output test=trunk.ExampleTSCC -->
 ```text
 Registered 3002701
 CallStart talkgroup 9 from 3002701 on channel 10 TS1
 CallEnd Maintenance
 registered true
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
 Tick and Inbound return no errors. The service methods return an error for an address or data out of range, and Interrupt returns an error for a slot without a call. NewTSCC returns a configuration error for a field out of range. Match the errors with errors.Is.
 
-<!-- dmrgo:errors pkg=trunk type=TSCC -->
+<!-- docgen:errors pkg=trunk type=TSCC -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `TSCC.Interrupt`, `TSCC.MassRegister`, `TSCC.PollShortData`, `TSCC.PollUSBD`, `TSCC.SendShortData`, `TSCC.SendStatus`, `TSCC.Stun` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
@@ -129,7 +129,7 @@ Tick and Inbound return no errors. The service methods return an error for an ad
 | [`trunk.ErrNoCall`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#ErrNoCall) | `TSCC.Interrupt` | ErrNoCall is returned by MS.Interrupt when the MS is not on the payload channel of a voice call, and by TSCC.Interrupt for a slot without a call. |
 | [`trunk.ErrUDTFormat`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#ErrUDTFormat) | `TSCC.AssignGroups` | ErrUDTFormat is returned for appended data in another UDT Format than the method reads or writes, or in a Format over 15. |
 | [`trunk.ErrUDTLength`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#ErrUDTLength) | `TSCC.PollShortData`, `TSCC.SendShortData` | ErrUDTLength is returned for data that does not fit in 1 to 4 appended blocks, for blocks whose size does not match the format, and for a PadNibble over 31. |
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

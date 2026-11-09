@@ -27,7 +27,7 @@ go test -C v2 -run ExampleTransmitter -v ./privacy
 
 [privacy.NewBasicKeyNumber](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewBasicKeyNumber) returns the key of a key number as a radio shows it. [privacy.NewBasicKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewBasicKey) takes the 16-bit value instead. [privacy.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewTransmitter) takes the key and the radio service of the station. It returns [ErrAmateur](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#ErrAmateur) for the amateur service, and an error for a service that is not stated.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go symbol=basicTransmitter -->
+<!-- docgen:code file=v2/privacy/example_test.go symbol=basicTransmitter -->
 ```go
 func basicTransmitter() (*privacy.Key, *privacy.Transmitter, error) {
 	key := privacy.NewBasicKeyNumber(100)
@@ -41,13 +41,13 @@ func basicTransmitter() (*privacy.Key, *privacy.Transmitter, error) {
 	return key, ptx, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Make the Receiver
 
 [privacy.NewReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#NewReceiver) makes a Receiver, and [Receiver.AddKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Receiver.AddKey) gives it the key. A Receiver holds one Basic Privacy key; a new one replaces it.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go symbol=basicReceiver -->
+<!-- docgen:code file=v2/privacy/example_test.go symbol=basicReceiver -->
 ```go
 func basicReceiver(key *privacy.Key) (*privacy.Receiver, error) {
 	prx := privacy.NewReceiver()
@@ -57,13 +57,13 @@ func basicReceiver(key *privacy.Key) (*privacy.Receiver, error) {
 	return prx, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Send the call
 
 Set the Privacy service option and FID 0x10 in the [voice.Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/voice#Call), and call [Transmitter.Start](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Start) of the privacy Transmitter for each call. A Basic Privacy key ignores the message indicator, and sends no PI header. Then pass each burst output of the `voice.Transmitter` through [Transmitter.Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Transmitter.Output) before it goes on air. It changes the three AMBE+2 frames of each voice burst in place and leaves other bursts as they are.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go symbol=sendPrivateCall -->
+<!-- docgen:code file=v2/privacy/example_test.go symbol=sendPrivateCall -->
 ```go
 func sendPrivateCall(ptx *privacy.Transmitter, tx *voice.Transmitter) ([]vocoder.AMBEFrame, error) {
 	call := voice.Call{Group: true, Target: 9, Source: 3002068, Options: layer3.ServiceOptions{IsPrivacy: true}, FID: enums.FIDMotorola}
@@ -80,9 +80,9 @@ func sendPrivateCall(ptx *privacy.Transmitter, tx *voice.Transmitter) ([]vocoder
 	return sent, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/privacy/example_test.go symbol=encryptOutput -->
+<!-- docgen:code file=v2/privacy/example_test.go symbol=encryptOutput -->
 ```go
 func encryptOutput(ptx *privacy.Transmitter, o *voice.Output, onAir []vocoder.AMBEFrame) ([]vocoder.AMBEFrame, error) {
 	if err := ptx.Output(o); err != nil {
@@ -95,13 +95,13 @@ func encryptOutput(ptx *privacy.Transmitter, o *voice.Output, onAir []vocoder.AM
 	return onAir, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Receive the call
 
 Give each event of the `voice.Receiver` to [Receiver.Event](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Receiver.Event). For a voice event it writes the three frames of the burst, in the clear when it holds the key. It returns the [Info](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Info) of the call: `Encrypted` when the call carries privacy, `Decrypting` when the Receiver removes it.
 
-<!-- dmrgo:code file=v2/privacy/example_test.go symbol=decryptBurst -->
+<!-- docgen:code file=v2/privacy/example_test.go symbol=decryptBurst -->
 ```go
 func decryptBurst(rx *voice.Receiver, prx *privacy.Receiver, o *voice.Output, events []voice.Event, received []vocoder.AMBEFrame, info privacy.Info) ([]vocoder.AMBEFrame, privacy.Info) {
 	for _, e := range rx.Burst(o.Due, &o.Burst, o.Hint, events[:0]) {
@@ -114,7 +114,7 @@ func decryptBurst(rx *voice.Receiver, prx *privacy.Receiver, o *voice.Output, ev
 	return received, info
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Some radios send Basic Privacy without the Privacy service option in the LC. [Receiver.ForceBasic](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#Receiver.ForceBasic) applies the key to every voice call without a PI header.
 
@@ -122,25 +122,25 @@ Some radios send Basic Privacy without the Privacy service option in the LC. [Re
 
 The refusal in the amateur service, then the frames on air and after the Receiver:
 
-<!-- dmrgo:output test=privacy.ExampleTransmitter -->
+<!-- docgen:output test=privacy.ExampleTransmitter -->
 ```text
 amateur: privacy: the amateur service forbids encryption
 on air: 0 of 18 frames in the clear
 received: 18 of 18 frames in the clear
 encrypted true PI header false decrypting true
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The errors of the Transmitter:
 
-<!-- dmrgo:errors pkg=privacy type=Transmitter -->
+<!-- docgen:errors pkg=privacy type=Transmitter -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `Transmitter.Data` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
 | [`dmrgo.ErrNilArgument`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrNilArgument) | `Transmitter.Output` | ErrNilArgument is returned by a function or method of the library that returns an error when a pointer, func or interface argument it needs is nil. |
 | [`privacy.ErrDataAlgorithm`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#ErrDataAlgorithm) | `Transmitter.Data` | ErrDataAlgorithm is returned by Transmitter.Data for a key other than ARC4: no public capture with a key proves the data framing of AES, DES or Basic Privacy. |
 | [`privacy.ErrNotStarted`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/privacy#ErrNotStarted) | `Transmitter.Output` | ErrNotStarted is returned by Transmitter.Output before Start. |
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## How it works
 

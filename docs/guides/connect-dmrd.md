@@ -30,7 +30,7 @@ go test -C v2 -run ExamplePeer_loopback -v ./transport/dmrd/dmrdsession
 
 The repeater sends its configuration in an RPTC message during the login. [dmrd.MMDVMConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#MMDVMConfig) is the RPTC of the MMDVM network protocol and [dmrd.HBRPConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#HBRPConfig) that of HBRP. `Reset` fills the fixed octets, and the setters write the repeater ID, callsign, frequencies, color code and the other fields in place.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=rptcConfig -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=rptcConfig -->
 ```go
 func rptcConfig(dialect dmrd.Dialect) []byte {
 	if dialect == dmrd.DialectMMDVM {
@@ -45,13 +45,13 @@ func rptcConfig(dialect dmrd.Dialect) []byte {
 	return c[:]
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Make the Peer and the Master
 
 [dmrdsession.NewPeer](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewPeer) takes the dialect, the repeater ID, the password of the master and the RPTC. `PeerConfig.Options` is the RPTO options text, which the Peer sends after the RPTC is acknowledged. [dmrdsession.NewMaster](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewMaster) makes the master side of one repeater. Keep one Master for each address that sends you packets.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=newMachines -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=newMachines -->
 ```go
 func newMachines(dialect dmrd.Dialect, rptc []byte) (*dmrdsession.Peer, *dmrdsession.Master, error) {
 	peer, err := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dialect, ID: 3009990, Password: []byte("passw0rd"), Config: rptc})
@@ -65,7 +65,7 @@ func newMachines(dialect dmrd.Dialect, rptc []byte) (*dmrdsession.Peer, *dmrdses
 	return peer, master, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Pass packets between the socket and the machines
 
@@ -73,7 +73,7 @@ The machines do no I/O. Read each UDP packet and give it to `Packet` of the mach
 
 At the Master, `OutputLogin` reports an RPTL. Answer it with `Admit` and a random salt and the password of the repeater, or with `Refuse`. `OutputConfig` reports the RPTC. Check it and call `Accept` or `Refuse`. The Peer returns `OutputUp` when the login is complete.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=passPackets -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/udp_example_test.go symbol=passPackets -->
 ```go
 func passPackets(dialect dmrd.Dialect, call []byte, masterConn, peerConn *net.UDPConn, peer *dmrdsession.Peer, master *dmrdsession.Master) error {
 	start := time.Now()
@@ -145,13 +145,13 @@ func passPackets(dialect dmrd.Dialect, call []byte, masterConn, peerConn *net.UD
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Send and receive the bursts of a call
 
 Once the Peer is up, send each burst in a DMRD packet on the same socket. The Master returns each DMRD packet that it gets from a logged-in repeater as `OutputData`. [dmrd.DecodeData](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#DecodeData) decodes it, and [Data.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Data.Hint) gives the `layer2.Hint` for the voice and data machines. To build a DMRD packet from the output of a machine, such as a [voice.Transmitter](../machines/voice-transmitter.md), set the call and burst kind with [Data.SetCallHint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd#Data.SetCallHint) and encode it with `Data.AppendBinary`.
 
-<!-- dmrgo:code file=v2/transport/dmrd/example_test.go symbol=ExampleDecodeData -->
+<!-- docgen:code file=v2/transport/dmrd/example_test.go symbol=ExampleDecodeData -->
 ```go
 func ExampleDecodeData() {
 	p, _ := hex.DecodeString("444d5244002dedcf00005b002dedc6a1506290d021f40d58182015f8599012205c4d5d7f77fd757362300e202b9229044141c303910000")
@@ -166,13 +166,13 @@ func ExampleDecodeData() {
 	fmt.Println(h.Kind, h.DataType)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The login in each dialect, then the voice LC header of a call at the master:
 
-<!-- dmrgo:output test=dmrdsession.ExamplePeer_loopback -->
+<!-- docgen:output test=dmrdsession.ExamplePeer_loopback -->
 ```text
 MMDVM
   repeater sends RPTL
@@ -195,19 +195,19 @@ HBRP
   repeater sends DMRD
   master gets a call from 3009999 to 91 on TS2
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The DMRD packet and the hint of its burst:
 
-<!-- dmrgo:output test=dmrd.ExampleDecodeData -->
+<!-- docgen:output test=dmrd.ExampleDecodeData -->
 ```text
 DMRD
 3009999 91 3009990 TS2 true Data Sync 55
 Data Voice LC Header
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
-<!-- dmrgo:config pkg=transport/dmrd/dmrdsession type=PeerConfig -->
+<!-- docgen:config pkg=transport/dmrd/dmrdsession type=PeerConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Dialect` | `dmrd.Dialect` | zero value | Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. |
@@ -218,15 +218,15 @@ Data Voice LC Header
 | `Retry` | `time.Duration` | not machine-readable; see the description | Retry is the time between two sends of a login step, between two pings, and before a new login after the session ended. 0 means RetryDefault. |
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without an acknowledgement or a pong after which the Peer ends the session and logs in again. 0 means TimeoutDefault. |
 | `Backoff` | `time.Duration` | zero value | Backoff is the longest wait before a new login. Each session that ends before the login completes doubles the wait from Retry up to Backoff. 0, or a value up to Retry, waits Retry each time, as DMRGateway does. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
-<!-- dmrgo:config pkg=transport/dmrd/dmrdsession type=MasterConfig -->
+<!-- docgen:config pkg=transport/dmrd/dmrdsession type=MasterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Dialect` | `dmrd.Dialect` | zero value | Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. |
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. |
 | `LoginTimeout` | `time.Duration` | not machine-readable; see the description | LoginTimeout is the time after the first RPTL of a login in which the repeater must finish its login, or the Master ends the session. A repeated RPTL or RPTK does not restart it. 0 means LoginTimeoutDefault. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## How it works
 

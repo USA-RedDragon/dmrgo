@@ -35,7 +35,7 @@ go build -o dmrrf ./cmd/dmrrf
 
 A [Monitor](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Monitor) follows the TDMA channels, as a scanner does. It finds the channel of each burst from the CACHs of its stream, decodes the burst and keeps the LC of the call on each channel. [Burst.Hint](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Burst.Hint) gives the `layer2.Hint` of a burst for the voice and data machines.
 
-<!-- dmrgo:code file=v2/rf/example_test.go symbol=ExampleMonitor -->
+<!-- docgen:code file=v2/rf/example_test.go symbol=ExampleMonitor -->
 ```go
 func ExampleMonitor() {
 	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3002068, Dest: 9, BS: 990126, Group: true, Wakeups: 1,
@@ -78,7 +78,7 @@ func ExampleMonitor() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Decode discriminator audio
 
@@ -86,7 +86,7 @@ An FM radio gives the 4FSK signal at its discriminator output. [rf.NewAudioRecei
 
 On a microcontroller, [AudioReceiver.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioReceiver.Init) sets up the receiver in Tier 0 in memory of the caller, without an allocation. The rxaudio example runs it as a hotspot board does, with a placeholder `read` in place of the ADC:
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=rx -->
+<!-- docgen:code file=v2/examples/rxaudio/main.go symbol=rx -->
 ```go
 var (
 	rx     rf.AudioReceiver
@@ -94,23 +94,23 @@ var (
 	bursts int
 )
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=onBursts -->
+<!-- docgen:code file=v2/examples/rxaudio/main.go symbol=onBursts -->
 ```go
 func onBursts(bs []rf.Burst) { bursts += len(bs) }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=read -->
+<!-- docgen:code file=v2/examples/rxaudio/main.go symbol=read -->
 ```go
 func read(x []int16) {
 	clear(x)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/rxaudio/main.go symbol=main -->
+<!-- docgen:code file=v2/examples/rxaudio/main.go symbol=main -->
 ```go
 func main() {
 	if err := rx.Init(rf.AudioRxConfig{Rate: 9600, OnBursts: onBursts}); err != nil {
@@ -128,7 +128,7 @@ func main() {
 	println("bursts:", bursts > 0)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 It builds with TinyGo and `-gc=none`, which fails the link of any program that allocates. The page [Microcontrollers](../targets/mcu.md) gives the build.
 
@@ -136,23 +136,23 @@ It builds with TinyGo and `-gc=none`, which fails the link of any program that a
 
 The Monitor follows a group call on TDMA channel 2 of a repeater:
 
-<!-- dmrgo:output test=rf.ExampleMonitor -->
+<!-- docgen:output test=rf.ExampleMonitor -->
 ```text
 call from 3002068 to 9 ended after 12 voice bursts
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The rxaudio example on a PC, with silence as its input:
 
-<!-- dmrgo:output example=rxaudio -->
+<!-- docgen:output cmd=v2/examples/rxaudio -->
 ```text
 
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The configs of the two receivers:
 
-<!-- dmrgo:config pkg=rf type=RxConfig -->
+<!-- docgen:config pkg=rf type=RxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Tier` | `Tier` | `Tier0` (1) or `discDefaultTier` (2) | Tier selects the detection. The zero value TierDefault is Tier1 for NewReceiver, and Tier0 for Init and for NewReceiver under TinyGo. Under TinyGo too, NewReceiver takes every tier. |
@@ -162,9 +162,9 @@ The configs of the two receivers:
 | `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. A slot comes out at most once: the replay after a relock skips each slot that an earlier lock already gave. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
 | `LookbackSlots` | `int` | not machine-readable; see the description | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
 | `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo.ConfigError for it. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
-<!-- dmrgo:config pkg=rf type=AudioRxConfig -->
+<!-- docgen:config pkg=rf type=AudioRxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Tier` | `Tier` | `discDefaultTier` (2) | Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is Tier1 for NewAudioReceiver, Tier0 for it under TinyGo, and Tier0 for Init, which does not allocate the stages of the higher tiers. Under TinyGo too, NewAudioReceiver takes every tier and allocates its stages once, and a program that calls only Init links none of them. Tier2 detects the bursts again coherently, on the carrier phase that it rebuilds from the samples, at about 5 times the CPU time of Tier1. Tier3 detects the bursts of Tier2 again over 52 carrier phases with no compute budget and makes four passes over each data burst, at about 10 times the CPU time of Tier2, 935 KB and the delay of Tier2. |
@@ -174,7 +174,7 @@ The configs of the two receivers:
 | `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the bursts of the slots before the lock, decoded again. A slot comes out at most once: the replay after a relock skips each slot that an earlier lock already gave. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
 | `PreEmphasis` | `*RxPreEmphasis` | zero value | PreEmphasis, when not nil, states that the radio de-emphasizes its discriminator output from 300 Hz to 3 kHz, as the speaker and accessory outputs of FM radios do, so that the receiver inverts it with the filter that it holds before it detects the bursts: a RxPreEmphasis of this receiver alone, set up by Init or NewRxPreEmphasis. Nil is a flat discriminator output, as the radio chips of hotspots and MMDVM modems give it. Every Tier and Rate takes it. A RxPreEmphasis that is not set up gives a *dmrgo.ConfigError. |
 | `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo.ConfigError for it. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## How it works
 

@@ -16,7 +16,7 @@ Radios put the text in the user data in more than one format. [Package sms](http
 
 The example has two parts. The first part, `readText`, replays the capture to a [data.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver) and returns the decoded text of the packet that it delivers:
 
-<!-- dmrgo:code file=v2/sms/example_test.go symbol=readText -->
+<!-- docgen:code file=v2/sms/example_test.go symbol=readText -->
 ```go
 func readText(path string) (sms.Text, error) {
 	f, err := os.Open(path)
@@ -55,11 +55,11 @@ func readText(path string) (sms.Text, error) {
 	return in, sc.Err()
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 The second part, `sendReply`, builds a reply in the same format with [sms.AppendPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/sms#AppendPacket) and sends it with a [data.Sender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender). A second Receiver, at the address of the radio, takes the place of the radio. It sends its ACK back to the Sender:
 
-<!-- dmrgo:code file=v2/sms/example_test.go symbol=sendReply -->
+<!-- docgen:code file=v2/sms/example_test.go symbol=sendReply -->
 ```go
 func sendReply(in sms.Text) error {
 	out := sms.Text{Format: in.Format, Source: in.Destination, Destination: in.Source, Confirmed: true, Body: []byte("got it")}
@@ -105,7 +105,7 @@ func sendReply(in sms.Text) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Run it from the `v2` directory:
 
@@ -115,13 +115,13 @@ go test -run Example_reply -v ./sms
 
 It prints:
 
-<!-- dmrgo:output test=sms.Example_reply -->
+<!-- docgen:output test=sms.Example_reply -->
 ```text
 AnyTone text from 3009999 to 3002198: "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG"
 radio: "got it" from 3002198 <nil>
 sender: Delivered after 1 tries (ACK)
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## What the code does
 

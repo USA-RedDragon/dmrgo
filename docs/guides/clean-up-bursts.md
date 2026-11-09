@@ -24,7 +24,7 @@ go run -C v2 ./examples/hotspot
 
 Decode each burst with the color code of the channel. [fec.Result.Combine](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/fec#Result.Combine) adds the corrected bits of each burst to a total. A [VoiceReceiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceReceiver) returns the embedded LC of each superframe, which must match the Voice LC Header of the call.
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go symbol=rxStats.decodeBurst -->
+<!-- docgen:code file=v2/examples/hotspot/main.go symbol=rxStats.decodeBurst -->
 ```go
 func (s *rxStats) decodeBurst(rx *layer2.VoiceReceiver, cc enums.ColorCode, p *layer2.RawBurst, b *layer2.Burst) error {
 	f, a := addRFErrors(p)
@@ -47,13 +47,13 @@ func (s *rxStats) decodeBurst(rx *layer2.VoiceReceiver, cc enums.ColorCode, p *l
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Check each data burst as MMDVMHost does
 
 [RawBurst.MMDVMHostPayload](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#RawBurst.MMDVMHostPayload) returns the BPTC payload and whether MMDVMHost uses a burst of that data type from the network. Keep the Voice LC Header for the next step. From each voice burst, keep the AMBE+2 frames after FEC with `AMBEFrames`.
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go symbol=rxStats.countBurst -->
+<!-- docgen:code file=v2/examples/hotspot/main.go symbol=rxStats.countBurst -->
 ```go
 func (s *rxStats) countBurst(p *layer2.RawBurst, b *layer2.Burst) {
 	switch b.Kind {
@@ -75,13 +75,13 @@ func (s *rxStats) countBurst(p *layer2.RawBurst, b *layer2.Burst) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Regenerate the call from the LC and the frames
 
 A [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceTransmitter) makes the Voice LC Header, the voice superframes with their embedded LC, and the Terminator with LC. `AddFrames` encodes each AMBE+2 frame with its FEC, so the new bursts carry no bit errors. The transmitter pads the last superframe with the silence slot of [vocoder.AMBESilenceSlot](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/vocoder#AMBESilenceSlot).
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go symbol=regenerate -->
+<!-- docgen:code file=v2/examples/hotspot/main.go symbol=regenerate -->
 ```go
 func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
 	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: colorCode, Source: layer2.SyncSourceBS, Silence: vocoder.AMBESilenceSlot()})
@@ -101,13 +101,13 @@ func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([]layer2.Ra
 	return append(out, tail...), nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Rewrite a header and seal it for MMDVMHost
 
 To change the target of a Voice LC Header in place, read the payload with `BPTCPayload`, set the addresses with [LCBytes.SetAddresses](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#LCBytes.SetAddresses), and write the check bits again with [MMDVMHostSeal](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#MMDVMHostSeal). Then build the burst with [BuildDataBurst](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#BuildDataBurst). Before the seal, MMDVMHost rejects the payload. After the seal, it accepts it.
 
-<!-- dmrgo:code file=v2/examples/hotspot/main.go symbol=rewriteTarget -->
+<!-- docgen:code file=v2/examples/hotspot/main.go symbol=rewriteTarget -->
 ```go
 func rewriteTarget(header layer2.RawBurst, target uint32) (before, after, sameAsCodeword bool, decoded uint32, err error) {
 	p, _ := header.BPTCPayload()
@@ -145,13 +145,13 @@ func rewriteTarget(header layer2.RawBurst, target uint32) (before, after, sameAs
 	return
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The first lines describe the capture and the call. Then come the bit errors that the example put in and the bits that the FEC corrected, the MMDVMHost check, the regenerated call, and the rewritten header.
 
-<!-- dmrgo:output example=hotspot -->
+<!-- docgen:output cmd=v2/examples/hotspot -->
 ```text
 capture: 79 bursts (2 data, 77 voice), color code 1
 call: Unit to Unit Voice Channel User 3009999 -> 9990
@@ -162,7 +162,7 @@ embedded LC: 13/13 match the header
 regenerated: 80 bursts from 231 AMBE frames, clean true, frames match true, 48 identical to capture
 rewrite target 9990 -> 91: accepted before seal false, after seal true, equals LCBytes.Codeword true
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The AMBE+2 FEC corrects more bits than the example put in, because the capture itself has a few bit errors in its voice frames. The regenerated call has more bursts than the capture: the transmitter completes the last superframe with silence.
 

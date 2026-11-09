@@ -16,7 +16,7 @@ To decode the voice of a call, pass the call of the grant to [voice.Receiver.Exp
 
 Pass a [CapacityPlusConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusConfig) to [NewCapacityPlusFollower](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#NewCapacityPlusFollower). A nil config follows every talkgroup on the repeater that the receiver is on. Set a [ChannelPlan](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#ChannelPlan) with the frequencies of the repeaters, so the Follower can hunt and tune. Set Individual to follow private calls too. Set NoFollow for a receiver that cannot tune.
 
-<!-- dmrgo:config pkg=trunk type=CapacityPlusConfig -->
+<!-- docgen:config pkg=trunk type=CapacityPlusConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Plan` | `*ChannelPlan` | zero value | Plan, when set, maps the repeaters of the site to frequencies: channel number n is repeater n, which carries LSN 2n-1 on timeslot 1 and LSN 2n on timeslot 2. The Follower copies it and hunts over the repeaters that it names, in number order. Without a plan the Follower hunts nothing, and the consumer keeps the receiver on one repeater. |
@@ -28,13 +28,13 @@ Pass a [CapacityPlusConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2
 | `Inactive` | `time.Duration` | not machine-readable; see the description | Inactive is the time without a burst of the call after which the Follower returns to the rest channel. 0 means constants.TVInactiveDefault, and a negative value turns the timer off. |
 | `Hangtime` | `time.Duration` | not machine-readable; see the description | Hangtime is the time after a Terminator with LC in which the Follower waits for more voice. 0 means constants.TVHangtimeDefault, and a negative value turns the timer off. |
 | `Scratch` | `*layer2.Burst` | `&layer2.Burst{}` | Scratch, when set, is the Burst that the Follower decodes into. Nil means the Follower makes its own. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.State) returns the current state. The type is the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#State) of the Tier III Follower, with the rest channel in place of the TSCC.
 
-<!-- dmrgo:states pkg=trunk type=CapacityPlusFollower -->
+<!-- docgen:states pkg=trunk type=CapacityPlusFollower -->
 States of [`CapacityPlusFollower`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower), from [`CapacityPlusFollower.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.State):
 
 | State | Meaning | Seen in tests |
@@ -55,7 +55,7 @@ Transitions seen in tests:
 | StatePayload | `Tick` | StateControl |
 
 ![Transitions of CapacityPlusFollower](states/trunk-capacityplusfollower.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 The Follower starts by hunting. With a plan, the first Tick or Burst requests the first repeater, and the Follower moves to the next repeater in number order when no valid Capacity Plus PDU comes within the no-signal time. A rest channel beacon or site status moves it to the rest channel, and it reports the site. When the site announces a new rest channel, the Follower moves with it. A voice grant or the activity of a site status for a selected call moves it to the payload slot of the call. The hang time after a Terminator with LC, the inactive time, or a lost signal returns it to the rest channel, or to the hunt when no rest channel is known. On the rest channel, the no-signal time without a valid PDU starts the hunt again.
 
@@ -71,13 +71,13 @@ Inputs:
 
 Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Output) values of the same kinds as for the Tier III Follower: tune requests, the site, the loss of the rest channel, grants and the end of a followed call. A tune request and a [Grant](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Grant) name the repeater in Channel and the timeslot of the LSN in Slot. A grant from a site status has the site status opcode and LateEntry set; one from a Voice LC Header has opcode 0.
 
-The accessors [RestLSN](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.RestLSN), [SiteNumber](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.SiteNumber) and [Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.Call) return the rest channel, the Linked Capacity Plus site number and the followed call. Give each method a slice with capacity <!-- dmrgo:const pkg=trunk name=MaxOutputs -->`10`<!-- /dmrgo:const -->.
+The accessors [RestLSN](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.RestLSN), [SiteNumber](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.SiteNumber) and [Call](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower.Call) return the rest channel, the Linked Capacity Plus site number and the followed call. Give each method a slice with capacity <!-- docgen:const pkg=trunk name=MaxOutputs -->`10`<!-- /docgen:const -->.
 
 ## Timers
 
-- No-signal time: the time without a valid Capacity Plus PDU on the rest channel after which the Follower hunts again, and the time it stays on each repeater while it hunts. The default is <!-- dmrgo:const pkg=trunk name=CapacityPlusNoSignalDefault -->`5s`<!-- /dmrgo:const -->, more than twice the beacon period of an idle rest channel.
-- Inactive time: the time without a burst of the call after which the Follower returns to the rest channel. The default is <!-- dmrgo:const pkg=constants name=TVInactiveDefault -->`5s`<!-- /dmrgo:const -->.
-- Hang time: the time after a Terminator with LC in which the Follower waits for more voice. The default is <!-- dmrgo:const pkg=constants name=TVHangtimeDefault -->`4s`<!-- /dmrgo:const -->.
+- No-signal time: the time without a valid Capacity Plus PDU on the rest channel after which the Follower hunts again, and the time it stays on each repeater while it hunts. The default is <!-- docgen:const pkg=trunk name=CapacityPlusNoSignalDefault -->`5s`<!-- /docgen:const -->, more than twice the beacon period of an idle rest channel.
+- Inactive time: the time without a burst of the call after which the Follower returns to the rest channel. The default is <!-- docgen:const pkg=constants name=TVInactiveDefault -->`5s`<!-- /docgen:const -->.
+- Hang time: the time after a Terminator with LC in which the Follower waits for more voice. The default is <!-- docgen:const pkg=constants name=TVHangtimeDefault -->`4s`<!-- /docgen:const -->.
 
 A negative value in the config turns that timer off.
 
@@ -85,7 +85,7 @@ A negative value in the config turns that timer off.
 
 This example reads the rest channel beacons of a Linked Capacity Plus site from a recording: the time, the CACH and the burst of each line. The Follower reports the site with its rest LSN, holds the site number from the beacons, and hunts again one no-signal time after the last beacon.
 
-<!-- dmrgo:code file=v2/trunk/example_test.go symbol=ExampleCapacityPlusFollower -->
+<!-- docgen:code file=v2/trunk/example_test.go symbol=ExampleCapacityPlusFollower -->
 ```go
 func ExampleCapacityPlusFollower() {
 	file, err := os.ReadFile("testdata/capplus_lcp_beacon.txt")
@@ -126,25 +126,25 @@ func ExampleCapacityPlusFollower() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=trunk.ExampleCapacityPlusFollower -->
+<!-- docgen:output test=trunk.ExampleCapacityPlusFollower -->
 ```text
 Site rest LSN 6 Control
 site 3
 Lost after 5s Hunting
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
 The event methods return no errors. NewCapacityPlusFollower returns a configuration error for a talkgroup list out of range.
 
-<!-- dmrgo:errors pkg=trunk type=CapacityPlusFollower -->
+<!-- docgen:errors pkg=trunk type=CapacityPlusFollower -->
 The doc comments of [`CapacityPlusFollower`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#CapacityPlusFollower) and its methods name no error.
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

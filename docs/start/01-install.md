@@ -4,7 +4,7 @@ This step adds dmrgo to a Go module and gets a clone of the repository, so that 
 
 ## What you need
 
-- Go <!-- dmrgo:gomod field=go -->`1.24.0`<!-- /dmrgo:gomod --> or later, the version of the `go` line of the module.
+- Go <!-- docgen:gomod field=go -->`1.24.0`<!-- /docgen:gomod --> or later, the version of the `go` line of the module.
 - No C compiler. The library is pure Go. A C compiler is necessary only for two optional parts: the system libcodec2 backend of `vocoder/codec2` (build tag `codec2native`) and the C API in `v2/capi`.
 
 ## Add the module to your program
@@ -37,13 +37,13 @@ go test -run '^Example$' -v .
 
 The example prints:
 
-<!-- dmrgo:output test=.Example -->
+<!-- docgen:output test=.Example -->
 ```text
 Voice LC Header <nil>
 call from 3009999 to 9990
 true <nil>
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) lists every package. [The layer model](../concepts/layers.md) shows how the packages fit together.
 

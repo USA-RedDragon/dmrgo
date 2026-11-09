@@ -14,20 +14,20 @@ Use a Bridge in a master that links to another master over OpenBridge, such as a
 
 Pass a [BridgeConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#BridgeConfig) to [NewBridge](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#NewBridge). The config is required. Key is the passphrase of the link, as [dmrdauth.NewBridgeKey](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth#NewBridgeKey) takes it. Keepalive applies only with Enhanced.
 
-<!-- dmrgo:config pkg=transport/dmrd/dmrdsession type=BridgeConfig -->
+<!-- docgen:config pkg=transport/dmrd/dmrdsession type=BridgeConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Key` | `[]byte` | zero value | Key is the passphrase of the OpenBridge link (see dmrdauth.NewBridgeKey). |
 | `Enhanced` | `bool` | zero value | Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive. Without it OpenBridge has no keepalive, and the Bridge sends nothing of its own. |
 | `Keepalive` | `time.Duration` | not machine-readable; see the description | Keepalive is the BCKA period. 0 means KeepaliveDefault. |
 | `Timeout` | `time.Duration` | not machine-readable; see the description | Timeout is the time without a packet with a good signature after which the Bridge reports OutputDown. 0 means TimeoutDefault, the time after which FreeDMR stops sending to a peer. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
 [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.State) returns the current state. The Peer, the Master and the Bridge share the [State](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#State) type. A Bridge uses only two of its values: the link is idle, or it runs.
 
-<!-- dmrgo:states pkg=transport/dmrd/dmrdsession type=Bridge -->
+<!-- docgen:states pkg=transport/dmrd/dmrdsession type=Bridge -->
 States of [`Bridge`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge), from [`Bridge.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.State):
 
 | State | Meaning | Seen in tests |
@@ -48,7 +48,7 @@ Transitions seen in tests:
 | StateRunning | `Tick` | StateIdle |
 
 ![Transitions of Bridge](states/transport-dmrd-dmrdsession-bridge.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 The link runs while the other end sent a packet with a good signature, a BCKA or any other, within Timeout. The first such packet after an idle link reports the link up. When Timeout passes without one, Tick reports the link down. This works with and without the enhanced mode. Without it, OpenBridge has no keepalive, so the link of a quiet peer goes down at Timeout and comes up again with its next packet.
 
@@ -60,18 +60,18 @@ Inputs:
 - [SignInPlace](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.SignInPlace) writes the signature into the last octets of an OpenBridge packet that you send.
 - [Tick](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Tick) runs the timeout and, in the enhanced mode, sends the keepalive. Call it at the time [Deadline](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Bridge.Deadline) returns. A Bridge without the enhanced mode has no deadline while the link is idle.
 
-Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Output) values with an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#OutputKind): the BCKA to send, the link up and down, the DMRD and DMRE data packets with a good signature, and the BCSQ, BCST and BCVE messages. A packet without a good signature, or that is not OpenBridge, gives no output. The packets of the data and message outputs point into the packet that you passed in. Give each method a slice with capacity <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /dmrgo:const -->.
+Outputs are [Output](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#Output) values with an [OutputKind](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession#OutputKind): the BCKA to send, the link up and down, the DMRD and DMRE data packets with a good signature, and the BCSQ, BCST and BCVE messages. A packet without a good signature, or that is not OpenBridge, gives no output. The packets of the data and message outputs point into the packet that you passed in. Give each method a slice with capacity <!-- docgen:const pkg=transport/dmrd/dmrdsession name=MaxOutputs -->`4`<!-- /docgen:const -->.
 
 ## Timers
 
-- Keepalive: the BCKA period of an enhanced Bridge. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=KeepaliveDefault -->`10s`<!-- /dmrgo:const -->, the BCKA period of FreeDMR. The first BCKA goes out at the first Tick.
-- Timeout: the time without a packet with a good signature after which the Bridge reports the link down. The default is <!-- dmrgo:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /dmrgo:const -->, the time after which FreeDMR stops sending to a peer.
+- Keepalive: the BCKA period of an enhanced Bridge. The default is <!-- docgen:const pkg=transport/dmrd/dmrdsession name=KeepaliveDefault -->`10s`<!-- /docgen:const -->, the BCKA period of FreeDMR. The first BCKA goes out at the first Tick.
+- Timeout: the time without a packet with a good signature after which the Bridge reports the link down. The default is <!-- docgen:const pkg=transport/dmrd/dmrdsession name=TimeoutDefault -->`1m0s`<!-- /docgen:const -->, the time after which FreeDMR stops sending to a peer.
 
 ## Worked example
 
 This example runs both ends of an enhanced link in memory. The BCKA of one end brings the link up at the other. A signed BCSQ passes, the same packet with one bit changed is dropped, and the link goes down one Timeout after the last good packet.
 
-<!-- dmrgo:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExampleBridge -->
+<!-- docgen:code file=v2/transport/dmrd/dmrdsession/example_test.go symbol=ExampleBridge -->
 ```go
 func ExampleBridge() {
 	cfg := dmrdsession.BridgeConfig{Key: []byte("bridge passphrase"), Enhanced: true}
@@ -108,28 +108,28 @@ func ExampleBridge() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=transport/dmrd/dmrdsession.ExampleBridge -->
+<!-- docgen:output test=transport/dmrd/dmrdsession.ExampleBridge -->
 ```text
 b: Up
 b: Message BCSQ
 b: bad signature, 0 outputs
 b: 1m1s Down Timeout Idle
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
 Packet and Tick return no errors: a packet with a bad signature gives no output. SignInPlace returns an error for a Bridge that NewBridge did not make and for a packet that is not OpenBridge. NewBridge returns an error for a nil config, and a configuration error for a negative Keepalive or Timeout.
 
-<!-- dmrgo:errors pkg=transport/dmrd/dmrdsession type=Bridge -->
+<!-- docgen:errors pkg=transport/dmrd/dmrdsession type=Bridge -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`dmrgo.ErrZeroValue`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrZeroValue) | `Bridge.SignInPlace` | ErrZeroValue is returned by a method of a state machine that starts work, such as Start, Request or Send, when the machine is a zero value and not made with its constructor. |
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## Related machines and guides
 

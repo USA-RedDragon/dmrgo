@@ -37,7 +37,7 @@ The flowgraph prints each burst with its TDMA channel, color code and call. `gr-
 
 The `gr-dmrgo` job builds the module on Ubuntu 24.04, runs its tests, and compiles and runs the file flowgraph:
 
-<!-- dmrgo:code file=.github/workflows/test.yaml symbol="jobs.gr-dmrgo.steps[Install GNU Radio:Compile and run the example flowgraph]" -->
+<!-- docgen:code file=.github/workflows/test.yaml symbol="jobs.gr-dmrgo.steps[Install GNU Radio:Compile and run the example flowgraph]" -->
 ```yaml
 - name: Install GNU Radio
   run: sudo apt-get update && sudo apt-get install -y gnuradio-dev pkg-config cmake
@@ -58,4 +58,4 @@ The `gr-dmrgo` job builds the module on Ubuntu 24.04, runs its tests, and compil
     PYTHONPATH="$(dirname "$pkg")" LD_LIBRARY_PATH="$PWD/gr-dmrgo/build/prefix/lib" timeout 300 python3 gr-dmrgo/build/dmrgo_rx_file.py -i v2/cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8 -o gr-dmrgo/build/audio.wav > gr-dmrgo/build/example.log
     grep -c "src . 3191868" gr-dmrgo/build/example.log
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->

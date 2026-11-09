@@ -4,7 +4,7 @@ This page links the documentation of each public package of the `v2` module on p
 
 The root package [dmrgo](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) holds the overview of the module, the errors that every package shares and the types that several packages use. Its package doc lists the packages:
 
-<!-- dmrgo:doc pkg=. section=Packages -->
+<!-- docgen:doc pkg=. section=Packages -->
 Air interface, layers 2 and 3:
 
   - enums: the enumerated information elements, such as data types, SYNC patterns, FLCO, FID and color codes.
@@ -57,7 +57,7 @@ Radio and voice:
   - privacy: opt-in privacy: the algorithm and key ID of an encrypted call or data packet, ARC4, AES and Basic Privacy keystreams for the AMBE+2 frames of a voice.Receiver and a voice.Transmitter, and ARC4 for the packets of a data.Receiver.
 
 The C API of the library, libdmrgo, is in v2/capi, a module of its own. It has an ABI number of its own; the README gives its version rules.
-<!-- /dmrgo:doc -->
+<!-- /docgen:doc -->
 
 ## Air interface, layers 2 and 3
 

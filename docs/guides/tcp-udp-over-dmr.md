@@ -27,7 +27,7 @@ The README of each example describes its parts, its flags, the columns of its ta
 
 A [data.Sender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender) sends packets and a [data.Receiver](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Receiver) receives them. Set `Address` to the radio ID of the radio and `Respond` so that the Receiver answers confirmed packets. Make the output and event slices with capacity `data.MaxOutputs` and `data.MaxEvents`, so that they never grow.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=newLink -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=newLink -->
 ```go
 func newLink(id uint32, rate enums.DataType, seed uint64, h linkHandler, emit func(time.Duration, *layer2.RawBurst)) (*link, error) {
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, Seed: seed})
@@ -46,13 +46,13 @@ func newLink(id uint32, rate enums.DataType, seed uint64, h linkHandler, emit fu
 	}, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Send a UDP datagram with a compressed header
 
 [ip.AppendCompressed](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#AppendCompressed) puts a compressed UDP/IPv4 header in front of the payload. Send it in a confirmed packet with the SAP UDP/IP header compression. A compressed header has no IPv4 addresses, so the LLIDs of the data header carry the addresses. The Sender takes one packet at a time: send the next one when its state is `data.SenderIdle` again. (ETSI TS 102 361-3 clause 7.2.3)
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.pump -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.pump -->
 ```go
 func (l *link) pump(now time.Duration) {
 	for len(l.queue) > 0 && l.tx.State() == data.SenderIdle {
@@ -79,13 +79,13 @@ func (l *link) pump(now time.Duration) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Send an IPv4 packet
 
 For TCP, send each IPv4 packet of the stack as one confirmed packet with the SAP IP based packet data. The MTU of the stack must fit one DMR packet. `Send` returns `data.ErrBusy` while the Sender has a packet in progress, so keep the packet in the queue and try again later. (ETSI TS 102 361-3 clause 5.5)
 
-<!-- dmrgo:code file=v2/examples/tcp/link.go symbol=link.pump -->
+<!-- docgen:code file=v2/examples/tcp/link.go symbol=link.pump -->
 ```go
 func (l *link) pump(now time.Duration) {
 	for len(l.queue) > 0 {
@@ -107,13 +107,13 @@ func (l *link) pump(now time.Duration) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Drive the machines with the clock and the channel
 
 The machines do no I/O. Call `Tick` at the time that `Deadline` returns, and pass each burst that the radio hears to `Burst` of both machines. Call `Channel` when the channel goes busy or idle. A polite Sender waits for an idle channel before it starts a try.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.deadline -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.deadline -->
 ```go
 func (l *link) deadline() (time.Duration, bool) {
 	at, ok := l.tx.Deadline()
@@ -123,9 +123,9 @@ func (l *link) deadline() (time.Duration, bool) {
 	return at, ok
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.tick -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.tick -->
 ```go
 func (l *link) tick(now time.Duration) {
 	l.outputs(now, l.tx.Tick(now, l.outs[:0]))
@@ -133,9 +133,9 @@ func (l *link) tick(now time.Duration) {
 	l.pump(now)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.hear -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.hear -->
 ```go
 func (l *link) hear(now time.Duration, raw *layer2.RawBurst) {
 	h := layer2.Hint{At: now}
@@ -144,21 +144,21 @@ func (l *link) hear(now time.Duration, raw *layer2.RawBurst) {
 	l.pump(now)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.channel -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.channel -->
 ```go
 func (l *link) channel(now time.Duration, busy bool) {
 	l.tx.Channel(now, busy)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Send the outputs and deliver the packets
 
 An `OutputBurst` is a burst to send at its `Due` time, and `OutputDone` ends a packet with its result and its count of tries. An `EventRespond` is a response burst that the Receiver sends, and `EventDelivered` holds a packet. [ip.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#Decode) reads the datagram from the user data for the SAP of the header.
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.outputs -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.outputs -->
 ```go
 func (l *link) outputs(now time.Duration, outs []data.Output) {
 	for i := range outs {
@@ -173,9 +173,9 @@ func (l *link) outputs(now time.Duration, outs []data.Output) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:code file=v2/examples/udp/link.go symbol=link.events -->
+<!-- docgen:code file=v2/examples/udp/link.go symbol=link.events -->
 ```go
 func (l *link) events(now time.Duration, evs []data.Event) {
 	for i := range evs {
@@ -198,13 +198,13 @@ func (l *link) events(now time.Duration, evs []data.Event) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The udp example sends filled forms in different encodings, at each data rate and bit error rate, and prints the size of each encoding and the time from a form to its acknowledgement.
 
-<!-- dmrgo:output example=udp -->
+<!-- docgen:output cmd=v2/examples/udp -->
 ```text
 Octets of the form body, 200 forms, with a 4096-octet dictionary. Each datagram adds a 5-octet form header and a 9-octet compressed UDP/IP header:
 
@@ -251,11 +251,11 @@ Time from a form to its acknowledgement, 30 forms each, one at a time:
 | fields+zstd+dict | Rate 1 | 0.01 | 10/30 | 5.9 | 10.2 | 10.2 | 143.9 | 7.63 | 45 | 0 |
 | fields+zstd+dict | Rate 1 | 0.02 | 0/30 | - | - | - | 187.7 | 8.00 | 60 | 0 |
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The tcp example runs a TN3270 session over TCP, on a simplex and a duplex channel, with and without a DMR window, and prints the time of each screen.
 
-<!-- dmrgo:output example=tcp -->
+<!-- docgen:output cmd=v2/examples/tcp -->
 ```text
 TN3270 over TCP over DMR, MTU 576, 5 cycles of form submit and back. Records: negotiation 54 octets in 6 records, form screen 316, form input 160, list screen 1674, PF3 5:
 
@@ -322,11 +322,11 @@ TN3270 over TCP over DMR, MTU 576, 5 cycles of form submit and back. Records: ne
 | duplex | 4 | Rate 1 | 0.01 | session stopped at 2m25.42s: terminal TCP error: operation timed out | | | | | | | | |
 | duplex | 4 | Rate 1 | 0.02 | session stopped at 2m7s: terminal TCP error: operation timed out | | | | | | | | |
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## How it works
 
-The DMR IP bearer service carries an IPv4 packet in the user data of a data packet. With the SAP IP based packet data, the packet has its full IPv4 header. With the SAP UDP/IP header compression, a short header replaces the IPv4 and UDP headers, and the ports <!-- dmrgo:const pkg=ip name=PortText -->`5016`<!-- /dmrgo:const --> and <!-- dmrgo:const pkg=ip name=PortLocation -->`5017`<!-- /dmrgo:const --> need no extended header. [ip.RadioAddress](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#RadioAddress) gives the IPv4 address of a radio ID, for a stack that needs one. (ETSI TS 102 361-3 clauses 5.5, 5.6 and 7.2.3)
+The DMR IP bearer service carries an IPv4 packet in the user data of a data packet. With the SAP IP based packet data, the packet has its full IPv4 header. With the SAP UDP/IP header compression, a short header replaces the IPv4 and UDP headers, and the ports <!-- docgen:const pkg=ip name=PortText print=raw -->`5016`<!-- /docgen:const --> and <!-- docgen:const pkg=ip name=PortLocation print=raw -->`5017`<!-- /docgen:const --> need no extended header. [ip.RadioAddress](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#RadioAddress) gives the IPv4 address of a radio ID, for a stack that needs one. (ETSI TS 102 361-3 clauses 5.5, 5.6 and 7.2.3)
 
 A DMR ACK covers one radio hop, and the IP bearer service delivers a packet again after its response is lost. So an application on UDP needs its own acknowledgement and its own check for copies, as the form protocol of the udp example has. (ETSI TS 102 361-3 clause 5.4.1.3)
 

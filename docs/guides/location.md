@@ -22,9 +22,9 @@ Which format to use depends on the radio:
 
 | Radios | Format | Carried in |
 | --- | --- | --- |
-| MOTOTRBO, and Hytera | LRRP request and report | UDP datagram to port <!-- dmrgo:const pkg=ip name=PortLRRP -->`4001`<!-- /dmrgo:const --> |
-| AnyTone | NMEA RMC sentence | UDP datagram to port <!-- dmrgo:const pkg=ip name=PortNMEA -->`10110`<!-- /dmrgo:const --> |
-| Hytera | HDAP location protocol | UDP datagram to port <!-- dmrgo:const pkg=ip name=PortHyteraLocation -->`3003`<!-- /dmrgo:const --> |
+| MOTOTRBO, and Hytera | LRRP request and report | UDP datagram to port <!-- docgen:const pkg=ip name=PortLRRP print=raw -->`4001`<!-- /docgen:const --> |
+| AnyTone | NMEA RMC sentence | UDP datagram to port <!-- docgen:const pkg=ip name=PortNMEA print=raw -->`10110`<!-- /docgen:const --> |
+| Hytera | HDAP location protocol | UDP datagram to port <!-- docgen:const pkg=ip name=PortHyteraLocation print=raw -->`3003`<!-- /docgen:const --> |
 | Radios and systems that use ETSI LIP | LIP PDU | appended data of a UDT (ETSI TS 102 361-4) |
 
 ## Steps
@@ -33,7 +33,7 @@ Which format to use depends on the radio:
 
 Make an [lrrp.Message](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp#Message) with an immediate request document and a request ID, and write it with `AppendBinary`. Put it in a UDP datagram to the LRRP port with [ip.AppendIPv4](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#AppendIPv4). [ip.RadioAddress](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/ip#RadioAddress) gives the IPv4 address of each radio ID. Send the datagram in a data packet with the SAP IP based packet data.
 
-<!-- dmrgo:code file=v2/location/example_test.go symbol=requestLRRP -->
+<!-- docgen:code file=v2/location/example_test.go symbol=requestLRRP -->
 ```go
 func requestLRRP(server, radio uint32) (ip.Datagram, []byte, error) {
 	request = lrrp.Message{Document: lrrp.DocumentImmediateRequest}
@@ -62,7 +62,7 @@ func requestLRRP(server, radio uint32) (ip.Datagram, []byte, error) {
 	return d, data, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 [location.Decoder.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#Decoder.Decode) returns `location.ErrNoFix` for a request, so a program that reads every data packet on a channel can give each one to the Decoder.
 
@@ -70,7 +70,7 @@ func requestLRRP(server, radio uint32) (ip.Datagram, []byte, error) {
 
 The radio reads the request with [lrrp.DecodeMessageInto](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp#DecodeMessageInto) and answers with an immediate report that carries the same request ID, a result code and a position. The Decoder reads the answer into a [location.Fix](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#Fix), with the request ID that it answers.
 
-<!-- dmrgo:code file=v2/location/example_test.go symbol=answerLRRP -->
+<!-- docgen:code file=v2/location/example_test.go symbol=answerLRRP -->
 ```go
 func answerLRRP(server, radio uint32, d ip.Datagram, data []byte) error {
 	got, err := ip.Decode(enums.SAPIPBasedPacketData, data)
@@ -109,14 +109,14 @@ func answerLRRP(server, radio uint32, d ip.Datagram, data []byte) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=location.ExampleDecoder_Decode_lrrp -->
+<!-- docgen:output test=location.ExampleDecoder_Decode_lrrp -->
 ```text
 request: location: packet carries no position
 LRRP from 3002068: 34.21217 108.83333, 5 m, request 2468ace0, result 0
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 An `lrrp.Message` is large, and a `location.Decoder` holds one. Keep them in a struct or a package variable, not in a local variable on a small stack, as the examples do.
 
@@ -124,7 +124,7 @@ An `lrrp.Message` is large, and a `location.Decoder` holds one. Keep them in a s
 
 [location.AppendPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#AppendPacket) writes a Fix as the NMEA RMC sentence of an AnyTone radio, behind a compressed UDP/IPv4 header in an unconfirmed packet, and sets the data header in a [location.Header](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/location#Header). The same Decoder reads it back.
 
-<!-- dmrgo:code file=v2/location/example_test.go symbol=ExampleAppendPacket -->
+<!-- docgen:code file=v2/location/example_test.go symbol=ExampleAppendPacket -->
 ```go
 func ExampleAppendPacket() {
 	f := location.Fix{
@@ -146,14 +146,14 @@ func ExampleAppendPacket() {
 	fmt.Printf("%d blocks: %q\n%s from %d: %.5f %.5f %v\n", len(p.Blocks), data[9:], got.Format, got.Source, got.Latitude, got.Longitude, err)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=location.ExampleAppendPacket -->
+<!-- docgen:output test=location.ExampleAppendPacket -->
 ```text
 8 blocks: "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"
 NMEA from 3002068: 34.21217 108.83333 <nil>
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 To read or write the sentence alone, use [nmea.ParseRMC](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/nmea#ParseRMC) and [nmea.AppendRMC](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/nmea#AppendRMC). `ParseRMC` returns an error for a sentence with a bad checksum.
 
@@ -161,7 +161,7 @@ To read or write the sentence alone, use [nmea.ParseRMC](https://pkg.go.dev/gith
 
 A LIP PDU is a string of bits. Encode an [lip.ImmediateRequest](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#ImmediateRequest) with the report type that you want, and put it in the appended data of a UDT with [trunk.Appended.SetLIP](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#Appended.SetLIP). The radio reads the PDU type with [lip.DecodeHeader](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#DecodeHeader) and the request with `DecodeImmediateRequest`. (ETSI TS 102 361-4 clause B.3.10, ETSI TS 100 392-18-1 clause 6.2.16)
 
-<!-- dmrgo:code file=v2/lip/example_test.go symbol=requestLIP -->
+<!-- docgen:code file=v2/lip/example_test.go symbol=requestLIP -->
 ```go
 func requestLIP(a *trunk.Appended) ([]byte, error) {
 	q := lip.ImmediateRequest{ReportType: lip.ReportLongPosition}
@@ -192,13 +192,13 @@ func requestLIP(a *trunk.Appended) ([]byte, error) {
 	return got, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Answer with a LIP long location report
 
 The radio answers with an [lip.LongReport](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#LongReport) of the type that the request specified, here with the time of the position. [lip.DecodeLongReport](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/lip#DecodeLongReport) reads it. Velocities and accuracies stay codes, as the spec codes them in steps. (ETSI TS 100 392-18-1 clause 6.2.2)
 
-<!-- dmrgo:code file=v2/lip/example_test.go symbol=answerLIP -->
+<!-- docgen:code file=v2/lip/example_test.go symbol=answerLIP -->
 ```go
 func answerLIP(a *trunk.Appended, buf []byte) error {
 	r := lip.LongReport{
@@ -225,15 +225,15 @@ func answerLIP(a *trunk.Appended, buf []byte) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=lip.ExampleDecodeImmediateRequest -->
+<!-- docgen:output test=lip.ExampleDecodeImmediateRequest -->
 ```text
 LIP 1 block
 request: Long location report with time of position
 answer: Location point 34.2122 108.8333, day 2 20:00:37 UTC
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## How it works
 

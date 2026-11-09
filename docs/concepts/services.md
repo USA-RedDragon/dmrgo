@@ -31,7 +31,7 @@ Three machines differ. [bs.Repeater](https://pkg.go.dev/github.com/USA-RedDragon
 
 This example sends a confirmed message to no one. Each loop calls `Deadline` and then `Tick` at that time, so the example does not wait for real time to pass. The Sender tries again at each timeout, and then gives up:
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=driveClock -->
+<!-- docgen:code file=v2/data/sender_example_test.go symbol=driveClock -->
 ```go
 func driveClock(tx *data.Sender) {
 	outputs := make([]data.Output, 0, data.MaxOutputs)
@@ -48,13 +48,13 @@ func driveClock(tx *data.Sender) {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=data.ExampleOutput_ICMP -->
+<!-- docgen:output test=data.ExampleOutput_ICMP -->
 ```text
 RetryLimit after 2 tries: ICMP Host Unreachable (type 3, code 1)
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 In a real program, set a timer to the time that `Deadline` returns, and call `Tick` when it fires or when an input comes first. Call `Deadline` again after each call, because each input can change it.
 
@@ -68,7 +68,7 @@ The hint of each burst that a machine sends carries its slot. The `Call` of the 
 
 A zero machine does nothing. Each method that starts work, such as `Start`, `Request` or `Send`, returns [dmrgo.ErrZeroValue](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrZeroValue) on a zero machine, and the other methods do nothing. Make each machine with its constructor, such as [data.NewSender](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#NewSender):
 
-<!-- dmrgo:code file=v2/example_test.go symbol=ExampleErrZeroValue -->
+<!-- docgen:code file=v2/example_test.go symbol=ExampleErrZeroValue -->
 ```go
 func ExampleErrZeroValue() {
 	m := &data.Message{Payload: []byte("hello")}
@@ -87,14 +87,14 @@ func ExampleErrZeroValue() {
 	fmt.Println(tx.Send(0, m))
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=.ExampleErrZeroValue -->
+<!-- docgen:output test=.ExampleErrZeroValue -->
 ```text
 true
 <nil>
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The constructor checks the config and returns a [*dmrgo.ConfigError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) for a field out of range. After the constructor, no method of the machine allocates when `dst` has room. See [Allocation](allocation.md).
 

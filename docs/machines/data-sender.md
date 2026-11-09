@@ -22,7 +22,7 @@ Turn on the window only for receivers that keep every packet of it. The AnyTone 
 
 [`data.NewSender`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#NewSender) takes a [`*data.SenderConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#SenderConfig). A nil config is the zero config. `Slot` must be slot 1 or slot 2, so a nil config returns an error. `Source` selects the SYNC: BS sourced for a repeater outbound, MS sourced for a radio. A duration of 0 selects the default in the field doc, and the field doc gives what a negative duration does.
 
-<!-- dmrgo:config pkg=data type=SenderConfig -->
+<!-- docgen:config pkg=data type=SenderConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the bursts. |
@@ -41,11 +41,11 @@ Turn on the window only for receivers that keep every packet of it. The AnyTone 
 | `Seed` | `uint64` | zero value | Seed seeds the random holdoff. Two Senders with the same seed hold off for the same times, so give each radio its own seed. |
 | `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the Sender, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
 | `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the Sender keep to the Due times. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## States and transitions
 
-<!-- dmrgo:states pkg=data type=SenderState -->
+<!-- docgen:states pkg=data type=SenderState -->
 States of [`Sender`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender), from [`Sender.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#Sender.State):
 
 | State | Meaning | Seen in tests |
@@ -75,7 +75,7 @@ Transitions seen in tests:
 | SenderWaitResponse | `Burst`, `Tick` | SenderSending |
 
 ![Transitions of Sender](states/data-sender-senderstate.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 These inputs move the state:
 
@@ -119,22 +119,22 @@ For a message of the IP bearer service, [`Output.ICMP`](https://pkg.go.dev/githu
 
 | Timer | Config field | Default |
 |---|---|---|
-| Idle search, the wait for an idle channel before a holdoff (ETSI TS 102 361-1 clause F.1) | `IdleSearch` | <!-- dmrgo:const pkg=data name=DefaultIdleSearch -->`540ms`<!-- /dmrgo:const --> |
-| Upper end of the random holdoff T_Holdoff | `Holdoff` | <!-- dmrgo:const pkg=constants name=THoldoffMax -->`2s`<!-- /dmrgo:const --> |
-| T_RspnsWait, the wait for the response after a try | `ResponseWait` | <!-- dmrgo:const pkg=constants name=TResponseWait -->`180ms`<!-- /dmrgo:const --> |
-| T_DataTxLmt, the time from `Send` after which no new try starts | `TxLimit` | <!-- dmrgo:const pkg=constants name=TDataTxLimit -->`1m0s`<!-- /dmrgo:const --> |
-| N_RtryLmt, the most transmissions of a confirmed message | `Retries` | <!-- dmrgo:const pkg=constants name=NRetryLimit -->`8`<!-- /dmrgo:const -->, at most <!-- dmrgo:const pkg=data name=MaxRetries -->`64`<!-- /dmrgo:const --> |
-| Pre_CSBKs before the header of each try | `Preambles` | <!-- dmrgo:const pkg=data name=DefaultPreambles -->`5`<!-- /dmrgo:const -->, at most <!-- dmrgo:const pkg=data name=MaxPreambles -->`64`<!-- /dmrgo:const --> |
-| Time after a response from the target in which a try sends at most one Pre_CSBK | none | <!-- dmrgo:const pkg=data name=DefaultHang -->`360ms`<!-- /dmrgo:const --> |
-| Most C_HEAD messages in a window | `Window` | stop and wait, at most <!-- dmrgo:const pkg=data name=MaxWindow -->`8`<!-- /dmrgo:const --> |
+| Idle search, the wait for an idle channel before a holdoff (ETSI TS 102 361-1 clause F.1) | `IdleSearch` | <!-- docgen:const pkg=data name=DefaultIdleSearch -->`540ms`<!-- /docgen:const --> |
+| Upper end of the random holdoff T_Holdoff | `Holdoff` | <!-- docgen:const pkg=constants name=THoldoffMax -->`2s`<!-- /docgen:const --> |
+| T_RspnsWait, the wait for the response after a try | `ResponseWait` | <!-- docgen:const pkg=constants name=TResponseWait -->`180ms`<!-- /docgen:const --> |
+| T_DataTxLmt, the time from `Send` after which no new try starts | `TxLimit` | <!-- docgen:const pkg=constants name=TDataTxLimit -->`1m0s`<!-- /docgen:const --> |
+| N_RtryLmt, the most transmissions of a confirmed message | `Retries` | <!-- docgen:const pkg=constants name=NRetryLimit -->`8`<!-- /docgen:const -->, at most <!-- docgen:const pkg=data name=MaxRetries -->`64`<!-- /docgen:const --> |
+| Pre_CSBKs before the header of each try | `Preambles` | <!-- docgen:const pkg=data name=DefaultPreambles -->`5`<!-- /docgen:const -->, at most <!-- docgen:const pkg=data name=MaxPreambles -->`64`<!-- /docgen:const --> |
+| Time after a response from the target in which a try sends at most one Pre_CSBK | none | <!-- docgen:const pkg=data name=DefaultHang -->`360ms`<!-- /docgen:const --> |
+| Most C_HEAD messages in a window | `Window` | stop and wait, at most <!-- docgen:const pkg=data name=MaxWindow -->`8`<!-- /docgen:const --> |
 
-A response that comes through a network can need a longer `ResponseWait`; <!-- dmrgo:const pkg=constants name=TResponseWaitSimulcast -->`2s`<!-- /dmrgo:const --> is the simulcast value. A try that starts soon after a response from the target sends at most one Pre_CSBK, because the target is still in the data call; one Pre_CSBK is also the ChanAuth PDU of data in channel hang time (ETSI TS 102 361-2 clause 5.1.1.6.0). `Lead` makes `Tick` emit each burst early, for an RF FIFO, and the timers still keep to the `Due` times. `Seed` seeds the holdoff; give each radio its own seed.
+A response that comes through a network can need a longer `ResponseWait`; <!-- docgen:const pkg=constants name=TResponseWaitSimulcast -->`2s`<!-- /docgen:const --> is the simulcast value. A try that starts soon after a response from the target sends at most one Pre_CSBK, because the target is still in the data call; one Pre_CSBK is also the ChanAuth PDU of data in channel hang time (ETSI TS 102 361-2 clause 5.1.1.6.0). `Lead` makes `Tick` emit each burst early, for an RF FIFO, and the timers still keep to the `Due` times. `Seed` seeds the holdoff; give each radio its own seed.
 
 ## Worked example
 
 This example sends a confirmed message to a [data.Receiver](data-receiver.md). The air between them loses one block of the first try, so the Receiver requests that block again with a SACK, and the Sender resends only that block.
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=ExampleSender -->
+<!-- docgen:code file=v2/data/sender_example_test.go symbol=ExampleSender -->
 ```go
 func ExampleSender() {
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1})
@@ -190,22 +190,22 @@ func ExampleSender() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=data.ExampleSender -->
+<!-- docgen:output test=data.ExampleSender -->
 ```text
 receiver sends SACK
 delivered "a confirmed message of a few blocks"
 receiver sends ACK
 Delivered after 2 tries (ACK)
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The next example sends three IP messages in one window. Only the last header requests a response, and one ACK delivers all three.
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=ExampleSender_window -->
+<!-- docgen:code file=v2/data/sender_example_test.go symbol=ExampleSender_window -->
 ```go
 func ExampleSender_window() {
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1, Window: 3})
@@ -256,11 +256,11 @@ func ExampleSender_window() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=data.ExampleSender_window -->
+<!-- docgen:output test=data.ExampleSender_window -->
 ```text
 delivered "one", response requested false
 delivered "two", response requested false
@@ -269,18 +269,22 @@ N(S) 0: Delivered (ACK)
 N(S) 1: Delivered (ACK)
 N(S) 2: Delivered (ACK)
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
-<!-- dmrgo:errors pkg=data type=Sender -->
+<!-- docgen:errors pkg=data type=Sender -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`data.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#ErrBusy) | `Sender.Send` | ErrBusy is returned by Sender.Send while a message is in progress. |
 | [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `Sender.Send` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
 | [`dmrgo.ErrNilArgument`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrNilArgument) | `Sender.Send` | ErrNilArgument is returned by a function or method of the library that returns an error when a pointer, func or interface argument it needs is nil. |
 | [`dmrgo.ErrZeroValue`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ErrZeroValue) | `Sender.Send` | ErrZeroValue is returned by a method of a state machine that starts work, such as Start, Request or Send, when the machine is a zero value and not made with its constructor. |
-<!-- /dmrgo:errors -->
+| [`packet.ErrNoRoom`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#ErrNoRoom) | `Sender.Send` | ErrNoRoom is returned by Assembler.Add and AddBurst, and by Builder.Segment and Retry, for a packet with more data blocks than the storage that NewAssembler or NewBuilder allocated. |
+| [`packet.ErrPadNibble`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#ErrPadNibble) | `Sender.Send` | ErrPadNibble is returned by NewPacket and Builder.Segment for a UDT_HEAD whose Pad Nibble counts more nibbles than the payload leaves free in its blocks, plus the low nibble of its last octet. |
+| [`packet.ErrRate`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#ErrRate) | `Sender.Send` | ErrRate is returned for a data type other than rate 1/2, 3/4 or 1, and for one other than rate 1/2 for a UDT_HEAD. |
+| [`packet.ErrTooLong`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#ErrTooLong) | `Sender.Send` | ErrTooLong is returned when the payload needs more than 127 blocks, or more than the header can count, such as more than 4 for a UDT_HEAD. |
+<!-- /docgen:errors -->
 
 Match [`data.ErrBusy`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/data#ErrBusy) and the errors of [`packet.Builder.Segment`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Builder.Segment) with `errors.Is`, and a [`*dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) with `errors.As`; its `Field` names the field, such as `Header`, `Proprietary` or `Header.Group`. A `Send` that fails returns its error at once and queues nothing. A message that starts and then fails ends with an `OutputDone` and gives no error. A burst that the Sender cannot build ends every message in progress with `ResultRefused`.
 

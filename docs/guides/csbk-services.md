@@ -34,7 +34,7 @@ Give each received burst to `Burst` of each machine. The Responder returns an `O
 
 In this example the two machines pass the bursts to each other in memory:
 
-<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleResponder_callAlert -->
+<!-- docgen:code file=v2/csbk/example_test.go symbol=ExampleResponder_callAlert -->
 ```go
 func ExampleResponder_callAlert() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
@@ -67,13 +67,13 @@ func ExampleResponder_callAlert() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Handle a radio that does not answer
 
 The Requester sends the request again after each wait for the answer, up to the number of retries of its config, and then returns `OutputDone` with `ResultNoAnswer`. Call `Deadline` and `Tick` in a loop until `Deadline` returns false. [RequestOptions](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#RequestOptions) adds Pre_CSBKs before the first try, for radios that scan or sleep, and sets the channel access of each try.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleRequester_RequestRadioCheck -->
+<!-- docgen:code file=v2/csbk/example_test.go symbol=ExampleRequester_RequestRadioCheck -->
 ```go
 func ExampleRequester_RequestRadioCheck() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
@@ -98,7 +98,7 @@ func ExampleRequester_RequestRadioCheck() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Report the state of the channel with `Channel` of each machine, so that a polite try waits for an idle channel. Until the first report the channel counts as idle, as it is for a network transport.
 
@@ -106,7 +106,7 @@ Report the state of the channel with `Channel` of each machine, so that a polite
 
 [Requester.RequestOACSU](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Requester.RequestOACSU) sends the OACSU presence check (UU_V_Req) of a private call, and the Responder answers with UU_Ans_Rsp. `ResponderConfig.OACSU` sets the answer.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go symbol=Example -->
+<!-- docgen:code file=v2/csbk/example_test.go symbol=Example -->
 ```go
 func Example() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
@@ -129,7 +129,7 @@ func Example() {
 	fmt.Println(out[0].Kind, out[0].Result, "at", due)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Send any other CSBK
 
@@ -141,7 +141,7 @@ func Example() {
 - [Wakeup](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Wakeup) sends BS_Dwn_Act until the repeater outbound starts.
 - [Timing](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Timing) follows, elects and propagates the timing leader of a TDMA direct mode channel with CT_CSBKs.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleWakeup -->
+<!-- docgen:code file=v2/csbk/example_test.go symbol=ExampleWakeup -->
 ```go
 func ExampleWakeup() {
 	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1, ColorCode: 7})
@@ -161,51 +161,51 @@ func ExampleWakeup() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The radio check and the call alert, each answered:
 
-<!-- dmrgo:output test=csbk.ExampleResponder_callAlert -->
+<!-- docgen:output test=csbk.ExampleResponder_callAlert -->
 ```text
 responder: Request RadioCheck from 3002198
 requester: Done RadioCheck Answered after 60ms
 responder: Request CallAlert from 3002198
 requester: Done CallAlert Answered after 60ms
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 A radio check that no radio answers:
 
-<!-- dmrgo:output test=csbk.ExampleRequester_RequestRadioCheck -->
+<!-- docgen:output test=csbk.ExampleRequester_RequestRadioCheck -->
 ```text
 6 bursts, NoAnswer at 2.3s
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The OACSU presence check:
 
-<!-- dmrgo:output test=csbk.Example -->
+<!-- docgen:output test=csbk.Example -->
 ```text
 Request OACSU from 1001
 Done Answered at 60ms
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The wakeup of a repeater that does not answer:
 
-<!-- dmrgo:output test=csbk.ExampleWakeup -->
+<!-- docgen:output test=csbk.ExampleWakeup -->
 ```text
 0s Burst
 360ms Burst
 720ms Done NoAnswer
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The configs of the Requester and the Responder:
 
-<!-- dmrgo:config pkg=csbk type=RequesterConfig -->
+<!-- docgen:config pkg=csbk type=RequesterConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the slot types of the bursts sent. Other than 0, it also drops received CSBKs with another color code, as WakeupConfig.ColorCode does; 0 accepts every color code. |
@@ -218,9 +218,9 @@ The configs of the Requester and the Responder:
 | `Seed` | `uint64` | zero value | Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. Requesters on one channel need different seeds. |
 | `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. |
 | `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a machine is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Requester makes its own. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
-<!-- dmrgo:config pkg=csbk type=ResponderConfig -->
+<!-- docgen:config pkg=csbk type=ResponderConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Address` | `uint32` | zero value | Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. |
@@ -238,7 +238,7 @@ The configs of the Requester and the Responder:
 | `Seed` | `uint64` | zero value | Seed seeds the generator of the random holdoff. |
 | `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. |
 | `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## How it works
 

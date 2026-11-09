@@ -8,15 +8,15 @@ This page lists the commands of the repository, what each one does, and its flag
 
 [dmrrf](../../v2/cmd/dmrrf/README.md) writes DMR test transmissions and decodes DMR from the samples of a software radio or an FM radio:
 
-<!-- dmrgo:doc pkg=cmd/dmrrf -->
+<!-- docgen:doc pkg=cmd/dmrrf -->
 Command dmrrf builds DMR transmissions as I/Q or FM modulator audio and decodes DMR from I/Q or FM discriminator audio. It reads and writes files and pipes in the sample formats of common software radios; it does not drive a radio.
-<!-- /dmrgo:doc -->
+<!-- /docgen:doc -->
 
 Build it from the `v2` directory with `go build -o dmrrf ./cmd/dmrrf`. It has three subcommands. Its README gives the sample formats, the sequences of `tx`, the output lines of `rx` and examples for common radios.
 
 `dmrrf tx` writes a transmission as I/Q or modulator audio. Its flags:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go symbol=txFlags -->
+<!-- docgen:code file=v2/cmd/dmrrf/main.go symbol=txFlags -->
 ```go
 func txFlags(fs *flag.FlagSet) *txOptions {
 	o := &txOptions{cc: enums.ColorCode(1), dd: uint8(enums.DDUTF16LE)}
@@ -58,11 +58,11 @@ func txFlags(fs *flag.FlagSet) *txOptions {
 	return o
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 `dmrrf rx` decodes I/Q or discriminator audio. Its flags:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go symbol=rxFlags -->
+<!-- docgen:code file=v2/cmd/dmrrf/main.go symbol=rxFlags -->
 ```go
 func rxFlags(fs *flag.FlagSet) rxOptions {
 	return rxOptions{
@@ -76,11 +76,11 @@ func rxFlags(fs *flag.FlagSet) rxOptions {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 `dmrrf cal` gives the frequency offset of an unmodulated carrier in I/Q. Its flags:
 
-<!-- dmrgo:code file=v2/cmd/dmrrf/main.go symbol=calFlags -->
+<!-- docgen:code file=v2/cmd/dmrrf/main.go symbol=calFlags -->
 ```go
 func calFlags(fs *flag.FlagSet) calOptions {
 	return calOptions{
@@ -91,13 +91,13 @@ func calFlags(fs *flag.FlagSet) calOptions {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## rxbench
 
 `cmd/rxbench` writes the tables and graphs of the [Receiver](../rx.md) datasheet from the data of `v2/rf`. With `-update-readme` it first runs the long sweep and `TestRxSheet`, then writes the tables and graphs; `-sheet` runs only `TestRxSheet`, and `-no-sweep` neither. With `-check-readme` it renders the committed data and fails when the page or a graph differs. Give one of the two.
 
-<!-- dmrgo:code file=cmd/rxbench/main.go symbol=defineFlags -->
+<!-- docgen:code file=cmd/rxbench/main.go symbol=defineFlags -->
 ```go
 func defineFlags(fs *flag.FlagSet) options {
 	return options{
@@ -108,7 +108,7 @@ func defineFlags(fs *flag.FlagSet) options {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## rxsweep
 
@@ -116,7 +116,7 @@ func defineFlags(fs *flag.FlagSet) options {
 
 The flags of `rxsweep run`:
 
-<!-- dmrgo:code file=cmd/rxsweep/main.go symbol=runFlags -->
+<!-- docgen:code file=cmd/rxsweep/main.go symbol=runFlags -->
 ```go
 func runFlags(fs *flag.FlagSet) runOptions {
 	return runOptions{
@@ -129,11 +129,11 @@ func runFlags(fs *flag.FlagSet) runOptions {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 The flags of `rxsweep report`:
 
-<!-- dmrgo:code file=cmd/rxsweep/main.go symbol=reportFlags -->
+<!-- docgen:code file=cmd/rxsweep/main.go symbol=reportFlags -->
 ```go
 func reportFlags(fs *flag.FlagSet) reportOptions {
 	return reportOptions{
@@ -142,13 +142,13 @@ func reportFlags(fs *flag.FlagSet) reportOptions {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## speccheck
 
 `cmd/speccheck` checks `spec_matrix.yaml` against the code. It runs the tests that the file lists for each clause of ETSI TS 102 361 and gives each clause a status: verified, failing, untested or unimplemented. It also checks that each Go file under `v2` that is not a test and not generated is in the file. With `-update-readme` it writes the table of [ETSI coverage](etsi.md). With `-check-readme` it fails when that table is out of date, or when a relative link in `README.md` or `docs/` names a file or heading that does not exist.
 
-<!-- dmrgo:code file=cmd/speccheck/main.go symbol=defineFlags -->
+<!-- docgen:code file=cmd/speccheck/main.go symbol=defineFlags -->
 ```go
 func defineFlags(fs *flag.FlagSet) options {
 	return options{
@@ -157,7 +157,7 @@ func defineFlags(fs *flag.FlagSet) options {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## tablegen
 
@@ -169,17 +169,13 @@ func defineFlags(fs *flag.FlagSet) options {
 
 ## docgen
 
-`cmd/docgen` fills the generated parts of the pages under `docs/` from the code of `v2`: example output, code excerpts, constants, config tables, error tables, state tables and doc comments. Give one of `-update` and `-check`.
+[docgen](https://docgen.mcswain.dev/) fills the generated parts of the pages under `docs/` from the code of `v2`: example output, code excerpts, constants, config tables, error tables, state tables and doc comments. It is an external tool. `.docgen.yaml` at the repository root holds its settings. Run it from the repository root:
 
-<!-- dmrgo:code file=cmd/docgen/main.go symbol=defineFlags -->
-```go
-func defineFlags(fl *flag.FlagSet) options {
-	return options{
-		update: fl.Bool("update", false, "rewrite the body of each marker in docs/**/*.md"),
-		check:  fl.Bool("check", false, "exit 1 and list each marker whose body differs from what docgen writes"),
-		root:   fl.String("root", "", "repository root (default: two directories above the docgen source)"),
-		docs:   fl.String("docs", "docs", "directory of the Markdown pages, relative to the root"),
-	}
-}
+<!-- docgen:text text="go run github.com/USA-RedDragon/docgen@{docgen} update\ngo run github.com/USA-RedDragon/docgen@{docgen} check" code=sh -->
+```sh
+go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 update
+go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 check
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:text -->
+
+For its flags and markers, see the [docgen documentation](https://docgen.mcswain.dev/).

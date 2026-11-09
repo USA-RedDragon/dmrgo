@@ -8,7 +8,7 @@ A tier sets how a receiver of [package rf](https://pkg.go.dev/github.com/USA-Red
 
 The tiers are the constants of [rf.Tier](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Tier). Their doc comments give what each tier adds:
 
-<!-- dmrgo:code file=v2/rf/options.go symbol=TierDefault -->
+<!-- docgen:code file=v2/rf/options.go symbol=TierDefault -->
 ```go
 const (
 	// TierDefault is the zero value: Tier1 for NewReceiver and
@@ -56,7 +56,7 @@ const (
 	Tier3
 )
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 The [Receiver datasheet](../rx.md) gives the measured sensitivity, CPU and RAM of each tier, for each input: FM discriminator audio, I/Q from a software radio, and I/Q that a radio chip filtered to the channel.
 
@@ -73,7 +73,7 @@ Tier0 to Tier2 each run in real time on a PC. Step 5 of Get started, [Receive on
 
 The `Tier` field of [rf.RxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#RxConfig) selects the tier of an I/Q receiver. The zero value `TierDefault` selects the default tier. The fields of the config:
 
-<!-- dmrgo:config pkg=rf type=RxConfig -->
+<!-- docgen:config pkg=rf type=RxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Tier` | `Tier` | `Tier0` (1) or `discDefaultTier` (2) | Tier selects the detection. The zero value TierDefault is Tier1 for NewReceiver, and Tier0 for Init and for NewReceiver under TinyGo. Under TinyGo too, NewReceiver takes every tier. |
@@ -83,7 +83,7 @@ The `Tier` field of [rf.RxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dm
 | `OnBursts` | `func([]Burst)` | zero value | OnBursts, when not nil, selects stream mode: Write and Flush hand the bursts to it. Each call carries the bursts that are ready at the same point of the stream, in storage of the receiver that is valid only during the call: usually one, and after a late lock the LookbackSlots bursts decoded again. A slot comes out at most once: the replay after a relock skips each slot that an earlier lock already gave. When nil, the receiver is in append mode, for AppendBursts and AppendFlush. |
 | `LookbackSlots` | `int` | not machine-readable; see the description | LookbackSlots is the number of 30 ms slots before the first SYNC it locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8 for Tier2, and 16 for Tier3, and at most MaxLookbackSlots. Tier0 keeps none, and loses the start of a stream that it enters late. |
 | `OnShortLC` | `func([]ShortLC)` | zero value | OnShortLC, when not nil, receives each Short LC that the CACH of the bursts carries and that passes its CRC-8, in stream and in append mode, in storage of the receiver that is valid only during the call: usually one. The receiver calls it as it outputs the burst of the last fragment, before that burst reaches OnBursts or the slice of AppendBursts. It decodes the fragments of the Decoded CACH as layer2.ShortLCAssembler does, and from Tier1 up decodes those that fail again from their soft values. Tier0 gives the hard decode only. Init takes no OnShortLC and returns a *dmrgo.ConfigError for it. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 [rf.AudioRxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioRxConfig) has the same `Tier` field for a receiver of discriminator audio. On audio, Tier3 is Tier2 with more passes over each data burst.
 
@@ -91,7 +91,7 @@ The `Tier` field of [rf.RxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dm
 
 The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#TxConfig) selects the modulator:
 
-<!-- dmrgo:config pkg=rf type=TxConfig -->
+<!-- docgen:config pkg=rf type=TxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and for NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
@@ -102,7 +102,7 @@ The transmitter has tiers too. The `Tier` field of [rf.TxConfig](https://pkg.go.
 | `Region` | `Region` | zero value | Region is the regulatory region whose limits the signal keeps. |
 | `Service` | `Service` | zero value | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. The transmitter refuses ServiceLicenseFree. |
 | `Power` | `int` | `top` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 The [Transmitter datasheet](../tx.md) gives the limits, the formats, the rates and the measured margins of each transmit tier.
 

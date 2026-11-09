@@ -24,7 +24,7 @@ go run -C v2 ./examples/bridge
 
 Decode each burst. Keep the Full LC of the first Voice LC Header whose FEC passed, with the color code of its slot type, and keep the vocoder slots of each voice burst from `VoiceSlots`. The slots stay as they came: the bridge does not decode the voice.
 
-<!-- dmrgo:code file=v2/examples/bridge/main.go symbol=receive -->
+<!-- docgen:code file=v2/examples/bridge/main.go symbol=receive -->
 ```go
 func receive(bursts []layer2.RawBurst) (inbound, error) {
 	var in inbound
@@ -55,13 +55,13 @@ func receive(bursts []layer2.RawBurst) (inbound, error) {
 	return in, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Rewrite the LC
 
 [FullLinkControl.AsUnitToUnit](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#FullLinkControl.AsUnitToUnit) reads a private call. `SetGroupVoice` turns the LC into a group call and keeps the service options. `SetAddresses` sets the new target and source. The example rewrites only an LC with the standardized FID and returns an error for any other FID.
 
-<!-- dmrgo:code file=v2/examples/bridge/main.go symbol=toGroupCall -->
+<!-- docgen:code file=v2/examples/bridge/main.go symbol=toGroupCall -->
 ```go
 func toGroupCall(lc *pdu.FullLinkControl) error {
 	if lc.FID != enums.FIDStandardized {
@@ -80,13 +80,13 @@ func toGroupCall(lc *pdu.FullLinkControl) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Send the call with the new LC
 
 Give the new LC to a [VoiceTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#VoiceTransmitter). `Headers` returns the Voice LC Header bursts, `AddSlots` the voice bursts with the new embedded LC, and `Terminate` the Terminator with LC. `AddSlots` takes the slots of any codec as they are.
 
-<!-- dmrgo:code file=v2/examples/bridge/main.go symbol=transmit -->
+<!-- docgen:code file=v2/examples/bridge/main.go symbol=transmit -->
 ```go
 func transmit(in inbound) ([]layer2.RawBurst, error) {
 	silence := vocoder.AMBESilenceSlot()
@@ -107,13 +107,13 @@ func transmit(in inbound) ([]layer2.RawBurst, error) {
 	return append(out, tail...), nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Check the new bursts
 
 Decode the new bursts again. The header and the terminator must carry the new IDs and pass [MMDVMHostAccepts](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2#MMDVMHostAccepts), each superframe must carry the new IDs in its embedded LC, and the voice slots must equal the slots that came in.
 
-<!-- dmrgo:code file=v2/examples/bridge/main.go symbol=verify -->
+<!-- docgen:code file=v2/examples/bridge/main.go symbol=verify -->
 ```go
 func verify(bursts []layer2.RawBurst) (verified, error) {
 	var v verified
@@ -155,13 +155,13 @@ func verify(bursts []layer2.RawBurst) (verified, error) {
 	return v, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Rewrite the headers of an SMS
 
 A data call has no embedded LC. Its IDs are in the CSBK preambles and in the data header. Set them with `SetAddresses` on the [pdu.CSBK](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#CSBK) or the [pdu.DataHeader](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/pdu#DataHeader), and call `Encode` on the burst. The data blocks after the header go out unchanged.
 
-<!-- dmrgo:code file=v2/examples/bridge/main.go symbol=bridgeSMS -->
+<!-- docgen:code file=v2/examples/bridge/main.go symbol=bridgeSMS -->
 ```go
 func bridgeSMS(w io.Writer, path string) error {
 	bursts, err := loadBursts(path)
@@ -203,11 +203,11 @@ func bridgeSMS(w io.Writer, path string) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
-<!-- dmrgo:output example=bridge -->
+<!-- docgen:output cmd=v2/examples/bridge -->
 ```text
 voice in: 79 bursts, 231 slots, Unit to Unit Voice Channel User 3009999 -> 9990
 voice out: 80 bursts, 234 slots, Group Voice Channel User 3002699 -> 91
@@ -216,7 +216,7 @@ ok embedded LC carries the new IDs in 13/13 superframes
 ok 231 voice slots forwarded unchanged, 3 silence slots of padding
 ok sms: 5 CSBK preambles and 1 data headers rewritten to 3002699 -> 91
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The call out has more voice slots than the call in. The transmitter pads the last superframe with silence slots, and the check counts them.
 

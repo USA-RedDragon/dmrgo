@@ -24,7 +24,7 @@ go run -C v2 ./examples/data
 
 Give each decoded burst to a [packet.Assembler](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Assembler). `AddBurst` returns the [Message](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Message) when the packet is complete. [sms.Decode](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/sms#Decode) finds the text format from the header and the user data, and returns the text as UTF-8.
 
-<!-- dmrgo:code file=v2/examples/data/main.go symbol=capture -->
+<!-- docgen:code file=v2/examples/data/main.go symbol=capture -->
 ```go
 func capture(w io.Writer, path string) error {
 	raw, err := os.ReadFile(path)
@@ -62,13 +62,13 @@ func capture(w io.Writer, path string) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 2. Send an unconfirmed packet
 
 Put a compressed UDP/IPv4 header in front of the text, and make an unconfirmed data header with the SAP UDP/IP header compression. [packet.NewPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#NewPacket) cuts the payload into blocks of the rate that you pick and adds the pad octets and the message CRC. [packet.Bursts](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#Bursts) codes the header and the blocks as bursts.
 
-<!-- dmrgo:code file=v2/examples/data/main.go symbol=unconfirmed -->
+<!-- docgen:code file=v2/examples/data/main.go symbol=unconfirmed -->
 ```go
 func unconfirmed(w io.Writer) error {
 	udp := pdu.UDPIPv4CompressedHeader{IPv4Identification: 0x1234, SPID: enums.SPIDTextMessage, DPID: enums.DPIDTextMessage}
@@ -110,11 +110,11 @@ func unconfirmed(w io.Writer) error {
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 [sms.AppendPacket](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/sms#AppendPacket) builds the user data and the data header of a text in each format that radios use, so you do not build the UDP header yourself:
 
-<!-- dmrgo:code file=v2/sms/example_test.go symbol=Example -->
+<!-- docgen:code file=v2/sms/example_test.go symbol=Example -->
 ```go
 func Example() {
 	t := sms.Text{Format: sms.FormatTMS, Source: 3002068, Destination: 3002198, Body: []byte("Hello")}
@@ -133,19 +133,19 @@ func Example() {
 	fmt.Printf("%d blocks, %s from %d: %s %v\n", len(p.Blocks), got.Format, got.Source, got.Body, err)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=sms.Example -->
+<!-- docgen:output test=sms.Example -->
 ```text
 5 blocks, TMS from 3002068: Hello <nil>
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ### 3. Send a confirmed packet and lose a block
 
 A confirmed data header requests a response. Each block of a confirmed packet has its own sequence number (DBSN) and CRC-9, so the receiver can identify each lost block. The example corrupts one block on the air.
 
-<!-- dmrgo:code file=v2/examples/data/main.go symbol=lossyConfirmed -->
+<!-- docgen:code file=v2/examples/data/main.go symbol=lossyConfirmed -->
 ```go
 func lossyConfirmed(lip []byte) ([]layer2.RawBurst, layer2.RawBurst, error) {
 	h, err := pdu.ConfirmedDataHeader{
@@ -175,13 +175,13 @@ func lossyConfirmed(lip []byte) ([]layer2.RawBurst, layer2.RawBurst, error) {
 	return bursts, good, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 4. Answer with a selective ACK and resend the missing block
 
 The receiving Assembler returns `packet.ErrBlocksMissing`, and `Missing` returns the blocks that it did not get. `Response` builds the SACK packet. At the sender, `RetryBlocks` of the response returns the blocks to send again.
 
-<!-- dmrgo:code file=v2/examples/data/main.go symbol=requestRetry -->
+<!-- docgen:code file=v2/examples/data/main.go symbol=requestRetry -->
 ```go
 func requestRetry(w io.Writer, bursts []layer2.RawBurst) (*packet.Assembler, *packet.Assembler, error) {
 	rx := packet.NewAssembler(127)
@@ -217,13 +217,13 @@ func requestRetry(w io.Writer, bursts []layer2.RawBurst) (*packet.Assembler, *pa
 	return rx, tx, nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Complete the packet and send the ACK
 
 Send the header and the missing block again. The Assembler completes the packet, and [packet.NewResponse](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/layer2/packet#NewResponse) builds the ACK.
 
-<!-- dmrgo:code file=v2/examples/data/main.go symbol=completeRetry -->
+<!-- docgen:code file=v2/examples/data/main.go symbol=completeRetry -->
 ```go
 func completeRetry(w io.Writer, rx, tx *packet.Assembler, lip []byte, header, good layer2.RawBurst) error {
 	m, err := receive(rx, []layer2.RawBurst{header, good})
@@ -259,13 +259,13 @@ func completeRetry(w io.Writer, rx, tx *packet.Assembler, lip []byte, header, go
 	return nil
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ## Output
 
 The first lines are the received SMS captures. Then come the unconfirmed packet, the confirmed packet with its SACK, and the retry with its ACK.
 
-<!-- dmrgo:output example=data -->
+<!-- docgen:output cmd=v2/examples/data -->
 ```text
 d-sms.bin: Unconfirmed 3009999 -> 9990, Rate 1/2, 56 octets, CRC 0f89b330, text "TEST N0CALL"
 h-sms.bin: Defined Short 3009999 -> 9990, Rate 1/2, 26 octets, CRC 5dc543c8, text "TEST N0CALL"
@@ -274,7 +274,7 @@ unconfirmed: 6 bursts, BF=5 POC=9, port 5016, text "Hello from dmrgo, unconfirme
 confirmed: 4 bursts, missing [1], SACK requests [1]
 confirmed: retry done, "LIP: 41.878,-87.629,hdg=90,v=12", ACK 3002702 -> 3002701: ok
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Send on a live channel
 
@@ -282,7 +282,7 @@ The example above builds every packet and response by hand. On a live channel, a
 
 In this example the air loses one burst of the first try. The Receiver requests the block again with a SACK, and the Sender resends only that block.
 
-<!-- dmrgo:code file=v2/data/sender_example_test.go symbol=ExampleSender -->
+<!-- docgen:code file=v2/data/sender_example_test.go symbol=ExampleSender -->
 ```go
 func ExampleSender() {
 	tx, err := data.NewSender(&data.SenderConfig{Slot: enums.Slot1, Source: layer2.SyncSourceMS, ColorCode: 1})
@@ -338,20 +338,20 @@ func ExampleSender() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
-<!-- dmrgo:output test=data.ExampleSender -->
+<!-- docgen:output test=data.ExampleSender -->
 ```text
 receiver sends SACK
 delivered "a confirmed message of a few blocks"
 receiver sends ACK
 Delivered after 2 tries (ACK)
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
-The Sender sends <!-- dmrgo:const pkg=data name=DefaultPreambles -->`5`<!-- /dmrgo:const --> preamble CSBKs by default before a packet. The config of each machine:
+The Sender sends <!-- docgen:const pkg=data name=DefaultPreambles -->`5`<!-- /docgen:const --> preamble CSBKs by default before a packet. The config of each machine:
 
-<!-- dmrgo:config pkg=data type=SenderConfig -->
+<!-- docgen:config pkg=data type=SenderConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ColorCode` | `enums.ColorCode` | zero value | ColorCode is the color code of the bursts. |
@@ -370,9 +370,9 @@ The Sender sends <!-- dmrgo:const pkg=data name=DefaultPreambles -->`5`<!-- /dmr
 | `Seed` | `uint64` | zero value | Seed seeds the random holdoff. Two Senders with the same seed hold off for the same times, so give each radio its own seed. |
 | `Slot` | `enums.Slot` | zero value | Slot is the TDMA slot of the Sender, which it puts in the Hint of each burst it sends. It must be Slot1 or Slot2. |
 | `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the Sender keep to the Due times. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
-<!-- dmrgo:config pkg=data type=ReceiverConfig -->
+<!-- docgen:config pkg=data type=ReceiverConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `ColorCode` | `*enums.ColorCode` | zero value | ColorCode, when set, drops bursts with another color code, and is the color code of the responses. Nil accepts every color code and answers with the color code of the packet. |
@@ -388,7 +388,7 @@ The Sender sends <!-- dmrgo:const pkg=data name=DefaultPreambles -->`5`<!-- /dmr
 | `Hang` | `time.Duration` | not machine-readable; see the description | Hang is the time without a burst after which a data call ends with EndQuiet. 0 means DefaultHang, and a negative value turns the timer off. |
 | `AcceptBadCRC` | `bool` | zero value | AcceptBadCRC delivers packets whose CRC failed, with Message.BadCRC set, as packet.Assembler.AcceptBadCRC describes. A confirmed packet still gets a NACK, so that a good copy can follow. |
 | `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Receiver makes its own. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 ## How it works
 

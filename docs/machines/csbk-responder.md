@@ -20,7 +20,7 @@ Use a [csbk.Requester](csbk-requester.md) to send the requests. Do not use a Res
 
 [`csbk.NewResponder`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#NewResponder) takes a [`*csbk.ResponderConfig`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#ResponderConfig). It has no nil default: a nil config, and an `Address` of 0, return an error. `Slot` must be slot 1 or slot 2.
 
-<!-- dmrgo:config pkg=csbk type=ResponderConfig -->
+<!-- docgen:config pkg=csbk type=ResponderConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Address` | `uint32` | zero value | Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. |
@@ -38,13 +38,13 @@ Use a [csbk.Requester](csbk-requester.md) to send the requests. Do not use a Res
 | `Seed` | `uint64` | zero value | Seed seeds the generator of the random holdoff. |
 | `Lead` | `time.Duration` | not machine-readable; see the description | Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. |
 | `Scratch` | `*layer2.Burst` | `layer2.NewBurst()` | Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 `OACSU` sets the answer to UU_V_Req: Proceed, Deny or the Feature Not Supported NACK_Rsp, as [`csbk.OACSUAnswer`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#OACSUAnswer) gives. `NoRadioCheck` and `NoCallAlert` turn off the Motorola answers, as a radio does when its settings turn them off. `Offset` selects the offset channel timing of a BS.
 
 ## States and transitions
 
-<!-- dmrgo:states pkg=csbk type=ResponderState -->
+<!-- docgen:states pkg=csbk type=ResponderState -->
 States of [`Responder`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder), from [`Responder.State`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder.State):
 
 | State | Meaning | Seen in tests |
@@ -64,7 +64,7 @@ Transitions seen in tests:
 | ResponderSending | `Reset`, `Tick` | ResponderIdle |
 
 ![Transitions of Responder](states/csbk-responder-responderstate.svg)
-<!-- /dmrgo:states -->
+<!-- /docgen:states -->
 
 These inputs move the state:
 
@@ -103,9 +103,9 @@ Call `Channel` each time the activity on the channel changes. Until the first re
 
 | Timer | Config field | Default |
 |---|---|---|
-| Answer grid: the answer goes this long after the start of the request, or a whole number of these later | none | <!-- dmrgo:const pkg=csbk name=BurstInterval -->`60ms`<!-- /dmrgo:const --> |
-| T_IdleSrch of a time critical answer (ETSI TS 102 361-1 clause F.1) | `IdleSearch` | <!-- dmrgo:const pkg=csbk name=DefaultIdleSearch -->`540ms`<!-- /dmrgo:const --> |
-| Upper end of the random holdoff T_Holdoff of a NACK_Rsp | `HoldoffMax` | <!-- dmrgo:const pkg=csbk name=DefaultHoldoffMax -->`1s`<!-- /dmrgo:const --> |
+| Answer grid: the answer goes this long after the start of the request, or a whole number of these later | none | <!-- docgen:const pkg=csbk name=BurstInterval -->`60ms`<!-- /docgen:const --> |
+| T_IdleSrch of a time critical answer (ETSI TS 102 361-1 clause F.1) | `IdleSearch` | <!-- docgen:const pkg=csbk name=DefaultIdleSearch -->`540ms`<!-- /docgen:const --> |
+| Upper end of the random holdoff T_Holdoff of a NACK_Rsp | `HoldoffMax` | <!-- docgen:const pkg=csbk name=DefaultHoldoffMax -->`1s`<!-- /docgen:const --> |
 
 With `Offset`, the answer grid starts half a `BurstInterval` later. A polite answer that gets channel access between two slots of the grid goes in the next slot of the grid. A negative `IdleSearch` denies a time critical answer on a busy channel at once. A negative `HoldoffMax` turns the holdoff off, and the NACK_Rsp waits for an idle channel. `Lead` makes `Tick` emit the answer early, for an RF FIFO; when the lead is more than one `BurstInterval`, the answer moves to a later slot of the grid.
 
@@ -113,7 +113,7 @@ With `Offset`, the answer grid starts half a `BurstInterval` later. A polite ans
 
 This example sends a Motorola radio check from a Requester to two Responders: one on the aligned channel timing of a BS, and one with `Offset`. It prints when each answer goes on air.
 
-<!-- dmrgo:code file=v2/csbk/example_test.go symbol=ExampleResponder -->
+<!-- docgen:code file=v2/csbk/example_test.go symbol=ExampleResponder -->
 ```go
 func ExampleResponder() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Slot: enums.Slot1, ColorCode: 1, Source: layer2.SyncSourceMS})
@@ -140,24 +140,24 @@ func ExampleResponder() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 Output:
 
-<!-- dmrgo:output test=csbk.ExampleResponder -->
+<!-- docgen:output test=csbk.ExampleResponder -->
 ```text
 Request RadioCheck from 3002068 state Sending
 offset false Burst due 60ms state Idle
 Request RadioCheck from 3002068 state Sending
 offset true Burst due 90ms state Idle
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 ## Errors
 
-<!-- dmrgo:errors pkg=csbk type=Responder -->
+<!-- docgen:errors pkg=csbk type=Responder -->
 The doc comments of [`Responder`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/csbk#Responder) and its methods name no error.
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 Only `NewResponder` returns an error, a [`*dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError). Match it with `errors.As`; its `Field` names the field out of range. The package example `ExampleNewResponder_configError` shows a config without an address. An answer that the channel denies gives an `OutputDone` with `ResultDenied`, and no error.
 

@@ -25,7 +25,7 @@ dmrgo makes no claim that a station complies with its rules. A setup that the tr
 
 [rf.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewTransmitter) and [rf.NewAudioTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewAudioTransmitter) return a [*RegionError](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#RegionError) for a setup that the region, the service and the power do not allow, or that no measurement shows to keep their limits with margin. `Field` names the config field, and `Reason` gives the cause. A field out of range gives a `*dmrgo.ConfigError` instead. Do not transmit when either comes back. This example sets up I/Q at 48 kHz, a rate that no measurement accepts:
 
-<!-- dmrgo:code file=v2/rf/region_example_test.go symbol=ExampleRegionError -->
+<!-- docgen:code file=v2/rf/region_example_test.go symbol=ExampleRegionError -->
 ```go
 func ExampleRegionError() {
 	_, err := rf.NewTransmitter(&rf.TxConfig{Rate: 48000, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30})
@@ -35,13 +35,13 @@ func ExampleRegionError() {
 	}
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 3. Transmit I/Q from a microcontroller
 
 [Transmitter.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Transmitter.Init) sets up a Tier 0 transmitter in memory of the caller, without an allocation. The txiq example feeds the I/Q DAC of a software radio in stream mode: `Write` takes bursts and hands the samples to `OnSamples`, `Active` reports whether the transmitter is keyed, and `Flush` ends the transmission. It stops when `Init` refuses the setup.
 
-<!-- dmrgo:code file=v2/examples/txiq/main.go symbol=main -->
+<!-- docgen:code file=v2/examples/txiq/main.go symbol=main -->
 ```go
 func main() {
 	err := tx.Init(rf.TxConfig{Rate: 96000, OnSamples: toDAC, Region: rf.RegionUS, Service: rf.ServiceLandMobile, Power: 30})
@@ -66,7 +66,7 @@ func main() {
 	println("sum", sum, keyed)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 On a PC, [rf.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#NewTransmitter) makes the same transmitter in the other tiers, at any rate of its config, and `AppendSamples` and `AppendFlush` append the samples to a slice when `OnSamples` is nil.
 
@@ -74,7 +74,7 @@ On a PC, [rf.NewTransmitter](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v
 
 An FM radio with a flat modulation input, such as a 9600 baud data port, takes the deviation signal as audio. [AudioTransmitter.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#AudioTransmitter.Init) sets it up for the rate and the resolution of the DAC. `Bits` and `Unsigned` give the codes of the converter. State a pre-emphasis or a low pass of the radio in `PreEmphasis` and `InputLowpassHz`, since both change the signal on air. The txaudio example keys the radio by `Active`:
 
-<!-- dmrgo:code file=v2/examples/txaudio/main.go symbol=main -->
+<!-- docgen:code file=v2/examples/txaudio/main.go symbol=main -->
 ```go
 func main() {
 	err := tx.Init(rf.AudioTxConfig{Rate: 48000, Bits: 12, Unsigned: true, OnSamples: toDAC,
@@ -100,7 +100,7 @@ func main() {
 	println("sum", sum, ptt)
 }
 ```
-<!-- /dmrgo:code -->
+<!-- /docgen:code -->
 
 ### 5. Write a test transmission with dmrrf
 
@@ -110,15 +110,15 @@ func main() {
 
 The refused setup of step 2:
 
-<!-- dmrgo:output test=rf.ExampleRegionError -->
+<!-- docgen:output test=rf.ExampleRegionError -->
 ```text
 TxConfig.Rate: no measurement keeps the limits at this rate
 ```
-<!-- /dmrgo:output -->
+<!-- /docgen:output -->
 
 The configs, with the range and the default of each field:
 
-<!-- dmrgo:config pkg=rf type=TxConfig -->
+<!-- docgen:config pkg=rf type=TxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewTransmitter, and Tier0 for Init and for NewTransmitter under TinyGo. Under TinyGo too, NewTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
@@ -129,9 +129,9 @@ The configs, with the range and the default of each field:
 | `Region` | `Region` | zero value | Region is the regulatory region whose limits the signal keeps. |
 | `Service` | `Service` | zero value | Service is the radio service of the station. ServiceUnknown keeps the limits of the land mobile and amateur services at once. The transmitter refuses ServiceLicenseFree. |
 | `Power` | `int` | `top` | Power is the most power of the station, in dBm, from 1 to 63. 0 means the highest legal power of the Service in the Region. The limits are kept at the next of the breakpoints 27, 30, 40, 44, 47, 50, 54, 57, 60 and 62 dBm at or above it. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
-<!-- dmrgo:config pkg=rf type=AudioTxConfig -->
+<!-- docgen:config pkg=rf type=AudioTxConfig -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Tier` | `Tier` | `discDefaultTier` (2) or `Tier0` (1) | Tier selects the modulator: Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1 for NewAudioTransmitter, and Tier0 for Init and for NewAudioTransmitter under TinyGo. Under TinyGo too, NewAudioTransmitter takes every modulator, and a program that calls only Init links none but Tier0. Tier3 has no modulator of its own yet and gives a *dmrgo.ConfigError. |
@@ -147,11 +147,11 @@ The configs, with the range and the default of each field:
 | `Service` | `Service` | zero value | Service is the radio service of the station, as in TxConfig. |
 | `Power` | `int` | `top` | Power is the most power of the station in dBm, as in TxConfig. |
 | `InputHighpassHz` | `int` | not machine-readable; see the description | InputHighpassHz states the corner in Hz of the AC coupling, a first-order high pass, that the radio puts before its modulator input; 0 means none stated, and the signal is the same as without the field. Tier1 and Tier2 then add back the low frequencies that the high pass takes away, as far as the room of the converter above the peak at Level allows, and a zero Level takes the level that the limits are measured at, which leaves that room at 16 bits and none at fewer. A corner over 20 Hz, a negative one, or a corner at Tier0 gives a *dmrgo.ConfigError. |
-<!-- /dmrgo:config -->
+<!-- /docgen:config -->
 
 The errors of the transmitters:
 
-<!-- dmrgo:errors pkg=rf type=Transmitter -->
+<!-- docgen:errors pkg=rf type=Transmitter -->
 | Error | Returned by | Meaning |
 |---|---|---|
 | [`dmrgo.ConfigError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2#ConfigError) | `NewTransmitter`, `Transmitter.Init`, `Transmitter.Write` | ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. |
@@ -159,7 +159,7 @@ The errors of the transmitters:
 | [`rf.ErrBurstOrder`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#ErrBurstOrder) | `Transmitter.Write` | ErrBurstOrder is the error of Write on a transmitter for a burst whose Slot does not increase within its Stream. |
 | [`rf.ErrNotSetUp`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#ErrNotSetUp) | `Transmitter.Write` | ErrNotSetUp is the error of Write and Flush on a receiver or transmitter that neither its constructor nor Init set up. |
 | [`rf.RegionError`](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#RegionError) | `NewTransmitter`, `Transmitter.Init` | RegionError is the error of a transmitter setup that the Region, Service and Power do not allow, or that no measurement shows to keep their limits. |
-<!-- /dmrgo:errors -->
+<!-- /docgen:errors -->
 
 ## How it works
 
