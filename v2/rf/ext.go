@@ -1640,8 +1640,14 @@ func (x *softExt) replayStretch(c *leanCore, n int, last int64, at, sps float32)
 func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32, w int) (best, pat int, top float32) {
 	best = -w
 	oldest := float32(c.acqKept() - 4)
+	k := -end * 8 / sps
+	newest := int(k)
+	if float32(newest) > k {
+		newest--
+	}
+	newest = min(w, newest-1)
 	for p := range syms {
-		for i := -w; i <= w; i++ {
+		for i := -w; i <= newest; i++ {
 			t := end + float32(i)*sps/8
 			if float32(syncSymbols-1)*sps-t > oldest {
 				continue
@@ -1664,6 +1670,9 @@ func keptSyncPeak(c *leanCore, syms *[2][syncSymbols]int8, end, sps float32, w i
 				top, best, pat = r, i, p
 			}
 		}
+	}
+	if best == newest && newest < w {
+		best = w
 	}
 	return best, pat, top
 }

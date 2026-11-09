@@ -1821,7 +1821,7 @@ const staleSlots = 6
 
 const (
 	leanSeekSyms     = 4
-	leanSeekLead     = slotSymbols - leanSyncEnd - 1
+	leanSeekLead     = slotSymbols - leanSyncEnd - 2
 	leanReplayErrors = 1
 	leanReplayFalse  = 4
 	leanReplayNear   = 8

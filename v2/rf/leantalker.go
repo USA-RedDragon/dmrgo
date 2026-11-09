@@ -175,8 +175,9 @@ func (r *leanCore) lockFresh(j int32, voice bool) {
 }
 
 // seekMid seeks, in a core with no soft stages, an MS talker that has no
-// SYNC anchor yet by the EMB of the slot at the end of its SYNC field, while
-// the hunt buffer still holds the burst up to there. A seek at the end of the
+// SYNC anchor yet by the EMB of the slot one symbol after the end of its SYNC
+// field, while the hunt buffer still holds the burst up to there, so that the
+// EMB readings up to half a symbol late read kept samples. A seek at the end of the
 // slot, as the soft stages run it, needs the samples of the whole slot. In
 // the next burst of a fresh talker, the one it took on its EMB or the one
 // the stream locked on, it fits the timing again on the EMB: that talker's
@@ -187,7 +188,7 @@ func (r *leanCore) lockFresh(j int32, voice bool) {
 // asks of the whole burst.
 func (r *leanCore) seekMid() bool {
 	j := r.next
-	if r.hasExt() || !r.ms.seek || r.ns != r.slotEnd-slotSymbols+leanSyncEnd+1 || r.ms.anch[j&1] != leanNoSlot && r.ms.fresh[j&1] == 0 {
+	if r.hasExt() || !r.ms.seek || r.ns != r.slotEnd-slotSymbols+leanSyncEnd+2 || r.ms.anch[j&1] != leanNoSlot && r.ms.fresh[j&1] == 0 {
 		return false
 	}
 	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
@@ -226,7 +227,10 @@ func (r *leanCore) seekNoise(energy float32, known, measured bool) {
 // symbols of the SYNC field then stand in for a SYNC pattern: their timing
 // fit on the kept samples resamples the slot and moves the talker's strobe
 // phase, and their level fit gives the talker's levels, as a SYNC anchor's
-// fit does.
+// fit does. A phase that puts the newest strobe, or the zero search around
+// it, past the newest kept sample moves the grid a symbol on and the strobe a
+// symbol back instead: the reslice then reads kept samples only, and the next
+// strobe takes that symbol.
 func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	cc, known := r.colorCode()
 	end := base + leanSyncEnd
@@ -264,6 +268,10 @@ func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
 	d += at - (at0 - float32(back)*sps)
 	sh := int64(roundf(d / sps))
 	d -= float32(sh) * sps
+	if at0+d+sps/4 > 0 {
+		sh++
+		d -= sps
+	}
 	base += sh
 	end += sh
 	var spp float32
