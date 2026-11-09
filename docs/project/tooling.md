@@ -33,6 +33,7 @@ The genie harness in `v2/rf` (`genie_test.go`, `genie_scenes_test.go`) tells, fo
   - `rx-time`: the reference decodes the burst at its true timing, but not at the timing of the receiver.
   - `rx-bits`: the reference decodes the burst at both timings, and the receiver does not.
   - `rx-cach`: the receiver decodes the burst with a wrong CACH, and the reference reads the CACH correctly.
+  - `rx-raw`: the receiver decodes the burst, a voice burst by the Golay codes of its C0 and C1 words, but some of its raw bits differ from the burst on the air, and the reference slices every raw bit correctly. The matrix needs exact raw bits.
   - `extra`: the receiver gives a burst with no burst on the air within 1 ms.
   - `split`: the receiver gives one talker in more than one stream.
 - `TestGenieKnownAnswer` checks the reference receiver on clean inputs of each front: audio, I/Q at 48 kHz and I/Q at 9600 Hz.

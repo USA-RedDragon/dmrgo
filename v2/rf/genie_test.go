@@ -396,8 +396,10 @@ func genieRead(c *leanCore, off, dev float64) *genieReading {
 // does not decode it either, a physical limit of the input; and a receiver
 // loss otherwise: rx-miss when the receiver gives no burst, rx-time when
 // the reference decodes it at the true timing but not at the timing that
-// the receiver stamped, rx-bits when it decodes it at both, and rx-cach for
-// a wrong CACH that the reference reads right. A burst of the receiver with
+// the receiver stamped, rx-bits when it decodes it at both, rx-cach for
+// a wrong CACH that the reference reads right, and rx-raw for a burst that
+// decodes, its voice by the Golay codes of C0 and C1, with raw bits that
+// differ from the air where the reference slices every raw bit right. A burst of the receiver with
 // no burst on the air within 1 ms is extra, a receiver loss too.
 func genieRun(c *genieCase, tier Tier) *genieReport {
 	fronts := map[int]*genieFront{0: c.front(0)}
@@ -452,8 +454,10 @@ func genieRun(c *genieCase, tier Tier) *genieReport {
 			gb.gtBits, gb.gtOK = genieBits(&td, &tr.data), tin && genieSame(&td, &tr.data)
 		}
 		switch {
-		case gb.ok && (gb.cachOK || !gb.gCach):
+		case gb.ok && (gb.cachOK || !gb.gCach) && (gb.bits == 0 || gb.gBits != 0):
 			gb.verdict = "ok"
+		case gb.ok && (gb.cachOK || !gb.gCach):
+			gb.verdict = "rx-raw"
 		case gb.ok:
 			gb.verdict = "rx-cach"
 		case !gb.gOK:
@@ -483,7 +487,7 @@ func genieNearest(truth []mxTruth, at float64) int {
 	return j
 }
 
-var genieVerdicts = []string{"ok", "phys", "rx-miss", "rx-time", "rx-bits", "rx-cach", "extra", "split"}
+var genieVerdicts = []string{"ok", "phys", "rx-miss", "rx-time", "rx-bits", "rx-cach", "rx-raw", "extra", "split"}
 
 func (rep *genieReport) summary() string {
 	var b strings.Builder

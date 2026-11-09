@@ -80,6 +80,27 @@ func genieRowsAs(test string, sub bool, rows ...string) genieBuild {
 	}
 }
 
+// genieRowRuns builds a matrix row on the scenarios of the pinned runs from
+// first on, one case per run.
+func genieRowRuns(test, r string, first uint64, n int) genieBuild {
+	return func(t testing.TB) ([]*genieCase, error) {
+		row := mxRowName(r)
+		if row.name() != r {
+			return nil, fmt.Errorf("row %s reads as %s", r, row.name())
+		}
+		out := make([]*genieCase, 0, n)
+		for k := range uint64(n) {
+			c, err := genieRowCase(pinnedTB{genieAs{t, test + "/" + r}, first + k}, row, nil)
+			if err != nil {
+				return nil, err
+			}
+			c.name = fmt.Sprintf("%s run %d", r, first+k)
+			out = append(out, c)
+		}
+		return out, nil
+	}
+}
+
 func genieJoin(bs ...genieBuild) genieBuild {
 	return func(t testing.TB) ([]*genieCase, error) {
 		var out []*genieCase
@@ -131,6 +152,8 @@ func genieScenes() []genieScene {
 				"gap.none.+0.ms.csbk.0ppm.nom.cs16-48k.40dB.dmr40",
 				"gap.none.-4000.ms2.data1.+500ppm.nom.cs16-48k.inf",
 				"gap.cw500ms.-4000.ms.voice.-500ppm.nom.a9600.40dB")},
+		{name: "a01c-carrier-lead", q: "TestRxMatrix row gap.cw500ms.-4000.ms.voice.-500ppm.nom.a9600.40dB over 100 pinned runs: the raw bits of the first burst after a 500 ms carrier lead, Tiers 2 and 3",
+			tiers: []Tier{Tier2, Tier3}, build: genieRowRuns("TestRxMatrix", "gap.cw500ms.-4000.ms.voice.-500ppm.nom.a9600.40dB", 1, 100)},
 		{name: "a02-direct-reentry", q: "TestReceiverDirectModeTiming/0: the frames of the later calls of a held MS stream that Tier 3 misses at 5 dB",
 			tiers: []Tier{Tier3}, build: genieDirect("TestReceiverDirectModeTiming/0", 5, 6)},
 		{name: "a03-level-step", q: "TestRxLevelStep: the CACH and bits of the burst of a +10 dB step at 2, 3 and 12 ms",
