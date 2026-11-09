@@ -37,28 +37,28 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 |:---|---:|---:|---:|---:|---:|
 | 4FSK floor | -1.0 | -3.1 | 0.1 | -4.0 | < -6.9 |
 | Audio tier 0 | 9.6 | 6.3 | 8.2 | 6.2 | 9.3 |
-| Audio tier 1 | 8.2 | 6.3 | 7.9 | 5.2 | 6.4 |
-| Audio tier 2 | 4.9 | 4.2 | 6.2 | 3.7 | 4.4 |
+| Audio tier 1 | 8.2 | 6.3 | 7.6 | 5.2 | 6.4 |
+| Audio tier 2 | 4.9 | 4.2 | 6.1 | 3.7 | 4.4 |
 | Audio tier 3 | 4.3 | 3.7 | 5.7 | 3.1 | 4.1 |
 | Low-rate I/Q tier 0 | 10.3 | 6.3 | 8.2 | 6.2 | 9.6 |
 | I/Q tier 0 | 9.3 | 5.3 | 7.6 | 5.2 | 9.0 |
-| I/Q tier 1 | 8.0 | 5.3 | 7.0 | 3.7 | 4.9 |
-| I/Q tier 2 | 4.8 | 4.3 | 5.5 | 3.2 | 3.9 |
+| I/Q tier 1 | 8.0 | 5.3 | 6.7 | 3.7 | 4.9 |
+| I/Q tier 2 | 4.8 | 4.3 | 5.4 | 3.2 | 3.9 |
 | I/Q tier 3 | 2.5 | 1.8 | 4.8 | 1.2 | 2.2 |
 
 ### Operating characteristics
 
 | Tier | Input | Rate (kHz) | Carrier offset (kHz) | Clock error (ppm) | Late entry, C/N 8 dB (ms) | Late entry, C/N 20 dB (ms) | CPU, C/N 6 dB (ms/s) | CPU, worst (ms/s) | RAM (KiB) |
 |:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 60 | 0.35 | 0.46 | 1.9 |
-| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 45 | 1.0 | 3.0 | 53 |
+| Audio tier 0 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 60 | 0.32 | 0.49 | 1.9 |
+| Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 45 | 0.96 | 3.0 | 53 |
 | Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 52 | 45 | 7.4 | 12 | 316 |
-| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 53 | 135 | 912 |
+| Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 54 | 133 | 912 |
 | Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 52 | 59 | 0.48 | 0.48 | 2.1 |
-| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.3 | 1.5 | 21 |
+| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.4 | 1.5 | 21 |
 | I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 2.1 | 4.3 | 168 |
-| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 8.4 | 9.8 | 464 |
-| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 95 | 124 | 2,131 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 8.3 | 9.8 | 464 |
+| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 95 | 123 | 2,131 |
 
 - Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
 - Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
@@ -81,7 +81,7 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 |:---|---:|---:|---:|---:|
 | Audio tier 0 | 9.6 | 6.6 | 2,628 | 55.1 |
 | Audio tier 0, `PreEmphasis` | 9.6 | 7.1 | 2,684 | 55.3 |
-| Low-rate I/Q tier 0 | 9.6 | 8.2 | 3,000 | 55.0 |
+| Low-rate I/Q tier 0 | 9.6 | 8.3 | 3,000 | 55.0 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
@@ -89,8 +89,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 61.9 | 57,056 | 274.7 |
-| Audio tier 2 | 9.6 | 660.4 | 344,128 | 274.7 |
+| Audio tier 1 | 9.6 | 62.0 | 57,320 | 282.2 |
+| Audio tier 2 | 9.6 | 661.3 | 344,432 | 282.2 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
@@ -269,8 +269,8 @@ Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) d
 | Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.3 | 10.3 | 9.3 | 8.0 | 4.8 | 2.5 |
 | Voice frame, protected bits (C0 and C1) | 5.8 | 5.2 | 3.8 | 3.3 | 5.1 | 4.5 | 3.7 | 3.1 | 1.6 |
 | Data block, rate 1/2 | 6.3 | 6.3 | 4.2 | 3.7 | 6.3 | 5.3 | 5.3 | 4.3 | 1.8 |
-| Data block, rate 3/4 | 8.2 | 7.9 | 6.2 | 5.7 | 8.2 | 7.6 | 7.0 | 5.5 | 4.8 |
-| Data block, rate 1 | 11.3 | 11.3 | 8.2 | 8.0 | 12.4 | 11.1 | 11.4 | 7.9 | 7.6 |
+| Data block, rate 3/4 | 8.2 | 7.6 | 6.1 | 5.7 | 8.2 | 7.6 | 6.7 | 5.4 | 4.8 |
+| Data block, rate 1 | 11.3 | 11.3 | 8.2 | 8.0 | 12.4 | 11.1 | 11.4 | 7.8 | 7.6 |
 | CSBK | 6.2 | 5.2 | 3.7 | 3.1 | 6.2 | 5.2 | 3.7 | 3.2 | 1.2 |
 | Voice LC header and terminator | 6.3 | 5.5 | 4.0 | 3.4 | 6.6 | 5.5 | 3.8 | 3.1 | 1.6 |
 | Data header | 6.1 | 5.1 | 3.8 | 3.1 | 6.2 | 5.4 | 3.7 | 3.2 | 1.1 |
@@ -314,7 +314,7 @@ Eb/N0 in dB for 90% of the Short LCs right, and the Short LCs that pass the CRC-
 | I/Q tier 0 | I/Q | 7.2 | 7.2 | 0 of 3,851 | 0 of 3,851 | 0.0 | 0.0 |
 | I/Q tier 1 | I/Q | 7.1 | 5.8 | 0 of 3,852 | 0 of 4,725 | 0.0 | 0.0 |
 | I/Q tier 2 | I/Q | 7.0 | 5.9 | 0 of 3,534 | 0 of 4,302 | 0.0 | 0.0 |
-| I/Q tier 3 | I/Q | 4.2 | 2.9 | 0 of 3,969 | 0 of 4,744 | 0.0 | 0.0 |
+| I/Q tier 3 | I/Q | 4.2 | 2.9 | 0 of 3,968 | 0 of 4,743 | 0.0 | 0.0 |
 
 - Hard decode and `OnShortLC` are the Eb/N0 at which 90% of the Short LCs of the sweep stream are right, from 4 streams per point. Hard decode is `layer2.ShortLCAssembler` on the `Decoded` CACH of the bursts.
 - Wrong counts the Short LCs that pass the CRC-8 with other bits than the stream sent, of all that pass. On noise gives the Short LCs that the receivers report on white Gaussian noise alone.
