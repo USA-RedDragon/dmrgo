@@ -29,6 +29,26 @@ func TestCohExtVoice(t *testing.T) {
 	}
 }
 
+// TestLeanLockKeptBuffer pins a run whose lock moved the kept samples to the
+// shorter hunt buffer with the write head past its end, so the hunt of the
+// lock slot read out of range.
+func TestLeanLockKeptBuffer(t *testing.T) {
+	t.Parallel()
+	p := pinnedTB{t, runMix(16546592868071331661, nameHash("TestCohExtVoice"))}
+	slots, _ := benchStream(p, 10)
+	x := noisyBaseband(p, slots, 1400, 4, 21)
+	for _, coh := range []bool{false, true} {
+		o := discOptions()
+		o.IQDisc, o.IQHz, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC = true, discRate, true, true, true, true
+		o.CohExt, o.PSPGain, o.LLRScale = coh, 0.2, 0.5
+		r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: Tier0, OnBursts: each(func(*Burst) {}), Format: IQFormatCU8}, o)
+		for k := 0; k < len(x); k += 4096 {
+			must(r.writeBB(x[k:min(k+4096, len(x))]))
+		}
+		r.flushAll()
+	}
+}
+
 func TestCohTier2VoiceAboveEasySNR(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 30)

@@ -99,6 +99,9 @@ func (r *leanCore) lockStream(src int, d, q float32, back int64) {
 	if r.unproven && r.hasExt() {
 		r.ext.end(r)
 	}
+	if !r.locked() && (!r.hasExt() || r.ext.kept() == nil) {
+		r.acqFrom, r.acqHead, r.acqLow = r.n, 0, 0
+	}
 	r.stage, r.forced, r.suspect, r.src, r.bs = stageTrack, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.suspectRun = 0
 	r.pairSrc = 0
