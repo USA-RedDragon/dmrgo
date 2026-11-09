@@ -94,23 +94,38 @@ func exactFrames(slots []rftx.BSSlot, got []Burst) (exact, total int) {
 
 type AMBEFrameValue = uint64
 
+// TestReceiverTiersAtLowSNR checks the voice frames of Tiers 0, 2 and 3 at
+// 3 dB: summed over lowSNRDraws payload draws, each tier must recover more
+// than the tier below. On one draw Tier 3 leads Tier 2 by 6.6 frames with a
+// standard deviation of 2.7, so a single draw ties now and then; the sum of 8
+// draws keeps the strict order.
 func TestReceiverTiersAtLowSNR(t *testing.T) {
 	t.Parallel()
-	cfg := testConfig(t)
-	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 6, 1
-	built, err := rftx.Sequence("voice", cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	x := noisyBaseband(t, built.Slots, 1200, 3, 3)
-	prev := -1
-	for _, tier := range []Tier{Tier0, Tier2, Tier3} {
-		exact, total := exactFrames(built.Slots, receiveBaseband(x, tier))
-		t.Logf("tier %d: %d of %d frames exact", tier, exact, total)
-		if exact <= prev {
-			t.Errorf("tier %d: %d frames exact, the tier below %d", tier, exact, prev)
+	const lowSNRDraws = 8
+	tiers := []Tier{Tier0, Tier2, Tier3}
+	exact := make([]int, len(tiers))
+	total := 0
+	for d := range uint64(lowSNRDraws) {
+		cfg := randomizedN(t, 100+d, testConfigFixed())
+		cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 6, 1
+		built, err := rftx.Sequence("voice", cfg)
+		if err != nil {
+			t.Fatal(err)
 		}
-		prev = exact
+		x := noisyBaseband(t, built.Slots, 1200, 3, 3+d)
+		for i, tier := range tiers {
+			e, n := exactFrames(built.Slots, receiveBaseband(x, tier))
+			exact[i] += e
+			if i == 0 {
+				total += n
+			}
+		}
+	}
+	for i, tier := range tiers {
+		t.Logf("tier %d: %d of %d frames exact over %d draws", tier, exact[i], total, lowSNRDraws)
+		if i > 0 && exact[i] <= exact[i-1] {
+			t.Errorf("tier %d: %d frames exact over %d draws, the tier below %d", tier, exact[i], lowSNRDraws, exact[i-1])
+		}
 	}
 }
 
