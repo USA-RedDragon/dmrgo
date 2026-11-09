@@ -86,7 +86,7 @@ v2/hytera/hdap/services_decode_gen.go	558	536
 v2/internal/allocgate/allapi/allapi_gen.go	3	0
 v2/internal/allocgate/apigen/apigen.go	88	83
 v2/internal/allocgate/apigen/gen/main.go	5	0
-v2/internal/allocstest/count.go	168	155
+v2/internal/allocstest/count.go	168	156
 v2/internal/bits/bits.go	36	36
 v2/internal/c2mode/c2mode.go	13	13
 v2/internal/crc/checksum5.go	5	5
@@ -291,11 +291,11 @@ v2/rf/devgain.go	21	19
 v2/rf/disc48.go	37	37
 v2/rf/disccoh.go	348	343
 v2/rf/discext.go	63	57
-v2/rf/discrx.go	588	566
+v2/rf/discrx.go	588	565
 v2/rf/discsoft.go	27	21
 v2/rf/exact.go	263	263
-v2/rf/exact_amd64.go	62	62
-v2/rf/ext.go	1109	1095
+v2/rf/exact_amd64.go	62	59
+v2/rf/ext.go	1109	1094
 v2/rf/fastmath.go	60	60
 v2/rf/fir96.go	1	1
 v2/rf/frontend.go	138	136
@@ -308,7 +308,7 @@ v2/rf/iqlow.go	198	195
 v2/rf/iqpower.go	16	16
 v2/rf/iqrefill.go	291	280
 v2/rf/iqrefill_host.go	7	7
-v2/rf/lean.go	2229	2186
+v2/rf/lean.go	2229	2188
 v2/rf/leanfec.go	265	263
 v2/rf/leanfront.go	169	152
 v2/rf/leanpow.go	5	5
@@ -318,7 +318,7 @@ v2/rf/npml.go	54	53
 v2/rf/options.go	51	51
 v2/rf/polarity.go	39	39
 v2/rf/preemph.go	7	7
-v2/rf/rawvoice.go	37	36
+v2/rf/rawvoice.go	37	37
 v2/rf/rx.go	141	140
 v2/rf/rxhost.go	72	66
 v2/rf/rxpreemph.go	27	27
@@ -422,5 +422,5 @@ v2/voice/interrupter.go	103	100
 v2/voice/jitter.go	275	266
 v2/voice/nocopy.go	0	0
 v2/voice/position.go	23	23
-v2/voice/receiver.go	611	603
+v2/voice/receiver.go	611	602
 v2/voice/transmitter.go	417	409
