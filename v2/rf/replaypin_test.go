@@ -218,3 +218,23 @@ func TestRxReplayLockOffset(t *testing.T) {
 		t.Error(strings.Join(r.detail, " | "))
 	}
 }
+
+// TestRxCarrierLeadNoBurst pins draws of a call after a 500 ms carrier, whose
+// lead slots held symbols within one level spacing that read as a valid EMB.
+// Tiers 1 to 3 gave a voice burst from such a slot.
+func TestRxCarrierLeadNoBurst(t *testing.T) {
+	t.Parallel()
+	row := mxRowNamed(t, "gap.cw500ms.-4000.ms.voice.-500ppm.nom.a9600.40dB")
+	rxs := mxReceivers(row.val(mxFormat), true)
+	for _, run := range []uint64{12, 16} {
+		out, err := mxRun(pinnedTB{t, run}, row, rxs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, x := range rxs {
+			if r := out[x]; r.fail["extra"] {
+				t.Errorf("run %d %s: %s", run, x.name(), strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}

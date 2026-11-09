@@ -114,6 +114,7 @@ var bugPinTests = map[string]string{
 	"TestRxSeekEyeVertex":                "a payload whose burst C EMB reads wrong at all five quarter symbol phases",
 	"TestRxReplaySeekPhase":              "draws where the replay sliced the second talker at the phase of the first",
 	"TestRxTier0LockRefit":               "draws where the locked weak talker lost head bits of burst B to its held phase",
+	"TestRxCarrierLeadNoBurst":           "draws whose carrier lead slots read as a valid EMB",
 }
 
 func fixedPayload(t testing.TB) bool {

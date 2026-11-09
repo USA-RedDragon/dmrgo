@@ -62,7 +62,6 @@ const (
 	leanBlindStep       = 0.5
 	leanBlindGain       = 0.2
 	leanFadeBursts      = 2
-	leanFlatSyms        = 1
 	leanInBurst         = cachSymbols + syncSymbols - 1
 	leanDeferSkew       = 0.125
 	leanHoldF           = 4
@@ -2294,7 +2293,7 @@ func (r *leanCore) pastEnd(ticks int64) bool {
 }
 
 func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) bool {
-	return anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
+	return float32(int32(hi)-int32(lo))*discStepHz < 2*deviationHz*r.devScale || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
 }
 
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, missedA bool) bool {
