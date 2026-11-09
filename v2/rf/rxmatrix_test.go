@@ -802,8 +802,11 @@ type mxInput struct {
 }
 
 func mxInputOf(s *mxSignal, row mxRow) mxInput {
-	format, level := row.val(mxFormat), row.val(mxLevel)
 	off, _ := strconv.ParseFloat(row.val(mxOffset), 64)
+	return mxInputFor(s, row.val(mxFormat), row.val(mxLevel), off, row.val(mxDC) != "none")
+}
+
+func mxInputFor(s *mxSignal, format, level string, off float64, dc bool) mxInput {
 	if hz, ok := strings.CutPrefix(format, "a"); ok {
 		in := mxInput{gain: mxAudioGain(level, off)}
 		in.hz, _ = strconv.Atoi(hz)
@@ -824,7 +827,7 @@ func mxInputOf(s *mxSignal, row mxRow) mxInput {
 		in.iqFmt = IQFormatCU8
 	}
 	var dcRe, dcIm float64
-	if row.val(mxDC) != "none" {
+	if dc {
 		lo := mxIQLevel(format, "low")
 		dcRe, dcIm = mxDCRe*lo, mxDCIm*lo
 	}

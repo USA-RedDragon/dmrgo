@@ -20,6 +20,24 @@ This page lists the generators of the repository and the checks of the generated
   - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](../concepts/allocation.md), and `DMRGO_README=check` fails when it differs.
   - <!-- docgen:text text="`go run github.com/USA-RedDragon/docgen@{docgen} update`" -->`go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 update`<!-- /docgen:text --> writes the generated facts of every page under `docs/`. `check` fails and lists each stale marker. See [Generated facts](#generated-facts).
 
+## Receiver genie harness
+
+The genie harness in `v2/rf` (`genie_test.go`, `genie_scenes_test.go`) tells, for each burst on the air, if a receiver loss comes from the receiver or from the input. It runs the receivers of the selected tiers on a scene whose truth it knows: the time, talker, slot, bits and CACH of each burst, the clock rate and carrier of each talker, and the input level over time. A reference receiver then slices each burst at its true timing, clock rate, carrier and level, and again at the timing that the receiver stamped.
+
+- `DMRGO_GENIE=list go test -run '^TestGenie$' -v ./rf` in v2 lists the scenes. Each scene maps to an item of the rf acceptance list and gives the question it answers.
+- `DMRGO_GENIE='<regexp>' go test -run '^TestGenie$' -v ./rf` runs the scenes whose name matches. Add `DMRGO_TESTSEED=<seed>` to take the payloads and noise of a failing run, and `DMRGO_GENIE_ALL=1` to log the bursts that the receiver decodes too.
+- Each `GENIE` line gives, for one tier, the count of each verdict and the readings of the receiver at the end of the input: offset, deviation, clock rate and the clock stretch of the lookback replay. The verdicts are:
+  - `ok`: the receiver decodes the burst.
+  - `phys`: the reference receiver does not decode it either. The input does not hold it.
+  - `rx-miss`: the receiver gives no burst, and the reference decodes it.
+  - `rx-time`: the reference decodes the burst at its true timing, but not at the timing of the receiver.
+  - `rx-bits`: the reference decodes the burst at both timings, and the receiver does not.
+  - `rx-cach`: the receiver decodes the burst with a wrong CACH, and the reference reads the CACH correctly.
+  - `extra`: the receiver gives a burst with no burst on the air within 1 ms.
+  - `split`: the receiver gives one talker in more than one stream.
+- `TestGenieKnownAnswer` checks the reference receiver on clean inputs of each front: audio, I/Q at 48 kHz and I/Q at 9600 Hz.
+- To add a scene, build a `genieCase` from a matrix row (`genieRowCase`), from a bench stream (`genieBenchCase`, `genieBBCase`) or from I/Q bytes (`genieIQBytesCase`), and add it to `genieScenes`.
+
 ## Generated facts
 
 Facts that come from the code go inside markers in the Markdown, so that the pages change when the code changes. Write the prose by hand and leave the marker body empty; [docgen](https://docgen.mcswain.dev/) fills it. Do not edit a marker body by hand.
