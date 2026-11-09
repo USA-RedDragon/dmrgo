@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -345,22 +344,16 @@ type leanTuner interface {
 }
 
 type leanCore struct {
+	leanLock
+	leanStep
 	center   int64
 	endTicks int64
 	fitT     int64
 	mfStep   int64
 	n        int64
 	first    int64
-	lockNs   int64
 	lastGood int32
 	termAt   int32
-	pendEnd  int64
-	pendQ    float32
-	pendWait uint8
-	pendSrc  uint8
-	pendData bool
-	unproven bool
-	rcLone   bool
 	pow      leanPow
 	base     int64
 	anchor   enums.SyncPattern
@@ -375,7 +368,6 @@ type leanCore struct {
 	ns       int64
 	ring     [leanRing]int8
 	head     uint8
-	locked   bool
 	acqHead  int32
 	acqFrom  int64
 	acqLow   int16
@@ -386,16 +378,10 @@ type leanCore struct {
 	signs    uint32
 	cb       Burst
 
-	acqGain   float32
-	trackGain float32
-	pairNs    int64
-	pairSrc   uint8
-	pairLv    bool
-	refit     bool
-	looseLv   bool
-	// levelN counts down the SYNC fits after a lock that the level average
-	// still weighs as a running mean.
-	levelN         uint8
+	acqGain        float32
+	trackGain      float32
+	pairNs         int64
+	pairSrc        uint8
 	tuneHz         float32
 	offsetHz       float32
 	tunePrev       float32
@@ -419,7 +405,6 @@ type leanCore struct {
 	eAcc           float32
 	eSyms          int32
 	ch             [2]leanChan
-	streams        int32
 	midSigns       uint32
 	ll             float32
 	lfloor         float32
@@ -435,29 +420,21 @@ type leanCore struct {
 	huntBuf        [leanHuntSamples / 2]int16
 	devHz          int16
 	devAtHz        int16
-	levelEnd       uint16
 	clipNs         uint16
-	jumpZ          float32
-	preDev, preOff float32
-	stepHold       bool
-	preStep        bool
-	preCut         bool
 	fecOK          bool
 
 	signMiss                           uint8
-	suspectRun, bsSuspectRun           uint8
-	suspect, hunt, cohRefit            bool
-	reEntry                            bool
+	bsSuspectRun                       uint8
+	cohRefit                           bool
 	dataAnch                           [2]bool
 	again, midTiming, front96, slotDue bool
-	lockDue                            bool
 	mid96                              uint8
-	replaying, replayDry, replayDeep   bool
+	replay                             leanReplay
+	replayDeep                         bool
 	lateTime, backfill                 bool
 	iqLow, linHunt                     bool
 	mmOK                               bool
 	chase                              uint8
-	forced                             bool
 	softFEC                            bool
 	src                                uint8
 	sources                            uint8
@@ -466,27 +443,37 @@ type leanCore struct {
 	ms                                 leanSlots
 }
 
+// leanStep is the state of the level fit of the lean core across a level
+// step. A SYNC fit whose gain sits more than levelJumpZ standard errors from
+// the held gain twice in a row in the same direction, or whose residual at
+// the held levels is levelRefit times its own (heldOff), is a step: the
+// levels restart from the fit, preDev and preOff keep the levels before it,
+// and preStep marks the next burst for stepSplit, which slices the head of
+// that burst before the step at the old levels; preCut tells the soft stages
+// that the burst was cut so. jumpZ keeps the z of the first jump. stepHold
+// holds the timing loop over the next slot when an audio input overloads at
+// a SYNC. pairLv marks levels that a pair lock fit without the tight check,
+// and refit levels that a later anchor fits again once the AFC moved
+// (iqRx), so that the anchor restarts them. looseLv marks levels whose fit
+// was not tight. levelN counts down the SYNC fits after a lock that the
+// level average still weighs as a running mean, and levelEnd is the end of
+// the last fit.
+type leanStep struct {
+	preDev, preOff float32
+	jumpZ          float32
+	levelEnd       uint16
+	levelN         uint8
+	stepHold       bool
+	preStep        bool
+	preCut         bool
+	pairLv         bool
+	refit          bool
+	looseLv        bool
+}
+
 type leanLevels struct {
 	devScale, dcHz, discVar, amp, noise float32
 	fitHz                               float32
-}
-
-type leanSlots struct {
-	anch    [2]int32
-	t       [2]float32
-	n, ns   [2]uint16
-	off     [2]int16
-	lv      [2]leanLevels
-	moved   bool
-	seek    bool
-	retry   bool
-	late    bool
-	fresh   [2]uint8
-	lvN     [2]uint8
-	clk     leanClock
-	clkNs   uint16
-	clkAt   uint8
-	looseLv uint8
 }
 
 func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
@@ -553,7 +540,7 @@ func (r *leanCore) acqBuf() ([]int16, int32) {
 			return b, int32(2 * len(b))
 		}
 	}
-	if r.locked {
+	if r.locked() {
 		return r.huntBuf[:], leanHuntSamples
 	}
 	return r.fec.s[:leanAcqSamples/2], leanAcqSamples
@@ -814,7 +801,7 @@ func peakAt(c *[7]float32, k int) float32 {
 func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool, lim float32, at *float32) (d, c2, z float32, ok bool) {
 	sps := 2 * r.tm.step
 	end := r.lastAt
-	if !r.burstKept() && (!r.locked || max(int32(-end-sps/2)-2, 0)+leanSyncWindow > r.acqKept()) {
+	if !r.burstKept() && (!r.locked() || max(int32(-end-sps/2)-2, 0)+leanSyncWindow > r.acqKept()) {
 		return 0, 0, 0, false
 	}
 	var syms [syncSymbols]int8
@@ -822,7 +809,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	var win syncWindow
 	r.fillWindow(&win, max(int32(-end-sps/2)-2, 0))
 	reach := int32(1)
-	if r.locked {
+	if r.locked() {
 		reach = 2
 	}
 	if !coarseSync(&win, &syms, end, sps, reach) {
@@ -831,7 +818,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	ninf := float32(math.Inf(-1))
 	var c [7]float32
 	best := win.peak(&syms, &c, end, sps, wide)
-	if r.locked && best < len(c)-1 && c[best+1] == ninf {
+	if r.locked() && best < len(c)-1 && c[best+1] == ninf {
 		r.again = true
 		return 0, 0, 0, false
 	}
@@ -874,7 +861,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	if sxy <= 0 || sxy*sxy < lim*lim*sxx*spp {
 		return 0, 0, 0, false
 	}
-	if at == nil && (!r.locked || r.hunt) && r.hasExt() {
+	if at == nil && r.stage != stageTrack && r.hasExt() {
 		if f, ok := r.ext.syncZero(r, p, end, z); ok {
 			z, bestD = f, min32(f, -end)
 		}
@@ -985,35 +972,6 @@ func roundBits(v float32) int32 {
 	return int32(math.Float32bits(v+0x1.8p23)) - 0x4B400000
 }
 
-//go:noinline
-func (r *leanCore) symbol(x, at float32) {
-	r.lastAt = at
-	r.pushSym(x)
-	if r.hasExt() {
-		r.ext.noteStrobe(r)
-	}
-	if !r.locked {
-		r.searchHit(r.searchSigns())
-		return
-	}
-	if r.ns&7 == 0 {
-		r.clipHot()
-	}
-	if r.pendEnd != 0 && r.ns >= r.pendEnd+int64(r.pendWait) {
-		r.decidePend()
-	}
-	if r.hunt && (uint32(r.ns)+leanSeekLead != uint32(r.slotEnd) || !r.seekMid()) {
-		r.huntSym(at)
-	}
-	if r.ns == r.slotEnd {
-		if r.front96 {
-			r.slotDue = true
-			return
-		}
-		r.endSlot()
-	}
-}
-
 func symQ(x, off float32) int8 {
 	return int8(max(min(roundBits((x-off)/discStepHz), math.MaxInt8), math.MinInt8))
 }
@@ -1111,26 +1069,6 @@ func midSignAt[_ any](r *leanCore) {
 	}
 }
 
-func (r *leanCore) searchHit(sym, mid bool) {
-	switch {
-	case r.ns >= leanAcqSymbols && sym:
-		r.searchSym(false)
-	case r.ns >= leanAcqSymbols && r.rcSigns(r.signs) && r.searchRC():
-	case r.ns >= leanRing && r.hasExt():
-		if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
-			r.forceLock(src, data, back)
-			r.unproven = true
-			r.ext.weakAt(r.ns - 1 - back)
-		}
-	}
-	if mid && !r.locked && !r.dueLock() && r.ns > leanAcqSymbols {
-		r.searchMid()
-	}
-	if !r.locked && !r.dueLock() && r.ns > leanAcqSymbols && r.ns >= r.acqNext && r.rcSigns(r.midSigns) && r.lockMid(1, enums.SyncMSSourcedRC) {
-		r.rcLone = true
-	}
-}
-
 //go:noinline
 //go:section .text.rawSym
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
@@ -1169,10 +1107,10 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	r.pushSym(x)
-	if r.hunt && !r.hasExt() && r.midTiming && r.linHunt {
+	if r.hunting() && !r.hasExt() && r.midTiming && r.linHunt {
 		return r.lockHunt(at)
 	}
-	if !r.hunt || !r.huntMid(r.lastAt) {
+	if !r.hunting() || !r.huntMid(r.lastAt) {
 		return false, false, false
 	}
 	again = r.again
@@ -1276,36 +1214,6 @@ func (r *leanCore) lockPush(x, at float32) (more bool) {
 	return r.ns != r.slotEnd
 }
 
-func (r *leanCore) endSlot() {
-	lagN := float32(leanClockLag)
-	switch {
-	case r.tm.mm && r.tm.gain > 0:
-		lagN = 2 * r.tm.step / (leanMMGain * r.trackGain * leanMMSlope)
-	case r.bs:
-		lagN = leanClockLagBS
-	}
-	r.gearShift(r.tm.settle(lagN))
-	first := r.next == 0
-	if r.hasExt() && first {
-		r.ext.firstSlot(r)
-	}
-	r.slot()
-	if first && r.locked && r.audio != nil && r.devScale > leanOverScale {
-		r.fitScale()
-	}
-	r.slotJ, r.slotC = leanNoSlot, r.tm.baseC+r.tm.corr
-	if r.locked && (!r.tm.hold || r.tm.wake != 0) {
-		r.slotJ = r.next
-	}
-}
-
-//go:noinline
-func (r *leanCore) huntSym(at float32) {
-	if again, mid, ok := r.huntSigns(at); ok || r.ms.retry {
-		r.huntMatch(again, mid)
-	}
-}
-
 func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
 	if !r.huntMid(at) {
 		return false, false, false
@@ -1319,7 +1227,7 @@ func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
 //go:section .text.huntMid
 func (r *leanCore) huntMid(at float32) bool {
 	an := int64(leanAcqSamples)
-	if r.locked {
+	if r.locked() {
 		an = leanHuntSamples
 	}
 	if r.hasExt() {
@@ -1353,29 +1261,6 @@ func (r *leanCore) huntMid(at float32) bool {
 		}
 	}
 	return r.ns >= leanRing
-}
-
-//go:noinline
-func (r *leanCore) huntMatch(again, mid bool) {
-	if !r.ms.seek && !r.reEntry && !r.offGrid() && !r.stale() {
-		return
-	}
-	if d := r.gridMiss(); r.ms.seek && d >= -leanSeekSyms && d <= leanSeekSyms {
-		r.seekMatch(d, again && mid)
-		return
-	}
-	switch {
-	case again && mid && r.offGrid():
-		r.midSync()
-	case again && mid:
-		r.retime(true)
-	case !r.offGrid():
-		r.retime(false)
-	default:
-		if r.searchSym(true); r.lockNs == r.ns {
-			r.forced = true
-		}
-	}
 }
 
 // gearShift sets the gain of the timing loop at the end of a slot. While the
@@ -1417,13 +1302,9 @@ func cbrt1(x float32) float32 {
 	return y
 }
 
-func (r *leanCore) holding() bool {
-	return !r.bs && r.lastGood != r.termAt && r.next-1-r.lastGood <= 2*leanFadeBursts+1
-}
-
 func (r *leanCore) held(d, c2 float32, src int, data bool, p enums.SyncPattern) bool {
 	base := r.slotEnd - slotSymbols
-	if !r.locked || !r.holding() || (r.next-r.lastGood)&1 != 0 || r.ns-1 < base+leanInBurst ||
+	if !r.locked() || !r.holding() || (r.next-r.lastGood)&1 != 0 || r.ns-1 < base+leanInBurst ||
 		abs32(d) > leanDeferSkew*2*r.tm.step || !r.fitOK(r.ns-1, p) {
 		return false
 	}
@@ -1439,28 +1320,6 @@ func (r *leanCore) held(d, c2 float32, src int, data bool, p enums.SyncPattern) 
 func (r *leanCore) fitOK(end int64, p enums.SyncPattern) bool {
 	g, _, res := r.fitSync(end, p)
 	return tightSync(g, res)
-}
-
-//go:noinline
-func (r *leanCore) decidePend() {
-	end := r.pendEnd
-	r.pendEnd = 0
-	if r.slotHolds(end+int64(r.pendWait)-leanSyncEnd-1, r.pendQ) {
-		return
-	}
-	src, back := int(r.pendSrc), r.ns-1-end
-	if r.hasExt() {
-		r.forceLock(src, r.pendData, back)
-		return
-	}
-	voice, dp, _ := sourceAt(src).SyncPatterns()
-	p := voice
-	if r.pendData {
-		p = dp
-	}
-	r.fitLevels(end, p, true, false)
-	r.lockStream(src, 0, 0, back)
-	r.forced, r.hunt = true, true
 }
 
 // slotHolds tells whether the stream's own burst fills the slot at base, so
@@ -1505,10 +1364,6 @@ func (r *leanCore) slotHolds(base int64, q float32) bool {
 	}
 	e := embOfCW(cw)
 	return r.embOK(&e) && (e.FEC.ErrorsCorrected == 0 || q >= leanHoldExactQ)
-}
-
-func (r *leanCore) fitScale() {
-	r.relevel(1 / r.devScale)
 }
 
 func ringPos(k int64) uint32 {
@@ -1689,7 +1544,7 @@ func (r *leanCore) searchFit(p enums.SyncPattern, src int, data, strict bool) (d
 	if pairing {
 		lim = leanPairLock
 	}
-	if d, c2, _, sampled := r.resample(p, &saved, r.locked, lim, nil); sampled {
+	if d, c2, _, sampled := r.resample(p, &saved, r.locked(), lim, nil); sampled {
 		if strict && r.held(d, c2, src, data, p) {
 			r.restoreSync(&saved)
 			return 0, 0, false, true
@@ -1739,11 +1594,7 @@ func (r *leanCore) searchSym(strict bool) {
 	if weak && (strict || !r.hasExt() || rho2 < leanExtRho*leanExtRho) {
 		return
 	}
-	voice, dp, _ := sourceAt(src).SyncPatterns()
-	p := voice
-	if data {
-		p = dp
-	}
+	p := syncOf(src, data)
 	ok, verified := false, false
 	var d, c2 float32
 	if !weak && (strict || r.ns >= r.acqNext || rho2 >= discLock*discLock) {
@@ -1773,7 +1624,8 @@ func (r *leanCore) searchSym(strict bool) {
 	}
 	r.lockStream(src, d, c2, 0)
 	if verified {
-		r.unproven, r.hunt = true, true
+		r.unproven = true
+		r.huntOn()
 		r.ext.weakAt(r.ns - 1)
 	}
 }
@@ -1798,11 +1650,7 @@ func (r *leanCore) weakLock(p enums.SyncPattern, src int, rho2 float32, strict b
 //go:noinline
 func (r *leanCore) searchMid() {
 	src, data := r.signsSource(r.midSigns)
-	voice, dp, _ := sourceAt(src).SyncPatterns()
-	p := voice
-	if data {
-		p = dp
-	}
+	p := syncOf(src, data)
 	r.lockMid(src, p)
 }
 
@@ -1829,7 +1677,7 @@ func (r *leanCore) lockMid(src int, p enums.SyncPattern) bool {
 	}
 	r.resampleStart(d)
 	r.lockStream(src, d, c2, 0)
-	return r.locked
+	return r.locked()
 }
 
 //go:noinline
@@ -1878,26 +1726,12 @@ func (r *leanCore) overload(best float32, end int64, fresh bool) bool {
 	return n >= leanClipSyms && best >= discAnchor*discAnchor || 2*n >= syncSymbols
 }
 
-func (r *leanCore) relevel(g float32) {
-	g = r.scaleAudio(g)
-	r.devScale, r.dcHz, r.discVar = r.devScale*g, r.dcHz*g, r.discVar*g*g
-	for i := range r.ms.lv {
-		lv := &r.ms.lv[i]
-		lv.devScale, lv.dcHz, lv.discVar = lv.devScale*g, lv.dcHz*g, lv.discVar*g*g
-	}
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-}
-
 func (r *leanCore) retime(mid bool) {
 	rho2, src, data := r.syncAt(r.ns - 1)
 	if mid {
 		src, data = r.signsSource(r.midSigns)
 	}
-	voice, dp, _ := sourceAt(src).SyncPatterns()
-	p := voice
-	if data {
-		p = dp
-	}
+	p := syncOf(src, data)
 	if !mid && (rho2 < leanExtRho*leanExtRho || src != int(r.src)) {
 		if !r.rcSource() || r.rcAt(r.ns-1) < leanExtRho*leanExtRho {
 			return
@@ -1939,11 +1773,7 @@ func (r *leanCore) retime(mid bool) {
 //go:noinline
 func (r *leanCore) midSync() {
 	src, data := r.signsSource(r.midSigns)
-	voice, dp, _ := sourceAt(src).SyncPatterns()
-	p := voice
-	if data {
-		p = dp
-	}
+	p := syncOf(src, data)
 	var saved [syncSymbols]int8
 	d, c2, _, ok := r.resample(p, &saved, true, discLock, nil)
 	if !ok {
@@ -1989,29 +1819,6 @@ func (r *leanCore) signsSource(signs uint32) (src int, data bool) {
 
 const staleSlots = 6
 
-func (r *leanCore) stale() bool {
-	if r.forced || r.suspect && (!r.bs || r.suspectRun >= r.bsSuspectRun) {
-		return true
-	}
-	if r.lastAnch == leanNoSlot {
-		return r.next > 0
-	}
-	return r.bs && r.next-r.lastAnch > staleSlots
-}
-
-func (r *leanCore) offGrid() bool {
-	d := r.gridMiss()
-	return d < -1 || d > 1
-}
-
-func (r *leanCore) gridMiss() int32 {
-	m := int32(mod64(r.ns-1-leanSyncEnd-r.first-int64(r.ms.off[r.next&1]), slotSymbols))
-	if m > slotSymbols/2 {
-		m -= slotSymbols
-	}
-	return m
-}
-
 const (
 	leanSeekSyms     = 4
 	leanSeekLead     = slotSymbols - leanSyncEnd - 1
@@ -2021,29 +1828,6 @@ const (
 	leanSeekRho      = 0.5
 	leanRCSigns      = 0xa7c91a
 )
-
-func (r *leanCore) seekMatch(d int32, mid bool) {
-	rho2, _, _ := r.syncAt(r.ns - 1)
-	if !mid && r.rcSource() {
-		rho2 = max32(rho2, r.rcAt(r.ns-1))
-	}
-	if !mid && rho2 < leanSeekRho*leanSeekRho {
-		return
-	}
-	if !r.ms.late && r.ms.anch[r.next&1] == leanNoSlot {
-		r.ms.late = true
-		r.slotEnd++
-	}
-	moved, retry := r.ms.moved, r.ms.retry
-	r.ms.moved, r.ms.retry = false, false
-	r.retime(mid)
-	r.ms.retry = !r.ms.moved && !retry
-	if r.ms.moved && d != 0 {
-		r.ms.off[r.next&1] += int16(d)
-		r.slotEnd += int64(d)
-	}
-	r.ms.moved = r.ms.moved || moved
-}
 
 func mod64(k int64, n uint32) uint32 {
 	u := uint64(k)
@@ -2056,231 +1840,6 @@ func mod64(k int64, n uint32) uint32 {
 		m = n - m
 	}
 	return m
-}
-
-func (r *leanCore) forceLock(src int, data bool, back int64) {
-	voice, dp, _ := sourceAt(src).SyncPatterns()
-	p := voice
-	if data {
-		p = dp
-	}
-	r.fitLevels(r.ns-1-back, p, true, false)
-	d := float32(0)
-	if t, ok := r.ext.lockShift(r, p, back); ok {
-		d = t * 2 * r.tm.step
-		r.shiftStrobe(d)
-	}
-	r.lockStream(src, d, 0, back)
-	r.forced, r.hunt = true, true
-}
-
-func (r *leanCore) lockStream(src int, d, q float32, back int64) {
-	if r.dueLock() {
-		return
-	}
-	if r.unproven && r.hasExt() {
-		r.ext.end(r)
-	}
-	r.locked, r.forced, r.suspect, r.hunt, r.src, r.bs = true, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
-	r.suspectRun = 0
-	r.pairSrc = 0
-	r.lockNs = r.ns
-	r.unproven, r.rcLone = false, false
-	r.lastGood, r.termAt, r.pendEnd = 0, leanNoSlot, 0
-	r.streams++
-	r.slotJ = leanNoSlot
-	r.first = r.ns - 1 - back - leanSyncEnd
-	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
-	r.ms.anch, r.ms.off, r.ms.moved, r.ms.seek = [2]int32{leanNoSlot, leanNoSlot}, [2]int16{}, false, false
-	r.ms.fresh, r.ms.clkAt = [2]uint8{}, 0
-	r.slotEnd = r.first + slotSymbols
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed, r.tm.fresh = false, r.trackGain, 0, leanClockGain, 0, 1
-	r.tm.wake = 0
-	r.tm.learned = false
-	r.tm.lag0 = float32(back) + (syncSymbols-1)/2
-	r.tm.baseN, r.tm.baseC, r.tm.mOK, r.tm.jit = 0, 0, false, 0
-	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
-	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
-	gk := max32(r.devScale, leanMinScale) * deviationHz
-	r.tm.pow = 5*gk*gk + r.discVar
-	if q > 0 && !r.bs {
-		sps := 2 * r.tm.step
-		r.tm.measure(0, leanRefitVar*(1-q)/q*sps*sps)
-	}
-	if r.mmOK && !r.tm.mm {
-		r.tm.mm, r.tm.mid = true, false
-		r.tm.t += r.tm.step
-		r.tm.half = 0
-	}
-	r.resetChans()
-	r.eAcc, r.eSyms = 0, 0
-	r.fitNs, r.fitT, r.fitQ = int32(r.ns-1-back), r.strobeTicks(r.lastAt+d-float32(back)*2*r.tm.step), q
-	if a := r.audio; a != nil && a.iq && !r.hasExt() && abs32(r.fitHz) > iqHeldHz*iqUnitsPerHz {
-		r.heldNs = r.ns
-	}
-	if r.hasExt() {
-		r.ext.locked(r, d)
-		r.ext.lockFit(r, r.ns-1-back, r.fitT, q)
-	}
-}
-
-func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) bool {
-	g, dc, res := r.fitSync(end, p)
-	r.stepHold = false
-	if first && check && !tightSync(g, res) {
-		return false
-	}
-	var step float32
-	if !first && g > 0 {
-		se := sqrtf(res/(syncSymbols-2)/9) / deviationHz
-		z := (g - r.devScale) / max32(se, 1e-6)
-		jump := abs32(z) > levelJumpZ
-		twice := jump && r.jumpZ*z > 0
-		r.jumpZ = 0
-		if jump && !twice {
-			r.jumpZ = z
-		}
-		if first = twice || r.heldOff(end, p, res); first {
-			r.preDev, r.preOff, r.preStep = r.devScale, r.off-r.dcHz, !r.isReplaying()
-			k := max32(g, leanMinScale) / r.devScale
-			gk := max32(g, leanMinScale) * deviationHz
-			r.tm.pow = 5*gk*gk + res
-			r.tm.gain = r.trackGain
-			step = k
-		}
-	}
-	if first {
-		g = max32(g, leanMinScale)
-		r.devScale, r.dcHz, r.discVar, r.refit, r.looseLv = g, dc, res, false, !tightSync(g, res)
-		r.levelN, r.levelEnd = levelWarm, uint16(end)
-		r.syncFitRes = res
-		if a := r.audio; a != nil {
-			t, o := r.tuneHz, r.fcOff
-			if int32(uint32(end)-r.tuneNs) < 0 {
-				t, o = r.tunePrev, r.fcPrev
-			}
-			r.fitHz = (t+dc)/a.gain + o
-		}
-		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-		if step > 0 && r.hasExt() && !r.isReplaying() {
-			base := end - leanSyncEnd
-			off := func(dc float32) int32 { return int32(roundf((r.off - dc) / llrStepHz)) }
-			dev := func(g float32) int32 { return int32(roundf(g * deviationHz / llrStepHz)) }
-			r.ext.stepped(r, base+int64(r.splitAt(base, off(r.off-r.preOff), dev(r.preDev), off(dc), dev(g))))
-		}
-		return true
-	}
-	if check {
-		g, dc = r.inlierLevels(end, p, g, dc)
-	}
-	f := float32(levelForget)
-	if r.levelN > 0 && uint16(end) != r.levelEnd {
-		f = 1 - 1/float32(levelWarm+2-r.levelN)
-		r.levelN--
-	}
-	r.levelEnd = uint16(end)
-	r.devScale = f*r.devScale + (1-f)*g
-	r.dcHz = f*r.dcHz + (1-f)*dc
-	r.discVar = f*r.discVar + (1-f)*res
-	r.looseLv = r.looseLv && !tightSync(g, res)
-	r.syncFitRes = res
-	if a := r.audio; a != nil {
-		t, o := r.tuneHz, r.fcOff
-		if int32(uint32(end)-r.tuneNs) < 0 {
-			t, o = r.tunePrev, r.fcPrev
-		}
-		r.fitHz = f*r.fitHz + (1-f)*((t+dc)/a.gain+o)
-	}
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-	return true
-}
-
-func (r *leanCore) syncRes(end int64, p enums.SyncPattern, g, dc float32) float32 {
-	var syms [syncSymbols]int8
-	syncSyms(p, &syms)
-	j := ringPos(end - syncSymbols + 1)
-	var res float32
-	for k := range syncSymbols {
-		e := float32(r.ring[j])*discStepHz + r.off - dc - g*deviationHz*float32(syms[k])
-		if j++; j == leanRing {
-			j = 0
-		}
-		res += e * e
-	}
-	return res / syncSymbols
-}
-
-func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) {
-	var syms [syncSymbols]int8
-	syncSyms(p, &syms)
-	return r.fitSyms(end, &syms)
-}
-
-func (r *leanCore) fitSyms(end int64, syms *[syncSymbols]int8) (g, dc, res float32) {
-	j0 := ringPos(end - syncSymbols + 1)
-	var mp, mx float32
-	j := j0
-	for k := range syncSymbols {
-		mx += float32(r.ring[j])*discStepHz + r.off
-		if j++; j == leanRing {
-			j = 0
-		}
-		mp += float32(syms[k])
-	}
-	mp /= syncSymbols
-	mx /= syncSymbols
-	var sxy, spp float32
-	j = j0
-	for k := range syncSymbols {
-		sxy += (float32(syms[k]) - mp) * (float32(r.ring[j])*discStepHz + r.off - mx)
-		if j++; j == leanRing {
-			j = 0
-		}
-		spp += (float32(syms[k]) - mp) * (float32(syms[k]) - mp)
-	}
-	g = sxy / spp / deviationHz
-	dc = mx - g*deviationHz*mp
-	j = j0
-	for k := range syncSymbols {
-		e := float32(r.ring[j])*discStepHz + r.off - dc - g*deviationHz*float32(syms[k])
-		if j++; j == leanRing {
-			j = 0
-		}
-		res += e * e
-	}
-	return g, dc, res / syncSymbols
-}
-
-func (r *leanCore) inlierLevels(end int64, p enums.SyncPattern, g, dc float32) (float32, float32) {
-	var syms [syncSymbols]int8
-	syncSyms(p, &syms)
-	ref := max(r.devScale, leanMinScale) * deviationHz
-	lim := leanSyncClip * ref
-	var n, sp, spp, sx, spx float32
-	j := ringPos(end - syncSymbols + 1)
-	out := 0
-	for k := range syncSymbols {
-		v := float32(r.ring[j])*discStepHz + r.off
-		if j++; j == leanRing {
-			j = 0
-		}
-		s := float32(syms[k])
-		if abs32(v-r.dcHz-ref*s) > lim && abs32(v-dc-g*deviationHz*s) > lim {
-			out++
-			continue
-		}
-		n++
-		sp += s
-		spp += s * s
-		sx += v
-		spx += s * v
-	}
-	den := n*spp - sp*sp
-	if out == 0 || out > leanSyncClipMax || den <= 0 {
-		return g, dc
-	}
-	gd := (n*spx - sp*sx) / den
-	return gd / deviationHz, (sx - gd*sp) / n
 }
 
 func (r *leanCore) slotEnergy(base int64) (energy, floor float32, known, measured bool) {
@@ -2300,87 +1859,9 @@ func (r *leanCore) powered(energy, floor float32, known, measured bool) bool {
 	return !known && !measured || r.noise == 0 && !measured || energy > 1.5*r.noise || measured && energy > leanSlotContrast*floor
 }
 
-//go:noinline
-func (r *leanCore) slot() {
-	j := r.next
-	r.next++
-	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
-	energy, floor, known, measured := r.slotEnergy(base)
-	vp, dp, _ := sourceAt(int(r.src)).SyncPatterns()
-	seek := !r.bs && r.lastAnch != leanNoSlot && r.ms.anch[j&1] == leanNoSlot
-	r.replaySeek(j, base, seek)
-	isAnchor, shift, anchor := r.slotAnchor(base, seek)
-	c := &r.ch[j&1]
-	sf := c.sf
-	if isAnchor {
-		base += shift
-		if seek {
-			r.slotFirst(j, base, anchor)
-		}
-		r.anchorAt(j, base, shift, anchor, energy)
-		r.lockFresh(j, anchor == vp)
-	}
-	present := isAnchor || r.powered(energy, floor, known, measured)
-	noisy := present && !isAnchor && r.eyeNoise(base)
-	missedA := !isAnchor && sf != leanNoSlot && j-sf >= 2*layer2.VoiceBurstsPerSuperframe
-	if seek && !isAnchor {
-		if sh, ok := r.embSeek(j, base, present, known, measured); ok {
-			base, present = base+sh, true
-		} else {
-			present = false
-			r.seekNoise(energy, known, measured)
-		}
-	}
-	r.holdNext(j, present)
-	lost := r.lost
-	switch {
-	case present && (isAnchor || r.lastLive() != leanNoSlot && j-r.lastLive() < lostSlots):
-		r.lost = 0
-	default:
-		r.lost++
-	}
-	heard := present
-	if present {
-		if !isAnchor {
-			anchor = 0
-		}
-		if heard = r.burst(j, base, anchor, noisy, missedA); !heard {
-			r.lost = lost + 1
-		} else if !isAnchor && r.syncLive(j) {
-			r.lost = 0
-		}
-	}
-	r.undoSlot(j, heard)
-	if !r.isReplaying() {
-		switch {
-		case isAnchor:
-			r.suspect = false
-		case r.dataAnch[j&1], sf != leanNoSlot && j-sf == 2*layer2.VoiceBurstsPerSuperframe && c.sf != j:
-			r.suspect = true
-		}
-		r.dataAnch[j&1] = isAnchor && anchor == dp
-	}
-	r.slotSwitch(j)
-	r.holdGuard()
-	r.slotEnd = r.first + int64(j+2)*slotSymbols + int64(r.ms.off[(j+1)&1])
-	r.setHunt()
-	if !r.isReplaying() && r.ended(j, base) {
-		r.unlock()
-	}
-}
-
 func (r *leanCore) replaySeek(j int32, base int64, seek bool) {
 	if seek && r.isReplaying() {
 		r.ext.seekPhase(r, j, base)
-	}
-}
-
-// lockFresh counts the MS talker that a core with no soft stages locked on
-// with a voice SYNC in slot j as fresh, so that seekMid fits its timing
-// again on the EMB of its next burst.
-func (r *leanCore) lockFresh(j int32, voice bool) {
-	if j == 0 && voice && !r.bs && !r.hasExt() {
-		r.ms.fresh[0] = 2
 	}
 }
 
@@ -2467,23 +1948,6 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 	return isAnchor, shift, anchor
 }
 
-func (r *leanCore) wakeStep() {
-	if r.tm.wake != 0 {
-		if r.tm.wake--; r.tm.wake == 0 {
-			r.tm.hold, r.tm.stale = false, true
-		}
-	}
-}
-
-// holdGuard keeps the timing loop of an MS stream held over the guard at
-// the start of the next slot, where the ramp of the transmitter and the
-// carrier-off noise give no symbols, and frees it at the first burst symbol.
-func (r *leanCore) holdGuard() {
-	if !r.bs && !r.tm.hold && !r.isReplaying() {
-		r.tm.hold, r.tm.wake = true, cachSymbols
-	}
-}
-
 // embBeats reports whether the 48 bits in the SYNC field at end read better
 // as the EMB of a voice burst of the stream (ETSI TS 102 361-1 clause 9.1.2)
 // than as a data SYNC with errs bit errors: the EMB must carry the stream's
@@ -2518,144 +1982,9 @@ func bitsCost(k, n int) float32 {
 	return -float32(k)*log32(p) - float32(n-k)*log32(1-p)
 }
 
-func (r *leanCore) holdNext(j int32, present bool) {
-	r.tm.hold = !r.bs && !present
-	if !r.bs && r.lastAnch != leanNoSlot {
-		r.tm.hold = r.ms.anch[(j+1)&1] == leanNoSlot
-	}
-	r.tm.hold = r.tm.hold || r.stepHold
-}
-
-func (r *leanCore) slotFirst(j int32, base int64, anchor enums.SyncPattern) {
-	o := (j + 1) & 1
-	r.saveLevels(o)
-	r.fitLevels(base+leanSyncEnd, anchor, true, false)
-	r.amp = 0
-	if !r.isReplaying() {
-		r.ms.fresh[j&1] = 2
-		r.saveClock(o)
-	}
-}
-
-func (r *leanCore) levels() leanLevels {
-	return leanLevels{r.devScale, r.dcHz, r.discVar, r.amp, r.noise, r.fitHz}
-}
-
-func (r *leanCore) saveLevels(i int32) {
-	m := &r.ms
-	m.lv[i], m.lvN[i] = r.levels(), r.levelN
-	m.looseLv &^= 1 << i
-	if r.looseLv {
-		m.looseLv |= 1 << i
-	}
-}
-
-func (r *leanCore) setLevels(l *leanLevels) {
-	r.devScale, r.dcHz, r.discVar, r.amp, r.noise, r.fitHz = l.devScale, l.dcHz, l.discVar, l.amp, l.noise, l.fitHz
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-}
-
 type sliceLevels struct {
 	off, dcHz, dev, discVar, ll, lfloor float32
 	llrOff, llrDev, llrFloor, llrK      int32
-}
-
-func (r *leanCore) sliceLevels() sliceLevels {
-	return sliceLevels{r.off, r.dcHz, r.dev, r.discVar, r.ll, r.lfloor, r.llrOff, r.llrDev, r.llrFloor, r.llrK}
-}
-
-func (r *leanCore) setSliceLevels(l *sliceLevels) {
-	r.off, r.dcHz, r.dev, r.discVar, r.ll, r.lfloor = l.off, l.dcHz, l.dev, l.discVar, l.ll, l.lfloor
-	r.llrOff, r.llrDev, r.llrFloor, r.llrK = l.llrOff, l.llrDev, l.llrFloor, l.llrK
-}
-
-func (r *leanCore) symWait() float32 {
-	if !r.tm.mm && r.tm.mid {
-		return r.tm.t + r.tm.step
-	}
-	return r.tm.t
-}
-
-func (r *leanCore) savePhase(i int32) {
-	r.ms.t[i], r.ms.n[i], r.ms.ns[i] = r.symWait(), uint16(r.n), uint16(r.ns)
-}
-
-func (r *leanCore) slotSwitch(j int32) {
-	if r.bs || r.lastAnch == leanNoSlot {
-		return
-	}
-	m := &r.ms
-	p, q := j&1, (j+1)&1
-	live := !r.isReplaying()
-	sps := 2 * r.tm.step
-	if m.anch[p] != leanNoSlot {
-		if live {
-			r.savePhase(p)
-		}
-		r.saveLevels(p)
-	}
-	if m.fresh[p] > 0 {
-		m.fresh[p]--
-	}
-	if m.anch[q] != leanNoSlot && j+1-m.anch[q] >= lostSlots {
-		m.anch[q] = leanNoSlot
-	}
-	moved := m.moved
-	m.moved = false
-	if m.anch[q] == leanNoSlot {
-		m.off[q] = m.off[p]
-		r.tm.hold = true
-		return
-	}
-	r.tm.hold = false
-	if m.anch[p] == leanNoSlot && !moved {
-		return
-	}
-	if m.anch[p] != leanNoSlot {
-		r.setLevels(&m.lv[q])
-		r.levelN, r.looseLv = m.lvN[q], m.looseLv>>q&1 != 0
-	}
-	if !live {
-		return
-	}
-	if m.anch[p] != leanNoSlot {
-		r.swapClock(p, q)
-	}
-	lo := float32(0)
-	if !r.tm.mm && r.tm.mid {
-		lo = r.tm.step
-	}
-	u := m.t[q] + float32(int16(m.n[q]-uint16(r.n))) + float32(int16(uint16(r.ns)-m.ns[q]))*(sps+r.tm.rate)
-	cur := r.symWait()
-	for k := 0; (u <= lo || u <= cur-sps/2) && k < 4; k++ {
-		u += sps
-		m.off[q]--
-	}
-	for k := 0; u > cur+sps/2 && u-sps > lo && k < 4; k++ {
-		u -= sps
-		m.off[q]++
-	}
-	r.tm.t = u - lo
-	r.savePhase(q)
-}
-
-func (r *leanCore) saveClock(i int32) {
-	m := &r.ms
-	m.clk, m.clkAt, m.clkNs = r.tm.leanClock, uint8(i)+1, uint16(r.ns)
-	r.tm.newTalker()
-	r.tm.gain = r.trackGain
-}
-
-func (r *leanCore) swapClock(p, q int32) {
-	m := &r.ms
-	if m.clkAt != uint8(q)+1 {
-		r.saveClock(p)
-		return
-	}
-	gap := int32(int16(uint16(r.ns) - m.clkNs))
-	r.tm.leanClock, m.clk = m.clk, r.tm.leanClock
-	m.clkAt, m.clkNs = uint8(p)+1, uint16(r.ns)
-	r.tm.nall += gap
 }
 
 func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
@@ -2698,55 +2027,6 @@ func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern
 	if base > r.lockNs {
 		r.forced = false
 	}
-}
-
-func (r *leanCore) setHunt() {
-	switch {
-	case !r.suspect:
-		r.suspectRun = 0
-	case r.suspectRun < math.MaxUint8:
-		r.suspectRun++
-	}
-	r.ms.seek, r.ms.retry, r.ms.late = r.seeking(), false, false
-	r.reEntry = false
-	if r.isReplaying() {
-		return
-	}
-	was := r.hunt
-	if !r.stale() {
-		r.hunt = false
-		if !r.ms.seek {
-			settled := r.bs || r.tm.learned && (!r.hasExt() || r.ext.rateSettled(r))
-			if settled && !r.syncDue() {
-				return
-			}
-			r.reEntry = !settled
-		}
-	}
-	if !r.hunt {
-		r.acqFrom = r.n
-		if !r.hasExt() || r.ext.kept() == nil {
-			r.acqHead, r.acqLow = 0, 0
-		} else if !was {
-			r.ext.keptGap(r.n)
-		}
-	}
-	r.hunt = true
-}
-
-// syncDue reports whether the next slot of an MS stream should carry the
-// voice A SYNC of a superframe after the last one. The hunt runs in that slot
-// for a SYNC off the grid, so a voice A SYNC that a timing jump moved locks
-// again in the slot that carries it.
-func (r *leanCore) syncDue() bool {
-	j := r.next
-	c := &r.ch[j&1]
-	return !r.bs && !r.isReplaying() && c.sf != leanNoSlot && j > c.sf && (j-c.sf)%(2*layer2.VoiceBurstsPerSuperframe) == 0
-}
-
-func (r *leanCore) seeking() bool {
-	p := r.next & 1
-	return !r.bs && r.lastAnch != leanNoSlot && (r.ms.anch[p] == leanNoSlot || r.ms.fresh[p] != 0) && !r.isReplaying()
 }
 
 func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
@@ -2808,12 +2088,6 @@ func (r *leanCore) lastLive() int32 {
 	return r.lastAnch
 }
 
-func (r *leanCore) ended(j int32, base int64) bool {
-	a := r.lastLive()
-	return r.lost >= lostSlots || a == leanNoSlot && j >= 6 || j-a >= lostSlots ||
-		r.forced && base-r.lockNs > 6*slotSymbols
-}
-
 // heldTune notes a tune of hz before the lock. A tune of more than
 // iqHuntMaxHz moved a carrier that was outside the range the lean core pulls
 // in, so the symbols taken before it are off; inside that range the lean core
@@ -2821,7 +2095,7 @@ func (r *leanCore) ended(j int32, base int64) bool {
 func (r *leanCore) heldTune(hz float32) { r.heldOver(hz, iqHuntMaxHz) }
 
 func (r *leanCore) heldOver(hz, lim float32) {
-	if !r.locked && abs32(hz) > lim {
+	if !r.locked() && abs32(hz) > lim {
 		r.heldNs = r.ns
 	}
 }
@@ -2845,7 +2119,7 @@ func (r *leanCore) moveDC(d float32) {
 
 func (r *leanCore) shift(d float32) {
 	center := float32(0)
-	if r.locked {
+	if r.locked() {
 		center = r.dcHz - d
 	} else if r.acqKept() > 0 {
 		r.rescaleKept(256, int32(roundf(-d*(256.0/discStepHz))))
@@ -2875,19 +2149,6 @@ func (r *leanCore) shift(d float32) {
 	if !r.tm.mm {
 		r.tm.half -= d
 	}
-}
-
-func (r *leanCore) stepped(end int64, p enums.SyncPattern) bool {
-	g, dc, res := r.fitSync(end, p)
-	return tightSync(g, res) && r.heldOff(end, p, res) && r.syncErrors(end, p, g, dc) <= discAnchorBits
-}
-
-func tightSync(g, res float32) bool {
-	return g > 0 && sqrtf(res) <= discFirstSpread*2*g*deviationHz
-}
-
-func (r *leanCore) heldOff(end int64, p enums.SyncPattern, res float32) bool {
-	return r.syncRes(end, p, r.devScale, r.dcHz) > levelRefit*max32(res, levelRefitFloor)
 }
 
 //go:noinline
@@ -2931,36 +2192,6 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern, g, dc float32) int
 
 func (r *leanCore) markEnd() {
 	r.endTicks = (r.mfStep*(r.n+1) + discSpan*samplesPerSy) << 8
-}
-
-//go:noinline
-func (r *leanCore) unlock() {
-	if r.hasExt() {
-		r.ext.end(r)
-	}
-	if !r.hunt || !r.hasExt() || r.ext.kept() == nil {
-		r.acqFrom = r.n
-		if r.hasExt() && r.ext.kept() != nil {
-			r.ext.keptGap(r.n)
-		}
-	}
-	r.locked, r.forced, r.hunt, r.stepHold, r.preStep = false, false, false, false, false
-	r.snap().ok = false
-	if a := r.audio; a != nil {
-		a.sum, a.sq, a.n, a.qsum, a.qsq = 0, 0, 0, 0, 0
-	}
-	r.rebuildSigns()
-	r.tm.hold, r.tm.gain, r.tm.rate, r.tm.rateK, r.tm.owed = false, r.acqGain, 0, 0, 0
-	r.tm.wake = 0
-	r.tm.corr, r.tm.corr2, r.tm.nc, r.tm.nall = 0, 0, 0, 0
-	r.tm.estS, r.tm.estW, r.tm.estN = 0, 0, 0
-	if r.tm.mm {
-		r.tm.mm, r.tm.mid = false, true
-		r.tm.t -= r.tm.step
-	}
-	r.offsetHz = r.tuneHz + r.dcHz
-	r.devHz = sat16(3 * deviationHz * r.devScale)
-	r.devAtHz = sat16(r.fitHz)
 }
 
 func sat16(x float32) int16 {
@@ -3058,129 +2289,6 @@ func (r *leanCore) pastEnd(ticks int64) bool {
 
 func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) bool {
 	return anchor == 0 && int32(hi)-int32(lo) <= leanFlatSyms || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
-}
-
-// blindLevels refits the levels of a flywheel burst from its own symbols after
-// a level step of an audio input. The discriminator of an I/Q input measures
-// Hz at any input level, so a level step there does not move the levels. The
-// step scales the whole input, so the held levels of the other slot take the
-// same step.
-func (r *leanCore) blindLevels(slot int32, base int64, anchor enums.SyncPattern) {
-	if a := r.audio; anchor != 0 || a == nil || a.iq {
-		return
-	}
-	const n = slotSymbols - cachSymbols
-	j0 := ringPos(base + cachSymbols)
-	var sum, spread float32
-	j := j0
-	for range n {
-		v := float32(r.ring[j])*discStepHz + r.off
-		sum += v
-		spread += abs32(v - r.dcHz)
-		if j++; j == leanRing {
-			j = 0
-		}
-	}
-	dc := sum / n
-	unit := r.devScale * deviationHz
-	if q := spread / (n * 2 * unit); abs32(dc-r.dcHz) < unit && q > leanBlindStep && q < 1/leanBlindStep {
-		return
-	}
-	var a float32
-	j = j0
-	for range n {
-		a += abs32(float32(r.ring[j])*discStepHz + r.off - dc)
-		if j++; j == leanRing {
-			j = 0
-		}
-	}
-	g := a / n / (2 * deviationHz)
-	k := g / r.devScale
-	if g < leanMinScale || k > leanBlindStep && k < 1/leanBlindStep || k < leanBlindStep*leanBlindStep || k > 1/(leanBlindStep*leanBlindStep) {
-		return
-	}
-	g, dc = r.eyeFit(j0, g, dc)
-	fresh, held := r.eyeNear(j0, g, dc), r.eyeNear(j0, r.devScale, r.dcHz)
-	if float32(fresh) < leanBlindNear*n || float32(fresh-held) < leanBlindGain*n {
-		return
-	}
-	k = g / r.devScale
-	held0 := r.dcHz
-	r.devScale, r.dcHz, r.discVar = g, dc, r.discVar*k*k
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-	r.stepOther(slot, k, held0)
-	if r.hasExt() && !r.isReplaying() {
-		r.ext.stepped(r, -1)
-	}
-}
-
-// stepOther gives the held levels of the slot after slot the level step k
-// that the levels of slot took from dc0 to r.dcHz. The step scales the whole
-// input, so the offset between the two talkers scales with it.
-func (r *leanCore) stepOther(slot int32, k, dc0 float32) {
-	if r.bs {
-		return
-	}
-	lv := &r.ms.lv[(slot+1)&1]
-	lv.devScale, lv.dcHz, lv.discVar = lv.devScale*k, r.dcHz+k*(lv.dcHz-dc0), lv.discVar*k*k
-}
-
-// eyeFit refits the levels g and dc of the burst at ring position j by least
-// squares on the symbols sliced with g and dc. The mean and the mean absolute
-// deviation of a burst follow its symbols: a burst with more symbols on one
-// side or more outer symbols moves them. With inner and outer symbols in the
-// burst, the mean absolute deviation is off by at most a factor of 1.5 or 2;
-// a refit beyond a factor of 2 comes from a slicing with one kind of symbol
-// only, and the levels stay.
-func (r *leanCore) eyeFit(j uint32, g, dc float32) (float32, float32) {
-	const n = slotSymbols - cachSymbols
-	var s1, s2, sv, svs float32
-	for range n {
-		v := float32(r.ring[j])*discStepHz + r.off
-		if j++; j == leanRing {
-			j = 0
-		}
-		y := (v - dc) / (g * deviationHz)
-		s := float32(1)
-		if abs32(y) >= 2 {
-			s = 3
-		}
-		if y < 0 {
-			s = -s
-		}
-		s1 += s
-		s2 += s * s
-		sv += v
-		svs += v * s
-	}
-	d := n*s2 - s1*s1
-	if d <= 0 {
-		return g, dc
-	}
-	gd := (n*svs - s1*sv) / d / deviationHz
-	if k := gd / g; gd < leanMinScale || k < leanBlindStep || k > 1/leanBlindStep {
-		return g, dc
-	}
-	return gd, (sv - gd*deviationHz*s1) / n
-}
-
-func (r *leanCore) eyeNear(j uint32, g, dc float32) int {
-	c := 0
-	for range slotSymbols - cachSymbols {
-		y := abs32((float32(r.ring[j])*discStepHz + r.off - dc) / (g * deviationHz))
-		if j++; j == leanRing {
-			j = 0
-		}
-		if y < 2 {
-			y--
-		} else {
-			y -= 3
-		}
-		if abs32(y) < 0.5 {
-			c++
-		}
-	}
-	return c
 }
 
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, missedA bool) bool {
@@ -3367,68 +2475,6 @@ func stampSeconds(ticks float32) float32 {
 	return ticks * (1.0 / (samplesPerSy * symbolRate * 256))
 }
 
-func (r *leanCore) stepSplit(base int64) (int, int32, int32) {
-	if !r.preStep {
-		return 0, 0, 0
-	}
-	r.preStep = false
-	off := int32(roundf(r.preOff / llrStepHz))
-	dev := int32(roundf(r.preDev * deviationHz / llrStepHz))
-	return r.splitAt(base, off, dev, r.llrOff, r.llrDev), off, 2 * dev
-}
-
-// splitAt gives the number of symbols of the burst at base before a level
-// step: the head that the levels off and dev fit better than the levels
-// offNew and devNew.
-func (r *leanCore) splitAt(base int64, off, dev, offNew, devNew int32) int {
-	var c, best int32
-	split := 0
-	h := ringPos(base)
-	for k := range syncFirstSym {
-		v := int32(r.ring[h]) * (discStepHz / llrStepHz)
-		if h++; h == leanRing {
-			h = 0
-		}
-		if c += symRes(v+off, dev) - symRes(v+offNew, devNew); c < best {
-			best, split = c, k+1
-		}
-	}
-	return split
-}
-
-//go:noinline
-func (r *leanCore) sliceHead(b *Burst, base int64, split int, off, thr int32) {
-	h := ringPos(base)
-	for k := range split {
-		x := int32(r.ring[h])*(discStepHz/llrStepHz) + off
-		if h++; h == leanRing {
-			h = 0
-		}
-		var d byte
-		if x < 0 {
-			d = 2
-			x = -x
-		}
-		if x > thr {
-			d |= 1
-		}
-		sh := uint(6 - 2*(k&3))
-		if k < cachSymbols {
-			b.CACH[k/4] = b.CACH[k/4]&^(3<<sh) | d<<sh
-		} else {
-			j := (k - cachSymbols) / 4
-			b.Data[j] = b.Data[j]&^(3<<sh) | d<<sh
-		}
-	}
-}
-
-func symRes(x, d int32) int32 {
-	if x < 0 {
-		x = -x
-	}
-	return min(abs32i(x-d), abs32i(x-3*d))
-}
-
 func abs32i(x int32) int32 {
 	if x < 0 {
 		return -x
@@ -3570,415 +2616,7 @@ func (r *leanCore) voicePosition(b *Burst, j int32, c *leanChan) (enums.VoiceBur
 	return pos, ok && (!r.isReplaying() || r.ext.replayFits(r, j, pos))
 }
 
-// seekMid seeks, in a core with no soft stages, an MS talker that has no
-// SYNC anchor yet by the EMB of the slot at the end of its SYNC field, while
-// the hunt buffer still holds the burst up to there. A seek at the end of the
-// slot, as the soft stages run it, needs the samples of the whole slot. In
-// the next burst of a fresh talker, the one it took on its EMB or the one
-// the stream locked on, it fits the timing again on the EMB: that talker's
-// clock rate is not known yet, and the phase it carried over the other slot
-// can be off at the start of the burst. Where
-// the core measures the I/Q power, the head of the burst must stand 10 dB
-// over the guard before it, as the slot power test at the end of the slot
-// asks of the whole burst.
-func (r *leanCore) seekMid() bool {
-	j := r.next
-	if r.hasExt() || !r.ms.seek || r.ns != r.slotEnd-slotSymbols+leanSyncEnd+1 || r.ms.anch[j&1] != leanNoSlot && r.ms.fresh[j&1] == 0 {
-		return false
-	}
-	base := r.first + int64(j)*slotSymbols + int64(r.ms.off[j&1])
-	if on, off, ok := r.slotPower(base, true); ok && on <= leanSlotContrast*off || !ok && r.eSyms > 0 && !r.powered(r.eAcc/float32(r.eSyms), 0, true, false) {
-		return false
-	}
-	sh, ok := r.embAnchor(j, base)
-	if !ok {
-		return false
-	}
-	r.slotEnd += sh
-	r.ms.seek, r.tm.hold = false, false
-	return true
-}
-
-func (r *leanCore) embSeek(j int32, base int64, present, known, measured bool) (int64, bool) {
-	if !r.hasExt() || !present && (known || measured) {
-		return 0, false
-	}
-	return r.embAnchor(j, base)
-}
-
-func (r *leanCore) seekNoise(energy float32, known, measured bool) {
-	if known || measured {
-		r.noise = min32(r.noise, energy)
-	}
-}
-
-// embAnchor takes the MS slot at base, in the slot parity of a talker that
-// has no SYNC anchor yet, as that talker's voice burst B or E when its EMB,
-// sliced at the grid of the locked talker, carries the stream's color code
-// and the LCSS of burst B or E with at most one corrected bit (ETSI TS 102
-// 361-1 clause 7.1.3). A core with no soft stages keeps no slot back to
-// confirm the EMB by the next one, so before any color code vote it takes
-// an EMB of burst B or E that reads with no bit corrected. The 24 sliced
-// symbols of the SYNC field then stand in for a SYNC pattern: their timing
-// fit on the kept samples resamples the slot and moves the talker's strobe
-// phase, and their level fit gives the talker's levels, as a SYNC anchor's
-// fit does.
-func (r *leanCore) embAnchor(j int32, base int64) (int64, bool) {
-	cc, known := r.colorCode()
-	end := base + leanSyncEnd
-	sym, at0, sps := r.ns-1, r.lastAt, 2*r.tm.step+r.tm.rate
-	if r.isReplaying() {
-		sym, at0, sps = r.ext.replayGrid(r)
-	}
-	back := sym - end
-	at := at0 - float32(back)*sps
-	if back < 0 || float32(int(back)+syncSymbols+4)*2*r.tm.step+4-at0 > float32(r.acqKept()) {
-		return 0, false
-	}
-	syms, emb, shift, top := r.embFind(at, sps, known, cc)
-	if top == embNone {
-		return 0, false
-	}
-	at += shift
-	strong := top == 0
-	agrees := r.hasExt() && r.ext.seekAgrees(j, emb.ColorCode, emb.LCSS)
-	if !strong && !agrees {
-		return 0, false
-	}
-	if !known {
-		cc = emb.ColorCode
-	}
-	var win syncWindow
-	r.fillWindow(&win, max(int32(-at-sps/2)-2, 0))
-	var cv [7]float32
-	best := win.peak(&syms, &cv, at, sps, true)
-	if best == 0 || best == len(cv)-1 {
-		return 0, false
-	}
-	d := float32(best-3)*sps/4 + edgeVertex(&cv, best)*sps/4
-	sv, svv, sxv, sp := win.sums(&syms, at+d, sps)
-	d += at - (at0 - float32(back)*sps)
-	sh := int64(roundf(d / sps))
-	d -= float32(sh) * sps
-	base += sh
-	end += sh
-	var spp float32
-	for _, q := range syms {
-		spp += float32(q) * float32(q)
-	}
-	const n = syncSymbols
-	sxy, sxx, pp := sxv-sp*sv/n, svv-sv*sv/n, spp-sp*sp/n
-	if sxy <= 0 || sxx <= 0 || pp <= 0 || sxy*sxy < discLock*discLock*sxx*pp {
-		return 0, false
-	}
-	kept := sym + 1 - int64((float32(r.acqKept())-4+at0)/sps)
-	lo, hi := max(base-1, kept), min(base+slotSymbols, r.ns-1)
-	d = r.ringZero(lo, hi, base, sym, at0, d, sps)
-	r.sliceSyms(end, &syms)
-	g, dc, res := r.fitSyms(end, &syms)
-	if emb = embOfSyms(&syms); !embWeak(&emb, true, cc) || g <= 0 {
-		return 0, false
-	}
-	o := (j + 1) & 1
-	refit := r.ms.anch[j&1] != leanNoSlot
-	if !refit {
-		r.embTalker(j, end, g, dc, res, &emb, known)
-		r.ms.anch[j&1] = j
-	}
-	k := sh + int64(r.ms.off[j&1])
-	r.first += k
-	r.ms.off[(j+1)&1] -= int16(k)
-	r.ms.off[j&1] = 0
-	if r.isReplaying() {
-		r.ext.replayPhase(j&1, d)
-	} else {
-		if !refit {
-			r.ms.fresh[j&1] = 2
-			r.saveClock(o)
-		}
-		r.fitNs, r.fitT, r.fitQ = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps), sxy*sxy/(sxx*pp)
-		r.tm.t += d
-		if r.hasExt() {
-			r.ext.noteSpan(r, max(base-1, kept), base+slotSymbols, d, sps)
-			if agrees {
-				r.seekBackfill(j-2, base-2*slotSymbols, d, sps)
-			}
-		}
-	}
-	return sh, true
-}
-
 const embNone = 3
-
-// embFind slices the SYNC field that ends at at, and at a quarter and a half
-// symbol to each side, and returns the reading whose EMB ranks best: rank 0
-// for an EMB that needs no corrected bit to carry the stream's color code,
-// or, in a core with no soft stages before a color code vote, to place its
-// burst; rank 1 plus its corrected bits for an EMB that fits the stream with
-// at most one corrected bit; embNone when no reading holds such an EMB.
-func (r *leanCore) embFind(at, sps float32, known bool, cc enums.ColorCode) (syms [syncSymbols]int8, emb pdu.EmbeddedSignalling, shift float32, top int) {
-	var try [syncSymbols]int8
-	top = embNone
-	var eye float32
-	for _, k := range [5]float32{0, -1, 1, -2, 2} {
-		e, ok := r.sliceEMB(at+k*sps/4, sps, known, cc)
-		if !ok {
-			continue
-		}
-		var rank int
-		switch {
-		case known && embStrong(&e, cc), !known && !r.hasExt() && embPlaced(&e):
-		case embWeak(&e, known, cc):
-			rank = 1 + e.FEC.ErrorsCorrected
-		default:
-			continue
-		}
-		ek := r.sliceKept(at+k*sps/4, sps, &try)
-		if rank < top || rank == top && ek < eye {
-			top, shift, syms, emb, eye = rank, k*sps/4, try, e, ek
-		}
-		if rank == 0 {
-			break
-		}
-	}
-	if top != 0 && r.hasExt() {
-		if vs, ve, vsh, rank, ek, ok := r.ext.vertexEMB(r, at, sps, known, cc); ok && (rank < top || rank == top && ek < eye) {
-			syms, emb, shift, top = vs, ve, vsh, rank
-		}
-	}
-	return syms, emb, shift, top
-}
-
-// eyeVertex returns the phase, in quarter symbols from at, where the 24
-// symbols of the SYNC field that ends there slice with the least squared
-// distance to their levels, from a parabola through the best of the five
-// quarter symbol phases from -1/2 to +1/2 symbol and its neighbors. With the
-// roll-off of 0.2 of the DMR pulse the eye closes fast off its center, so
-// the nearest quarter symbol phase can miss outer symbols that the vertex
-// phase reads. It reports false when the best phase is an outer one.
-func (r *leanCore) eyeVertex(at, sps float32) (float32, bool) {
-	var try [syncSymbols]int8
-	var ek [5]float32
-	for p := range ek {
-		ek[p] = r.sliceKept(at+float32(p-2)*sps/4, sps, &try)
-	}
-	lo, a, b, c := 0, float32(0), float32(math.Inf(1)), float32(0)
-	for p := 1; p+1 < len(ek); p++ {
-		if ek[p] < b {
-			lo, a, b, c = p, ek[p-1], ek[p], ek[p+1]
-		}
-	}
-	den := a - 2*b + c
-	if ek[0] <= b || ek[len(ek)-1] < b || den <= 0 {
-		return 0, false
-	}
-	return float32(lo-2) + 0.5*(a-c)/den, true
-}
-
-// embTalker starts the talker of slot j on its EMB anchor: it keeps the
-// levels of the other talker, takes the levels of the SYNC field fit, and
-// before a color code vote places the burst in the superframe by the LCSS of
-// its EMB.
-func (r *leanCore) embTalker(j int32, end int64, g, dc, res float32, emb *pdu.EmbeddedSignalling, known bool) {
-	r.saveLevels((j + 1) & 1)
-	g = max32(g, leanMinScale)
-	r.devScale, r.dcHz, r.discVar, r.amp, r.looseLv = g, dc, res, 0, true
-	r.levelN, r.levelEnd = levelWarm, uint16(end)
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-	if known {
-		return
-	}
-	switch emb.LCSS {
-	case enums.LCSSFirstFragment:
-		r.ch[j&1].sf = j - 2*int32(enums.VoiceBurstB-enums.VoiceBurstA)
-	case enums.LCSSLastFragment:
-		r.ch[j&1].sf = j - 2*int32(enums.VoiceBurstE-enums.VoiceBurstA)
-	case enums.LCSSSingleFragment, enums.LCSSContinuationFragment:
-	}
-}
-
-// sliceEMB slices from the kept samples only the 8 EMB symbols of the SYNC
-// field that ends at at, the first and last 4 of its 24 (ETSI TS 102 361-1
-// clause 9.1.2), and reads the EMB from them. It reports no EMB unless the
-// EMB needs at most one corrected bit, and with the color code known it
-// stops after the first 2 symbols when they differ from it in 2 bits or
-// more, since no such EMB can then carry it.
-func (r *leanCore) sliceEMB(at, sps float32, known bool, cc enums.ColorCode) (pdu.EmbeddedSignalling, bool) {
-	r.setLLR()
-	var cw uint16
-	for n, i := range [8]int{0, 1, 2, 3, syncSymbols - 4, syncSymbols - 3, syncSymbols - 2, syncSymbols - 1} {
-		v := int32(roundf(r.keptAt(at - float32(syncSymbols-1-i)*sps)))
-		cw = cw<<2 | dibitOf(r.sliceLevel(v))
-		if n == 1 && known && bits.OnesCount16(cw^uint16(cc)) >= 2 {
-			return pdu.EmbeddedSignalling{}, false
-		}
-	}
-	if !embNear(cw) {
-		return pdu.EmbeddedSignalling{}, false
-	}
-	return embOfCW(cw), true
-}
-
-// embNear reports whether cw lies at most one bit from a QR (16,7,6)
-// codeword: its data bits encode to within one bit of it, or one flipped
-// data bit makes it a codeword.
-func embNear(cw uint16) bool {
-	if bits.OnesCount16(quadraticresidue.Encode(uint8(cw>>9))^cw) <= 1 {
-		return true
-	}
-	for k := 9; k < 16; k++ {
-		if quadraticresidue.Check(cw ^ 1<<k) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r *leanCore) sliceKept(at, sps float32, syms *[syncSymbols]int8) float32 {
-	r.setLLR()
-	var e float32
-	for i := range syncSymbols {
-		v := int32(roundf(r.keptAt(at - float32(syncSymbols-1-i)*sps)))
-		syms[i] = r.sliceLevel(v)
-		d := float32(v*(discStepHz/llrStepHz)+r.llrOff) - float32(syms[i])*float32(r.llrDev)
-		e += d * d
-	}
-	return e
-}
-
-func (r *leanCore) sliceSyms(end int64, syms *[syncSymbols]int8) {
-	r.setLLR()
-	k0 := end - (syncSymbols - 1)
-	for i := range syncSymbols {
-		syms[i] = r.sliceLevel(int32(r.ring[ringPos(k0+int64(i))]))
-	}
-}
-
-func (r *leanCore) sliceLevel(v int32) int8 {
-	x := v*(discStepHz/llrStepHz) + r.llrOff
-	q := int8(1)
-	if x > 2*r.llrDev || -x > 2*r.llrDev {
-		q = 3
-	}
-	if x < 0 {
-		q = -q
-	}
-	return q
-}
-
-func (r *leanCore) ringZero(lo, hi, base, sym int64, at, d, sps float32) float32 {
-	r.ringKept(lo, hi, sym, at+d, sps)
-	for range leanZeroPasses {
-		z, ok := r.burstZero(max(lo, base+cachSymbols+2), min(hi, base+slotSymbols-3), sym, at, d, sps)
-		if !ok {
-			break
-		}
-		moved := abs32(z - d)
-		d = z
-		r.ringKept(lo, hi, sym, at+d, sps)
-		if moved < leanZeroStill {
-			break
-		}
-	}
-	return d
-}
-
-func (r *leanCore) ringKept(lo, hi, sym int64, at, sps float32) {
-	for k := lo; k <= hi; k++ {
-		v := r.keptAt(at - float32(sym-k)*sps)
-		r.ring[ringPos(k)] = int8(max32(min32(roundf(v), math.MaxInt8), math.MinInt8))
-	}
-}
-
-// burstZero moves the timing d of an EMB seek to the zero of the
-// Mueller-Muller detector over the symbols lo to hi of the burst, sliced from
-// the ring at d. The correlation peak of the 24 EMB symbols moves with the
-// payload symbols next to them; the detector zero over the whole burst does
-// not.
-func (r *leanCore) burstZero(lo, hi, sym int64, at, d, sps float32) (float32, bool) {
-	if hi-lo < slotSymbols/2 {
-		return d, false
-	}
-	r.setLLR()
-	x0, x1 := d-leanLockMMStep, d+leanLockMMStep
-	f0, f1 := r.burstMM(lo, hi, sym, at+x0, sps), r.burstMM(lo, hi, sym, at+x1, sps)
-	for range leanMMSteps {
-		if f1 == f0 {
-			break
-		}
-		x0, x1 = x1, x1-f1*(x1-x0)/(f1-f0)
-		if abs32(x1-d) > sps/4 {
-			return d, false
-		}
-		f0, f1 = f1, r.burstMM(lo, hi, sym, at+x1, sps)
-	}
-	return x1, true
-}
-
-func (r *leanCore) burstMM(lo, hi, sym int64, at, sps float32) float32 {
-	prev := r.keptAt(at - float32(sym-lo)*sps)
-	a0 := r.sliceLevel(int32(r.ring[ringPos(lo)]))
-	first, e, m := a0, float32(0), prev
-	for k := lo + 1; k <= hi; k++ {
-		y := r.keptAt(at - float32(sym-k)*sps)
-		a1 := r.sliceLevel(int32(r.ring[ringPos(k)]))
-		e += float32(a0)*y - float32(a1)*prev
-		m += y
-		prev, a0 = y, a1
-	}
-	return e - m/float32(hi-lo+1)*float32(first-a0)
-}
-
-// seekBackfill decodes the talker's slot two slots before the one where
-// its EMB seek closed, from the kept samples at the talker's fitted timing,
-// for the slot whose EMB the seek noted first. The seek kept the samples of
-// that slot, as the hunt keeps them for every seeked slot, so it reads them
-// back from the whole kept buffer, past the start of the current hunt. The burst goes to the late
-// queue until a later EMB or SYNC of the talker gives its position.
-func (r *leanCore) seekBackfill(j int32, base int64, d, sps float32) {
-	_, an := r.acqBuf()
-	room := float32(min(int64(an), r.n-r.ext.keptSince())) + r.lastAt - 4
-	lo := base - 1
-	for float32(r.ns-lo)*sps > room && lo < base+cachSymbols-1 {
-		lo++
-	}
-	if j < 0 || float32(r.ns-lo)*sps > room {
-		return
-	}
-	saved := r.ring
-	r.ringKept(lo, base+slotSymbols, r.ns-1, r.lastAt+d, sps)
-	r.ext.backfillAt(d)
-	fitNs, fitT := r.fitNs, r.fitT
-	end := base + leanSyncEnd
-	r.fitNs, r.fitT = int32(end), r.strobeTicks(r.lastAt+d-float32(r.ns-1-end)*sps)
-	r.backfill = true
-	r.burst(j, base, 0, false, false)
-	r.ring, r.backfill = saved, false
-	r.fitNs, r.fitT = fitNs, fitT
-}
-
-func embOfSyms(syms *[syncSymbols]int8) pdu.EmbeddedSignalling {
-	var cw uint16
-	for _, i := range [8]int{0, 1, 2, 3, syncSymbols - 4, syncSymbols - 3, syncSymbols - 2, syncSymbols - 1} {
-		cw = cw<<2 | dibitOf(syms[i])
-	}
-	return embOfCW(cw)
-}
-
-func embStrong(emb *pdu.EmbeddedSignalling, cc enums.ColorCode) bool {
-	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected == 0 && emb.ColorCode == cc && emb.LCSS != enums.LCSSSingleFragment
-}
-
-func embWeak(emb *pdu.EmbeddedSignalling, known bool, cc enums.ColorCode) bool {
-	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && (!known || emb.ColorCode == cc) && emb.LCSS != enums.LCSSSingleFragment
-}
-
-// embPlaced reports whether emb reads with no bit corrected as the EMB of
-// voice burst B or E, the bursts whose LCSS gives their place in the
-// superframe (ETSI TS 102 361-1 clause 9.1.2 and annex B.2.1).
-func embPlaced(emb *pdu.EmbeddedSignalling) bool {
-	return !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected == 0 && (emb.LCSS == enums.LCSSFirstFragment || emb.LCSS == enums.LCSSLastFragment)
-}
 
 func dibitOf(v int8) uint16 {
 	var d uint16
@@ -3990,25 +2628,6 @@ func dibitOf(v int8) uint16 {
 		d |= 1
 	}
 	return d
-}
-
-func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
-	cc, ok := r.colorCode()
-	if !ok {
-		return 0, false
-	}
-	emb := embOf(&b.Data)
-	if emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected > 1 || emb.ColorCode != cc {
-		return 0, false
-	}
-	switch emb.LCSS {
-	case enums.LCSSFirstFragment:
-		return enums.VoiceBurstB, true
-	case enums.LCSSLastFragment:
-		return enums.VoiceBurstE, true
-	default:
-		return 0, false
-	}
 }
 
 func (r *leanCore) embOK(emb *pdu.EmbeddedSignalling) bool {
@@ -4113,6 +2732,14 @@ func sourceAt(i int) layer2.SyncSource {
 		return layer2.SyncSourceDirectTS1
 	}
 	return layer2.SyncSourceDirectTS2
+}
+
+func syncOf(src int, data bool) enums.SyncPattern {
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	if data {
+		return dp
+	}
+	return voice
 }
 
 func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {

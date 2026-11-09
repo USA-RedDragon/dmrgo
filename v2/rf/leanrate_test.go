@@ -25,7 +25,7 @@ func maxLockedRate(t *testing.T, tr Tier, cn float64, seeds []uint64) []float64 
 			x := sig.noisy(t, cn, seed)
 			for k := 0; k < len(x); k += 2048 {
 				must(r.writeBB(x[k:min(k+2048, len(x))]))
-				if v := math.Abs(float64(d.tm.rate / (2 * d.tm.step))); d.locked && v > out[i] {
+				if v := math.Abs(float64(d.tm.rate / (2 * d.tm.step))); d.locked() && v > out[i] {
 					out[i] = v
 				}
 			}

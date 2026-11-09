@@ -380,7 +380,7 @@ func (s *cohStage) scanAcq(c *leanCore) (int, bool, int64, bool) {
 // coherent grid follows the corrections of the timing loop over the burst.
 func (s *cohStage) followStrobe(c *leanCore, b *Burst) {
 	s.followOK = false
-	if s.strobes == nil || c.bs || c.replaying || c.lateTime || c.backfill || c.ns-1-(c.base-cohFollowPre) >= extStrobes {
+	if s.strobes == nil || c.bs || c.replay != replayNone || c.lateTime || c.backfill || c.ns-1-(c.base-cohFollowPre) >= extStrobes {
 		return
 	}
 	end := float64(s.strobes[(c.ns-1)&(extStrobes-1)]) / 256
@@ -409,11 +409,11 @@ func (s *cohStage) followAt(k int) float64 {
 
 func symTime(c *leanCore, k int64) float64 {
 	per := float64(samplesPerSy)
-	if (c.replaying || c.lateTime || c.backfill) && c.tm.step > 0 {
+	if (c.replay != replayNone || c.lateTime || c.backfill) && c.tm.step > 0 {
 		per *= 1 + float64(c.tm.rate)/(2*float64(c.tm.step))
 	}
 	t := float64(c.mfStep*(c.n-1)+c.center) - float64(c.ns-1-k)*per + float64(c.mfStep)*float64(c.lastAt)
-	if c.replaying || c.backfill {
+	if c.replay != replayNone || c.backfill {
 		t += float64(c.mfStep) * float64(c.ext.gridShift(c))
 	}
 	return t / 2
@@ -473,10 +473,10 @@ func (r *iqRx) cohKey() (int, float64, float64) {
 
 func (r *iqRx) cohTrack() (float64, bool) {
 	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
-	if f := &r.d.f; r.d.locked {
+	if f := &r.d.f; r.d.locked() {
 		hz = float64(r.conv.hz-r.unsettled()) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
 	}
-	return hz, r.d.locked
+	return hz, r.d.locked()
 }
 
 func (r *iqRx) cohLockHz() (float64, float64) {
@@ -537,7 +537,7 @@ func (p *discPhase) cohKey() (int, float64, float64) {
 }
 
 func (p *discPhase) cohTrack() (float64, bool) {
-	return p.offsetHz(), p.c.locked
+	return p.offsetHz(), p.c.locked()
 }
 
 func (p *discPhase) cohLockHz() (float64, float64) {

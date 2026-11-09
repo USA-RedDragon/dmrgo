@@ -325,7 +325,7 @@ func (r *iqLowRx) follow() {
 		return
 	}
 	scale := f.gain * iqUnitsPerHz
-	if r.d.locked {
+	if r.d.locked() {
 		hz := (f.dc + r.d.dcHz) / scale
 		switch {
 		case abs32(avg) >= iqAFCPullHz && abs32(hz) >= iqAFCLockHz && hz*avg > 0:
@@ -356,14 +356,14 @@ func (r *iqLowRx) tune(hz, dc float32) {
 	s, c := sincosf(-2 * math.Pi * hz / rate)
 	r.afcAvg = cmul(r.afcAvg, complex(c, s))
 	d := hz*scale + dc - f.dc
-	if r.d.locked {
+	if r.d.locked() {
 		f.mean += dc - f.dc
 	} else {
 		f.mean = dc
 	}
 	f.dc, r.d.tuneHz = dc, dc
 	f.refresh()
-	if !r.d.locked {
+	if !r.d.locked() {
 		f.shiftHist(d)
 		r.d.shift(d)
 	}

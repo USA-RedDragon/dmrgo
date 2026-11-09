@@ -29,7 +29,7 @@ func TestLeanClockRateNullMS(t *testing.T) {
 		worst := 0.0
 		for k := 0; k < len(x); k += 2048 {
 			must(r.writeBB(x[k:min(k+2048, len(x))]))
-			if v := math.Abs(float64(dd.tm.rate / (2 * dd.tm.step))); dd.locked {
+			if v := math.Abs(float64(dd.tm.rate / (2 * dd.tm.step))); dd.locked() {
 				worst = max(worst, v)
 			}
 		}
@@ -87,7 +87,7 @@ func TestRateLineNullMS(t *testing.T) {
 		worst := 0.0
 		for k, n := 0, write(0); n > 0; n = write(k) {
 			k += n
-			if v := math.Abs(float64(core.tm.rate / (2 * core.tm.step))); core.locked {
+			if v := math.Abs(float64(core.tm.rate / (2 * core.tm.step))); core.locked() {
 				worst = max(worst, v)
 			}
 		}

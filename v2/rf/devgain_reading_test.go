@@ -122,7 +122,7 @@ func TestDeviationAfterRetune(t *testing.T) {
 		}
 		iq := h.iqd
 		if retune {
-			if !iq.d.locked {
+			if !iq.d.locked() {
 				t.Fatal("the stream is not locked at the retune")
 			}
 			iq.d.write(iq.audio)

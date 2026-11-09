@@ -31,7 +31,7 @@ func TestDataSyncRescue(t *testing.T) {
 		{"reserved data type", 1, 10, cc, enums.DataTypeReserved, false, false},
 		{"unproven stream", 1, 10, cc, enums.DataTypeCSBK, true, false},
 	} {
-		r := &leanCore{ns: 600, sources: 1, devScale: 1, unproven: c.unproven}
+		r := &leanCore{ns: 600, sources: 1, devScale: 1, leanLock: leanLock{unproven: c.unproven}}
 		r.votes[cc] = 3
 		r.base = r.ns - slotSymbols
 		for k := range syncSymbols {

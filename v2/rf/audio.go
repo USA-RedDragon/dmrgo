@@ -350,7 +350,7 @@ func (r *AudioReceiver) Active() bool {
 		return false
 	}
 
-	return r.locked
+	return r.locked()
 }
 
 // Lag returns the most samples between the last sample of a burst and

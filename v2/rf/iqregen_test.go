@@ -22,7 +22,7 @@ func TestIQRegenAudioAligned(t *testing.T) {
 			q.sample(v)
 		}
 		x = x[n+700:]
-		if q.d.locked {
+		if q.d.locked() {
 			t.Fatal("locked on a tone")
 		}
 		live := append([]int16(nil), q.audio...)

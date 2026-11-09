@@ -1172,7 +1172,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	}
 	if x.refill != nil {
 		end := x.lockN
-		if c.hunt {
+		if c.hunting() {
 			end = c.n
 		}
 		x.refill(c, end)
@@ -1181,7 +1181,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 	last := x.lockSym
 	at := x.lockAt
 	x.atN = x.lockN
-	if c.hunt && c.acqFrom <= x.lockN {
+	if c.hunting() && c.acqFrom <= x.lockN {
 		at -= float32(c.n - x.lockN)
 		x.atN = c.n
 	}
@@ -1214,9 +1214,9 @@ func (x *softExt) firstSlot(c *leanCore) {
 	ms := c.ms
 	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
 	clicks := c.clicks
-	c.replaying = true
 	x.replayN, x.replayP, x.replayT = n32, 0, false
-	for _, dry := range [2]bool{true, false} {
+	for _, mode := range [2]leanReplay{replayDry, replayLive} {
+		dry := mode == replayDry
 		x.replayD = [2]float32{}
 		votes := c.votes
 		c.resetChans()
@@ -1230,7 +1230,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 		}
 		c.first = first - int64(n)*slotSymbols
 		c.slotEnd = c.first + slotSymbols
-		c.replayDry = dry
+		c.replay = mode
 		m := n
 		if dry {
 			m++
@@ -1257,7 +1257,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 			}
 		}
 	}
-	c.replaying, c.replayDry, c.replayDeep = false, false, false
+	c.replay, c.replayDeep = replayNone, false
 	if c.lastAnch == n32 {
 		c.lastAnch = leanNoSlot
 	}
@@ -1318,7 +1318,7 @@ func (x *softExt) replayLock(j int32, b *Burst) {
 }
 
 func (x *softExt) replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) bool {
-	if c.replayDry {
+	if c.replay == replayDry {
 		return true
 	}
 	d := x.replayN - j
@@ -1339,7 +1339,7 @@ func (x *softExt) replayFits(c *leanCore, j int32, pos enums.VoiceBurstType) boo
 func (x *softExt) replayPos(c *leanCore, j int32, b *Burst) (enums.VoiceBurstType, bool) {
 	_, data, _ := sourceAt(int(c.src)).SyncPatterns()
 	d := x.replayN - j
-	if c.replayDry || x.replayP != data || !x.replayT || d&1 != 0 || d < 2 || d > 2*int32(enums.VoiceBurstF-enums.VoiceBurstB+1) {
+	if c.replay == replayDry || x.replayP != data || !x.replayT || d&1 != 0 || d < 2 || d > 2*int32(enums.VoiceBurstF-enums.VoiceBurstB+1) {
 		return 0, false
 	}
 	pos := enums.VoiceBurstF - enums.VoiceBurstType(d/2-1)
@@ -1927,7 +1927,7 @@ func (x *softExt) grid(c *leanCore, start int64) (int64, float32, bool) {
 // also gives the error that the uncertainty of that fit makes, in ticks;
 // without one, the symbols projected at a period of unknown error.
 func (x *softExt) replayTicks(c *leanCore, start int64) (int64, int16, float32, bool) {
-	if !c.replaying {
+	if c.replay == replayNone {
 		return 0, 0, 0, false
 	}
 	k := float32(x.lockSym - start)

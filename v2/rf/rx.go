@@ -337,7 +337,7 @@ func (r *Receiver) Active() bool {
 
 	switch r.mode {
 	case rxModeLow:
-		return r.low.d.locked
+		return r.low.d.locked()
 	case rxModeFull:
 		return r.full.active()
 	}

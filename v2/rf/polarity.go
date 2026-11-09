@@ -72,7 +72,7 @@ func (r *discRx) polarity() {
 	if f := &r.f; f.polBits&polFlipped != 0 {
 		f.polBits &^= polFlipped
 		r.scaleAudio(-1)
-		if r.locked {
+		if r.locked() {
 			r.unlock()
 		}
 	}

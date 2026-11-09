@@ -15,7 +15,7 @@ type lockRetune struct {
 func (r *leanCore) dueLock() bool { return r.hasExt() && r.lockDue }
 
 func (r *leanCore) wantRetune(p enums.SyncPattern, src int, verified bool) bool {
-	return !r.locked && r.hasExt() && r.ext.lockTune(r, p, src, verified)
+	return !r.locked() && r.hasExt() && r.ext.lockTune(r, p, src, verified)
 }
 
 func (r *leanCore) relock(p enums.SyncPattern, src int, verified bool, at *float32) {

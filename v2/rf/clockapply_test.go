@@ -34,7 +34,7 @@ func TestLeanClockRateApplied(t *testing.T) {
 				var tm *leanTiming
 				var on bool
 				if h.iqd != nil {
-					tm, on = &h.iqd.d.tm, h.iqd.d.locked
+					tm, on = &h.iqd.d.tm, h.iqd.d.locked()
 				}
 				if tm == nil || !on || k < len(iq)/3 {
 					continue

@@ -189,7 +189,7 @@ func adjacentReceiveSeed(t *testing.T, tier Tier, o *options, offsetHz float64, 
 	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: tier, OnBursts: each(func(b *Burst) { out = append(out, *b) }), Format: IQFormatCU8}, *o)
 	for k := 0; k < len(x); k += 960 {
 		must(r.writeBB(x[k:min(k+960, len(x))]))
-		if r.host().iqd != nil && r.host().iqd.d.locked {
+		if r.host().iqd != nil && r.host().iqd.d.locked() {
 			off = max(off, abs32(r.host().iqd.conv.hz-float32(offsetHz)))
 		}
 	}

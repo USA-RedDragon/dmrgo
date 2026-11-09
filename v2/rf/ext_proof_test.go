@@ -41,7 +41,7 @@ func TestExtWeakLockProof(t *testing.T) {
 	t.Parallel()
 	run := func(bs []Burst, votes int) int {
 		n := 0
-		c := &leanCore{unproven: true, onBurst: func(*Burst) { n++ }}
+		c := &leanCore{leanLock: leanLock{unproven: true}, onBurst: func(*Burst) { n++ }}
 		if votes >= 0 {
 			c.votes[votes] = 1
 		}

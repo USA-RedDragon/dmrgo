@@ -581,7 +581,7 @@ func (r *iqRx) take(v complex64) {
 func (r *iqRx) follow() {
 	acc, pw := r.conv.acc, r.conv.pw
 	incoherent := real(acc)*real(acc)+imag(acc)*imag(acc) < iqAFCCoherence*iqAFCCoherence*pw*pw
-	if r.conv.afc != nil && !r.d.locked {
+	if r.conv.afc != nil && !r.d.locked() {
 		acc = r.conv.accAvg
 	}
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
@@ -598,7 +598,7 @@ func (r *iqRx) follow() {
 		return
 	}
 	scale := f.gain * iqUnitsPerHz
-	if r.d.locked {
+	if r.d.locked() {
 		r.afcPull = 0
 		hz := (f.dc + r.d.dcHz) / scale
 		switch {
@@ -649,7 +649,7 @@ func (r *iqRx) syncTune() {
 }
 
 func (r *iqRx) lockTune() {
-	if !r.d.locked {
+	if !r.d.locked() {
 		r.lockSeen = false
 		return
 	}
@@ -664,7 +664,7 @@ func (d *iqDisc) hzOf(acc complex64) float32 {
 }
 
 func (r *iqRx) hunt(v complex64) {
-	if r.d.locked {
+	if r.d.locked() {
 		if !r.specLock {
 			r.spec.reset()
 		}
@@ -697,7 +697,7 @@ func (r *iqRx) hunt(v complex64) {
 	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
-	if r.writeAudio(); r.d.locked {
+	if r.writeAudio(); r.d.locked() {
 		return
 	}
 	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
@@ -708,7 +708,7 @@ func (r *iqRx) hunt(v complex64) {
 func (r *iqRx) lockLimit() float32 { return max32(r.maxHz, iqTuneMaxHz) }
 
 func (r *iqRx) tuneLimit() float32 {
-	if r.d.locked {
+	if r.d.locked() {
 		return r.lockLimit()
 	}
 	if r.maxHz == 0 {
@@ -759,7 +759,7 @@ func (r *iqRx) tuneLean(hz, dc float32) {
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
 	r.afcAvg = cmul(r.afcAvg, complex(float32(math.Cos(p)), float32(math.Sin(p))))
 	d := hz*scale + dc - f.dc
-	if r.d.locked {
+	if r.d.locked() {
 		f.mean += dc - f.dc
 		r.d.refit = r.d.refit || abs32(r.fcMove) >= iqAFCPullHz
 	} else {
@@ -769,7 +769,7 @@ func (r *iqRx) tuneLean(hz, dc float32) {
 	r.d.fcPrev, r.d.fcOff = r.d.fcOff, (r.conv.hz-r.conv.fc)*iqUnitsPerHz
 	f.dc, r.d.tuneHz = dc, dc
 	f.refresh()
-	if !r.d.locked {
+	if !r.d.locked() {
 		f.shiftHist(d)
 		r.d.shift(d)
 	}

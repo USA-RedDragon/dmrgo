@@ -34,9 +34,9 @@ func txHostOn() bool { return txHostRx }
 
 func (r *leanCore) hasExt() bool { return extRx && r.ext != nil }
 
-func (r *leanCore) isReplaying() bool { return r.hasExt() && r.replaying }
+func (r *leanCore) isReplaying() bool { return r.hasExt() && r.replay != replayNone }
 
-func (r *leanCore) isReplayDry() bool { return r.hasExt() && r.replayDry }
+func (r *leanCore) isReplayDry() bool { return r.hasExt() && r.replay == replayDry }
 
 func (r *leanCore) earlyOK(b *Burst) bool {
 	if r.hasExt() {

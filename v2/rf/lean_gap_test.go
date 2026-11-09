@@ -117,7 +117,7 @@ func TestLeanReplayNoise(t *testing.T) {
 	syncSyms(p, &syms)
 	end := int64(5000)
 	base := end - leanSyncEnd
-	r := &leanCore{devScale: 1, lastAnch: leanNoSlot, replaying: true}
+	r := &leanCore{devScale: 1, lastAnch: leanNoSlot, replay: replayLive}
 	r.first, r.next = base-3*slotSymbols, 4
 	r.ns = base + 10*slotSymbols
 	r.head = uint8(ringPos(r.ns))

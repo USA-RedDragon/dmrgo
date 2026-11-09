@@ -128,7 +128,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	for _, u := range x[:n] {
 		p.clip(u)
 		p.click(u, lo, hi)
-		if (p.sumN+1)%64 == 0 && p.cal && p.c.locked && p.c.bs && p.hotBlock() {
+		if (p.sumN+1)%64 == 0 && p.cal && p.c.locked() && p.c.bs && p.hotBlock() {
 			p.cal, p.fitN, p.heldN = false, 0, 0
 		}
 		i := p.sumN
@@ -324,12 +324,12 @@ func (p *discPhase) update() {
 	g := float64(f.gain)
 	unit := p.unit
 	switch {
-	case c.locked && p.useHeld && p.heldN >= discHeldFits:
+	case c.locked() && p.useHeld && p.heldN >= discHeldFits:
 		unit = p.held
-	case c.locked && p.fitN > 0:
+	case c.locked() && p.fitN > 0:
 		unit = p.fitUnit
 	case p.cal:
-	case c.locked:
+	case c.locked():
 		unit = g / float64(max(c.devScale, 0.1))
 	case !p.seen:
 		unit = g / discPhaseDev0
@@ -353,18 +353,18 @@ func (p *discPhase) follow() {
 	if n := p.sumN - p.clickAt; n > 0 {
 		over := float64(p.clickN) > discStepClicks*float64(n)
 		pair := float64(p.clickN+p.prevClicks) > discStepClicks*float64(n+p.prevN)
-		if over && pair && p.cal && c.locked {
+		if over && pair && p.cal && c.locked() {
 			p.cal, p.fitN, p.heldN = false, 0, 0
 		}
 		p.prevClicks, p.prevN = p.clickN, n
 	}
 	p.clickN, p.clickAt = 0, p.sumN
 	switch {
-	case c.locked && !c.bs:
+	case c.locked() && !c.bs:
 		if hz := p.coreHz(); abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz {
 			p.move(hz)
 		}
-	case c.locked:
+	case c.locked():
 		hz := p.coreHz()
 		switch {
 		case abs32(avg) >= iqAFCPullHz:
@@ -488,7 +488,7 @@ func rescaleTurn(v complex64, k, d float64) complex64 {
 }
 
 func (p *discPhase) offsetHz() float64 {
-	if c := p.c; c.locked && !c.bs {
+	if c := p.c; c.locked() && !c.bs {
 		return float64(p.coreHz())
 	}
 	return float64(ringHz(p.avg))

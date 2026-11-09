@@ -49,7 +49,7 @@ func adjacentPin(t *testing.T, tier Tier, o *options, offsetHz float64, wanted, 
 	r := mustNewOpt(RxConfig{Rate: basebandRate, Tier: tier, OnBursts: each(func(b *Burst) { out = append(out, *b) }), Format: IQFormatCU8}, *o)
 	for k := 0; k < len(x); k += 960 {
 		must(r.writeBB(x[k:min(k+960, len(x))]))
-		if r.host().iqd.d.locked {
+		if r.host().iqd.d.locked() {
 			off = max(off, abs32(r.host().iqd.conv.hz-float32(offsetHz)))
 		}
 	}
@@ -398,12 +398,12 @@ func TestIQSyncTuneFitNoise(t *testing.T) {
 				t.Fatal(err)
 			}
 			if hz := h.iqd.conv.hz; hz != last {
-				if h.iqd.d.locked && seen {
+				if h.iqd.d.locked() && seen {
 					moves++
 				}
 				last = hz
 			}
-			seen = seen || h.iqd.d.locked
+			seen = seen || h.iqd.d.locked()
 		}
 		if moves > 0 {
 			t.Errorf("run %d: converter moved %d times while locked on a carrier at 0 Hz", run, moves)

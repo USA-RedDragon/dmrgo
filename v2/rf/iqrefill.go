@@ -148,7 +148,7 @@ func (f *iqRefill) fir(taps []float32, e int64) complex64 {
 func (r *iqRx) keepRawExt(v complex64) {
 	f := r.refill
 	switch {
-	case r.d.locked && !r.d.hunt:
+	case r.d.stage == stageTrack:
 		if !f.idle {
 			f.idle, f.stop = true, f.n
 		}
@@ -180,7 +180,7 @@ func (f *iqRefill) keptEnd() int64 {
 }
 
 func (r *iqRx) noteTuneExt(hz float32) {
-	if f := r.refill; f != nil && !r.d.locked {
+	if f := r.refill; f != nil && !r.d.locked() {
 		if f.tuned < 0 {
 			f.hz0 = r.conv.hz - hz
 		}
@@ -197,7 +197,7 @@ func (r *iqRx) lockOffset() float32 {
 }
 
 func (r *iqRx) retuneWanted(*leanCore) bool {
-	if r.refill == nil || r.d.locked {
+	if r.refill == nil || r.d.locked() {
 		return false
 	}
 	return r.refill.narrow != nil || r.lockTuned()
@@ -374,7 +374,7 @@ func (r *iqRx) writeAudioExt() {
 	}
 	r.settleCoh()
 	r.audio = r.audio[:0]
-	if f != nil && f.narrowOn && !r.d.locked {
+	if f != nil && f.narrowOn && !r.d.locked() {
 		r.toWide()
 	}
 }

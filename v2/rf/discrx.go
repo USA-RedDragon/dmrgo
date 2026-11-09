@@ -121,7 +121,7 @@ func (r *discRx) flush() {
 	for range slotSymbols * discSPS &^ 63 / len(idle) {
 		r.write(idle[:])
 	}
-	if r.locked {
+	if r.locked() {
 		r.unlock()
 	}
 	r.endTicks = 0
@@ -134,7 +134,7 @@ func (r *discRx) flushIQ() {
 	for range slotSymbols * discSPS &^ 63 / len(idle) {
 		r.writeIQ(idle[:])
 	}
-	if r.locked {
+	if r.locked() {
 		r.unlock()
 	}
 	r.endTicks = 0
@@ -266,7 +266,7 @@ func (r *discRx) runAll(x []int16) int {
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
 	cubic, half, slow := tm.cubic, f.half, f.slow
-	search, keep := !r.locked, !r.locked || r.hunt
+	search, keep := !r.locked(), r.stage != stageTrack
 	fit := r.hasExt()
 	r.startRaw(0)
 	for i, v := range x {
@@ -334,7 +334,7 @@ func (r *discRx) runAll(x []int16) int {
 				sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 				kh = r.acqHead
 				buf, an = r.acqBuf()
-				search, keep = !r.locked, !r.locked || r.hunt
+				search, keep = !r.locked(), r.stage != stageTrack
 				if r.dueLock() {
 					r.keepRaw(x, i+1)
 					return i + 1
@@ -368,19 +368,19 @@ func (r *discRx) state96() uint8 {
 	if mode == mid96Linear {
 		st |= st96LinMid
 	}
-	if !r.locked {
+	if !r.locked() {
 		st |= st96Search | st96Keep
 		if mode >= mid96Raw {
 			st |= st96Raw
 		}
 		return st
 	}
-	if r.hunt {
+	if r.hunting() {
 		st |= st96Keep
 	}
 	if mode == mid96RawLock {
 		st |= st96Lock
-		if !r.hunt {
+		if !r.hunting() {
 			st |= st96Quiet
 		}
 	}
@@ -586,7 +586,7 @@ func (r *discRx) run96(x []int16, i0 int, in []uint32) (int, int) {
 				r.acqHead, r.acqLow = kh, kq
 				if st&st96Lock != 0 {
 					again, mid, match := r.lockSym(tm.last, at)
-					if !match && !r.ms.retry && uint32(r.ns) != uint32(r.slotEnd) && (uint32(r.ns)+leanSeekLead != uint32(r.slotEnd) || !r.hunt || !r.seekMid()) {
+					if !match && !r.ms.retry && uint32(r.ns) != uint32(r.slotEnd) && (uint32(r.ns)+leanSeekLead != uint32(r.slotEnd) || !r.hunting() || !r.seekMid()) {
 						if t > 0 {
 							break
 						}
@@ -751,14 +751,14 @@ func (r *leanCore) snap() *frontSnap {
 }
 
 func (r *leanCore) startRaw(i int) {
-	if f := r.audio; audioOn() && f.maxGain == 0 && !f.cold && !r.locked {
+	if f := r.audio; audioOn() && f.maxGain == 0 && !f.cold && !r.locked() {
 		r.snap().seg = uint16(i)
 	}
 }
 
 func (r *leanCore) keepRaw(x []int16, i int) {
 	f := r.audio
-	if !audioOn() || f.maxGain != 0 || f.cold || r.locked {
+	if !audioOn() || f.maxGain != 0 || f.cold || r.locked() {
 		return
 	}
 	sn := r.snap()
@@ -797,7 +797,7 @@ func (r *leanCore) quarterHot(qv float32) {
 
 func (r *leanCore) refilter(g float32) bool {
 	f := r.audio
-	if sn := r.snap(); r.locked || !sn.ok || sn.rn > frontQuarter {
+	if sn := r.snap(); r.locked() || !sn.ok || sn.rn > frontQuarter {
 		return false
 	}
 	rrc, hb := r.snapHist()

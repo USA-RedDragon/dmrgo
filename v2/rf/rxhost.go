@@ -112,9 +112,9 @@ func (r *rxHost) flush() {
 func (r *rxHost) active() bool {
 	switch {
 	case r.iqd != nil:
-		return r.iqd.d.locked
+		return r.iqd.d.locked()
 	case r.lean != nil:
-		return r.lean.locked
+		return r.lean.locked()
 	}
 	return false
 }

@@ -256,7 +256,7 @@ func (r *leanRx) flush() {
 	for range slotSamplesN {
 		r.sample(0)
 	}
-	if r.locked {
+	if r.locked() {
 		r.unlock()
 	}
 	r.endTicks = 0
@@ -272,10 +272,10 @@ func (r *leanRx) sample(v complex64) {
 		return
 	}
 	r.power(p)
-	if !r.locked {
+	if !r.locked() {
 		r.block(p)
 	}
-	if !r.locked || r.hunt {
+	if r.stage != stageTrack {
 		r.keep(s)
 	}
 	if r.hasExt() {

@@ -135,6 +135,9 @@ ignore_files:
   - v2/rf/lean.go
   - v2/rf/leanfec.go
   - v2/rf/leanfront.go
+  - v2/rf/leanlevel.go
+  - v2/rf/leanstage.go
+  - v2/rf/leantalker.go
   - v2/rf/monitor.go
   - v2/rf/npml.go
   - v2/rf/options.go

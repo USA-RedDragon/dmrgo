@@ -129,7 +129,7 @@ func TestLevelQuartersAfterUnlock(t *testing.T) {
 	t.Parallel()
 	r := mustAudio(AudioRxConfig{Rate: 9600, Tier: Tier0})
 	r.f.sum, r.f.sq, r.f.n, r.f.qsum, r.f.qsq = 900, 90000, 3*frontQuarter, 600, 60000
-	r.locked = true
+	r.stage = stageTrack
 	r.unlock()
 	for range frontQuarter {
 		r.f.sum++
