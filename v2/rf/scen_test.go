@@ -99,6 +99,7 @@ var bugPinTests = map[string]string{
 	"TestRxEMBNotRCSync":                 "a payload whose voice EMB field reads as an MS reverse channel SYNC",
 	"TestRxReplayLockOffset":             "a payload whose forced lock left the lock strobe 0.1 symbol off its SYNC",
 	"TestRxEMBNotDataSync":               "a payload whose voice EMB field lies 12 bits from the MS data SYNC",
+	"TestRxEMBShiftNotDataSync":          "a payload whose voice field one symbol off the grid lies 12 bits from the BS data SYNC",
 	"TestRxReplaySeekEMBTiming":          "payloads whose EMB seek the 24-symbol peak timed 7 to 9 us off",
 	"TestLeanFadeKeepsPhase":             "a payload whose burst after a fade was stamped early (loop on the faded slots)",
 	"TestLeanWeakLockKeeps":              "payloads whose header a weak lock on its payload cut from the kept samples",

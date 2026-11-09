@@ -143,6 +143,22 @@ func TestRxEMBNotDataSync(t *testing.T) {
 	}
 }
 
+// TestRxEMBShiftNotDataSync pins a payload whose voice burst field one
+// symbol after the grid lies 12 bits from the BS data SYNC while the EMB on
+// the grid carries the color code. Every tier anchored the burst there as
+// data and rewrote about 120 of its bits.
+func TestRxEMBShiftNotDataSync(t *testing.T) {
+	t.Parallel()
+	p := pinnedTB{t, 1001116}
+	slots, _ := benchStream(p, 6)
+	x := noisyBaseband(p, slots, 1400, 40, 1)
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+		if e, n := exactFrames(slots, receiveBaseband(x, tier)); e != n {
+			t.Errorf("tier %d: %d of %d frames exact", tier-Tier0, e, n)
+		}
+	}
+}
+
 // TestRxEMBSeekSliceTie pins a payload on which two slices of the first EMB
 // of the second talker decoded exactly before the color code was known, one
 // at the wrong timing with the wrong color code; taking the first of the
