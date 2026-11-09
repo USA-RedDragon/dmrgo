@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
 func TestRxPreEmphasisInit(t *testing.T) {
@@ -53,25 +54,38 @@ func TestRxPreEmphasisFilter(t *testing.T) {
 	}
 }
 
+// TestRxPreEmphasisRecovers checks that RxPreEmphasis recovers de-emphasized
+// audio at 9 dB: over preEmphasisDraws payload draws, de-emphasis alone must
+// lose at least half of the AMBE frames of flat audio, and pre-emphasis must
+// get back all but a tenth of that loss. One draw varies by about 1.8 frames
+// against a margin of about 3, so the test pools 16 draws.
 func TestRxPreEmphasisRecovers(t *testing.T) {
 	t.Parallel()
-	slots, truth := benchStream(t, 3)
-	x := noisyBaseband(t, slots, 0, 9, 1)
-	for _, hz := range []int{8000, 9600, 48000} {
-		exact := func(a []int16, pe *RxPreEmphasis) int {
-			var r AudioReceiver
-			if err := r.Init(AudioRxConfig{Rate: hz, PreEmphasis: pe}); err != nil {
-				t.Fatal(err)
+	const preEmphasisDraws = 16
+	type sums struct{ flat, off, on int }
+	got := map[int]*sums{8000: {}, 9600: {}, 48000: {}}
+	for d := range uint64(preEmphasisDraws) {
+		slots, truth := benchStreamOf(t, randomizedN(t, d+1, rftx.SeqConfig{Source: 3009101, BS: 990913, Dest: 3009201, Message: benchMessage(d)}), 3)
+		x := noisyBaseband(t, slots, 0, 9, 1+d)
+		for hz, s := range got {
+			exact := func(a []int16, pe *RxPreEmphasis) int {
+				var r AudioReceiver
+				if err := r.Init(AudioRxConfig{Rate: hz, PreEmphasis: pe}); err != nil {
+					t.Fatal(err)
+				}
+				return scoreBench(truth, r.AppendFlush(r.AppendBursts(nil, a)))["ambe"].Exact
 			}
-			got := r.AppendFlush(r.AppendBursts(nil, a))
-			return scoreBench(truth, got)["ambe"].Exact
+			de := radioAudio(x, hz, true)
+			s.flat += exact(radioAudio(x, hz, false), nil)
+			s.off += exact(de, nil)
+			s.on += exact(de, NewRxPreEmphasis())
 		}
-		flat := exact(radioAudio(x, hz, false), nil)
-		de := radioAudio(x, hz, true)
-		off, on := exact(de, nil), exact(de, NewRxPreEmphasis())
-		t.Logf("%d Hz: flat %d, de-emphasized %d, with pre-emphasis %d", hz, flat, off, on)
-		if off >= flat/2 || flat-on > (flat-off)/10 {
-			t.Errorf("%d Hz: flat %d, de-emphasized %d, with pre-emphasis %d", hz, flat, off, on)
+	}
+	for _, hz := range []int{8000, 9600, 48000} {
+		s := got[hz]
+		t.Logf("%d Hz over %d draws: flat %d, de-emphasized %d, with pre-emphasis %d", hz, preEmphasisDraws, s.flat, s.off, s.on)
+		if s.off >= s.flat/2 || s.flat-s.on > (s.flat-s.off)/10 {
+			t.Errorf("%d Hz over %d draws: flat %d, de-emphasized %d, with pre-emphasis %d", hz, preEmphasisDraws, s.flat, s.off, s.on)
 		}
 	}
 }
