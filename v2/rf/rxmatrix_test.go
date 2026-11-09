@@ -1056,6 +1056,8 @@ func mxGenieMean(s *mxSignal, in mxInput, matched []bool, last int) (float64, bo
 	return sum / float64(n), true
 }
 
+const mxGenieTaps = 16
+
 func mxGenieLevel(s *mxSignal, in mxInput, j int) (float64, bool) {
 	tr := s.truth[j]
 	var sym [burstSymbols]float64
@@ -1066,11 +1068,16 @@ func mxGenieLevel(s *mxSignal, in mxInput, j int) (float64, bool) {
 	at := func(t float64) (float64, bool) {
 		x := t * float64(in.hz)
 		i := int(math.Floor(x))
-		if i < 0 || i+1 >= len(in.audio) {
+		if i-mxGenieTaps+1 < 0 || i+mxGenieTaps >= len(in.audio) {
 			return 0, false
 		}
-		w := x - float64(i)
-		return float64(in.audio[i])*(1-w) + float64(in.audio[i+1])*w, true
+		var v, ws float64
+		for k := -mxGenieTaps + 1; k <= mxGenieTaps; k++ {
+			d := float64(k) - (x - float64(i))
+			h := sinc(d) * (0.5 + 0.5*math.Cos(math.Pi*d/mxGenieTaps))
+			v, ws = v+float64(in.audio[i+k])*h, ws+h
+		}
+		return v / ws, true
 	}
 	best, bg := math.Inf(1), 0.0
 	for tau := -8e-6; tau <= 8e-6; tau += 2e-6 {
