@@ -6,7 +6,9 @@
 // counted instructions, the RAM from the static data, the heap and a
 // painted stack, and the flash from the sections of the ELF. With -update
 // it writes v2/rf/testdata/rxbench_mcu.json, v2/rf/testdata/rxbench_m7.json
-// and v2/internal/fsktx/testdata/tier0cost.json.
+// and v2/internal/fsktx/testdata/tier0cost.json. The cycle model reads
+// the mnemonic of each instruction, so QEMU must be built with capstone;
+// mcubench fails when the plugin output has no disassembly.
 // With -check it measures again and fails when a value differs, or skips
 // with the reason when a tool is missing.
 package main
@@ -203,6 +205,9 @@ func signalConds() []string {
 }
 
 func run(ctx context.Context, root, work string, update bool) error {
+	if err := checkCycleModel(); err != nil {
+		return err
+	}
 	t, err := findTools(ctx, root)
 	if err != nil {
 		return err
