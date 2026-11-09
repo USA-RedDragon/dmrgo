@@ -51,11 +51,11 @@ Least margin in dB to the limits of each region and service at 1 W (30 dBm), les
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0, 12-bit | 48 | 3.5 | 708 | 27.6 |
-| Audio tier 0, 12-bit | 24 | 3.4 | 748 | 27.5 |
-| Audio tier 0, 12-bit, pre-emphasis | 48 | 4.4 | 932 | 49.1 |
-| Audio tier 0, 12-bit, pre-emphasis | 24 | 3.9 | 932 | 49.1 |
-| I/Q tier 0, CS16 | 96 | 4.3 | 1304 | 30.2 |
+| Audio tier 0, 12-bit | 48 | 2.7 | 708 | 27.6 |
+| Audio tier 0, 12-bit | 24 | 2.6 | 748 | 27.5 |
+| Audio tier 0, 12-bit, pre-emphasis | 48 | 3.5 | 932 | 49.1 |
+| Audio tier 0, 12-bit, pre-emphasis | 24 | 3.0 | 932 | 49.1 |
+| I/Q tier 0, CS16 | 96 | 3.5 | 1304 | 30.2 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`, with BS-sourced bursts on every slot. CPU counts the cycles of the `rf` and `fsktx` code and of the bench loop per second of signal. RAM is the `Transmitter` or `AudioTransmitter`, with its `PreEmphasis` when it has one, and the most stack under it. Flash is the code and constant data of the whole program.
 

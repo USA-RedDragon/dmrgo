@@ -22,7 +22,7 @@
     {
       "tier": 1,
       "side_hz": -12500,
-      "acs_db": 100
+      "acs_db": 104
     },
     {
       "tier": 1,
@@ -32,17 +32,17 @@
     {
       "tier": 2,
       "side_hz": -12500,
-      "acs_db": 102
+      "acs_db": 104
     },
     {
       "tier": 2,
       "side_hz": 12500,
-      "acs_db": 102
+      "acs_db": 100
     },
     {
       "tier": 3,
       "side_hz": -12500,
-      "acs_db": 88
+      "acs_db": 86
     },
     {
       "tier": 3,

@@ -35,7 +35,7 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Voice | Rate 1/2 | Rate 3/4 | CSBK | Embedded LC |
 |:---|---:|---:|---:|---:|---:|
-| 4FSK floor | -1.0 | -3.0 | 0.3 | -4.1 | < -6.9 |
+| 4FSK floor | -1.0 | -3.1 | 0.1 | -4.0 | < -6.9 |
 | Audio tier 0 | 9.6 | 6.3 | 8.2 | 6.2 | 9.3 |
 | Audio tier 1 | 8.2 | 6.3 | 7.9 | 5.2 | 6.4 |
 | Audio tier 2 | 4.9 | 4.2 | 6.2 | 3.7 | 4.4 |
@@ -69,9 +69,9 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 | Tier | Wanted C/N (dB) | Channel below (dB) | Channel above (dB) |
 |:---|---:|---:|---:|
 | I/Q tier 0 | 11.0 | 88 | 88 |
-| I/Q tier 1 | 11.0 | 100 | 102 |
-| I/Q tier 2 | 7.0 | 102 | 102 |
-| I/Q tier 3 | 7.0 | 88 | 86 |
+| I/Q tier 1 | 11.0 | 104 | 102 |
+| I/Q tier 2 | 7.0 | 104 | 100 |
+| I/Q tier 3 | 7.0 | 86 | 86 |
 
 - EN 300 113 V2.2.1 clause 8.6: an A-M3 signal (FM, 400 Hz tone, 1.5 kHz deviation) 12.5 kHz above or below the wanted signal, which sits 3 dB above the sensitivity limit. The value is the highest A-M3 level over the wanted signal, in steps of 2 dB, at which the bit error rate over 4 noise draws stays at or under 0.01. The standard asks for 60 dB.
 
@@ -79,9 +79,9 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0 | 9.6 | 5.9 | 2,628 | 55.1 |
-| Audio tier 0, `PreEmphasis` | 9.6 | 6.4 | 2,684 | 55.3 |
-| Low-rate I/Q tier 0 | 9.6 | 7.2 | 3,000 | 55.0 |
+| Audio tier 0 | 9.6 | 5.0 | 2,628 | 55.1 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 5.4 | 2,684 | 55.3 |
+| Low-rate I/Q tier 0 | 9.6 | 6.2 | 3,000 | 55.0 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
 
@@ -89,8 +89,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 55.0 | 57,056 | 274.7 |
-| Audio tier 2 | 9.6 | 548.6 | 344,128 | 274.7 |
+| Audio tier 1 | 9.6 | 48.6 | 57,056 | 274.7 |
+| Audio tier 2 | 9.6 | 460.7 | 344,128 | 274.7 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
@@ -251,17 +251,17 @@ Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) d
 
 | Payload | 4FSK floor | DMR floor | Code cost | Code-aware |
 |:---|---:|---:|---:|---:|
-| Voice frame (AMBE+2, 49 bits) | -1.0 | at least 1.3 | 2.3 to 2.9 | 1.9 |
-| Voice frame, protected bits (C0 and C1) | -5.3 | at least -4.9 | 0.4 to 4.6 | -0.7 |
-| Data block, rate 1/2 | -3.0 | - | at most 3.5 | 0.5 |
-| Data block, rate 3/4 | 0.3 | at least 1.3 | 0.9 to 4.3 | 4.6 |
-| Data block, rate 1 | 5.3 | 6.5 | 1.2 | 6.6 |
-| CSBK | -4.1 | - | at most 4.5 | 0.3 |
-| Voice LC header and terminator | -4.3 | - | at most 5.0 | 0.7 |
-| Data header | -3.9 | - | at most 4.4 | 0.5 |
-| Embedded LC | < -6.9 | - | - | -2.0 |
+| Voice frame (AMBE+2, 49 bits) | -1.0 | at least 1.4 | 2.4 to 2.9 | 1.9 |
+| Voice frame, protected bits (C0 and C1) | -5.4 | at least -5.0 | 0.4 to 4.7 | -0.7 |
+| Data block, rate 1/2 | -3.1 | - | at most 3.4 | 0.3 |
+| Data block, rate 3/4 | 0.1 | at least 0.8 | 0.7 to 4.3 | 4.5 |
+| Data block, rate 1 | 6.0 | 7.2 | 1.2 | 7.3 |
+| CSBK | -4.0 | - | at most 4.5 | 0.5 |
+| Voice LC header and terminator | -5.3 | - | at most 5.7 | 0.4 |
+| Data header | -4.2 | - | at most 4.5 | 0.4 |
+| Embedded LC | < -6.9 | - | - | -1.6 |
 | EMB | < -6.9 | < -6.9 | - | -3.4 |
-| Slot type | < -6.9 | < -6.9 | - | -2.5 |
+| Slot type | < -6.9 | < -6.9 | - | -2.7 |
 | SYNC detection | < -6.9 | < -6.9 | - | < -6.9 |
 
 | Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |

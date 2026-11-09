@@ -2191,7 +2191,7 @@
    "ns_per_second": 354860.975641313,
    "worst_ns_per_second": 460960.9750023644,
    "worst_cn": 4,
-   "ram_bytes": 1952,
+   "ram_bytes": 1960,
    "allocs": 0,
    "false": [
     {
@@ -10741,7 +10741,7 @@
    "ns_per_second": 476649.6524951605,
    "worst_ns_per_second": 477013.4299076636,
    "worst_cn": 2,
-   "ram_bytes": 2160,
+   "ram_bytes": 2168,
    "allocs": 0,
    "false": [
     {
