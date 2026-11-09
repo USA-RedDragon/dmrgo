@@ -22,7 +22,7 @@
 			"mode": "iqlow",
 			"tier": 0,
 			"rate": 9600,
-			"mhz": 8.2,
+			"mhz": 8.3,
 			"ram_bytes": 3000,
 			"flash_kb": 55
 		}
