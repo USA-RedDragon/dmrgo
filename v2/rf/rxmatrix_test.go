@@ -1008,7 +1008,7 @@ func mxScore(s *mxSignal, in mxInput, tier Tier, got []Burst, dev float64, cn bo
 			res.add(check, "%d of %d: %s", len(v), len(s.truth), strings.Join(v, "; "))
 		}
 	}
-	if mean := sum / float64(max(n, 1)); worst != 0 || math.Abs(mean) > mxSecondsMean+slack/float64(max(n, 1)) {
+	if mean := sum / float64(max(n, 1)); worst != 0 || math.Abs(mean) > mxSecondsMean+(mxSeconds*math.Sqrt(float64(max(n, 1)))+slack)/float64(max(n, 1)) {
 		res.add("seconds", "mean %+.1f us, worst %+.1f us", mean*1e6, worst*1e6)
 	}
 	if n > 0 {
@@ -1205,6 +1205,13 @@ func mxRun(t testing.TB, row mxRow, rxs []mxRx) (map[mxRx]*mxResult, error) {
 
 // TestRxMatrix runs every receiver on a pairwise cover of the scenario
 // dimensions in mxValues and scores each run against the transmitted truth.
+//
+// The seconds check holds each burst stamp within mxSeconds of the truth,
+// and the mean stamp error of the n bursts of a run within mxSecondsMean
+// plus mxSeconds/√n. A stamp that the burst bar passes can still carry up to
+// mxSeconds of jitter, and the mean of n such stamps keeps mxSeconds/√n of
+// it, so the mean bar tests the stamp bias over many bursts and leaves a run
+// of one burst to the burst bar.
 //
 // The dc dimension adds a constant I/Q offset to the I/Q formats, as an
 // RTL-SDR does. On the XPR 8400 capture in cmd/dmrrf/testdata the offset is
