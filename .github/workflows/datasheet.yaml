@@ -140,13 +140,13 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/qemu
-          key: qemu-arm-plugins-${{ env.QEMU_VERSION }}
+          key: qemu-arm-plugins-capstone-${{ env.QEMU_VERSION }}
 
       - name: Build QEMU with plugin support
         if: steps.qemu-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libglib2.0-dev libpixman-1-dev python3-venv flex bison
+          sudo apt-get install -y ninja-build libglib2.0-dev libpixman-1-dev libcapstone-dev python3-venv flex bison
           curl -fsSLo qemu.tar.xz "https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz"
           curl -fsSLo qemu.tar.xz.sig "https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz.sig"
           export GNUPGHOME="$RUNNER_TEMP/gnupg"
@@ -157,14 +157,14 @@ jobs:
           mkdir qemu-src
           tar -xf qemu.tar.xz -C qemu-src --strip-components=1
           cd qemu-src
-          ./configure --prefix="$RUNNER_TEMP/qemu" --target-list=arm-softmmu --enable-plugins --disable-docs --disable-tools --disable-werror
+          ./configure --prefix="$RUNNER_TEMP/qemu" --target-list=arm-softmmu --enable-plugins --enable-capstone --disable-docs --disable-tools --disable-werror
           make -j"$(nproc)"
           make install
 
       - name: Put QEMU on the path
         run: |
           sudo apt-get update
-          sudo apt-get install -y libglib2.0-dev libpixman-1-0 pkg-config
+          sudo apt-get install -y libglib2.0-dev libpixman-1-0 libcapstone-dev pkg-config
           echo "$RUNNER_TEMP/qemu/bin" >> "$GITHUB_PATH"
           echo "CPATH=$RUNNER_TEMP/qemu/include" >> "$GITHUB_ENV"
 
