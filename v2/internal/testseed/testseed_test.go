@@ -53,3 +53,24 @@ func TestTrialStreams(t *testing.T) {
 		t.Fatal("the Gen of a test does not come from the run seed and its name")
 	}
 }
+
+func TestCountBars(t *testing.T) {
+	t.Parallel()
+	if math.Abs(BarZ-5.884) > 0.001 {
+		t.Errorf("BarZ %.4f, want 5.884 for an upper tail of %g", BarZ, BarAlpha)
+	}
+	for _, c := range []struct {
+		mean, variance float64
+		want           int
+	}{{1, 1, 11}, {1, 0.5, 11}, {0.13, 0.13, 6}, {10, 30, 73}, {86, 14.4, 108}} {
+		if got := CountBar(c.mean, c.variance); got != c.want {
+			t.Errorf("CountBar(%g, %g) = %d, want %d", c.mean, c.variance, got, c.want)
+		}
+		if c.mean >= 20 {
+			continue
+		}
+		if tail := countTail(c.want+1, c.mean, c.variance); tail >= BarAlpha || countTail(c.want, c.mean, c.variance) < BarAlpha {
+			t.Errorf("mean %g, variance %g: the tail above %d is %.3g", c.mean, c.variance, c.want, tail)
+		}
+	}
+}

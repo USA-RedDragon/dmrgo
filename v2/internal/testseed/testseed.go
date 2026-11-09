@@ -327,3 +327,69 @@ func lgamma(n int) float64 {
 	v, _ := math.Lgamma(float64(n))
 	return v
 }
+
+// The statistical bars of the suite share one false failure budget: a run
+// of the suite on a receiver that meets every bar fails with probability at
+// most SuiteAlpha, as each of its at most BarChecks bar checks fails with
+// probability at most BarAlpha.
+const (
+	SuiteAlpha = 1e-6
+	BarChecks  = 500
+	BarAlpha   = SuiteAlpha / BarChecks
+)
+
+// BarZ is the standard normal quantile with upper tail BarAlpha.
+var BarZ = math.Sqrt2 * math.Erfcinv(2*BarAlpha)
+
+// CountAbove reports whether a count of k lies above the level that a
+// count of the given mean and variance exceeds with probability BarAlpha.
+// The count is negative binomial with that mean and variance when the
+// variance is above the mean. Otherwise it is Poisson with that mean when
+// the mean is below 20, and normal with that mean and variance above.
+func CountAbove(k int, mean, variance float64) bool {
+	switch {
+	case k <= 0:
+		return false
+	case mean <= 0:
+		return true
+	case variance <= mean && mean >= 20:
+		return float64(k) > mean+BarZ*math.Sqrt(variance)
+	}
+	return countTail(k, mean, variance) < BarAlpha
+}
+
+// CountBar returns the largest count that CountAbove accepts.
+func CountBar(mean, variance float64) int {
+	k := 0
+	for !CountAbove(k+1, mean, variance) {
+		k++
+	}
+	return k
+}
+
+func countTail(k int, mean, variance float64) float64 {
+	lpmf := func(i int) float64 {
+		x := float64(i)
+		return x*math.Log(mean) - mean - lgammaF(x+1)
+	}
+	if variance > mean {
+		r, p := mean*mean/(variance-mean), mean/variance
+		lpmf = func(i int) float64 {
+			x := float64(i)
+			return lgammaF(x+r) - lgammaF(r) - lgammaF(x+1) + r*math.Log(p) + x*math.Log1p(-p)
+		}
+	}
+	s := 0.0
+	for i := k; ; i++ {
+		v := math.Exp(lpmf(i))
+		s += v
+		if float64(i) > mean && v < s*1e-15 {
+			return s
+		}
+	}
+}
+
+func lgammaF(x float64) float64 {
+	v, _ := math.Lgamma(x)
+	return v
+}
