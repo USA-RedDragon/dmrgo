@@ -397,6 +397,7 @@ func (r *leanCore) slot() {
 		r.anchorAt(j, base, shift, anchor, energy)
 		r.lockFresh(j, anchor == vp)
 	}
+	r.noteCarrier(j, base)
 	present := isAnchor || r.powered(energy, floor, known, measured)
 	noisy := present && !isAnchor && r.eyeNoise(base)
 	missedA := !isAnchor && sf != leanNoSlot && j-sf >= 2*layer2.VoiceBurstsPerSuperframe

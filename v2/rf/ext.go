@@ -85,6 +85,7 @@ type extChan struct {
 }
 
 type softExt struct {
+	car             leanCarrier
 	fit             [extFitSamples]int8
 	lastSync        int32
 	outs            []float64
@@ -1072,6 +1073,7 @@ func (x *softExt) lockShift(c *leanCore, p enums.SyncPattern, back int64) (float
 
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
+	x.car.dark, x.car.noted = [2]uint8{}, [2]int32{leanNoSlot, leanNoSlot}
 	x.spread = float32(math.Inf(1))
 	voice, dp, _ := sourceAt(int(c.src)).SyncPatterns()
 	for _, p := range [2]enums.SyncPattern{voice, dp} {
