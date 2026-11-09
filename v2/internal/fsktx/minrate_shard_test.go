@@ -104,6 +104,7 @@ func decodeMinRates(enc map[string]map[string]string) (map[string]map[string]flo
 }
 
 func TestMinRatesShard(t *testing.T) {
+	t.Parallel()
 	spec, path := os.Getenv("DMRGO_MINRATE_SHARD"), os.Getenv("DMRGO_MINRATE_SHARD_OUT")
 	if spec == "" || path == "" {
 		t.Skip("set DMRGO_MINRATE_SHARD=<k>/<n> and DMRGO_MINRATE_SHARD_OUT=<file> to measure shard k of n of the rate grid of TestMinRatesGenerated")
@@ -188,6 +189,7 @@ func readMinRateShards(dir, inputs string) (map[string]map[string]float64, error
 }
 
 func TestMinRatesMerge(t *testing.T) {
+	t.Parallel()
 	dir := os.Getenv("DMRGO_MINRATE_MERGE")
 	if dir == "" {
 		t.Skip("set DMRGO_MINRATE_MERGE to a directory of TestMinRatesShard files to merge them as TestMinRatesGenerated does")
