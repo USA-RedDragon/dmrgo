@@ -3,31 +3,31 @@
 	"rows": [
 		{
 			"name": "I/Q at 96 kHz, CS16",
-			"mhz": 3.5,
+			"mhz": 4.6,
 			"ram_bytes": 1304,
 			"flash_kb": 30.2
 		},
 		{
 			"name": "Audio at 48 kHz, 12-bit",
-			"mhz": 2.7,
+			"mhz": 3.6,
 			"ram_bytes": 708,
 			"flash_kb": 27.6
 		},
 		{
 			"name": "Audio at 24 kHz, 12-bit",
-			"mhz": 2.6,
+			"mhz": 3.5,
 			"ram_bytes": 748,
 			"flash_kb": 27.5
 		},
 		{
 			"name": "Audio at 48 kHz, 12-bit, pre-emphasis",
-			"mhz": 3.5,
+			"mhz": 4.6,
 			"ram_bytes": 932,
 			"flash_kb": 49.1
 		},
 		{
 			"name": "Audio at 24 kHz, 12-bit, pre-emphasis",
-			"mhz": 3,
+			"mhz": 4,
 			"ram_bytes": 932,
 			"flash_kb": 49.1
 		}
