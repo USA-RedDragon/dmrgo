@@ -1,12 +1,12 @@
 {
-	"source": "Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.",
+	"source": "Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program. The I/Q row at 48 kHz is the receiver of `NewReceiver`, built with `-gc=leaking`, and its RAM also holds the heap that `NewReceiver` takes; the receiver allocates nothing after it starts, and its bursts match those of the Go compiler with `Burst.Seconds` to the microsecond.",
 	"rows": [
 		{
 			"mode": "audio",
 			"tier": 0,
 			"rate": 9600,
 			"mhz": 6.6,
-			"ram_bytes": 2628,
+			"ram_bytes": 2636,
 			"flash_kb": 55.2
 		},
 		{
@@ -15,7 +15,7 @@
 			"rate": 9600,
 			"pre_emphasis": true,
 			"mhz": 7.1,
-			"ram_bytes": 2684,
+			"ram_bytes": 2692,
 			"flash_kb": 55.3
 		},
 		{
@@ -23,8 +23,16 @@
 			"tier": 0,
 			"rate": 9600,
 			"mhz": 8.3,
-			"ram_bytes": 3000,
-			"flash_kb": 55.5
+			"ram_bytes": 3008,
+			"flash_kb": 55.2
+		},
+		{
+			"mode": "iq",
+			"tier": 0,
+			"rate": 48000,
+			"mhz": 110.5,
+			"ram_bytes": 36640,
+			"flash_kb": 340.6
 		}
 	]
 }
