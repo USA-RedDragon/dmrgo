@@ -41,6 +41,15 @@ const (
 	discStepBlock   = 256
 )
 
+type discFit struct {
+	fitUnit float64
+	fitN    int
+	held    float64
+	heldN   int
+	ref     float64
+	cal     bool
+}
+
 type discPhase struct {
 	c          *leanCore
 	sum        []int32
@@ -62,24 +71,19 @@ type discPhase struct {
 	dcU        float64
 	ph0        float64
 	seen       bool
-	cal        bool
 	acc        complex64
 	accN       int
 	avg        complex64
-	fitUnit    float64
-	fitN       int
 	coh        *cohStage
 	clipAt     [discPhaseRaw / discClipBlock]int64
 	clicks     []uint64
-	held       float64
-	heldN      int
 	clickN     int64
 	clickAt    int64
 	prevClicks int64
 	prevN      int64
 	useHeld    bool
-	ref        float64
 	out        [discPhaseChunk + discPhaseLag + 4]int16
+	discFit
 }
 
 func newDiscPhase(r *discRx, hz int, size int64) *discPhase {

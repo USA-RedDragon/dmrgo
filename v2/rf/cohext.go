@@ -806,6 +806,7 @@ const (
 	cohFreqGain  = 0.03
 	cohFreqSpan  = 200
 	cohFreqFirst = 1000
+	cohSeedFits  = 2
 	cohFreqVar   = 80 * 80
 	cohFitVar    = 5000
 	cohFreqWalk  = 10
@@ -1188,29 +1189,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	if nseg == 1 {
 		s.slotSync(b.Slot, segs[0])
-		a0, n0 := s.levels(segs[0][0], segs[0][1])
-		fit := s.freqFit(segs[0][0], segs[0][1])
-		f0 := s.freq
-		s.totalHz = s.freq + fit
-		amp, noise := s.levels(segs[0][0], segs[0][1])
-		s.totalHz = s.freq
-		ok := amp > 0 && noise > 0 && math.Abs(fit) < cohFreqFirst
-		if ok && math.Abs(fit) >= cohFreqSpan {
-			rho := amp * amp / (amp*amp + noise)
-			ok = rho >= cohPlaceRho && rho > a0*a0/(a0*a0+fmath.Max(n0, 0))
-			if ok {
-				s.nFit, s.fitVar = 0, cohFreqVar
-			}
-		}
-		if ok {
-			snr := amp * amp / noise
-			g := s.fitVar / (s.fitVar + cohFitVar/(snr*snr))
-			s.fitVar *= 1 - g
-			s.nFit++
-			s.freq += fmath.Max(cohFreqGain, g) * fit
-			s.totalHz = s.freq
-		}
-		s.fitDeviation(segs[0][0], segs[0][1], f0+fit-s.freq)
+		s.fitSync(segs[0])
 	}
 	if !s.average(segs, nseg) {
 		return false
@@ -1235,6 +1214,56 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	s.fitReady = true
 	return !s.fitOnly && s.runAll(llr)
+}
+
+// fitSync fits the carrier and then the phase scale on the known symbols of
+// seg. The first scale fit after a lock searches wide from the lock levels,
+// and the carrier fit before it used the scale of the lock, so both fits
+// start again from the same state at each new scale until the scale holds.
+func (s *cohStage) fitSync(seg [2]int) {
+	a0, n0 := s.levels(seg[0], seg[1])
+	p := s.ph
+	if p == nil || p.cal {
+		s.fitCarrier(seg, a0, n0)
+		return
+	}
+	f0, hz0, nFit, fitVar, pf := s.freq, s.totalHz, s.nFit, s.fitVar, p.discFit
+	for range cohSeedFits {
+		u := p.unit
+		s.fitCarrier(seg, a0, n0)
+		if p.unit == u {
+			return
+		}
+		k := p.unit / u
+		f0, hz0 = f0*k, hz0*k
+		s.freq, s.totalHz, s.nFit, s.fitVar, p.discFit = f0, hz0, nFit, fitVar, pf
+	}
+	s.fitCarrier(seg, a0, n0)
+}
+
+func (s *cohStage) fitCarrier(seg [2]int, a0, n0 float64) {
+	fit := s.freqFit(seg[0], seg[1])
+	f0 := s.freq
+	s.totalHz = s.freq + fit
+	amp, noise := s.levels(seg[0], seg[1])
+	s.totalHz = s.freq
+	ok := amp > 0 && noise > 0 && math.Abs(fit) < cohFreqFirst
+	if ok && math.Abs(fit) >= cohFreqSpan {
+		rho := amp * amp / (amp*amp + noise)
+		ok = rho >= cohPlaceRho && rho > a0*a0/(a0*a0+fmath.Max(n0, 0))
+		if ok {
+			s.nFit, s.fitVar = 0, cohFreqVar
+		}
+	}
+	if ok {
+		snr := amp * amp / noise
+		g := s.fitVar / (s.fitVar + cohFitVar/(snr*snr))
+		s.fitVar *= 1 - g
+		s.nFit++
+		s.freq += fmath.Max(cohFreqGain, g) * fit
+		s.totalHz = s.freq
+	}
+	s.fitDeviation(seg[0], seg[1], f0+fit-s.freq)
 }
 
 func (s *cohStage) knownSegs(b *Burst) (segs [2][2]int, nseg int) {

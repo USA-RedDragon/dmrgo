@@ -115,6 +115,7 @@ var bugPinTests = map[string]string{
 	"TestRxReplaySeekPhase":              "draws where the replay sliced the second talker at the phase of the first",
 	"TestRxTier0LockRefit":               "draws where the locked weak talker lost head bits of burst B to its held phase",
 	"TestRxCarrierLeadNoBurst":           "draws whose carrier lead slots read as a valid EMB",
+	"TestRxCarrierLeadFirstBurstPhase":   "payloads whose first burst after a carrier lead took a carrier fit at the lock phase scale",
 }
 
 func fixedPayload(t testing.TB) bool {

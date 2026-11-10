@@ -415,3 +415,25 @@ func TestRxAudioTwoTalkerLevelStepBlind(t *testing.T) {
 		}
 	}
 }
+
+// TestRxCarrierLeadFirstBurstPhase holds a 500 ms carrier ahead of an MS
+// voice call on 9600 Hz audio. The phase stage of Tiers 2 and 3 takes its
+// first phase scale from the lock levels, and the carrier fit of the first
+// burst must follow the scale that the burst fits, so the bits of the first
+// burst come out exact.
+func TestRxCarrierLeadFirstBurstPhase(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "gap.cw500ms.-4000.ms.voice.-500ppm.nom.a9600.40dB")
+	rxs := []mxRx{{row.val(mxFormat), Tier2}, {row.val(mxFormat), Tier3}}
+	for _, run := range []uint64{4, 7, 18, 37, 43, 46, 53, 69, 73, 86} {
+		res, err := mxRun(pinnedTB{t, run}, row, rxs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, x := range rxs {
+			if r := res[x]; len(r.symptoms()) > 0 {
+				t.Errorf("run %d %s: %v %s", run, x.name(), r.symptoms(), strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}
