@@ -30,8 +30,6 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t1":       {checks: "cach"},
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t2":       {checks: "cach"},
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t3":       {checks: "cach"},
-	"gap.none.+3000.ms.data34.+500ppm.nom.cs16-2048k.40dB/t0":         {checks: "missing"},
-	"gap.none.+4000.ms.data1.0ppm.low.cs16-2048k.inf/t0":              {checks: "missing"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t0":              {checks: "cach"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t1":              {checks: "cach"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t2":              {checks: "cach"},
@@ -55,5 +53,4 @@ var rxMatrixXFail = map[string]mxXFail{
 	"s0.noise.-4000.bs.data12.-500ppm.low.a9600.40dB.step10dB/t2":     {checks: "cach"},
 	"s0.noise.-4000.bs.data12.-500ppm.low.a9600.40dB.step10dB/t3":     {checks: "cach"},
 	"s0.none.+3000.ms2.rc.-500ppm.low.cu8-2048k.40dB.dc/t0":           {checks: "missing"},
-	"s0.none.+4000.ms.rc.+500ppm.high.cu8-48k.40dB/t0":                {checks: "missing"},
 }

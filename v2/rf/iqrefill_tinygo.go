@@ -2,12 +2,6 @@
 
 package rf
 
-func (r *iqRx) keepRaw(v complex64) {
-	if r.d.hasExt() {
-		r.keepRawExt(v)
-	}
-}
-
 func (r *iqRx) noteTune(hz float32) {
 	if r.d.hasExt() {
 		r.noteTuneExt(hz)

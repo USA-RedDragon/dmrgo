@@ -4,6 +4,9 @@ import "math"
 
 const (
 	iqRefillHz = 1000
+	iqRaw0N    = 512
+	raw8RMS    = 32
+	raw8Peak   = 96
 )
 
 type iqRefill struct {
@@ -22,11 +25,28 @@ type iqRefill struct {
 	settle   bool
 	settleHz float32
 	conv     iqDisc
+	half     iqHalf
+	front    audioFront
+	raw8     [][2]int8
+	g8       []float32
+	gAcc     float32
+	gCur     float32
 	narrow   []float32
 	wideTaps []float32
 	dd       int64
 	drop     int
 	narrowOn bool
+}
+
+func (r *iqRx) attachRaw0() {
+	f := &iqRefill{tuned: -1}
+	f.raw8, f.g8 = make([][2]int8, iqRaw0N), make([]float32, iqRaw0N/frontBlock+2)
+	f.conv.hist = make([]complex64, 2*len(r.conv.taps))
+	if r.conv.halfOn {
+		f.half = *r.conv.half
+		f.half.hist = make([]complex64, len(r.conv.half.hist))
+	}
+	r.refill = f
 }
 
 func (r *iqRx) attachRefill(x *softExt) {
@@ -145,7 +165,7 @@ func (f *iqRefill) fir(taps []float32, e int64) complex64 {
 	return complex64(y)
 }
 
-func (r *iqRx) keepRawExt(v complex64) {
+func (r *iqRx) keepRaw(v complex64) {
 	f := r.refill
 	switch {
 	case r.d.stage == stageTrack:
@@ -156,15 +176,64 @@ func (r *iqRx) keepRawExt(v complex64) {
 		f.idle, f.from = false, f.n
 		fallthrough
 	default:
-		f.raw[f.head] = v
+		f.put(v)
 	}
 	if f.wide != nil {
 		f.wide[f.n%int64(len(f.wide))] = v
 	}
-	if f.head++; f.head == len(f.raw) {
+	if f.head++; f.head == f.size() {
 		f.head = 0
 	}
 	f.n++
+}
+
+func (f *iqRefill) size() int {
+	if f.raw8 != nil {
+		return len(f.raw8)
+	}
+	return len(f.raw)
+}
+
+func (f *iqRefill) put(v complex64) {
+	if f.raw8 == nil {
+		f.raw[f.head] = v
+		return
+	}
+	b, in := int(f.n/frontBlock)%len(f.g8), int(min(f.n%frontBlock, f.n-f.from))
+	if in == 0 {
+		if f.gAcc > 0 {
+			f.gCur = raw8RMS / sqrtf(f.gAcc/frontBlock)
+		}
+		f.gAcc, f.g8[b] = 0, f.gCur
+	}
+	f.gAcc += real(v)*real(v) + imag(v)*imag(v)
+	g := f.g8[b]
+	if a := max32(abs32(real(v)), abs32(imag(v))); a*g > math.MaxInt8 || g == 0 && a > 0 {
+		ng := raw8Peak / a
+		k := ng / max32(g, ng)
+		for i := range in {
+			p := f.head - 1 - i
+			if p < 0 {
+				p += len(f.raw8)
+			}
+			w := f.raw8[p]
+			f.raw8[p] = [2]int8{sat8(float32(w[0]) * k), sat8(float32(w[1]) * k)}
+		}
+		g, f.g8[b], f.gCur = ng, ng, ng
+	}
+	f.raw8[f.head] = [2]int8{sat8(real(v) * g), sat8(imag(v) * g)}
+}
+
+func (f *iqRefill) at(p int, i int64) complex64 {
+	if f.raw8 == nil {
+		return f.raw[p]
+	}
+	g := f.g8[int(i/frontBlock)%len(f.g8)]
+	if g == 0 {
+		return 0
+	}
+	w := f.raw8[p]
+	return complex(float32(w[0])/g, float32(w[1])/g)
 }
 
 // keptEnd returns the end of the raw samples that the ring holds. The ring
@@ -412,7 +481,10 @@ func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force 
 		return
 	}
 	warm := int64(len(taps)) + int64(2*audio12Taps+halfTaps)*per
-	s := max((m-k)*per-warm, f.n-int64(len(f.raw)), f.from)
+	if r.conv.halfOn {
+		warm += int64(len(taps) + len(r.conv.half.hist))
+	}
+	s := max((m-k)*per-warm, f.n-int64(f.size()), f.from)
 	s = (s + per - 1) / per * per
 	if f.tuned <= s && !force {
 		return
@@ -421,7 +493,13 @@ func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force 
 	hist := cv.hist
 	clear(hist)
 	*cv = iqDisc{decim: r.conv.decim, step: r.conv.step, taps: taps, hist: hist, ncoRot: 1, ncoStep: r.conv.ncoStep, hz: r.conv.hz, fc: r.conv.fc, post: 1, postW: r.conv.postW, postRot: r.conv.postRot, floor: r.conv.floor, span: r.conv.span}
-	fr := r.d.f
+	if r.conv.halfOn {
+		clear(f.half.hist)
+		f.half.head, f.half.phase = 0, 0
+		cv.half, cv.halfOn = &f.half, true
+	}
+	fr := &f.front
+	*fr = r.d.f
 	fr.rrcHist, fr.hbHist, fr.rrcHead, fr.hbHead, fr.odd = [2 * audio12Taps]int8{}, [halfTaps]int8{}, 0, 0, false
 	j := s / per
 	first := max(m-k, j+warm/per+1)
@@ -430,12 +508,12 @@ func (r *iqRx) refillWith(c *leanCore, m int64, taps []float32, dd int64, force 
 	}
 	p := f.head - int(f.n-s)
 	if p < 0 {
-		p += len(f.raw)
+		p += f.size()
 	}
 	stop := min(end+dd*int64(r.conv.step), f.keptEnd())
 	for i := s; i < stop; i++ {
-		w := f.raw[p]
-		if p++; p == len(f.raw) {
+		w := f.at(p, i)
+		if p++; p == f.size() {
 			p = 0
 		}
 		v, _, ok := cv.push(w)

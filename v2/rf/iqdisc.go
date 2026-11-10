@@ -510,6 +510,8 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 		if opt.IQFineLock {
 			r.attachFine(x)
 		}
+	} else {
+		r.attachRaw0()
 	}
 	r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())), span+float64(cap(r.audio))/float64(hz))
 	r.d.pow = r.pow
@@ -693,7 +695,7 @@ func (r *iqRx) hunt(v complex64) {
 		r.conv.tuneAt(r.conv.hz, r.filterAt(r.conv.hz))
 		r.d.fcOff = (r.conv.hz - r.conv.fc) * iqUnitsPerHz
 	}
-	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
+	if d := abs32(hz - r.center); d > iqTuneMaxHz || d <= r.maxHz && r.spec.Frames < specFrames/8 && (r.wasLocked || r.refill != nil && r.refill.soft != nil || d < iqAFCJumpHz) || abs32(hz-r.conv.hz) < r.specPull {
 		return
 	}
 	if r.writeAudio(); r.d.locked() {
@@ -702,6 +704,9 @@ func (r *iqRx) hunt(v complex64) {
 	r.afcAvg, r.afcPull, r.afcN = 0, 0, 0
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	r.tuneWith(hz-r.conv.hz, 0, iqTuneMaxHz)
+	if f := r.refill; f != nil && f.soft == nil {
+		r.refillWith(&r.d.leanCore, r.d.n, r.conv.taps, 0, true)
+	}
 }
 
 func (r *iqRx) lockLimit() float32 { return max32(r.maxHz, iqTuneMaxHz) }
