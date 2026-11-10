@@ -165,9 +165,8 @@ ignore_files:
   - v2/rf/audioflag.go
   - v2/rf/audioflag_tinygo.go
   - v2/rf/iqpower.go
-  - v2/rf/leanpow.go
-  - v2/rf/leanpow_tinygo.go
   - v2/rf/leanretune.go
+  - v2/rf/carrierpresent.go
   - v2/transport/dmrd/alias.go
   - v2/transport/dmrd/alias_lc.go
   - v2/transport/dmrd/dmrdauth/auth.go
