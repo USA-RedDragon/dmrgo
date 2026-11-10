@@ -2,4 +2,4 @@ docs: docs
 module: v2
 jobs: 2
 vars:
-  docgen: v0.0.0-20261109085748-19e5b8a522a2
+  docgen: v0.0.0-20261109224744-ef1962a8c996

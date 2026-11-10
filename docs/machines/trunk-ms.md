@@ -14,7 +14,7 @@ Use an MS to build a Tier III radio, a dispatcher console on a radio link, a tes
 
 Pass an [MSConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#MSConfig) to [NewMS](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#NewMS). The individual address is required, so a nil config returns an error. Set the talkgroups whose calls the MS follows. The system code, hunt list and channel plan work as in the Follower. Set a different Seed for each MS of a simulation, so that their random access backoffs differ. Set Auth to authenticate the TSCC before a stun, revive or kill.
 
-<!-- docgen:config pkg=trunk type=MSConfig -->
+<!-- docgen:config pkg=trunk type=MSConfig print=config -->
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `Address` | `uint32` | zero value | Address is the 24-bit individual address of the MS, 1 to 0xFFFCDF. |
@@ -23,7 +23,7 @@ Pass an [MSConfig](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/trunk#MS
 | `SysCode` | `*pdu.SysCode` | zero value | SysCode, when set, is the system to use, as in FollowerConfig. |
 | `Hunt` | `*HuntList` | zero value | Hunt, when set, is the hunt list, as in FollowerConfig. |
 | `Plan` | `*ChannelPlan` | zero value | Plan, when set, is the channel plan to start from. |
-| `Slot` | `enums.Slot` | `f.cach.TACT.Slot()` or `enums.Slot1` (TS1) or `m.slot` | Slot is the TDMA channel of the TSCC on which the MS makes random access. SlotUnknown means enums.Slot1. |
+| `Slot` | `enums.Slot` | `f.cach.TACT.Slot()` or `enums.Slot1` (1) or `m.slot` | Slot is the TDMA channel of the TSCC on which the MS makes random access. SlotUnknown means enums.Slot1. |
 | `Seed` | `uint64` | zero value | Seed seeds the random choice of the backoff frames. Two MSs with the same seed make the same choices; 0 is a valid seed. |
 | `NoRegistration` | `bool` | zero value | NoRegistration keeps the MS from registering when the TSCC requests it with Reg. |
 | `RandomTimeout` | `time.Duration` | not machine-readable; see the description | RandomTimeout is TRand_TC, the longest time of a random access. 0 means constants.TRandTCDefault, and a negative value turns the timer off. (ETSI TS 102 361-4 clause 6.2.1.1.7) |

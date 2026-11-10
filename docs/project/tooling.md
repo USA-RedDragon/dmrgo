@@ -18,7 +18,7 @@ This page lists the generators of the repository and the checks of the generated
   - `DMRGO_DOCPARAMS=write go test ./rf -run TestDocParams` in v2 writes the facts, limits, rates and test parameters of [Receiver](../rx.md) and [Transmitter](../tx.md) from the code of `rf` and `fsktx`. Without the variable the test fails when they differ.
   - `go test ./internal/fsktx -run TestTxDoc -update-txdoc` in v2 measures the transmitter margins into `v2/internal/fsktx/testdata/txmargins.json` and the spectra, eye diagrams and FSK error into `v2/internal/fsktx/testdata/txsheet.json`, and writes the tables and graphs of [Transmitter](../tx.md). Without the flag the test fails when the page or a graph differs from `minrate_gen.go` and that data. With `DMRGO_LONG=1` it measures the margins again and fails when they differ from the data.
   - `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table of [Allocation](../concepts/allocation.md), and `DMRGO_README=check` fails when it differs.
-  - <!-- docgen:text text="`go run github.com/USA-RedDragon/docgen@{docgen} update`" -->`go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 update`<!-- /docgen:text --> writes the generated facts of every page under `docs/`. `check` fails and lists each stale marker. See [Generated facts](#generated-facts).
+  - <!-- docgen:text text="`go run github.com/USA-RedDragon/docgen@{docgen} update`" -->`go run github.com/USA-RedDragon/docgen@v0.0.0-20261109224744-ef1962a8c996 update`<!-- /docgen:text --> writes the generated facts of every page under `docs/`. `check` fails and lists each stale marker. See [Generated facts](#generated-facts).
 
 ## Receiver genie harness
 

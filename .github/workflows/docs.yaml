@@ -27,7 +27,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Check the generated parts of the docs
-        run: go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 check -diff
+        run: go run github.com/USA-RedDragon/docgen@v0.0.0-20261109224744-ef1962a8c996 check -diff
 
       - name: Install pandoc
         run: |

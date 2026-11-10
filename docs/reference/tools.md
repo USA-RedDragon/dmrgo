@@ -173,8 +173,8 @@ func defineFlags(fs *flag.FlagSet) options {
 
 <!-- docgen:text text="go run github.com/USA-RedDragon/docgen@{docgen} update\ngo run github.com/USA-RedDragon/docgen@{docgen} check" code=sh -->
 ```sh
-go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 update
-go run github.com/USA-RedDragon/docgen@v0.0.0-20261109085748-19e5b8a522a2 check
+go run github.com/USA-RedDragon/docgen@v0.0.0-20261109224744-ef1962a8c996 update
+go run github.com/USA-RedDragon/docgen@v0.0.0-20261109224744-ef1962a8c996 check
 ```
 <!-- /docgen:text -->
 
