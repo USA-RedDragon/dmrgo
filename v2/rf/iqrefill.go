@@ -199,17 +199,19 @@ func (f *iqRefill) put(v complex64) {
 		f.raw[f.head] = v
 		return
 	}
-	b, in := int(f.n/frontBlock)%len(f.g8), int(min(f.n%frontBlock, f.n-f.from))
+	re, im := real(v), imag(v)
+	in := int(min(f.n&(frontBlock-1), f.n-f.from))
 	if in == 0 {
 		if f.gAcc > 0 {
 			f.gCur = raw8RMS / sqrtf(f.gAcc/frontBlock)
 		}
-		f.gAcc, f.g8[b] = 0, f.gCur
+		f.gAcc, f.g8[f.block()] = 0, f.gCur
 	}
-	f.gAcc += real(v)*real(v) + imag(v)*imag(v)
-	g := f.g8[b]
-	if a := max32(abs32(real(v)), abs32(imag(v))); a*g > math.MaxInt8 || g == 0 && a > 0 {
-		ng := raw8Peak / a
+	f.gAcc += re*re + im*im
+	g := f.gCur
+	x, y := re*g, im*g
+	if x > math.MaxInt8 || x < -math.MaxInt8 || y > math.MaxInt8 || y < -math.MaxInt8 || g == 0 && (re != 0 || im != 0) {
+		ng := raw8Peak / max32(abs32(re), abs32(im))
 		k := ng / max32(g, ng)
 		for i := range in {
 			p := f.head - 1 - i
@@ -219,9 +221,19 @@ func (f *iqRefill) put(v complex64) {
 			w := f.raw8[p]
 			f.raw8[p] = [2]int8{sat8(float32(w[0]) * k), sat8(float32(w[1]) * k)}
 		}
-		g, f.g8[b], f.gCur = ng, ng, ng
+		f.g8[f.block()], f.gCur = ng, ng
+		x, y = re*ng, im*ng
 	}
-	f.raw8[f.head] = [2]int8{sat8(real(v) * g), sat8(imag(v) * g)}
+	f.raw8[f.head] = [2]int8{round8(x), round8(y)}
+}
+
+func (f *iqRefill) block() int { return int(f.n/frontBlock) % len(f.g8) }
+
+func round8(x float32) int8 {
+	if x < 0 {
+		return int8(x - 0.5)
+	}
+	return int8(x + 0.5)
 }
 
 func (f *iqRefill) at(p int, i int64) complex64 {
