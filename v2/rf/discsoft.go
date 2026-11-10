@@ -22,6 +22,10 @@ func setExtOn() {}
 
 func setTxHostOn() {}
 
+func setPowerOn() {}
+
+func powerOn() bool { return true }
+
 func txHostOn() bool { return true }
 
 func (r *leanCore) hasExt() bool { return r.ext != nil }

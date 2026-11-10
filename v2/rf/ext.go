@@ -126,7 +126,6 @@ type softExt struct {
 	acq             []int16
 	refill          func(*leanCore, int64)
 	rt              lockRetune
-	pow             *iqPower //nolint:unused // the I/Q power of the soft stages under TinyGo
 	rs              *audioRate
 	slc             *shortLCOut
 	refillCoh       func(float64)

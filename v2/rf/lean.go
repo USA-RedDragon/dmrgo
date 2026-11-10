@@ -353,7 +353,7 @@ type leanCore struct {
 	first    int64
 	lastGood int32
 	termAt   int32
-	pow      leanPow
+	pow      *iqPower
 	base     int64
 	anchor   enums.SyncPattern
 	onBurst  func(*Burst)

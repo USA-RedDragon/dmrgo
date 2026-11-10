@@ -1,6 +1,10 @@
 package rf
 
-func (r *leanCore) slotPowerOf(p *iqPower, base int64, head bool) (on, off float32, ok bool) {
+func (r *leanCore) slotPower(base int64, head bool) (on, off float32, ok bool) {
+	p := r.pow
+	if !powerOn() || p == nil {
+		return 0, 0, false
+	}
 	ticks, _, _ := r.burstTicks(base)
 	t0 := tickSeconds(ticks)
 	end := t0 + 3*leanBurstSec/4

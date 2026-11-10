@@ -32,6 +32,12 @@ func setTxHostOn() {
 
 func txHostOn() bool { return txHostRx }
 
+var powerRx bool //nolint:gochecknoglobals // set where an I/Q receiver attaches its slot power measure, so builds without one drop it
+
+func setPowerOn() { powerRx = true }
+
+func powerOn() bool { return powerRx }
+
 func (r *leanCore) hasExt() bool { return extRx && r.ext != nil }
 
 func (r *leanCore) isReplaying() bool { return r.hasExt() && r.replay != replayNone }

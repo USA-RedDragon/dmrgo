@@ -511,10 +511,9 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 			r.attachFine(x)
 		}
 	}
-	if wantPower(&opt) {
-		r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())), span+float64(cap(r.audio))/float64(hz))
-		r.d.setPower(r.pow)
-	}
+	r.pow = newIQPower(hz, tickSeconds(int64(r.conv.lagTicks())), span+float64(cap(r.audio))/float64(hz))
+	r.d.pow = r.pow
+	setPowerOn()
 	if r.spec != nil {
 		r.spec.fast = !opt.SoftExt || !opt.CohExt
 	}
