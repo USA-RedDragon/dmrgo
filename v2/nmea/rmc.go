@@ -287,7 +287,7 @@ func decimal(s []byte, lo, hi int) (float64, bool) {
 		case c == '.' && frac < 0:
 			frac = 0
 		case c >= '0' && c <= '9':
-			if n == 18 {
+			if n == maxDigits {
 				return 0, false
 			}
 			mant = mant*10 + uint64(c-'0')
@@ -302,11 +302,7 @@ func decimal(s []byte, lo, hi int) (float64, bool) {
 	if n == 0 {
 		return 0, false
 	}
-	scale := 1.0
-	for range max(frac, 0) {
-		scale *= 10
-	}
-	return float64(mant) / scale, true
+	return float64(mant) / pow10(max(frac, 0)), true
 }
 
 func digits(s []byte, lo, n int) (int, bool) {

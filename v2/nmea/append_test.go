@@ -29,8 +29,13 @@ func TestAppendRMC(t *testing.T) {
 			MagneticVariation: 11.3},
 			"$GPRMC,,A,3751.6500,N,14507.3600,W,,,,011.3,E*66\r\n"},
 		{"empty", nmea.RMC{Mode: 'N'}, "$GPRMC,,V,,,,,,,,,,N*53\r\n"},
-		{"carry", nmea.RMC{Latitude: 59.999999999, Longitude: -179.99999999, HasPosition: true, Speed: 0.004, HasSpeed: true, Course: 359.999, HasCourse: true},
-			"$GPRMC,,V,6000.0000,N,18000.0000,W,0.00,360.00,,,*12\r\n"},
+		{"carry", nmea.RMC{Latitude: 59.999999999, Longitude: -179.99999999, HasPosition: true, Speed: 99.99999999999999, HasSpeed: true, Course: 359.9999999999999, HasCourse: true},
+			"$GPRMC,,V,6000.0000,N,18000.0000,W,100.00,360.00,,,*13\r\n"},
+		{"precision", nmea.RMC{Latitude: -(37 + 11.65/60), Longitude: 145 + 7.12345/60, HasPosition: true, Speed: 0.125, HasSpeed: true,
+			Course: 0.125, HasCourse: true, MagneticVariation: 0.85},
+			"$GPRMC,,V,3711.6500,S,14507.1235,E,0.125,0.125,,000.85,E*44\r\n"},
+		{"no short decimal", nmea.RMC{Latitude: math.Pi, HasPosition: true, Speed: 1.0 / 3, HasSpeed: true, MagneticVariation: -0.04},
+			"$GPRMC,,V,0308.4956,N,00000.0000,E,0.33,,,000.04,W*5C\r\n"},
 	}
 	for _, tt := range tests {
 		out, err := nmea.AppendRMC([]byte("x"), &tt.in)

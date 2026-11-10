@@ -26,6 +26,8 @@ func rmcSeeds(add func(data []byte)) {
 	add([]byte("\x00\x01\x00\x00\x00'~'~$GPRMC"))
 	add([]byte("$GPRMC,081833,A,3751.65,S,14507.36,E,6.0,360.0,130998,0.033,E*62"))
 	add([]byte("$GaRMC,235959.5,A,4807.038,S,01131.0,W,.4,084.4,230394,3.1,W,D*1B"))
+	add([]byte("$GPRMC,033833,A,3711.65,S,14507.36,E,6.0,360.0,130998,.85,E*62"))
+	add([]byte("$GPRMC,033833,A,3711.65,S,14507.36,E,6.0,0.125,130998,,*07"))
 }
 
 func fuzzParseRMC(t *testing.T, data []byte) {
