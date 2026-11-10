@@ -159,7 +159,7 @@ v2/internal/rftx/site.go	106	83
 v2/internal/testmode/cases.go	26	25
 v2/internal/testmode/testmode.go	5	3
 v2/internal/testscen/testscen.go	27	26
-v2/internal/testseed/testseed.go	161	113
+v2/internal/testseed/testseed.go	161	132
 v2/internal/text/text.go	112	111
 v2/internal/text/texttest/texttest.go	32	27
 v2/internal/udttext/udttext.go	49	47
@@ -284,8 +284,9 @@ v2/rf/audiorate.go	44	39
 v2/rf/audiorate0.go	37	37
 v2/rf/audiorates.go	4	4
 v2/rf/burst.go	8	8
+v2/rf/carrierpresent.go	24	24
 v2/rf/coherent.go	180	173
-v2/rf/cohext.go	1015	990
+v2/rf/cohext.go	1015	991
 v2/rf/cohlate.go	9	9
 v2/rf/devgain.go	21	19
 v2/rf/disc48.go	37	37
@@ -295,7 +296,7 @@ v2/rf/discrx.go	588	566
 v2/rf/discsoft.go	27	21
 v2/rf/exact.go	263	263
 v2/rf/exact_amd64.go	62	62
-v2/rf/ext.go	1176	1161
+v2/rf/ext.go	1184	1168
 v2/rf/fastmath.go	60	60
 v2/rf/fir96.go	1	1
 v2/rf/frontend.go	138	136
@@ -306,7 +307,7 @@ v2/rf/iqfine.go	127	117
 v2/rf/iqformat.go	18	18
 v2/rf/iqlow.go	198	195
 v2/rf/iqpower.go	16	16
-v2/rf/iqrefill.go	291	279
+v2/rf/iqrefill.go	291	280
 v2/rf/iqrefill_host.go	7	7
 v2/rf/lean.go	1434	1402
 v2/rf/leanfec.go	265	263
@@ -314,14 +315,14 @@ v2/rf/leanfront.go	169	152
 v2/rf/leanlevel.go	252	251
 v2/rf/leanpow.go	5	5
 v2/rf/leanretune.go	44	33
-v2/rf/leanstage.go	221	219
-v2/rf/leantalker.go	331	323
+v2/rf/leanstage.go	222	218
+v2/rf/leantalker.go	334	326
 v2/rf/monitor.go	71	70
 v2/rf/npml.go	54	53
 v2/rf/options.go	51	51
 v2/rf/polarity.go	39	39
 v2/rf/preemph.go	7	7
-v2/rf/rawvoice.go	37	36
+v2/rf/rawvoice.go	37	37
 v2/rf/rx.go	141	140
 v2/rf/rxhost.go	72	66
 v2/rf/rxpreemph.go	27	27
