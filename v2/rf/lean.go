@@ -2306,8 +2306,8 @@ func (r *leanCore) pastEnd(ticks int64) bool {
 	return r.endTicks != 0 && ticks+(slotSymbols-cachSymbols)*samplesPerSy<<8 > r.endTicks
 }
 
-func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8) bool {
-	return float32(int32(hi)-int32(lo))*discStepHz < 2*deviationHz*r.devScale || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data)
+func (r *leanCore) unreported(b *Burst, anchor enums.SyncPattern, lo, hi int8, split int) bool {
+	return float32(int32(hi)-int32(lo))*discStepHz < 2*deviationHz*r.devScale || r.rcLone && anchor == enums.SyncMSSourcedRC && !r.rcProof(&b.Data) || r.clipHead(r.base, split)
 }
 
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, missedA bool) bool {
@@ -2374,7 +2374,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 	if r.clickSpan > 0 {
 		r.clickFloor(v)
 	}
-	if r.unreported(b, anchor, lo, hi) {
+	if r.unreported(b, anchor, lo, hi, split) {
 		return true
 	}
 	if noisy && r.dropNoise(b, missedA) {
@@ -2407,6 +2407,17 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 	}
 	r.emit(b)
 	return true
+}
+
+// clipHead reports whether a clip drop of the audio gain fell in the burst
+// at base after its CACH and by the end of its SYNC while a level step splits
+// the burst after split symbols. With the step in the payload, the ring holds
+// at the rails the symbols that the step took past them before the drop, and
+// the matched filter mixes the levels before and after the step in the
+// symbols at it, so the burst is lost.
+func (r *leanCore) clipHead(base int64, split int) bool {
+	k := r.ns - int64(int16(uint16(r.ns)-r.clipNs))
+	return split > 0 && k <= r.ns && k > base+cachSymbols && k <= base+leanSyncEnd
 }
 
 func (r *leanCore) levelCut(base int64, split int) bool {
