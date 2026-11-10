@@ -38,8 +38,8 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 | 4FSK floor | -1.0 | -3.1 | 0.1 | -4.0 | < -6.9 |
 | Audio tier 0 | 9.6 | 6.3 | 8.2 | 6.2 | 9.3 |
 | Audio tier 1 | 8.2 | 6.3 | 7.6 | 5.2 | 6.4 |
-| Audio tier 2 | 4.9 | 4.2 | 6.1 | 3.7 | 4.4 |
-| Audio tier 3 | 4.3 | 3.7 | 5.7 | 3.1 | 4.1 |
+| Audio tier 2 | 4.9 | 4.3 | 6.1 | 3.6 | 4.4 |
+| Audio tier 3 | 4.2 | 3.5 | 5.7 | 3.0 | 4.0 |
 | Low-rate I/Q tier 0 | 10.3 | 6.3 | 8.2 | 6.2 | 9.6 |
 | I/Q tier 0 | 9.3 | 5.3 | 7.6 | 5.2 | 9.0 |
 | I/Q tier 1 | 8.0 | 5.3 | 6.7 | 3.7 | 4.9 |
@@ -89,8 +89,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 62.1 | 57,328 | 283.4 |
-| Audio tier 2 | 9.6 | 660.7 | 344,432 | 283.4 |
+| Audio tier 1 | 9.6 | 62.1 | 57,328 | 283.8 |
+| Audio tier 2 | 9.6 | 657.4 | 344,432 | 283.8 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
@@ -266,18 +266,18 @@ Eb/N0 in dB for 90% of the frames recovered exactly. [The floors](#the-floors) d
 
 | Payload | Audio tier 0 | Audio tier 1 | Audio tier 2 | Audio tier 3 | Low-rate I/Q tier 0 | I/Q tier 0 | I/Q tier 1 | I/Q tier 2 | I/Q tier 3 |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.3 | 10.3 | 9.3 | 8.0 | 4.8 | 2.5 |
+| Voice frame (AMBE+2, 49 bits) | 9.6 | 8.2 | 4.9 | 4.2 | 10.3 | 9.3 | 8.0 | 4.8 | 2.5 |
 | Voice frame, protected bits (C0 and C1) | 5.8 | 5.2 | 3.8 | 3.3 | 5.1 | 4.5 | 3.7 | 3.1 | 1.6 |
-| Data block, rate 1/2 | 6.3 | 6.3 | 4.2 | 3.7 | 6.3 | 5.3 | 5.3 | 4.3 | 1.8 |
+| Data block, rate 1/2 | 6.3 | 6.3 | 4.3 | 3.5 | 6.3 | 5.3 | 5.3 | 4.3 | 1.8 |
 | Data block, rate 3/4 | 8.2 | 7.6 | 6.1 | 5.7 | 8.2 | 7.6 | 6.7 | 5.4 | 4.8 |
 | Data block, rate 1 | 11.3 | 11.3 | 8.2 | 8.0 | 12.4 | 11.1 | 11.4 | 7.8 | 7.6 |
-| CSBK | 6.2 | 5.2 | 3.7 | 3.1 | 6.2 | 5.2 | 3.7 | 3.2 | 1.2 |
-| Voice LC header and terminator | 6.3 | 5.5 | 4.0 | 3.4 | 6.6 | 5.5 | 3.8 | 3.1 | 1.6 |
-| Data header | 6.1 | 5.1 | 3.8 | 3.1 | 6.2 | 5.4 | 3.7 | 3.2 | 1.1 |
-| Embedded LC | 9.3 | 6.4 | 4.4 | 4.1 | 9.6 | 9.0 | 4.9 | 3.9 | 2.2 |
-| EMB | 3.3 | 3.3 | 1.9 | 1.4 | 2.3 | 1.9 | 1.5 | 0.9 | -0.5 |
-| Slot type | 3.7 | 3.6 | 1.3 | 1.5 | 2.8 | 2.2 | 2.0 | 0.9 | -0.8 |
-| SYNC detection | 3.2 | 3.2 | 0.8 | 1.0 | 2.2 | 1.5 | 1.4 | -1.4 | -1.7 |
+| CSBK | 6.2 | 5.2 | 3.6 | 3.0 | 6.2 | 5.2 | 3.7 | 3.2 | 1.2 |
+| Voice LC header and terminator | 6.3 | 5.5 | 3.9 | 3.4 | 6.6 | 5.5 | 3.8 | 3.1 | 1.6 |
+| Data header | 6.1 | 5.1 | 3.8 | 3.0 | 6.2 | 5.4 | 3.7 | 3.2 | 1.1 |
+| Embedded LC | 9.3 | 6.4 | 4.4 | 4.0 | 9.6 | 9.0 | 4.9 | 3.9 | 2.2 |
+| EMB | 3.3 | 3.3 | 1.7 | 1.4 | 2.3 | 1.9 | 1.5 | 0.9 | -0.5 |
+| Slot type | 3.7 | 3.6 | 1.2 | 1.5 | 2.8 | 2.2 | 2.0 | 0.9 | -0.8 |
+| SYNC detection | 3.2 | 3.2 | 0.8 | 0.5 | 2.2 | 1.5 | 1.4 | -1.4 | -1.7 |
 
 ### Real recordings
 
