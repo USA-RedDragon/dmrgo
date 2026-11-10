@@ -1682,47 +1682,60 @@ func (r *leanCore) lockMid(src int, p enums.SyncPattern) bool {
 
 //go:noinline
 func (r *leanCore) clipped(end int64) bool {
-	return 2*r.clips(end, false) > syncSymbols
+	lo, hi := r.clips(end, false)
+	return 2*(lo+hi) > syncSymbols
 }
 
-// clips counts the symbols at the rails in the SYNC span that ends at end.
-// With fresh, it counts only the symbols after the last gain drop: the ring
-// keeps the symbols that clipped before a drop at the rails, and they say
-// nothing of the level after it.
-func (r *leanCore) clips(end int64, fresh bool) int {
-	n := 0
+// clips counts the symbols at the low and the high rail in the SYNC span that
+// ends at end. With fresh, it counts only the symbols after the last gain
+// drop: the ring keeps the symbols that clipped before a drop at the rails,
+// and they say nothing of the level after it.
+func (r *leanCore) clips(end int64, fresh bool) (lo, hi int) {
 	k := end - syncSymbols + 1
 	if d := int64(int16(uint16(r.ns) - r.clipNs)); fresh && d >= 0 && d < leanRing {
 		k = max(k, r.ns-d)
 	}
 	j := ringPos(k)
 	for ; k <= end; k++ {
-		if q := r.ring[j]; q == math.MaxInt8 || q == math.MinInt8 {
-			n++
+		switch r.ring[j] {
+		case math.MinInt8:
+			lo++
+		case math.MaxInt8:
+			hi++
 		}
 		if j++; j == leanRing {
 			j = 0
 		}
 	}
-	return n
+	return lo, hi
 }
 
-// clipHot drops the audio gain when half of the newest SYNC span of symbols
-// clip the ring, as overload does at a SYNC, so that a level rise between two
-// SYNCs costs the symbols before it and not the next SYNC. It waits a SYNC
+// clipHot drops the audio gain when a quarter of the newest SYNC span of
+// symbols clip the ring at the rail on the side of the DC of the front, so
+// that a level rise between two SYNCs costs the symbols before it and not the
+// next SYNC. The front takes off the DC of the input before the rise, so the
+// rise moves a carrier off by the rise times that DC, and one outer level of
+// four, a quarter of the symbols, clips first. The noise of a slot with no
+// carrier centers on the opposite side, at minus that DC. It waits a SYNC
 // span after each drop, as the ring keeps the clipped symbols.
 func (r *leanCore) clipHot() {
-	if a := r.audio; !audioOn() || a == nil || a.maxGain != 0 || r.isReplaying() || int16(uint16(r.ns)-r.clipNs) < syncSymbols {
+	a := r.audio
+	if !audioOn() || a == nil || a.maxGain != 0 || r.isReplaying() || int16(uint16(r.ns)-r.clipNs) < syncSymbols {
 		return
 	}
-	if 2*r.clips(r.ns-1, true) >= syncSymbols {
+	n, hi := r.clips(r.ns-1, true)
+	if a.dc >= 0 {
+		n = hi
+	}
+	if 4*n >= syncSymbols {
 		r.relevel(leanClipDrop)
 		r.clipNs = uint16(r.ns)
 	}
 }
 
 func (r *leanCore) overload(best float32, end int64, fresh bool) bool {
-	n := r.clips(end, fresh)
+	lo, hi := r.clips(end, fresh)
+	n := lo + hi
 	return n >= leanClipSyms && best >= discAnchor*discAnchor || 2*n >= syncSymbols
 }
 

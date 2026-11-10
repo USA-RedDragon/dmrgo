@@ -372,6 +372,27 @@ func TestRxTwoTalkerClipStep(t *testing.T) {
 	}
 }
 
+// TestRxTwoTalkerClipDCSide runs the row of TestRxTwoTalkerClipStep on draws
+// where the 10 dB rise moved the burst of the second talker by the rise times
+// the DC of the front, so that it clipped at one rail only and short of half
+// the symbols.
+func TestRxTwoTalkerClipDCSide(t *testing.T) {
+	t.Parallel()
+	row := mxRowOf(t, "gap.none.+2500.ms2.data1.-500ppm.nom.a12000.40dB.step10dB")
+	rxs := []mxRx{{row.val(mxFormat), Tier0}, {row.val(mxFormat), Tier1}}
+	for _, run := range []uint64{151, 194, 228, 270} {
+		res, err := mxRun(pinnedTB{t, run}, row, rxs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, x := range rxs {
+			if r := res[x]; r.fail["bits"] || r.fail["missing"] {
+				t.Errorf("run %d %s: %s", run, x.name(), strings.Join(r.detail, " | "))
+			}
+		}
+	}
+}
+
 // TestRxTwoTalkerSyncLevelStepHead steps the level of an audio input by
 // -10 dB a third of the way into a burst of one of two talkers. The phase
 // stage of Tiers 2 and 3 must keep the phase of the samples before the step
