@@ -51,6 +51,7 @@ This writes `v2/capi/build/libdmrgo.so.N` and the link `libdmrgo.so`. Other targ
 - `make -C v2/capi static` writes `build/static/libdmrgo.a`, a static archive whose only global symbols are the C API.
 - `make -C v2/capi test` builds the shared and static libraries, checks the exported symbols against `libdmrgo.map`, and runs the C test program on a capture.
 - `BUILD=<dir>` sets the output directory.
+- `GOFLAGS=-tags=rftier0` builds a library with the Tier 0 receiver only. `dmrgo_rf_new_receiver` and `dmrgo_rf_new_audio_receiver` then return an error for a higher tier.
 
 The CI job of the C API runs these builds, also with the native Codec2 backend and without libcodec2:
 

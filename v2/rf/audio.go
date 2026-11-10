@@ -23,7 +23,9 @@ type AudioRxConfig struct {
 	// time of Tier1. Tier3 detects the bursts of Tier2 again over 52
 	// carrier phases with no compute budget and makes four passes over
 	// each data burst, at about 10 times the CPU time of Tier2, 935 KB and
-	// the delay of Tier2.
+	// the delay of Tier2. A program built with the tag rftier0 links no
+	// code of Tier1 to Tier3: TierDefault is then Tier0, and
+	// NewAudioReceiver returns a *dmrgo.ConfigError for a higher tier.
 	Tier Tier
 	// Rate is the sample rate of the discriminator samples, in Hz, from
 	// 8000 to 1000000, and for Tier0 to 48000. 0 means 48000. The
@@ -123,9 +125,9 @@ func NewAudioReceiver(c *AudioRxConfig) (*AudioReceiver, error) {
 
 func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	if cfg.Tier == TierDefault {
-		cfg.Tier = discDefaultTier
+		cfg.Tier = rxDefaultTier
 	}
-	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
+	if cfg.Tier < Tier0 || cfg.Tier > maxRxTier {
 		return nil, errAudioTier
 	}
 	if err := cfg.check(cfg.Tier); err != nil {
@@ -137,7 +139,7 @@ func newAudioReceiver(cfg AudioRxConfig, o *options) (*AudioReceiver, error) {
 	}
 	r := &AudioReceiver{}
 	r.configure(cfg, &opt)
-	soft := o == nil && opt.SoftExt
+	soft := maxRxTier > Tier0 && o == nil && opt.SoftExt
 	if soft {
 		if err := r.addSoft(&opt); err != nil {
 			return nil, err

@@ -207,7 +207,7 @@ func newLean(cfg rxSetup, opt options) *leanRx {
 	if cfg.OffsetHz != 0 {
 		r.retune(float32(cfg.OffsetHz))
 	}
-	if opt.SoftExt {
+	if maxRxTier > Tier0 && opt.SoftExt {
 		r.ext = softExtOf(&opt, float32(discSPS)/2)
 		setExtOn()
 	}

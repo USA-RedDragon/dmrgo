@@ -146,6 +146,8 @@ ignore_files:
   - v2/rf/rawvoice.go
   - v2/rf/rx.go
   - v2/rf/rxhost.go
+  - v2/rf/rxtiers_all.go
+  - v2/rf/rxtiers_tier0.go
   - v2/rf/rxpreemph.go
   - v2/rf/shortlc.go
   - v2/rf/shortlcout.go

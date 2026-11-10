@@ -140,6 +140,7 @@ rx, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: 9600, Tier: rf.Tier1, OnB
 
 - The constructors allocate the stages of the tier once. After that, `Write` and `Flush` do not allocate. Build with a heap, for example `-gc=leaking` or `-gc=conservative`, not `-gc=none`.
 - A program that calls only `Init` links none of the higher tiers. Its size is the size of a Tier 0 build.
+- A program built with the tag `rftier0`, for example `tinygo build -tags rftier0`, links none of the higher tiers when it calls `rf.NewReceiver` or `rf.NewAudioReceiver`. The constructors then take only Tier 0, and return a `*dmrgo.ConfigError` for a higher tier. Use it for the Tier 0 receiver of `NewReceiver` at 24 kHz and up, which `Init` does not set up.
 - The transmitters take tiers 1 and 2 the same way, through `rf.NewTransmitter` and `rf.NewAudioTransmitter`.
 - Use a target with a hardware FPU. The `cortex-m7` target of TinyGo uses soft float. `cmd/mcubench` builds for a Cortex-M7 with an FPv5-D16 FPU.
 

@@ -491,7 +491,7 @@ func newIQRx(cfg rxSetup, opt options) *iqRx {
 	r.gs.init()
 	r.d.lagTicks += r.conv.lagTicks()
 	var span float64
-	if opt.SoftExt {
+	if maxRxTier > Tier0 && opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		span = x.keptSeconds(2 * r.d.tm.step)
 		if opt.CohExt {

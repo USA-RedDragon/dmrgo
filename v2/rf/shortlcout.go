@@ -41,7 +41,7 @@ func newShortLCOut(on func([]ShortLC), t Tier) *shortLCOut {
 		return nil
 	}
 	o := &shortLCOut{on: on}
-	if t != Tier0 {
+	if maxRxTier > Tier0 && t != Tier0 {
 		o.soft = newSoftDecoder()
 		o.soft.OSDOrder, o.soft.OSDWindow, o.soft.ShortLCList = 2, 0, 2
 		o.notes = make([]slcNote, slcNotes)

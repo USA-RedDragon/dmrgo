@@ -10,7 +10,10 @@ import (
 type RxConfig struct {
 	// Tier selects the detection. The zero value TierDefault is Tier1 for
 	// NewReceiver, and Tier0 for Init and for NewReceiver under TinyGo.
-	// Under TinyGo too, NewReceiver takes every tier.
+	// Under TinyGo too, NewReceiver takes every tier. A program built with
+	// the tag rftier0 links no code of Tier1 to Tier3: TierDefault is
+	// then Tier0, and NewReceiver returns a *dmrgo.ConfigError for a higher
+	// tier.
 	Tier Tier
 	// Rate is the sample rate of the I/Q, in Hz. 0 means 2400000. Tier0 to
 	// Tier3 take a Rate from 48000 to 1e9, and Tier0 and Tier1 also one
@@ -135,7 +138,7 @@ func NewReceiver(c *RxConfig) (*Receiver, error) {
 }
 
 func (c *RxConfig) check(o *options) (low bool, hz int, err error) {
-	if c.Tier < Tier0 || c.Tier > Tier3 {
+	if c.Tier < Tier0 || c.Tier > maxRxTier {
 		return false, 0, errRxTier
 	}
 	if c.Format == IQFormatDefault {

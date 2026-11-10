@@ -16,7 +16,7 @@ type rxHost struct {
 
 func newReceiver(cfg RxConfig, o *options) (*Receiver, error) {
 	if cfg.Tier == TierDefault {
-		cfg.Tier = discDefaultTier
+		cfg.Tier = rxDefaultTier
 	}
 	low, hz, err := cfg.check(o)
 	if err != nil {
