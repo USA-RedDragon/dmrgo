@@ -54,11 +54,11 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 | Audio tier 1 | FM audio | 9.6 | -4.5 to 4 | ±2,000 | 52 | 45 | 0.96 | 3.0 | 53 |
 | Audio tier 2 | FM audio | 9.6 | ±4.5 | ±2,000 | 52 | 45 | 7.4 | 12 | 316 |
 | Audio tier 3 | FM audio | 9.6 | ±4.5 | ±2,000 | 47 | 45 | 54 | 133 | 912 |
-| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 52 | 59 | 0.48 | 0.48 | 2.1 |
-| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.4 | 1.5 | 21 |
-| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 2.1 | 4.3 | 168 |
-| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 8.3 | 9.8 | 464 |
-| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 95 | 123 | 2,131 |
+| Low-rate I/Q tier 0 | I/Q | 9.6 | ±2 | ±2,000 | 52 | 59 | 0.42 | 0.48 | 2.1 |
+| I/Q tier 0 | I/Q | 48 | ±6 | ±2,000 | 53 | 53 | 1.6 | 2.0 | 24 |
+| I/Q tier 1 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 2.1 | 4.4 | 168 |
+| I/Q tier 2 | I/Q | 48 | ±6 | ±2,000 | 48 | 44 | 9.3 | 11 | 464 |
+| I/Q tier 3 | I/Q | 48 | ±6 | ±2,000 | 47 | 44 | 103 | 131 | 2,131 |
 
 - Carrier offset and clock error: the range with at least 90% of the voice frames at C/N 15.0 dB, over 8 noise draws. "At least" marks a range that reaches the ends of the grid.
 - Late entry: median time from a random start in a call to the end of the first exact burst. A count gives the runs that found one within 1500 ms.
@@ -79,18 +79,19 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0 | 9.6 | 6.6 | 2,628 | 55.2 |
-| Audio tier 0, `PreEmphasis` | 9.6 | 7.1 | 2,684 | 55.3 |
-| Low-rate I/Q tier 0 | 9.6 | 8.3 | 3,000 | 55.5 |
+| Audio tier 0 | 9.6 | 6.6 | 2,636 | 55.2 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 7.1 | 2,692 | 55.3 |
+| Low-rate I/Q tier 0 | 9.6 | 8.3 | 3,008 | 55.2 |
+| I/Q tier 0 | 48 | 110.5 | 36,640 | 340.6 |
 
-Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program.
+Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program. The I/Q row at 48 kHz is the receiver of `NewReceiver`, built with `-gc=leaking`, and its RAM also holds the heap that `NewReceiver` takes; the receiver allocates nothing after it starts, and its bursts match those of the Go compiler with `Burst.Seconds` to the microsecond.
 
 ### Higher tiers on a Cortex-M7
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 62.1 | 57,328 | 283.8 |
-| Audio tier 2 | 9.6 | 657.4 | 344,432 | 283.8 |
+| Audio tier 1 | 9.6 | 62.0 | 57,328 | 280.7 |
+| Audio tier 2 | 9.6 | 657.4 | 344,432 | 280.7 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
