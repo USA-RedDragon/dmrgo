@@ -7,7 +7,7 @@
 			"rate": 9600,
 			"mhz": 6.6,
 			"ram_bytes": 2636,
-			"flash_kb": 55.2
+			"flash_kb": 55.6
 		},
 		{
 			"mode": "audio",
@@ -16,7 +16,7 @@
 			"pre_emphasis": true,
 			"mhz": 7.1,
 			"ram_bytes": 2692,
-			"flash_kb": 55.3
+			"flash_kb": 55.8
 		},
 		{
 			"mode": "iqlow",
@@ -32,7 +32,7 @@
 			"rate": 48000,
 			"mhz": 110.5,
 			"ram_bytes": 36640,
-			"flash_kb": 340.6
+			"flash_kb": 341.6
 		}
 	]
 }
