@@ -102,6 +102,8 @@ The same job runs the library tests with TinyGo, except the commands, `rf` and t
 
 Tier 0 is the tier of `rf` for a microcontroller. `Init` sets up a Tier 0 receiver or transmitter in memory of the caller, such as a package-level variable, and does not allocate. Under TinyGo, the default tier is Tier 0. The doc comments of the four types give their budgets.
 
+On a microcontroller, a Tier 0 receiver takes input at 9.6 kHz: I/Q that a radio chip filtered to the channel, or FM discriminator audio. The budgets are for that rate. The I/Q row at 48 kHz of `cmd/mcubench` is for information only: it measures the receiver of `NewReceiver` at 48 kHz, which needs much more CPU, RAM and flash than a microcontroller has for Tier 0.
+
 [rf.Receiver.Init](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2/rf#Receiver.Init), for I/Q that a radio chip filtered to the channel:
 
 <!-- docgen:doc pkg=rf name=Receiver.Init -->
