@@ -30,6 +30,8 @@ var rxMatrixXFail = map[string]mxXFail{
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t1":       {checks: "cach"},
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t2":       {checks: "cach"},
 	"gap.cw500ms.+4000.bs.csbk.0ppm.low.a48000.inf.step10dB/t3":       {checks: "cach"},
+	"gap.none.+2500.ms2.data1.0ppm.nom.a12000.40dB.step10dB/t0":       {checks: "missing"},
+	"gap.none.+2500.ms2.data1.0ppm.nom.a12000.40dB.step10dB/t1":       {checks: "missing"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t0":              {checks: "cach"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t1":              {checks: "cach"},
 	"gap.none.-2500.bs.data1.-500ppm.nom.a48000.40dB/t2":              {checks: "cach"},

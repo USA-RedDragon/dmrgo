@@ -414,7 +414,24 @@ func mxPlan() []mxCase {
 	for i, r := range rows {
 		out = append(out, mxCase{r, mxReceivers(r.val(mxFormat), t3[i] || !mxCostly(r))})
 	}
+	for _, c := range mxCells {
+		r := mxRowName(c.row)
+		rxs := make([]mxRx, 0, len(c.tiers))
+		for _, tier := range c.tiers {
+			rxs = append(rxs, mxRx{r.val(mxFormat), tier})
+		}
+		out = append(out, mxCase{r, rxs})
+	}
 	return out
+}
+
+// mxCells are the cells of the matrix that the covering rows miss and that
+// the plan holds as well, each with the tiers of a defect found there.
+var mxCells = []struct {
+	row   string
+	tiers []Tier
+}{
+	{"gap.none.+2500.ms2.data1.0ppm.nom.a12000.40dB.step10dB", []Tier{Tier0, Tier1}},
 }
 
 type mxTruth struct {
