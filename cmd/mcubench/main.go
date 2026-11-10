@@ -38,6 +38,7 @@ const (
 	progRxAudio = "rxaudio"
 	progRxPE    = "rxaudiope"
 	progRxIQ    = "rxiq"
+	progRxIQ48  = "rxiqfull"
 	progTxAudio = "txaudio"
 	progTxPE    = "txaudiope"
 	progTxIQ    = "txiq"
@@ -174,7 +175,7 @@ type benchRow struct {
 }
 
 func rxRows() []benchRow {
-	return []benchRow{{prog: progRxAudio, mode: modeAudio, rate: 9600}, {prog: progRxPE, mode: modeAudio, rate: 9600}, {prog: progRxIQ, mode: "iqlow", rate: 9600}}
+	return []benchRow{{prog: progRxAudio, mode: modeAudio, rate: 9600}, {prog: progRxPE, mode: modeAudio, rate: 9600}, {prog: progRxIQ, mode: "iqlow", rate: 9600}, {prog: progRxIQ48, mode: "iq", rate: 48000}}
 }
 
 func txRows() []benchRow {
@@ -222,9 +223,13 @@ func run(ctx context.Context, root, work string, update bool) error {
 	if err := b.setup(ctx); err != nil {
 		return err
 	}
-	rx := rxData{Source: "Built with TinyGo " + t.version + " `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program."}
+	rx := rxData{Source: "Built with TinyGo " + t.version + " `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program. The I/Q row at 48 kHz is the receiver of `NewReceiver`, built with `-gc=leaking`, and its RAM also holds the heap that `NewReceiver` takes; the receiver allocates nothing after it starts, and its bursts match those of the Go compiler with `Burst.Seconds` to the microsecond."}
 	for _, r := range rxRows() {
-		m, err := b.rx(ctx, r)
+		measureRow := b.rx
+		if r.prog == progRxIQ48 {
+			measureRow = b.rxFull
+		}
+		m, err := measureRow(ctx, r)
 		if err != nil {
 			return fmt.Errorf("%s %d: %w", r.prog, r.rate, err)
 		}
@@ -281,6 +286,7 @@ type bench struct {
 	t      tools
 	plugin string
 	target string
+	m4full string
 	m7     string
 	sig    string
 	refs   map[string]sigRef
@@ -344,7 +350,7 @@ func (b *bench) setup(ctx context.Context) error {
 		}
 	}
 	files := map[string]string{}
-	for _, n := range []string{"m4count.c", "startup.s", "m7.ld", "common.go.txt", progRxAudio + ".go.txt", progRxPE + ".go.txt", progRxIQ + ".go.txt", progTxAudio + ".go.txt", progTxPE + ".go.txt", progTxIQ + ".go.txt", progRxTier + ".go.txt"} {
+	for _, n := range []string{"m4count.c", "startup.s", "m7.ld", "common.go.txt", progRxAudio + ".go.txt", progRxPE + ".go.txt", progRxIQ + ".go.txt", progRxIQ48 + ".go.txt", progTxAudio + ".go.txt", progTxPE + ".go.txt", progTxIQ + ".go.txt", progRxTier + ".go.txt"} {
 		data, err := benchFS.ReadFile("bench/" + n)
 		if err != nil {
 			return err
@@ -369,12 +375,14 @@ func (b *bench) setup(ctx context.Context) error {
 			return err
 		}
 	}
-	tierDir := filepath.Join(src, "zzmcubench", progRxTier)
-	if err := os.MkdirAll(tierDir, 0o755); err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(tierDir, "main.go"), []byte(files[progRxTier+".go.txt"]), 0o600); err != nil {
-		return err
+	for _, prog := range []string{progRxTier, progRxIQ48} {
+		dir := filepath.Join(src, "zzmcubench", prog)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte(files[prog+".go.txt"]), 0o600); err != nil {
+			return err
+		}
 	}
 	startup := filepath.Join(b.work, "startup.s")
 	if err := os.WriteFile(startup, []byte(files["startup.s"]), 0o600); err != nil {
@@ -399,6 +407,9 @@ func (b *bench) setup(ctx context.Context) error {
 	}
 	b.target = filepath.Join(b.work, "m4.json")
 	if err := os.WriteFile(b.target, js, 0o600); err != nil {
+		return err
+	}
+	if b.m4full, err = b.bigTarget(target, "m4full", files["m7.ld"]); err != nil {
 		return err
 	}
 	if err := b.setupM7(files["m7.ld"], rel); err != nil {
@@ -434,7 +445,7 @@ func (b *bench) signals(ctx context.Context) error {
 		tiers = append(tiers, strconv.Itoa(r.tier))
 	}
 	env := []string{"DMRGO_MCUBENCH_OUT=" + b.sig, "DMRGO_MCUBENCH_TIERS=" + strings.Join(tiers, " "), "DMRGO_MCUBENCH_AUDIO=" + strings.Join(rates[progRxAudio], " "),
-		"DMRGO_MCUBENCH_AUDIOPE=" + strings.Join(rates[progRxPE], " "), "DMRGO_MCUBENCH_IQ=" + strings.Join(rates[progRxIQ], " ")}
+		"DMRGO_MCUBENCH_AUDIOPE=" + strings.Join(rates[progRxPE], " "), "DMRGO_MCUBENCH_IQ=" + strings.Join(rates[progRxIQ], " "), "DMRGO_MCUBENCH_IQFULL=" + strings.Join(rates[progRxIQ48], " ")}
 	if err := b.cmd(ctx, filepath.Join(b.root, "v2"), env, "go", "test", "-count=1", "-run", "^TestMCUBenchSignals$", "./rf"); err != nil {
 		return err
 	}

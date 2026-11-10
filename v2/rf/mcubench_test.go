@@ -164,33 +164,38 @@ func TestMCUBenchSignals(t *testing.T) {
 			}
 		}
 	}
-	for _, r := range strings.Fields(os.Getenv("DMRGO_MCUBENCH_IQ")) {
-		rate, _ := strconv.Atoi(r)
-		for c, f := range conds {
-			y := lowIQ(f(), rate)
-			b := make([]byte, 4*len(y))
-			for i, v := range y {
-				binary.LittleEndian.PutUint16(b[4*i:], uint16(q15(real(v))))
-				binary.LittleEndian.PutUint16(b[4*i+2:], uint16(q15(imag(v))))
-			}
-			name := fmt.Sprintf("q-%s-%d.bin", c, rate)
-			if err := os.WriteFile(filepath.Join(out, name), b, 0o600); err != nil {
-				t.Fatal(err)
-			}
-			var m mcuHash
-			m.h = 2166136261
-			var r Receiver
-			if err := r.Init(RxConfig{Rate: rate, OnBursts: m.on}); err != nil {
-				t.Fatal(err)
-			}
-			for k := 0; k < len(b); k += 512 {
-				_, _ = r.Write(b[k:min(k+512, len(b))])
-			}
-			_ = r.Flush()
-			ref = append(ref, fmt.Sprintf("%s %d %d %x %d", name, len(y), m.nb, m.h, rate))
+	for _, key := range []string{"DMRGO_MCUBENCH_IQ", "DMRGO_MCUBENCH_IQFULL"} {
+		for _, r := range strings.Fields(os.Getenv(key)) {
+			mcuIQ(t, out, conds, r, key == "DMRGO_MCUBENCH_IQFULL", &ref)
 		}
 	}
 	if err := os.WriteFile(filepath.Join(out, "ref.txt"), []byte(strings.Join(ref, "\n")+"\n"), 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func mcuIQ(t *testing.T, out string, conds map[string]func() []complex64, rs string, full bool, ref *[]string) {
+	rate, _ := strconv.Atoi(rs)
+	for c, f := range conds {
+		y := lowIQ(f(), rate)
+		b := make([]byte, 4*len(y))
+		for i, v := range y {
+			binary.LittleEndian.PutUint16(b[4*i:], uint16(q15(real(v))))
+			binary.LittleEndian.PutUint16(b[4*i+2:], uint16(q15(imag(v))))
+		}
+		name := fmt.Sprintf("q-%s-%d.bin", c, rate)
+		if err := os.WriteFile(filepath.Join(out, name), b, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		m := mcuHash{h: 2166136261, us: full}
+		r, err := NewReceiver(&RxConfig{Rate: rate, Tier: Tier0, OnBursts: m.on})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for k := 0; k < len(b); k += 512 {
+			_, _ = r.Write(b[k:min(k+512, len(b))])
+		}
+		_ = r.Flush()
+		*ref = append(*ref, fmt.Sprintf("%s %d %d %x %d", name, len(y), m.nb, m.h, rate))
 	}
 }

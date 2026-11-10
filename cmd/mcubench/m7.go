@@ -36,12 +36,38 @@ func (b *bench) setupM7(ld, startup string) error {
 	return os.WriteFile(b.m7, js, 0o600)
 }
 
+func (b *bench) bigTarget(target map[string]any, name, ld string) (string, error) {
+	path := filepath.Join(b.work, name+".ld")
+	if err := os.WriteFile(path, []byte(ld), 0o600); err != nil {
+		return "", err
+	}
+	rel, err := filepath.Rel(b.t.tinygoRoot, path)
+	if err != nil {
+		return "", err
+	}
+	target["linkerscript"] = rel
+	js, err := json.Marshal(target)
+	if err != nil {
+		return "", err
+	}
+	out := filepath.Join(b.work, name+".json")
+	return out, os.WriteFile(out, js, 0o600)
+}
+
 func (b *bench) rxTier(ctx context.Context, r benchRow) (measure, error) {
-	on, err := b.buildFor(ctx, b.m7, "leaking", r.prog, r.rate, r.tier, true)
+	return b.rxHeap(ctx, r, b.m7, "mps2-an500", "cortex-m7", "a", fmt.Sprintf("-t%d", r.tier))
+}
+
+func (b *bench) rxFull(ctx context.Context, r benchRow) (measure, error) {
+	return b.rxHeap(ctx, r, b.m4full, "mps2-an386", "cortex-m4", "q", "")
+}
+
+func (b *bench) rxHeap(ctx context.Context, r benchRow, target, machine, cpu, prefix, suffix string) (measure, error) {
+	on, err := b.buildFor(ctx, target, "leaking", r.prog, r.rate, r.tier, true)
 	if err != nil {
 		return measure{}, err
 	}
-	off, err := b.buildFor(ctx, b.m7, "leaking", r.prog, r.rate, r.tier, false)
+	off, err := b.buildFor(ctx, target, "leaking", r.prog, r.rate, r.tier, false)
 	if err != nil {
 		return measure{}, err
 	}
@@ -56,14 +82,14 @@ func (b *bench) rxTier(ctx context.Context, r benchRow) (measure, error) {
 	var m measure
 	var depth, heap uint64
 	for _, c := range signalConds() {
-		in := fmt.Sprintf("a-%s-%d.bin", c, r.rate)
-		name := fmt.Sprintf("%s-t%d", in, r.tier)
+		in := fmt.Sprintf("%s-%s-%d.bin", prefix, c, r.rate)
+		name := in + suffix
 		ref, ok := b.refs[name]
 		if !ok {
 			return m, fmt.Errorf("no reference %s", name)
 		}
-		dir := filepath.Join(b.work, "run", strings.TrimSuffix(in, ".bin")+fmt.Sprintf("-t%d", r.tier))
-		o1, err := b.qemuOn(ctx, "mps2-an500", "cortex-m7", on, dir, filepath.Join(b.sig, in))
+		dir := filepath.Join(b.work, "run", strings.TrimSuffix(in, ".bin")+suffix)
+		o1, err := b.qemuOn(ctx, machine, cpu, on, dir, filepath.Join(b.sig, in))
 		if err != nil {
 			return m, err
 		}
@@ -73,7 +99,7 @@ func (b *bench) rxTier(ctx context.Context, r benchRow) (measure, error) {
 		if o1.grow != 0 {
 			return m, fmt.Errorf("%s: the receiver allocated %d B after it started", name, o1.grow)
 		}
-		o0, err := b.qemuOn(ctx, "mps2-an500", "cortex-m7", off, dir, filepath.Join(b.sig, in))
+		o0, err := b.qemuOn(ctx, machine, cpu, off, dir, filepath.Join(b.sig, in))
 		if err != nil {
 			return m, err
 		}
