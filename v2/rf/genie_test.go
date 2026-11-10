@@ -186,7 +186,7 @@ func (c *genieCase) front(who int) *genieFront {
 }
 
 type genieCal struct {
-	tau, unit, dc float64
+	tau, unit, isi, dc float64
 }
 
 func genieSyms(tr *mxTruth) (sym [cachSymbols + burstSymbols]float64) {
@@ -201,44 +201,63 @@ func genieSyms(tr *mxTruth) (sym [cachSymbols + burstSymbols]float64) {
 	return sym
 }
 
-func genieFit(c *genieCase, f *genieFront, tau float64) (g, dc, res float64, n int) {
-	var sx, sy, sxx, sxy, syy float64
+func genieFit(c *genieCase, f *genieFront, tau float64) (g, isi, dc, res float64, n int) {
+	var a [3][3]float64
+	var b [3]float64
+	var syy float64
 	for j := range c.truth {
 		tr := &c.truth[j]
 		if tr.who != 0 {
 			continue
 		}
 		sym := genieSyms(tr)
-		for k := cachSymbols; k < len(sym); k++ {
+		for k := cachSymbols + 1; k < len(sym)-1; k++ {
 			v, ok := f.at(tr.at + tau + float64(k-cachSymbols)/(symbolRate*c.r))
 			if !ok {
 				continue
 			}
-			sx, sy, sxx, sxy, syy, n = sx+sym[k], sy+v, sxx+sym[k]*sym[k], sxy+sym[k]*v, syy+v*v, n+1
+			x := [3]float64{sym[k], sym[k-1] + sym[k+1], 1}
+			for p := range x {
+				for q := range x {
+					a[p][q] += x[p] * x[q]
+				}
+				b[p] += x[p] * v
+			}
+			syy += v * v
+			n++
 		}
 	}
-	m := float64(n)
-	den := m*sxx - sx*sx
-	if n == 0 || den <= 0 {
-		return 0, 0, math.Inf(1), 0
+	det := a[0][0]*(a[1][1]*a[2][2]-a[1][2]*a[2][1]) - a[0][1]*(a[1][0]*a[2][2]-a[1][2]*a[2][0]) + a[0][2]*(a[1][0]*a[2][1]-a[1][1]*a[2][0])
+	if n == 0 || det <= 0 {
+		return 0, 0, 0, math.Inf(1), 0
 	}
-	g = (m*sxy - sx*sy) / den
-	dc = (sy - g*sx) / m
-	res = syy - 2*g*sxy - 2*dc*sy + g*g*sxx + 2*g*dc*sx + m*dc*dc
-	return g, dc, res / m, n
+	var w [3]float64
+	for p := range w {
+		m := a
+		for q := range m {
+			m[q][p] = b[q]
+		}
+		w[p] = (m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0])) / det
+	}
+	res = syy
+	for p := range w {
+		res -= w[p] * b[p]
+	}
+	return w[0], w[1], w[2], res / float64(n), n
 }
 
-// calibrate fits the delay of the reference front of talker 0 and the unit
-// and DC of its output by least squares on the known symbols of every burst
-// of that talker: the constant delay of the filters and the gain of the
-// path, the same for every burst, so that each burst is sliced at its own
-// true time.
+// calibrate fits the delay of the reference front of talker 0 and the unit,
+// the intersymbol interference of the two adjacent symbols and the DC of
+// its output by least squares on the known symbols of every burst of that
+// talker: the constant delay of the filters, the gain of the path and the
+// spread of a band-limited input, the same for every burst, so that each
+// burst is sliced at its own true time.
 func (c *genieCase) calibrate(f *genieFront) genieCal {
 	best, cal := math.Inf(1), genieCal{}
 	scan := func(lo, hi, step float64) {
 		for tau := lo; tau <= hi; tau += step {
-			if g, dc, res, n := genieFit(c, f, tau); n > 0 && g > 0 && res/(g*g) < best {
-				best, cal = res/(g*g), genieCal{tau, g, dc}
+			if g, isi, dc, res, n := genieFit(c, f, tau); n > 0 && g > 0 && res/(g*g) < best {
+				best, cal = res/(g*g), genieCal{tau, g, isi, dc}
 			}
 		}
 	}
@@ -247,26 +266,48 @@ func (c *genieCase) calibrate(f *genieFront) genieCal {
 	return cal
 }
 
+// genieSlice slices from f the burst whose data starts at the time at: each
+// symbol less the interference of the hard decisions on its two adjacent
+// symbols.
 func genieSlice(f *genieFront, cal genieCal, at, r float64) (data layer2.RawBurst, cach [3]byte, ok bool) {
-	for k := -cachSymbols; k < burstSymbols; k++ {
-		v, in := f.at(at + cal.tau + float64(k)/(symbolRate*r))
-		if !in {
-			if k >= 0 {
+	var y, l [cachSymbols + burstSymbols]float64
+	var in [len(y)]bool
+	for i := range y {
+		var v float64
+		if v, in[i] = f.at(at + cal.tau + float64(i-cachSymbols)/(symbolRate*r)); !in[i] {
+			if i >= cachSymbols {
 				return data, cach, false
 			}
 			continue
 		}
-		y := (v - cal.dc) / cal.unit
-		var d byte
-		if y < 0 {
-			d = 2
-			y = -y
+		y[i] = (v - cal.dc) / cal.unit
+		l[i] = math.Copysign(1, y[i])
+		if math.Abs(y[i]) > 2 {
+			l[i] *= 3
 		}
-		if y > 2 {
+	}
+	for i := range y {
+		if !in[i] {
+			continue
+		}
+		var e float64
+		if i > 0 {
+			e += l[i-1]
+		}
+		if i+1 < len(l) {
+			e += l[i+1]
+		}
+		x := y[i] - cal.isi/cal.unit*e
+		var d byte
+		if x < 0 {
+			d = 2
+			x = -x
+		}
+		if x > 2 {
 			d |= 1
 		}
-		if k < 0 {
-			b := 2 * (k + cachSymbols)
+		if k := i - cachSymbols; k < 0 {
+			b := 2 * i
 			cach[b/8] |= d << (6 - b%8)
 		} else {
 			b := 2 * k
@@ -770,7 +811,7 @@ func TestGenieKnownAnswer(t *testing.T) {
 			if n < 4 {
 				t.Errorf("%d bursts on the air", n)
 			}
-			t.Logf("%d bursts, delay %.1f us, unit %.1f Hz, DC %.1f Hz", n, cal.tau*1e6, cal.unit, cal.dc)
+			t.Logf("%d bursts, delay %.1f us, unit %.1f Hz, ISI %.1f Hz, DC %.1f Hz", n, cal.tau*1e6, cal.unit, cal.isi, cal.dc)
 		})
 	}
 }
