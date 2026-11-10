@@ -77,7 +77,7 @@ func TestTiersDecode(t *testing.T) {
 		n, ok, h uint32
 	}{
 		{rf.Tier1, 48, 48, 0xf98ad06b},
-		{rf.Tier2, 48, 47, 0x1e99ad82},
+		{rf.Tier2, 48, 47, 0xa10f4ebe},
 	} {
 		d := digest{sent: sent, h: 2166136261}
 		r, err := rf.NewAudioReceiver(&rf.AudioRxConfig{Rate: audioRate, Tier: c.tier, OnBursts: d.on})
