@@ -419,7 +419,7 @@ type leanCore struct {
 	huntBuf        [leanHuntSamples / 2]int16
 	devHz          int16
 	devAtHz        int16
-	clipNs         uint16
+	clipNs         int64
 	fecOK          bool
 
 	signMiss                           uint8
@@ -1692,7 +1692,7 @@ func (r *leanCore) clipped(end int64) bool {
 // and they say nothing of the level after it.
 func (r *leanCore) clips(end int64, fresh bool) (lo, hi int) {
 	k := end - syncSymbols + 1
-	if d := int64(int16(uint16(r.ns) - r.clipNs)); fresh && d >= 0 && d < leanRing {
+	if d := r.ns - r.clipNs; fresh && d >= 0 && d < leanRing {
 		k = max(k, r.ns-d)
 	}
 	j := ringPos(k)
@@ -1720,7 +1720,7 @@ func (r *leanCore) clips(end int64, fresh bool) (lo, hi int) {
 // span after each drop, as the ring keeps the clipped symbols.
 func (r *leanCore) clipHot() {
 	a := r.audio
-	if !audioOn() || a == nil || a.maxGain != 0 || r.isReplaying() || int16(uint16(r.ns)-r.clipNs) < syncSymbols {
+	if !audioOn() || a == nil || a.maxGain != 0 || r.isReplaying() || r.ns-r.clipNs < syncSymbols {
 		return
 	}
 	n, hi := r.clips(r.ns-1, true)
@@ -1729,7 +1729,7 @@ func (r *leanCore) clipHot() {
 	}
 	if 4*n >= syncSymbols {
 		r.relevel(leanClipDrop)
-		r.clipNs = uint16(r.ns)
+		r.clipNs = r.ns
 	}
 }
 
@@ -1938,7 +1938,7 @@ func (r *leanCore) slotAnchor(base int64, seek bool) (bool, int64, enums.SyncPat
 	if a := r.audio; audioOn() && a != nil && a.maxGain == 0 && !r.isReplaying() && r.overload(best, base+leanSyncEnd+shift, false) {
 		if r.overload(best, base+leanSyncEnd+shift, true) {
 			r.relevel(leanClipDrop)
-			r.clipNs = uint16(r.ns)
+			r.clipNs = r.ns
 		}
 		r.stepHold = true
 		return false, 0, 0
@@ -2416,12 +2416,12 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern, noisy, m
 // the matched filter mixes the levels before and after the step in the
 // symbols at it, so the burst is lost.
 func (r *leanCore) clipHead(base int64, split int) bool {
-	k := r.ns - int64(int16(uint16(r.ns)-r.clipNs))
-	return split > 0 && k <= r.ns && k > base+cachSymbols && k <= base+leanSyncEnd
+	k := r.clipNs
+	return split > 0 && k > base+cachSymbols && k <= base+leanSyncEnd
 }
 
 func (r *leanCore) levelCut(base int64, split int) bool {
-	clip := int64(int16(uint16(r.ns) - r.clipNs))
+	clip := r.ns - r.clipNs
 	return split > 0 || clip >= 0 && clip <= r.ns-base
 }
 
