@@ -79,10 +79,10 @@ Eb/N0 in dB at which the tier recovers 90% of the frames exactly. C/N in 12.5 kH
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 0 | 9.6 | 6.6 | 2,636 | 55.6 |
-| Audio tier 0, `PreEmphasis` | 9.6 | 7.1 | 2,692 | 55.8 |
-| Low-rate I/Q tier 0 | 9.6 | 8.3 | 3,008 | 55.2 |
-| I/Q tier 0 | 48 | 110.5 | 36,640 | 341.6 |
+| Audio tier 0 | 9.6 | 6.6 | 2,644 | 55.5 |
+| Audio tier 0, `PreEmphasis` | 9.6 | 7.1 | 2,700 | 55.6 |
+| Low-rate I/Q tier 0 | 9.6 | 8.3 | 3,016 | 55.1 |
+| I/Q tier 0 | 48 | 110.5 | 36,648 | 341.6 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex-M4F) by `cmd/mcubench`. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal. RAM is the static data of the program less the bench, with the most stack. Flash is the code and constant data of the whole program. The I/Q row at 48 kHz is the receiver of `NewReceiver`, built with `-gc=leaking`, and its RAM also holds the heap that `NewReceiver` takes; the receiver allocates nothing after it starts, and its bursts match those of the Go compiler with `Burst.Seconds` to the microsecond.
 
@@ -90,8 +90,8 @@ Built with TinyGo 0.44.0 `-opt z -gc=none` and run in QEMU (`mps2-an386`, Cortex
 
 | Tier | Rate (kHz) | CPU (MHz) | RAM with heap and stack (B) | Flash (KB) |
 |:---|---:|---:|---:|---:|
-| Audio tier 1 | 9.6 | 62.1 | 57,328 | 280.8 |
-| Audio tier 2 | 9.6 | 657.6 | 344,432 | 280.8 |
+| Audio tier 1 | 9.6 | 62.1 | 57,336 | 280.9 |
+| Audio tier 2 | 9.6 | 657.6 | 344,440 | 280.9 |
 
 Built with TinyGo 0.44.0 `-opt z -gc=leaking` for a Cortex-M7 with an FPv5-D16 FPU and run in QEMU (`mps2-an500`) by `cmd/mcubench`. The receiver is the one of `NewAudioReceiver`, and each run gives the bursts of the receiver of the Go compiler, with `Burst.Seconds` to the microsecond, as the math package of TinyGo differs from the assembly of gc in the last bit of some results. CPU is the most, over the test signals, of the cycles that the receiver takes per second of signal, by the cycle model of the Cortex-M4F rows. RAM is the static data of the program less the bench, the heap that `NewAudioReceiver` takes, and the most stack. The receiver allocates nothing after it starts. Flash is the code and constant data of the whole program.
 
