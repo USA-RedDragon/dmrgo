@@ -2,7 +2,7 @@ module github.com/USA-RedDragon/dmrgo/v2
 
 go 1.24.0
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require github.com/tetratelabs/wazero v1.11.0
 
