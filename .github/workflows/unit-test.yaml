@@ -24,7 +24,7 @@ jobs:
       - name: Generate GitHub App Token
         id: app-token
         if: inputs.coverage
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.AUTO_COMMIT_APP_ID }}
           private-key: ${{ secrets.app_key }}
@@ -35,7 +35,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token || github.token }}
 
       - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: go.mod
 
@@ -66,7 +66,7 @@ jobs:
         run: |
           env CGO_ENABLED=0 go test -C v2 -timeout 60m -v ./... -coverprofile ../coverage.out -coverpkg=./... -covermode count
 
-      - uses: USA-RedDragon/reusable-actions/coverage@c5ee15922a0ff4229b0f06a8d0551541b5cabfdc # v2.0.34
+      - uses: USA-RedDragon/reusable-actions/coverage@ff5d8c9d1d9fda2d1ca4cb4325987a429db9a85a # v2.0.39
         if: always() && inputs.coverage
         with:
           file: coverage.out
